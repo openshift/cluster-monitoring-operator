@@ -1,0 +1,133 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: kube-state-metrics
+  name: kube-state-metrics
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kube-state-metrics
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        k8s-app: kube-state-metrics
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=:8443
+        - --upstream=http://127.0.0.1:8081/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/brancz/kube-rbac-proxy:v0.3.0
+        imagePullPolicy: IfNotPresent
+        name: kube-rbac-proxy-main
+        ports:
+        - containerPort: 8443
+          name: https-main
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 20m
+            memory: 40Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: kube-state-metrics-tls
+      - args:
+        - --secure-listen-address=:9443
+        - --upstream=http://127.0.0.1:8082/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/brancz/kube-rbac-proxy:v0.3.0
+        imagePullPolicy: IfNotPresent
+        name: kube-rbac-proxy-self
+        ports:
+        - containerPort: 9443
+          name: https-self
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 20m
+            memory: 40Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: kube-state-metrics-tls
+      - args:
+        - --host=127.0.0.1
+        - --port=8081
+        - --telemetry-host=127.0.0.1
+        - --telemetry-port=8082
+        image: quay.io/coreos/kube-state-metrics:v1.3.0
+        imagePullPolicy: IfNotPresent
+        name: kube-state-metrics
+        resources:
+          limits:
+            cpu: 102m
+            memory: 180Mi
+          requests:
+            cpu: 102m
+            memory: 180Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - command:
+        - /pod_nanny
+        - --container=kube-state-metrics
+        - --cpu=100m
+        - --extra-cpu=2m
+        - --memory=150Mi
+        - --extra-memory=30Mi
+        - --threshold=5
+        - --deployment=kube-state-metrics
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: quay.io/coreos/addon-resizer:1.0
+        imagePullPolicy: IfNotPresent
+        name: addon-resizer
+        resources:
+          limits:
+            cpu: 10m
+            memory: 30Mi
+          requests:
+            cpu: 10m
+            memory: 30Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: kube-state-metrics
+      serviceAccountName: kube-state-metrics
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: kube-state-metrics-tls
+        secret:
+          defaultMode: 420
+          secretName: kube-state-metrics-tls

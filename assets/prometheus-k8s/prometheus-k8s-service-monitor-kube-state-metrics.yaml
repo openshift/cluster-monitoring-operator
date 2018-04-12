@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kube-state-metrics
+  labels:
+    k8s-app: kube-state-metrics
+spec:
+  jobLabel: k8s-app
+  selector:
+    matchLabels:
+      k8s-app: kube-state-metrics
+  namespaceSelector:
+    matchNames:
+    - this-namespace-is-automatically-replaced-at-runtime
+  endpoints:
+  - port: https-main
+    scheme: https
+    interval: 30s
+    honorLabels: true
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      serverName: server-name-replaced-at-runtime
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - port: https-self
+    scheme: https
+    interval: 30s
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      serverName: server-name-replaced-at-runtime
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token

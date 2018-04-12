@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: prometheus-k8s
+spec:
+  to:
+    kind: Service
+    name: prometheus-k8s
+  port:
+    targetPort: web
+  tls:
+    termination: Reencrypt

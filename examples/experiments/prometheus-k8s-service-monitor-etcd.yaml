@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ServiceMonitor
+metadata:
+  name: kube-etcd
+  namespace: openshift-monitoring
+  labels:
+    k8s-app: kube-etcd
+spec:
+  selector:
+    matchLabels:
+      k8s-app: kube-etcd
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  endpoints:
+  - port: metrics
+    interval: 30s

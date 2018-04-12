@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter
+  labels:
+    k8s-app: node-exporter
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: node-exporter-tls
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: https
+    port: 9100
+    protocol: TCP
+  selector:
+    k8s-app: node-exporter
