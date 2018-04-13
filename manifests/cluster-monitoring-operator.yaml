@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cluster-monitoring-operator
+  namespace: openshift-monitoring
+  labels:
+    app: cluster-monitoring-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-monitoring-operator
+  template:
+    metadata:
+      labels:
+        app: cluster-monitoring-operator
+    spec:
+      serviceAccountName: cluster-monitoring-operator
+      containers:
+      - image: quay.io/coreos/cluster-monitoring-operator:c399707c
+        name: cluster-monitoring-operator
+        args:
+        - "-namespace=openshift-monitoring"
+        - "-configmap=cluster-monitoring-config"
+        - "-logtostderr=true"
+        - "-v=4"
+        resources:
+          limits:
+            cpu: 20m
+            memory: 50Mi
+          requests:
+            cpu: 20m
+            memory: 50Mi

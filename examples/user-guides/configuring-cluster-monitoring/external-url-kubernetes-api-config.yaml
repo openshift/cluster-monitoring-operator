@@ -1,0 +1,4 @@
+prometheusK8s:
+  externalUrl: https://subdomain.domain.tld/api/kubernetes/api/v1/proxy/namespaces/openshift-monitoring/services/prometheus-k8s:9090/
+alertmanagerMain:
+  externalUrl: https://subdomain.domain.tld/api/kubernetes/api/v1/proxy/namespaces/openshift-monitoring/services/alertmanager-main:9093/

@@ -1,0 +1,4 @@
+prometheusK8s:
+  externalUrl: https://subdomain.domain.tld/prometheus
+alertmanagerMain:
+  externalUrl: https://subdomain.domain.tld/alertmanager

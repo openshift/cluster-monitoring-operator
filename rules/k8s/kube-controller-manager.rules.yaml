@@ -1,0 +1,11 @@
+groups:
+- name: kube-controller-manager.rules
+  rules:
+  - alert: K8SControllersDown
+    expr: absent(up{job="kube-controllers"} == 1)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: There is no running instance of the OpenShift master controllers. Deployments and replication controllers are not making progress and Pods are not being scheduled.
+      summary: OpenShift master controllers

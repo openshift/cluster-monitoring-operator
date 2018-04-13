@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |+
+    prometheusOperator:
+      baseImage: quay.io/coreos/prometheus-operator
+      prometheusConfigReloaderBaseImage: quay.io/coreos/prometheus-config-reloader
+      configReloaderBaseImage: quay.io/coreos/configmap-reload
+    prometheusK8s:
+      baseImage: quay.io/prometheus/prometheus
+    alertmanagerMain:
+      baseImage: quay.io/prometheus/alertmanager

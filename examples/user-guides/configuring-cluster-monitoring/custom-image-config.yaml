@@ -1,0 +1,15 @@
+prometheusOperator:
+  baseImage: custom-registry.com/prometheus-operator
+  prometheusConfigReloaderBaseImage: custom-registry.com/prometheus-config-reloader
+  configReloaderBaseImage: custom-registry.com/configmap-reload
+prometheusK8s:
+  baseImage: custom-registry.com/prometheus
+alertmanagerMain:
+  baseImage: custom-registry.com/alertmanager
+auth:
+  baseImage: custom-registry.com/openshift-oauth-proxy
+nodeExporter:
+  baseImage: custom-registry.com/node-exporter
+kubeStateMetrics:
+  baseImage: custom-registry.com/kube-state-metrics
+  addonResizerBaseImage: custom-registry.com/addon-resizer
