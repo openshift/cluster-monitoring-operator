@@ -75,7 +75,7 @@ spec:
         - --port=8081
         - --telemetry-host=127.0.0.1
         - --telemetry-port=8082
-        image: quay.io/coreos/kube-state-metrics:v1.3.0
+        image: quay.io/coreos/kube-state-metrics:v1.3.1
         imagePullPolicy: IfNotPresent
         name: kube-state-metrics
         resources:
