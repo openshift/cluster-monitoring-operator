@@ -40,11 +40,8 @@ To add a new builtin alerting rule:
 
 ## Roadmap
 
-* Monitor etcd *(self-hosted vs custom?)*
-* Alerting on cluster components
-* User-relevant alerting based on Kubernetes metrics, e.g. "deployment got stuck"
-* Meta-monitoring, i.e. monitoring user-deployed Prometheus servers
-* Make monitoring stack configurable
+* Monitor etcd
+* Adapt Tectonic inherited alerts with OpenShift operational knowledge
 
 ## Testing
 
