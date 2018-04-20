@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: logging-elasticsearch
+  labels:
+    k8s-app: logging-elasticsearch
+spec:
+  selector:
+    matchLabels:
+      k8s-app: logging-elasticsearch
+      prometheus: TBD
+  namespaceSelector:
+    matchNames:
+    - this-namespace-is-automatically-replaced-at-runtime
+  endpoints:
+  - port: web
+    interval: 30s
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      serverName: alertmanager-main
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token

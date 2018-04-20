@@ -77,6 +77,7 @@ var (
 	PrometheusK8sKubeControllersServiceMonitor    = "assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-controllers.yaml"
 	PrometheusK8sKubeDNSServiceMonitor            = "assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-dns.yaml"
 	PrometheusK8sPrometheusOperatorServiceMonitor = "assets/prometheus-k8s/prometheus-k8s-service-monitor-prometheus-operator.yaml"
+	PrometheusK8sLoggingElasticsearchServiceMonitor = "assets/prometheus-k8s/prometheus-k8s-service-monitor-logging-elasticsearch.yaml"
 	PrometheusK8sService                          = "assets/prometheus-k8s/prometheus-k8s-svc.yaml"
 	PrometheusK8sProxySecret                      = "assets/prometheus-k8s/prometheus-k8s-proxy-secret.yaml"
 	PrometheusK8sRoute                            = "assets/prometheus-k8s/prometheus-k8s-route.yaml"
@@ -588,6 +589,10 @@ func (f *Factory) PrometheusK8sPrometheusOperatorServiceMonitor() (*monv1.Servic
 	sm.Spec.NamespaceSelector.MatchNames[0] = f.namespace
 
 	return sm, nil
+}
+
+func (f *Factory) PrometheusK8sLoggingElasticsearchServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(MustAssetReader(PrometheusK8sLoggingElasticsearchServiceMonitor))
 }
 
 func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {

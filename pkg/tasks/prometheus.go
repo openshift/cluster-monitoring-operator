@@ -239,6 +239,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Prometheus Operator ServiceMonitor failed")
 	}
 
+	smles, err := t.factory.PrometheusK8sLoggingElasticsearchServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Logging Elasticsearch Operator ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smles)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Logging Elasticsearch Operator ServiceMonitor failed")
+	}
+
 	smp, err := t.factory.PrometheusK8sPrometheusServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Prometheus ServiceMonitor failed")
