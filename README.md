@@ -38,6 +38,8 @@ To add a new builtin alerting rule:
 
 * Add a new [Prometheus rules file](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) to [rules/k8s](rules/k8s).
 
+Run `make generate` after you modify the files and make sure to add the modified files to the commit.
+
 ## Roadmap
 
 * Monitor etcd
