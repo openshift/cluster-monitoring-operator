@@ -249,6 +249,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Prometheus ServiceMonitor failed")
 	}
 
+	aac, err := t.factory.PrometheusK8sAvailabilityAppCreateServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing availability-app-create ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(aac)
+	if err != nil {
+		return errors.Wrap(err, "reconciling availability-app-create ServiceMonitor failed")
+	}
+
 	svc, err := t.factory.PrometheusK8sService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Service failed")

@@ -36,6 +36,7 @@
 // assets/prometheus-k8s/prometheus-k8s-service-account.yaml
 // assets/prometheus-k8s/prometheus-k8s-service-monitor-alertmanager.yaml
 // assets/prometheus-k8s/prometheus-k8s-service-monitor-apiserver.yaml
+// assets/prometheus-k8s/prometheus-k8s-service-monitor-availability-app-create.yaml
 // assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-controllers.yaml
 // assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-dns.yaml
 // assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-state-metrics.yaml
@@ -837,6 +838,26 @@ func assetsPrometheusK8sPrometheusK8sServiceMonitorApiserverYaml() (*asset, erro
 	return a, nil
 }
 
+var _assetsPrometheusK8sPrometheusK8sServiceMonitorAvailabilityAppCreateYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x91\xc1\x6e\xe3\x40\x08\x86\xef\x7e\x0a\x5e\xc0\xf6\xae\xf6\xb2\xf2\x75\xa5\x3d\xa5\xbd\xa4\xea\x1d\x13\x12\x53\x8f\x87\x11\x10\x4b\x7d\xfb\x6a\xe2\x34\xaa\xd4\x36\x87\x1e\x07\x3e\x3e\xfd\x0c\x58\xe4\x99\xcd\x45\xf3\x00\x8b\x66\x09\x35\xc9\xa7\x8e\xd4\x58\xbd\x23\x5d\xfa\xf5\x77\x33\x4b\x3e\x0c\xb0\x67\x5b\x85\xf8\x61\xa3\x9a\x85\x03\x0f\x18\x38\x34\x00\x19\x17\xbe\xcd\xb7\x58\x4a\x4b\xc6\x18\xdc\x00\x24\x1c\x39\x79\x85\x00\xe6\xbf\x5e\x9b\x5f\x92\x5e\x98\x2a\xf5\xa2\xe3\xae\x8e\x0c\xef\x74\x03\xc0\xf9\x50\x54\x72\x5c\x34\x2d\x14\xb5\x18\x60\x8a\x28\xed\xc2\x61\x42\x7e\xb1\x4b\x0e\xb6\x15\xd3\x00\x7f\x7e\x6d\x15\xa7\x89\x6b\xb0\x8a\x6e\x95\x91\xd1\xd8\x9e\x74\xe6\xfc\x5f\x12\x0f\xd0\xaf\x68\xbd\x9d\x73\xef\x4c\xc6\xe1\xfd\x7c\x1e\xd9\x32\x07\x7b\x27\xda\xfb\xb6\x33\x12\xe9\x39\x47\x1f\x75\xf0\x22\x8a\xe4\xff\x34\x1f\xe5\xb4\x6d\x06\x40\xf8\x13\xe1\xf5\xd9\x12\x76\x64\x71\x55\xd5\x22\xdb\xe3\x37\x7f\xda\x69\xe1\xec\x93\x1c\xa3\xbd\x35\x57\x94\x84\xa3\x24\x89\xd7\xce\x57\x6a\xaa\x23\x31\x85\xda\x16\x6f\xc1\xa0\x69\xf7\xe1\x12\xf7\x6f\xb1\x1d\xd4\x0b\x12\xef\x3f\x7b\x6a\xb0\xab\xa6\x85\xfb\x61\x9a\xb7\x00\x00\x00\xff\xff\xb3\xf6\xac\x03\x5f\x02\x00\x00")
+
+func assetsPrometheusK8sPrometheusK8sServiceMonitorAvailabilityAppCreateYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsPrometheusK8sPrometheusK8sServiceMonitorAvailabilityAppCreateYaml,
+		"assets/prometheus-k8s/prometheus-k8s-service-monitor-availability-app-create.yaml",
+	)
+}
+
+func assetsPrometheusK8sPrometheusK8sServiceMonitorAvailabilityAppCreateYaml() (*asset, error) {
+	bytes, err := assetsPrometheusK8sPrometheusK8sServiceMonitorAvailabilityAppCreateYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/prometheus-k8s/prometheus-k8s-service-monitor-availability-app-create.yaml", size: 607, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _assetsPrometheusK8sPrometheusK8sServiceMonitorKubeControllersYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x90\xc1\x4a\x24\x41\x0c\x86\xef\xfd\x14\x79\x81\xee\xde\x65\x2f\x4b\x5d\x05\x4f\xa3\x97\x11\xef\xe9\x4c\x9c\x29\xbb\x3a\x29\x92\x4c\x83\x6f\x2f\x35\x85\x20\x28\x1e\x3c\x56\xea\xfb\x3f\x92\x1f\x6b\x7e\x66\xf3\xac\x92\x60\x53\xc9\xa1\x96\xe5\x3c\x91\x1a\xab\x4f\xa4\xdb\xbc\xff\x1d\xd6\x2c\xa7\x04\x47\xb6\x3d\x13\x3f\x74\x6a\xd8\x38\xf0\x84\x81\x69\x00\x10\xdc\x38\xc1\x7a\x5d\x78\x24\x95\x30\x2d\x85\xcd\x07\x80\x82\x0b\x17\x6f\x08\xc0\xfa\xdf\x47\xac\xf5\x1b\xce\x2b\x53\x63\x5e\x75\x39\xb4\x40\xfa\x60\x07\x00\x96\x53\xd5\x2c\x71\x93\x8c\x50\xd5\x22\xc1\x25\xa2\x8e\x1b\x87\x65\xf2\x9b\x3b\x4b\xb0\xed\x58\x12\xfc\xfb\xd3\x27\x4e\x17\x6e\x4b\x35\xb4\x4f\x16\x46\x63\x7b\xd2\x95\xe5\x3e\x17\x4e\x30\xef\x68\xb3\x5d\x65\x76\x26\xe3\xf0\xb9\x2d\x66\xc2\xc1\x3e\x65\x9d\xbd\xdf\x8b\x44\x7a\x95\x98\xa3\x05\x6f\xa2\x28\x7e\xa7\xf2\x92\xcf\xfd\x2e\x00\xc2\xdf\x08\x09\x27\xb2\x18\x00\x9c\x0b\x53\xa8\x75\xdd\x86\x41\x97\xc3\xa7\xde\x7e\x6a\xae\x57\xef\x15\x89\x8f\x5f\x2d\x8f\xed\xaf\xbf\xc7\x9e\xf5\x37\x0f\xde\x86\xf7\x00\x00\x00\xff\xff\xf3\x48\x49\xeb\xf6\x01\x00\x00")
 
 func assetsPrometheusK8sPrometheusK8sServiceMonitorKubeControllersYamlBytes() ([]byte, error) {
@@ -1205,6 +1226,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/prometheus-k8s/prometheus-k8s-service-account.yaml": assetsPrometheusK8sPrometheusK8sServiceAccountYaml,
 	"assets/prometheus-k8s/prometheus-k8s-service-monitor-alertmanager.yaml": assetsPrometheusK8sPrometheusK8sServiceMonitorAlertmanagerYaml,
 	"assets/prometheus-k8s/prometheus-k8s-service-monitor-apiserver.yaml": assetsPrometheusK8sPrometheusK8sServiceMonitorApiserverYaml,
+	"assets/prometheus-k8s/prometheus-k8s-service-monitor-availability-app-create.yaml": assetsPrometheusK8sPrometheusK8sServiceMonitorAvailabilityAppCreateYaml,
 	"assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-controllers.yaml": assetsPrometheusK8sPrometheusK8sServiceMonitorKubeControllersYaml,
 	"assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-dns.yaml": assetsPrometheusK8sPrometheusK8sServiceMonitorKubeDnsYaml,
 	"assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-state-metrics.yaml": assetsPrometheusK8sPrometheusK8sServiceMonitorKubeStateMetricsYaml,
@@ -1305,6 +1327,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"prometheus-k8s-service-account.yaml": &bintree{assetsPrometheusK8sPrometheusK8sServiceAccountYaml, map[string]*bintree{}},
 			"prometheus-k8s-service-monitor-alertmanager.yaml": &bintree{assetsPrometheusK8sPrometheusK8sServiceMonitorAlertmanagerYaml, map[string]*bintree{}},
 			"prometheus-k8s-service-monitor-apiserver.yaml": &bintree{assetsPrometheusK8sPrometheusK8sServiceMonitorApiserverYaml, map[string]*bintree{}},
+			"prometheus-k8s-service-monitor-availability-app-create.yaml": &bintree{assetsPrometheusK8sPrometheusK8sServiceMonitorAvailabilityAppCreateYaml, map[string]*bintree{}},
 			"prometheus-k8s-service-monitor-kube-controllers.yaml": &bintree{assetsPrometheusK8sPrometheusK8sServiceMonitorKubeControllersYaml, map[string]*bintree{}},
 			"prometheus-k8s-service-monitor-kube-dns.yaml": &bintree{assetsPrometheusK8sPrometheusK8sServiceMonitorKubeDnsYaml, map[string]*bintree{}},
 			"prometheus-k8s-service-monitor-kube-state-metrics.yaml": &bintree{assetsPrometheusK8sPrometheusK8sServiceMonitorKubeStateMetricsYaml, map[string]*bintree{}},
