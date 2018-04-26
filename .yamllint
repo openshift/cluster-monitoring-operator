@@ -1,0 +1,15 @@
+---
+extends: default
+ignore: | 
+ vendor/
+ manifests/cluster-monitoring-operator-role.yaml
+
+rules: 
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  document-start: disable
+  line-length: disable
+  trailing-spaces: disable
+  colons: disable
+  empty-lines: disable
