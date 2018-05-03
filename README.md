@@ -22,6 +22,7 @@ Metrics are collected from the following components
 * API server
 * Prometheus (just `prometheus-k8s` for now)
 * Alertmanager
+* Web console
 
 ## Contributing new component integrations
 

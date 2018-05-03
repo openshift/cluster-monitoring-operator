@@ -239,6 +239,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Prometheus Operator ServiceMonitor failed")
 	}
 
+	smwc, err := t.factory.PrometheusK8sWebConsoleServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Web Console ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smwc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Web Console ServiceMonitor failed")
+	}
+
 	smp, err := t.factory.PrometheusK8sPrometheusServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Prometheus ServiceMonitor failed")

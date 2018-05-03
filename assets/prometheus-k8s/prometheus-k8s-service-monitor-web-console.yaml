@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: web-console
+  labels:
+    k8s-app: web-console
+spec:
+  selector:
+    matchLabels:
+      k8s-app: web-console
+  namespaceSelector:
+    matchNames:
+    - openshift-web-console-smoke-test
+  endpoints:
+  - port: web
+    interval: 5m
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      serverName: server-name-replaced-at-runtime
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+

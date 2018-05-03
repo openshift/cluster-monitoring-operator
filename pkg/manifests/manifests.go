@@ -77,6 +77,7 @@ var (
 	PrometheusK8sKubeControllersServiceMonitor    = "assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-controllers.yaml"
 	PrometheusK8sKubeDNSServiceMonitor            = "assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-dns.yaml"
 	PrometheusK8sPrometheusOperatorServiceMonitor = "assets/prometheus-k8s/prometheus-k8s-service-monitor-prometheus-operator.yaml"
+	PrometheusK8sWebConsoleServiceMonitor         = "assets/prometheus-k8s/prometheus-k8s-service-monitor-web-console.yaml"
 	PrometheusK8sService                          = "assets/prometheus-k8s/prometheus-k8s-svc.yaml"
 	PrometheusK8sProxySecret                      = "assets/prometheus-k8s/prometheus-k8s-proxy-secret.yaml"
 	PrometheusK8sRoute                            = "assets/prometheus-k8s/prometheus-k8s-route.yaml"
@@ -581,6 +582,17 @@ func (f *Factory) PrometheusK8sKubeDNSServiceMonitor() (*monv1.ServiceMonitor, e
 
 func (f *Factory) PrometheusK8sPrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
 	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sPrometheusOperatorServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.NamespaceSelector.MatchNames[0] = f.namespace
+
+	return sm, nil
+}
+
+func (f *Factory) PrometheusK8sWebConsoleServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sWebConsoleServiceMonito)r)
 	if err != nil {
 		return nil, err
 	}

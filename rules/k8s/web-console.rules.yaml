@@ -1,0 +1,17 @@
+groups:
+- name: web-console.rules
+  rules:
+  - alert: WebConsoleNotAvailable
+    expr: sum(web_console_smoke_test_fail) == 1
+    labels:
+      severity: warning
+    annotations:
+      description: Can't test OpenShift web console availability.
+      summary: OpenShift web console might not be available
+  - alert: WebConsoleDown
+    expr: sum(web_console_smoke_test_fail) > 1
+    labels:
+      severity: critical
+    annotations:
+      description: OpenShift web console is down.
+      summary: OpenShift web console is down
