@@ -45,7 +45,7 @@ assets: gobindata
 
 generate:
 	docker build -t tpo-generate -f Dockerfile.generate .
-	docker run --rm -v `pwd`:/go/src/github.com/openshift/cluster-monitoring-operator -w /go/src/github.com/openshift/cluster-monitoring-operator tpo-generate make merge-cluster-roles assets docs
+	docker run --rm  --security-opt label=disable -v `pwd`:/go/src/github.com/openshift/cluster-monitoring-operator -w /go/src/github.com/openshift/cluster-monitoring-operator tpo-generate make merge-cluster-roles assets docs
 
 gobindata:
 	go get -u github.com/jteeuwen/go-bindata/...
