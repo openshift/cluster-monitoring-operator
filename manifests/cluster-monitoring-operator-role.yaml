@@ -114,5 +114,5 @@ rules:
   verbs: [list, watch]
 - apiGroups: ['']
   resources: [namespaces]
-  verbs: [list]
+  verbs: [list, watch]
 
