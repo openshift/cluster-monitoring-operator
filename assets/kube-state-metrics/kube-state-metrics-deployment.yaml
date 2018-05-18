@@ -78,13 +78,7 @@ spec:
         image: quay.io/coreos/kube-state-metrics:v1.3.1
         imagePullPolicy: IfNotPresent
         name: kube-state-metrics
-        resources:
-          limits:
-            cpu: 102m
-            memory: 180Mi
-          requests:
-            cpu: 102m
-            memory: 180Mi
+        resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       - command:

@@ -28,13 +28,7 @@ spec:
         ports:
         - containerPort: 8080
           name: http
-        resources:
-          limits:
-            cpu: 50m
-            memory: 200Mi
-          requests:
-            cpu: 30m
-            memory: 50Mi
+        resources: {}
       securityContext:
         runAsNonRoot: true
       serviceAccountName: prometheus-operator
