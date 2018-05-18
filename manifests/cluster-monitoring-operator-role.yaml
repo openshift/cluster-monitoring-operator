@@ -5,7 +5,6 @@
 # 	manifests/cluster-monitoring-operator-role.yaml.in
 # 	assets/alertmanager/alertmanager-cluster-role.yaml
 # 	assets/kube-state-metrics/kube-state-metrics-cluster-role.yaml
-# 	assets/kube-state-metrics/kube-state-metrics-role.yaml
 # 	assets/node-exporter/node-exporter-cluster-role.yaml
 # 	assets/prometheus-k8s/prometheus-k8s-cluster-role.yaml
 # 	assets/prometheus-k8s/prometheus-k8s-role.yaml
@@ -57,13 +56,6 @@ rules:
 - apiGroups: [authorization.k8s.io]
   resources: [subjectaccessreviews]
   verbs: [create]
-- apiGroups: ['']
-  resources: [pods]
-  verbs: [get]
-- apiGroups: [extensions]
-  resourceNames: [kube-state-metrics]
-  resources: [deployments]
-  verbs: [get, update]
 - apiGroups: [authentication.k8s.io]
   resources: [tokenreviews]
   verbs: [create]
