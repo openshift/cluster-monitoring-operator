@@ -115,10 +115,6 @@ func (c *Config) applyDefaults() {
 				v1.ResourceMemory: resource.MustParse("500Mi"),
 				v1.ResourceCPU:    resource.MustParse("100m"),
 			},
-			Limits: v1.ResourceList{
-				v1.ResourceMemory: resource.MustParse("2000Mi"),
-				v1.ResourceCPU:    resource.MustParse("400m"),
-			},
 		}
 	}
 	if c.AlertmanagerMainConfig == nil {
