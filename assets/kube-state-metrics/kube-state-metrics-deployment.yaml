@@ -78,45 +78,7 @@ spec:
         image: quay.io/coreos/kube-state-metrics:v1.3.1
         imagePullPolicy: IfNotPresent
         name: kube-state-metrics
-        resources:
-          limits:
-            cpu: 102m
-            memory: 180Mi
-          requests:
-            cpu: 102m
-            memory: 180Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-      - command:
-        - /pod_nanny
-        - --container=kube-state-metrics
-        - --cpu=100m
-        - --extra-cpu=2m
-        - --memory=150Mi
-        - --extra-memory=30Mi
-        - --threshold=5
-        - --deployment=kube-state-metrics
-        env:
-        - name: MY_POD_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.name
-        - name: MY_POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        image: quay.io/coreos/addon-resizer:1.0
-        imagePullPolicy: IfNotPresent
-        name: addon-resizer
-        resources:
-          limits:
-            cpu: 10m
-            memory: 30Mi
-          requests:
-            cpu: 10m
-            memory: 30Mi
+        resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst

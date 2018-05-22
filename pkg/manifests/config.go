@@ -66,8 +66,7 @@ type NodeExporterConfig struct {
 }
 
 type KubeStateMetricsConfig struct {
-	BaseImage             string `json:"baseImage"`
-	AddonResizerBaseImage string `json:"addonResizerBaseImage"`
+	BaseImage string `json:"baseImage"`
 }
 
 type KubeRbacProxyConfig struct {
@@ -116,10 +115,6 @@ func (c *Config) applyDefaults() {
 				v1.ResourceMemory: resource.MustParse("500Mi"),
 				v1.ResourceCPU:    resource.MustParse("100m"),
 			},
-			Limits: v1.ResourceList{
-				v1.ResourceMemory: resource.MustParse("2000Mi"),
-				v1.ResourceCPU:    resource.MustParse("400m"),
-			},
 		}
 	}
 	if c.AlertmanagerMainConfig == nil {
@@ -152,9 +147,6 @@ func (c *Config) applyDefaults() {
 	}
 	if c.KubeStateMetricsConfig.BaseImage == "" {
 		c.KubeStateMetricsConfig.BaseImage = "quay.io/coreos/kube-state-metrics"
-	}
-	if c.KubeStateMetricsConfig.BaseImage == "" {
-		c.KubeStateMetricsConfig.AddonResizerBaseImage = "quay.io/coreos/addon-resizer"
 	}
 	if c.KubeRbacProxyConfig == nil {
 		c.KubeRbacProxyConfig = &KubeRbacProxyConfig{}

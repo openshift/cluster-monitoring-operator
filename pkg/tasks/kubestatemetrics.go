@@ -17,8 +17,6 @@ package tasks
 import (
 	"reflect"
 
-	"k8s.io/api/core/v1"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -69,26 +67,6 @@ func (t *KubeStateMetricsTask) Run() error {
 		return errors.Wrap(err, "reconciling kube-state-metrics ClusterRoleBinding failed")
 	}
 
-	arr, err := t.factory.KubeStateMetricsAddonResizerRole()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics addon-resizer Role failed")
-	}
-
-	err = t.client.CreateOrUpdateRole(arr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics addon-resizer Role failed")
-	}
-
-	arrb, err := t.factory.KubeStateMetricsAddonResizerRoleBinding()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics addon-resizer RoleBinding failed")
-	}
-
-	err = t.client.CreateOrUpdateRoleBinding(arrb)
-	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics addon-resizer RoleBinding failed")
-	}
-
 	svc, err := t.factory.KubeStateMetricsService()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-state-metrics Service failed")
@@ -115,11 +93,6 @@ func (t *KubeStateMetricsTask) reconcileKubeStateMetricsDeployments() error {
 
 	// No need for comparing if deployment doesn't exist in the first place.
 	if !apierrors.IsNotFound(err) {
-		// kube-state-metrics is auto scaled, so we have to ignore the resources
-		// configured when comparing them.
-		d.Spec.Template.Spec.Containers[2].Resources = v1.ResourceRequirements{}
-		depl.Spec.Template.Spec.Containers[2].Resources = v1.ResourceRequirements{}
-
 		if reflect.DeepEqual(d.Spec, depl.Spec) {
 			// Nothing to do, as the currently existing kube-state-metrics
 			// deployment is equivalent to the one that would be applied.

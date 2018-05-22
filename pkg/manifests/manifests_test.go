@@ -15,6 +15,8 @@
 package manifests
 
 import (
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -44,16 +46,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.KubeStateMetricsClusterRole()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.KubeStateMetricsAddonResizerRoleBinding()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.KubeStateMetricsAddonResizerRole()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -426,7 +418,6 @@ kubeRbacProxy:
 func TestKubeStateMetrics(t *testing.T) {
 	c, err := NewConfigFromString(`kubeStateMetrics:
   baseImage: quay.io/test/kube-state-metrics
-  addonResizerBaseImage: quay.io/test/addon-resizer
 kubeRbacProxy:
   baseImage: quay.io/test/kube-rbac-proxy
 `)
@@ -440,32 +431,23 @@ kubeRbacProxy:
 	if err != nil {
 		t.Fatal(err)
 	}
-	image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
-	if err != nil {
-		t.Fatal(err)
+
+	expected := []string{
+		"quay.io/test/kube-rbac-proxy",
+		"quay.io/test/kube-rbac-proxy",
+		"quay.io/test/kube-state-metrics",
 	}
-	if image.repo != "quay.io/test/kube-rbac-proxy" {
-		t.Fatalf("image for kube-rbac-proxy container is wrong: %s", d.Spec.Template.Spec.Containers[0].Image)
+	actual := []string{}
+	for _, c := range d.Spec.Template.Spec.Containers {
+		image, err := imageFromString(c.Image)
+		if err != nil {
+			t.Fatal(err)
+		}
+		actual = append(actual, image.repo)
 	}
-	image, err = imageFromString(d.Spec.Template.Spec.Containers[1].Image)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if image.repo != "quay.io/test/kube-rbac-proxy" {
-		t.Fatalf("image for kube-rbac-proxy container is wrong: %s", d.Spec.Template.Spec.Containers[1].Image)
-	}
-	image, err = imageFromString(d.Spec.Template.Spec.Containers[2].Image)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if image.repo != "quay.io/test/kube-state-metrics" {
-		t.Fatalf("image for kube-state-metrics container is wrong: %s", d.Spec.Template.Spec.Containers[2].Image)
-	}
-	image, err = imageFromString(d.Spec.Template.Spec.Containers[3].Image)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if image.repo != "quay.io/test/addon-resizer" {
-		t.Fatalf("image for addon-resizer container is wrong: %s", d.Spec.Template.Spec.Containers[3].Image)
+	sort.Strings(expected)
+	sort.Strings(actual)
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("expected: %v\ngot:\n%s", expected, actual)
 	}
 }

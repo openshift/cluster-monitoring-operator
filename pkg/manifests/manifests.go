@@ -42,13 +42,11 @@ var (
 	AlertmanagerClusterRole        = "assets/alertmanager/alertmanager-cluster-role.yaml"
 	AlertmanagerRoute              = "assets/alertmanager/alertmanager-route.yaml"
 
-	KubeStateMetricsClusterRoleBinding      = "assets/kube-state-metrics/kube-state-metrics-cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole             = "assets/kube-state-metrics/kube-state-metrics-cluster-role.yaml"
-	KubeStateMetricsAddonResizerRoleBinding = "assets/kube-state-metrics/kube-state-metrics-role-binding.yaml"
-	KubeStateMetricsAddonResizerRole        = "assets/kube-state-metrics/kube-state-metrics-role.yaml"
-	KubeStateMetricsDeployment              = "assets/kube-state-metrics/kube-state-metrics-deployment.yaml"
-	KubeStateMetricsServiceAccount          = "assets/kube-state-metrics/kube-state-metrics-service-account.yaml"
-	KubeStateMetricsService                 = "assets/kube-state-metrics/kube-state-metrics-service.yaml"
+	KubeStateMetricsClusterRoleBinding = "assets/kube-state-metrics/kube-state-metrics-cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole        = "assets/kube-state-metrics/kube-state-metrics-cluster-role.yaml"
+	KubeStateMetricsDeployment         = "assets/kube-state-metrics/kube-state-metrics-deployment.yaml"
+	KubeStateMetricsServiceAccount     = "assets/kube-state-metrics/kube-state-metrics-service-account.yaml"
+	KubeStateMetricsService            = "assets/kube-state-metrics/kube-state-metrics-service.yaml"
 
 	NodeExporterDaemonSet                  = "assets/node-exporter/node-exporter-ds.yaml"
 	NodeExporterService                    = "assets/node-exporter/node-exporter-svc.yaml"
@@ -247,14 +245,6 @@ func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1beta1.ClusterRole, error
 	return f.NewClusterRole(MustAssetReader(KubeStateMetricsClusterRole))
 }
 
-func (f *Factory) KubeStateMetricsAddonResizerRoleBinding() (*rbacv1beta1.RoleBinding, error) {
-	return f.NewRoleBinding(MustAssetReader(KubeStateMetricsAddonResizerRoleBinding))
-}
-
-func (f *Factory) KubeStateMetricsAddonResizerRole() (*rbacv1beta1.Role, error) {
-	return f.NewRole(MustAssetReader(KubeStateMetricsAddonResizerRole))
-}
-
 func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(MustAssetReader(KubeStateMetricsDeployment))
 	if err != nil {
@@ -286,15 +276,6 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 		}
 		image.repo = f.config.KubeStateMetricsConfig.BaseImage
 		d.Spec.Template.Spec.Containers[2].Image = image.String()
-	}
-
-	if f.config.KubeStateMetricsConfig.AddonResizerBaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[3].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.KubeStateMetricsConfig.AddonResizerBaseImage
-		d.Spec.Template.Spec.Containers[3].Image = image.String()
 	}
 
 	return d, nil

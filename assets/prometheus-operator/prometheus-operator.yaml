@@ -21,20 +21,14 @@ spec:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
-        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.0.3
+        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.0.4
         - --disable-auto-user-group
         image: quay.io/coreos/prometheus-operator:v0.19.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
           name: http
-        resources:
-          limits:
-            cpu: 50m
-            memory: 200Mi
-          requests:
-            cpu: 30m
-            memory: 50Mi
+        resources: {}
       securityContext:
         runAsNonRoot: true
       serviceAccountName: prometheus-operator
