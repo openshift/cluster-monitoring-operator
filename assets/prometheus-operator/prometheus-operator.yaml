@@ -29,6 +29,5 @@ spec:
         - containerPort: 8080
           name: http
         resources: {}
-      securityContext:
-        runAsNonRoot: true
+      securityContext: {}
       serviceAccountName: prometheus-operator
