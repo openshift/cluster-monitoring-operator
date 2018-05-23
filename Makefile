@@ -8,10 +8,11 @@ ENVVAR = GOOS=linux GOARCH=amd64 CGO_ENABLED=0
 NAMESPACE=openshift-monitoring
 KUBECONFIG?=$(HOME)/.kube/config
 PKGS   = $(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
+GOOS   = linux
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
 
 build:
-	go build --ldflags="-s -X github.com/openshift/cluster-monitoring-operator/pkg/operator.Version=$(VERSION)" -o operator $(MAIN_PKG)
+	GOOS=$(GOOS) go build --ldflags="-s -X github.com/openshift/cluster-monitoring-operator/pkg/operator.Version=$(VERSION)" -o operator $(MAIN_PKG)
 
 run:
 	./operator
