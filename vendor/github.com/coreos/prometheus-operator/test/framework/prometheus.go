@@ -48,36 +48,7 @@ func (f *Framework) MakeBasicPrometheus(ns, name, group string, replicas int32) 
 				},
 			},
 			ServiceAccountName: "prometheus",
-			RuleSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"role": "rulefile",
-				},
-			},
-			Resources: v1.ResourceRequirements{
-				Requests: v1.ResourceList{
-					v1.ResourceMemory: resource.MustParse("400Mi"),
-				},
-			},
-		},
-	}
-}
-
-func (f *Framework) MakeBasicPrometheusV1alpha1(ns, name, group string, replicas int32) *v1alpha1.Prometheus {
-	return &v1alpha1.Prometheus{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Spec: v1alpha1.PrometheusSpec{
-			Replicas: &replicas,
-			Version:  prometheus.DefaultVersion,
-			ServiceMonitorSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"group": group,
-				},
-			},
-			ServiceAccountName: "prometheus",
-			RuleSelector: &metav1.LabelSelector{
+			RuleFileSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"role": "rulefile",
 				},
@@ -177,20 +148,20 @@ func (f *Framework) MakePrometheusService(name, group string, serviceType v1.Ser
 }
 
 func (f *Framework) CreatePrometheusAndWaitUntilReady(ns string, p *monitoringv1.Prometheus) error {
-	_, err := f.MonClient.Prometheuses(ns).Create(p)
+	_, err := f.MonClientV1.Prometheuses(ns).Create(p)
 	if err != nil {
-		return fmt.Errorf("creating %d Prometheus instances failed (%v): %v", p.Spec.Replicas, p.Name, err)
+		return fmt.Errorf("creating %v Prometheus instances failed (%v): %v", p.Spec.Replicas, p.Name, err)
 	}
 
 	if err := f.WaitForPrometheusReady(p, 5*time.Minute); err != nil {
-		return fmt.Errorf("waiting for %d Prometheus instances timed out (%v): %v", p.Spec.Replicas, p.Name, err)
+		return fmt.Errorf("waiting for %v Prometheus instances timed out (%v): %v", p.Spec.Replicas, p.Name, err)
 	}
 
 	return nil
 }
 
 func (f *Framework) UpdatePrometheusAndWaitUntilReady(ns string, p *monitoringv1.Prometheus) error {
-	_, err := f.MonClient.Prometheuses(ns).Update(p)
+	_, err := f.MonClientV1.Prometheuses(ns).Update(p)
 	if err != nil {
 		return err
 	}
@@ -202,7 +173,7 @@ func (f *Framework) UpdatePrometheusAndWaitUntilReady(ns string, p *monitoringv1
 }
 
 func (f *Framework) WaitForPrometheusReady(p *monitoringv1.Prometheus, timeout time.Duration) error {
-	return wait.Poll(2*time.Second, timeout, func() (bool, error) {
+	err := wait.Poll(2*time.Second, timeout, func() (bool, error) {
 		st, _, err := prometheus.PrometheusStatus(f.KubeClient, p)
 		if err != nil {
 			log.Print(err)
@@ -211,20 +182,19 @@ func (f *Framework) WaitForPrometheusReady(p *monitoringv1.Prometheus, timeout t
 		if st.UpdatedReplicas == *p.Spec.Replicas {
 			return true, nil
 		} else {
-			log.Printf("expected %v Prometheus instances, got %v", st.UpdatedReplicas, *p.Spec.Replicas)
-			log.Print(st)
 			return false, nil
 		}
 	})
+	return errors.Wrapf(err, "waiting for Prometheus %v/%v", p.Namespace, p.Name)
 }
 
 func (f *Framework) DeletePrometheusAndWaitUntilGone(ns, name string) error {
-	_, err := f.MonClient.Prometheuses(ns).Get(name, metav1.GetOptions{})
+	_, err := f.MonClientV1.Prometheuses(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("requesting Prometheus tpr %v failed", name))
 	}
 
-	if err := f.MonClient.Prometheuses(ns).Delete(name, nil); err != nil {
+	if err := f.MonClientV1.Prometheuses(ns).Delete(name, nil); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("deleting Prometheus tpr %v failed", name))
 	}
 
@@ -261,7 +231,7 @@ func promImage(version string) string {
 func (f *Framework) WaitForTargets(ns, svcName string, amount int) error {
 	var targets []*Target
 
-	if err := wait.Poll(time.Second, time.Minute*10, func() (bool, error) {
+	if err := wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
 		var err error
 		targets, err = f.GetActiveTargets(ns, svcName)
 		if err != nil {
@@ -300,6 +270,54 @@ func (f *Framework) GetActiveTargets(ns, svcName string) ([]*Target, error) {
 	return rt.Data.ActiveTargets, nil
 }
 
+func (f *Framework) checkPrometheusFiringAlert(ns, svcName, alertName string) (bool, error) {
+	response, err := f.QueryPrometheusSVC(
+		ns,
+		svcName,
+		"/api/v1/query",
+		map[string]string{"query": fmt.Sprintf("ALERTS{alertname=\"%v\"}", alertName)},
+	)
+	if err != nil {
+		return false, err
+	}
+
+	q := prometheusQueryAPIResponse{}
+	if err := json.NewDecoder(bytes.NewBuffer(response)).Decode(&q); err != nil {
+		return false, err
+	}
+
+	if len(q.Data.Result) != 1 {
+		return false, errors.Errorf("expected 1 query result but got %v", len(q.Data.Result))
+	}
+
+	alertstate, ok := q.Data.Result[0].Metric["alertstate"]
+	if !ok {
+		return false, errors.Errorf("could not retrieve 'alertstate' label from query result: %v", q.Data.Result[0])
+	}
+
+	return alertstate == "firing", nil
+}
+
+func (f *Framework) WaitForPrometheusFiringAlert(ns, svcName, alertName string) error {
+	var loopError error
+
+	err := wait.Poll(time.Second, 2*f.DefaultTimeout, func() (bool, error) {
+		var firing bool
+		firing, loopError = f.checkPrometheusFiringAlert(ns, svcName, alertName)
+		return firing, nil
+	})
+
+	if err != nil {
+		return errors.Errorf(
+			"waiting for alert '%v' to fire: %v: %v",
+			alertName,
+			err.Error(),
+			loopError.Error(),
+		)
+	}
+	return nil
+}
+
 type Target struct {
 	ScrapeURL string `json:"scrapeUrl"`
 }
@@ -311,4 +329,17 @@ type targetDiscovery struct {
 type prometheusTargetAPIResponse struct {
 	Status string           `json:"status"`
 	Data   *targetDiscovery `json:"data"`
+}
+
+type prometheusQueryResult struct {
+	Metric map[string]string `json:"metric"`
+}
+
+type prometheusQueryData struct {
+	Result []prometheusQueryResult `json:"result"`
+}
+
+type prometheusQueryAPIResponse struct {
+	Status string               `json:"status"`
+	Data   *prometheusQueryData `json:"data"`
 }
