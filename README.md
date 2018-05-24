@@ -23,6 +23,8 @@ Metrics are collected from the following components
 * Prometheus (just `prometheus-k8s` for now)
 * Alertmanager
 
+**Important:** The Prometheus Operator managed by the Cluster Monitoring Operator will by default only look for `ServiceMonitor` resources in namespaces containing an `openshift.io/cluster-monitoring` label (with any value).
+
 ## Contributing new component integrations
 
 The Cluster Monitoring Operator has many builtin `ServiceMonitor` resources which enable discovering the metrics endpoints of a variety of well-known components.
