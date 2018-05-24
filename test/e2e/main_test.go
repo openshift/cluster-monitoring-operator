@@ -15,46 +15,41 @@
 package e2e
 
 import (
+	"crypto/tls"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
-	"os/user"
 	"testing"
 	"time"
 
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	"github.com/Jeffail/gabs"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-var f *framework.Framework
+var client *promClient
 
 func TestMain(m *testing.M) {
-	usr, _ := user.Current()
-	kubeConfigPath := flag.String("kubeconfig", usr.HomeDir+"/.kube/config", "kube config path, default: $HOME/.kube/config")
-	opImageName := flag.String("operator-image", "", "operator image, e.g. quay.io/coreos/cluster-monitoring-operator")
-
+	tokenFileFlag := flag.String("token-file", "/var/run/secrets/kubernetes.io/serviceaccount/token", "path to a bearer token")
+	endpointFlag := flag.String("endpoint", "https://prometheus-k8s.openshift-monitoring.svc:9090", "Prometheus service endpoint")
 	flag.Parse()
 
-	var err error
-	f, err = framework.New(*kubeConfigPath, *opImageName)
+	tokenBytes, err := ioutil.ReadFile(*tokenFileFlag)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("couldn't read token file %q: %v", *tokenFileFlag, err)
 	}
-
-	// Wait for Prometheus operator
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.Apps().Deployments(f.Ns).Get("prometheus-operator", metav1.GetOptions{})
-		if err != nil {
-			return false, nil
-		}
-		return true, nil
-	})
-	if err != nil {
-		log.Fatal(err)
+	client = &promClient{
+		client: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		},
+		endpoint: *endpointFlag,
+		token:    string(tokenBytes),
 	}
-
 	os.Exit(m.Run())
 }
 
@@ -67,53 +62,72 @@ func TestQueryPrometheus(t *testing.T) {
 		{
 			query:   `up{job="node-exporter"} == 1`,
 			expectN: 1,
-		}, {
+		},
+		{
 			query:   `up{job="kubelet"} == 1`,
 			expectN: 1,
-		}, {
-			query:   `up{job="kube-scheduler"} == 1`,
+		},
+		// Not supported in the origin 3.10 topology.
+		// {
+		// 	query:   `up{job="kube-scheduler"} == 1`,
+		// 	expectN: 1,
+		// },
+
+		// Not supported in the origin 3.10 topology.
+		// {
+		// 	query:   `up{job="kube-controller-manager"} == 1`,
+		// 	expectN: 1,
+		// },
+		{
+			query:   `up{job="kube-controllers"} == 1`,
 			expectN: 1,
-		}, {
-			query:   `up{job="kube-controller-manager"} == 1`,
-			expectN: 1,
-		}, {
+		},
+		{
 			query:   `up{job="apiserver"} == 1`,
 			expectN: 1,
-		}, {
+		},
+		{
 			query:   `up{job="kube-state-metrics"} == 1`,
 			expectN: 1,
-		}, {
-			query:   `up{job="prometheus"} == 1`,
+		},
+		{
+			query:   `up{job="prometheus-k8s"} == 1`,
 			expectN: 1,
-		}, {
+		},
+		{
 			query:   `up{job="prometheus-operator"} == 1`,
 			expectN: 1,
-		}, {
+		},
+		{
 			query:   `up{job="alertmanager-main"} == 1`,
 			expectN: 2,
-		}, {
+		},
+		{
 			query:   `namespace:container_memory_usage_bytes:sum`,
 			expectN: 1,
 		},
 	}
 
 	// Wait for pod to respond at queries at all. Then start verifying their results.
-	err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.QueryPrometheus("prometheus-k8s-0", "up")
+	err := wait.Poll(5*time.Second, 20*time.Second, func() (bool, error) {
+		_, err := client.query("up")
 		return err == nil, nil
 	})
 	if err != nil {
 		t.Fatal(errors.Wrap(err, "wait for prometheus-k8s"))
 	}
 
-	err = wait.Poll(5*time.Second, 10*time.Minute, func() (bool, error) {
+	err = wait.Poll(5*time.Second, 20*time.Second, func() (bool, error) {
 		defer t.Log("---------------------------\n")
 
 		for _, q := range queries {
-			n, err := f.QueryPrometheus("prometheus-k8s-0", q.query)
+			response, err := client.query(q.query)
+			res, err := gabs.ParseJSONBuffer(response.Body)
 			if err != nil {
-				return false, err
+				t.Logf("error parsing response: %v", err)
+				return false, nil
 			}
+			n, err := res.ArrayCountP("data.result")
 			if n < q.expectN {
 				// Don't return an error as targets may only become visible after a while.
 				t.Logf("expected at least %d results for %q but got %d", q.expectN, q.query, n)
@@ -126,4 +140,23 @@ func TestQueryPrometheus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+type promClient struct {
+	client   *http.Client
+	endpoint string
+	token    string
+}
+
+func (c *promClient) query(q string) (*http.Response, error) {
+	url := fmt.Sprintf("%s/api/v1/query", c.endpoint)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	urlQuery := req.URL.Query()
+	urlQuery.Add("query", q)
+	req.URL.RawQuery = urlQuery.Encode()
+	return c.client.Do(req)
 }

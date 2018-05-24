@@ -14,11 +14,17 @@ VERSION=$(shell cat VERSION | tr -d " \t\n\r")
 build:
 	GOOS=$(GOOS) go build --ldflags="-s -X github.com/openshift/cluster-monitoring-operator/pkg/operator.Version=$(VERSION)" -o operator $(MAIN_PKG)
 
+build-e2e:
+	go test -c ./test/e2e/
+
 run:
 	./operator
 
 crossbuild:
 	$(ENVVAR) $(MAKE) build
+
+crossbuild-e2e:
+	$(ENVVAR) $(MAKE) build-e2e
 
 container:
 	docker build -t $(REPO):$(TAG) .
@@ -67,8 +73,7 @@ e2e-clean:
 	kubectl delete namespace $(NAMESPACE)
 
 build-docker-test:
-	sed 's/DOCKER_IMAGE_TAG/$(TAG)/' Dockerfile.test > Dockerfile.test.generated
-	docker build -f Dockerfile.test.generated -t quay.io/coreos/cluster-monitoring-operator-test:$(TAG) .
+	docker build -f Dockerfile.test -t $(REPO)-test:$(TAG) .
 
 run-docker-test-minikube:
 	docker run --rm -it --env KUBECONFIG=/kubeconfig -v /home/$(USER)/.kube/config:/kubeconfig -v /home/$(USER)/.minikube:/home/$(USER)/.minikube quay.io/coreos/cluster-monitoring-operator-test:$(TAG)
@@ -76,4 +81,4 @@ run-docker-test-minikube:
 merge-cluster-roles:
 	python2 hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in `echo assets/*/*role.yaml` > manifests/cluster-monitoring-operator-role.yaml
 
-.PHONY: all build run crossbuild container push clean deps generate gobindata test e2e-test e2e-clean
+.PHONY: all build run crossbuild container push clean deps generate gobindata test e2e-test e2e-clean build-e2e crossbuild-e2e build-docker-test

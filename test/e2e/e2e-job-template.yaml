@@ -1,0 +1,27 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: cluster-monitoring-operator-test
+parameters:
+- name: IMAGE
+  description: The application container image to use.
+  required: true
+objects:
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: cluster-monitoring-operator-test
+    namespace: openshift-monitoring
+  spec:
+    parallelism: 1
+    completions: 1
+    backoffLimit: 1
+    activeDeadlineSeconds: 100
+    template:
+      spec:
+        serviceAccountName: cluster-monitoring-operator
+        containers:
+        - name: test
+          image: ${IMAGE}
+          imagePullPolicy: Always
+        restartPolicy: Never
