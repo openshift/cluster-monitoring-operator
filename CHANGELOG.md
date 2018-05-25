@@ -1,3 +1,9 @@
+## 0.0.4 / 2018-05-25
+
+* Set GOOS=linux to build binaries for Linux by default
+* Add a default namespace selector for service monitors
+* Remove securityContext by default
+
 ## 0.0.3 / 2018-05-23
 
 * Remove resource limit defaults
