@@ -9,6 +9,7 @@ spec:
   replicas: 2
   version: v0.14.0
   serviceAccountName: alertmanager-main
+  securityContext: {}
   resources:
     requests:
       memory: 40Mi
