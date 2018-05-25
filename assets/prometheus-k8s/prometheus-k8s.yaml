@@ -9,6 +9,7 @@ spec:
   replicas: 2
   version: v2.2.1
   serviceAccountName: prometheus-k8s
+  securityContext: {}
   serviceMonitorSelector:
     matchExpressions:
     - {key: k8s-app, operator: Exists}
