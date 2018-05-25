@@ -491,7 +491,7 @@ func ExpandSpec(spec *Swagger, options *ExpandOptions) error {
 		for key, definition := range spec.Definitions {
 			var def *Schema
 			var err error
-			if def, err = expandSchema(definition, []string{fmt.Sprintf("#/defintions/%s", key)}, resolver, specBasePath); shouldStopOnError(err, resolver.options) {
+			if def, err = expandSchema(definition, []string{fmt.Sprintf("#/definitions/%s", key)}, resolver, specBasePath); shouldStopOnError(err, resolver.options) {
 				return err
 			}
 			if def != nil {
@@ -888,6 +888,10 @@ func expandOperation(op *Operation, resolver *schemaLoader, basePath string) err
 }
 
 func transitiveResolver(basePath string, ref Ref, resolver *schemaLoader) (*schemaLoader, error) {
+	if ref.IsRoot() || ref.HasFragmentOnly {
+		return resolver, nil
+	}
+
 	baseRef, _ := NewRef(basePath)
 	currentRef := normalizeFileRef(&ref, basePath)
 	// Set a new root to resolve against

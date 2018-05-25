@@ -12,6 +12,9 @@ spec:
   serviceMonitorSelector:
     matchExpressions:
     - {key: k8s-app, operator: Exists}
+  serviceMonitorNamespaceSelector:
+    matchExpressions:
+    - {key: openshift.io/cluster-monitoring, operator: Exists}
   ruleSelector:
     matchLabels:
       role: prometheus-rulefiles
