@@ -2,15 +2,17 @@ groups:
 - name: kubernetes.rules
   rules:
   - record: pod_name:container_memory_usage_bytes:sum
-    expr: sum(container_memory_usage_bytes{container_name!="POD",pod_name!=""}) BY
-      (pod_name)
+    expr: sum(container_memory_usage_bytes{container_name!="POD",pod_name!=""})
+      BY (pod_name, namespace)
   - record: pod_name:container_spec_cpu_shares:sum
-    expr: sum(container_spec_cpu_shares{container_name!="POD",pod_name!=""}) BY (pod_name)
+    expr: sum(container_spec_cpu_shares{container_name!="POD",pod_name!=""})
+      BY (pod_name, namespace)
   - record: pod_name:container_cpu_usage:sum
     expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",pod_name!=""}[5m]))
-      BY (pod_name)
+      BY (pod_name, namespace)
   - record: pod_name:container_fs_usage_bytes:sum
-    expr: sum(container_fs_usage_bytes{container_name!="POD",pod_name!=""}) BY (pod_name)
+    expr: sum(container_fs_usage_bytes{container_name!="POD",pod_name!=""})
+      BY (pod_name, namespace)
   - record: namespace:container_memory_usage_bytes:sum
     expr: sum(container_memory_usage_bytes{container_name!=""}) BY (namespace)
   - record: namespace:container_spec_cpu_shares:sum
