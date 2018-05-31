@@ -81,6 +81,11 @@ spec:
         resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        # TODO(brancz): remove this once shipping v1.4.0+ where the volume
+        # directive on `/tmp` will be removed.
+        volumeMounts:
+        - mountPath: /tmp
+          name: volume-directive-shadow
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -93,3 +98,7 @@ spec:
         secret:
           defaultMode: 420
           secretName: kube-state-metrics-tls
+      # TODO(brancz): remove this once shipping v1.4.0+ where the volume
+      # directive on `/tmp` will be removed.
+      - name: volume-directive-shadow
+        emptyDir: {}
