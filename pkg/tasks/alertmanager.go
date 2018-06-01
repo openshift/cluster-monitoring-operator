@@ -48,6 +48,16 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "waiting for Alertmanager Route to become ready failed")
 	}
 
+	smam, err := t.factory.AlertmanagerServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smam)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
+	}
+
 	s, err := t.factory.AlertmanagerConfig()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager configuration Secret failed")

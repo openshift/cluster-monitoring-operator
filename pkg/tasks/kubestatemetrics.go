@@ -37,6 +37,16 @@ func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) 
 }
 
 func (t *KubeStateMetricsTask) Run() error {
+	smksm, err := t.factory.KubeStateMetricsServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smksm)
+	if err != nil {
+		return errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
+	}
+
 	sa, err := t.factory.KubeStateMetricsServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-state-metrics Service failed")

@@ -38,9 +38,6 @@ docs: embedmd
 	embedmd -w `find Documentation -name "*.md"`
 
 assets: gobindata
-	hack/generate-rules-configmap.sh k8s > assets/prometheus-k8s/prometheus-k8s-rules.yaml
-	#hack/generate-rules-configmap.sh kube-system etcd > assets/prometheus-etcd/prometheus-etcd-rules.yaml
-	hack/generate-alertmanager-secret.sh > assets/alertmanager/alertmanager-config.yaml
 	# Using "-modtime 1" to make generate target deterministic. It sets all file time stamps to unix timestamp 1
 	go-bindata -mode 420 -modtime 1 -pkg manifests -o pkg/manifests/bindata.go assets/...
 
@@ -74,6 +71,6 @@ run-docker-test-minikube:
 	docker run --rm -it --env KUBECONFIG=/kubeconfig -v /home/$(USER)/.kube/config:/kubeconfig -v /home/$(USER)/.minikube:/home/$(USER)/.minikube quay.io/coreos/cluster-monitoring-operator-test:$(TAG)
 
 merge-cluster-roles:
-	python2 hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in `echo assets/*/*role.yaml` > manifests/cluster-monitoring-operator-role.yaml
+	python2 hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/cluster-monitoring-operator-role.yaml
 
 .PHONY: all build run crossbuild container push clean deps generate gobindata test e2e-test e2e-clean

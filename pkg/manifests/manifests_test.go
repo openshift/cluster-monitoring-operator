@@ -35,6 +35,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.AlertmanagerServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc")
 	if err != nil {
 		t.Fatal(err)
@@ -50,6 +55,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.KubeStateMetricsServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.KubeStateMetricsDeployment()
 	if err != nil {
 		t.Fatal(err)
@@ -61,6 +71,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.KubeStateMetricsService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.NodeExporterServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,6 +120,16 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.PrometheusK8sRoleConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusK8sRoleBindingConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.PrometheusK8sRoleBinding()
 	if err != nil {
 		t.Fatal(err)
@@ -135,17 +160,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sNodeExporterServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusK8sApiserverServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sKubeStateMetricsServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,17 +170,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sAlertmanagerServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusK8sKubeControllersServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sKubeDNSServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,70 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  labels:
+    prometheus: k8s
+  name: k8s
+  namespace: openshift-monitoring
+spec:
+  alerting:
+    alertmanagers:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      name: alertmanager-main
+      namespace: openshift-monitoring
+      port: web
+      scheme: https
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+        serverName: alertmanager-main
+  baseImage: quay.io/prometheus/prometheus
+  containers:
+  - args:
+    - -provider=openshift
+    - -https-address=:9091
+    - -http-address=
+    - -email-domain=*
+    - -upstream=http://localhost:9090
+    - -openshift-service-account=prometheus-k8s
+    - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+    - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+    - -tls-cert=/etc/tls/private/tls.crt
+    - -tls-key=/etc/tls/private/tls.key
+    - -client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token
+    - -cookie-secret-file=/etc/proxy/secrets/session_secret
+    - -openshift-ca=/etc/pki/tls/cert.pem
+    - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    - -skip-auth-regex=^/metrics
+    image: openshift/oauth-proxy:v1.1.0
+    name: prometheus-proxy
+    ports:
+    - containerPort: 9091
+      name: web
+    resources: {}
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-prometheus-k8s-tls
+    - mountPath: /etc/proxy/secrets
+      name: secret-prometheus-k8s-proxy
+  listenLocal: true
+  nodeSelector:
+    beta.kubernetes.io/os: linux
+  replicas: 2
+  resources: {}
+  ruleSelector:
+    matchLabels:
+      prometheus: k8s
+      role: alert-rules
+  secrets:
+  - prometheus-k8s-tls
+  - prometheus-k8s-proxy
+  securityContext: {}
+  serviceAccountName: prometheus-k8s
+  serviceMonitorNamespaceSelector:
+    matchExpressions:
+    - key: openshift.io/cluster-monitoring
+      operator: Exists
+  serviceMonitorSelector:
+    matchExpressions:
+    - key: k8s-app
+      operator: Exists
+  version: v2.2.1
