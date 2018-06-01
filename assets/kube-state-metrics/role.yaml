@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kube-state-metrics
+  namespace: openshift-monitoring
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+- apiGroups:
+  - extensions
+  resourceNames:
+  - kube-state-metrics
+  resources:
+  - deployments
+  verbs:
+  - get
+  - update

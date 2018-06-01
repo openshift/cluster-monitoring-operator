@@ -109,6 +109,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus RoleBinding default failed")
 	}
 
+	rc, err := t.factory.PrometheusK8sRoleConfig()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Role config failed")
+	}
+
+	err = t.client.CreateOrUpdateRole(rc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Role config failed")
+	}
+
 	rks, err := t.factory.PrometheusK8sRoleKubeSystem()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Role kube-system failed")
@@ -149,6 +159,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus RoleBinding failed")
 	}
 
+	rbc, err := t.factory.PrometheusK8sRoleBindingConfig()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus config RoleBinding failed")
+	}
+
+	err = t.client.CreateOrUpdateRoleBinding(rbc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus config RoleBinding failed")
+	}
+
 	cm, err := t.factory.PrometheusK8sRules()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus rules ConfigMap failed")
@@ -169,16 +189,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus kubelet ServiceMonitor failed")
 	}
 
-	smn, err := t.factory.PrometheusK8sNodeExporterServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus node-exporter ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smn)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus node-exporter ServiceMonitor failed")
-	}
-
 	sma, err := t.factory.PrometheusK8sApiserverServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus apiserver ServiceMonitor failed")
@@ -189,26 +199,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus apiserver ServiceMonitor failed")
 	}
 
-	smksm, err := t.factory.PrometheusK8sKubeStateMetricsServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus kube-state-metrics ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smksm)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus kube-state-metrics ServiceMonitor failed")
-	}
-
-	smam, err := t.factory.PrometheusK8sAlertmanagerServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Alertmanager ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smam)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Alertmanager ServiceMonitor failed")
-	}
-
 	smkc, err := t.factory.PrometheusK8sKubeControllersServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus kube-controllers ServiceMonitor failed")
@@ -217,26 +207,6 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.CreateOrUpdateServiceMonitor(smkc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus kube-controllers ServiceMonitor failed")
-	}
-
-	smkd, err := t.factory.PrometheusK8sKubeDNSServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus kube-dns ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smkd)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus kube-dns ServiceMonitor failed")
-	}
-
-	smpo, err := t.factory.PrometheusK8sPrometheusOperatorServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Prometheus Operator ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smpo)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Prometheus Operator ServiceMonitor failed")
 	}
 
 	smp, err := t.factory.PrometheusK8sPrometheusServiceMonitor()

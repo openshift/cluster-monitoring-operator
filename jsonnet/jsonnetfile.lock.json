@@ -1,0 +1,14 @@
+{
+    "dependencies": [
+        {
+            "name": "kube-prometheus",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/coreos/prometheus-operator",
+                    "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
+                }
+            },
+            "version": "6f9d57a2affde5def9d013ccb2e6bcd348d1b4f0"
+        }
+    ]
+}

@@ -19,7 +19,6 @@ import (
 	"io"
 
 	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -110,12 +109,7 @@ func (c *Config) applyDefaults() {
 		c.PrometheusK8sConfig.Retention = "24h"
 	}
 	if c.PrometheusK8sConfig.Resources == nil {
-		c.PrometheusK8sConfig.Resources = &v1.ResourceRequirements{
-			Requests: v1.ResourceList{
-				v1.ResourceMemory: resource.MustParse("500Mi"),
-				v1.ResourceCPU:    resource.MustParse("100m"),
-			},
-		}
+		c.PrometheusK8sConfig.Resources = &v1.ResourceRequirements{}
 	}
 	if c.AlertmanagerMainConfig == nil {
 		c.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
@@ -124,11 +118,7 @@ func (c *Config) applyDefaults() {
 		c.AlertmanagerMainConfig.BaseImage = "quay.io/prometheus/alertmanager"
 	}
 	if c.AlertmanagerMainConfig.Resources == nil {
-		c.AlertmanagerMainConfig.Resources = &v1.ResourceRequirements{
-			Requests: v1.ResourceList{
-				v1.ResourceMemory: resource.MustParse("40Mi"),
-			},
-		}
+		c.AlertmanagerMainConfig.Resources = &v1.ResourceRequirements{}
 	}
 	if c.AuthConfig == nil {
 		c.AuthConfig = &AuthConfig{}

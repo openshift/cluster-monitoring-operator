@@ -1,0 +1,82 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    app: kube-state-metrics
+  name: kube-state-metrics
+  namespace: openshift-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-state-metrics
+  template:
+    metadata:
+      labels:
+        app: kube-state-metrics
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=:8443
+        - --upstream=http://127.0.0.1:8081/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/coreos/kube-rbac-proxy:v0.3.0
+        name: kube-rbac-proxy-main
+        ports:
+        - containerPort: 8443
+          name: https-main
+        resources:
+          limits:
+            cpu: 20m
+            memory: 40Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: kube-state-metrics-tls
+          readOnly: false
+      - args:
+        - --secure-listen-address=:9443
+        - --upstream=http://127.0.0.1:8082/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/coreos/kube-rbac-proxy:v0.3.0
+        name: kube-rbac-proxy-self
+        ports:
+        - containerPort: 9443
+          name: https-self
+        resources:
+          limits:
+            cpu: 20m
+            memory: 40Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: kube-state-metrics-tls
+          readOnly: false
+      - args:
+        - --host=127.0.0.1
+        - --port=8081
+        - --telemetry-host=127.0.0.1
+        - --telemetry-port=8082
+        image: quay.io/coreos/kube-state-metrics:v1.3.0
+        name: kube-state-metrics
+        resources: {}
+        volumeMounts:
+        - mountPath: /tmp
+          name: volume-directive-shadow
+          readOnly: false
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      securityContext: {}
+      serviceAccountName: kube-state-metrics
+      volumes:
+      - emptyDir: {}
+        name: volume-directive-shadow
+      - name: kube-state-metrics-tls
+        secret:
+          secretName: kube-state-metrics-tls

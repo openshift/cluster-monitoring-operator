@@ -33,59 +33,60 @@ import (
 )
 
 var (
-	AlertmanagerConfig             = "assets/alertmanager/alertmanager-config.yaml"
-	AlertmanagerService            = "assets/alertmanager/alertmanager-service.yaml"
-	AlertmanagerProxySecret        = "assets/alertmanager/alertmanager-proxy-secret.yaml"
+	AlertmanagerConfig             = "assets/alertmanager/secret.yaml"
+	AlertmanagerService            = "assets/alertmanager/service.yaml"
+	AlertmanagerProxySecret        = "assets/alertmanager/proxy-secret.yaml"
 	AlertmanagerMain               = "assets/alertmanager/alertmanager.yaml"
-	AlertmanagerServiceAccount     = "assets/alertmanager/alertmanager-service-account.yaml"
-	AlertmanagerClusterRoleBinding = "assets/alertmanager/alertmanager-cluster-role-binding.yaml"
-	AlertmanagerClusterRole        = "assets/alertmanager/alertmanager-cluster-role.yaml"
-	AlertmanagerRoute              = "assets/alertmanager/alertmanager-route.yaml"
+	AlertmanagerServiceAccount     = "assets/alertmanager/service-account.yaml"
+	AlertmanagerClusterRoleBinding = "assets/alertmanager/cluster-role-binding.yaml"
+	AlertmanagerClusterRole        = "assets/alertmanager/cluster-role.yaml"
+	AlertmanagerRoute              = "assets/alertmanager/route.yaml"
+	AlertmanagerServiceMonitor     = "assets/alertmanager/service-monitor.yaml"
 
-	KubeStateMetricsClusterRoleBinding = "assets/kube-state-metrics/kube-state-metrics-cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole        = "assets/kube-state-metrics/kube-state-metrics-cluster-role.yaml"
-	KubeStateMetricsDeployment         = "assets/kube-state-metrics/kube-state-metrics-deployment.yaml"
-	KubeStateMetricsServiceAccount     = "assets/kube-state-metrics/kube-state-metrics-service-account.yaml"
-	KubeStateMetricsService            = "assets/kube-state-metrics/kube-state-metrics-service.yaml"
+	KubeStateMetricsClusterRoleBinding = "assets/kube-state-metrics/cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole        = "assets/kube-state-metrics/cluster-role.yaml"
+	KubeStateMetricsDeployment         = "assets/kube-state-metrics/deployment.yaml"
+	KubeStateMetricsServiceAccount     = "assets/kube-state-metrics/service-account.yaml"
+	KubeStateMetricsService            = "assets/kube-state-metrics/service.yaml"
+	KubeStateMetricsServiceMonitor     = "assets/kube-state-metrics/service-monitor.yaml"
 
-	NodeExporterDaemonSet                  = "assets/node-exporter/node-exporter-ds.yaml"
-	NodeExporterService                    = "assets/node-exporter/node-exporter-svc.yaml"
-	NodeExporterServiceAccount             = "assets/node-exporter/node-exporter-service-account.yaml"
-	NodeExporterClusterRole                = "assets/node-exporter/node-exporter-cluster-role.yaml"
-	NodeExporterClusterRoleBinding         = "assets/node-exporter/node-exporter-cluster-role-binding.yaml"
-	NodeExporterSecurityContextConstraints = "assets/node-exporter/node-exporter-security-context-constraints.yaml"
+	NodeExporterDaemonSet                  = "assets/node-exporter/daemonset.yaml"
+	NodeExporterService                    = "assets/node-exporter/service.yaml"
+	NodeExporterServiceAccount             = "assets/node-exporter/service-account.yaml"
+	NodeExporterClusterRole                = "assets/node-exporter/cluster-role.yaml"
+	NodeExporterClusterRoleBinding         = "assets/node-exporter/cluster-role-binding.yaml"
+	NodeExporterSecurityContextConstraints = "assets/node-exporter/security-context-constraints.yaml"
+	NodeExporterServiceMonitor             = "assets/node-exporter/service-monitor.yaml"
 
-	PrometheusK8sClusterRoleBinding               = "assets/prometheus-k8s/prometheus-k8s-cluster-role-binding.yaml"
-	PrometheusK8sRoleBindingDefault               = "assets/prometheus-k8s/prometheus-k8s-role-binding-default.yaml"
-	PrometheusK8sRoleBindingKubeSystem            = "assets/prometheus-k8s/prometheus-k8s-role-binding-kube-system.yaml"
-	PrometheusK8sRoleBinding                      = "assets/prometheus-k8s/prometheus-k8s-role-binding.yaml"
-	PrometheusK8sClusterRole                      = "assets/prometheus-k8s/prometheus-k8s-cluster-role.yaml"
-	PrometheusK8sRoleDefault                      = "assets/prometheus-k8s/prometheus-k8s-role-default.yaml"
-	PrometheusK8sRoleKubeSystem                   = "assets/prometheus-k8s/prometheus-k8s-role-kube-system.yaml"
-	PrometheusK8sRole                             = "assets/prometheus-k8s/prometheus-k8s-role.yaml"
-	PrometheusK8sRules                            = "assets/prometheus-k8s/prometheus-k8s-rules.yaml"
-	PrometheusK8sServiceAccount                   = "assets/prometheus-k8s/prometheus-k8s-service-account.yaml"
-	PrometheusK8s                                 = "assets/prometheus-k8s/prometheus-k8s.yaml"
-	PrometheusK8sKubeletServiceMonitor            = "assets/prometheus-k8s/prometheus-k8s-service-monitor-kubelet.yaml"
-	PrometheusK8sNodeExporterServiceMonitor       = "assets/prometheus-k8s/prometheus-k8s-service-monitor-node-exporter.yaml"
-	PrometheusK8sApiserverServiceMonitor          = "assets/prometheus-k8s/prometheus-k8s-service-monitor-apiserver.yaml"
-	PrometheusK8sKubeStateMetricsServiceMonitor   = "assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-state-metrics.yaml"
-	PrometheusK8sPrometheusServiceMonitor         = "assets/prometheus-k8s/prometheus-k8s-service-monitor-prometheus.yaml"
-	PrometheusK8sAlertmanagerServiceMonitor       = "assets/prometheus-k8s/prometheus-k8s-service-monitor-alertmanager.yaml"
-	PrometheusK8sKubeControllersServiceMonitor    = "assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-controllers.yaml"
-	PrometheusK8sKubeDNSServiceMonitor            = "assets/prometheus-k8s/prometheus-k8s-service-monitor-kube-dns.yaml"
-	PrometheusK8sPrometheusOperatorServiceMonitor = "assets/prometheus-k8s/prometheus-k8s-service-monitor-prometheus-operator.yaml"
-	PrometheusK8sService                          = "assets/prometheus-k8s/prometheus-k8s-svc.yaml"
-	PrometheusK8sProxySecret                      = "assets/prometheus-k8s/prometheus-k8s-proxy-secret.yaml"
-	PrometheusK8sRoute                            = "assets/prometheus-k8s/prometheus-k8s-route.yaml"
+	PrometheusK8sClusterRoleBinding            = "assets/prometheus-k8s/cluster-role-binding.yaml"
+	PrometheusK8sRoleBindingDefault            = "assets/prometheus-k8s/role-binding-default.yaml"
+	PrometheusK8sRoleBindingKubeSystem         = "assets/prometheus-k8s/role-binding-kube-system.yaml"
+	PrometheusK8sRoleBinding                   = "assets/prometheus-k8s/role-binding-namespace.yaml"
+	PrometheusK8sRoleBindingConfig             = "assets/prometheus-k8s/role-binding-config.yaml"
+	PrometheusK8sClusterRole                   = "assets/prometheus-k8s/cluster-role.yaml"
+	PrometheusK8sRoleDefault                   = "assets/prometheus-k8s/role-default.yaml"
+	PrometheusK8sRoleKubeSystem                = "assets/prometheus-k8s/role-kube-system.yaml"
+	PrometheusK8sRoleConfig                    = "assets/prometheus-k8s/role-config.yaml"
+	PrometheusK8sRole                          = "assets/prometheus-k8s/role-namespace.yaml"
+	PrometheusK8sRules                         = "assets/prometheus-k8s/rules.yaml"
+	PrometheusK8sServiceAccount                = "assets/prometheus-k8s/service-account.yaml"
+	PrometheusK8s                              = "assets/prometheus-k8s/prometheus.yaml"
+	PrometheusK8sKubeletServiceMonitor         = "assets/prometheus-k8s/service-monitor-kubelet.yaml"
+	PrometheusK8sApiserverServiceMonitor       = "assets/prometheus-k8s/service-monitor-apiserver.yaml"
+	PrometheusK8sPrometheusServiceMonitor      = "assets/prometheus-k8s/service-monitor.yaml"
+	PrometheusK8sKubeControllersServiceMonitor = "assets/prometheus-k8s/service-monitor-kube-controllers.yaml"
+	PrometheusK8sService                       = "assets/prometheus-k8s/service.yaml"
+	PrometheusK8sProxySecret                   = "assets/prometheus-k8s/proxy-secret.yaml"
+	PrometheusK8sRoute                         = "assets/prometheus-k8s/route.yaml"
 
-	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/prometheus-operator-cluster-role-binding.yaml"
-	PrometheusOperatorClusterRole        = "assets/prometheus-operator/prometheus-operator-cluster-role.yaml"
-	PrometheusOperatorServiceAccount     = "assets/prometheus-operator/prometheus-operator-service-account.yaml"
-	PrometheusOperatorDeployment         = "assets/prometheus-operator/prometheus-operator.yaml"
-	PrometheusOperatorService            = "assets/prometheus-operator/prometheus-operator-svc.yaml"
+	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
+	PrometheusOperatorClusterRole        = "assets/prometheus-operator/cluster-role.yaml"
+	PrometheusOperatorServiceAccount     = "assets/prometheus-operator/service-account.yaml"
+	PrometheusOperatorDeployment         = "assets/prometheus-operator/deployment.yaml"
+	PrometheusOperatorService            = "assets/prometheus-operator/service.yaml"
+	PrometheusOperatorServiceMonitor     = "assets/prometheus-operator/service-monitor.yaml"
 
-	KubeControllersService = "assets/prometheus-k8s/kube-controllers-svc.yaml"
+	KubeControllersService = "assets/prometheus-k8s/kube-controllers-service.yaml"
 )
 
 var (
@@ -138,7 +139,14 @@ func (f *Factory) AlertmanagerExternalURL(host string) *url.URL {
 }
 
 func (f *Factory) AlertmanagerConfig() (*v1.Secret, error) {
-	return f.NewSecret(MustAssetReader(AlertmanagerConfig))
+	s, err := f.NewSecret(MustAssetReader(AlertmanagerConfig))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
@@ -152,16 +160,31 @@ func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
 		return nil, err
 	}
 	s.Data["session_secret"] = []byte(p)
+	s.Namespace = f.namespace
 
 	return s, nil
 }
 
 func (f *Factory) AlertmanagerService() (*v1.Service, error) {
-	return f.NewService(MustAssetReader(AlertmanagerService))
+	s, err := f.NewService(MustAssetReader(AlertmanagerService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) AlertmanagerServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(MustAssetReader(AlertmanagerServiceAccount))
+	s, err := f.NewServiceAccount(MustAssetReader(AlertmanagerServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {
@@ -177,6 +200,18 @@ func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1beta1.ClusterRoleBind
 
 func (f *Factory) AlertmanagerClusterRole() (*rbacv1beta1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(AlertmanagerClusterRole))
+}
+
+func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(AlertmanagerServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
 }
 
 func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
@@ -214,6 +249,8 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 		a.Spec.Containers[0].Image = image.String()
 	}
 
+	a.Namespace = f.namespace
+
 	return a, nil
 }
 
@@ -226,6 +263,7 @@ func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
 	if f.config.AlertmanagerMainConfig.Hostport != "" {
 		r.Spec.Host = f.config.AlertmanagerMainConfig.Hostport
 	}
+	r.Namespace = f.namespace
 
 	return r, nil
 }
@@ -243,6 +281,19 @@ func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1beta1.ClusterRole
 
 func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1beta1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(KubeStateMetricsClusterRole))
+}
+
+func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(KubeStateMetricsServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
+	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
 }
 
 func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
@@ -278,15 +329,43 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.Containers[2].Image = image.String()
 	}
 
+	d.Namespace = f.namespace
+
 	return d, nil
 }
 
 func (f *Factory) KubeStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(MustAssetReader(KubeStateMetricsServiceAccount))
+	s, err := f.NewServiceAccount(MustAssetReader(KubeStateMetricsServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) KubeStateMetricsService() (*v1.Service, error) {
-	return f.NewService(MustAssetReader(KubeStateMetricsService))
+	s, err := f.NewService(MustAssetReader(KubeStateMetricsService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(NodeExporterServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("node-exporter.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
 }
 
 func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
@@ -312,12 +391,20 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 		image.repo = f.config.KubeRbacProxyConfig.BaseImage
 		ds.Spec.Template.Spec.Containers[1].Image = image.String()
 	}
+	ds.Namespace = f.namespace
 
 	return ds, nil
 }
 
 func (f *Factory) NodeExporterService() (*v1.Service, error) {
-	return f.NewService(MustAssetReader(NodeExporterService))
+	s, err := f.NewService(MustAssetReader(NodeExporterService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) NodeExporterSecurityContextConstraints() (*securityv1.SecurityContextConstraints, error) {
@@ -332,7 +419,14 @@ func (f *Factory) NodeExporterSecurityContextConstraints() (*securityv1.Security
 }
 
 func (f *Factory) NodeExporterServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(MustAssetReader(NodeExporterServiceAccount))
+	s, err := f.NewServiceAccount(MustAssetReader(NodeExporterServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) NodeExporterClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {
@@ -376,8 +470,26 @@ func (f *Factory) PrometheusK8sRoleBindingDefault() (*rbacv1beta1.RoleBinding, e
 	return rb, nil
 }
 
+func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1beta1.Role, error) {
+	r, err := f.NewRole(MustAssetReader(PrometheusK8sRoleConfig))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespace
+
+	return r, nil
+}
+
 func (f *Factory) PrometheusK8sRoleDefault() (*rbacv1beta1.Role, error) {
-	return f.NewRole(MustAssetReader(PrometheusK8sRoleDefault))
+	r, err := f.NewRole(MustAssetReader(PrometheusK8sRoleDefault))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespace
+
+	return r, nil
 }
 
 func (f *Factory) PrometheusK8sRoleBindingKubeSystem() (*rbacv1beta1.RoleBinding, error) {
@@ -406,16 +518,48 @@ func (f *Factory) PrometheusK8sRoleBinding() (*rbacv1beta1.RoleBinding, error) {
 	return rb, nil
 }
 
+func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1beta1.RoleBinding, error) {
+	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusK8sRoleBindingConfig))
+	if err != nil {
+		return nil, err
+	}
+
+	rb.Namespace = f.namespace
+
+	return rb, nil
+}
+
 func (f *Factory) PrometheusK8sRole() (*rbacv1beta1.Role, error) {
-	return f.NewRole(MustAssetReader(PrometheusK8sRole))
+	r, err := f.NewRole(MustAssetReader(PrometheusK8sRole))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespace
+
+	return r, nil
 }
 
 func (f *Factory) PrometheusK8sRules() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(MustAssetReader(PrometheusK8sRules))
+	r, err := f.NewConfigMap(MustAssetReader(PrometheusK8sRules))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespace
+
+	return r, nil
 }
 
 func (f *Factory) PrometheusK8sServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(MustAssetReader(PrometheusK8sServiceAccount))
+	s, err := f.NewServiceAccount(MustAssetReader(PrometheusK8sServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
@@ -429,6 +573,7 @@ func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
 		return nil, err
 	}
 	s.Data["session_secret"] = []byte(p)
+	s.Namespace = f.namespace
 
 	return s, nil
 }
@@ -442,6 +587,7 @@ func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 	if f.config.PrometheusK8sConfig.Hostport != "" {
 		r.Spec.Host = f.config.PrometheusK8sConfig.Hostport
 	}
+	r.Namespace = f.namespace
 
 	return r, nil
 }
@@ -491,41 +637,31 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
+	p.Namespace = f.namespace
 
 	return p, nil
 }
 
 func (f *Factory) PrometheusK8sKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeletServiceMonitor))
-}
-
-func (f *Factory) PrometheusK8sNodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sNodeExporterServiceMonitor))
+	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeletServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
 
-	sm.Spec.NamespaceSelector.MatchNames[0] = f.namespace
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("node-exporter.%s.svc", f.namespace)
+	s.Namespace = f.namespace
 
-	return sm, nil
+	return s, nil
 }
 
 func (f *Factory) PrometheusK8sApiserverServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(MustAssetReader(PrometheusK8sApiserverServiceMonitor))
-}
-
-func (f *Factory) PrometheusK8sKubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeStateMetricsServiceMonitor))
+	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sApiserverServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
 
-	sm.Spec.NamespaceSelector.MatchNames[0] = f.namespace
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
-	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
+	s.Namespace = f.namespace
 
-	return sm, nil
+	return s, nil
 }
 
 func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -534,39 +670,30 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor
 		return nil, err
 	}
 
-	sm.Spec.NamespaceSelector.MatchNames[0] = f.namespace
 	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-k8s.%s.svc", f.namespace)
-
-	return sm, nil
-}
-
-func (f *Factory) PrometheusK8sAlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sAlertmanagerServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	sm.Spec.NamespaceSelector.MatchNames[0] = f.namespace
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
 
 	return sm, nil
 }
 
 func (f *Factory) PrometheusK8sKubeControllersServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeControllersServiceMonitor))
-}
-
-func (f *Factory) PrometheusK8sKubeDNSServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeDNSServiceMonitor))
-}
-
-func (f *Factory) PrometheusK8sPrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sPrometheusOperatorServiceMonitor))
+	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeControllersServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
 
-	sm.Spec.NamespaceSelector.MatchNames[0] = f.namespace
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusOperatorServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespace
 
 	return sm, nil
 }
@@ -587,7 +714,14 @@ func (f *Factory) PrometheusOperatorClusterRole() (*rbacv1beta1.ClusterRole, err
 }
 
 func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(MustAssetReader(PrometheusOperatorServiceAccount))
+	s, err := f.NewServiceAccount(MustAssetReader(PrometheusOperatorServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
@@ -626,16 +760,31 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 		}
 	}
 	d.Spec.Template.Spec.Containers[0].Args = args
+	d.Namespace = f.namespace
 
 	return d, nil
 }
 
 func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
-	return f.NewService(MustAssetReader(PrometheusOperatorService))
+	s, err := f.NewService(MustAssetReader(PrometheusOperatorService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
-	return f.NewService(MustAssetReader(PrometheusK8sService))
+	s, err := f.NewService(MustAssetReader(PrometheusK8sService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) KubeControllersService() (*v1.Service, error) {

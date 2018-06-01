@@ -18,6 +18,7 @@
 oc create namespace openshift-monitoring
 oc project openshift-monitoring
 oc annotate ns/openshift-monitoring openshift.io/node-selector=
+oc label ns/openshift-monitoring openshift.io/cluster-monitoring=true
 
 oc apply -f manifests/cluster-monitoring-operator-role.yaml
 oc apply -f manifests/cluster-monitoring-operator-role-binding.yaml

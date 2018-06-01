@@ -84,5 +84,15 @@ func (t *PrometheusOperatorTask) Run() error {
 	}
 
 	err = t.client.WaitForPrometheusOperatorCRDsReady()
-	return errors.Wrap(err, "waiting for Prometheus CRDs to become available failed")
+	if err != nil {
+		return errors.Wrap(err, "waiting for Prometheus CRDs to become available failed")
+	}
+
+	smpo, err := t.factory.PrometheusOperatorServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Operator ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smpo)
+	return errors.Wrap(err, "reconciling Prometheus Operator ServiceMonitor failed")
 }
