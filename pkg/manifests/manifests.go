@@ -482,14 +482,7 @@ func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1beta1.Role, error) {
 }
 
 func (f *Factory) PrometheusK8sRoleDefault() (*rbacv1beta1.Role, error) {
-	r, err := f.NewRole(MustAssetReader(PrometheusK8sRoleDefault))
-	if err != nil {
-		return nil, err
-	}
-
-	r.Namespace = f.namespace
-
-	return r, nil
+	return f.NewRole(MustAssetReader(PrometheusK8sRoleDefault))
 }
 
 func (f *Factory) PrometheusK8sRoleBindingKubeSystem() (*rbacv1beta1.RoleBinding, error) {
