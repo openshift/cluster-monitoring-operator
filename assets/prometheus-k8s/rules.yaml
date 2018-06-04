@@ -135,14 +135,33 @@ data:
     \"sum(rate(node_cpu{mode!=\\\"idle\\\",mode!=\\\"iowait\\\"}[5m]))\"\n    \"record\":
     \"cluster:node_cpu:sum_rate5m\"\n  - \"expr\": \"cluster:node_cpu:rate5m / count(sum(node_cpu)
     BY (instance, cpu))\"\n    \"record\": \"cluster:node_cpu:ratio\"\n- \"name\":
-    \"kubernetes-absent\"\n  \"rules\": \n  - \"alert\": \"AlertmanagerDown\"\n    \"annotations\":
-    \n      \"message\": \"Alertmanager has disappeared from Prometheus target discovery.\"\n
-    \   \"expr\": |\n      absent(up{job=\"alertmanager-main\"} == 1)\n    \"for\":
-    \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n  - \"alert\": \"KubeAPIDown\"\n
-    \   \"annotations\": \n      \"message\": \"KubeAPI has disappeared from Prometheus
-    target discovery.\"\n    \"expr\": |\n      absent(up{job=\"apiserver\"} == 1)\n
-    \   \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n  -
-    \"alert\": \"KubeControllerManagerDown\"\n    \"annotations\": \n      \"message\":
+    \"kubernetes.rules\"\n  \"rules\": \n  - \"expr\": \"sum(container_memory_usage_bytes{container_name!=\\\"POD\\\",pod_name!=\\\"\\\"})
+    BY (pod_name, namespace)\"\n    \"record\": \"pod_name:container_memory_usage_bytes:sum\"\n
+    \ - \"expr\": \"sum(container_spec_cpu_shares{container_name!=\\\"POD\\\",pod_name!=\\\"\\\"})
+    BY (pod_name, namespace)\"\n    \"record\": \"pod_name:container_spec_cpu_shares:sum\"\n
+    \ - \"expr\": \"sum(rate(container_cpu_usage_seconds_total{container_name!=\\\"POD\\\",pod_name!=\\\"\\\"}[5m]))
+    BY (pod_name, namespace)\"\n    \"record\": \"pod_name:container_cpu_usage:sum\"\n
+    \ - \"expr\": \"sum(container_fs_usage_bytes{container_name!=\\\"POD\\\",pod_name!=\\\"\\\"})
+    BY (pod_name, namespace)\"\n    \"record\": \"pod_name:container_fs_usage_bytes:sum\"\n
+    \ - \"expr\": \"sum(container_memory_usage_bytes{container_name!=\\\"\\\"}) BY
+    (namespace)\"\n    \"record\": \"namespace:container_memory_usage_bytes:sum\"\n
+    \ - \"expr\": \"sum(container_spec_cpu_shares{container_name!=\\\"\\\"}) BY (namespace)\"\n
+    \   \"record\": \"namespace:container_spec_cpu_shares:sum\"\n  - \"expr\": \"sum(rate(container_cpu_usage_seconds_total{container_name!=\\\"POD\\\"}[5m]))
+    BY (namespace)\"\n    \"record\": \"namespace:container_cpu_usage:sum\"\n  - \"expr\":
+    \"sum(container_memory_usage_bytes{container_name!=\\\"POD\\\",pod_name!=\\\"\\\"})
+    BY (cluster) / sum(machine_memory_bytes) BY (cluster)\"\n    \"record\": \"cluster:memory_usage:ratio\"\n
+    \ - \"expr\": \"sum(container_spec_cpu_shares{container_name!=\\\"POD\\\",pod_name!=\\\"\\\"})
+    / 1000 / sum(machine_cpu_cores)\"\n    \"record\": \"cluster:container_spec_cpu_shares:ratio\"\n
+    \ - \"expr\": \"sum(rate(container_cpu_usage_seconds_total{container_name!=\\\"POD\\\",pod_name!=\\\"\\\"}[5m]))
+    / sum(machine_cpu_cores)\"\n    \"record\": \"cluster:container_cpu_usage:ratio\"\n-
+    \"name\": \"kubernetes-absent\"\n  \"rules\": \n  - \"alert\": \"AlertmanagerDown\"\n
+    \   \"annotations\": \n      \"message\": \"Alertmanager has disappeared from
+    Prometheus target discovery.\"\n    \"expr\": |\n      absent(up{job=\"alertmanager-main\"}
+    == 1)\n    \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n
+    \ - \"alert\": \"KubeAPIDown\"\n    \"annotations\": \n      \"message\": \"KubeAPI
+    has disappeared from Prometheus target discovery.\"\n    \"expr\": |\n      absent(up{job=\"apiserver\"}
+    == 1)\n    \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n
+    \ - \"alert\": \"KubeControllerManagerDown\"\n    \"annotations\": \n      \"message\":
     \"KubeControllerManager has disappeared from Prometheus target discovery.\"\n
     \   \"expr\": |\n      absent(up{job=\"kube-controllers\"} == 1)\n    \"for\":
     \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n  - \"alert\": \"KubeSchedulerDown\"\n
