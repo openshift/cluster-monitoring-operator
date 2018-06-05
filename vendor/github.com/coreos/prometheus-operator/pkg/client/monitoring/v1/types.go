@@ -15,8 +15,6 @@
 package v1
 
 import (
-	"time"
-
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -100,14 +98,12 @@ type PrometheusSpec struct {
 	RoutePrefix string `json:"routePrefix,omitempty"`
 	// Storage spec to specify how storage shall be used.
 	Storage *StorageSpec `json:"storage,omitempty"`
-	// A selector to select which RuleFiles to mount for loading alerting rules from.
-	RuleFileSelector *metav1.LabelSelector `json:"ruleFileSelector,omitempty"`
-	// DEPRECATED with Prometheus Operator 'v0.20.0'. Any value in this field
-	// will just be copied to 'RuleFileSelector' field
+	// A selector to select which PrometheusRules to mount for loading alerting
+	// rules from.
 	RuleSelector *metav1.LabelSelector `json:"ruleSelector,omitempty"`
-	// Namespaces to be selected for RuleFiles discovery. If empty, only
-	// check own namespace.
-	RuleFileNamespaceSelector *metav1.LabelSelector `json:"ruleFileNamespaceSelector,omitempty"`
+	// Namespaces to be selected for PrometheusRules discovery. If unspecified, only
+	// the same namespace as the Prometheus object is in is used.
+	RuleNamespaceSelector *metav1.LabelSelector `json:"ruleNamespaceSelector,omitempty"`
 	// Define details regarding alerting.
 	Alerting *AlertingSpec `json:"alerting,omitempty"`
 	// Define resources requests and limits for single Pods.
@@ -367,6 +363,8 @@ type Endpoint struct {
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
 	// MetricRelabelConfigs to apply to samples before ingestion.
 	MetricRelabelConfigs []*RelabelConfig `json:"metricRelabelings,omitempty"`
+	// ProxyURL eg http://proxyserver:2195 Directs scrapes to proxy through this endpoint.
+	ProxyURL *string `json:"proxyUrl,omitempty"`
 }
 
 // BasicAuth allow an endpoint to authenticate over basic authentication
@@ -405,31 +403,31 @@ type ServiceMonitorList struct {
 	Items []*ServiceMonitor `json:"items"`
 }
 
-// A list of RuleFiles.
+// A list of PrometheusRules.
 // +k8s:openapi-gen=true
-type RuleFileList struct {
+type PrometheusRuleList struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard list metadata
 	// More info: http://releases.k8s.io/HEAD/docs/devel/api-conventions.md#metadata
 	metav1.ListMeta `json:"metadata,omitempty"`
 	// List of Rules
-	Items []*RuleFile `json:"items"`
+	Items []*PrometheusRule `json:"items"`
 }
 
-// RuleFile defines alerting rules for a Prometheus instance
+// PrometheusRule defines alerting rules for a Prometheus instance
 // +k8s:openapi-gen=true
-type RuleFile struct {
+type PrometheusRule struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object’s metadata. More info:
 	// http://releases.k8s.io/HEAD/docs/devel/api-conventions.md#metadata
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// Specification of desired alerting rule definitions for Prometheus.
-	Spec RuleFileSpec `json:"spec"`
+	Spec PrometheusRuleSpec `json:"spec"`
 }
 
-// RuleFileSpec contains specification parameters for a Rule.
+// PrometheusRuleSpec contains specification parameters for a Rule.
 // +k8s:openapi-gen=true
-type RuleFileSpec struct {
+type PrometheusRuleSpec struct {
 	// Content of Prometheus rule file
 	Groups []RuleGroup `json:"groups,omitempty"`
 }
@@ -440,9 +438,9 @@ type RuleFileSpec struct {
 // RuleGroup is a list of sequentially evaluated recording and alerting rules.
 // +k8s:openapi-gen=true
 type RuleGroup struct {
-	Name     string        `json:"name"`
-	Interval time.Duration `json:"interval,omitempty"`
-	Rules    []Rule        `json:"rules"`
+	Name     string `json:"name"`
+	Interval string `json:"interval,omitempty"`
+	Rules    []Rule `json:"rules"`
 }
 
 // Rule describes an alerting or recording rule.
@@ -451,12 +449,12 @@ type Rule struct {
 	Record      string            `json:"record,omitempty"`
 	Alert       string            `json:"alert,omitempty"`
 	Expr        string            `json:"expr"`
-	For         time.Duration     `json:"for,omitempty"`
+	For         string            `json:"for,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-// Describes an Alertmanager cluster.
+// Alertmanager describes an Alertmanager cluster.
 // +k8s:openapi-gen=true
 type Alertmanager struct {
 	metav1.TypeMeta `json:",inline"`
@@ -610,10 +608,10 @@ func (l *ServiceMonitorList) DeepCopyObject() runtime.Object {
 	return l.DeepCopy()
 }
 
-func (f *RuleFile) DeepCopyObject() runtime.Object {
+func (f *PrometheusRule) DeepCopyObject() runtime.Object {
 	return f.DeepCopy()
 }
 
-func (l *RuleFileList) DeepCopyObject() runtime.Object {
+func (l *PrometheusRuleList) DeepCopyObject() runtime.Object {
 	return l.DeepCopy()
 }
