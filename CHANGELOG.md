@@ -1,3 +1,7 @@
+## 0.0.5 / 2018-06-05
+
+* [ENHANCEMENT] Update Prometheus Operator to v0.20.0
+
 ## 0.0.4 / 2018-05-25
 
 * Set GOOS=linux to build binaries for Linux by default
