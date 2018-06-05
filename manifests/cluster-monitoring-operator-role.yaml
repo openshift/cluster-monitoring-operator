@@ -104,7 +104,7 @@ rules:
   verbs: ['*']
 - apiGroups: [monitoring.coreos.com]
   resources: [alertmanagers, prometheuses, prometheuses/finalizers, alertmanagers/finalizers,
-    servicemonitors]
+    servicemonitors, prometheusrules]
   verbs: ['*']
 - apiGroups: [apps]
   resources: [statefulsets]

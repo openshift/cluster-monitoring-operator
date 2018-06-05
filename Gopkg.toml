@@ -28,7 +28,7 @@
   version = "1.0.0"
 
 [[constraint]]
-  branch = "master"
+  version = "v0.20.0"
   name = "github.com/coreos/prometheus-operator"
 
 [[constraint]]

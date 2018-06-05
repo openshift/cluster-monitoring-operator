@@ -16,13 +16,16 @@ package framework
 
 import (
 	"fmt"
+	"time"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func (f *Framework) MakeBasicRuleFile(ns, name string, groups []monitoringv1.RuleGroup) monitoringv1.RuleFile {
-	return monitoringv1.RuleFile{
+func (f *Framework) MakeBasicRule(ns, name string, groups []monitoringv1.RuleGroup) monitoringv1.PrometheusRule {
+	return monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
@@ -30,14 +33,14 @@ func (f *Framework) MakeBasicRuleFile(ns, name string, groups []monitoringv1.Rul
 				"role": "rulefile",
 			},
 		},
-		Spec: monitoringv1.RuleFileSpec{
+		Spec: monitoringv1.PrometheusRuleSpec{
 			Groups: groups,
 		},
 	}
 }
 
-func (f *Framework) CreateRuleFile(ns string, ar monitoringv1.RuleFile) error {
-	_, err := f.MonClientV1.RuleFiles(ns).Create(&ar)
+func (f *Framework) CreateRule(ns string, ar monitoringv1.PrometheusRule) error {
+	_, err := f.MonClientV1.PrometheusRules(ns).Create(&ar)
 	if err != nil {
 		return fmt.Errorf("creating %v RuleFile failed: %v", ar.Name, err)
 	}
@@ -45,7 +48,7 @@ func (f *Framework) CreateRuleFile(ns string, ar monitoringv1.RuleFile) error {
 	return nil
 }
 
-func (f *Framework) MakeAndCreateFiringRuleFile(ns, name, alertName string) (monitoringv1.RuleFile, error) {
+func (f *Framework) MakeAndCreateFiringRule(ns, name, alertName string) (monitoringv1.PrometheusRule, error) {
 	groups := []monitoringv1.RuleGroup{
 		monitoringv1.RuleGroup{
 			Name: alertName,
@@ -57,9 +60,9 @@ func (f *Framework) MakeAndCreateFiringRuleFile(ns, name, alertName string) (mon
 			},
 		},
 	}
-	file := f.MakeBasicRuleFile(ns, name, groups)
+	file := f.MakeBasicRule(ns, name, groups)
 
-	err := f.CreateRuleFile(ns, file)
+	err := f.CreateRule(ns, file)
 	if err != nil {
 		return file, err
 	}
@@ -67,8 +70,22 @@ func (f *Framework) MakeAndCreateFiringRuleFile(ns, name, alertName string) (mon
 	return file, nil
 }
 
-func (f *Framework) UpdateRuleFile(ns string, ar monitoringv1.RuleFile) error {
-	_, err := f.MonClientV1.RuleFiles(ns).Update(&ar)
+// WaitForRule waits for a rule file with a given name to exist in a given
+// namespace.
+func (f *Framework) WaitForRule(ns, name string) error {
+	return wait.Poll(time.Second, f.DefaultTimeout, func() (bool, error) {
+		_, err := f.MonClientV1.PrometheusRules(ns).Get(name, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		} else if err != nil {
+			return false, err
+		}
+		return true, nil
+	})
+}
+
+func (f *Framework) UpdateRule(ns string, ar monitoringv1.PrometheusRule) error {
+	_, err := f.MonClientV1.PrometheusRules(ns).Update(&ar)
 	if err != nil {
 		return fmt.Errorf("updating %v RuleFile failed: %v", ar.Name, err)
 	}
