@@ -533,8 +533,8 @@ func (f *Factory) PrometheusK8sRole() (*rbacv1beta1.Role, error) {
 	return r, nil
 }
 
-func (f *Factory) PrometheusK8sRules() (*v1.ConfigMap, error) {
-	r, err := f.NewConfigMap(MustAssetReader(PrometheusK8sRules))
+func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
+	r, err := f.NewPrometheusRule(MustAssetReader(PrometheusK8sRules))
 	if err != nil {
 		return nil, err
 	}
@@ -924,6 +924,19 @@ func (f *Factory) NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 	return p, nil
 }
 
+func (f *Factory) NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, error) {
+	p, err := NewPrometheusRule(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	if p.GetNamespace() == "" {
+		p.SetNamespace(f.namespace)
+	}
+
+	return p, nil
+}
+
 func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
 	a, err := NewAlertmanager(manifest)
 	if err != nil {
@@ -1089,6 +1102,16 @@ func NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
 
 func NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 	p := monv1.Prometheus{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+func NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, error) {
+	p := monv1.PrometheusRule{}
 	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&p)
 	if err != nil {
 		return nil, err

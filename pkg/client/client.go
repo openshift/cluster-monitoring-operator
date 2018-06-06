@@ -190,6 +190,21 @@ func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 	return errors.Wrap(err, "updating Prometheus object failed")
 }
 
+func (c *Client) CreateOrUpdatePrometheusRule(p *monv1.PrometheusRule) error {
+	pclient := c.mclient.MonitoringV1().PrometheusRules(p.GetNamespace())
+	_, err := pclient.Get(p.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := pclient.Create(p)
+		return errors.Wrap(err, "creating PrometheusRule object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving PrometheusRule object failed")
+	}
+
+	_, err = pclient.Update(p)
+	return errors.Wrap(err, "updating PrometheusRule object failed")
+}
+
 func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	aclient := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace())
 	_, err := aclient.Get(a.GetName(), metav1.GetOptions{})

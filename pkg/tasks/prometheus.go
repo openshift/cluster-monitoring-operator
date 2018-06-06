@@ -169,14 +169,14 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus config RoleBinding failed")
 	}
 
-	cm, err := t.factory.PrometheusK8sRules()
+	pm, err := t.factory.PrometheusK8sRules()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus rules ConfigMap failed")
+		return errors.Wrap(err, "initializing Prometheus rules PrometheusRule failed")
 	}
 
-	err = t.client.CreateOrUpdateConfigMap(cm)
+	err = t.client.CreateOrUpdatePrometheusRule(pm)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus rules ConfigMap failed")
+		return errors.Wrap(err, "reconciling Prometheus rules PrometheusRule failed")
 	}
 
 	smk, err := t.factory.PrometheusK8sKubeletServiceMonitor()
