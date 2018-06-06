@@ -1,3 +1,7 @@
+## 0.0.6 / 2018-06-06
+
+* Fix default rule creation
+
 ## 0.0.5 / 2018-06-05
 
 * [ENHANCEMENT] Update Prometheus Operator to v0.20.0
