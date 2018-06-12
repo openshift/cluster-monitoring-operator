@@ -204,6 +204,36 @@ func TestUnconfiguredManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	_, err = f.GrafanaDatasources()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaDashboardDefinitions()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaDashboardSources()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaServiceAccount()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaService()
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestPrometheusOperatorConfiguration(t *testing.T) {

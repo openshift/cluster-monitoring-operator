@@ -87,6 +87,13 @@ var (
 	PrometheusOperatorServiceMonitor     = "assets/prometheus-operator/service-monitor.yaml"
 
 	KubeControllersService = "assets/prometheus-k8s/kube-controllers-service.yaml"
+
+	GrafanaDatasources          = "assets/grafana/dashboard-datasources.yaml"
+	GrafanaDashboardDefinitions = "assets/grafana/dashboard-definitions.yaml"
+	GrafanaDashboardSources     = "assets/grafana/dashboard-sources.yaml"
+	GrafanaDeployment           = "assets/grafana/deployment.yaml"
+	GrafanaServiceAccount       = "assets/grafana/service-account.yaml"
+	GrafanaService              = "assets/grafana/service.yaml"
 )
 
 var (
@@ -784,6 +791,74 @@ func (f *Factory) KubeControllersService() (*v1.Service, error) {
 	return f.NewService(MustAssetReader(KubeControllersService))
 }
 
+func (f *Factory) GrafanaDatasources() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(GrafanaDatasources))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+
+	return c, nil
+}
+
+func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
+	cl, err := f.NewConfigMapList(MustAssetReader(GrafanaDashboardDefinitions))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range cl.Items {
+		c.Namespace = f.namespace
+	}
+
+	return cl, nil
+}
+
+func (f *Factory) GrafanaDashboardSources() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(GrafanaDashboardSources))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+
+	return c, nil
+}
+
+func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(MustAssetReader(GrafanaDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	d.Namespace = f.namespace
+
+	return d, nil
+}
+
+func (f *Factory) GrafanaServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(MustAssetReader(GrafanaServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) GrafanaService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(GrafanaService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func hostFromBaseAddress(baseAddress string) (string, error) {
 	host, _, err := net.SplitHostPort(baseAddress)
 	if err != nil && !IsMissingPortInAddressError(err) {
@@ -896,6 +971,21 @@ func (f *Factory) NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
 	}
 
 	return cm, nil
+}
+
+func (f *Factory) NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
+	cml, err := NewConfigMapList(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cm := range cml.Items {
+		if cm.GetNamespace() == "" {
+			cm.SetNamespace(f.namespace)
+		}
+	}
+
+	return cml, nil
 }
 
 func (f *Factory) NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
@@ -1088,6 +1178,16 @@ func NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
 	}
 
 	return &cm, nil
+}
+
+func NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
+	cml := v1.ConfigMapList{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cml)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cml, nil
 }
 
 func NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
