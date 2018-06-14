@@ -4,6 +4,7 @@
 # Sources: 
 # 	manifests/cluster-monitoring-operator-role.yaml.in
 # 	assets/alertmanager/cluster-role.yaml
+# 	assets/grafana/cluster-role.yaml
 # 	assets/kube-state-metrics/cluster-role.yaml
 # 	assets/kube-state-metrics/role.yaml
 # 	assets/node-exporter/cluster-role.yaml
@@ -32,6 +33,12 @@ rules:
 - apiGroups: [security.openshift.io]
   resources: [securitycontextconstraints]
   verbs: [create, get, list, watch, update, delete]
+- apiGroups: [authentication.k8s.io]
+  resources: [tokenreviews]
+  verbs: [create]
+- apiGroups: [authorization.k8s.io]
+  resources: [subjectaccessreviews]
+  verbs: [create]
 - apiGroups: [authentication.k8s.io]
   resources: [tokenreviews]
   verbs: [create]

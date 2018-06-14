@@ -33,12 +33,67 @@ func NewGrafanaTask(client *client.Client, factory *manifests.Factory) *GrafanaT
 }
 
 func (t *GrafanaTask) Run() error {
+	cr, err := t.factory.GrafanaClusterRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana ClusterRole failed")
+	}
+
+	err = t.client.CreateOrUpdateClusterRole(cr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Grafana ClusterRole failed")
+	}
+
+	crb, err := t.factory.GrafanaClusterRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana ClusterRoleBinding failed")
+	}
+
+	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Grafana ClusterRoleBinding failed")
+	}
+
+	r, err := t.factory.GrafanaRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Route failed")
+	}
+
+	err = t.client.CreateRouteIfNotExists(r)
+	if err != nil {
+		return errors.Wrap(err, "creating Grafana Route failed")
+	}
+
+	_, err = t.client.WaitForRouteReady(r)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Grafana Route to become ready failed")
+	}
+
+	ps, err := t.factory.GrafanaProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana proxy Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ps)
+	if err != nil {
+		return errors.Wrap(err, "creating Grafana proxy Secret failed")
+	}
+
+	cmc, err := t.factory.GrafanaConfigConfigMap()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Config ConfigMap failed")
+	}
+
+	err = t.client.CreateOrUpdateConfigMap(cmc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Grafana Config ConfigMap failed")
+	}
+
 	cmds, err := t.factory.GrafanaDatasources()
 	if err != nil {
 		return errors.Wrap(err, "initializing Grafana Datasources ConfigMap failed")
 	}
 
-	err = t.client.CreateOrUpdateConfigMap(cmds)
+	err = t.client.CreateIfNotExistConfigMap(cmds)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana Datasources ConfigMap failed")
 	}
@@ -53,7 +108,7 @@ func (t *GrafanaTask) Run() error {
 		return errors.Wrap(err, "reconciling Grafana Dashboard Definitions ConfigMaps failed")
 	}
 
-	cmdbs, err := t.factory.GrafanaDatasources()
+	cmdbs, err := t.factory.GrafanaDashboardSources()
 	if err != nil {
 		return errors.Wrap(err, "initializing Grafana Dashboard Sources ConfigMap failed")
 	}

@@ -24,6 +24,7 @@ spec:
     - -http-address=
     - -email-domain=*
     - -upstream=http://localhost:9090
+    - -htpasswd-file=/etc/proxy/htpasswd/auth
     - -openshift-service-account=prometheus-k8s
     - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
     - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
@@ -45,6 +46,8 @@ spec:
       name: secret-prometheus-k8s-tls
     - mountPath: /etc/proxy/secrets
       name: secret-prometheus-k8s-proxy
+    - mountPath: /etc/proxy/htpasswd
+      name: secret-prometheus-k8s-htpasswd
   listenLocal: true
   nodeSelector:
     beta.kubernetes.io/os: linux
@@ -57,6 +60,7 @@ spec:
   secrets:
   - prometheus-k8s-tls
   - prometheus-k8s-proxy
+  - prometheus-k8s-htpasswd
   securityContext: {}
   serviceAccountName: prometheus-k8s
   serviceMonitorNamespaceSelector:

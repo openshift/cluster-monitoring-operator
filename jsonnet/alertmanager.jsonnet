@@ -137,7 +137,7 @@ local authorizationRole = policyRule.new() +
           containers: [
             {
               name: 'alertmanager-proxy',
-              image: 'openshift/oauth-proxy:v1.1.0',
+              image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
               resources: {},
               ports: [
                 {

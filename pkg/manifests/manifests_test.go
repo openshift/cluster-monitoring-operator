@@ -205,6 +205,21 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.GrafanaClusterRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaConfigConfigMap()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.GrafanaDatasources()
 	if err != nil {
 		t.Fatal(err)
@@ -221,6 +236,16 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.GrafanaDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaProxySecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaRoute()
 	if err != nil {
 		t.Fatal(err)
 	}

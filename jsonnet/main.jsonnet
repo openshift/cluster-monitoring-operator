@@ -1,8 +1,19 @@
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
+           {
+             _config+:: {
+               imageRepos+:: {
+                 openshiftOauthProxy: 'openshift/oauth-proxy',
+               },
+               versions+:: {
+                 openshiftOauthProxy: 'v1.1.0',
+               },
+             },
+           } +
            (import 'rules.jsonnet') +
            (import 'prometheus-operator.jsonnet') +
            (import 'node-exporter.jsonnet') +
            (import 'kube-state-metrics.jsonnet') +
+           (import 'grafana.jsonnet') +
            (import 'alertmanager.jsonnet') +
            (import 'prometheus.jsonnet') + {
   _config+:: {

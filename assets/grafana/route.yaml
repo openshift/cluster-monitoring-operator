@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: grafana
+  namespace: openshift-monitoring
+spec:
+  port:
+    targetPort: https
+  tls:
+    termination: Reencrypt
+  to:
+    kind: Service
+    name: grafana

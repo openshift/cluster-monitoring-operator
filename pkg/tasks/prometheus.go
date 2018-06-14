@@ -15,10 +15,13 @@
 package tasks
 
 import (
+	"encoding/json"
+
 	"github.com/golang/glog"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type PrometheusTask struct {
@@ -57,6 +60,24 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.CreateIfNotExistSecret(ps)
 	if err != nil {
 		return errors.Wrap(err, "creating Prometheus proxy Secret failed")
+	}
+
+	c := t.client.KubernetesInterface()
+	cm, err := c.CoreV1().ConfigMaps(t.client.Namespace()).Get("grafana-datasources", metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve Grafana datasources config")
+	}
+	d := &manifests.GrafanaDatasources{}
+	err = json.Unmarshal([]byte(cm.Data["prometheus.yaml"]), d)
+
+	hs, err := t.factory.PrometheusK8sHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus htpasswd Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(hs)
+	if err != nil {
+		return errors.Wrap(err, "creating Prometheus htpasswd Secret failed")
 	}
 
 	sa, err := t.factory.PrometheusK8sServiceAccount()
