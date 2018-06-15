@@ -38,6 +38,7 @@ spec:
         name: kube-rbac-proxy
         ports:
         - containerPort: 9100
+          hostPort: 9100
           name: https
         resources:
           limits:
@@ -50,6 +51,8 @@ spec:
         - mountPath: /etc/tls/private
           name: node-exporter-tls
           readOnly: false
+      hostNetwork: true
+      hostPID: true
       nodeSelector:
         beta.kubernetes.io/os: linux
       securityContext: {}
