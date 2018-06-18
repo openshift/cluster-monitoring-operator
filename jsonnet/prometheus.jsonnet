@@ -151,6 +151,11 @@ local namespacesRole = policyRule.new() +
       secret.mixin.metadata.withNamespace($._config.namespace) +
       secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
 
+    htpasswdSecret:
+      secret.new('prometheus-k8s-htpasswd', {}) +
+      secret.mixin.metadata.withNamespace($._config.namespace) +
+      secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
+
     // This changes the kubelet's certificates to be validated when
     // scraping.
 
@@ -246,6 +251,7 @@ local namespacesRole = policyRule.new() +
           secrets: [
             'prometheus-k8s-tls',
             'prometheus-k8s-proxy',
+            'prometheus-k8s-htpasswd',
           ],
           serviceMonitorSelector: selector.withMatchExpressions({ key: 'k8s-app', operator: 'Exists' }),
           serviceMonitorNamespaceSelector: selector.withMatchExpressions({ key: 'openshift.io/cluster-monitoring', operator: 'Exists' }),
@@ -253,7 +259,7 @@ local namespacesRole = policyRule.new() +
           containers: [
             {
               name: 'prometheus-proxy',
-              image: 'openshift/oauth-proxy:v1.1.0',
+              image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
               resources: {},
               ports: [
                 {
@@ -267,6 +273,7 @@ local namespacesRole = policyRule.new() +
                 '-http-address=',
                 '-email-domain=*',
                 '-upstream=http://localhost:9090',
+                '-htpasswd-file=/etc/proxy/htpasswd/auth',
                 '-openshift-service-account=prometheus-k8s',
                 '-openshift-sar={"resource": "namespaces", "verb": "get"}',
                 '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
@@ -286,6 +293,10 @@ local namespacesRole = policyRule.new() +
                 {
                   mountPath: '/etc/proxy/secrets',
                   name: 'secret-prometheus-k8s-proxy',
+                },
+                {
+                  mountPath: '/etc/proxy/htpasswd',
+                  name: 'secret-prometheus-k8s-htpasswd',
                 },
               ],
             },

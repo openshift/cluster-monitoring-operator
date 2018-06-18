@@ -107,6 +107,10 @@ func (c *Client) KubernetesInterface() kubernetes.Interface {
 	return c.kclient
 }
 
+func (c *Client) Namespace() string {
+	return c.namespace
+}
+
 // ConfigMapListWatch returns a new ListWatch on the ConfigMap resource.
 func (c *Client) ConfigMapListWatch() *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", c.namespace, fields.Everything())
@@ -453,6 +457,16 @@ func (c *Client) CreateIfNotExistSecret(s *v1.Secret) error {
 	return errors.Wrap(err, "retrieving Secret object failed")
 }
 
+func (c *Client) CreateOrUpdateConfigMapList(cml *v1.ConfigMapList) error {
+	for _, cm := range cml.Items {
+		err := c.CreateOrUpdateConfigMap(&cm)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Client) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 	cmClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
 	_, err := cmClient.Get(cm.GetName(), metav1.GetOptions{})
@@ -466,6 +480,17 @@ func (c *Client) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 
 	_, err = cmClient.Update(cm)
 	return errors.Wrap(err, "updating ConfigMap object failed")
+}
+
+func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) error {
+	cClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
+	_, err := cClient.Get(cm.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := cClient.Create(cm)
+		return errors.Wrap(err, "creating ConfigMap object failed")
+	}
+
+	return errors.Wrap(err, "retrieving ConfigMap object failed")
 }
 
 func (c *Client) CreateOrUpdateService(svc *v1.Service) error {

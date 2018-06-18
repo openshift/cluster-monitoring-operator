@@ -16,6 +16,9 @@ package manifests
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -78,6 +81,7 @@ var (
 	PrometheusK8sService                       = "assets/prometheus-k8s/service.yaml"
 	PrometheusK8sProxySecret                   = "assets/prometheus-k8s/proxy-secret.yaml"
 	PrometheusK8sRoute                         = "assets/prometheus-k8s/route.yaml"
+	PrometheusK8sHtpasswd                      = "assets/prometheus-k8s/htpasswd-secret.yaml"
 
 	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole        = "assets/prometheus-operator/cluster-role.yaml"
@@ -87,6 +91,18 @@ var (
 	PrometheusOperatorServiceMonitor     = "assets/prometheus-operator/service-monitor.yaml"
 
 	KubeControllersService = "assets/prometheus-k8s/kube-controllers-service.yaml"
+
+	GrafanaClusterRoleBinding   = "assets/grafana/cluster-role-binding.yaml"
+	GrafanaClusterRole          = "assets/grafana/cluster-role.yaml"
+	GrafanaConfigConfigMap      = "assets/grafana/config.yaml"
+	GrafanaDatasourcesConfigMap = "assets/grafana/dashboard-datasources.yaml"
+	GrafanaDashboardDefinitions = "assets/grafana/dashboard-definitions.yaml"
+	GrafanaDashboardSources     = "assets/grafana/dashboard-sources.yaml"
+	GrafanaDeployment           = "assets/grafana/deployment.yaml"
+	GrafanaProxySecret          = "assets/grafana/proxy-secret.yaml"
+	GrafanaRoute                = "assets/grafana/route.yaml"
+	GrafanaServiceAccount       = "assets/grafana/service-account.yaml"
+	GrafanaService              = "assets/grafana/service.yaml"
 )
 
 var (
@@ -571,6 +587,20 @@ func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(PrometheusK8sHtpasswd))
+	if err != nil {
+		return nil, err
+	}
+
+	h := sha1.New()
+	h.Write([]byte(password))
+	s.Data["auth"] = []byte("internal:{SHA}" + base64.StdEncoding.EncodeToString(h.Sum(nil)))
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 	r, err := f.NewRoute(MustAssetReader(PrometheusK8sRoute))
 	if err != nil {
@@ -784,6 +814,187 @@ func (f *Factory) KubeControllersService() (*v1.Service, error) {
 	return f.NewService(MustAssetReader(KubeControllersService))
 }
 
+func (f *Factory) GrafanaClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(GrafanaClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespace
+
+	return crb, nil
+}
+
+func (f *Factory) GrafanaClusterRole() (*rbacv1beta1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(GrafanaClusterRole))
+}
+
+func (f *Factory) GrafanaConfigConfigMap() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(GrafanaConfigConfigMap))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+
+	return c, nil
+}
+
+type GrafanaDatasources struct {
+	ApiVersion  int                  `json:"apiVersion"`
+	Datasources []*GrafanaDatasource `json:"datasources"`
+}
+
+type GrafanaDatasource struct {
+	Access            string           `json:"access"`
+	BasicAuth         bool             `json:"basicAuth"`
+	BasicAuthPassword string           `json:"basicAuthPassword"`
+	BasicAuthUser     string           `json:"basicAuthUser"`
+	Editable          bool             `json:"editable"`
+	JsonData          *GrafanaJsonData `json:"jsonData"`
+	Name              string           `json:"name"`
+	OrgId             int              `json:"orgId"`
+	Type              string           `json:"type"`
+	Url               string           `json:"url"`
+	Version           int              `json:"version"`
+}
+
+type GrafanaJsonData struct {
+	TlsSkipVerify bool `json:"tlsSkipVerify"`
+}
+
+func (f *Factory) GrafanaDatasources() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(GrafanaDatasourcesConfigMap))
+	if err != nil {
+		return nil, err
+	}
+
+	d := &GrafanaDatasources{}
+	err = json.Unmarshal([]byte(c.Data["prometheus.yaml"]), d)
+	if err != nil {
+		return nil, err
+	}
+	d.Datasources[0].BasicAuthPassword, err = GeneratePassword(255)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := json.MarshalIndent(d, "", "    ")
+	if err != nil {
+		return nil, err
+	}
+	c.Data["prometheus.yaml"] = string(b)
+
+	c.Namespace = f.namespace
+
+	return c, nil
+}
+
+func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
+	cl, err := f.NewConfigMapList(MustAssetReader(GrafanaDashboardDefinitions))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range cl.Items {
+		c.Namespace = f.namespace
+	}
+
+	return cl, nil
+}
+
+func (f *Factory) GrafanaDashboardSources() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(GrafanaDashboardSources))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+
+	return c, nil
+}
+
+func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(MustAssetReader(GrafanaDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	if f.config.GrafanaConfig.BaseImage != "" {
+		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
+		if err != nil {
+			return nil, err
+		}
+		image.repo = f.config.GrafanaConfig.BaseImage
+		d.Spec.Template.Spec.Containers[0].Image = image.String()
+	}
+
+	if f.config.AuthConfig.BaseImage != "" {
+		image, err := imageFromString(d.Spec.Template.Spec.Containers[1].Image)
+		if err != nil {
+			return nil, err
+		}
+		image.repo = f.config.AuthConfig.BaseImage
+		d.Spec.Template.Spec.Containers[1].Image = image.String()
+	}
+
+	d.Namespace = f.namespace
+
+	return d, nil
+}
+
+func (f *Factory) GrafanaProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(GrafanaProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := GeneratePassword(43)
+	if err != nil {
+		return nil, err
+	}
+	s.Data["session_secret"] = []byte(p)
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) GrafanaRoute() (*routev1.Route, error) {
+	r, err := f.NewRoute(MustAssetReader(GrafanaRoute))
+	if err != nil {
+		return nil, err
+	}
+
+	if f.config.GrafanaConfig.Hostport != "" {
+		r.Spec.Host = f.config.GrafanaConfig.Hostport
+	}
+	r.Namespace = f.namespace
+
+	return r, nil
+}
+
+func (f *Factory) GrafanaServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(MustAssetReader(GrafanaServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) GrafanaService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(GrafanaService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func hostFromBaseAddress(baseAddress string) (string, error) {
 	host, _, err := net.SplitHostPort(baseAddress)
 	if err != nil && !IsMissingPortInAddressError(err) {
@@ -896,6 +1107,21 @@ func (f *Factory) NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
 	}
 
 	return cm, nil
+}
+
+func (f *Factory) NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
+	cml, err := NewConfigMapList(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cm := range cml.Items {
+		if cm.GetNamespace() == "" {
+			cm.SetNamespace(f.namespace)
+		}
+	}
+
+	return cml, nil
 }
 
 func (f *Factory) NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
@@ -1088,6 +1314,16 @@ func NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
 	}
 
 	return &cm, nil
+}
+
+func NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
+	cml := v1.ConfigMapList{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cml)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cml, nil
 }
 
 func NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {

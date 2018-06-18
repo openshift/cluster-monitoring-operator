@@ -30,6 +30,7 @@ type Config struct {
 	NodeExporterConfig       *NodeExporterConfig       `json:"nodeExporter"`
 	KubeStateMetricsConfig   *KubeStateMetricsConfig   `json:"kubeStateMetrics"`
 	KubeRbacProxyConfig      *KubeRbacProxyConfig      `json:"kubeRbacProxy"`
+	GrafanaConfig            *GrafanaConfig            `json:"grafana"`
 }
 
 type PrometheusOperatorConfig struct {
@@ -54,6 +55,11 @@ type AlertmanagerMainConfig struct {
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	Hostport            string                    `json:"hostport"`
+}
+
+type GrafanaConfig struct {
+	BaseImage string `json:"baseImage"`
+	Hostport  string `json:"hostport"`
 }
 
 type AuthConfig struct {
@@ -119,6 +125,12 @@ func (c *Config) applyDefaults() {
 	}
 	if c.AlertmanagerMainConfig.Resources == nil {
 		c.AlertmanagerMainConfig.Resources = &v1.ResourceRequirements{}
+	}
+	if c.GrafanaConfig == nil {
+		c.GrafanaConfig = &GrafanaConfig{}
+	}
+	if c.GrafanaConfig.BaseImage == "" {
+		c.GrafanaConfig.BaseImage = "grafana/grafana"
 	}
 	if c.AuthConfig == nil {
 		c.AuthConfig = &AuthConfig{}

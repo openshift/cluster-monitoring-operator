@@ -1,0 +1,139 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    app: grafana
+  name: grafana
+  namespace: openshift-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - image: grafana/grafana:5.1.0
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: http
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: grafana-storage
+          readOnly: false
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: grafana-datasources
+          readOnly: false
+        - mountPath: /etc/grafana/provisioning/dashboards
+          name: grafana-dashboards
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/k8s-cluster-rsrc-use
+          name: grafana-dashboard-k8s-cluster-rsrc-use
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/k8s-node-rsrc-use
+          name: grafana-dashboard-k8s-node-rsrc-use
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/k8s-resources-cluster
+          name: grafana-dashboard-k8s-resources-cluster
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/k8s-resources-namespace
+          name: grafana-dashboard-k8s-resources-namespace
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/k8s-resources-pod
+          name: grafana-dashboard-k8s-resources-pod
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/nodes
+          name: grafana-dashboard-nodes
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/pods
+          name: grafana-dashboard-pods
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/statefulset
+          name: grafana-dashboard-statefulset
+          readOnly: false
+        - mountPath: /etc/grafana
+          name: grafana-config
+          readOnly: false
+      - args:
+        - -provider=openshift
+        - -https-address=:3000
+        - -http-address=
+        - -email-domain=*
+        - -upstream=http://localhost:3001
+        - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+        - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+        - -tls-cert=/etc/tls/private/tls.crt
+        - -tls-key=/etc/tls/private/tls.key
+        - -client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token
+        - -cookie-secret-file=/etc/proxy/secrets/session_secret
+        - -openshift-service-account=grafana
+        - -openshift-ca=/etc/pki/tls/cert.pem
+        - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        - -skip-auth-regex=^/metrics
+        image: openshift/oauth-proxy:v1.1.0
+        name: grafana-proxy
+        ports:
+        - containerPort: 3000
+          name: https
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: secret-grafana-tls
+          readOnly: false
+        - mountPath: /etc/proxy/secrets
+          name: secret-grafana-proxy
+          readOnly: false
+      securityContext: {}
+      serviceAccountName: grafana
+      volumes:
+      - emptyDir: {}
+        name: grafana-storage
+      - configMap:
+          name: grafana-datasources
+        name: grafana-datasources
+      - configMap:
+          name: grafana-dashboards
+        name: grafana-dashboards
+      - configMap:
+          name: grafana-dashboard-k8s-cluster-rsrc-use
+        name: grafana-dashboard-k8s-cluster-rsrc-use
+      - configMap:
+          name: grafana-dashboard-k8s-node-rsrc-use
+        name: grafana-dashboard-k8s-node-rsrc-use
+      - configMap:
+          name: grafana-dashboard-k8s-resources-cluster
+        name: grafana-dashboard-k8s-resources-cluster
+      - configMap:
+          name: grafana-dashboard-k8s-resources-namespace
+        name: grafana-dashboard-k8s-resources-namespace
+      - configMap:
+          name: grafana-dashboard-k8s-resources-pod
+        name: grafana-dashboard-k8s-resources-pod
+      - configMap:
+          name: grafana-dashboard-nodes
+        name: grafana-dashboard-nodes
+      - configMap:
+          name: grafana-dashboard-pods
+        name: grafana-dashboard-pods
+      - configMap:
+          name: grafana-dashboard-statefulset
+        name: grafana-dashboard-statefulset
+      - configMap:
+          name: grafana-config
+        name: grafana-config
+      - name: secret-grafana-tls
+        secret:
+          secretName: grafana-tls
+      - name: secret-grafana-proxy
+        secret:
+          secretName: grafana-proxy
