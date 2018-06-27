@@ -16,7 +16,7 @@ spec:
       tlsConfig:
         caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
         serverName: alertmanager-main
-  baseImage: quay.io/prometheus/prometheus
+  baseImage: openshift/prometheus
   containers:
   - args:
     - -provider=openshift

@@ -10,6 +10,8 @@ data:
       prometheusConfigReloaderBaseImage: quay.io/coreos/prometheus-config-reloader
       configReloaderBaseImage: quay.io/coreos/configmap-reload
     prometheusK8s:
-      baseImage: quay.io/prometheus/prometheus
+      baseImage: openshift/prometheus
     alertmanagerMain:
-      baseImage: quay.io/prometheus/alertmanager
+      baseImage: openshift/prometheus-alertmanager
+    nodeExporter:
+      baseImage: openshift/prometheus-node-exporter
