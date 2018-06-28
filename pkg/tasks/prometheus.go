@@ -63,12 +63,12 @@ func (t *PrometheusTask) Run() error {
 	}
 
 	c := t.client.KubernetesInterface()
-	cm, err := c.CoreV1().ConfigMaps(t.client.Namespace()).Get("grafana-datasources", metav1.GetOptions{})
+	cm, err := c.CoreV1().Secrets(t.client.Namespace()).Get("grafana-datasources", metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve Grafana datasources config")
 	}
 	d := &manifests.GrafanaDatasources{}
-	err = json.Unmarshal([]byte(cm.Data["prometheus.yaml"]), d)
+	err = json.Unmarshal(cm.Data["prometheus.yaml"], d)
 
 	hs, err := t.factory.PrometheusK8sHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
 	if err != nil {

@@ -215,7 +215,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.GrafanaConfigConfigMap()
+	_, err = f.GrafanaConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
