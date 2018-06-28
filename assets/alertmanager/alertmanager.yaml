@@ -6,7 +6,7 @@ metadata:
   name: main
   namespace: openshift-monitoring
 spec:
-  baseImage: quay.io/prometheus/alertmanager
+  baseImage: openshift/prometheus-alertmanager
   containers:
   - args:
     - -provider=openshift

@@ -19,7 +19,7 @@ spec:
         - --web.listen-address=127.0.0.1:9101
         - --path.procfs=/host/proc
         - --path.sysfs=/host/sys
-        image: quay.io/prometheus/node-exporter:v0.15.2
+        image: openshift/prometheus-node-exporter:v0.15.2
         name: node-exporter
         resources: {}
         volumeMounts:
