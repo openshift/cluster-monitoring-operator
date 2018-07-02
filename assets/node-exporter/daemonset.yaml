@@ -34,7 +34,7 @@ spec:
         - --upstream=http://127.0.0.1:9101/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/coreos/kube-rbac-proxy:v0.3.0
+        image: quay.io/coreos/kube-rbac-proxy:v0.3.1
         name: kube-rbac-proxy
         ports:
         - containerPort: 9100

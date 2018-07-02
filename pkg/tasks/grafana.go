@@ -78,24 +78,24 @@ func (t *GrafanaTask) Run() error {
 		return errors.Wrap(err, "creating Grafana proxy Secret failed")
 	}
 
-	cmc, err := t.factory.GrafanaConfigConfigMap()
+	smc, err := t.factory.GrafanaConfig()
 	if err != nil {
-		return errors.Wrap(err, "initializing Grafana Config ConfigMap failed")
+		return errors.Wrap(err, "initializing Grafana Config Secret failed")
 	}
 
-	err = t.client.CreateOrUpdateConfigMap(cmc)
+	err = t.client.CreateOrUpdateSecret(smc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Grafana Config ConfigMap failed")
+		return errors.Wrap(err, "reconciling Grafana Config Secret failed")
 	}
 
-	cmds, err := t.factory.GrafanaDatasources()
+	sds, err := t.factory.GrafanaDatasources()
 	if err != nil {
-		return errors.Wrap(err, "initializing Grafana Datasources ConfigMap failed")
+		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistConfigMap(cmds)
+	err = t.client.CreateIfNotExistSecret(sds)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Grafana Datasources ConfigMap failed")
+		return errors.Wrap(err, "reconciling Grafana Datasources Secret failed")
 	}
 
 	cmdds, err := t.factory.GrafanaDashboardDefinitions()

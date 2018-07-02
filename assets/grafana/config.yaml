@@ -1,19 +1,8 @@
 apiVersion: v1
 data:
-  grafana.ini: |
-    [auth]
-    disable_login_form = true
-    disable_signout_menu = true
-    [auth.basic]
-    enabled = false
-    [auth.proxy]
-    auto_sign_up = true
-    enabled = true
-    header_name = X-Forwarded-User
-    [server]
-    http_addr = 127.0.0.1
-    http_port = 3001
-kind: ConfigMap
+  grafana.ini: W2F1dGhdCmRpc2FibGVfbG9naW5fZm9ybSA9IHRydWUKZGlzYWJsZV9zaWdub3V0X21lbnUgPSB0cnVlClthdXRoLmJhc2ljXQplbmFibGVkID0gZmFsc2UKW2F1dGgucHJveHldCmF1dG9fc2lnbl91cCA9IHRydWUKZW5hYmxlZCA9IHRydWUKaGVhZGVyX25hbWUgPSBYLUZvcndhcmRlZC1Vc2VyCltzZXJ2ZXJdCmh0dHBfYWRkciA9IDEyNy4wLjAuMQpodHRwX3BvcnQgPSAzMDAxCg==
+kind: Secret
 metadata:
   name: grafana-config
   namespace: openshift-monitoring
+type: Opaque

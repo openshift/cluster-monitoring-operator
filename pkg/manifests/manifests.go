@@ -94,8 +94,8 @@ var (
 
 	GrafanaClusterRoleBinding   = "assets/grafana/cluster-role-binding.yaml"
 	GrafanaClusterRole          = "assets/grafana/cluster-role.yaml"
-	GrafanaConfigConfigMap      = "assets/grafana/config.yaml"
-	GrafanaDatasourcesConfigMap = "assets/grafana/dashboard-datasources.yaml"
+	GrafanaConfigSecret         = "assets/grafana/config.yaml"
+	GrafanaDatasourcesSecret    = "assets/grafana/dashboard-datasources.yaml"
 	GrafanaDashboardDefinitions = "assets/grafana/dashboard-definitions.yaml"
 	GrafanaDashboardSources     = "assets/grafana/dashboard-sources.yaml"
 	GrafanaDeployment           = "assets/grafana/deployment.yaml"
@@ -829,15 +829,15 @@ func (f *Factory) GrafanaClusterRole() (*rbacv1beta1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(GrafanaClusterRole))
 }
 
-func (f *Factory) GrafanaConfigConfigMap() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(GrafanaConfigConfigMap))
+func (f *Factory) GrafanaConfig() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(GrafanaConfigSecret))
 	if err != nil {
 		return nil, err
 	}
 
-	c.Namespace = f.namespace
+	s.Namespace = f.namespace
 
-	return c, nil
+	return s, nil
 }
 
 type GrafanaDatasources struct {
@@ -863,14 +863,14 @@ type GrafanaJsonData struct {
 	TlsSkipVerify bool `json:"tlsSkipVerify"`
 }
 
-func (f *Factory) GrafanaDatasources() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(GrafanaDatasourcesConfigMap))
+func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(GrafanaDatasourcesSecret))
 	if err != nil {
 		return nil, err
 	}
 
 	d := &GrafanaDatasources{}
-	err = json.Unmarshal([]byte(c.Data["prometheus.yaml"]), d)
+	err = json.Unmarshal(s.Data["prometheus.yaml"], d)
 	if err != nil {
 		return nil, err
 	}
@@ -883,11 +883,11 @@ func (f *Factory) GrafanaDatasources() (*v1.ConfigMap, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.Data["prometheus.yaml"] = string(b)
+	s.Data["prometheus.yaml"] = b
 
-	c.Namespace = f.namespace
+	s.Namespace = f.namespace
 
-	return c, nil
+	return s, nil
 }
 
 func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {

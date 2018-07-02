@@ -6,12 +6,16 @@ metadata:
 data:
   config.yaml: |+
     prometheusOperator:
-      baseImage: quay.io/coreos/prometheus-operator
-      prometheusConfigReloaderBaseImage: quay.io/coreos/prometheus-config-reloader
-      configReloaderBaseImage: quay.io/coreos/configmap-reload
+      baseImage: quay.io/brancz/prometheus-operator-openshift
+      prometheusConfigReloaderBaseImage: quay.io/brancz/prometheus-config-reloader-openshift
+      configReloaderBaseImage: quay.io/brancz/configmap-reload-openshift
     prometheusK8s:
       baseImage: openshift/prometheus
     alertmanagerMain:
       baseImage: openshift/prometheus-alertmanager
     nodeExporter:
       baseImage: openshift/prometheus-node-exporter
+    kubeRbacProxy:
+      baseImage: quay.io/brancz/kube-rbac-proxy-openshift
+    kubeStateMetrics:
+      baseImage: quay.io/brancz/kube-state-metrics-openshift

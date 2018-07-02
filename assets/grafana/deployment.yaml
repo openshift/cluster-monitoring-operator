@@ -98,9 +98,9 @@ spec:
       volumes:
       - emptyDir: {}
         name: grafana-storage
-      - configMap:
-          name: grafana-datasources
-        name: grafana-datasources
+      - name: grafana-datasources
+        secret:
+          secretName: grafana-datasources
       - configMap:
           name: grafana-dashboards
         name: grafana-dashboards
@@ -128,9 +128,9 @@ spec:
       - configMap:
           name: grafana-dashboard-statefulset
         name: grafana-dashboard-statefulset
-      - configMap:
-          name: grafana-config
-        name: grafana-config
+      - name: grafana-config
+        secret:
+          secretName: grafana-config
       - name: secret-grafana-tls
         secret:
           secretName: grafana-tls

@@ -1,27 +1,8 @@
 apiVersion: v1
 data:
-  prometheus.yaml: |-
-    {
-        "apiVersion": 1,
-        "datasources": [
-            {
-                "access": "proxy",
-                "basicAuth": true,
-                "basicAuthPassword": "",
-                "basicAuthUser": "internal",
-                "editable": false,
-                "jsonData": {
-                    "tlsSkipVerify": true
-                },
-                "name": "prometheus",
-                "orgId": 1,
-                "type": "prometheus",
-                "url": "https://prometheus-k8s.openshift-monitoring.svc:9091",
-                "version": 1
-            }
-        ]
-    }
-kind: ConfigMap
+  prometheus.yaml: ewogICAgImFwaVZlcnNpb24iOiAxLAogICAgImRhdGFzb3VyY2VzIjogWwogICAgICAgIHsKICAgICAgICAgICAgImFjY2VzcyI6ICJwcm94eSIsCiAgICAgICAgICAgICJiYXNpY0F1dGgiOiB0cnVlLAogICAgICAgICAgICAiYmFzaWNBdXRoUGFzc3dvcmQiOiAiIiwKICAgICAgICAgICAgImJhc2ljQXV0aFVzZXIiOiAiaW50ZXJuYWwiLAogICAgICAgICAgICAiZWRpdGFibGUiOiBmYWxzZSwKICAgICAgICAgICAgImpzb25EYXRhIjogewogICAgICAgICAgICAgICAgInRsc1NraXBWZXJpZnkiOiB0cnVlCiAgICAgICAgICAgIH0sCiAgICAgICAgICAgICJuYW1lIjogInByb21ldGhldXMiLAogICAgICAgICAgICAib3JnSWQiOiAxLAogICAgICAgICAgICAidHlwZSI6ICJwcm9tZXRoZXVzIiwKICAgICAgICAgICAgInVybCI6ICJodHRwczovL3Byb21ldGhldXMtazhzLm9wZW5zaGlmdC1tb25pdG9yaW5nLnN2Yzo5MDkxIiwKICAgICAgICAgICAgInZlcnNpb24iOiAxCiAgICAgICAgfQogICAgXQp9
+kind: Secret
 metadata:
   name: grafana-datasources
   namespace: openshift-monitoring
+type: Opaque
