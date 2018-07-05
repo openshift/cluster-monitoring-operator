@@ -31,6 +31,7 @@ type Config struct {
 	KubeStateMetricsConfig   *KubeStateMetricsConfig   `json:"kubeStateMetrics"`
 	KubeRbacProxyConfig      *KubeRbacProxyConfig      `json:"kubeRbacProxy"`
 	GrafanaConfig            *GrafanaConfig            `json:"grafana"`
+	EtcdConfig               *EtcdConfig               `json:"etcd"`
 }
 
 type PrometheusOperatorConfig struct {
@@ -76,6 +77,21 @@ type KubeStateMetricsConfig struct {
 
 type KubeRbacProxyConfig struct {
 	BaseImage string `json:"baseImage"`
+}
+
+type EtcdConfig struct {
+	Enabled   *bool          `json:"enabled"`
+	Targets   EtcdTargets    `json:"targets,omitempty"`
+	TLSConfig *EtcdTLSConfig `json:"tlsConfig"`
+}
+
+type EtcdTargets struct {
+	IPs      []string          `json:"ips"`
+	Selector map[string]string `json:"selector"`
+}
+
+type EtcdTLSConfig struct {
+	ServerName string `json:"serverName"`
 }
 
 func NewConfig(content io.Reader) (*Config, error) {
@@ -155,6 +171,13 @@ func (c *Config) applyDefaults() {
 	}
 	if c.KubeRbacProxyConfig.BaseImage == "" {
 		c.KubeRbacProxyConfig.BaseImage = "quay.io/brancz/kube-rbac-proxy"
+	}
+	if c.EtcdConfig == nil {
+		c.EtcdConfig = &EtcdConfig{}
+	}
+	if c.EtcdConfig.Enabled == nil {
+		falseBool := false
+		c.EtcdConfig.Enabled = &falseBool
 	}
 }
 

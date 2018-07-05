@@ -204,6 +204,18 @@ local namespacesRole = policyRule.new() +
         },
       },
 
+    serviceMonitorEtcd+:
+      {
+        metadata+: {
+          namespace: $._config.namespace,
+        },
+        spec+: {
+          namespaceSelector: {
+            matchNames: ['kube-system'],
+          },
+        },
+      },
+
     // This changes the Prometheuses to be scraped with TLS, authN and
     // authZ, which are not present in kube-prometheus.
 
@@ -248,7 +260,7 @@ local namespacesRole = policyRule.new() +
           },
           securityContext: {},
           resources: {},
-          secrets: [
+          secrets+: [
             'prometheus-k8s-tls',
             'prometheus-k8s-proxy',
             'prometheus-k8s-htpasswd',

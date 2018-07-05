@@ -82,6 +82,10 @@ var (
 	PrometheusK8sProxySecret                   = "assets/prometheus-k8s/proxy-secret.yaml"
 	PrometheusK8sRoute                         = "assets/prometheus-k8s/route.yaml"
 	PrometheusK8sHtpasswd                      = "assets/prometheus-k8s/htpasswd-secret.yaml"
+	PrometheusK8sEtcdService                   = "assets/prometheus-k8s/service-etcd.yaml"
+	PrometheusK8sEtcdEndpoints                 = "assets/prometheus-k8s/endpoints-etcd.yaml"
+	PrometheusK8sEtcdCerts                     = "assets/prometheus-k8s/secret-etcd-certs.yaml"
+	PrometheusK8sEtcdServiceMonitor            = "assets/prometheus-k8s/service-monitor-etcd.yaml"
 
 	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole        = "assets/prometheus-operator/cluster-role.yaml"
@@ -601,6 +605,61 @@ func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, erro
 	return s, nil
 }
 
+func (f *Factory) PrometheusK8sEtcdService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(PrometheusK8sEtcdService))
+	if err != nil {
+		return nil, err
+	}
+
+	if f.config.EtcdConfig.Targets.Selector != nil {
+		s.Spec.Selector = f.config.EtcdConfig.Targets.Selector
+	}
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusK8sEtcdEndpoints() (*v1.Endpoints, error) {
+	e, err := f.NewEndpoints(MustAssetReader(PrometheusK8sEtcdEndpoints))
+	if err != nil {
+		return nil, err
+	}
+
+	if f.config.EtcdConfig.Targets.IPs != nil {
+		addresses := []v1.EndpointAddress{}
+		for _, ip := range f.config.EtcdConfig.Targets.IPs {
+			addresses = append(addresses, v1.EndpointAddress{IP: ip})
+		}
+		e.Subsets[0].Addresses = addresses
+	}
+
+	return e, nil
+}
+
+func (f *Factory) PrometheusK8sEtcdCerts() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(PrometheusK8sEtcdCerts))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sEtcdServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	if f.config.EtcdConfig.TLSConfig != nil && f.config.EtcdConfig.TLSConfig.ServerName != "" {
+		s.Spec.Endpoints[0].TLSConfig.ServerName = f.config.EtcdConfig.TLSConfig.ServerName
+	}
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 	r, err := f.NewRoute(MustAssetReader(PrometheusK8sRoute))
 	if err != nil {
@@ -1044,6 +1103,19 @@ func (f *Factory) NewService(manifest io.Reader) (*v1.Service, error) {
 	return s, nil
 }
 
+func (f *Factory) NewEndpoints(manifest io.Reader) (*v1.Endpoints, error) {
+	e, err := NewEndpoints(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	if e.GetNamespace() == "" {
+		e.SetNamespace(f.namespace)
+	}
+
+	return e, nil
+}
+
 func (f *Factory) NewRoute(manifest io.Reader) (*routev1.Route, error) {
 	r, err := NewRoute(manifest)
 	if err != nil {
@@ -1245,6 +1317,16 @@ func NewService(manifest io.Reader) (*v1.Service, error) {
 	}
 
 	return &s, nil
+}
+
+func NewEndpoints(manifest io.Reader) (*v1.Endpoints, error) {
+	e := v1.Endpoints{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&e)
+	if err != nil {
+		return nil, err
+	}
+
+	return &e, nil
 }
 
 func NewRoute(manifest io.Reader) (*routev1.Route, error) {

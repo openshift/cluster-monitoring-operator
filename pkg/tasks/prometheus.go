@@ -27,12 +27,14 @@ import (
 type PrometheusTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.Config
 }
 
-func NewPrometheusTask(client *client.Client, factory *manifests.Factory) *PrometheusTask {
+func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *PrometheusTask {
 	return &PrometheusTask{
 		client:  client,
 		factory: factory,
+		config:  config,
 	}
 }
 
@@ -228,6 +230,40 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.CreateOrUpdateServiceMonitor(smkc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus kube-controllers ServiceMonitor failed")
+	}
+
+	if t.config.EtcdConfig != nil && t.config.EtcdConfig.Enabled != nil && *t.config.EtcdConfig.Enabled {
+		svc, err := t.factory.PrometheusK8sEtcdService()
+		if err != nil {
+			return errors.Wrap(err, "initializing etcd Service failed")
+		}
+
+		err = t.client.CreateOrUpdateService(svc)
+		if err != nil {
+			return errors.Wrap(err, "reconciling etcd Service failed")
+		}
+
+		if t.config.EtcdConfig.Targets.IPs != nil {
+			endpoints, err := t.factory.PrometheusK8sEtcdEndpoints()
+			if err != nil {
+				return errors.Wrap(err, "initializing etcd Endpoints failed")
+			}
+
+			err = t.client.CreateOrUpdateEndpoints(endpoints)
+			if err != nil {
+				return errors.Wrap(err, "reconciling etcd Endpoints failed")
+			}
+		}
+
+		sme, err := t.factory.PrometheusK8sEtcdServiceMonitor()
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus etcd ServiceMonitor failed")
+		}
+
+		err = t.client.CreateOrUpdateServiceMonitor(sme)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus etcd ServiceMonitor failed")
+		}
 	}
 
 	smp, err := t.factory.PrometheusK8sPrometheusServiceMonitor()

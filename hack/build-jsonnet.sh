@@ -50,3 +50,6 @@ rm -rf "assets/prometheus-operator/0servicemonitor-custom-resource-definition.ya
 rm -rf "assets/prometheus-k8s/service-monitor-core-d-n-s.yaml"
 rm -rf "assets/prometheus-k8s/service-monitor-kube-controller-manager.yaml"
 rm -rf "assets/prometheus-k8s/service-monitor-kube-scheduler.yaml"
+rm -rf "assets/prometheus-k8s/service-monitor-kube-scheduler.yaml"
+rm -rf "assets/prometheus-k8s/secret-etcd-certs.yaml"
+

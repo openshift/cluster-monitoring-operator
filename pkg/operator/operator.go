@@ -205,14 +205,16 @@ func (o *Operator) enqueue(obj interface{}) {
 }
 
 func (o *Operator) sync(key string) error {
-	factory := manifests.NewFactory(o.namespace, o.Config())
+	config := o.Config()
+
+	factory := manifests.NewFactory(o.namespace, config)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
 		[]*tasks.TaskSpec{
 			tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory)),
+			tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
 			tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
