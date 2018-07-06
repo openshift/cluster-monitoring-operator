@@ -561,6 +561,16 @@ func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
+	if f.config.EtcdConfig == nil {
+		groups := []monv1.RuleGroup{}
+		for _, g := range r.Spec.Groups {
+			if g.Name != "etcd" {
+				groups = append(groups, g)
+			}
+		}
+		r.Spec.Groups = groups
+	}
+
 	return r, nil
 }
 
@@ -611,7 +621,7 @@ func (f *Factory) PrometheusK8sEtcdService() (*v1.Service, error) {
 		return nil, err
 	}
 
-	if f.config.EtcdConfig.Targets.Selector != nil {
+	if f.config.EtcdConfig != nil && f.config.EtcdConfig.Targets.Selector != nil {
 		s.Spec.Selector = f.config.EtcdConfig.Targets.Selector
 	}
 
@@ -624,7 +634,7 @@ func (f *Factory) PrometheusK8sEtcdEndpoints() (*v1.Endpoints, error) {
 		return nil, err
 	}
 
-	if f.config.EtcdConfig.Targets.IPs != nil {
+	if f.config.EtcdConfig != nil && f.config.EtcdConfig.Targets.IPs != nil {
 		addresses := []v1.EndpointAddress{}
 		for _, ip := range f.config.EtcdConfig.Targets.IPs {
 			addresses = append(addresses, v1.EndpointAddress{IP: ip})
@@ -652,7 +662,7 @@ func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, erro
 		return nil, err
 	}
 
-	if f.config.EtcdConfig.TLSConfig != nil && f.config.EtcdConfig.TLSConfig.ServerName != "" {
+	if f.config.EtcdConfig != nil && f.config.EtcdConfig.TLSConfig != nil && f.config.EtcdConfig.TLSConfig.ServerName != "" {
 		s.Spec.Endpoints[0].TLSConfig.ServerName = f.config.EtcdConfig.TLSConfig.ServerName
 	}
 	s.Namespace = f.namespace
@@ -955,9 +965,18 @@ func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
 		return nil, err
 	}
 
+	configmaps := []v1.ConfigMap{}
 	for _, c := range cl.Items {
 		c.Namespace = f.namespace
+		if f.config.EtcdConfig == nil {
+			if c.GetName() != "grafana-dashboard-etcd" {
+				configmaps = append(configmaps, c)
+			}
+		} else {
+			configmaps = append(configmaps, c)
+		}
 	}
+	cl.Items = configmaps
 
 	return cl, nil
 }

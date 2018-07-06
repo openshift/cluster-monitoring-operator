@@ -172,13 +172,6 @@ func (c *Config) applyDefaults() {
 	if c.KubeRbacProxyConfig.BaseImage == "" {
 		c.KubeRbacProxyConfig.BaseImage = "quay.io/brancz/kube-rbac-proxy"
 	}
-	if c.EtcdConfig == nil {
-		c.EtcdConfig = &EtcdConfig{}
-	}
-	if c.EtcdConfig.Enabled == nil {
-		falseBool := false
-		c.EtcdConfig.Enabled = &falseBool
-	}
 }
 
 func NewConfigFromString(content string) (*Config, error) {

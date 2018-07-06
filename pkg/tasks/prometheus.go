@@ -232,7 +232,7 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus kube-controllers ServiceMonitor failed")
 	}
 
-	if t.config.EtcdConfig != nil && t.config.EtcdConfig.Enabled != nil && *t.config.EtcdConfig.Enabled {
+	if t.config.EtcdConfig != nil {
 		svc, err := t.factory.PrometheusK8sEtcdService()
 		if err != nil {
 			return errors.Wrap(err, "initializing etcd Service failed")

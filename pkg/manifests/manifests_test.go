@@ -526,3 +526,81 @@ kubeRbacProxy:
 		t.Fatalf("expected: %v\ngot:\n%s", expected, actual)
 	}
 }
+
+func TestPrometheusEtcdRulesFiltered(t *testing.T) {
+	f := NewFactory("openshift-monitoring", NewDefaultConfig())
+
+	r, err := f.PrometheusK8sRules()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, g := range r.Spec.Groups {
+		if g.Name == "etcd" {
+			t.Fatal("etcd rules found, even if etcd is disabled")
+		}
+	}
+}
+
+func TestPrometheusEtcdRules(t *testing.T) {
+	c, err := NewConfigFromString(`etcd: {}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", c)
+
+	r, err := f.PrometheusK8sRules()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := false
+	for _, g := range r.Spec.Groups {
+		if g.Name == "etcd" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("etcd rules not found, even if etcd is enabled")
+	}
+}
+
+func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
+	f := NewFactory("openshift-monitoring", NewDefaultConfig())
+
+	cms, err := f.GrafanaDashboardDefinitions()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, cm := range cms.Items {
+		if cm.Name == "grafana-dashboard-etcd" {
+			t.Fatal("etcd dashboard found, even if etcd is disabled")
+		}
+	}
+}
+
+func TestEtcdGrafanaDashboard(t *testing.T) {
+	c, err := NewConfigFromString(`etcd: {}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", c)
+
+	cms, err := f.GrafanaDashboardDefinitions()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := false
+	for _, cm := range cms.Items {
+		if cm.Name == "grafana-dashboard-etcd" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("etcd dashboard not found, even if etcd is enabled")
+	}
+}
