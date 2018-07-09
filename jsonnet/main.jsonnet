@@ -9,8 +9,6 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                },
                versions+:: {
                  openshiftOauthProxy: 'v1.1.0',
-                 prometheus: 'v2.2.1',
-                 alertmanager: 'v0.14.0',
                },
              },
            } +
