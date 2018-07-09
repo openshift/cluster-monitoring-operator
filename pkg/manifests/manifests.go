@@ -345,6 +345,10 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.Containers[2].Image = image.String()
 	}
 
+	if f.config.KubeStateMetricsConfig.NodeSelector != nil {
+		d.Spec.Template.Spec.NodeSelector = f.config.KubeStateMetricsConfig.NodeSelector
+	}
+
 	d.Namespace = f.namespace
 
 	return d, nil
@@ -936,6 +940,10 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 		}
 		image.repo = f.config.AuthConfig.BaseImage
 		d.Spec.Template.Spec.Containers[1].Image = image.String()
+	}
+
+	if f.config.GrafanaConfig.NodeSelector != nil {
+		d.Spec.Template.Spec.NodeSelector = f.config.GrafanaConfig.NodeSelector
 	}
 
 	d.Namespace = f.namespace

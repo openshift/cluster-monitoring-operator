@@ -58,8 +58,9 @@ type AlertmanagerMainConfig struct {
 }
 
 type GrafanaConfig struct {
-	BaseImage string `json:"baseImage"`
-	Hostport  string `json:"hostport"`
+	BaseImage    string            `json:"baseImage"`
+	NodeSelector map[string]string `json:"nodeSelector"`
+	Hostport     string            `json:"hostport"`
 }
 
 type AuthConfig struct {
@@ -71,7 +72,8 @@ type NodeExporterConfig struct {
 }
 
 type KubeStateMetricsConfig struct {
-	BaseImage string `json:"baseImage"`
+	BaseImage    string            `json:"baseImage"`
+	NodeSelector map[string]string `json:"nodeSelector"`
 }
 
 type KubeRbacProxyConfig struct {
