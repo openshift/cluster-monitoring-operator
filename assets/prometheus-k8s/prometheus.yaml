@@ -58,6 +58,7 @@ spec:
       prometheus: k8s
       role: alert-rules
   secrets:
+  - kube-etcd-client-certs
   - prometheus-k8s-tls
   - prometheus-k8s-proxy
   - prometheus-k8s-htpasswd

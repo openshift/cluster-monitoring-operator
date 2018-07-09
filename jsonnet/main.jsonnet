@@ -1,4 +1,5 @@
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
+           (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
            {
              _config+:: {
                imageRepos+:: {
@@ -9,6 +10,13 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                },
                versions+:: {
                  openshiftOauthProxy: 'v1.1.0',
+               },
+               etcd+:: {
+                 ips: [],
+                 clientCA: '',
+                 clientKey: '',
+                 clientCert: '',
+                 serverName: '',
                },
              },
            } +

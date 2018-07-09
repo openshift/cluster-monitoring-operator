@@ -19,3 +19,9 @@ data:
       baseImage: quay.io/brancz/kube-rbac-proxy-openshift
     kubeStateMetrics:
       baseImage: quay.io/brancz/kube-state-metrics-openshift
+    etcd:
+      enabled: true
+      targets:
+        selector:
+          openshift.io/component: etcd
+          openshift.io/control-plane: "true"

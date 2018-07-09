@@ -512,6 +512,22 @@ func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
 	return errors.Wrap(err, "updating Service object failed")
 }
 
+func (c *Client) CreateOrUpdateEndpoints(endpoints *v1.Endpoints) error {
+	eclient := c.kclient.CoreV1().Endpoints(endpoints.GetNamespace())
+	e, err := eclient.Get(endpoints.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err = eclient.Create(endpoints)
+		return errors.Wrap(err, "creating Endpoints object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving Endpoints object failed")
+	}
+
+	endpoints.ResourceVersion = e.ResourceVersion
+	_, err = eclient.Update(endpoints)
+	return errors.Wrap(err, "updating Endpoints object failed")
+}
+
 func (c *Client) CreateOrUpdateRoleBinding(rb *rbacv1beta1.RoleBinding) error {
 	rbClient := c.kclient.RbacV1beta1().RoleBindings(rb.GetNamespace())
 	_, err := rbClient.Get(rb.GetName(), metav1.GetOptions{})

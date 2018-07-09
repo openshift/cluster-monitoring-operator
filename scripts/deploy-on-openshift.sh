@@ -23,4 +23,5 @@ oc label ns/openshift-monitoring openshift.io/cluster-monitoring=true
 oc apply -f manifests/cluster-monitoring-operator-role.yaml
 oc apply -f manifests/cluster-monitoring-operator-role-binding.yaml
 oc apply -f manifests/cluster-monitoring-config.yaml
+oc apply -f manifests/secret-etcd-certs.yaml
 oc apply -f manifests/cluster-monitoring-operator.yaml
