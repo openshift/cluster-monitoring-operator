@@ -33,7 +33,7 @@ import (
 
 const (
 	governingServiceName   = "alertmanager-operated"
-	defaultVersion         = "v0.14.0"
+	defaultVersion         = "v0.15.0"
 	secretsDir             = "/etc/alertmanager/secrets/"
 	alertmanagerConfDir    = "/etc/alertmanager/config"
 	alertmanagerConfFile   = alertmanagerConfDir + "/alertmanager.yaml"
@@ -117,7 +117,9 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 		})
 	} else {
 		pvcTemplate := storageSpec.VolumeClaimTemplate
-		pvcTemplate.Name = volumeName(am.Name)
+		if pvcTemplate.Name == "" {
+			pvcTemplate.Name = volumeName(am.Name)
+		}
 		pvcTemplate.Spec.AccessModes = []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce}
 		pvcTemplate.Spec.Resources = storageSpec.VolumeClaimTemplate.Spec.Resources
 		pvcTemplate.Spec.Selector = storageSpec.VolumeClaimTemplate.Spec.Selector
@@ -164,7 +166,11 @@ func makeStatefulSetService(p *monitoringv1.Alertmanager, config Config) *v1.Ser
 }
 
 func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.StatefulSetSpec, error) {
-	image := fmt.Sprintf("%s:%s", a.Spec.BaseImage, a.Spec.Version)
+	tag := a.Spec.Version
+	if a.Spec.Tag != "" {
+		tag = a.Spec.Tag
+	}
+	image := fmt.Sprintf("%s:%s", a.Spec.BaseImage, tag)
 	versionStr := strings.TrimLeft(a.Spec.Version, "v")
 
 	version, err := semver.Parse(versionStr)
@@ -321,13 +327,21 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 			},
 		},
 	}
+
+	volName := volumeName(a.Name)
+	if a.Spec.Storage != nil {
+		if a.Spec.Storage.VolumeClaimTemplate.Name != "" {
+			volName = a.Spec.Storage.VolumeClaimTemplate.Name
+		}
+	}
+
 	amVolumeMounts := []v1.VolumeMount{
 		{
 			Name:      "config-volume",
 			MountPath: alertmanagerConfDir,
 		},
 		{
-			Name:      volumeName(a.Name),
+			Name:      volName,
 			MountPath: alertmanagerStorageDir,
 			SubPath:   subPathForStorage(a.Spec.Storage),
 		},

@@ -120,7 +120,7 @@ func (f *Framework) setupPrometheusOperator(opImage string) error {
 		return errors.Wrap(err, "failed to create prometheus cluster role")
 	}
 
-	deploy, err := MakeDeployment("../../example/rbac/prometheus-operator/prometheus-operator.yaml")
+	deploy, err := MakeDeployment("../../example/rbac/prometheus-operator/prometheus-operator-deployment.yaml")
 	if err != nil {
 		return err
 	}
@@ -136,9 +136,14 @@ func (f *Framework) setupPrometheusOperator(opImage string) error {
 				repoAndTag,
 			)
 		}
-		deploy.Spec.Template.Spec.Containers[0].Args[1] = "--prometheus-config-reloader=" +
-			"quay.io/coreos/prometheus-config-reloader:" +
-			repoAndTag[1]
+		// Override Prometheus config reloader image
+		for i, arg := range deploy.Spec.Template.Spec.Containers[0].Args {
+			if strings.Contains(arg, "--prometheus-config-reloader=") {
+				deploy.Spec.Template.Spec.Containers[0].Args[i] = "--prometheus-config-reloader=" +
+					"quay.io/coreos/prometheus-config-reloader:" +
+					repoAndTag[1]
+			}
+		}
 	}
 
 	deploy.Spec.Template.Spec.Containers[0].Args = append(deploy.Spec.Template.Spec.Containers[0].Args, "--log-level=all")

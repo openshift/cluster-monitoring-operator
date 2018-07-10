@@ -40,9 +40,12 @@ func GetCustomResourceValidation(name string, fn func(ref common.ReferenceCallba
 	openapiSpec := fn(OpenAPIRefCallBack)
 	fixKnownTypes(openapiSpec)
 	schema := openapiSpec[name].Schema
-	return &extensionsobj.CustomResourceValidation{
+	crv := &extensionsobj.CustomResourceValidation{
 		OpenAPIV3Schema: SchemaPropsToJSONProps(&schema, openapiSpec, true),
 	}
+	crv.OpenAPIV3Schema.Description = ""
+	crv.OpenAPIV3Schema.Required = nil
+	return crv
 }
 
 // ref: https://github.com/kubernetes/kubernetes/issues/62329
