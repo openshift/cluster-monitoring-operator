@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"k8s.io/api/core/v1"
@@ -41,7 +40,7 @@ func (f *Framework) MakeBasicPrometheus(ns, name, group string, replicas int32) 
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			Replicas: &replicas,
-			Version:  prometheus.DefaultVersion,
+			Version:  prometheus.DefaultPrometheusVersion,
 			ServiceMonitorSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"group": group,
@@ -147,6 +146,48 @@ func (f *Framework) MakePrometheusService(name, group string, serviceType v1.Ser
 	return service
 }
 
+func (f *Framework) MakeThanosQuerierService(name string) *v1.Service {
+	service := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				v1.ServicePort{
+					Name:       "http-query",
+					Port:       10902,
+					TargetPort: intstr.FromString("http"),
+				},
+			},
+			Selector: map[string]string{
+				"app": "thanos-query",
+			},
+		},
+	}
+	return service
+}
+
+func (f *Framework) MakeThanosService(name string) *v1.Service {
+	service := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				v1.ServicePort{
+					Name:       "cluster",
+					Port:       10900,
+					TargetPort: intstr.FromString("cluster"),
+				},
+			},
+			Selector: map[string]string{
+				"thanos-peer": "true",
+			},
+		},
+	}
+	return service
+}
+
 func (f *Framework) CreatePrometheusAndWaitUntilReady(ns string, p *monitoringv1.Prometheus) error {
 	_, err := f.MonClientV1.Prometheuses(ns).Create(p)
 	if err != nil {
@@ -173,19 +214,22 @@ func (f *Framework) UpdatePrometheusAndWaitUntilReady(ns string, p *monitoringv1
 }
 
 func (f *Framework) WaitForPrometheusReady(p *monitoringv1.Prometheus, timeout time.Duration) error {
+	var pollErr error
+
 	err := wait.Poll(2*time.Second, timeout, func() (bool, error) {
-		st, _, err := prometheus.PrometheusStatus(f.KubeClient, p)
-		if err != nil {
-			log.Print(err)
+		st, _, pollErr := prometheus.PrometheusStatus(f.KubeClient, p)
+
+		if pollErr != nil {
 			return false, nil
 		}
+
 		if st.UpdatedReplicas == *p.Spec.Replicas {
 			return true, nil
-		} else {
-			return false, nil
 		}
+
+		return false, nil
 	})
-	return errors.Wrapf(err, "waiting for Prometheus %v/%v", p.Namespace, p.Name)
+	return errors.Wrapf(pollErr, "waiting for Prometheus %v/%v: %v", p.Namespace, p.Name, err)
 }
 
 func (f *Framework) DeletePrometheusAndWaitUntilGone(ns, name string) error {

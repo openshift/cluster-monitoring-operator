@@ -42,3 +42,9 @@ func imageFromString(s string) (*image, error) {
 func (i *image) String() string {
 	return i.repo + ":" + i.tag
 }
+
+func (i *image) SetTagIfNotEmpty(tag string) {
+	if tag != "" {
+		i.tag = tag
+	}
+}

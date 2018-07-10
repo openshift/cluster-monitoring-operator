@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package dynamic
+package deprecated_dynamic
 
 import (
 	"sync"
@@ -113,7 +113,7 @@ func (c *clientPoolImpl) ClientForGroupVersionKind(kind schema.GroupVersionKind)
 	// we need to make a client
 	conf.GroupVersion = &gv
 
-	dynamicClient, err := NewClient(conf)
+	dynamicClient, err := NewClient(conf, gv)
 	if err != nil {
 		return nil, err
 	}
