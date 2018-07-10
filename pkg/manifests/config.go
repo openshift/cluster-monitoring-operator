@@ -35,14 +35,18 @@ type Config struct {
 }
 
 type PrometheusOperatorConfig struct {
-	BaseImage                string `json:"baseImage"`
-	PrometheusConfigReloader string `json:"prometheusConfigReloaderBaseImage"`
-	ConfigReloaderImage      string `json:"configReloaderBaseImage"`
+	BaseImage                   string `json:"baseImage"`
+	Tag                         string `json:"-"`
+	PrometheusConfigReloader    string `json:"prometheusConfigReloaderBaseImage"`
+	PrometheusConfigReloaderTag string `json:"-"`
+	ConfigReloaderImage         string `json:"configReloaderBaseImage"`
+	ConfigReloaderTag           string `json:"-"`
 }
 
 type PrometheusK8sConfig struct {
 	Retention           string                    `json:"retention"`
 	BaseImage           string                    `json:"baseImage"`
+	Tag                 string                    `json:"-"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	ExternalLabels      map[string]string         `json:"externalLabels"`
@@ -52,6 +56,7 @@ type PrometheusK8sConfig struct {
 
 type AlertmanagerMainConfig struct {
 	BaseImage           string                    `json:"baseImage"`
+	Tag                 string                    `json:"-"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
@@ -60,25 +65,30 @@ type AlertmanagerMainConfig struct {
 
 type GrafanaConfig struct {
 	BaseImage    string            `json:"baseImage"`
+	Tag          string            `json:"-"`
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Hostport     string            `json:"hostport"`
 }
 
 type AuthConfig struct {
 	BaseImage string `json:"baseImage"`
+	Tag       string `json:"-"`
 }
 
 type NodeExporterConfig struct {
 	BaseImage string `json:"baseImage"`
+	Tag       string `json:"-"`
 }
 
 type KubeStateMetricsConfig struct {
 	BaseImage    string            `json:"baseImage"`
+	Tag          string            `json:"-"`
 	NodeSelector map[string]string `json:"nodeSelector"`
 }
 
 type KubeRbacProxyConfig struct {
 	BaseImage string `json:"baseImage"`
+	Tag       string `json:"-"`
 }
 
 type EtcdConfig struct {
@@ -174,6 +184,19 @@ func (c *Config) applyDefaults() {
 	if c.KubeRbacProxyConfig.BaseImage == "" {
 		c.KubeRbacProxyConfig.BaseImage = "quay.io/brancz/kube-rbac-proxy"
 	}
+}
+
+func (c *Config) SetTagOverrides(tagOverrides map[string]string) {
+	c.PrometheusOperatorConfig.Tag, _ = tagOverrides["prometheus-operator"]
+	c.PrometheusOperatorConfig.PrometheusConfigReloaderTag, _ = tagOverrides["prometheus-config-reloader"]
+	c.PrometheusOperatorConfig.ConfigReloaderTag, _ = tagOverrides["config-reloader"]
+	c.PrometheusK8sConfig.Tag, _ = tagOverrides["prometheus"]
+	c.AlertmanagerMainConfig.Tag, _ = tagOverrides["alertmanager"]
+	c.GrafanaConfig.Tag, _ = tagOverrides["grafana"]
+	c.AuthConfig.Tag, _ = tagOverrides["oauth-proxy"]
+	c.NodeExporterConfig.Tag, _ = tagOverrides["node-exporter"]
+	c.KubeStateMetricsConfig.Tag, _ = tagOverrides["kube-state-metrics"]
+	c.KubeRbacProxyConfig.Tag, _ = tagOverrides["kube-rbac-proxy"]
 }
 
 func NewConfigFromString(content string) (*Config, error) {

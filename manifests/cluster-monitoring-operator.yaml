@@ -24,6 +24,16 @@ spec:
         - "-configmap=cluster-monitoring-config"
         - "-logtostderr=true"
         - "-v=4"
+        #- "-tags=prometheus-operator=master"
+        #- "-tags=prometheus-config-reloader=master"
+        #- "-tags=config-reloader=master"
+        #- "-tags=prometheus=master"
+        #- "-tags=alertmanager=master"
+        #- "-tags=grafana=master"
+        #- "-tags=oauth-proxy=master"
+        #- "-tags=node-exporter=master"
+        #- "-tags=kube-state-metrics=master"
+        #- "-tags=kube-rbac-proxy=master"
         resources:
           limits:
             cpu: 20m

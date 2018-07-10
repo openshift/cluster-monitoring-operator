@@ -42,6 +42,7 @@ const (
 type Operator struct {
 	namespace     string
 	configMapName string
+	tagOverrides  map[string]string
 
 	client *client.Client
 
@@ -51,13 +52,14 @@ type Operator struct {
 	queue workqueue.RateLimitingInterface
 }
 
-func New(namespace string, configMapName string) (*Operator, error) {
+func New(namespace string, configMapName string, tagOverrides map[string]string) (*Operator, error) {
 	c, err := client.New(namespace, configMapName)
 	if err != nil {
 		return nil, err
 	}
 
 	o := &Operator{
+		tagOverrides:  tagOverrides,
 		configMapName: configMapName,
 		namespace:     namespace,
 		client:        c,
@@ -206,6 +208,7 @@ func (o *Operator) enqueue(obj interface{}) {
 
 func (o *Operator) sync(key string) error {
 	config := o.Config()
+	config.SetTagOverrides(o.tagOverrides)
 
 	factory := manifests.NewFactory(o.namespace, config)
 

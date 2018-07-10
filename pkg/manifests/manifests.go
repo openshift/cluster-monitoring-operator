@@ -242,6 +242,7 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 
 	if f.config.AlertmanagerMainConfig.BaseImage != "" {
 		a.Spec.BaseImage = f.config.AlertmanagerMainConfig.BaseImage
+		a.Spec.Tag = f.config.AlertmanagerMainConfig.Tag
 	}
 
 	a.Spec.ExternalURL = f.AlertmanagerExternalURL(host).String()
@@ -266,6 +267,7 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 			return nil, err
 		}
 		image.repo = f.config.AuthConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.AuthConfig.Tag)
 		a.Spec.Containers[0].Image = image.String()
 	}
 
@@ -328,6 +330,7 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 			return nil, err
 		}
 		image.repo = f.config.KubeRbacProxyConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.KubeRbacProxyConfig.Tag)
 		d.Spec.Template.Spec.Containers[0].Image = image.String()
 	}
 
@@ -337,6 +340,7 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 			return nil, err
 		}
 		image.repo = f.config.KubeRbacProxyConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.KubeRbacProxyConfig.Tag)
 		d.Spec.Template.Spec.Containers[1].Image = image.String()
 	}
 
@@ -346,6 +350,7 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 			return nil, err
 		}
 		image.repo = f.config.KubeStateMetricsConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.KubeStateMetricsConfig.Tag)
 		d.Spec.Template.Spec.Containers[2].Image = image.String()
 	}
 
@@ -404,6 +409,7 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 			return nil, err
 		}
 		image.repo = f.config.NodeExporterConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.NodeExporterConfig.Tag)
 		ds.Spec.Template.Spec.Containers[0].Image = image.String()
 	}
 
@@ -413,6 +419,7 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 			return nil, err
 		}
 		image.repo = f.config.KubeRbacProxyConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.KubeRbacProxyConfig.Tag)
 		ds.Spec.Template.Spec.Containers[1].Image = image.String()
 	}
 	ds.Namespace = f.namespace
@@ -700,6 +707,7 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 
 	if f.config.PrometheusK8sConfig.BaseImage != "" {
 		p.Spec.BaseImage = f.config.PrometheusK8sConfig.BaseImage
+		p.Spec.Tag = f.config.PrometheusK8sConfig.Tag
 	}
 
 	p.Spec.ExternalURL = f.PrometheusExternalURL(host).String()
@@ -728,6 +736,7 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 			return nil, err
 		}
 		image.repo = f.config.AuthConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.AuthConfig.Tag)
 		p.Spec.Containers[0].Image = image.String()
 	}
 
@@ -832,6 +841,7 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 			return nil, err
 		}
 		image.repo = f.config.PrometheusOperatorConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.PrometheusOperatorConfig.Tag)
 		d.Spec.Template.Spec.Containers[0].Image = image.String()
 	}
 
@@ -843,6 +853,7 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 				return nil, err
 			}
 			image.repo = f.config.PrometheusOperatorConfig.PrometheusConfigReloader
+			image.SetTagIfNotEmpty(f.config.PrometheusOperatorConfig.PrometheusConfigReloaderTag)
 			args[i] = PrometheusConfigReloaderFlag + image.String()
 		}
 
@@ -852,6 +863,7 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 				return nil, err
 			}
 			image.repo = f.config.PrometheusOperatorConfig.ConfigReloaderImage
+			image.SetTagIfNotEmpty(f.config.PrometheusOperatorConfig.ConfigReloaderTag)
 			args[i] = ConfigReloaderImageFlag + image.String()
 		}
 	}
@@ -1008,6 +1020,7 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 			return nil, err
 		}
 		image.repo = f.config.GrafanaConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.GrafanaConfig.Tag)
 		d.Spec.Template.Spec.Containers[0].Image = image.String()
 	}
 
@@ -1017,6 +1030,7 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 			return nil, err
 		}
 		image.repo = f.config.AuthConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.AuthConfig.Tag)
 		d.Spec.Template.Spec.Containers[1].Image = image.String()
 	}
 

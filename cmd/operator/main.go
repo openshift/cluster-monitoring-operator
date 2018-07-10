@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/golang/glog"
@@ -28,10 +29,55 @@ import (
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
 
+type tags map[string]string
+
+func (t *tags) String() string {
+	m := *t
+	slice := m.asSlice()
+	return strings.Join(slice, ",")
+}
+
+func (t *tags) Set(value string) error {
+	m := *t
+	pairs := strings.Split(value, ",")
+	for _, pair := range pairs {
+		splitPair := strings.Split(pair, "=")
+		if len(splitPair) != 2 {
+			return fmt.Errorf("Pair %v is malformed. Key value pairs must be in the form of \"key=value\". Multiple pairs must be comma separated.")
+		}
+		imageName := splitPair[0]
+		imageTag := splitPair[1]
+		m[imageName] = imageTag
+	}
+	return nil
+}
+
+func (t tags) asSlice() []string {
+	pairs := []string{}
+	for name, tag := range t {
+		pairs = append(pairs, name+"="+tag)
+	}
+	return pairs
+}
+
+func (t tags) asMap() map[string]string {
+	res := make(map[string]string, len(t))
+	for k, v := range t {
+		res[k] = v
+	}
+	return res
+}
+
+func (t *tags) Type() string {
+	return "map[string]string"
+}
+
 func Main() int {
 	flagset := flag.CommandLine
 	namespace := flagset.String("namespace", "openshift-monitoring", "Namespace to deploy and manage cluster monitoring stack in.")
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
+	tags := tags{}
+	flag.Var(&tags, "tags", "Tags to use for images.")
 	flag.Parse()
 
 	if *namespace == "" {
@@ -42,7 +88,7 @@ func Main() int {
 		fmt.Fprint(os.Stderr, "`--configmap` flag is required, but not specified.")
 	}
 
-	o, err := cmo.New(*namespace, *configMapName)
+	o, err := cmo.New(*namespace, *configMapName, tags.asMap())
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
