@@ -84,7 +84,10 @@ local tlsVolumeName = 'node-exporter-tls';
                         ],
                       }
                     else
-                      c { resources: {} },
+                      c {
+                        args+: ['--no-collector.wifi'],
+                        resources: {},
+                      },
                   super.containers,
                 ),
               volumes+: [volume.fromSecret(tlsVolumeName, 'node-exporter-tls')],
