@@ -47,6 +47,12 @@ local authorizationRole = policyRule.new() +
 
       config: {
         sections: {
+          paths: {
+            data: '/var/lib/grafana',
+            logs: '/var/lib/grafana/logs',
+            plugins: '/var/lib/grafana/plugins',
+            provisioning: '/etc/grafana/provisioning',
+          },
           server: {
             http_addr: '127.0.0.1',
             http_port: '3001',
@@ -183,6 +189,26 @@ local authorizationRole = policyRule.new() +
                 volume.fromSecret('secret-grafana-proxy', 'grafana-proxy'),
               ],
               securityContext: {},
+            },
+          },
+        },
+      } + {
+        spec+: {
+          template+: {
+            spec+: {
+              containers:
+                std.map(
+                  function(c)
+                    if c.name == 'grafana' then
+                      c {
+                        args+: [
+                          '-config=/etc/grafana/grafana.ini',
+                        ],
+                      }
+                    else
+                      c,
+                  super.containers,
+                ),
             },
           },
         },
