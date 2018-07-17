@@ -16,7 +16,9 @@ spec:
         app: grafana
     spec:
       containers:
-      - image: grafana/grafana:5.1.0
+      - args:
+        - -config=/etc/grafana/grafana.ini
+        image: grafana/grafana:5.1.0
         name: grafana
         ports:
         - containerPort: 3000
