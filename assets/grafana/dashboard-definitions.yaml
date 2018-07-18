@@ -6,7 +6,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "description": "etcd sample Grafana dashboard with Prometheus",
@@ -15,7 +14,6 @@ items:
           "hideControls": false,
           "id": 6,
           "links": [
-
           ],
           "refresh": false,
           "rows": [
@@ -48,7 +46,6 @@ items:
                           "interval": null,
                           "isNew": true,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -89,7 +86,7 @@ items:
                                   "legendFormat": "",
                                   "metric": "etcd_server_has_leader",
                                   "refId": "A",
-                                  "step": 20
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": "",
@@ -107,7 +104,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -128,7 +124,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -136,7 +131,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 5,
                           "stack": false,
@@ -149,7 +143,7 @@ items:
                                   "legendFormat": "RPC Rate",
                                   "metric": "grpc_server_started_total",
                                   "refId": "A",
-                                  "step": 2
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(rate(grpc_server_handled_total{job=\"$cluster\",grpc_type=\"unary\",grpc_code!=\"OK\"}[5m]))",
@@ -158,11 +152,10 @@ items:
                                   "legendFormat": "RPC Failed Rate",
                                   "metric": "grpc_server_handled_total",
                                   "refId": "B",
-                                  "step": 2
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -179,7 +172,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -203,7 +195,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -224,7 +215,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -232,7 +222,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 4,
                           "stack": true,
@@ -244,7 +233,7 @@ items:
                                   "legendFormat": "Watch Streams",
                                   "metric": "grpc_server_handled_total",
                                   "refId": "A",
-                                  "step": 4
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(grpc_server_started_total{job=\"$cluster\",grpc_service=\"etcdserverpb.Lease\",grpc_type=\"bidi_stream\"}) - sum(grpc_server_handled_total{job=\"$cluster\",grpc_service=\"etcdserverpb.Lease\",grpc_type=\"bidi_stream\"})",
@@ -252,11 +241,10 @@ items:
                                   "legendFormat": "Lease Streams",
                                   "metric": "grpc_server_handled_total",
                                   "refId": "B",
-                                  "step": 4
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -273,7 +261,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -306,7 +293,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -315,7 +301,6 @@ items:
                           "error": false,
                           "fill": 0,
                           "grid": {
-
                           },
                           "id": 1,
                           "legend": {
@@ -330,7 +315,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -338,7 +322,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 4,
                           "stack": false,
@@ -352,11 +335,10 @@ items:
                                   "legendFormat": "{{instance}} DB Size",
                                   "metric": "",
                                   "refId": "A",
-                                  "step": 4
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -373,7 +355,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -395,7 +376,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -403,7 +383,6 @@ items:
                           "error": false,
                           "fill": 0,
                           "grid": {
-
                           },
                           "id": 3,
                           "legend": {
@@ -418,7 +397,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -426,7 +404,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 4,
                           "stack": false,
@@ -439,7 +416,7 @@ items:
                                   "legendFormat": "{{instance}} WAL fsync",
                                   "metric": "etcd_disk_wal_fsync_duration_seconds_bucket",
                                   "refId": "A",
-                                  "step": 4
+                                  "step": $resolution
                               },
                               {
                                   "expr": "histogram_quantile(0.99, sum(rate(etcd_disk_backend_commit_duration_seconds_bucket{job=\"$cluster\"}[5m])) by (instance, le))",
@@ -447,11 +424,10 @@ items:
                                   "legendFormat": "{{instance}} DB fsync",
                                   "metric": "etcd_disk_backend_commit_duration_seconds_bucket",
                                   "refId": "B",
-                                  "step": 4
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -468,7 +444,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -490,7 +465,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -511,7 +485,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -519,7 +492,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 4,
                           "stack": false,
@@ -531,11 +503,10 @@ items:
                                   "legendFormat": "{{instance}} Resident Memory",
                                   "metric": "process_resident_memory_bytes",
                                   "refId": "A",
-                                  "step": 4
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -552,7 +523,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -584,7 +554,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -605,7 +574,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -613,7 +581,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 3,
                           "stack": true,
@@ -625,11 +592,10 @@ items:
                                   "legendFormat": "{{instance}} Client Traffic In",
                                   "metric": "etcd_network_client_grpc_received_bytes_total",
                                   "refId": "A",
-                                  "step": 4
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -646,7 +612,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -670,7 +635,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -691,7 +655,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -699,7 +662,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 3,
                           "stack": true,
@@ -711,11 +673,10 @@ items:
                                   "legendFormat": "{{instance}} Client Traffic Out",
                                   "metric": "etcd_network_client_grpc_sent_bytes_total",
                                   "refId": "A",
-                                  "step": 4
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -732,7 +693,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -756,7 +716,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -777,7 +736,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -785,7 +743,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 3,
                           "stack": false,
@@ -797,11 +754,10 @@ items:
                                   "legendFormat": "{{instance}} Peer Traffic In",
                                   "metric": "etcd_network_peer_received_bytes_total",
                                   "refId": "A",
-                                  "step": 4
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -818,7 +774,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -842,7 +797,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -851,7 +805,6 @@ items:
                           "error": false,
                           "fill": 0,
                           "grid": {
-
                           },
                           "id": 16,
                           "legend": {
@@ -866,7 +819,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -874,7 +826,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 3,
                           "stack": false,
@@ -888,11 +839,10 @@ items:
                                   "legendFormat": "{{instance}} Peer Traffic Out",
                                   "metric": "etcd_network_peer_sent_bytes_total",
                                   "refId": "A",
-                                  "step": 4
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -909,7 +859,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -939,7 +888,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -960,7 +908,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -968,7 +915,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 6,
                           "stack": false,
@@ -980,7 +926,7 @@ items:
                                   "legendFormat": "Proposal Failure Rate",
                                   "metric": "etcd_server_proposals_failed_total",
                                   "refId": "A",
-                                  "step": 2
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(etcd_server_proposals_pending{job=\"$cluster\"})",
@@ -988,7 +934,7 @@ items:
                                   "legendFormat": "Proposal Pending Total",
                                   "metric": "etcd_server_proposals_pending",
                                   "refId": "B",
-                                  "step": 2
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(rate(etcd_server_proposals_committed_total{job=\"$cluster\"}[5m]))",
@@ -996,18 +942,17 @@ items:
                                   "legendFormat": "Proposal Commit Rate",
                                   "metric": "etcd_server_proposals_committed_total",
                                   "refId": "C",
-                                  "step": 2
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(rate(etcd_server_proposals_applied_total{job=\"$cluster\"}[5m]))",
                                   "intervalFactor": 2,
                                   "legendFormat": "Proposal Apply Rate",
                                   "refId": "D",
-                                  "step": 2
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1024,7 +969,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1048,7 +992,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "datasource": "$datasource",
@@ -1072,7 +1015,6 @@ items:
                           "lines": true,
                           "linewidth": 2,
                           "links": [
-
                           ],
                           "nullPointMode": "connected",
                           "percentage": false,
@@ -1080,7 +1022,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "span": 6,
                           "stack": false,
@@ -1092,11 +1033,10 @@ items:
                                   "legendFormat": "{{instance}} Total Leader Elections Per Day",
                                   "metric": "etcd_server_leader_changes_seen_total",
                                   "refId": "A",
-                                  "step": 2
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1113,7 +1053,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1143,10 +1082,23 @@ items:
           "sharedCrosshair": false,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -1156,7 +1108,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -1176,7 +1127,6 @@ items:
                       "multi": false,
                       "name": "cluster",
                       "options": [
-
                       ],
                       "query": "label_values(etcd_server_has_leader, job)",
                       "refresh": 1,
@@ -1184,7 +1134,6 @@ items:
                       "sort": 2,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -1236,7 +1185,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "editable": true,
@@ -1244,7 +1192,6 @@ items:
           "graphTooltip": 0,
           "hideControls": false,
           "links": [
-
           ],
           "refresh": "10s",
           "rows": [
@@ -1254,7 +1201,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -1274,7 +1220,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -1282,7 +1227,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -1295,11 +1239,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1316,7 +1259,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1340,7 +1282,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -1360,7 +1301,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -1368,7 +1308,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -1381,11 +1320,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1402,7 +1340,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1438,7 +1375,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -1458,7 +1394,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -1466,7 +1401,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -1479,11 +1413,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1500,7 +1433,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1524,7 +1456,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -1544,7 +1475,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -1552,7 +1482,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -1565,11 +1494,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1586,7 +1514,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1622,7 +1549,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -1642,7 +1568,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -1650,7 +1575,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -1663,11 +1587,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1684,7 +1607,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1708,7 +1630,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -1728,7 +1649,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -1736,7 +1656,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -1749,11 +1668,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1770,7 +1688,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1806,7 +1723,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -1826,7 +1742,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -1834,7 +1749,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -1847,11 +1761,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1868,7 +1781,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1892,7 +1804,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -1912,7 +1823,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -1920,7 +1830,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -1933,11 +1842,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -1954,7 +1862,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -1990,7 +1897,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2010,7 +1916,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2018,7 +1923,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -2031,11 +1935,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
                                   "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2052,7 +1955,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2086,10 +1988,23 @@ items:
           "schemaVersion": 14,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -2099,7 +2014,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -2152,7 +2066,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "editable": true,
@@ -2160,7 +2073,6 @@ items:
           "graphTooltip": 0,
           "hideControls": false,
           "links": [
-
           ],
           "refresh": "10s",
           "rows": [
@@ -2170,7 +2082,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2190,7 +2101,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2198,7 +2108,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -2211,11 +2120,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Utilisation",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2232,7 +2140,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2256,7 +2163,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2276,7 +2182,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2284,7 +2189,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -2297,11 +2201,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Saturation",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2318,7 +2221,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2354,7 +2256,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2374,7 +2275,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2382,7 +2282,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -2395,11 +2294,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Memory",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2416,7 +2314,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2440,7 +2337,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2460,7 +2356,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2468,7 +2363,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -2481,11 +2375,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Swap IO",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2502,7 +2395,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2538,7 +2430,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2558,7 +2449,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2566,7 +2456,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -2579,11 +2468,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Utilisation",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2600,7 +2488,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2624,7 +2511,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2644,7 +2530,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2652,7 +2537,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -2665,11 +2549,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Saturation",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2686,7 +2569,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2722,7 +2604,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2742,7 +2623,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2750,7 +2630,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -2763,11 +2642,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Utilisation",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2784,7 +2662,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2808,7 +2685,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2828,7 +2704,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2836,7 +2711,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -2849,11 +2723,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Saturation",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2870,7 +2743,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -2906,7 +2778,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -2926,7 +2797,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -2934,7 +2804,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -2947,11 +2816,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "Disk",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -2968,7 +2836,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -3002,10 +2869,23 @@ items:
           "schemaVersion": 14,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -3015,7 +2895,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -3035,7 +2914,6 @@ items:
                       "multi": false,
                       "name": "node",
                       "options": [
-
                       ],
                       "query": "label_values(kube_node_info, node)",
                       "refresh": 1,
@@ -3043,7 +2921,6 @@ items:
                       "sort": 2,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -3095,7 +2972,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "editable": true,
@@ -3103,7 +2979,6 @@ items:
           "graphTooltip": 0,
           "hideControls": false,
           "links": [
-
           ],
           "refresh": "10s",
           "rows": [
@@ -3113,7 +2988,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -3134,7 +3008,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -3142,7 +3015,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 3,
@@ -3173,7 +3045,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -3197,7 +3068,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -3218,7 +3088,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -3226,7 +3095,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 3,
@@ -3257,7 +3125,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -3281,7 +3148,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -3302,7 +3168,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -3310,7 +3175,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 3,
@@ -3341,7 +3205,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -3365,7 +3228,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -3386,7 +3248,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -3394,7 +3255,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 3,
@@ -3425,7 +3285,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -3461,7 +3320,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -3481,7 +3339,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -3489,7 +3346,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -3502,11 +3358,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{namespace}}",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -3523,7 +3378,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -3559,7 +3413,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -3579,7 +3432,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -3587,7 +3439,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -3604,7 +3455,6 @@ items:
                                   "alias": "CPU Usage",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -3613,7 +3463,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #A",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -3622,7 +3471,6 @@ items:
                                   "alias": "CPU Requests",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -3631,7 +3479,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #B",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -3640,7 +3487,6 @@ items:
                                   "alias": "CPU Requests %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -3649,7 +3495,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #C",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -3658,7 +3503,6 @@ items:
                                   "alias": "CPU Limits",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -3667,7 +3511,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #D",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -3676,7 +3519,6 @@ items:
                                   "alias": "CPU Limits %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -3685,7 +3527,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #E",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -3694,7 +3535,6 @@ items:
                                   "alias": "Namespace",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -3703,7 +3543,6 @@ items:
                                   "linkUrl": "/d/85a562078cdf77779eaa1add43ccec1e/k8s-resources-namespace?var-datasource=$datasource&var-namespace=$__cell",
                                   "pattern": "namespace",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -3712,13 +3551,11 @@ items:
                                   "alias": "",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
                                   "pattern": "/.*/",
                                   "thresholds": [
-
                                   ],
                                   "type": "string",
                                   "unit": "short"
@@ -3732,7 +3569,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "A",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_requests_cpu_cores) by (namespace)",
@@ -3741,7 +3578,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "B",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(rate(container_cpu_usage_seconds_total[5m])) by (namespace) / sum(kube_pod_container_resource_requests_cpu_cores) by (namespace)",
@@ -3750,7 +3587,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "C",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_limits_cpu_cores) by (namespace)",
@@ -3759,7 +3596,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "D",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(rate(container_cpu_usage_seconds_total[5m])) by (namespace) / sum(kube_pod_container_resource_limits_cpu_cores) by (namespace)",
@@ -3768,11 +3605,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "E",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -3790,7 +3626,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -3826,7 +3661,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -3846,7 +3680,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -3854,7 +3687,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -3867,11 +3699,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{namespace}}",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -3888,7 +3719,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -3924,7 +3754,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -3944,7 +3773,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -3952,7 +3780,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -3969,7 +3796,6 @@ items:
                                   "alias": "Memory Usage",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -3978,7 +3804,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #A",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -3987,7 +3812,6 @@ items:
                                   "alias": "Memory Requests",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -3996,7 +3820,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #B",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -4005,7 +3828,6 @@ items:
                                   "alias": "Memory Requests %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4014,7 +3836,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #C",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -4023,7 +3844,6 @@ items:
                                   "alias": "Memory Limits",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4032,7 +3852,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #D",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -4041,7 +3860,6 @@ items:
                                   "alias": "Memory Limits %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4050,7 +3868,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #E",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -4059,7 +3876,6 @@ items:
                                   "alias": "Namespace",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4068,7 +3884,6 @@ items:
                                   "linkUrl": "/d/85a562078cdf77779eaa1add43ccec1e/k8s-resources-namespace?var-datasource=$datasource&var-namespace=$__cell",
                                   "pattern": "namespace",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -4077,13 +3892,11 @@ items:
                                   "alias": "",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
                                   "pattern": "/.*/",
                                   "thresholds": [
-
                                   ],
                                   "type": "string",
                                   "unit": "short"
@@ -4097,7 +3910,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "A",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_requests_memory_bytes) by (namespace)",
@@ -4106,7 +3919,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "B",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(container_memory_rss) by (namespace) / sum(kube_pod_container_resource_requests_memory_bytes) by (namespace)",
@@ -4115,7 +3928,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "C",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_limits_memory_bytes) by (namespace)",
@@ -4124,7 +3937,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "D",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(container_memory_rss) by (namespace) / sum(kube_pod_container_resource_limits_memory_bytes) by (namespace)",
@@ -4133,11 +3946,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "E",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -4155,7 +3967,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -4189,10 +4000,23 @@ items:
           "schemaVersion": 14,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -4202,7 +4026,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -4255,7 +4078,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "editable": true,
@@ -4263,7 +4085,6 @@ items:
           "graphTooltip": 0,
           "hideControls": false,
           "links": [
-
           ],
           "refresh": "10s",
           "rows": [
@@ -4273,7 +4094,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -4293,7 +4113,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -4301,7 +4120,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -4314,11 +4132,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{pod_name}}",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -4335,7 +4152,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -4371,7 +4187,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -4391,7 +4206,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -4399,7 +4213,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -4416,7 +4229,6 @@ items:
                                   "alias": "CPU Usage",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4425,7 +4237,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #A",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -4434,7 +4245,6 @@ items:
                                   "alias": "CPU Requests",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4443,7 +4253,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #B",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -4452,7 +4261,6 @@ items:
                                   "alias": "CPU Requests %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4461,7 +4269,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #C",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -4470,7 +4277,6 @@ items:
                                   "alias": "CPU Limits",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4479,7 +4285,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #D",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -4488,7 +4293,6 @@ items:
                                   "alias": "CPU Limits %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4497,7 +4301,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #E",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -4506,7 +4309,6 @@ items:
                                   "alias": "Pod",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4515,7 +4317,6 @@ items:
                                   "linkUrl": "/d/6581e46e4e5c7ba40a07646395ef7b23/k8s-resources-pod?var-datasource=$datasource&var-namespace=$namespace&var-pod=$__cell",
                                   "pattern": "pod",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -4524,13 +4325,11 @@ items:
                                   "alias": "",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
                                   "pattern": "/.*/",
                                   "thresholds": [
-
                                   ],
                                   "type": "string",
                                   "unit": "short"
@@ -4544,7 +4343,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "A",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\"}) by (pod)",
@@ -4553,7 +4352,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "B",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\"}[5m]), \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\"}) by (pod)",
@@ -4562,7 +4361,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "C",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\"}) by (pod)",
@@ -4571,7 +4370,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "D",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\"}[5m]), \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\"}) by (pod)",
@@ -4580,11 +4379,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "E",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -4602,7 +4400,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -4638,7 +4435,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -4658,7 +4454,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -4666,7 +4461,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -4679,11 +4473,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{pod_name}}",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -4700,7 +4493,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -4736,7 +4528,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -4756,7 +4547,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -4764,7 +4554,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -4781,7 +4570,6 @@ items:
                                   "alias": "Memory Usage",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4790,7 +4578,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #A",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -4799,7 +4586,6 @@ items:
                                   "alias": "Memory Requests",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4808,7 +4594,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #B",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -4817,7 +4602,6 @@ items:
                                   "alias": "Memory Requests %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4826,7 +4610,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #C",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -4835,7 +4618,6 @@ items:
                                   "alias": "Memory Limits",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4844,7 +4626,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #D",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -4853,7 +4634,6 @@ items:
                                   "alias": "Memory Limits %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4862,7 +4642,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #E",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -4871,7 +4650,6 @@ items:
                                   "alias": "Pod",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -4880,7 +4658,6 @@ items:
                                   "linkUrl": "/d/6581e46e4e5c7ba40a07646395ef7b23/k8s-resources-pod?var-datasource=$datasource&var-namespace=$namespace&var-pod=$__cell",
                                   "pattern": "pod",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -4889,13 +4666,11 @@ items:
                                   "alias": "",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
                                   "pattern": "/.*/",
                                   "thresholds": [
-
                                   ],
                                   "type": "string",
                                   "unit": "short"
@@ -4909,7 +4684,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "A",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\"}) by (pod)",
@@ -4918,7 +4693,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "B",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\"}) by (pod)",
@@ -4927,7 +4702,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "C",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\"}) by (pod)",
@@ -4936,7 +4711,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "D",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\"}) by (pod)",
@@ -4945,11 +4720,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "E",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -4967,7 +4741,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -5001,10 +4774,23 @@ items:
           "schemaVersion": 14,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -5014,7 +4800,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -5034,7 +4819,6 @@ items:
                       "multi": false,
                       "name": "namespace",
                       "options": [
-
                       ],
                       "query": "label_values(kube_pod_info, namespace)",
                       "refresh": 1,
@@ -5042,7 +4826,6 @@ items:
                       "sort": 2,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -5094,7 +4877,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "editable": true,
@@ -5102,7 +4884,6 @@ items:
           "graphTooltip": 0,
           "hideControls": false,
           "links": [
-
           ],
           "refresh": "10s",
           "rows": [
@@ -5112,7 +4893,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -5132,7 +4912,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -5140,7 +4919,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -5153,11 +4931,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{container_name}}",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -5174,7 +4951,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -5210,7 +4986,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -5230,7 +5005,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -5238,7 +5012,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -5255,7 +5028,6 @@ items:
                                   "alias": "CPU Usage",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5264,7 +5036,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #A",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -5273,7 +5044,6 @@ items:
                                   "alias": "CPU Requests",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5282,7 +5052,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #B",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -5291,7 +5060,6 @@ items:
                                   "alias": "CPU Requests %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5300,7 +5068,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #C",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -5309,7 +5076,6 @@ items:
                                   "alias": "CPU Limits",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5318,7 +5084,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #D",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -5327,7 +5092,6 @@ items:
                                   "alias": "CPU Limits %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5336,7 +5100,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #E",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -5345,7 +5108,6 @@ items:
                                   "alias": "Container",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5354,7 +5116,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "container",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -5363,13 +5124,11 @@ items:
                                   "alias": "",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
                                   "pattern": "/.*/",
                                   "thresholds": [
-
                                   ],
                                   "type": "string",
                                   "unit": "short"
@@ -5383,7 +5142,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "A",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -5392,7 +5151,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "B",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod_name=\"$pod\"}[5m]), \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container) / sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -5401,7 +5160,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "C",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -5410,7 +5169,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "D",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod_name=\"$pod\"}[5m]), \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container) / sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -5419,11 +5178,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "E",
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -5441,7 +5199,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -5477,7 +5234,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -5497,7 +5253,6 @@ items:
                           "lines": true,
                           "linewidth": 0,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -5505,7 +5260,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -5518,11 +5272,10 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "{{container_name}}",
                                   "legendLink": null,
-                                  "step": 10
+                                  "step": $resolution
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -5539,7 +5292,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -5575,7 +5327,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -5595,7 +5346,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null as zero",
                           "percentage": false,
@@ -5603,7 +5353,6 @@ items:
                           "points": false,
                           "renderer": "flot",
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -5620,7 +5369,6 @@ items:
                                   "alias": "Memory Usage",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5629,7 +5377,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #A",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -5638,7 +5385,6 @@ items:
                                   "alias": "Memory Requests",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5647,7 +5393,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #B",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -5656,7 +5401,6 @@ items:
                                   "alias": "Memory Requests %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5665,7 +5409,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #C",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -5674,7 +5417,6 @@ items:
                                   "alias": "Memory Limits",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5683,7 +5425,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #D",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "decbytes"
@@ -5692,7 +5433,6 @@ items:
                                   "alias": "Memory Limits %",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5701,7 +5441,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "Value #E",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "percentunit"
@@ -5710,7 +5449,6 @@ items:
                                   "alias": "Container",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
@@ -5719,7 +5457,6 @@ items:
                                   "linkUrl": "",
                                   "pattern": "container",
                                   "thresholds": [
-
                                   ],
                                   "type": "number",
                                   "unit": "short"
@@ -5728,13 +5465,11 @@ items:
                                   "alias": "",
                                   "colorMode": null,
                                   "colors": [
-
                                   ],
                                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                   "decimals": 2,
                                   "pattern": "/.*/",
                                   "thresholds": [
-
                                   ],
                                   "type": "string",
                                   "unit": "short"
@@ -5748,7 +5483,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "A",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -5757,7 +5492,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "B",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\", pod_name=\"$pod\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -5766,7 +5501,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "C",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -5775,7 +5510,7 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "D",
-                                  "step": 10
+                                  "step": $resolution
                               },
                               {
                                   "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\", pod_name=\"$pod\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -5784,11 +5519,9 @@ items:
                                   "intervalFactor": 2,
                                   "legendFormat": "",
                                   "refId": "E",
-                                  "step": 10
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -5806,7 +5539,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -5840,10 +5572,23 @@ items:
           "schemaVersion": 14,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -5853,7 +5598,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -5873,7 +5617,6 @@ items:
                       "multi": false,
                       "name": "namespace",
                       "options": [
-
                       ],
                       "query": "label_values(kube_pod_info, namespace)",
                       "refresh": 1,
@@ -5881,7 +5624,6 @@ items:
                       "sort": 2,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -5900,7 +5642,6 @@ items:
                       "multi": false,
                       "name": "pod",
                       "options": [
-
                       ],
                       "query": "label_values(kube_pod_info{namespace=\"$namespace\"}, pod)",
                       "refresh": 1,
@@ -5908,7 +5649,6 @@ items:
                       "sort": 2,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -5960,7 +5700,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "editable": false,
@@ -5969,7 +5708,6 @@ items:
           "hideControls": false,
           "id": null,
           "links": [
-
           ],
           "refresh": "",
           "rows": [
@@ -5980,7 +5718,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -5988,7 +5725,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 2,
                           "legend": {
@@ -6005,7 +5741,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -6014,7 +5749,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -6030,7 +5764,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -6047,7 +5780,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -6071,7 +5803,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -6079,7 +5810,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 3,
                           "legend": {
@@ -6096,7 +5826,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -6105,7 +5834,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -6135,7 +5863,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -6152,7 +5879,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -6190,7 +5916,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -6198,7 +5923,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 4,
                           "legend": {
@@ -6215,7 +5939,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -6224,7 +5947,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 9,
@@ -6261,7 +5983,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -6278,7 +5999,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -6319,12 +6039,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 5,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -6396,7 +6114,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -6404,7 +6121,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 6,
                           "legend": {
@@ -6421,7 +6137,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -6467,7 +6182,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -6484,7 +6198,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -6525,12 +6238,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 7,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -6602,7 +6313,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -6610,7 +6320,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 8,
                           "legend": {
@@ -6627,7 +6336,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -6636,7 +6344,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -6652,7 +6359,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -6669,7 +6375,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -6693,7 +6398,6 @@ items:
                       },
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -6701,7 +6405,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 9,
                           "legend": {
@@ -6718,7 +6421,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -6727,7 +6429,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 6,
@@ -6743,7 +6444,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -6760,7 +6460,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -6795,10 +6494,23 @@ items:
           "schemaVersion": 14,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -6808,7 +6520,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -6818,7 +6529,6 @@ items:
                   {
                       "allValue": null,
                       "current": {
-
                       },
                       "datasource": "$datasource",
                       "hide": 0,
@@ -6827,7 +6537,6 @@ items:
                       "multi": false,
                       "name": "instance",
                       "options": [
-
                       ],
                       "query": "label_values(node_boot_time{job=\"node-exporter\"}, instance)",
                       "refresh": 2,
@@ -6835,7 +6544,6 @@ items:
                       "sort": 0,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -6887,7 +6595,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "editable": false,
@@ -6896,7 +6603,6 @@ items:
           "hideControls": false,
           "id": null,
           "links": [
-
           ],
           "refresh": "",
           "rows": [
@@ -6907,7 +6613,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -6915,7 +6620,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 2,
                           "legend": {
@@ -6932,7 +6636,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -6941,7 +6644,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -6971,7 +6673,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -6988,7 +6689,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -7026,7 +6726,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -7034,7 +6733,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 3,
                           "legend": {
@@ -7051,7 +6749,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -7060,7 +6757,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -7076,7 +6772,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -7093,7 +6788,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -7131,7 +6825,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -7139,7 +6832,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 4,
                           "legend": {
@@ -7156,7 +6848,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -7165,7 +6856,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -7181,7 +6871,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -7198,7 +6887,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -7233,10 +6921,23 @@ items:
           "schemaVersion": 14,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -7246,7 +6947,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -7256,7 +6956,6 @@ items:
                   {
                       "allValue": null,
                       "current": {
-
                       },
                       "datasource": "$datasource",
                       "hide": 0,
@@ -7265,7 +6964,6 @@ items:
                       "multi": false,
                       "name": "namespace",
                       "options": [
-
                       ],
                       "query": "label_values(kube_pod_info, namespace)",
                       "refresh": 2,
@@ -7273,7 +6971,6 @@ items:
                       "sort": 0,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -7282,7 +6979,6 @@ items:
                   {
                       "allValue": null,
                       "current": {
-
                       },
                       "datasource": "$datasource",
                       "hide": 0,
@@ -7291,7 +6987,6 @@ items:
                       "multi": false,
                       "name": "pod",
                       "options": [
-
                       ],
                       "query": "label_values(kube_pod_info{namespace=\u007e\"$namespace\"}, pod)",
                       "refresh": 2,
@@ -7299,7 +6994,6 @@ items:
                       "sort": 0,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -7308,7 +7002,6 @@ items:
                   {
                       "allValue": null,
                       "current": {
-
                       },
                       "datasource": "$datasource",
                       "hide": 0,
@@ -7317,7 +7010,6 @@ items:
                       "multi": false,
                       "name": "container",
                       "options": [
-
                       ],
                       "query": "label_values(kube_pod_container_info{namespace=\"$namespace\", pod=\"$pod\"}, container)",
                       "refresh": 2,
@@ -7325,7 +7017,6 @@ items:
                       "sort": 0,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -7377,7 +7068,6 @@ items:
       {
           "annotations": {
               "list": [
-
               ]
           },
           "editable": false,
@@ -7386,7 +7076,6 @@ items:
           "hideControls": false,
           "id": null,
           "links": [
-
           ],
           "refresh": "",
           "rows": [
@@ -7414,12 +7103,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 2,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -7493,12 +7180,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 3,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -7572,12 +7257,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 4,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -7665,12 +7348,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 5,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -7745,12 +7426,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 6,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -7825,12 +7504,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 7,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -7905,12 +7582,10 @@ items:
                               "thresholdMarkers": true
                           },
                           "gridPos": {
-
                           },
                           "id": 8,
                           "interval": null,
                           "links": [
-
                           ],
                           "mappingType": 1,
                           "mappingTypes": [
@@ -7982,7 +7657,6 @@ items:
                   "panels": [
                       {
                           "aliasColors": {
-
                           },
                           "bars": false,
                           "dashLength": 10,
@@ -7990,7 +7664,6 @@ items:
                           "datasource": "$datasource",
                           "fill": 1,
                           "gridPos": {
-
                           },
                           "id": 9,
                           "legend": {
@@ -8007,7 +7680,6 @@ items:
                           "lines": true,
                           "linewidth": 1,
                           "links": [
-
                           ],
                           "nullPointMode": "null",
                           "percentage": false,
@@ -8016,7 +7688,6 @@ items:
                           "renderer": "flot",
                           "repeat": null,
                           "seriesOverrides": [
-
                           ],
                           "spaceLength": 10,
                           "span": 12,
@@ -8060,7 +7731,6 @@ items:
                               }
                           ],
                           "thresholds": [
-
                           ],
                           "timeFrom": null,
                           "timeShift": null,
@@ -8077,7 +7747,6 @@ items:
                               "name": null,
                               "show": true,
                               "values": [
-
                               ]
                           },
                           "yaxes": [
@@ -8112,10 +7781,23 @@ items:
           "schemaVersion": 14,
           "style": "dark",
           "tags": [
-
           ],
           "templating": {
               "list": [
+                  {
+                      "current": {
+                          "text": "15",
+                          "value": "15"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "resolution",
+                      "options": [
+                      ],
+                      "query": "15,10,5",
+                      "refresh": 1,
+                      "type": "custom"
+                  },
                   {
                       "current": {
                           "text": "Prometheus",
@@ -8125,7 +7807,6 @@ items:
                       "label": null,
                       "name": "datasource",
                       "options": [
-
                       ],
                       "query": "prometheus",
                       "refresh": 1,
@@ -8135,7 +7816,6 @@ items:
                   {
                       "allValue": null,
                       "current": {
-
                       },
                       "datasource": "$datasource",
                       "hide": 0,
@@ -8144,7 +7824,6 @@ items:
                       "multi": false,
                       "name": "namespace",
                       "options": [
-
                       ],
                       "query": "label_values(kube_statefulset_metadata_generation{job=\"kube-state-metrics\"}, namespace)",
                       "refresh": 2,
@@ -8152,7 +7831,6 @@ items:
                       "sort": 0,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
@@ -8161,7 +7839,6 @@ items:
                   {
                       "allValue": null,
                       "current": {
-
                       },
                       "datasource": "$datasource",
                       "hide": 0,
@@ -8170,7 +7847,6 @@ items:
                       "multi": false,
                       "name": "statefulset",
                       "options": [
-
                       ],
                       "query": "label_values(kube_statefulset_metadata_generation{job=\"kube-state-metrics\", namespace=\"$namespace\"}, statefulset)",
                       "refresh": 2,
@@ -8178,7 +7854,6 @@ items:
                       "sort": 0,
                       "tagValuesQuery": "",
                       "tags": [
-
                       ],
                       "tagsQuery": "",
                       "type": "query",
