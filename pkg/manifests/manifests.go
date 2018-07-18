@@ -110,8 +110,9 @@ var (
 )
 
 var (
-	PrometheusConfigReloaderFlag = "--prometheus-config-reloader="
-	ConfigReloaderImageFlag      = "--config-reloader-image="
+	PrometheusConfigReloaderFlag    = "--prometheus-config-reloader="
+	ConfigReloaderImageFlag         = "--config-reloader-image="
+	PrometheusOperatorNamespaceFlag = "--namespace="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -858,6 +859,10 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
+		if strings.HasPrefix(args[i], PrometheusOperatorNamespaceFlag) {
+			args[i] = PrometheusOperatorNamespaceFlag + f.namespace
+		}
+
 		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.PrometheusOperatorConfig.PrometheusConfigReloader != "" {
 			image, err := imageFromString(strings.TrimSuffix(args[i], PrometheusConfigReloaderFlag))
 			if err != nil {
