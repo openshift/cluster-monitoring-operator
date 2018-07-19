@@ -110,8 +110,9 @@ var (
 )
 
 var (
-	PrometheusConfigReloaderFlag = "--prometheus-config-reloader="
-	ConfigReloaderImageFlag      = "--config-reloader-image="
+	PrometheusConfigReloaderFlag    = "--prometheus-config-reloader="
+	ConfigReloaderImageFlag         = "--config-reloader-image="
+	PrometheusOperatorNamespaceFlag = "--namespace="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -730,6 +731,17 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		}
 	}
 
+	if f.config.EtcdConfig == nil {
+		secrets := []string{}
+		for _, s := range p.Spec.Secrets {
+			if s != "kube-etcd-client-certs" {
+				secrets = append(secrets, s)
+			}
+		}
+
+		p.Spec.Secrets = secrets
+	}
+
 	if f.config.AuthConfig.BaseImage != "" {
 		image, err := imageFromString(p.Spec.Containers[0].Image)
 		if err != nil {
@@ -847,6 +859,10 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
+		if strings.HasPrefix(args[i], PrometheusOperatorNamespaceFlag) {
+			args[i] = PrometheusOperatorNamespaceFlag + f.namespace
+		}
+
 		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.PrometheusOperatorConfig.PrometheusConfigReloader != "" {
 			image, err := imageFromString(strings.TrimSuffix(args[i], PrometheusConfigReloaderFlag))
 			if err != nil {
@@ -1022,6 +1038,24 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 		image.repo = f.config.GrafanaConfig.BaseImage
 		image.SetTagIfNotEmpty(f.config.GrafanaConfig.Tag)
 		d.Spec.Template.Spec.Containers[0].Image = image.String()
+	}
+
+	if f.config.EtcdConfig == nil {
+		vols := []v1.Volume{}
+		volMounts := []v1.VolumeMount{}
+		for _, v := range d.Spec.Template.Spec.Volumes {
+			if v.Name != "grafana-dashboard-etcd" {
+				vols = append(vols, v)
+			}
+		}
+		for _, vm := range d.Spec.Template.Spec.Containers[0].VolumeMounts {
+			if vm.Name != "grafana-dashboard-etcd" {
+				volMounts = append(volMounts, vm)
+			}
+		}
+
+		d.Spec.Template.Spec.Volumes = vols
+		d.Spec.Template.Spec.Containers[0].VolumeMounts = volMounts
 	}
 
 	if f.config.AuthConfig.BaseImage != "" {

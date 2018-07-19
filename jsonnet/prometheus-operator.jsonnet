@@ -9,7 +9,7 @@
 
               containers:
                 std.map(
-                  function(c) c { resources: {} },
+                  function(c) c { resources: {}, args+: ['--namespace=' + $._config.namespace] },
                   super.containers,
                 ),
             },

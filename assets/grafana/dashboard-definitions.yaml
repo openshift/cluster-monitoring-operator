@@ -3731,6 +3731,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "A",
                                   "step": 10
                               },
                               {
@@ -3739,6 +3740,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "B",
                                   "step": 10
                               },
                               {
@@ -3747,6 +3749,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "C",
                                   "step": 10
                               },
                               {
@@ -3755,6 +3758,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "D",
                                   "step": 10
                               },
                               {
@@ -3763,6 +3767,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "E",
                                   "step": 10
                               }
                           ],
@@ -4091,6 +4096,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "A",
                                   "step": 10
                               },
                               {
@@ -4099,6 +4105,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "B",
                                   "step": 10
                               },
                               {
@@ -4107,6 +4114,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "C",
                                   "step": 10
                               },
                               {
@@ -4115,6 +4123,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "D",
                                   "step": 10
                               },
                               {
@@ -4123,6 +4132,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "E",
                                   "step": 10
                               }
                           ],
@@ -4533,6 +4543,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "A",
                                   "step": 10
                               },
                               {
@@ -4541,6 +4552,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "B",
                                   "step": 10
                               },
                               {
@@ -4549,6 +4561,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "C",
                                   "step": 10
                               },
                               {
@@ -4557,6 +4570,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "D",
                                   "step": 10
                               },
                               {
@@ -4565,6 +4579,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "E",
                                   "step": 10
                               }
                           ],
@@ -4893,6 +4908,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "A",
                                   "step": 10
                               },
                               {
@@ -4901,6 +4917,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "B",
                                   "step": 10
                               },
                               {
@@ -4909,6 +4926,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "C",
                                   "step": 10
                               },
                               {
@@ -4917,6 +4935,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "D",
                                   "step": 10
                               },
                               {
@@ -4925,6 +4944,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "E",
                                   "step": 10
                               }
                           ],
@@ -5362,6 +5382,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "A",
                                   "step": 10
                               },
                               {
@@ -5370,6 +5391,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "B",
                                   "step": 10
                               },
                               {
@@ -5378,6 +5400,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "C",
                                   "step": 10
                               },
                               {
@@ -5386,6 +5409,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "D",
                                   "step": 10
                               },
                               {
@@ -5394,6 +5418,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "E",
                                   "step": 10
                               }
                           ],
@@ -5722,6 +5747,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "A",
                                   "step": 10
                               },
                               {
@@ -5730,6 +5756,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "B",
                                   "step": 10
                               },
                               {
@@ -5738,6 +5765,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "C",
                                   "step": 10
                               },
                               {
@@ -5746,6 +5774,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "D",
                                   "step": 10
                               },
                               {
@@ -5754,6 +5783,7 @@ items:
                                   "instant": true,
                                   "intervalFactor": 2,
                                   "legendFormat": "",
+                                  "refId": "E",
                                   "step": 10
                               }
                           ],
@@ -6926,14 +6956,14 @@ items:
                                   "refId": "A"
                               },
                               {
-                                  "expr": "sum by(container) (kube_pod_container_resource_requests_memory_bytes{job=\"kubelet\", namespace=\"$namespace\", pod=\"$pod\", container=\u007e\"$container\", container!=\"POD\"})",
+                                  "expr": "sum by(container) (kube_pod_container_resource_requests_memory_bytes{job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\", container=\u007e\"$container\"})",
                                   "format": "time_series",
                                   "intervalFactor": 2,
                                   "legendFormat": "Requested: {{ container }}",
                                   "refId": "B"
                               },
                               {
-                                  "expr": "sum by(container) (kube_pod_container_resource_limits_memory_bytes{job=\"kubelet\", namespace=\"$namespace\", pod=\"$pod\", container=\u007e\"$container\", container!=\"POD\"})",
+                                  "expr": "sum by(container) (kube_pod_container_resource_limits_memory_bytes{job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\", container=\u007e\"$container\"})",
                                   "format": "time_series",
                                   "intervalFactor": 2,
                                   "legendFormat": "Limit: {{ container }}",
