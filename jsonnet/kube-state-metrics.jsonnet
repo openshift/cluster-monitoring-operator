@@ -29,7 +29,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
             {
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
               honorLabels: true,
-              interval: '30s',
+              interval: '2m',
               port: 'https-main',
               scheme: 'https',
               tlsConfig: {
@@ -39,7 +39,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
             },
             {
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-              interval: '30s',
+              interval: '2m',
               port: 'https-self',
               scheme: 'https',
               tlsConfig: {
