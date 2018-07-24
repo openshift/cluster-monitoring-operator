@@ -44,6 +44,17 @@
             expr: 'sum(rate(container_cpu_usage_seconds_total{container_name!="POD",pod_name!=""}[5m])) / sum(machine_cpu_cores)',
             record: 'cluster:container_cpu_usage:ratio',
           },
+          {
+            expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[5m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[5m])) > 10',
+            alert: 'ClusterMonitoringOperatorErrors',
+            'for': '15m',
+            annotations: {
+              message: 'Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value }}% errors.',
+            },
+            labels: {
+              severity: 'critical',
+            },
+          },
         ],
       },
     ],
