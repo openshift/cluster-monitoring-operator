@@ -111,6 +111,9 @@ spec:
         #- "-tags=node-exporter=${TAG}"
         - "-tags=kube-state-metrics=${TAG}"
         - "-tags=kube-rbac-proxy=${TAG}"
+        ports:
+        - containerPort: 8080
+          name: http
         resources:
           limits:
             cpu: 20m
