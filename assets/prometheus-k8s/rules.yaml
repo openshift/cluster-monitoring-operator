@@ -293,6 +293,16 @@ spec:
     - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",pod_name!=""}[5m]))
         / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
+    - alert: ClusterMonitoringOperatorErrors
+      annotations:
+        message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value
+          }}% errors.
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-clustermonitoringoperatorerrors
+      expr: sum(rate(cluster_monitoring_operator_reconcile_errors_total[5m])) * 100
+        / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[5m])) > 10
+      for: 15m
+      labels:
+        severity: critical
   - name: kubernetes-absent
     rules:
     - alert: AlertmanagerDown
@@ -301,6 +311,16 @@ spec:
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-alertmanagerdown
       expr: |
         absent(up{job="alertmanager-main"} == 1)
+      for: 15m
+      labels:
+        severity: critical
+    - alert: ClusterMonitoringOperatorDown
+      annotations:
+        message: ClusterMonitoringOperator has disappeared from Prometheus target
+          discovery.
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-clustermonitoringoperatordown
+      expr: |
+        absent(up{job="cluster-monitoring-operator"} == 1)
       for: 15m
       labels:
         severity: critical
@@ -774,7 +794,7 @@ spec:
           full within the next 24 hours (mounted at {{$labels.mountpoint}})
         summary: Node disk is running full within 24 hours
       expr: |
-        predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[6h], 3600 * 24) < 0
+        predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[6h], 3600 * 24) < 0 and on(instance) up{job="node-exporter"}
       for: 30m
       labels:
         severity: warning
@@ -784,7 +804,7 @@ spec:
           full within the next 2 hours (mounted at {{$labels.mountpoint}})
         summary: Node disk is running full within 2 hours
       expr: |
-        predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[30m], 3600 * 2) < 0
+        predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[30m], 3600 * 2) < 0 and on(instance) up{job="node-exporter"}
       for: 10m
       labels:
         severity: critical
@@ -952,40 +972,6 @@ spec:
       for: 10m
       labels:
         severity: critical
-    - alert: EtcdHighNumberOfFailedHTTPRequests
-      annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": {{ $value }}%% of requests for
-          {{ $labels.method }} failed on etcd instance {{ $labels.instance }}.'
-      expr: |
-        100 * sum(rate(etcd_http_failed_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-          /
-        sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-          > 1
-      for: 10m
-      labels:
-        severity: warning
-    - alert: EtcdHighNumberOfFailedHTTPRequests
-      annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": {{ $value }}%% of requests for
-          {{ $labels.method }} failed on etcd instance {{ $labels.instance }}.'
-      expr: |
-        100 * sum(rate(etcd_http_failed_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-          /
-        sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-          > 5
-      for: 5m
-      labels:
-        severity: critical
-    - alert: EtcdHTTPRequestsSlow
-      annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": HTTP requests to {{ $labels.method
-          }} are taking {{ $value }} on etcd instance {{ $labels.instance }}.'
-      expr: |
-        histogram_quantile(0.99, rate(etcd_http_successful_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
-        > 0.15
-      for: 10m
-      labels:
-        severity: warning
     - alert: EtcdMemberCommunicationSlow
       annotations:
         message: 'Etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To

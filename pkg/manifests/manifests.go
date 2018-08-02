@@ -107,6 +107,9 @@ var (
 	GrafanaRoute                = "assets/grafana/route.yaml"
 	GrafanaServiceAccount       = "assets/grafana/service-account.yaml"
 	GrafanaService              = "assets/grafana/service.yaml"
+
+	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
+	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
 )
 
 var (
@@ -1127,6 +1130,28 @@ func (f *Factory) GrafanaService() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) ClusterMonitoringOperatorService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(ClusterMonitoringOperatorService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(ClusterMonitoringOperatorServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespace
+
+	return sm, nil
 }
 
 func hostFromBaseAddress(baseAddress string) (string, error) {
