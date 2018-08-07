@@ -18,6 +18,7 @@ from __future__ import unicode_literals, print_function
 import os.path
 import sys
 import yaml
+import warnings
 
 
 def main():
@@ -26,13 +27,28 @@ def main():
     with open(sys.argv[1], 'r') as f:
         base_role = yaml.load(f)
 
+    def add_to_base_role(role):
+        # In theory this merges ClusterRoles.
+        # If it happens to merge a regular Role, then log a warning
+        # but do not raise an exception, as this behavior is needed.
+        if role['kind'] != 'ClusterRole':
+            warnings.warn('appending a {} to the base ClusterRole'.format(role['kind']))
+        if role['rules'] not in base_role['rules']:
+            base_role['rules'] += role['rules']
+
     manifests = sys.argv[2:]
     for manifest in manifests:
-        sources.append(os.path.relpath(manifest))
         with open(manifest, 'r') as f:
-            rules = yaml.load(f)['rules']
-            if rules not in base_role['rules']:
-                base_role['rules'] += rules
+            y = yaml.load(f)
+            if y['kind'].endswith('RoleList'):
+                for item in y['items']:
+                    add_to_base_role(item)
+            elif y['kind'].endswith('Role'):
+                add_to_base_role(y)
+            else:
+                warnings.warn('unexpected resource kind: {}'.format(y['kind']))
+                continue
+        sources.append(os.path.relpath(manifest))
 
     print("---")
     print("# This is a generated file. DO NOT EDIT")
