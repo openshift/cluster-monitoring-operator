@@ -69,6 +69,7 @@ type Operator struct {
 
 type Config struct {
 	Host                         string
+	LocalHost                    string
 	ConfigReloaderImage          string
 	AlertmanagerDefaultBaseImage string
 	Namespace                    string
@@ -77,6 +78,7 @@ type Config struct {
 	CrdGroup                     string
 	EnableValidation             bool
 	DisableAutoUserGroup         bool
+	ManageCRDs                   bool
 }
 
 // New creates a new controller.
@@ -109,6 +111,7 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 		queue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "alertmanager"),
 		config: Config{
 			Host:                         c.Host,
+			LocalHost:                    c.LocalHost,
 			ConfigReloaderImage:          c.ConfigReloaderImage,
 			AlertmanagerDefaultBaseImage: c.AlertmanagerDefaultBaseImage,
 			Namespace:                    c.Namespace,
@@ -117,6 +120,7 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 			Labels:                       c.Labels,
 			EnableValidation:             c.EnableValidation,
 			DisableAutoUserGroup:         c.DisableAutoUserGroup,
+			ManageCRDs:                   c.ManageCRDs,
 		},
 	}
 
@@ -171,9 +175,11 @@ func (c *Operator) Run(stopc <-chan struct{}) error {
 		}
 		level.Info(c.logger).Log("msg", "connection established", "cluster-version", v)
 
-		if err := c.createCRDs(); err != nil {
-			errChan <- err
-			return
+		if c.config.ManageCRDs {
+			if err := c.createCRDs(); err != nil {
+				errChan <- err
+				return
+			}
 		}
 		errChan <- nil
 	}()
