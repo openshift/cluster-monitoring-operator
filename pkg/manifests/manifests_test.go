@@ -15,11 +15,14 @@
 package manifests
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 
+	monv1 "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	"k8s.io/api/core/v1"
 )
 
@@ -273,6 +276,138 @@ func TestUnconfiguredManifests(t *testing.T) {
 	_, err = f.GrafanaService()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestHTTPConfig(t *testing.T) {
+	type checkFunc func(*monv1.Alertmanager) error
+
+	checks := func(cs ...checkFunc) checkFunc {
+		return func(a *monv1.Alertmanager) error {
+			for _, f := range cs {
+				if err := f(a); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
+	hasContainers := func(a *monv1.Alertmanager) error {
+		if len(a.Spec.Containers) == 0 {
+			return errors.New("expected spec to have containers, but it doesn't have any")
+		}
+		return nil
+	}
+
+	containerHasEnv := func(c v1.Container, name, value string) bool {
+		for e := range c.Env {
+			if c.Env[e].Name != name {
+				continue
+			}
+			if c.Env[e].Value == value {
+				return true
+			}
+		}
+		return false
+	}
+
+	containersHaveEnv := func(name, value string) checkFunc {
+		return func(a *monv1.Alertmanager) error {
+			for c := range a.Spec.Containers {
+				if !containerHasEnv(a.Spec.Containers[c], name, value) {
+					return fmt.Errorf(
+						"containers expected to have env var %v=%v, but %v doesn't",
+						name, value, a.Spec.Containers[c].Name,
+					)
+				}
+			}
+			return nil
+		}
+	}
+
+	for _, tc := range []struct {
+		name   string
+		config string
+		check  checkFunc
+	}{
+		{
+			name: "no http config",
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", ""),
+				containersHaveEnv("HTTPS_PROXY", ""),
+			),
+		},
+		{
+			name: "empty http config",
+
+			config: `http:`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", ""),
+				containersHaveEnv("HTTPS_PROXY", ""),
+			),
+		},
+		{
+			name: "http proxy only",
+
+			config: `http:
+  httpProxy: http://insecure.proxy`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", "http://insecure.proxy"),
+				containersHaveEnv("HTTPS_PROXY", ""),
+			),
+		},
+		{
+			name: "https proxy only",
+
+			config: `http:
+  httpsProxy: https://secure.proxy`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", ""),
+				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+			),
+		},
+		{
+			name: "https and http proxy",
+
+			config: `http:
+  httpProxy: http://insecure.proxy
+  httpsProxy: https://secure.proxy`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", "http://insecure.proxy"),
+				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+			),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			f := NewFactory("openshift-monitoring", c)
+			d, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc")
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			if err := tc.check(d); err != nil {
+				t.Error(err)
+				return
+			}
+		})
 	}
 }
 
