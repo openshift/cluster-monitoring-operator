@@ -62,15 +62,11 @@ var (
 	NodeExporterServiceMonitor             = "assets/node-exporter/service-monitor.yaml"
 
 	PrometheusK8sClusterRoleBinding            = "assets/prometheus-k8s/cluster-role-binding.yaml"
-	PrometheusK8sRoleBindingDefault            = "assets/prometheus-k8s/role-binding-default.yaml"
-	PrometheusK8sRoleBindingKubeSystem         = "assets/prometheus-k8s/role-binding-kube-system.yaml"
-	PrometheusK8sRoleBinding                   = "assets/prometheus-k8s/role-binding-namespace.yaml"
 	PrometheusK8sRoleBindingConfig             = "assets/prometheus-k8s/role-binding-config.yaml"
+	PrometheusK8sRoleBinding                   = "assets/prometheus-k8s/role-binding-specific-namespaces.yaml"
 	PrometheusK8sClusterRole                   = "assets/prometheus-k8s/cluster-role.yaml"
-	PrometheusK8sRoleDefault                   = "assets/prometheus-k8s/role-default.yaml"
-	PrometheusK8sRoleKubeSystem                = "assets/prometheus-k8s/role-kube-system.yaml"
 	PrometheusK8sRoleConfig                    = "assets/prometheus-k8s/role-config.yaml"
-	PrometheusK8sRole                          = "assets/prometheus-k8s/role-namespace.yaml"
+	PrometheusK8sRole                          = "assets/prometheus-k8s/role-specific-namespaces.yaml"
 	PrometheusK8sRules                         = "assets/prometheus-k8s/rules.yaml"
 	PrometheusK8sServiceAccount                = "assets/prometheus-k8s/service-account.yaml"
 	PrometheusK8s                              = "assets/prometheus-k8s/prometheus.yaml"
@@ -494,17 +490,6 @@ func (f *Factory) PrometheusK8sClusterRole() (*rbacv1beta1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(PrometheusK8sClusterRole))
 }
 
-func (f *Factory) PrometheusK8sRoleBindingDefault() (*rbacv1beta1.RoleBinding, error) {
-	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusK8sRoleBindingDefault))
-	if err != nil {
-		return nil, err
-	}
-
-	rb.Subjects[0].Namespace = f.namespace
-
-	return rb, nil
-}
-
 func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1beta1.Role, error) {
 	r, err := f.NewRole(MustAssetReader(PrometheusK8sRoleConfig))
 	if err != nil {
@@ -514,25 +499,6 @@ func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1beta1.Role, error) {
 	r.Namespace = f.namespace
 
 	return r, nil
-}
-
-func (f *Factory) PrometheusK8sRoleDefault() (*rbacv1beta1.Role, error) {
-	return f.NewRole(MustAssetReader(PrometheusK8sRoleDefault))
-}
-
-func (f *Factory) PrometheusK8sRoleBindingKubeSystem() (*rbacv1beta1.RoleBinding, error) {
-	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusK8sRoleBindingKubeSystem))
-	if err != nil {
-		return nil, err
-	}
-
-	rb.Subjects[0].Namespace = f.namespace
-
-	return rb, nil
-}
-
-func (f *Factory) PrometheusK8sRoleKubeSystem() (*rbacv1beta1.Role, error) {
-	return f.NewRole(MustAssetReader(PrometheusK8sRoleKubeSystem))
 }
 
 func (f *Factory) PrometheusK8sRoleBinding() (*rbacv1beta1.RoleBinding, error) {

@@ -112,26 +112,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus ClusterRoleBinding failed")
 	}
 
-	rd, err := t.factory.PrometheusK8sRoleDefault()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Role default failed")
-	}
-
-	err = t.client.CreateOrUpdateRole(rd)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Role default failed")
-	}
-
-	rbd, err := t.factory.PrometheusK8sRoleBindingDefault()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus RoleBinding default failed")
-	}
-
-	err = t.client.CreateOrUpdateRoleBinding(rbd)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus RoleBinding default failed")
-	}
-
 	rc, err := t.factory.PrometheusK8sRoleConfig()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Role config failed")
@@ -140,26 +120,6 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.CreateOrUpdateRole(rc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Role config failed")
-	}
-
-	rks, err := t.factory.PrometheusK8sRoleKubeSystem()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Role kube-system failed")
-	}
-
-	err = t.client.CreateOrUpdateRole(rks)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Role kube-system failed")
-	}
-
-	rbks, err := t.factory.PrometheusK8sRoleBindingKubeSystem()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus RoleBinding kube-system failed")
-	}
-
-	err = t.client.CreateOrUpdateRoleBinding(rbks)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus RoleBinding kube-system failed")
 	}
 
 	rts, err := t.factory.PrometheusK8sRole()
