@@ -1,16 +1,17 @@
-FROM openshift/origin-base
+FROM openshift/origin-base AS builder
 
 ENV GOPATH /go
-ENV PATH="${PATH}:${GOPATH}/bin"
 RUN mkdir $GOPATH
+RUN yum install -y golang make git
 
 COPY . $GOPATH/src/github.com/openshift/cluster-monitoring-operator
-COPY manifests /manifests
+RUN cd $GOPATH/src/github.com/openshift/cluster-monitoring-operator && \
+    make operator-no-deps
 
-RUN yum install -y golang make git && \
-    cd $GOPATH/src/github.com/openshift/cluster-monitoring-operator && \
-    make operator-no-deps && cp $GOPATH/src/github.com/openshift/cluster-monitoring-operator/operator /usr/bin/ && \
-    yum erase -y golang make git && yum clean all
+FROM openshift/origin-base
+
+COPY --from=builder /go/src/github.com/openshift/cluster-monitoring-operator/operator /usr/bin/
+COPY manifests /manifests
 
 LABEL io.k8s.display-name="OpenShift cluster-monitoring-operator" \
       io.k8s.description="This is a component of OpenShift Container Platform and manages the lifecycle of the Prometheus based cluster monitoring stack." \
