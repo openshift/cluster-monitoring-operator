@@ -122,24 +122,28 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Role config failed")
 	}
 
-	rts, err := t.factory.PrometheusK8sRole()
+	rl, err := t.factory.PrometheusK8sRoleList()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Role failed")
 	}
 
-	err = t.client.CreateOrUpdateRole(rts)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Role failed")
+	for _, r := range rl.Items {
+		err = t.client.CreateOrUpdateRole(&r)
+		if err != nil {
+			return errors.Wrapf(err, "reconciling Prometheus Role %q failed", r.Name)
+		}
 	}
 
-	rbts, err := t.factory.PrometheusK8sRoleBinding()
+	rbl, err := t.factory.PrometheusK8sRoleBindingList()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus RoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateRoleBinding(rbts)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus RoleBinding failed")
+	for _, rb := range rbl.Items {
+		err = t.client.CreateOrUpdateRoleBinding(&rb)
+		if err != nil {
+			return errors.Wrapf(err, "reconciling Prometheus RoleBinding %q failed", rb.Name)
+		}
 	}
 
 	rbc, err := t.factory.PrometheusK8sRoleBindingConfig()
