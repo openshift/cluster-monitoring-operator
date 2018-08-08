@@ -32,6 +32,12 @@ type Config struct {
 	KubeRbacProxyConfig      *KubeRbacProxyConfig      `json:"kubeRbacProxy"`
 	GrafanaConfig            *GrafanaConfig            `json:"grafana"`
 	EtcdConfig               *EtcdConfig               `json:"etcd"`
+	HTTPConfig               *HTTPConfig               `json:"http"`
+}
+
+type HTTPConfig struct {
+	HTTPProxy  string `json:"httpProxy"`
+	HTTPSProxy string `json:"httpsProxy"`
 }
 
 type PrometheusOperatorConfig struct {
@@ -183,6 +189,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.KubeRbacProxyConfig.BaseImage == "" {
 		c.KubeRbacProxyConfig.BaseImage = "quay.io/brancz/kube-rbac-proxy"
+	}
+	if c.HTTPConfig == nil {
+		c.HTTPConfig = &HTTPConfig{}
 	}
 }
 
