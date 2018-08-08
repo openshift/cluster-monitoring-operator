@@ -10,9 +10,7 @@
 # 	assets/node-exporter/cluster-role.yaml
 # 	assets/prometheus-k8s/cluster-role.yaml
 # 	assets/prometheus-k8s/role-config.yaml
-# 	assets/prometheus-k8s/role-default.yaml
-# 	assets/prometheus-k8s/role-kube-system.yaml
-# 	assets/prometheus-k8s/role-namespace.yaml
+# 	assets/prometheus-k8s/role-specific-namespaces.yaml
 # 	assets/prometheus-operator/cluster-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
