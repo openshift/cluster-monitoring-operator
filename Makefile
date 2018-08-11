@@ -15,7 +15,7 @@ SRC=$(shell find . -type f -name '*.go') pkg/manifests/bindata.go
 GOBINDATA_BIN=$(GOPATH)/bin/go-bindata
 GOJSONTOYAML_BIN=$(GOPATH)/bin/gojsontoyaml
 # We need jsonnet on Travis; here we default to the user's installed jsonnet binary; if nothing is installed, then install go-jsonnet.
-JSONNET_BIN=$(if $(shell which jsonnet),$(shell which jsonnet),$(GOPATH)/bin/jsonnet)
+JSONNET_BIN=$(if $(shell which jsonnet 2>/dev/null),$(shell which jsonnet 2>/dev/null),$(GOPATH)/bin/jsonnet)
 JB_BIN=$(GOPATH)/bin/jb
 ASSETS=$(shell grep -oh 'assets/.*\.yaml' pkg/manifests/manifests.go)
 JSONNET_SRC=$(shell find ./jsonnet -type f)
