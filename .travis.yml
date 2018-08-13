@@ -12,5 +12,5 @@ jobs:
   include:
   - script: yamllint .
   - stage: Build
-    script: make build
+    script: make dependencies build
   - script: make generate && git diff --exit-code

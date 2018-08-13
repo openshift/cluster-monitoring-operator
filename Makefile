@@ -12,6 +12,7 @@ PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
 GOOS=linux
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
 SRC=$(shell find . -type f -name '*.go') pkg/manifests/bindata.go
+EMBEDMD_BIN=$(GOPATH)/bin/embedmd
 GOBINDATA_BIN=$(GOPATH)/bin/go-bindata
 GOJSONTOYAML_BIN=$(GOPATH)/bin/gojsontoyaml
 # We need jsonnet on Travis; here we default to the user's installed jsonnet binary; if nothing is installed, then install go-jsonnet.
@@ -39,44 +40,42 @@ push: container
 	docker push $(REPO):$(TAG)
 
 clean:
-	rm $(BIN)
+	rm -f $(BIN)
 	go clean -r $(MAIN_PKG)
-	docker images -q $(REPO) | xargs docker rmi --force
+	docker images -q $(REPO) | xargs --no-run-if-empty docker rmi --force
+	rm -rf jsonnet/vendor
 
-embedmd:
-	@go get github.com/campoy/embedmd
-
-docs: embedmd
+docs:
 	embedmd -w `find Documentation -name "*.md"`
 
-bindata: pkg/manifests/bindata.go
-pkg/manifests/bindata.go: $(ASSETS) $(GOBINDATA_BIN)
+pkg/manifests/bindata.go: $(ASSETS)
 	# Using "-modtime 1" to make generate target deterministic. It sets all file time stamps to unix timestamp 1
 	go-bindata -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
 
-$(ASSETS): $(JSONNET_SRC) $(JSONNET_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_VENDOR)
+$(ASSETS): $(JSONNET_SRC) $(JSONNET_VENDOR) hack/build-jsonnet.sh
 	./hack/build-jsonnet.sh
 
-$(JSONNET_VENDOR): $(JB_BIN)
+$(JSONNET_VENDOR): jsonnet/jsonnetfile.json
 	cd jsonnet && jb install
 
-generate:
+generate: clean
 	docker build -t tpo-generate -f Dockerfile.generate .
-	docker run --rm --security-opt label=disable -v `pwd`:/go/src/github.com/openshift/cluster-monitoring-operator -w /go/src/github.com/openshift/cluster-monitoring-operator tpo-generate make merge-cluster-roles bindata docs
+	docker run --rm --security-opt label=disable -v `pwd`:/go/src/github.com/openshift/cluster-monitoring-operator -w /go/src/github.com/openshift/cluster-monitoring-operator tpo-generate make dependencies merge-cluster-roles docs
 
-gobindata: $(GOBINDATA_BIN)
+dependencies: $(JB_BIN) $(JSONNET_BIN) $(GOBINDATA_BIN) $(GOJSONTOYAML_BIN) $(EMBEDMD_BIN)
+
+$(EMBEDMD_BIN):
+	go get -u github.com/campoy/embedmd
+
 $(GOBINDATA_BIN):
 	go get -u github.com/jteeuwen/go-bindata/...
 
-gojsontoyaml: $(GOJSONTOYAML_BIN)
 $(GOJSONTOYAML_BIN):
 	go get -u github.com/brancz/gojsontoyaml
 
-jb: $(JB_BIN)
 $(JB_BIN):
 	go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
 
-jsonnet: $(JSONNET_BIN)
 $(JSONNET_BIN):
 	go get -u github.com/google/go-jsonnet/jsonnet
 
@@ -102,7 +101,8 @@ build-docker-test:
 run-docker-test-minikube:
 	docker run --rm -it --env KUBECONFIG=/kubeconfig -v /home/$(USER)/.kube/config:/kubeconfig -v /home/$(USER)/.minikube:/home/$(USER)/.minikube quay.io/coreos/cluster-monitoring-operator-test:$(TAG)
 
-merge-cluster-roles:
+merge-cluster-roles: manifests/cluster-monitoring-operator-role.yaml
+manifests/cluster-monitoring-operator-role.yaml: $(ASSETS) hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in
 	python2 hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/cluster-monitoring-operator-role.yaml
 
-.PHONY: all build run crossbuild container push clean deps generate bindata gobindata gojsontoyaml jsonnet test e2e-test e2e-clean
+.PHONY: all build run crossbuild container push clean deps generate dependencies test e2e-test e2e-clean merge-cluster-roles
