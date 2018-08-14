@@ -103,26 +103,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sRoleBindingDefault()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sRoleDefault()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sRoleBindingKubeSystem()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sRoleKubeSystem()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusK8sRoleConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -133,12 +113,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sRoleBinding()
+	_, err = f.PrometheusK8sRoleBindingList()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sRole()
+	_, err = f.PrometheusK8sRoleList()
 	if err != nil {
 		t.Fatal(err)
 	}
