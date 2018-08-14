@@ -38,6 +38,7 @@ type Config struct {
 type HTTPConfig struct {
 	HTTPProxy  string `json:"httpProxy"`
 	HTTPSProxy string `json:"httpsProxy"`
+	NoProxy    string `json:"noProxy"`
 }
 
 type PrometheusOperatorConfig struct {

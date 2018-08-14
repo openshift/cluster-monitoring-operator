@@ -318,6 +318,7 @@ func TestHTTPConfig(t *testing.T) {
 				hasContainers,
 				containersHaveEnv("HTTP_PROXY", ""),
 				containersHaveEnv("HTTPS_PROXY", ""),
+				containersHaveEnv("NO_PROXY", ""),
 			),
 		},
 		{
@@ -329,6 +330,7 @@ func TestHTTPConfig(t *testing.T) {
 				hasContainers,
 				containersHaveEnv("HTTP_PROXY", ""),
 				containersHaveEnv("HTTPS_PROXY", ""),
+				containersHaveEnv("NO_PROXY", ""),
 			),
 		},
 		{
@@ -341,6 +343,7 @@ func TestHTTPConfig(t *testing.T) {
 				hasContainers,
 				containersHaveEnv("HTTP_PROXY", "http://insecure.proxy"),
 				containersHaveEnv("HTTPS_PROXY", ""),
+				containersHaveEnv("NO_PROXY", ""),
 			),
 		},
 		{
@@ -353,6 +356,7 @@ func TestHTTPConfig(t *testing.T) {
 				hasContainers,
 				containersHaveEnv("HTTP_PROXY", ""),
 				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+				containersHaveEnv("NO_PROXY", ""),
 			),
 		},
 		{
@@ -366,6 +370,36 @@ func TestHTTPConfig(t *testing.T) {
 				hasContainers,
 				containersHaveEnv("HTTP_PROXY", "http://insecure.proxy"),
 				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+				containersHaveEnv("NO_PROXY", ""),
+			),
+		},
+		{
+			name: "https and no proxy",
+
+			config: `http:
+  httpsProxy: https://secure.proxy
+  noProxy: .test.local,.cluster.local`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", ""),
+				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+				containersHaveEnv("NO_PROXY", ".test.local,.cluster.local"),
+			),
+		},
+		{
+			name: "http and https and no proxy",
+
+			config: `http:
+  httpProxy: http://insecure.proxy
+  httpsProxy: https://secure.proxy
+  noProxy: .test.local,.cluster.local`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", "http://insecure.proxy"),
+				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+				containersHaveEnv("NO_PROXY", ".test.local,.cluster.local"),
 			),
 		},
 	} {

@@ -182,6 +182,10 @@ local authorizationRole = policyRule.new() +
                   name: 'HTTPS_PROXY',
                   value: '',
                 },
+                {
+                  name: 'NO_PROXY',
+                  value: '',
+                },
               ],
             },
           ],
