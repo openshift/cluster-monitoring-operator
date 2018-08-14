@@ -46,7 +46,7 @@ func (t *tags) Set(value string) error {
 	for _, pair := range pairs {
 		splitPair := strings.Split(pair, "=")
 		if len(splitPair) != 2 {
-			return fmt.Errorf("Pair %v is malformed. Key value pairs must be in the form of \"key=value\". Multiple pairs must be comma separated.")
+			return fmt.Errorf("pair %q is malformed; key-value pairs must be in the form of \"key=value\"; multiple pairs must be comma-separated", value)
 		}
 		imageName := splitPair[0]
 		imageTag := splitPair[1]

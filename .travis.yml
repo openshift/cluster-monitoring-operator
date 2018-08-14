@@ -11,6 +11,7 @@ before_install:
 jobs:
   include:
   - script: yamllint .
+  - script: make test-unit
   - stage: Build
     script: make dependencies build
   - script: make generate && git diff --exit-code
