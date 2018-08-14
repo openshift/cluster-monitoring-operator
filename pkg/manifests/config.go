@@ -42,12 +42,13 @@ type HTTPConfig struct {
 }
 
 type PrometheusOperatorConfig struct {
-	BaseImage                   string `json:"baseImage"`
-	Tag                         string `json:"-"`
-	PrometheusConfigReloader    string `json:"prometheusConfigReloaderBaseImage"`
-	PrometheusConfigReloaderTag string `json:"-"`
-	ConfigReloaderImage         string `json:"configReloaderBaseImage"`
-	ConfigReloaderTag           string `json:"-"`
+	BaseImage                   string            `json:"baseImage"`
+	Tag                         string            `json:"-"`
+	PrometheusConfigReloader    string            `json:"prometheusConfigReloaderBaseImage"`
+	PrometheusConfigReloaderTag string            `json:"-"`
+	ConfigReloaderImage         string            `json:"configReloaderBaseImage"`
+	ConfigReloaderTag           string            `json:"-"`
+	NodeSelector                map[string]string `json:"nodeSelector"`
 }
 
 type PrometheusK8sConfig struct {

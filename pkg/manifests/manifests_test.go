@@ -427,6 +427,8 @@ func TestHTTPConfig(t *testing.T) {
 
 func TestPrometheusOperatorConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusOperator:
+  nodeSelector:
+    type: master
   baseImage: quay.io/test/prometheus-operator
   prometheusConfigReloaderBaseImage: quay.io/test/prometheus-config-reloader
   configReloaderBaseImage: quay.io/test/configmap-reload
@@ -439,6 +441,14 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	d, err := f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if len(d.Spec.Template.Spec.NodeSelector) == 0 {
+		t.Fatal("expected node selector to be present, got none")
+	}
+
+	if got := d.Spec.Template.Spec.NodeSelector["type"]; got != "master" {
+		t.Fatalf("expected node selector to be master, got %q", got)
 	}
 
 	if !strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Image, "quay.io/test/prometheus-operator") {

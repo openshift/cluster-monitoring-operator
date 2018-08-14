@@ -833,6 +833,10 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
+	if len(f.config.PrometheusOperatorConfig.NodeSelector) > 0 {
+		d.Spec.Template.Spec.NodeSelector = f.config.PrometheusOperatorConfig.NodeSelector
+	}
+
 	if f.config.PrometheusOperatorConfig.BaseImage != "" {
 		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
 		if err != nil {
