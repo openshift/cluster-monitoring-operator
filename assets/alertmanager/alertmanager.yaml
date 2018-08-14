@@ -29,6 +29,8 @@ spec:
       value: ""
     - name: HTTPS_PROXY
       value: ""
+    - name: NO_PROXY
+      value: ""
     image: openshift/oauth-proxy:v1.1.0
     name: alertmanager-proxy
     ports:

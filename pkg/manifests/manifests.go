@@ -278,6 +278,8 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.HTTPProxy
 			case "HTTPS_PROXY":
 				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.HTTPSProxy
+			case "NO_PROXY":
+				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.NoProxy
 			}
 		}
 	}
