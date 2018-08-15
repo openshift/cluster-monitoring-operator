@@ -9,7 +9,11 @@
 
               containers:
                 std.map(
-                  function(c) c { resources: {}, args+: ['--namespace=' + $._config.namespace] },
+                  function(c) c {
+                    resources: {},
+                    args+: ['--namespace=' + $._config.namespace],
+                    securityContext: {},
+                  },
                   super.containers,
                 ),
             },
