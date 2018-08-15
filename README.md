@@ -27,20 +27,21 @@ Metrics are collected from the following components
 
 ## Contributing new component integrations
 
-The Cluster Monitoring Operator has many builtin `ServiceMonitor` resources which enable discovering the metrics endpoints of a variety of well-known components.
+The Cluster Monitoring Operator has many builtin `ServiceMonitor` resources which enable discovering the metrics endpoints of a variety of well-known components. Only components that must be created before the cluster monitoring stack belong in this repository, in order to solve the cyclic dependencies of bootstrapping.
 
 To register a new builtin component, make the following changes:
 
-* Add a new `ServiceMonitor` manifest file to [assets/prometheus-k8s](assets/prometheus-k8s) following the existing `prometheus-k8s-service-monitor-$COMPONENT.yaml` naming convention.
-* Add a constant in [pkg/manifests/manifests.go](pkg/manifests/manifests.go) which points to the new manifest file.
+* Add a new `ServiceMonitor` manifest file to [jsonnet/prometheus.jsonnet](jsonnet/prometheus.jsonnet). An example of this can be seen for the OpenShift component "kube-controllers", [here](https://github.com/openshift/cluster-monitoring-operator/blob/01bfe3789117e7074e893251f2f6d31c816db8fb/jsonnet/prometheus.jsonnet#L113-L145).
+* Re-generate the go-bindata code, using the `pkg/manifests/bindata.go` make target. This will also create a new file in `assets/prometheus-k8s/` according to the name given in the jsonnet code.
+* Add a constant in [pkg/manifests/manifests.go](pkg/manifests/manifests.go) which points to the new manifest file, from `assets/`.
 * Add a new `Factory` method in [pkg/manifests/manifests.go](pkg/manifests/manifests.go) which loads the manifest using the new constant.
 * Add a step to `PrometheusTask` in [pkg/tasks/prometheus.go](pkg/tasks/prometheus.go) which creates the `ServiceMonitor` using the `Factory` new method.
 
-To add a new builtin alerting rule:
+To add new builtin recording or alerting rules:
 
-* Add a new [Prometheus rules file](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) to [rules/k8s](rules/k8s).
+* Add a new [Prometheus rules file](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) to [jsonnet/rules.jsonnet](jsonnet/rules.jsonnet).
 
-Run `make generate` after you modify the files and make sure to add the modified files to the commit.
+Run `make pkg/manifests/bindata.go` after you modify the files and make sure to add the modified files to the commit. All rules are automatically created, so no additional code changes are necessary.
 
 ## Roadmap
 
