@@ -28,9 +28,7 @@ spec:
         - containerPort: 8080
           name: http
         resources: {}
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
+        securityContext: {}
       nodeSelector:
         beta.kubernetes.io/os: linux
       securityContext: {}
