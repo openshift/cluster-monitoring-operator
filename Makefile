@@ -21,11 +21,15 @@ JB_BIN=$(GOPATH)/bin/jb
 ASSETS=$(shell grep -oh 'assets/.*\.yaml' pkg/manifests/manifests.go)
 JSONNET_SRC=$(shell find ./jsonnet -type f)
 JSONNET_VENDOR=$(addprefix jsonnet/vendor/, $(sort $(shell grep -oh "'.*libsonnet'" ./jsonnet/* --exclude-dir=./jsonnet/vendor | tr -d "'")))
+GO_BUILD_RECIPE=GOOS=$(GOOS) go build --ldflags="-s -X github.com/openshift/cluster-monitoring-operator/pkg/operator.Version=$(VERSION)" -o $(BIN) $(MAIN_PKG)
 
 build: $(BIN)
 
 $(BIN): $(SRC)
-	GOOS=$(GOOS) go build --ldflags="-s -X github.com/openshift/cluster-monitoring-operator/pkg/operator.Version=$(VERSION)" -o $@ $(MAIN_PKG)
+	$(GO_BUILD_RECIPE)
+
+operator-no-deps:
+	$(GO_BUILD_RECIPE)
 
 run: build
 	./$(BIN)
@@ -105,4 +109,4 @@ merge-cluster-roles: manifests/cluster-monitoring-operator-role.yaml
 manifests/cluster-monitoring-operator-role.yaml: $(ASSETS) hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in
 	python2 hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/cluster-monitoring-operator-role.yaml
 
-.PHONY: all build run crossbuild container push clean deps generate dependencies test e2e-test e2e-clean merge-cluster-roles
+.PHONY: all build operator-no-deps run crossbuild container push clean deps generate dependencies test e2e-test e2e-clean merge-cluster-roles
