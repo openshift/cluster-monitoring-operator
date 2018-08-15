@@ -15,3 +15,4 @@ jobs:
   - stage: Build
     script: make dependencies build
   - script: make generate && git diff --exit-code
+  - script: make container
