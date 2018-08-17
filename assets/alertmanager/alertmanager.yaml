@@ -51,4 +51,4 @@ spec:
   - alertmanager-main-proxy
   securityContext: {}
   serviceAccountName: alertmanager-main
-  version: v0.15.0
+  version: v0.15.2
