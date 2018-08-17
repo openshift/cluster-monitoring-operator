@@ -57,6 +57,15 @@
           },
         ],
       },
+      {
+        name: 'kubernetes.rules',
+        rules: [
+          {
+            expr: 'sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))',
+            record: 'build_error_rate',
+          },
+        ],
+      },
     ],
   },
 }
