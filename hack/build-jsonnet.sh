@@ -13,7 +13,10 @@ mkdir tmp
 
 jsonnet -J jsonnet/vendor jsonnet/main.jsonnet > tmp/main.json
 
-mapfile -t files < <(jq -r 'keys[]' tmp/main.json)
+while IFS= read -r line; do
+    files+=("$line")
+done < <(jq -r 'keys[]' tmp/main.json)
+
 
 for file in "${files[@]}"
 do
