@@ -1,5 +1,5 @@
-local kp = (import 'Openshiftmetrics.jsonnet') +
-           (import 'kube-prometheus/kube-prometheus.libsonnet') +
+local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
+           (import 'Openshiftmetrics.jsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
            {
              _config+:: {

@@ -1,4 +1,9 @@
 {
+  _config+:: {
+    grafanaDashboardIDs+:: {
+      'openshift-dashboard.json': 'abcd',
+    },
+  },
   grafanaDashboards+:: {
     "openshift-dashboard.json":
       local grafana = import 'grafonnet/grafana.libsonnet';
