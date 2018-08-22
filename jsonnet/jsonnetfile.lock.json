@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "3c341913ddd3882c8f1edc1c20accdbcaaf10525"
+            "version": "a2b417a9aa27d508d1c0b730ace0dff20b3b7bf7"
         },
         {
             "name": "grafonnet",
@@ -78,7 +78,7 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "6890a9e633b0cdccdeaf65ccda3d84fb0838801f"
+            "version": "2921ab670fa646c2cbb3ba53b5c5bc11ea47632f"
         }
     ]
 }
