@@ -75,7 +75,7 @@ spec:
           path: /sys
         name: sys
       - hostPath:
-          path: /root
+          path: /
         name: root
       - name: node-exporter-tls
         secret:
