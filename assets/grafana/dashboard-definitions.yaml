@@ -2026,7 +2026,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "sum(max(node_filesystem_size{fstype=\u007e\"ext[24]\"} - node_filesystem_avail{fstype=\u007e\"ext[24]\"}) by (device,pod,namespace)) by (pod,namespace) / scalar(sum(max(node_filesystem_size{fstype=\u007e\"ext[24]\"}) by (device,pod,namespace))) * on (namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:\n",
+                                  "expr": "sum(max(node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"} - node_filesystem_avail{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"}) by (device,pod,namespace)) by (pod,namespace)\n/ scalar(sum(max(node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"}) by (device,pod,namespace)))\n* on (namespace, pod) group_left (node) node_namespace_pod:kube_pod_info:\n",
                                   "format": "time_series",
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
@@ -2942,10 +2942,10 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "1 - sum(max by (device, node) (node_filesystem_avail{fstype=\u007e\"ext[24]\"})) / sum(max by (device, node) (node_filesystem_size{fstype=\u007e\"ext[24]\"}))",
+                                  "expr": "max ((node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"} - node_filesystem_avail{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"})\n/ node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"}) by (namespace, pod, device)\n* on (namespace, pod) group_left (node) node_namespace_pod:kube_pod_info:{node=\"$node\"}\n",
                                   "format": "time_series",
                                   "intervalFactor": 2,
-                                  "legendFormat": "Disk",
+                                  "legendFormat": "{{device}}",
                                   "legendLink": null,
                                   "step": 10
                               }
@@ -6920,7 +6920,7 @@ items:
                           "tableColumn": "",
                           "targets": [
                               {
-                                  "expr": "(\n  sum(node_filesystem_size{job=\"node-exporter\", device!=\"rootfs\", instance=\"$instance\"})\n- sum(node_filesystem_avail{job=\"node-exporter\", device!=\"rootfs\", instance=\"$instance\"})\n) * 100\n  /\nsum(node_filesystem_size{job=\"node-exporter\", device!=\"rootfs\", instance=\"$instance\"})\n",
+                                  "expr": "(1 - max (node_filesystem_avail{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\", instance=\"$instance\"}\n/ node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\", instance=\"$instance\"}) by (device,instance)) * 100\n",
                                   "format": "time_series",
                                   "intervalFactor": 2,
                                   "legendFormat": ""
