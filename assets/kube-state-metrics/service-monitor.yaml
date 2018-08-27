@@ -12,6 +12,7 @@ spec:
     interval: 2m
     port: https-main
     scheme: https
+    scrapeTimeout: 2m
     tlsConfig:
       caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
       serverName: server-name-replaced-at-runtime
@@ -19,6 +20,7 @@ spec:
     interval: 2m
     port: https-self
     scheme: https
+    scrapeTimeout: 2m
     tlsConfig:
       caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
       serverName: server-name-replaced-at-runtime
