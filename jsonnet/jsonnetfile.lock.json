@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "f5b2bcff06215872dd400939baca6f54057165f3"
+            "version": "4090e091fee875fd2baec1531a7ef9c2ab58c99b"
         },
         {
             "name": "grafonnet",
@@ -38,7 +38,7 @@
                     "subdir": "grafonnet"
                 }
             },
-            "version": "0fdef020a6360415d2c8fdc82b29122583e4df05"
+            "version": "d21784739a9adc7992c0382d1efa42be4ddb3044"
         },
         {
             "name": "grafana-builder",
@@ -78,7 +78,7 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "a9fcc82e4d8bb79fac0e347ced12043757e52591"
+            "version": "af85949b416547ed0989b396a28fe77f65978828"
         }
     ]
 }
