@@ -6144,7 +6144,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -6354,7 +6353,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -6395,7 +6393,7 @@ items:
 
                           ],
                           "spaceLength": 10,
-                          "span": 6,
+                          "span": 9,
                           "stack": false,
                           "steppedLine": false,
                           "targets": [
@@ -6539,7 +6537,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -6745,7 +6742,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -6793,7 +6789,7 @@ items:
                               }
                           ],
                           "spaceLength": 10,
-                          "span": 9,
+                          "span": 6,
                           "stack": false,
                           "steppedLine": false,
                           "targets": [
@@ -6860,84 +6856,95 @@ items:
                           ]
                       },
                       {
-                          "cacheTimeout": null,
-                          "colorBackground": false,
-                          "colorValue": false,
-                          "colors": [
-                              "rgba(50, 172, 45, 0.97)",
-                              "rgba(237, 129, 40, 0.89)",
-                              "rgba(245, 54, 54, 0.9)"
-                          ],
-                          "datasource": "$datasource",
-                          "format": "percent",
-                          "gauge": {
-                              "maxValue": 100,
-                              "minValue": 0,
-                              "show": true,
-                              "thresholdLabels": false,
-                              "thresholdMarkers": true
+                          "aliasColors": {
+
                           },
+                          "bars": false,
+                          "dashLength": 10,
+                          "dashes": false,
+                          "datasource": "$datasource",
+                          "fill": 1,
                           "gridPos": {
 
                           },
                           "id": 9,
-                          "interval": null,
+                          "legend": {
+                              "alignAsTable": false,
+                              "avg": false,
+                              "current": false,
+                              "max": false,
+                              "min": false,
+                              "rightSide": false,
+                              "show": true,
+                              "total": false,
+                              "values": false
+                          },
+                          "lines": true,
+                          "linewidth": 1,
                           "links": [
 
                           ],
-                          "mappingType": 1,
-                          "mappingTypes": [
-                              {
-                                  "name": "value to text",
-                                  "value": 1
-                              },
-                              {
-                                  "name": "range to text",
-                                  "value": 2
-                              }
+                          "nullPointMode": "null",
+                          "percentage": false,
+                          "pointradius": 5,
+                          "points": false,
+                          "renderer": "flot",
+                          "repeat": null,
+                          "seriesOverrides": [
+
                           ],
-                          "maxDataPoints": 100,
-                          "nullPointMode": "connected",
-                          "nullText": null,
-                          "postfix": "",
-                          "postfixFontSize": "50%",
-                          "prefix": "",
-                          "prefixFontSize": "50%",
-                          "rangeMaps": [
-                              {
-                                  "from": "null",
-                                  "text": "N/A",
-                                  "to": "null"
-                              }
-                          ],
-                          "span": 3,
-                          "sparkline": {
-                              "fillColor": "rgba(31, 118, 189, 0.18)",
-                              "full": false,
-                              "lineColor": "rgb(31, 120, 193)",
-                              "show": false
-                          },
-                          "tableColumn": "",
+                          "spaceLength": 10,
+                          "span": 6,
+                          "stack": false,
+                          "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "(1 - max (node_filesystem_avail{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\", instance=\"$instance\"}\n/ node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\", instance=\"$instance\"}) by (device,instance)) * 100\n",
+                                  "expr": "max ((node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\",instance=\"$instance\"}\n- node_filesystem_avail{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\",instance=\"$instance\"})\n/ node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\",instance=\"$instance\"}) by (namespace, pod, device)\n",
                                   "format": "time_series",
                                   "intervalFactor": 2,
-                                  "legendFormat": ""
+                                  "legendFormat": "{{device}}",
+                                  "refId": "A"
                               }
                           ],
-                          "thresholds": "80, 90",
+                          "thresholds": [
+
+                          ],
+                          "timeFrom": null,
+                          "timeShift": null,
                           "title": "Disk Space Usage",
-                          "type": "singlestat",
-                          "valueFontSize": "80%",
-                          "valueMaps": [
+                          "tooltip": {
+                              "shared": true,
+                              "sort": 0,
+                              "value_type": "individual"
+                          },
+                          "type": "graph",
+                          "xaxis": {
+                              "buckets": null,
+                              "mode": "time",
+                              "name": null,
+                              "show": true,
+                              "values": [
+
+                              ]
+                          },
+                          "yaxes": [
                               {
-                                  "op": "=",
-                                  "text": "N/A",
-                                  "value": "null"
+                                  "format": "percentunit",
+                                  "label": null,
+                                  "logBase": 1,
+                                  "max": null,
+                                  "min": null,
+                                  "show": true
+                              },
+                              {
+                                  "format": "percentunit",
+                                  "label": null,
+                                  "logBase": 1,
+                                  "max": null,
+                                  "min": null,
+                                  "show": true
                               }
-                          ],
-                          "valueName": "current"
+                          ]
                       }
                   ],
                   "repeat": null,
@@ -6951,7 +6958,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -7256,7 +7262,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -7297,7 +7302,6 @@ items:
 
                           ],
                           "spaceLength": 10,
-                          "span": 12,
                           "stack": false,
                           "steppedLine": false,
                           "targets": [
@@ -7375,7 +7379,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -7416,7 +7419,6 @@ items:
 
                           ],
                           "spaceLength": 10,
-                          "span": 12,
                           "stack": false,
                           "steppedLine": false,
                           "targets": [
@@ -7480,7 +7482,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -7521,7 +7522,6 @@ items:
 
                           ],
                           "spaceLength": 10,
-                          "span": 12,
                           "stack": false,
                           "steppedLine": false,
                           "targets": [
@@ -7746,7 +7746,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "cacheTimeout": null,
@@ -8331,7 +8330,6 @@ items:
               {
                   "collapse": false,
                   "collapsed": false,
-                  "height": "250px",
                   "panels": [
                       {
                           "aliasColors": {
@@ -8372,7 +8370,6 @@ items:
 
                           ],
                           "spaceLength": 10,
-                          "span": 12,
                           "stack": false,
                           "steppedLine": false,
                           "targets": [
