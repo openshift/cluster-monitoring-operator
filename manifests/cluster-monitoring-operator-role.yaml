@@ -4,6 +4,7 @@
 # Sources: 
 # 	manifests/cluster-monitoring-operator-role.yaml.in
 # 	assets/alertmanager/cluster-role.yaml
+# 	assets/cluster-monitoring-operator/cluster-role.yaml
 # 	assets/grafana/cluster-role.yaml
 # 	assets/kube-state-metrics/cluster-role.yaml
 # 	assets/kube-state-metrics/role.yaml
@@ -37,6 +38,9 @@ rules:
 - apiGroups: [authorization.k8s.io]
   resources: [subjectaccessreviews]
   verbs: [create]
+- apiGroups: ['']
+  resources: [namespaces]
+  verbs: [get]
 - apiGroups: [apps]
   resources: [daemonsets, deployments, replicasets, statefulsets]
   verbs: [list, watch]
@@ -64,9 +68,6 @@ rules:
   resourceNames: [kube-state-metrics]
   resources: [deployments]
   verbs: [get, update]
-- apiGroups: ['']
-  resources: [namespaces]
-  verbs: [get]
 - apiGroups: ['']
   resources: [nodes/metrics]
   verbs: [get]

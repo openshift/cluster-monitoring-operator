@@ -44,5 +44,20 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
         ],
       },
     },
+
+    clusterRole:
+      local clusterRole = k.rbac.v1.clusterRole;
+      local policyRule = clusterRole.rulesType;
+
+      local namespacesRule = policyRule.new() +
+                             policyRule.withApiGroups(['']) +
+                             policyRule.withResources(['namespaces']) +
+                             policyRule.withVerbs(['get']);
+
+      local rules = [namespacesRule];
+
+      clusterRole.new() +
+      clusterRole.mixin.metadata.withName('cluster-monitoring-view') +
+      clusterRole.withRules(rules),
   },
 }

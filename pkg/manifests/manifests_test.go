@@ -257,6 +257,21 @@ func TestUnconfiguredManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	_, err = f.ClusterMonitoringClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ClusterMonitoringOperatorService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ClusterMonitoringOperatorServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestHTTPConfig(t *testing.T) {

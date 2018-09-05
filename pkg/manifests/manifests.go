@@ -106,6 +106,7 @@ var (
 
 	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
+	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
 )
 
 var (
@@ -1117,6 +1118,15 @@ func (f *Factory) GrafanaService() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) ClusterMonitoringClusterRole() (*rbacv1beta1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
 }
 
 func (f *Factory) ClusterMonitoringOperatorService() (*v1.Service, error) {
