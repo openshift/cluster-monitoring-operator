@@ -204,6 +204,79 @@ local namespacesRole = policyRule.new() +
         },
       },
 
+    serviceMonitorMeteringReportingOperator:
+      {
+        kind: 'ServiceMonitor',
+        apiVersion: 'monitoring.coreos.com/v1',
+        metadata: {
+          name: 'metering-reporting-operator',
+          namespace: $._config.namespace,
+          labels: {
+            'k8s-app': 'reporting-operator',
+          },
+        },
+        spec: {
+          jobLabel: 'k8s-app',
+          endpoints: [
+            {
+              tlsConfig: {
+                serverName: 'reporting-operator-metrics.openshift-metering.svc',
+                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt',
+              },
+              scheme: 'https',
+              port: 'metrics',
+              interval: '30s',
+              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+            },
+          ],
+          namespaceSelector: {
+            matchNames: [
+              'openshift-metering',
+            ],
+          },
+          selector: {
+            matchLabels: {
+              metrics: 'true',
+              app: 'reporting-operator',
+            },
+          },
+        },
+      },
+
+    serviceMonitorMeteringPresto:
+      {
+        kind: 'ServiceMonitor',
+        apiVersion: 'monitoring.coreos.com/v1',
+        metadata: {
+          name: 'metering-presto',
+          namespace: $._config.namespace,
+          labels: {
+            'k8s-app': 'metering-presto',
+          },
+        },
+        spec: {
+          jobLabel: 'k8s-app',
+          endpoints: [
+            {
+              scheme: 'http',
+              port: 'metrics',
+              interval: '30s',
+            },
+          ],
+          namespaceSelector: {
+            matchNames: [
+              'openshift-metering',
+            ],
+          },
+          selector: {
+            matchLabels: {
+              metrics: 'true',
+              app: 'presto',
+            },
+          },
+        },
+      },
+
     serviceMonitorEtcd+:
       {
         metadata+: {

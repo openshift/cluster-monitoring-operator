@@ -196,6 +196,26 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus kube-controllers ServiceMonitor failed")
 	}
 
+	smreportingop, err := t.factory.PrometheusK8sMeteringReportingOperatorServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus metering-reporting-operator ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smreportingop)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus metering-reporting-operator ServiceMonitor failed")
+	}
+
+	smpresto, err := t.factory.PrometheusK8sMeteringPrestoServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus metering-presto ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smpresto)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus metering-presto ServiceMonitor failed")
+	}
+
 	if t.config.EtcdConfig != nil {
 		svc, err := t.factory.PrometheusK8sEtcdService()
 		if err != nil {
