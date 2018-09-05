@@ -49,6 +49,7 @@ type PrometheusOperatorConfig struct {
 	ConfigReloaderImage         string            `json:"configReloaderBaseImage"`
 	ConfigReloaderTag           string            `json:"-"`
 	NodeSelector                map[string]string `json:"nodeSelector"`
+	PriorityClassName           string            `json:"priorityclassname"`
 }
 
 type PrometheusK8sConfig struct {
@@ -60,6 +61,7 @@ type PrometheusK8sConfig struct {
 	ExternalLabels      map[string]string         `json:"externalLabels"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	Hostport            string                    `json:"hostport"`
+	PriorityClassName   string                    `json:"priorityclassname"`
 }
 
 type AlertmanagerMainConfig struct {
@@ -69,34 +71,40 @@ type AlertmanagerMainConfig struct {
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	Hostport            string                    `json:"hostport"`
+	PriorityClassName   string                    `json:"priorityclassname"`
 }
 
 type GrafanaConfig struct {
-	BaseImage    string            `json:"baseImage"`
-	Tag          string            `json:"-"`
-	NodeSelector map[string]string `json:"nodeSelector"`
-	Hostport     string            `json:"hostport"`
+	BaseImage         string            `json:"baseImage"`
+	Tag               string            `json:"-"`
+	NodeSelector      map[string]string `json:"nodeSelector"`
+	Hostport          string            `json:"hostport"`
+	PriorityClassName string            `json:"priorityclassname"`
 }
 
 type AuthConfig struct {
 	BaseImage string `json:"baseImage"`
 	Tag       string `json:"-"`
+	//PriorityClassName string `json:"priorityclassname"`
 }
 
 type NodeExporterConfig struct {
-	BaseImage string `json:"baseImage"`
-	Tag       string `json:"-"`
+	BaseImage         string `json:"baseImage"`
+	Tag               string `json:"-"`
+	PriorityClassName string `json:"priorityclassname"`
 }
 
 type KubeStateMetricsConfig struct {
-	BaseImage    string            `json:"baseImage"`
-	Tag          string            `json:"-"`
-	NodeSelector map[string]string `json:"nodeSelector"`
+	BaseImage         string            `json:"baseImage"`
+	Tag               string            `json:"-"`
+	NodeSelector      map[string]string `json:"nodeSelector"`
+	PriorityClassName string            `json:"priorityclassname"`
 }
 
 type KubeRbacProxyConfig struct {
 	BaseImage string `json:"baseImage"`
 	Tag       string `json:"-"`
+	//PriorityClassName string `json:"priorityclassname"`
 }
 
 type EtcdConfig struct {

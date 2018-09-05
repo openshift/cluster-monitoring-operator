@@ -262,6 +262,11 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 		a.Spec.NodeSelector = f.config.AlertmanagerMainConfig.NodeSelector
 	}
 
+	// Dependent on https://github.com/coreos/prometheus-operator/pull/1875
+	/*if len(f.config.AlertmanagerMainConfig.PriorityClassName) > 0 {
+		a.Spec.PriorityClassName = f.config.AlertmanagerMainConfig.PriorityClassName
+	}*/
+
 	if f.config.AuthConfig.BaseImage != "" {
 		image, err := imageFromString(a.Spec.Containers[0].Image)
 		if err != nil {
@@ -372,6 +377,10 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.NodeSelector = f.config.KubeStateMetricsConfig.NodeSelector
 	}
 
+	if len(f.config.KubeStateMetricsConfig.PriorityClassName) > 0 {
+		d.Spec.Template.Spec.PriorityClassName = f.config.KubeStateMetricsConfig.PriorityClassName
+	}
+
 	d.Namespace = f.namespace
 
 	return d, nil
@@ -435,6 +444,10 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 		image.repo = f.config.KubeRbacProxyConfig.BaseImage
 		image.SetTagIfNotEmpty(f.config.KubeRbacProxyConfig.Tag)
 		ds.Spec.Template.Spec.Containers[1].Image = image.String()
+	}
+
+	if len(f.config.NodeExporterConfig.PriorityClassName) > 0 {
+		ds.Spec.Template.Spec.PriorityClassName = f.config.NodeExporterConfig.PriorityClassName
 	}
 	ds.Namespace = f.namespace
 
@@ -708,6 +721,11 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		p.Spec.NodeSelector = f.config.PrometheusK8sConfig.NodeSelector
 	}
 
+	// Dependent on https://github.com/coreos/prometheus-operator/pull/1875
+	/*if len(f.config.PrometheusK8sConfig.PriorityClassName) > 0 {
+		p.Spec.PriorityClassName = f.config.PrometheusK8sConfig.PriorityClassName
+	}*/
+
 	if f.config.PrometheusK8sConfig.ExternalLabels != nil {
 		p.Spec.ExternalLabels = f.config.PrometheusK8sConfig.ExternalLabels
 	}
@@ -836,6 +854,10 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 
 	if len(f.config.PrometheusOperatorConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.PrometheusOperatorConfig.NodeSelector
+	}
+
+	if len(f.config.PrometheusOperatorConfig.PriorityClassName) > 0 {
+		d.Spec.Template.Spec.PriorityClassName = f.config.PrometheusOperatorConfig.PriorityClassName
 	}
 
 	if f.config.PrometheusOperatorConfig.BaseImage != "" {
@@ -1061,6 +1083,10 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 
 	if f.config.GrafanaConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.GrafanaConfig.NodeSelector
+	}
+
+	if len(f.config.GrafanaConfig.PriorityClassName) > 0 {
+		d.Spec.Template.Spec.PriorityClassName = f.config.GrafanaConfig.PriorityClassName
 	}
 
 	d.Namespace = f.namespace
