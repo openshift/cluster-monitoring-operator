@@ -59,7 +59,7 @@ pkg/manifests/bindata.go: $(ASSETS)
 $(ASSETS): $(JSONNET_SRC) $(JSONNET_VENDOR) hack/build-jsonnet.sh
 	./hack/build-jsonnet.sh
 
-$(JSONNET_VENDOR):
+$(JSONNET_VENDOR): jsonnet/jsonnetfile.json
 	cd jsonnet && jb install
 
 generate: clean
