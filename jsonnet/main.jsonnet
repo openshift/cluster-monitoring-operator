@@ -36,6 +36,13 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     kubeControllerManagerSelector: 'job="kube-controllers"',
     namespaceSelector: 'namespace=~"(openshift.*|kube.*|default|logging)"',
   },
+} + {
+  local d = super.grafanaDashboards,
+  grafanaDashboards:: {
+    [k]: d[k]
+    for k in std.objectFields(d)
+    if !std.setMember(k, ['nodes.json', 'pods.json', 'statefulset.json'])
+  },
 };
 
 { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
