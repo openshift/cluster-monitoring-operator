@@ -20,7 +20,7 @@ JSONNET_BIN=$(if $(shell which jsonnet 2>/dev/null),$(shell which jsonnet 2>/dev
 JB_BIN=$(GOPATH)/bin/jb
 ASSETS=$(shell grep -oh 'assets/.*\.yaml' pkg/manifests/manifests.go)
 JSONNET_SRC=$(shell find ./jsonnet -type f)
-JSONNET_VENDOR=$(addprefix jsonnet/vendor/, $(sort $(shell grep -oh "'.*libsonnet'" ./jsonnet/* --exclude-dir=./jsonnet/vendor | tr -d "'")))
+JSONNET_VENDOR=jsonnet/jsonnetfile.lock.json jsonnet/vendor
 GO_BUILD_RECIPE=GOOS=$(GOOS) go build --ldflags="-s -X github.com/openshift/cluster-monitoring-operator/pkg/operator.Version=$(VERSION)" -o $(BIN) $(MAIN_PKG)
 
 build: $(BIN)

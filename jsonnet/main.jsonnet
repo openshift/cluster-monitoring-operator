@@ -27,13 +27,21 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'grafana.jsonnet') +
            (import 'alertmanager.jsonnet') +
            (import 'prometheus.jsonnet') +
-           (import 'cluster-monitoring-operator.jsonnet') + {
+           (import 'cluster-monitoring-operator.jsonnet') +
+           (import 'remove_runbook.libsonnet') + {
   _config+:: {
     namespace: 'openshift-monitoring',
 
     kubeSchedulerSelector: 'job="kube-controllers"',
     kubeControllerManagerSelector: 'job="kube-controllers"',
     namespaceSelector: 'namespace=~"(openshift.*|kube.*|default|logging)"',
+  },
+} + {
+  local d = super.grafanaDashboards,
+  grafanaDashboards:: {
+    [k]: d[k]
+    for k in std.objectFields(d)
+    if !std.setMember(k, ['nodes.json', 'pods.json', 'statefulset.json'])
   },
 };
 
