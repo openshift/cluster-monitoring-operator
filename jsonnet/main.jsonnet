@@ -27,7 +27,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'grafana.jsonnet') +
            (import 'alertmanager.jsonnet') +
            (import 'prometheus.jsonnet') +
-           (import 'cluster-monitoring-operator.jsonnet') + {
+           (import 'cluster-monitoring-operator.jsonnet') +
+           (import 'remove_runbook.libsonnet') + {
   _config+:: {
     namespace: 'openshift-monitoring',
 
