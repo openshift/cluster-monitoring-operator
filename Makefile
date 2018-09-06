@@ -28,6 +28,8 @@ build: $(BIN)
 $(BIN): $(SRC)
 	$(GO_BUILD_RECIPE)
 
+# We need this Make target so that we can build the operator depending
+# only on what is checked into the repo, without calling to the internet.
 operator-no-deps:
 	$(GO_BUILD_RECIPE)
 
