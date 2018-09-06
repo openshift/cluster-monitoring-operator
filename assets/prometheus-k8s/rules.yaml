@@ -622,7 +622,7 @@ spec:
           }}) is restarting {{ printf "%.2f" $value }} / second'
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping
       expr: |
-        rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[15m]) > 0
+        rate(kube_pod_container_status_restarts_total{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}[15m]) > 0
       for: 1h
       labels:
         severity: critical
@@ -631,7 +631,7 @@ spec:
         message: '{{ $labels.namespace }}/{{ $labels.pod }} is not ready.'
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready
       expr: |
-        sum by (namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
+        sum by (namespace, pod) (kube_pod_status_phase{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
       for: 1h
       labels:
         severity: critical
@@ -641,9 +641,9 @@ spec:
           mismatch
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentgenerationmismatch
       expr: |
-        kube_deployment_status_observed_generation{job="kube-state-metrics"}
+        kube_deployment_status_observed_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_deployment_metadata_generation{job="kube-state-metrics"}
+        kube_deployment_metadata_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -653,9 +653,9 @@ spec:
           mismatch
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentreplicasmismatch
       expr: |
-        kube_deployment_spec_replicas{job="kube-state-metrics"}
+        kube_deployment_spec_replicas{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_deployment_status_replicas_available{job="kube-state-metrics"}
+        kube_deployment_status_replicas_available{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
       for: 1h
       labels:
         severity: critical
@@ -665,9 +665,9 @@ spec:
           mismatch
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetreplicasmismatch
       expr: |
-        kube_statefulset_status_replicas_ready{job="kube-state-metrics"}
+        kube_statefulset_status_replicas_ready{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_statefulset_status_replicas{job="kube-state-metrics"}
+        kube_statefulset_status_replicas{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -677,9 +677,9 @@ spec:
           mismatch
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetgenerationmismatch
       expr: |
-        kube_statefulset_status_observed_generation{job="kube-state-metrics"}
+        kube_statefulset_status_observed_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_statefulset_metadata_generation{job="kube-state-metrics"}
+        kube_statefulset_metadata_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -689,9 +689,9 @@ spec:
           {{$labels.namespace}}/{{$labels.daemonset}}
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetrolloutstuck
       expr: |
-        kube_daemonset_status_number_ready{job="kube-state-metrics"}
+        kube_daemonset_status_number_ready{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           /
-        kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"} * 100 < 100
+        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} * 100 < 100
       for: 15m
       labels:
         severity: critical
@@ -701,9 +701,9 @@ spec:
           are not scheduled.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetnotscheduled
       expr: |
-        kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"}
+        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           -
-        kube_daemonset_status_current_number_scheduled{job="kube-state-metrics"} > 0
+        kube_daemonset_status_current_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 0
       for: 10m
       labels:
         severity: warning
@@ -713,7 +713,7 @@ spec:
           are running where they are not supposed to run.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetmisscheduled
       expr: |
-        kube_daemonset_status_number_misscheduled{job="kube-state-metrics"} > 0
+        kube_daemonset_status_number_misscheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 0
       for: 10m
       labels:
         severity: warning
@@ -723,7 +723,7 @@ spec:
           more than 1h to complete.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecronjobrunning
       expr: |
-        time() - kube_cronjob_next_schedule_time{job="kube-state-metrics"} > 3600
+        time() - kube_cronjob_next_schedule_time{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 3600
       for: 1h
       labels:
         severity: warning
@@ -733,7 +733,7 @@ spec:
           1h to complete.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobcompletion
       expr: |
-        kube_job_spec_completions{job="kube-state-metrics"} - kube_job_status_succeeded{job="kube-state-metrics"}  > 0
+        kube_job_spec_completions{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}  > 0
       for: 1h
       labels:
         severity: warning
@@ -742,7 +742,7 @@ spec:
         message: Job {{ $labels.namespaces }}/{{ $labels.job }} failed to complete.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobfailed
       expr: |
-        kube_job_status_failed{job="kube-state-metrics"}  > 0
+        kube_job_status_failed{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}  > 0
       for: 1h
       labels:
         severity: warning
@@ -783,7 +783,7 @@ spec:
         message: Overcommited CPU resource request quota on Namespaces.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit
       expr: |
-        sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.cpu"})
+        sum(kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard", resource="requests.cpu"})
           /
         sum(node:node_num_cpu:sum)
           > 1.5
@@ -795,7 +795,7 @@ spec:
         message: Overcommited Memory resource request quota on Namespaces.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememovercommit
       expr: |
-        sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.memory"})
+        sum(kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard", resource="requests.memory"})
           /
         sum(node_memory_MemTotal{job="node-exporter"})
           > 1.5
@@ -808,9 +808,9 @@ spec:
           namespace {{ $labels.namespace }}.'
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubequotaexceeded
       expr: |
-        100 * kube_resourcequota{job="kube-state-metrics", type="used"}
+        100 * kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
-        kube_resourcequota{job="kube-state-metrics", type="hard"}
+        kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard"}
           > 90
       for: 15m
       labels:
@@ -824,9 +824,9 @@ spec:
           free.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeusagecritical
       expr: |
-        100 * kubelet_volume_stats_available_bytes{job="kubelet"}
+        100 * kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}
           /
-        kubelet_volume_stats_capacity_bytes{job="kubelet"}
+        kubelet_volume_stats_capacity_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}
           < 3
       for: 1m
       labels:
@@ -835,10 +835,10 @@ spec:
       annotations:
         message: Based on recent sampling, the persistent volume claimed by {{ $labels.persistentvolumeclaim
           }} in namespace {{ $labels.namespace }} is expected to fill up within four
-          days.
+          days. Currently {{ $value }} bytes are available.
         runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefullinfourdays
       expr: |
-        predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[1h], 4 * 24 * 3600) < 0
+        kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"} and predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}[6h], 4 * 24 * 3600) < 0
       for: 5m
       labels:
         severity: critical
@@ -1008,21 +1008,19 @@ spec:
     rules:
     - alert: NodeDiskRunningFull
       annotations:
-        description: device {{$labels.device}} on node {{$labels.instance}} is running
-          full within the next 24 hours (mounted at {{$labels.mountpoint}})
-        summary: Node disk is running full within 24 hours
+        message: Device {{ $labels.device }} of node-exporter {{ $labels.namespace
+          }}/{{ $labels.pod }} is running full within the next 24 hours.
       expr: |
-        predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[6h], 3600 * 24) < 0 and on(instance) up{job="node-exporter"}
+        (node:node_filesystem_usage: > 0.85) and (predict_linear(node:node_filesystem_avail:[6h], 3600 * 24) < 0)
       for: 30m
       labels:
         severity: warning
     - alert: NodeDiskRunningFull
       annotations:
-        description: device {{$labels.device}} on node {{$labels.instance}} is running
-          full within the next 2 hours (mounted at {{$labels.mountpoint}})
-        summary: Node disk is running full within 2 hours
+        message: Device {{ $labels.device }} of node-exporter {{ $labels.namespace
+          }}/{{ $labels.pod }} is running full within the next 2 hours.
       expr: |
-        predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[30m], 3600 * 2) < 0 and on(instance) up{job="node-exporter"}
+        (node:node_filesystem_usage: > 0.85) and (predict_linear(node:node_filesystem_avail:[30m], 3600 * 2) < 0)
       for: 10m
       labels:
         severity: critical
