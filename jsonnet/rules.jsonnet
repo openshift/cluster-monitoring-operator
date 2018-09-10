@@ -45,7 +45,7 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
-            expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[5m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[5m])) > 10',
+            expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
             alert: 'ClusterMonitoringOperatorErrors',
             'for': '15m',
             annotations: {
