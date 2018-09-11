@@ -92,6 +92,7 @@ local tlsVolumeName = 'node-exporter-tls';
                 ),
               volumes+: [volume.fromSecret(tlsVolumeName, 'node-exporter-tls')],
               securityContext: {},
+              priorityClassName: 'system-cluster-critical',
             },
           },
         },

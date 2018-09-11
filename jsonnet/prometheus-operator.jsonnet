@@ -6,6 +6,7 @@
           template+: {
             spec+: {
               securityContext: {},
+              priorityClassName: 'system-cluster-critical',
 
               containers:
                 std.map(

@@ -189,6 +189,7 @@ local authorizationRole = policyRule.new() +
                 volume.fromSecret('secret-grafana-proxy', 'grafana-proxy'),
               ],
               securityContext: {},
+              priorityClassName: 'system-cluster-critical',
             },
           },
         },
