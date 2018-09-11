@@ -62,6 +62,7 @@ spec:
       hostPID: true
       nodeSelector:
         beta.kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: node-exporter
       tolerations:

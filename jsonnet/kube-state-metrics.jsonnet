@@ -91,6 +91,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                 volume.fromSecret(tlsVolumeName, 'kube-state-metrics-tls'),
               ],
               securityContext: {},
+              priorityClassName: 'system-cluster-critical',
             },
           },
         },

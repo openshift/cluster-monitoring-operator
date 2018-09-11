@@ -89,6 +89,7 @@ spec:
         - mountPath: /etc/proxy/secrets
           name: secret-grafana-proxy
           readOnly: false
+      priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: grafana
       volumes:

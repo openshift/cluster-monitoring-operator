@@ -31,5 +31,6 @@ spec:
         securityContext: {}
       nodeSelector:
         beta.kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: prometheus-operator

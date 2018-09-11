@@ -72,6 +72,7 @@ spec:
           readOnly: false
       nodeSelector:
         beta.kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: kube-state-metrics
       volumes:
