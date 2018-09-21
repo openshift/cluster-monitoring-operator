@@ -16,6 +16,7 @@ package client
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/coreos/prometheus-operator/pkg/alertmanager"
@@ -320,13 +321,19 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 }
 
 func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
-	_, err := c.kclient.AppsV1beta2().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
+	d, err := c.kclient.AppsV1beta2().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
+
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDeployment(dep)
 		return errors.Wrap(err, "creating deployment object failed")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving deployment object failed")
+	}
+	if reflect.DeepEqual(dep.Spec, d.Spec) {
+		// Nothing to do, as the currently existing Telemeter client
+		// deployment is equivalent to the one that would be applied.
+		return nil
 	}
 
 	err = c.UpdateDeployment(dep)

@@ -15,6 +15,7 @@
 package operator
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -56,7 +58,7 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(namespace string, configMapName string, tagOverrides map[string]string) (*Operator, error) {
+func New(namespace, configMapName string, tagOverrides map[string]string) (*Operator, error) {
 	c, err := client.New(namespace, configMapName)
 	if err != nil {
 		return nil, err
@@ -242,6 +244,7 @@ func (o *Operator) sync(key string) error {
 			tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
+			tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory)),
 		},
 	)
 
@@ -269,6 +272,48 @@ func (o *Operator) Config() *manifests.Config {
 	if err != nil {
 		glog.V(4).Infof("Cluster Monitoring config could not be parsed. Using defaults.")
 		return manifests.NewDefaultConfig()
+	}
+
+	// Only fetch the the token and cluster ID if they have not been specified in the config.
+	if c.TelemeterClientConfig.ClusterID != "" && c.TelemeterClientConfig.Token != "" {
+		return c
+	}
+
+	cmap, err = o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
+	if err != nil {
+		glog.V(4).Infof("Could not fetch cluster configuration from API. Proceeding without it.")
+		return c
+	}
+	ic := make(map[string]interface{})
+	if err := json.Unmarshal(cmap.BinaryData["install-config"], &ic); err != nil {
+		glog.V(4).Infof("Could not parse cluster configuration. Proceeding without it.")
+		return c
+	}
+	var ok bool
+	if c.TelemeterClientConfig.ClusterID == "" {
+		c.TelemeterClientConfig.ClusterID, ok = ic["clusterID"].(string)
+		if !ok {
+			glog.V(4).Infof("Could not parse cluster ID. Proceeding without it.")
+			return c
+		}
+	}
+	if c.TelemeterClientConfig.Token == "" {
+		ps := struct {
+			Auths struct {
+				COC struct {
+					Auth string `json:"auth"`
+				} `json:"cloud.openshift.com"`
+			} `json:"auths"`
+		}{}
+		if _, ok := ic["pullSecret"].(string); !ok {
+			glog.V(4).Infof("Could not find pull secret. Proceeding without it.")
+			return c
+		}
+		if err := json.Unmarshal([]byte(ic["pullSecret"].(string)), &ps); err != nil {
+			glog.V(4).Infof("Could not parse pull secret. Proceeding without it.")
+			return c
+		}
+		c.TelemeterClientConfig.Token = ps.Auths.COC.Auth
 	}
 
 	return c

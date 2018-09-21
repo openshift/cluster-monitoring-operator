@@ -83,12 +83,19 @@ func Main() int {
 	flag.Var(&tags, "tags", "Tags to use for images.")
 	flag.Parse()
 
+	ok := true
 	if *namespace == "" {
+		ok = false
 		fmt.Fprint(os.Stderr, "`--namespace` flag is required, but not specified.")
 	}
 
 	if *configMapName == "" {
+		ok = false
 		fmt.Fprint(os.Stderr, "`--configmap` flag is required, but not specified.")
+	}
+
+	if !ok {
+		return 1
 	}
 
 	r := prometheus.NewRegistry()

@@ -33,6 +33,7 @@ type Config struct {
 	GrafanaConfig            *GrafanaConfig            `json:"grafana"`
 	EtcdConfig               *EtcdConfig               `json:"etcd"`
 	HTTPConfig               *HTTPConfig               `json:"http"`
+	TelemeterClientConfig    *TelemeterClientConfig    `json:"telemeterClient"`
 }
 
 type HTTPConfig struct {
@@ -112,6 +113,14 @@ type EtcdTargets struct {
 
 type EtcdTLSConfig struct {
 	ServerName string `json:"serverName"`
+}
+
+type TelemeterClientConfig struct {
+	BaseImage          string `json:"baseImage"`
+	ClusterID          string `json:"clusterID"`
+	Tag                string `json:"-"`
+	TelemeterServerURL string `json:"telemeterServerURL"`
+	Token              string `json:"token"`
 }
 
 func NewConfig(content io.Reader) (*Config, error) {
@@ -195,6 +204,12 @@ func (c *Config) applyDefaults() {
 	if c.HTTPConfig == nil {
 		c.HTTPConfig = &HTTPConfig{}
 	}
+	if c.TelemeterClientConfig == nil {
+		c.TelemeterClientConfig = &TelemeterClientConfig{}
+	}
+	if c.TelemeterClientConfig.BaseImage == "" {
+		c.TelemeterClientConfig.BaseImage = "openshift/telemeter-client"
+	}
 }
 
 func (c *Config) SetTagOverrides(tagOverrides map[string]string) {
@@ -208,6 +223,7 @@ func (c *Config) SetTagOverrides(tagOverrides map[string]string) {
 	c.NodeExporterConfig.Tag, _ = tagOverrides["node-exporter"]
 	c.KubeStateMetricsConfig.Tag, _ = tagOverrides["kube-state-metrics"]
 	c.KubeRbacProxyConfig.Tag, _ = tagOverrides["kube-rbac-proxy"]
+	c.TelemeterClientConfig.Tag, _ = tagOverrides["telemeter-client"]
 }
 
 func NewConfigFromString(content string) (*Config, error) {
