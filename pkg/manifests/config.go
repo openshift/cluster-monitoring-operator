@@ -32,15 +32,23 @@ type Config struct {
 	KubeRbacProxyConfig      *KubeRbacProxyConfig      `json:"kubeRbacProxy"`
 	GrafanaConfig            *GrafanaConfig            `json:"grafana"`
 	EtcdConfig               *EtcdConfig               `json:"etcd"`
+	HTTPConfig               *HTTPConfig               `json:"http"`
+}
+
+type HTTPConfig struct {
+	HTTPProxy  string `json:"httpProxy"`
+	HTTPSProxy string `json:"httpsProxy"`
+	NoProxy    string `json:"noProxy"`
 }
 
 type PrometheusOperatorConfig struct {
-	BaseImage                   string `json:"baseImage"`
-	Tag                         string `json:"-"`
-	PrometheusConfigReloader    string `json:"prometheusConfigReloaderBaseImage"`
-	PrometheusConfigReloaderTag string `json:"-"`
-	ConfigReloaderImage         string `json:"configReloaderBaseImage"`
-	ConfigReloaderTag           string `json:"-"`
+	BaseImage                   string            `json:"baseImage"`
+	Tag                         string            `json:"-"`
+	PrometheusConfigReloader    string            `json:"prometheusConfigReloaderBaseImage"`
+	PrometheusConfigReloaderTag string            `json:"-"`
+	ConfigReloaderImage         string            `json:"configReloaderBaseImage"`
+	ConfigReloaderTag           string            `json:"-"`
+	NodeSelector                map[string]string `json:"nodeSelector"`
 }
 
 type PrometheusK8sConfig struct {
@@ -183,6 +191,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.KubeRbacProxyConfig.BaseImage == "" {
 		c.KubeRbacProxyConfig.BaseImage = "quay.io/brancz/kube-rbac-proxy"
+	}
+	if c.HTTPConfig == nil {
+		c.HTTPConfig = &HTTPConfig{}
 	}
 }
 

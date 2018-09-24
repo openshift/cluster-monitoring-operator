@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cluster-monitoring-operator
+  name: cluster-monitoring-operator
+  namespace: openshift-monitoring
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+  selector:
+    app: cluster-monitoring-operator

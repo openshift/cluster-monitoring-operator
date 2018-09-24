@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
@@ -50,6 +51,9 @@ type Operator struct {
 	cmapInf cache.SharedIndexInformer
 
 	queue workqueue.RateLimitingInterface
+
+	reconcileAttempts prometheus.Counter
+	reconcileErrors   prometheus.Counter
 }
 
 func New(namespace string, configMapName string, tagOverrides map[string]string) (*Operator, error) {
@@ -76,6 +80,24 @@ func New(namespace string, configMapName string, tagOverrides map[string]string)
 	})
 
 	return o, nil
+}
+
+// RegisterMetrics registers the operator's metrics with the given registerer.
+func (o *Operator) RegisterMetrics(r prometheus.Registerer) {
+	o.reconcileAttempts = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "cluster_monitoring_operator_reconcile_attempts_total",
+		Help: "Number of attempts to reconcile the operator configuration",
+	})
+
+	o.reconcileErrors = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "cluster_monitoring_operator_reconcile_errors_total",
+		Help: "Number of errors that occurred while reconciling the operator configuration",
+	})
+
+	r.MustRegister(
+		o.reconcileAttempts,
+		o.reconcileErrors,
+	)
 }
 
 // Run the controller.
@@ -111,7 +133,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	return nil
 }
 
-func (c *Operator) keyFunc(obj interface{}) (string, bool) {
+func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 	k, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		glog.V(4).Infof("creating key failed, err: %s", err)
@@ -120,11 +142,7 @@ func (c *Operator) keyFunc(obj interface{}) (string, bool) {
 	return k, true
 }
 
-func (o *Operator) handleConfigMapAdd(obj interface{}) {
-	o.handleEvent(obj)
-}
-
-func (o *Operator) handleConfigMapUpdate(old, cur interface{}) {
+func (o *Operator) handleConfigMapUpdate(_, cur interface{}) {
 	o.handleEvent(cur)
 }
 
@@ -177,14 +195,16 @@ func (o *Operator) processNextWorkItem() bool {
 	}
 	defer o.queue.Done(key)
 
+	o.reconcileAttempts.Inc()
 	err := o.sync(key.(string))
 	if err == nil {
 		o.queue.Forget(key)
 		return true
 	}
 
+	o.reconcileErrors.Inc()
 	glog.Errorf("Syncing %q failed", key)
-	utilruntime.HandleError(errors.Wrap(err, fmt.Sprintf("Sync %q failed", key)))
+	utilruntime.HandleError(errors.Wrap(err, fmt.Sprintf("sync %q failed", key)))
 	o.queue.AddRateLimited(key)
 
 	return true
@@ -216,6 +236,7 @@ func (o *Operator) sync(key string) error {
 		o.client,
 		[]*tasks.TaskSpec{
 			tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
+			tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
 			tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),

@@ -44,6 +44,26 @@
             expr: 'sum(rate(container_cpu_usage_seconds_total{container_name!="POD",pod_name!=""}[5m])) / sum(machine_cpu_cores)',
             record: 'cluster:container_cpu_usage:ratio',
           },
+          {
+            expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
+            alert: 'ClusterMonitoringOperatorErrors',
+            'for': '15m',
+            annotations: {
+              message: 'Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value }}% errors.',
+            },
+            labels: {
+              severity: 'critical',
+            },
+          },
+        ],
+      },
+      {
+        name: 'openshift-build.rules',
+        rules: [
+          {
+            expr: 'sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))',
+            record: 'build_error_rate',
+          },
         ],
       },
     ],

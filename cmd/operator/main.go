@@ -18,12 +18,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/sync/errgroup"
 
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
@@ -43,7 +46,7 @@ func (t *tags) Set(value string) error {
 	for _, pair := range pairs {
 		splitPair := strings.Split(pair, "=")
 		if len(splitPair) != 2 {
-			return fmt.Errorf("Pair %v is malformed. Key value pairs must be in the form of \"key=value\". Multiple pairs must be comma separated.")
+			return fmt.Errorf("pair %q is malformed; key-value pairs must be in the form of \"key=value\"; multiple pairs must be comma-separated", value)
 		}
 		imageName := splitPair[0]
 		imageTag := splitPair[1]
@@ -88,11 +91,22 @@ func Main() int {
 		fmt.Fprint(os.Stderr, "`--configmap` flag is required, but not specified.")
 	}
 
+	r := prometheus.NewRegistry()
+	r.MustRegister(
+		prometheus.NewGoCollector(),
+		prometheus.NewProcessCollector(os.Getpid(), ""),
+	)
+
 	o, err := cmo.New(*namespace, *configMapName, tags.asMap())
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
 	}
+
+	o.RegisterMetrics(r)
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))
+	go http.ListenAndServe(":8080", mux)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	wg, ctx := errgroup.WithContext(ctx)

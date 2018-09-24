@@ -2,13 +2,12 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    k8s-app: prometheus-operator
-  name: prometheus-operator
+    k8s-app: cluster-monitoring-operator
+  name: cluster-monitoring-operator
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - honorLabels: true
-    port: http
+  - port: http
   selector:
     matchLabels:
-      k8s-app: prometheus-operator
+      app: cluster-monitoring-operator

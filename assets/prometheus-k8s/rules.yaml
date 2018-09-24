@@ -11,21 +11,26 @@ spec:
   - name: k8s.rules
     rules:
     - expr: |
-        sum(rate(container_cpu_usage_seconds_total{job="kubelet", image!=""}[5m])) by (namespace)
+        sum(rate(container_cpu_usage_seconds_total{job="kubelet", image!="", container_name!=""}[5m])) by (namespace)
       record: namespace:container_cpu_usage_seconds_total:sum_rate
     - expr: |
-        sum(container_memory_usage_bytes{job="kubelet", image!=""}) by (namespace)
+        sum by (namespace, pod_name, container_name) (
+          rate(container_cpu_usage_seconds_total{job="kubelet", image!="", container_name!=""}[5m])
+        )
+      record: namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate
+    - expr: |
+        sum(container_memory_usage_bytes{job="kubelet", image!="", container_name!=""}) by (namespace)
       record: namespace:container_memory_usage_bytes:sum
     - expr: |
         sum by (namespace, label_name) (
-           sum(rate(container_cpu_usage_seconds_total{job="kubelet", image!=""}[5m])) by (namespace, pod_name)
+           sum(rate(container_cpu_usage_seconds_total{job="kubelet", image!="", container_name!=""}[5m])) by (namespace, pod_name)
          * on (namespace, pod_name) group_left(label_name)
            label_replace(kube_pod_labels{job="kube-state-metrics"}, "pod_name", "$1", "pod", "(.*)")
         )
       record: namespace_name:container_cpu_usage_seconds_total:sum_rate
     - expr: |
         sum by (namespace, label_name) (
-          sum(container_memory_usage_bytes{job="kubelet",image!=""}) by (pod_name, namespace)
+          sum(container_memory_usage_bytes{job="kubelet",image!="", container_name!=""}) by (pod_name, namespace)
         * on (namespace, pod_name) group_left(label_name)
           label_replace(kube_pod_labels{job="kube-state-metrics"}, "pod_name", "$1", "pod", "(.*)")
         )
@@ -152,6 +157,12 @@ spec:
         sum(node_memory_MemTotal{job="node-exporter"})
       record: ':node_memory_utilisation:'
     - expr: |
+        sum(node_memory_MemFree{job="node-exporter"} + node_memory_Cached{job="node-exporter"} + node_memory_Buffers{job="node-exporter"})
+      record: :node_memory_MemFreeCachedBuffers:sum
+    - expr: |
+        sum(node_memory_MemTotal{job="node-exporter"})
+      record: :node_memory_MemTotal:sum
+    - expr: |
         sum by (node) (
           (node_memory_MemFree{job="node-exporter"} + node_memory_Cached{job="node-exporter"} + node_memory_Buffers{job="node-exporter"})
           * on (namespace, pod) group_left(node)
@@ -222,6 +233,14 @@ spec:
         )
       record: node:node_disk_saturation:avg_irate
     - expr: |
+        max by (namespace, pod, device) ((node_filesystem_size{fstype=~"ext[234]|btrfs|xfs|zfs"}
+        - node_filesystem_avail{fstype=~"ext[234]|btrfs|xfs|zfs"})
+        / node_filesystem_size{fstype=~"ext[234]|btrfs|xfs|zfs"})
+      record: 'node:node_filesystem_usage:'
+    - expr: |
+        max by (namespace, pod, device) (node_filesystem_avail{fstype=~"ext[234]|btrfs|xfs|zfs"} / node_filesystem_size{fstype=~"ext[234]|btrfs|xfs|zfs"})
+      record: 'node:node_filesystem_avail:'
+    - expr: |
         sum(irate(node_network_receive_bytes{job="node-exporter",device="eth0"}[1m])) +
         sum(irate(node_network_transmit_bytes{job="node-exporter",device="eth0"}[1m]))
       record: :node_net_utilisation:sum_irate
@@ -263,6 +282,201 @@ spec:
       record: cluster:node_cpu:sum_rate5m
     - expr: cluster:node_cpu:rate5m / count(sum(node_cpu) BY (instance, cpu))
       record: cluster:node_cpu:ratio
+  - name: node_exporter-16-bcache
+    rules:
+    - expr: node_bcache_cache_read_races
+      record: node_bcache_cache_read_races_total
+  - name: node_exporter-16-buddyinfo
+    rules:
+    - expr: node_buddyinfo_blocks
+      record: node_buddyinfo_count
+  - name: node_exporter-16-stat
+    rules:
+    - expr: node_boot_time_seconds
+      record: node_boot_time
+    - expr: node_context_switches_total
+      record: node_context_switches
+    - expr: node_forks_total
+      record: node_forks
+    - expr: node_intr_total
+      record: node_intr
+  - name: node_exporter-16-cpu
+    rules:
+    - expr: label_replace(node_cpu_seconds_total, "cpu", "$1", "cpu", "cpu(.+)")
+      record: node_cpu
+  - name: node_exporter-16-diskstats
+    rules:
+    - expr: node_disk_read_bytes_total
+      record: node_disk_bytes_read
+    - expr: node_disk_written_bytes_total
+      record: node_disk_bytes_written
+    - expr: node_disk_io_time_seconds_total * 1000
+      record: node_disk_io_time_ms
+    - expr: node_disk_io_time_weighted_seconds_total
+      record: node_disk_io_time_weighted
+    - expr: node_disk_reads_completed_total
+      record: node_disk_reads_completed
+    - expr: node_disk_reads_merged_total
+      record: node_disk_reads_merged
+    - expr: node_disk_read_time_seconds_total * 1000
+      record: node_disk_read_time_ms
+    - expr: node_disk_writes_completed_total
+      record: node_disk_writes_completed
+    - expr: node_disk_writes_merged_total
+      record: node_disk_writes_merged
+    - expr: node_disk_write_time_seconds_total * 1000
+      record: node_disk_write_time_ms
+  - name: node_exporter-16-filesystem
+    rules:
+    - expr: node_filesystem_free_bytes
+      record: node_filesystem_free
+    - expr: node_filesystem_avail_bytes
+      record: node_filesystem_avail
+    - expr: node_filesystem_size_bytes
+      record: node_filesystem_size
+  - name: node_exporter-16-infiniband
+    rules:
+    - expr: node_infiniband_port_data_received_bytes_total
+      record: node_infiniband_port_data_received_bytes
+    - expr: node_infiniband_port_data_transmitted_bytes_total
+      record: node_infiniband_port_data_transmitted_bytes
+  - name: node_exporter-16-interrupts
+    rules:
+    - expr: node_interrupts_total
+      record: node_interrupts
+  - name: node_exporter-16-memory
+    rules:
+    - expr: node_memory_Active_bytes
+      record: node_memory_Active
+    - expr: node_memory_Active_anon_bytes
+      record: node_memory_Active_anon
+    - expr: node_memory_Active_file_bytes
+      record: node_memory_Active_file
+    - expr: node_memory_AnonHugePages_bytes
+      record: node_memory_AnonHugePages
+    - expr: node_memory_AnonPages_bytes
+      record: node_memory_AnonPages
+    - expr: node_memory_Bounce_bytes
+      record: node_memory_Bounce
+    - expr: node_memory_Buffers_bytes
+      record: node_memory_Buffers
+    - expr: node_memory_Cached_bytes
+      record: node_memory_Cached
+    - expr: node_memory_CommitLimit_bytes
+      record: node_memory_CommitLimit
+    - expr: node_memory_Committed_AS_bytes
+      record: node_memory_Committed_AS
+    - expr: node_memory_DirectMap2M_bytes
+      record: node_memory_DirectMap2M
+    - expr: node_memory_DirectMap4k_bytes
+      record: node_memory_DirectMap4k
+    - expr: node_memory_Dirty_bytes
+      record: node_memory_Dirty
+    - expr: node_memory_HardwareCorrupted_bytes
+      record: node_memory_HardwareCorrupted
+    - expr: node_memory_Hugepagesize_bytes
+      record: node_memory_Hugepagesize
+    - expr: node_memory_Inactive_bytes
+      record: node_memory_Inactive
+    - expr: node_memory_Inactive_anon_bytes
+      record: node_memory_Inactive_anon
+    - expr: node_memory_Inactive_file_bytes
+      record: node_memory_Inactive_file
+    - expr: node_memory_KernelStack_bytes
+      record: node_memory_KernelStack
+    - expr: node_memory_Mapped_bytes
+      record: node_memory_Mapped
+    - expr: node_memory_MemAvailable_bytes
+      record: node_memory_MemAvailable
+    - expr: node_memory_MemFree_bytes
+      record: node_memory_MemFree
+    - expr: node_memory_MemTotal_bytes
+      record: node_memory_MemTotal
+    - expr: node_memory_Mlocked_bytes
+      record: node_memory_Mlocked
+    - expr: node_memory_NFS_Unstable_bytes
+      record: node_memory_NFS_Unstable
+    - expr: node_memory_PageTables_bytes
+      record: node_memory_PageTables
+    - expr: node_memory_Shmem_bytes
+      record: node_memory_Shmem
+    - expr: node_memory_Slab_bytes
+      record: node_memory_Slab
+    - expr: node_memory_SReclaimable_bytes
+      record: node_memory_SReclaimable
+    - expr: node_memory_SUnreclaim_bytes
+      record: node_memory_SUnreclaim
+    - expr: node_memory_SwapCached_bytes
+      record: node_memory_SwapCached
+    - expr: node_memory_SwapFree_bytes
+      record: node_memory_SwapFree
+    - expr: node_memory_SwapTotal_bytes
+      record: node_memory_SwapTotal
+    - expr: node_memory_Unevictable_bytes
+      record: node_memory_Unevictable
+    - expr: node_memory_VmallocChunk_bytes
+      record: node_memory_VmallocChunk
+    - expr: node_memory_VmallocTotal_bytes
+      record: node_memory_VmallocTotal
+    - expr: node_memory_VmallocUsed_bytes
+      record: node_memory_VmallocUsed
+    - expr: node_memory_Writeback_bytes
+      record: node_memory_Writeback
+    - expr: node_memory_WritebackTmp_bytes
+      record: node_memory_WritebackTmp
+  - name: node_exporter-16-network
+    rules:
+    - expr: node_network_receive_bytes_total
+      record: node_network_receive_bytes
+    - expr: node_network_receive_compressed_total
+      record: node_network_receive_compressed
+    - expr: node_network_receive_drop_total
+      record: node_network_receive_drop
+    - expr: node_network_receive_errs_total
+      record: node_network_receive_errs
+    - expr: node_network_receive_fifo_total
+      record: node_network_receive_fifo
+    - expr: node_network_receive_frame_total
+      record: node_network_receive_frame
+    - expr: node_network_receive_multicast_total
+      record: node_network_receive_multicast
+    - expr: node_network_receive_packets_total
+      record: node_network_receive_packets
+    - expr: node_network_transmit_bytes_total
+      record: node_network_transmit_bytes
+    - expr: node_network_transmit_compressed_total
+      record: node_network_transmit_compressed
+    - expr: node_network_transmit_drop_total
+      record: node_network_transmit_drop
+    - expr: node_network_transmit_errs_total
+      record: node_network_transmit_errs
+    - expr: node_network_transmit_fifo_total
+      record: node_network_transmit_fifo
+    - expr: node_network_transmit_frame_total
+      record: node_network_transmit_frame
+    - expr: node_network_transmit_multicast_total
+      record: node_network_transmit_multicast
+    - expr: node_network_transmit_packets_total
+      record: node_network_transmit_packets
+  - name: node_exporter-16-nfs
+    rules:
+    - expr: node_nfs_connections_total
+      record: node_nfs_net_connections
+    - expr: node_nfs_packets_total
+      record: node_nfs_net_reads
+    - expr: label_replace(label_replace(node_nfs_requests_total, "proto", "$1", "version",
+        "(.+)"), "method", "$1", "procedure", "(.+)")
+      record: node_nfs_procedures
+    - expr: node_nfs_rpc_authentication_refreshes_total
+      record: node_nfs_rpc_authentication_refreshes
+    - expr: node_nfs_rpcs_total
+      record: node_nfs_rpc_operations
+    - expr: node_nfs_rpc_retransmissions_total
+      record: node_nfs_rpc_retransmissions
+  - name: node_exporter-16-textfile
+    rules:
+    - expr: node_textfile_mtime_seconds
+      record: node_textfile_mtime
   - name: kubernetes.rules
     rules:
     - expr: sum(container_memory_usage_bytes{container_name!="POD",pod_name!=""})
@@ -293,21 +507,41 @@ spec:
     - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",pod_name!=""}[5m]))
         / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
+    - alert: ClusterMonitoringOperatorErrors
+      annotations:
+        message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value
+          }}% errors.
+      expr: sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100
+        / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10
+      for: 15m
+      labels:
+        severity: critical
+  - name: openshift-build.rules
+    rules:
+    - expr: sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))
+      record: build_error_rate
   - name: kubernetes-absent
     rules:
     - alert: AlertmanagerDown
       annotations:
         message: Alertmanager has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-alertmanagerdown
       expr: |
         absent(up{job="alertmanager-main"} == 1)
+      for: 15m
+      labels:
+        severity: critical
+    - alert: ClusterMonitoringOperatorDown
+      annotations:
+        message: ClusterMonitoringOperator has disappeared from Prometheus target
+          discovery.
+      expr: |
+        absent(up{job="cluster-monitoring-operator"} == 1)
       for: 15m
       labels:
         severity: critical
     - alert: KubeAPIDown
       annotations:
         message: KubeAPI has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapidown
       expr: |
         absent(up{job="apiserver"} == 1)
       for: 15m
@@ -316,7 +550,6 @@ spec:
     - alert: KubeControllerManagerDown
       annotations:
         message: KubeControllerManager has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontrollermanagerdown
       expr: |
         absent(up{job="kube-controllers"} == 1)
       for: 15m
@@ -325,7 +558,6 @@ spec:
     - alert: KubeSchedulerDown
       annotations:
         message: KubeScheduler has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeschedulerdown
       expr: |
         absent(up{job="kube-controllers"} == 1)
       for: 15m
@@ -334,7 +566,6 @@ spec:
     - alert: KubeStateMetricsDown
       annotations:
         message: KubeStateMetrics has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatemetricsdown
       expr: |
         absent(up{job="kube-state-metrics"} == 1)
       for: 15m
@@ -343,7 +574,6 @@ spec:
     - alert: KubeletDown
       annotations:
         message: Kubelet has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletdown
       expr: |
         absent(up{job="kubelet"} == 1)
       for: 15m
@@ -352,7 +582,6 @@ spec:
     - alert: NodeExporterDown
       annotations:
         message: NodeExporter has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-nodeexporterdown
       expr: |
         absent(up{job="node-exporter"} == 1)
       for: 15m
@@ -361,7 +590,6 @@ spec:
     - alert: PrometheusDown
       annotations:
         message: Prometheus has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-prometheusdown
       expr: |
         absent(up{job="prometheus-k8s"} == 1)
       for: 15m
@@ -370,7 +598,6 @@ spec:
     - alert: PrometheusOperatorDown
       annotations:
         message: PrometheusOperator has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-prometheusoperatordown
       expr: |
         absent(up{job="prometheus-operator"} == 1)
       for: 15m
@@ -382,18 +609,16 @@ spec:
       annotations:
         message: '{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
           }}) is restarting {{ printf "%.2f" $value }} / second'
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping
       expr: |
-        rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[15m]) > 0
+        rate(kube_pod_container_status_restarts_total{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}[15m]) > 0
       for: 1h
       labels:
         severity: critical
     - alert: KubePodNotReady
       annotations:
         message: '{{ $labels.namespace }}/{{ $labels.pod }} is not ready.'
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready
       expr: |
-        sum by (namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase!~"Running|Succeeded"}) > 0
+        sum by (namespace, pod) (kube_pod_status_phase{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
       for: 1h
       labels:
         severity: critical
@@ -401,11 +626,10 @@ spec:
       annotations:
         message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} generation
           mismatch
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentgenerationmismatch
       expr: |
-        kube_deployment_status_observed_generation{job="kube-state-metrics"}
+        kube_deployment_status_observed_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_deployment_metadata_generation{job="kube-state-metrics"}
+        kube_deployment_metadata_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -413,11 +637,10 @@ spec:
       annotations:
         message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replica
           mismatch
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentreplicasmismatch
       expr: |
-        kube_deployment_spec_replicas{job="kube-state-metrics"}
+        kube_deployment_spec_replicas{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_deployment_status_replicas_available{job="kube-state-metrics"}
+        kube_deployment_status_replicas_available{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
       for: 1h
       labels:
         severity: critical
@@ -425,11 +648,10 @@ spec:
       annotations:
         message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} replica
           mismatch
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetreplicasmismatch
       expr: |
-        kube_statefulset_status_replicas_ready{job="kube-state-metrics"}
+        kube_statefulset_status_replicas_ready{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_statefulset_status_replicas{job="kube-state-metrics"}
+        kube_statefulset_status_replicas{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -437,11 +659,10 @@ spec:
       annotations:
         message: StatefulSet {{ $labels.namespace }}/{{ labels.statefulset }} generation
           mismatch
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetgenerationmismatch
       expr: |
-        kube_statefulset_status_observed_generation{job="kube-state-metrics"}
+        kube_statefulset_status_observed_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_statefulset_metadata_generation{job="kube-state-metrics"}
+        kube_statefulset_metadata_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -449,11 +670,10 @@ spec:
       annotations:
         message: Only {{$value}}% of desired pods scheduled and ready for daemon set
           {{$labels.namespace}}/{{$labels.daemonset}}
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetrolloutstuck
       expr: |
-        kube_daemonset_status_number_ready{job="kube-state-metrics"}
+        kube_daemonset_status_number_ready{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           /
-        kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"} * 100 < 100
+        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} * 100 < 100
       for: 15m
       labels:
         severity: critical
@@ -461,11 +681,10 @@ spec:
       annotations:
         message: A number of pods of daemonset {{$labels.namespace}}/{{$labels.daemonset}}
           are not scheduled.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetnotscheduled
       expr: |
-        kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"}
+        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
           -
-        kube_daemonset_status_current_number_scheduled{job="kube-state-metrics"} > 0
+        kube_daemonset_status_current_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 0
       for: 10m
       labels:
         severity: warning
@@ -473,9 +692,8 @@ spec:
       annotations:
         message: A number of pods of daemonset {{$labels.namespace}}/{{$labels.daemonset}}
           are running where they are not supposed to run.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetmisscheduled
       expr: |
-        kube_daemonset_status_number_misscheduled{job="kube-state-metrics"} > 0
+        kube_daemonset_status_number_misscheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 0
       for: 10m
       labels:
         severity: warning
@@ -483,9 +701,8 @@ spec:
       annotations:
         message: CronJob {{ $labels.namespaces }}/{{ $labels.cronjob }} is taking
           more than 1h to complete.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecronjobrunning
       expr: |
-        time() - kube_cronjob_next_schedule_time{job="kube-state-metrics"} > 3600
+        time() - kube_cronjob_next_schedule_time{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 3600
       for: 1h
       labels:
         severity: warning
@@ -493,18 +710,16 @@ spec:
       annotations:
         message: Job {{ $labels.namespaces }}/{{ $labels.job }} is taking more than
           1h to complete.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobcompletion
       expr: |
-        kube_job_spec_completions{job="kube-state-metrics"} - kube_job_status_succeeded{job="kube-state-metrics"}  > 0
+        kube_job_spec_completions{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}  > 0
       for: 1h
       labels:
         severity: warning
     - alert: KubeJobFailed
       annotations:
         message: Job {{ $labels.namespaces }}/{{ $labels.job }} failed to complete.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobfailed
       expr: |
-        kube_job_status_failed{job="kube-state-metrics"}  > 0
+        kube_job_status_failed{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}  > 0
       for: 1h
       labels:
         severity: warning
@@ -514,7 +729,6 @@ spec:
       annotations:
         message: Overcommited CPU resource requests on Pods, cannot tolerate node
           failure.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit
       expr: |
         sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
           /
@@ -528,7 +742,6 @@ spec:
       annotations:
         message: Overcommited Memory resource requests on Pods, cannot tolerate node
           failure.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememovercommit
       expr: |
         sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
           /
@@ -543,9 +756,8 @@ spec:
     - alert: KubeCPUOvercommit
       annotations:
         message: Overcommited CPU resource request quota on Namespaces.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit
       expr: |
-        sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.cpu"})
+        sum(kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard", resource="requests.cpu"})
           /
         sum(node:node_num_cpu:sum)
           > 1.5
@@ -555,9 +767,8 @@ spec:
     - alert: KubeMemOvercommit
       annotations:
         message: Overcommited Memory resource request quota on Namespaces.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememovercommit
       expr: |
-        sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.memory"})
+        sum(kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard", resource="requests.memory"})
           /
         sum(node_memory_MemTotal{job="node-exporter"})
           > 1.5
@@ -568,11 +779,10 @@ spec:
       annotations:
         message: '{{ printf "%0.0f" $value }}% usage of {{ $labels.resource }} in
           namespace {{ $labels.namespace }}.'
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubequotaexceeded
       expr: |
-        100 * kube_resourcequota{job="kube-state-metrics", type="used"}
+        100 * kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
-        kube_resourcequota{job="kube-state-metrics", type="hard"}
+        kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard"}
           > 90
       for: 15m
       labels:
@@ -584,11 +794,10 @@ spec:
         message: The persistent volume claimed by {{ $labels.persistentvolumeclaim
           }} in namespace {{ $labels.namespace }} has {{ printf "%0.0f" $value }}%
           free.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeusagecritical
       expr: |
-        100 * kubelet_volume_stats_available_bytes{job="kubelet"}
+        100 * kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}
           /
-        kubelet_volume_stats_capacity_bytes{job="kubelet"}
+        kubelet_volume_stats_capacity_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}
           < 3
       for: 1m
       labels:
@@ -597,10 +806,9 @@ spec:
       annotations:
         message: Based on recent sampling, the persistent volume claimed by {{ $labels.persistentvolumeclaim
           }} in namespace {{ $labels.namespace }} is expected to fill up within four
-          days.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefullinfourdays
+          days. Currently {{ $value }} bytes are available.
       expr: |
-        predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[1h], 4 * 24 * 3600) < 0
+        kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"} and predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}[6h], 4 * 24 * 3600) < 0
       for: 5m
       labels:
         severity: critical
@@ -609,7 +817,6 @@ spec:
     - alert: KubeNodeNotReady
       annotations:
         message: '{{ $labels.node }} has been unready for more than an hour'
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodenotready
       expr: |
         kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
       for: 1h
@@ -619,7 +826,6 @@ spec:
       annotations:
         message: There are {{ $value }} different versions of Kubernetes components
           running.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeversionmismatch
       expr: |
         count(count(kubernetes_build_info{job!="kube-dns"}) by (gitVersion)) > 1
       for: 1h
@@ -629,12 +835,11 @@ spec:
       annotations:
         message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
           }}' is experiencing {{ printf "%0.0f" $value }}% errors.'
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclienterrors
       expr: |
-        sum(rate(rest_client_requests_total{code!~"2.."}[5m])) by (instance, job) * 100
+        (sum(rate(rest_client_requests_total{code!~"2..|404"}[5m])) by (instance, job)
           /
-        sum(rate(rest_client_requests_total[5m])) by (instance, job)
-          > 1
+        sum(rate(rest_client_requests_total[5m])) by (instance, job))
+        * 100 > 1
       for: 15m
       labels:
         severity: warning
@@ -642,7 +847,6 @@ spec:
       annotations:
         message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
           }}' is experiencing {{ printf "%0.0f" $value }} errors / sec.'
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclienterrors
       expr: |
         sum(rate(ksm_scrape_error_total{job="kube-state-metrics"}[5m])) by (instance, job) > 0.1
       for: 15m
@@ -652,7 +856,6 @@ spec:
       annotations:
         message: Kubelet {{$labels.instance}} is running {{$value}} pods, close to
           the limit of 110.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubelettoomanypods
       expr: |
         kubelet_running_pod_count{job="kubelet"} > 100
       for: 15m
@@ -662,9 +865,8 @@ spec:
       annotations:
         message: The API server has a 99th percentile latency of {{ $value }} seconds
           for {{$labels.verb}} {{$labels.resource}}.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapilatencyhigh
       expr: |
-        cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
+        cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
       for: 10m
       labels:
         severity: warning
@@ -672,16 +874,14 @@ spec:
       annotations:
         message: The API server has a 99th percentile latency of {{ $value }} seconds
           for {{$labels.verb}} {{$labels.resource}}.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapilatencyhigh
       expr: |
-        cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
+        cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
       for: 10m
       labels:
         severity: critical
     - alert: KubeAPIErrorsHigh
       annotations:
         message: API server is erroring for {{ $value }}% of requests.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorshigh
       expr: |
         sum(rate(apiserver_request_count{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
           /
@@ -692,7 +892,6 @@ spec:
     - alert: KubeAPIErrorsHigh
       annotations:
         message: API server is erroring for {{ $value }}% of requests.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorshigh
       expr: |
         sum(rate(apiserver_request_count{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
           /
@@ -703,7 +902,6 @@ spec:
     - alert: KubeClientCertificateExpiration
       annotations:
         message: Kubernetes API certificate is expiring in less than 7 days.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclientcertificateexpiration
       expr: |
         histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
       labels:
@@ -711,7 +909,6 @@ spec:
     - alert: KubeClientCertificateExpiration
       annotations:
         message: Kubernetes API certificate is expiring in less than 1 day.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclientcertificateexpiration
       expr: |
         histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
       labels:
@@ -770,21 +967,19 @@ spec:
     rules:
     - alert: NodeDiskRunningFull
       annotations:
-        description: device {{$labels.device}} on node {{$labels.instance}} is running
-          full within the next 24 hours (mounted at {{$labels.mountpoint}})
-        summary: Node disk is running full within 24 hours
+        message: Device {{ $labels.device }} of node-exporter {{ $labels.namespace
+          }}/{{ $labels.pod }} is running full within the next 24 hours.
       expr: |
-        predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[6h], 3600 * 24) < 0
+        (node:node_filesystem_usage: > 0.85) and (predict_linear(node:node_filesystem_avail:[6h], 3600 * 24) < 0)
       for: 30m
       labels:
         severity: warning
     - alert: NodeDiskRunningFull
       annotations:
-        description: device {{$labels.device}} on node {{$labels.instance}} is running
-          full within the next 2 hours (mounted at {{$labels.mountpoint}})
-        summary: Node disk is running full within 2 hours
+        message: Device {{ $labels.device }} of node-exporter {{ $labels.namespace
+          }}/{{ $labels.pod }} is running full within the next 2 hours.
       expr: |
-        predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[30m], 3600 * 2) < 0
+        (node:node_filesystem_usage: > 0.85) and (predict_linear(node:node_filesystem_avail:[30m], 3600 * 2) < 0)
       for: 10m
       labels:
         severity: critical
@@ -879,7 +1074,7 @@ spec:
       for: 10m
       labels:
         severity: warning
-    - alert: PrometheusTargetScapesDuplicate
+    - alert: PrometheusTargetScrapesDuplicate
       annotations:
         description: '{{$labels.namespace}}/{{$labels.pod}} has many samples rejected
           due to duplicate timestamps but different values'
@@ -952,40 +1147,6 @@ spec:
       for: 10m
       labels:
         severity: critical
-    - alert: EtcdHighNumberOfFailedHTTPRequests
-      annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": {{ $value }}%% of requests for
-          {{ $labels.method }} failed on etcd instance {{ $labels.instance }}.'
-      expr: |
-        100 * sum(rate(etcd_http_failed_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-          /
-        sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-          > 1
-      for: 10m
-      labels:
-        severity: warning
-    - alert: EtcdHighNumberOfFailedHTTPRequests
-      annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": {{ $value }}%% of requests for
-          {{ $labels.method }} failed on etcd instance {{ $labels.instance }}.'
-      expr: |
-        100 * sum(rate(etcd_http_failed_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-          /
-        sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-          > 5
-      for: 5m
-      labels:
-        severity: critical
-    - alert: EtcdHTTPRequestsSlow
-      annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": HTTP requests to {{ $labels.method
-          }} are taking {{ $value }} on etcd instance {{ $labels.instance }}.'
-      expr: |
-        histogram_quantile(0.99, rate(etcd_http_successful_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
-        > 0.15
-      for: 10m
-      labels:
-        severity: warning
     - alert: EtcdMemberCommunicationSlow
       annotations:
         message: 'Etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To

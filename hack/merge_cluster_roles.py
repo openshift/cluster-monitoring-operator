@@ -18,29 +18,74 @@ from __future__ import unicode_literals, print_function
 import os.path
 import sys
 import yaml
+import warnings
 
 
 def main():
-    base_role = {}
+    base = ClusterRole()
     sources = [os.path.relpath(sys.argv[1])]
     with open(sys.argv[1], 'r') as f:
-        base_role = yaml.load(f)
+        base = ClusterRole(yaml.load(f))
 
     manifests = sys.argv[2:]
     for manifest in manifests:
-        sources.append(os.path.relpath(manifest))
         with open(manifest, 'r') as f:
-            rules = yaml.load(f)['rules']
-            if rules not in base_role['rules']:
-                base_role['rules'] += rules
+            y = yaml.load(f)
+            if y['kind'].endswith('RoleList'):
+                for item in y['items']:
+                    base.merge(ClusterRole(item))
+            elif y['kind'].endswith('Role'):
+                base.merge(ClusterRole(y))
+            else:
+                warnings.warn('unexpected resource kind: {}'.format(y['kind']))
+                continue
+        sources.append(os.path.relpath(manifest))
 
-    print("---")
-    print("# This is a generated file. DO NOT EDIT")
-    print("# Run `make merge-cluster-roles` to generate.")
-    print("# Sources: ")
+    print('---')
+    print('# This is a generated file. DO NOT EDIT')
+    print('# Run `make merge-cluster-roles` to generate.')
+    print('# Sources: ')
     for source in sources:
-        print("# \t" + source)
-    print(yaml.dump(base_role))
+        print('# \t' + source)
+    print(yaml.dump(base.manifest))
+
+
+class ClusterRole(object):
+
+    def __init__(self, manifest = {}):
+        self.manifest = manifest
+        # In theory this merges ClusterRoles.
+        # If it happens to merge a regular Role, then log a warning
+        # but do not raise an exception, as this behavior is needed.
+        if 'kind' in self.manifest and self.manifest['kind'] != 'ClusterRole':
+            warnings.warn('creating a ClusterRole from a {}'.format(self.manifest['kind']))
+        self.rules = {}
+        if 'rules' in self.manifest:
+            for r in self.manifest['rules']:
+                self.rules[rule_to_string(r)] = r
+        else:
+            self.manifest['rules'] = []
+
+    # merge adds the rules of the passed ClusterRole to the list of rules.
+    def merge(self, cr):
+        for s, r in cr.rules.items():
+            if s not in self.rules:
+                self.rules[s] = r
+                self.manifest['rules'].append(r)
+
+
+# rule_to_string stably stringifies a rule so that rules can be
+# deduplicated using a dict.
+def rule_to_string(rule):
+    ks = list(rule.keys())
+    ks.sort()
+    s = []
+    for k in ks:
+        v = rule[k]
+        if isinstance(v, list):
+            v.sort()
+        s.append('{}:{}'.format(k, v))
+    return ','.join(s)
 
 
 if __name__ == "__main__":

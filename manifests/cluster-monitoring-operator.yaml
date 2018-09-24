@@ -34,6 +34,9 @@ spec:
         #- "-tags=node-exporter=master"
         #- "-tags=kube-state-metrics=master"
         #- "-tags=kube-rbac-proxy=master"
+        ports:
+        - containerPort: 8080
+          name: http
         resources:
           limits:
             cpu: 20m

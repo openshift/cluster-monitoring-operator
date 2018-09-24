@@ -15,11 +15,14 @@
 package manifests
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 
+	monv1 "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	"k8s.io/api/core/v1"
 )
 
@@ -100,26 +103,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sRoleBindingDefault()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sRoleDefault()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sRoleBindingKubeSystem()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sRoleKubeSystem()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusK8sRoleConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -130,12 +113,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sRoleBinding()
+	_, err = f.PrometheusK8sRoleBindingList()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sRole()
+	_, err = f.PrometheusK8sRoleList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,10 +257,193 @@ func TestUnconfiguredManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	_, err = f.ClusterMonitoringClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ClusterMonitoringOperatorService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ClusterMonitoringOperatorServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestHTTPConfig(t *testing.T) {
+	type checkFunc func(*monv1.Alertmanager) error
+
+	checks := func(cs ...checkFunc) checkFunc {
+		return func(a *monv1.Alertmanager) error {
+			for _, f := range cs {
+				if err := f(a); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
+	hasContainers := func(a *monv1.Alertmanager) error {
+		if len(a.Spec.Containers) == 0 {
+			return errors.New("expected spec to have containers, but it doesn't have any")
+		}
+		return nil
+	}
+
+	containerHasEnv := func(c v1.Container, name, value string) bool {
+		for e := range c.Env {
+			if c.Env[e].Name != name {
+				continue
+			}
+			if c.Env[e].Value == value {
+				return true
+			}
+		}
+		return false
+	}
+
+	containersHaveEnv := func(name, value string) checkFunc {
+		return func(a *monv1.Alertmanager) error {
+			for c := range a.Spec.Containers {
+				if !containerHasEnv(a.Spec.Containers[c], name, value) {
+					return fmt.Errorf(
+						"containers expected to have env var %v=%v, but %v doesn't",
+						name, value, a.Spec.Containers[c].Name,
+					)
+				}
+			}
+			return nil
+		}
+	}
+
+	for _, tc := range []struct {
+		name   string
+		config string
+		check  checkFunc
+	}{
+		{
+			name: "no http config",
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", ""),
+				containersHaveEnv("HTTPS_PROXY", ""),
+				containersHaveEnv("NO_PROXY", ""),
+			),
+		},
+		{
+			name: "empty http config",
+
+			config: `http:`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", ""),
+				containersHaveEnv("HTTPS_PROXY", ""),
+				containersHaveEnv("NO_PROXY", ""),
+			),
+		},
+		{
+			name: "http proxy only",
+
+			config: `http:
+  httpProxy: http://insecure.proxy`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", "http://insecure.proxy"),
+				containersHaveEnv("HTTPS_PROXY", ""),
+				containersHaveEnv("NO_PROXY", ""),
+			),
+		},
+		{
+			name: "https proxy only",
+
+			config: `http:
+  httpsProxy: https://secure.proxy`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", ""),
+				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+				containersHaveEnv("NO_PROXY", ""),
+			),
+		},
+		{
+			name: "https and http proxy",
+
+			config: `http:
+  httpProxy: http://insecure.proxy
+  httpsProxy: https://secure.proxy`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", "http://insecure.proxy"),
+				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+				containersHaveEnv("NO_PROXY", ""),
+			),
+		},
+		{
+			name: "https and no proxy",
+
+			config: `http:
+  httpsProxy: https://secure.proxy
+  noProxy: .test.local,.cluster.local`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", ""),
+				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+				containersHaveEnv("NO_PROXY", ".test.local,.cluster.local"),
+			),
+		},
+		{
+			name: "http and https and no proxy",
+
+			config: `http:
+  httpProxy: http://insecure.proxy
+  httpsProxy: https://secure.proxy
+  noProxy: .test.local,.cluster.local`,
+
+			check: checks(
+				hasContainers,
+				containersHaveEnv("HTTP_PROXY", "http://insecure.proxy"),
+				containersHaveEnv("HTTPS_PROXY", "https://secure.proxy"),
+				containersHaveEnv("NO_PROXY", ".test.local,.cluster.local"),
+			),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			f := NewFactory("openshift-monitoring", c)
+			d, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc")
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			if err := tc.check(d); err != nil {
+				t.Error(err)
+				return
+			}
+		})
+	}
 }
 
 func TestPrometheusOperatorConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusOperator:
+  nodeSelector:
+    type: master
   baseImage: quay.io/test/prometheus-operator
   prometheusConfigReloaderBaseImage: quay.io/test/prometheus-config-reloader
   configReloaderBaseImage: quay.io/test/configmap-reload
@@ -290,6 +456,14 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	d, err := f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if len(d.Spec.Template.Spec.NodeSelector) == 0 {
+		t.Fatal("expected node selector to be present, got none")
+	}
+
+	if got := d.Spec.Template.Spec.NodeSelector["type"]; got != "master" {
+		t.Fatalf("expected node selector to be master, got %q", got)
 	}
 
 	if !strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Image, "quay.io/test/prometheus-operator") {

@@ -62,15 +62,11 @@ var (
 	NodeExporterServiceMonitor             = "assets/node-exporter/service-monitor.yaml"
 
 	PrometheusK8sClusterRoleBinding            = "assets/prometheus-k8s/cluster-role-binding.yaml"
-	PrometheusK8sRoleBindingDefault            = "assets/prometheus-k8s/role-binding-default.yaml"
-	PrometheusK8sRoleBindingKubeSystem         = "assets/prometheus-k8s/role-binding-kube-system.yaml"
-	PrometheusK8sRoleBinding                   = "assets/prometheus-k8s/role-binding-namespace.yaml"
 	PrometheusK8sRoleBindingConfig             = "assets/prometheus-k8s/role-binding-config.yaml"
+	PrometheusK8sRoleBindingList               = "assets/prometheus-k8s/role-binding-specific-namespaces.yaml"
 	PrometheusK8sClusterRole                   = "assets/prometheus-k8s/cluster-role.yaml"
-	PrometheusK8sRoleDefault                   = "assets/prometheus-k8s/role-default.yaml"
-	PrometheusK8sRoleKubeSystem                = "assets/prometheus-k8s/role-kube-system.yaml"
 	PrometheusK8sRoleConfig                    = "assets/prometheus-k8s/role-config.yaml"
-	PrometheusK8sRole                          = "assets/prometheus-k8s/role-namespace.yaml"
+	PrometheusK8sRoleList                      = "assets/prometheus-k8s/role-specific-namespaces.yaml"
 	PrometheusK8sRules                         = "assets/prometheus-k8s/rules.yaml"
 	PrometheusK8sServiceAccount                = "assets/prometheus-k8s/service-account.yaml"
 	PrometheusK8s                              = "assets/prometheus-k8s/prometheus.yaml"
@@ -107,6 +103,10 @@ var (
 	GrafanaRoute                = "assets/grafana/route.yaml"
 	GrafanaServiceAccount       = "assets/grafana/service-account.yaml"
 	GrafanaService              = "assets/grafana/service.yaml"
+
+	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
+	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
+	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
 )
 
 var (
@@ -270,6 +270,19 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 		image.repo = f.config.AuthConfig.BaseImage
 		image.SetTagIfNotEmpty(f.config.AuthConfig.Tag)
 		a.Spec.Containers[0].Image = image.String()
+	}
+
+	for c := range a.Spec.Containers {
+		for e := range a.Spec.Containers[c].Env {
+			switch a.Spec.Containers[c].Env[e].Name {
+			case "HTTP_PROXY":
+				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.HTTPProxy
+			case "HTTPS_PROXY":
+				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.HTTPSProxy
+			case "NO_PROXY":
+				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.NoProxy
+			}
+		}
 	}
 
 	a.Namespace = f.namespace
@@ -491,17 +504,6 @@ func (f *Factory) PrometheusK8sClusterRole() (*rbacv1beta1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(PrometheusK8sClusterRole))
 }
 
-func (f *Factory) PrometheusK8sRoleBindingDefault() (*rbacv1beta1.RoleBinding, error) {
-	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusK8sRoleBindingDefault))
-	if err != nil {
-		return nil, err
-	}
-
-	rb.Subjects[0].Namespace = f.namespace
-
-	return rb, nil
-}
-
 func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1beta1.Role, error) {
 	r, err := f.NewRole(MustAssetReader(PrometheusK8sRoleConfig))
 	if err != nil {
@@ -513,34 +515,17 @@ func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1beta1.Role, error) {
 	return r, nil
 }
 
-func (f *Factory) PrometheusK8sRoleDefault() (*rbacv1beta1.Role, error) {
-	return f.NewRole(MustAssetReader(PrometheusK8sRoleDefault))
-}
-
-func (f *Factory) PrometheusK8sRoleBindingKubeSystem() (*rbacv1beta1.RoleBinding, error) {
-	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusK8sRoleBindingKubeSystem))
+func (f *Factory) PrometheusK8sRoleBindingList() (*rbacv1beta1.RoleBindingList, error) {
+	rbl, err := f.NewRoleBindingList(MustAssetReader(PrometheusK8sRoleBindingList))
 	if err != nil {
 		return nil, err
 	}
 
-	rb.Subjects[0].Namespace = f.namespace
-
-	return rb, nil
-}
-
-func (f *Factory) PrometheusK8sRoleKubeSystem() (*rbacv1beta1.Role, error) {
-	return f.NewRole(MustAssetReader(PrometheusK8sRoleKubeSystem))
-}
-
-func (f *Factory) PrometheusK8sRoleBinding() (*rbacv1beta1.RoleBinding, error) {
-	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusK8sRoleBinding))
-	if err != nil {
-		return nil, err
+	for _, rb := range rbl.Items {
+		rb.Subjects[0].Namespace = f.namespace
 	}
 
-	rb.Subjects[0].Namespace = f.namespace
-
-	return rb, nil
+	return rbl, nil
 }
 
 func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1beta1.RoleBinding, error) {
@@ -554,15 +539,17 @@ func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1beta1.RoleBinding, er
 	return rb, nil
 }
 
-func (f *Factory) PrometheusK8sRole() (*rbacv1beta1.Role, error) {
-	r, err := f.NewRole(MustAssetReader(PrometheusK8sRole))
+func (f *Factory) PrometheusK8sRoleList() (*rbacv1beta1.RoleList, error) {
+	rl, err := f.NewRoleList(MustAssetReader(PrometheusK8sRoleList))
 	if err != nil {
 		return nil, err
 	}
 
-	r.Namespace = f.namespace
+	for _, r := range rl.Items {
+		r.Namespace = f.namespace
+	}
 
-	return r, nil
+	return rl, nil
 }
 
 func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
@@ -847,6 +834,10 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
+	if len(f.config.PrometheusOperatorConfig.NodeSelector) > 0 {
+		d.Spec.Template.Spec.NodeSelector = f.config.PrometheusOperatorConfig.NodeSelector
+	}
+
 	if f.config.PrometheusOperatorConfig.BaseImage != "" {
 		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
 		if err != nil {
@@ -1129,6 +1120,37 @@ func (f *Factory) GrafanaService() (*v1.Service, error) {
 	return s, nil
 }
 
+func (f *Factory) ClusterMonitoringClusterRole() (*rbacv1beta1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringOperatorService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(ClusterMonitoringOperatorService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(ClusterMonitoringOperatorServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespace
+
+	return sm, nil
+}
+
 func hostFromBaseAddress(baseAddress string) (string, error) {
 	host, _, err := net.SplitHostPort(baseAddress)
 	if err != nil && !IsMissingPortInAddressError(err) {
@@ -1228,6 +1250,36 @@ func (f *Factory) NewRoleBinding(manifest io.Reader) (*rbacv1beta1.RoleBinding, 
 	}
 
 	return rb, nil
+}
+
+func (f *Factory) NewRoleList(manifest io.Reader) (*rbacv1beta1.RoleList, error) {
+	rl, err := NewRoleList(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range rl.Items {
+		if r.GetNamespace() == "" {
+			r.SetNamespace(f.namespace)
+		}
+	}
+
+	return rl, nil
+}
+
+func (f *Factory) NewRoleBindingList(manifest io.Reader) (*rbacv1beta1.RoleBindingList, error) {
+	rbl, err := NewRoleBindingList(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rb := range rbl.Items {
+		if rb.GetNamespace() == "" {
+			rb.SetNamespace(f.namespace)
+		}
+	}
+
+	return rbl, nil
 }
 
 func (f *Factory) NewRole(manifest io.Reader) (*rbacv1beta1.Role, error) {
@@ -1461,6 +1513,26 @@ func NewRole(manifest io.Reader) (*rbacv1beta1.Role, error) {
 	}
 
 	return &r, nil
+}
+
+func NewRoleBindingList(manifest io.Reader) (*rbacv1beta1.RoleBindingList, error) {
+	rbl := rbacv1beta1.RoleBindingList{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&rbl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rbl, nil
+}
+
+func NewRoleList(manifest io.Reader) (*rbacv1beta1.RoleList, error) {
+	rl := rbacv1beta1.RoleList{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&rl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rl, nil
 }
 
 func NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {

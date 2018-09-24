@@ -15,8 +15,8 @@
 package prometheus
 
 import (
-	"crypto/sha256"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -32,9 +32,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// The maximum `Data` size of a config map seems to differ between
+// The maximum `Data` size of a ConfigMap seems to differ between
 // environments. This is probably due to different meta data sizes which count
-// into the overall maximum size of a config map. Thereby lets leave a
+// into the overall maximum size of a ConfigMap. Thereby lets leave a
 // large buffer.
 var maxConfigMapDataSize = int(float64(v1.MaxSecretSize) * 0.5)
 
@@ -46,19 +46,9 @@ func (c *Operator) createOrUpdateRuleConfigMaps(p *monitoringv1.Prometheus) ([]s
 		return nil, err
 	}
 
-	rules, err := c.selectRules(p, namespaces)
+	newRules, err := c.selectRules(p, namespaces)
 	if err != nil {
 		return nil, err
-	}
-
-	newConfigMaps, err := makeRulesConfigMaps(p, rules)
-	if err != nil {
-		errors.Wrap(err, "failed to make rules config maps")
-	}
-
-	newConfigMapNames := []string{}
-	for _, cm := range newConfigMaps {
-		newConfigMapNames = append(newConfigMapNames, cm.Name)
 	}
 
 	currentConfigMapList, err := cClient.List(prometheusRulesConfigMapSelector(p.Name))
@@ -66,6 +56,37 @@ func (c *Operator) createOrUpdateRuleConfigMaps(p *monitoringv1.Prometheus) ([]s
 		return nil, err
 	}
 	currentConfigMaps := currentConfigMapList.Items
+
+	currentRules := map[string]string{}
+	for _, cm := range currentConfigMaps {
+		for ruleFileName, ruleFile := range cm.Data {
+			currentRules[ruleFileName] = ruleFile
+		}
+	}
+
+	equal := reflect.DeepEqual(newRules, currentRules)
+	if equal && len(currentConfigMaps) != 0 {
+		level.Debug(c.logger).Log(
+			"msg", "no PrometheusRule changes",
+			"namespace", p.Namespace,
+			"prometheus", p.Name,
+		)
+		currentConfigMapNames := []string{}
+		for _, cm := range currentConfigMaps {
+			currentConfigMapNames = append(currentConfigMapNames, cm.Name)
+		}
+		return currentConfigMapNames, nil
+	}
+
+	newConfigMaps, err := makeRulesConfigMaps(p, newRules)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to make rules ConfigMaps")
+	}
+
+	newConfigMapNames := []string{}
+	for _, cm := range newConfigMaps {
+		newConfigMapNames = append(newConfigMapNames, cm.Name)
+	}
 
 	if len(currentConfigMaps) == 0 {
 		level.Debug(c.logger).Log(
@@ -76,30 +97,18 @@ func (c *Operator) createOrUpdateRuleConfigMaps(p *monitoringv1.Prometheus) ([]s
 		for _, cm := range newConfigMaps {
 			_, err = cClient.Create(&cm)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to create config map '%v'", cm.Name)
+				return nil, errors.Wrapf(err, "failed to create ConfigMap '%v'", cm.Name)
 			}
 		}
 		return newConfigMapNames, nil
 	}
 
-	newChecksum := checksumConfigMaps(newConfigMaps)
-	currentChecksum := checksumConfigMaps(currentConfigMaps)
-
-	if newChecksum == currentChecksum {
-		level.Debug(c.logger).Log(
-			"msg", "no PrometheusRule changes",
-			"namespace", p.Namespace,
-			"prometheus", p.Name,
-		)
-		return newConfigMapNames, nil
-	}
-
-	// Simply deleting old config maps and creating new ones for now. Could be
-	// replaced by logic that only deletes obsolete config maps in the future.
+	// Simply deleting old ConfigMaps and creating new ones for now. Could be
+	// replaced by logic that only deletes obsolete ConfigMaps in the future.
 	for _, cm := range currentConfigMaps {
 		err := cClient.Delete(cm.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to delete current config map '%v'", cm.Name)
+			return nil, errors.Wrapf(err, "failed to delete current ConfigMap '%v'", cm.Name)
 		}
 	}
 
@@ -111,7 +120,7 @@ func (c *Operator) createOrUpdateRuleConfigMaps(p *monitoringv1.Prometheus) ([]s
 	for _, cm := range newConfigMaps {
 		_, err = cClient.Create(&cm)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create new config map '%v'", cm.Name)
+			return nil, errors.Wrapf(err, "failed to create new ConfigMap '%v'", cm.Name)
 		}
 	}
 
@@ -134,9 +143,10 @@ func (c *Operator) selectRuleNamespaces(p *monitoringv1.Prometheus) ([]string, e
 			return namespaces, errors.Wrap(err, "convert rule namespace label selector to selector")
 		}
 
-		cache.ListAll(c.nsInf.GetStore(), ruleNamespaceSelector, func(obj interface{}) {
-			namespaces = append(namespaces, obj.(*v1.Namespace).Name)
-		})
+		namespaces, err = c.listNamespaces(ruleNamespaceSelector)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	level.Debug(c.logger).Log(
@@ -191,43 +201,40 @@ func (c *Operator) selectRules(p *monitoringv1.Prometheus, namespaces []string) 
 	return rules, nil
 }
 
-func sortKeyesOfStringMap(m map[string]string) []string {
-	keys := []string{}
-	for k := range m {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-	return keys
-}
-
 // makeRulesConfigMaps takes a Prometheus configuration and rule files and
-// returns a list of Kubernetes config maps to be later on mounted into the
+// returns a list of Kubernetes ConfigMaps to be later on mounted into the
 // Prometheus instance.
-// If the total size of rule files exceeds the Kubernetes config map limit,
+// If the total size of rule files exceeds the Kubernetes ConfigMap limit,
 // they are split up via the simple first-fit [1] bin packing algorithm. In the
 // future this can be replaced by a more sophisticated algorithm, but for now
 // simplicity should be sufficient.
 // [1] https://en.wikipedia.org/wiki/Bin_packing_problem#First-fit_algorithm
 func makeRulesConfigMaps(p *monitoringv1.Prometheus, ruleFiles map[string]string) ([]v1.ConfigMap, error) {
-	//check if none of the rule files is too large for a single config map
+	//check if none of the rule files is too large for a single ConfigMap
 	for filename, file := range ruleFiles {
 		if len(file) > maxConfigMapDataSize {
 			return nil, errors.Errorf(
-				"rule file '%v' is too large for a single Kubernetes config map",
+				"rule file '%v' is too large for a single Kubernetes ConfigMap",
 				filename,
 			)
 		}
 	}
 
 	buckets := []map[string]string{
-		map[string]string{},
+		{},
 	}
 	currBucketIndex := 0
-	sortedNames := sortKeyesOfStringMap(ruleFiles)
 
-	for _, filename := range sortedNames {
-		// If rule file doesn't fit into current bucket, create new bucket
+	// To make bin packing algorithm deterministic, sort ruleFiles filenames and
+	// iterate over filenames instead of ruleFiles map (not deterministic).
+	fileNames := []string{}
+	for n := range ruleFiles {
+		fileNames = append(fileNames, n)
+	}
+	sort.Strings(fileNames)
+
+	for _, filename := range fileNames {
+		// If rule file doesn't fit into current bucket, create new bucket.
 		if bucketSize(buckets[currBucketIndex])+len(ruleFiles[filename]) > maxConfigMapDataSize {
 			buckets = append(buckets, map[string]string{})
 			currBucketIndex++
@@ -279,24 +286,6 @@ func makeRulesConfigMap(p *monitoringv1.Prometheus, ruleFiles map[string]string)
 		},
 		Data: ruleFiles,
 	}
-}
-
-func checksumConfigMaps(configMaps []v1.ConfigMap) string {
-	ruleFiles := map[string]string{}
-	for _, cm := range configMaps {
-		for filename, file := range cm.Data {
-			ruleFiles[filename] = file
-		}
-	}
-
-	sortedKeys := sortKeyesOfStringMap(ruleFiles)
-
-	sum := ""
-	for _, name := range sortedKeys {
-		sum += name + ruleFiles[name]
-	}
-
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(sum)))
 }
 
 func prometheusRuleConfigMapName(prometheusName string) string {

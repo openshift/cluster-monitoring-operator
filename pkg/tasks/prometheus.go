@@ -112,26 +112,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus ClusterRoleBinding failed")
 	}
 
-	rd, err := t.factory.PrometheusK8sRoleDefault()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Role default failed")
-	}
-
-	err = t.client.CreateOrUpdateRole(rd)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Role default failed")
-	}
-
-	rbd, err := t.factory.PrometheusK8sRoleBindingDefault()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus RoleBinding default failed")
-	}
-
-	err = t.client.CreateOrUpdateRoleBinding(rbd)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus RoleBinding default failed")
-	}
-
 	rc, err := t.factory.PrometheusK8sRoleConfig()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Role config failed")
@@ -142,44 +122,28 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Role config failed")
 	}
 
-	rks, err := t.factory.PrometheusK8sRoleKubeSystem()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Role kube-system failed")
-	}
-
-	err = t.client.CreateOrUpdateRole(rks)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Role kube-system failed")
-	}
-
-	rbks, err := t.factory.PrometheusK8sRoleBindingKubeSystem()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus RoleBinding kube-system failed")
-	}
-
-	err = t.client.CreateOrUpdateRoleBinding(rbks)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus RoleBinding kube-system failed")
-	}
-
-	rts, err := t.factory.PrometheusK8sRole()
+	rl, err := t.factory.PrometheusK8sRoleList()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Role failed")
 	}
 
-	err = t.client.CreateOrUpdateRole(rts)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Role failed")
+	for _, r := range rl.Items {
+		err = t.client.CreateOrUpdateRole(&r)
+		if err != nil {
+			return errors.Wrapf(err, "reconciling Prometheus Role %q failed", r.Name)
+		}
 	}
 
-	rbts, err := t.factory.PrometheusK8sRoleBinding()
+	rbl, err := t.factory.PrometheusK8sRoleBindingList()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus RoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateRoleBinding(rbts)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus RoleBinding failed")
+	for _, rb := range rbl.Items {
+		err = t.client.CreateOrUpdateRoleBinding(&rb)
+		if err != nil {
+			return errors.Wrapf(err, "reconciling Prometheus RoleBinding %q failed", rb.Name)
+		}
 	}
 
 	rbc, err := t.factory.PrometheusK8sRoleBindingConfig()
