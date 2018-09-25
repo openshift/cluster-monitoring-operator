@@ -9,6 +9,16 @@
                 }
             },
             "version": "master"
+        },
+        {
+            "name": "telemeter-client",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/openshift/telemeter",
+                    "subdir": "jsonnet/telemeter/client"
+                }
+            },
+            "version": "master"
         }
     ]
 }

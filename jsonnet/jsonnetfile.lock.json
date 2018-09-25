@@ -8,7 +8,7 @@
                     "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
                 }
             },
-            "version": "d741d30233d72a22a055d8ad1dab3cf3440548bf"
+            "version": "fd3299ce5ceef27c092082f74c0aafcf93a41d64"
         },
         {
             "name": "ksonnet",
@@ -18,7 +18,7 @@
                     "subdir": ""
                 }
             },
-            "version": "83f20ee933bcd13fcf4ad1b49a40c92135c5569c"
+            "version": "ed0796f3cb97ebc35ae54f543b1814a7c8dae305"
         },
         {
             "name": "kubernetes-mixin",
@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "d445c4d98fdf88fd3c59bb34ca4b0f82536f878c"
+            "version": "19da1eb2f2558dad0f8d9e280cc1fe7bc835677b"
         },
         {
             "name": "grafonnet",
@@ -38,7 +38,7 @@
                     "subdir": "grafonnet"
                 }
             },
-            "version": "7be7f8e4e8da37cac104d2655ca22fdb8a93ebcd"
+            "version": "64147daa1267a2571ef95609550b782ec9807c52"
         },
         {
             "name": "grafana-builder",
@@ -48,7 +48,7 @@
                     "subdir": "grafana-builder"
                 }
             },
-            "version": "e6fe81715dd802b4c9d9c64f2c44ba6ee56d2000"
+            "version": "94aef231932810633416bfe596a41dbad2b1ebb9"
         },
         {
             "name": "grafana",
@@ -78,7 +78,17 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "2589353c1ffbaf8f49a83a0db20e5a7aaef1d3a9"
+            "version": "a3e242d80ae1a13ae57904fc12e91fe4c9ecf972"
+        },
+        {
+            "name": "telemeter-client",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/openshift/telemeter",
+                    "subdir": "jsonnet/telemeter/client"
+                }
+            },
+            "version": "45552d0fa00f856ff1b564ab195349029e76dcc0"
         }
     ]
 }
