@@ -107,6 +107,11 @@ var (
 	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
+
+	TelemeterClientDeployment     = "assets/telemeter-client/deployment.yaml"
+	TelemeterClientService        = "assets/telemeter-client/service.yaml"
+	TelemeterClientServiceMonitor = "assets/telemeter-client/service-monitor.yaml"
+	TelemeterClientSecret         = "assets/telemeter-client/secret.yaml"
 )
 
 var (
@@ -1424,6 +1429,69 @@ func (f *Factory) NewClusterRoleBinding(manifest io.Reader) (*rbacv1beta1.Cluste
 
 func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1beta1.ClusterRole, error) {
 	return NewClusterRole(manifest)
+}
+
+// TelemeterClientServiceMonitor generates a new ServiceMonitor for Telemeter client.
+func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(TelemeterClientServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("telemeter.%s.svc", f.namespace)
+	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("telemeter.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
+}
+
+// TelemeterClientDeployment generates a new Deployment for Telemeter client.
+func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(MustAssetReader(TelemeterClientDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	if f.config.TelemeterClientConfig.BaseImage != "" {
+		image, err := imageFromString(d.Spec.Template.Spec.Containers[2].Image)
+		if err != nil {
+			return nil, err
+		}
+		image.repo = f.config.TelemeterClientConfig.BaseImage
+		image.SetTagIfNotEmpty(f.config.TelemeterClientConfig.Tag)
+		d.Spec.Template.Spec.Containers[0].Image = image.String()
+	}
+
+	d.Namespace = f.namespace
+
+	return d, nil
+}
+
+// TelemeterClientService generates a new Service for Telemeter client.
+func (f *Factory) TelemeterClientService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(TelemeterClientService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+// TelemeterClientSecret generates a new Secret for Telemeter client.
+func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(TelemeterClientSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Data["id"] = []byte(f.config.TelemeterClientConfig.ClusterID)
+	s.Data["to"] = []byte(f.config.TelemeterClientConfig.TelemeterServerURL)
+	s.Data["token"] = []byte(f.config.TelemeterClientConfig.Token)
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {

@@ -1,0 +1,55 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: telemeter-client
+  name: telemeter-client
+  namespace: openshift-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: telemeter-client
+  template:
+    metadata:
+      labels:
+        k8s-app: telemeter-client
+    spec:
+      containers:
+      - command:
+        - /usr/bin/telemeter-client
+        - --id=$(ID)
+        - --from=https://prometheus-k8s.openshift-monitoring.svc:9091
+        - --from-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+        - --from-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
+        - --to=$(TO)
+        - --to-token-file=/etc/telemeter/token
+        - --listen=localhost:8080
+        env:
+        - name: ID
+          valueFrom:
+            secretKeyRef:
+              key: id
+              name: telemeter-client
+        - name: TO
+          valueFrom:
+            secretKeyRef:
+              key: to
+              name: telemeter-client
+        image: openshift/telemeter:v3.11
+        name: telemeter-client
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - mountPath: /etc/telemeter
+          name: credentials
+          readOnly: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: telemeter-client
+      volumes:
+      - name: credentials
+        secret:
+          secretName: telemeter-client

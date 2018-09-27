@@ -15,13 +15,9 @@
 package tasks
 
 import (
-	"reflect"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type KubeStateMetricsTask struct {
@@ -37,12 +33,12 @@ func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) 
 }
 
 func (t *KubeStateMetricsTask) Run() error {
-	smksm, err := t.factory.KubeStateMetricsServiceMonitor()
+	sm, err := t.factory.KubeStateMetricsServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smksm)
+	err = t.client.CreateOrUpdateServiceMonitor(sm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
 	}
@@ -87,34 +83,11 @@ func (t *KubeStateMetricsTask) Run() error {
 		return errors.Wrap(err, "reconciling kube-state-metrics Service failed")
 	}
 
-	return errors.Wrap(t.reconcileKubeStateMetricsDeployments(), "reconciling kube-state-metrics Deployment failed")
-}
-
-func (t *KubeStateMetricsTask) reconcileKubeStateMetricsDeployments() error {
-	d, err := t.factory.KubeStateMetricsDeployment()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics Deployment for comparison failed")
-	}
-
-	depl, err := t.client.KubernetesInterface().AppsV1beta2().Deployments(d.GetNamespace()).Get(d.GetName(), metav1.GetOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return errors.Wrap(err, "retrieving kube-state-metrics Deployment for comparison failed")
-	}
-
-	// No need for comparing if deployment doesn't exist in the first place.
-	if !apierrors.IsNotFound(err) {
-		if reflect.DeepEqual(d.Spec, depl.Spec) {
-			// Nothing to do, as the currently existing kube-state-metrics
-			// deployment is equivalent to the one that would be applied.
-			return nil
-		}
-	}
-
-	d, err = t.factory.KubeStateMetricsDeployment()
+	dep, err := t.factory.KubeStateMetricsDeployment()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-state-metrics Deployment failed")
 	}
 
-	err = t.client.CreateOrUpdateDeployment(d)
+	err = t.client.CreateOrUpdateDeployment(dep)
 	return errors.Wrap(err, "reconciling kube-state-metrics Deployment failed")
 }
