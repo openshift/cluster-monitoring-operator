@@ -17,7 +17,7 @@ spec:
     spec:
       serviceAccountName: cluster-monitoring-operator
       containers:
-      - image: quay.io/coreos/cluster-monitoring-operator:v0.1.0
+      - image: docker.io/openshift/origin-cluster-monitoring-operator:latest
         name: cluster-monitoring-operator
         args:
         - "-namespace=openshift-monitoring"
