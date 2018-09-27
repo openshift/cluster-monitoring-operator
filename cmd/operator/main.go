@@ -131,7 +131,7 @@ func Main() int {
 
 	cancel()
 	if err := wg.Wait(); err != nil {
-		glog.V(4).Info("Unhandled error received. Exiting...err: %s", err)
+		glog.V(4).Infof("Unhandled error received. Exiting...err: %s", err)
 		return 1
 	}
 

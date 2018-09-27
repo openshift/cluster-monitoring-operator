@@ -250,7 +250,7 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 		}
 
 		glog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
-		glog.V(6).Infof("done waiting? %s", len(pods.Items) == 0)
+		glog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
 
 		return len(pods.Items) == 0, nil
 	})

@@ -47,7 +47,7 @@ def main():
     print('# Sources: ')
     for source in sources:
         print('# \t' + source)
-    print(yaml.dump(base.manifest))
+    print(yaml.dump(base.manifest, default_flow_style=False))
 
 
 class ClusterRole(object):

@@ -107,8 +107,8 @@ build-docker-test:
 run-docker-test-minikube:
 	docker run --rm -it --env KUBECONFIG=/kubeconfig -v /home/$(USER)/.kube/config:/kubeconfig -v /home/$(USER)/.minikube:/home/$(USER)/.minikube quay.io/coreos/cluster-monitoring-operator-test:$(TAG)
 
-merge-cluster-roles: manifests/cluster-monitoring-operator-role.yaml
-manifests/cluster-monitoring-operator-role.yaml: $(ASSETS) hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in
-	python2 hack/merge_cluster_roles.py manifests/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/cluster-monitoring-operator-role.yaml
+merge-cluster-roles: manifests/02-role.yaml
+manifests/02-role.yaml: $(ASSETS) hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in
+	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/02-role.yaml
 
 .PHONY: all build operator-no-deps run crossbuild container push clean deps generate dependencies test e2e-test e2e-clean merge-cluster-roles

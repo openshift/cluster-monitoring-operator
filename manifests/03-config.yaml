@@ -24,7 +24,6 @@ data:
     auth:
       baseImage: openshift/oauth-proxy
     etcd:
-      enabled: true
       targets:
         selector:
           openshift.io/component: etcd
