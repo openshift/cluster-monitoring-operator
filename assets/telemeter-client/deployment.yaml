@@ -36,7 +36,7 @@ spec:
             secretKeyRef:
               key: to
               name: telemeter-client
-        image: openshift/telemeter:v3.11
+        image: quay.io/openshift/origin-telemeter:v4.0
         name: telemeter-client
         ports:
         - containerPort: 8080
@@ -45,10 +45,6 @@ spec:
         - mountPath: /etc/telemeter
           name: credentials
           readOnly: false
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
-      serviceAccountName: telemeter-client
       volumes:
       - name: credentials
         secret:
