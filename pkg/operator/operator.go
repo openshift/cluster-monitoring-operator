@@ -22,6 +22,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/yaml.v2"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -285,7 +286,7 @@ func (o *Operator) Config() *manifests.Config {
 		return c
 	}
 	ic := make(map[string]interface{})
-	if err := json.Unmarshal(cmap.BinaryData["install-config"], &ic); err != nil {
+	if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
 		glog.V(4).Infof("Could not parse cluster configuration. Proceeding without it.")
 		return c
 	}
