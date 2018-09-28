@@ -1438,8 +1438,6 @@ func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error)
 		return nil, err
 	}
 
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("telemeter.%s.svc", f.namespace)
-	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("telemeter.%s.svc", f.namespace)
 	sm.Namespace = f.namespace
 
 	return sm, nil
@@ -1453,7 +1451,7 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 	}
 
 	if f.config.TelemeterClientConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[2].Image)
+		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
 		if err != nil {
 			return nil, err
 		}
