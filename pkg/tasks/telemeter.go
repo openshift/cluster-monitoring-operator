@@ -43,6 +43,36 @@ func (t *TelemeterClientTask) Run() error {
 		return errors.Wrap(err, "reconciling Telemeter client ServiceMonitor failed")
 	}
 
+	sa, err := t.factory.TelemeterClientServiceAccount()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client Service failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceAccount(sa)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Telemeter client ServiceAccount failed")
+	}
+
+	cr, err := t.factory.TelemeterClientClusterRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client ClusterRole failed")
+	}
+
+	err = t.client.CreateOrUpdateClusterRole(cr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Telemeter client ClusterRole failed")
+	}
+
+	crb, err := t.factory.TelemeterClientClusterRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client ClusterRoleBinding failed")
+	}
+
+	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Telemeter client ClusterRoleBinding failed")
+	}
+
 	svc, err := t.factory.TelemeterClientService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client Service failed")
