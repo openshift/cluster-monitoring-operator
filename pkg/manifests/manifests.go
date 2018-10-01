@@ -108,10 +108,13 @@ var (
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
 
-	TelemeterClientDeployment     = "assets/telemeter-client/deployment.yaml"
-	TelemeterClientService        = "assets/telemeter-client/service.yaml"
-	TelemeterClientServiceMonitor = "assets/telemeter-client/service-monitor.yaml"
-	TelemeterClientSecret         = "assets/telemeter-client/secret.yaml"
+	TelemeterClientClusterRole        = "assets/telemeter-client/cluster-role.yaml"
+	TelemeterClientClusterRoleBinding = "assets/telemeter-client/cluster-role-binding.yaml"
+	TelemeterClientDeployment         = "assets/telemeter-client/deployment.yaml"
+	TelemeterClientSecret             = "assets/telemeter-client/secret.yaml"
+	TelemeterClientService            = "assets/telemeter-client/service.yaml"
+	TelemeterClientServiceAccount     = "assets/telemeter-client/service-account.yaml"
+	TelemeterClientServiceMonitor     = "assets/telemeter-client/service-monitor.yaml"
 )
 
 var (
@@ -1431,6 +1434,26 @@ func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1beta1.ClusterRole, 
 	return NewClusterRole(manifest)
 }
 
+// TelemeterClientClusterRole generates a new ClusterRole for Telemeter client.
+func (f *Factory) TelemeterClientClusterRole() (*rbacv1beta1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(MustAssetReader(TelemeterClientClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+// TelemeterClientClusterRoleBinding generates a new ClusterRoleBinding for Telemeter client.
+func (f *Factory) TelemeterClientClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(TelemeterClientClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	return crb, nil
+}
+
 // TelemeterClientServiceMonitor generates a new ServiceMonitor for Telemeter client.
 func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error) {
 	sm, err := f.NewServiceMonitor(MustAssetReader(TelemeterClientServiceMonitor))
@@ -1438,8 +1461,6 @@ func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error)
 		return nil, err
 	}
 
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("telemeter.%s.svc", f.namespace)
-	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("telemeter.%s.svc", f.namespace)
 	sm.Namespace = f.namespace
 
 	return sm, nil
@@ -1453,7 +1474,7 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 	}
 
 	if f.config.TelemeterClientConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[2].Image)
+		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
 		if err != nil {
 			return nil, err
 		}
@@ -1470,6 +1491,18 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 // TelemeterClientService generates a new Service for Telemeter client.
 func (f *Factory) TelemeterClientService() (*v1.Service, error) {
 	s, err := f.NewService(MustAssetReader(TelemeterClientService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+// TelemeterClientServiceAccount generates a new ServiceAccount for Telemeter client.
+func (f *Factory) TelemeterClientServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(MustAssetReader(TelemeterClientServiceAccount))
 	if err != nil {
 		return nil, err
 	}

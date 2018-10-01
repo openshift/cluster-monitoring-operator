@@ -208,7 +208,7 @@ func (c *Config) applyDefaults() {
 		c.TelemeterClientConfig = &TelemeterClientConfig{}
 	}
 	if c.TelemeterClientConfig.BaseImage == "" {
-		c.TelemeterClientConfig.BaseImage = "openshift/telemeter-client"
+		c.TelemeterClientConfig.BaseImage = "quay.io/openshift/origin-telemeter"
 	}
 }
 
