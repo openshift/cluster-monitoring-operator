@@ -78,7 +78,7 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "1a8c52097971fbc1e0988ab8f807c7bdde1fc3e7"
+            "version": "60fd69a06f99e9abfad2314ed625ff3bca260e89"
         },
         {
             "name": "telemeter-client",
@@ -88,7 +88,7 @@
                     "subdir": "jsonnet/telemeter/client"
                 }
             },
-            "version": "f6385aa775963ad40055e95971d9e3107b9abd81"
+            "version": "c87418dea65d023ece9014ff55e898accac32bd1"
         }
     ]
 }

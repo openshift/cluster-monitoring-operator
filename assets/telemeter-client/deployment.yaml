@@ -45,6 +45,7 @@ spec:
         - mountPath: /etc/telemeter
           name: credentials
           readOnly: false
+      serviceAccountName: telemeter-client
       volumes:
       - name: credentials
         secret:
