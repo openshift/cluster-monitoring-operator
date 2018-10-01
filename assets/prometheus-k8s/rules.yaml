@@ -817,6 +817,16 @@ spec:
       for: 15m
       labels:
         severity: warning
+    - alert: CPUThrottlingHigh
+      annotations:
+        message: '{{ printf "%0.0f" $value }}% throttling of CPU in namespace {{ $labels.namespace
+          }} for {{ $labels.container_name }}.'
+      expr: "100 * sum(increase(container_cpu_cfs_throttled_periods_total[5m])) by
+        (container_name, pod_name, namespace) \n  / \nsum(increase(container_cpu_cfs_periods_total[5m]))
+        by (container_name, pod_name, namespace)\n  > 25 \n"
+      for: 15m
+      labels:
+        severity: warning
   - name: kubernetes-storage
     rules:
     - alert: KubePersistentVolumeUsageCritical
