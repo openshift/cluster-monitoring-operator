@@ -34,7 +34,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
 
     kubeSchedulerSelector: 'job="kube-controllers"',
     kubeControllerManagerSelector: 'job="kube-controllers"',
-    namespaceSelector: 'namespace=~"(openshift.*|kube.*|default|logging)"',
+    namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
   },
 } + {
   local d = super.grafanaDashboards,
