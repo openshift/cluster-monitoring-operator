@@ -618,7 +618,7 @@ spec:
         message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
           }}) is restarting {{ printf "%.2f" $value }} times / second.
       expr: |
-        rate(kube_pod_container_status_restarts_total{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}[15m]) > 0
+        rate(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[15m]) > 0
       for: 1h
       labels:
         severity: critical
@@ -627,7 +627,7 @@ spec:
         message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
           state for longer than an hour.
       expr: |
-        sum by (namespace, pod) (kube_pod_status_phase{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
+        sum by (namespace, pod) (kube_pod_status_phase{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
       for: 1h
       labels:
         severity: critical
@@ -637,9 +637,9 @@ spec:
           }} does not match, this indicates that the Deployment has failed but has
           not been rolled back.
       expr: |
-        kube_deployment_status_observed_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_deployment_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_deployment_metadata_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_deployment_metadata_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -648,9 +648,9 @@ spec:
         message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not
           matched the expected number of replicas for longer than an hour.
       expr: |
-        kube_deployment_spec_replicas{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_deployment_spec_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_deployment_status_replicas_available{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_deployment_status_replicas_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
       for: 1h
       labels:
         severity: critical
@@ -659,9 +659,9 @@ spec:
         message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has
           not matched the expected number of replicas for longer than 15 minutes.
       expr: |
-        kube_statefulset_status_replicas_ready{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_statefulset_status_replicas_ready{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_statefulset_status_replicas{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_statefulset_status_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -671,9 +671,9 @@ spec:
           }} does not match, this indicates that the StatefulSet has failed but has
           not been rolled back.
       expr: |
-        kube_statefulset_status_observed_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_statefulset_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
-        kube_statefulset_metadata_generation{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_statefulset_metadata_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: critical
@@ -683,15 +683,15 @@ spec:
           has not been rolled out.
       expr: |
         max without (revision) (
-          kube_statefulset_status_current_revision{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+          kube_statefulset_status_current_revision{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
             unless
-          kube_statefulset_status_update_revision{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+          kube_statefulset_status_update_revision{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
         )
           *
         (
-          kube_statefulset_replicas{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+          kube_statefulset_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
             !=
-          kube_statefulset_status_replicas_updated{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+          kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
         )
       for: 15m
       labels:
@@ -701,9 +701,9 @@ spec:
         message: Only {{ $value }}% of the desired Pods of DaemonSet {{ $labels.namespace
           }}/{{ $labels.daemonset }} are scheduled and ready.
       expr: |
-        kube_daemonset_status_number_ready{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_daemonset_status_number_ready{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           /
-        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} * 100 < 100
+        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} * 100 < 100
       for: 15m
       labels:
         severity: critical
@@ -712,9 +712,9 @@ spec:
         message: '{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset
           }} are not scheduled.'
       expr: |
-        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}
+        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           -
-        kube_daemonset_status_current_number_scheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 0
+        kube_daemonset_status_current_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
       for: 10m
       labels:
         severity: warning
@@ -723,7 +723,7 @@ spec:
         message: '{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset
           }} are running where they are not supposed to run.'
       expr: |
-        kube_daemonset_status_number_misscheduled{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 0
+        kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
       for: 10m
       labels:
         severity: warning
@@ -732,7 +732,7 @@ spec:
         message: CronJob {{ $labels.namespaces }}/{{ $labels.cronjob }} is taking
           more than 1h to complete.
       expr: |
-        time() - kube_cronjob_next_schedule_time{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} > 3600
+        time() - kube_cronjob_next_schedule_time{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 3600
       for: 1h
       labels:
         severity: warning
@@ -741,7 +741,7 @@ spec:
         message: Job {{ $labels.namespaces }}/{{ $labels.job }} is taking more than
           one hour to complete.
       expr: |
-        kube_job_spec_completions{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}  > 0
+        kube_job_spec_completions{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
       for: 1h
       labels:
         severity: warning
@@ -749,7 +749,7 @@ spec:
       annotations:
         message: Job {{ $labels.namespaces }}/{{ $labels.job }} failed to complete.
       expr: |
-        kube_job_status_failed{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics"}  > 0
+        kube_job_status_failed{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
       for: 1h
       labels:
         severity: warning
@@ -787,7 +787,7 @@ spec:
       annotations:
         message: Cluster has overcommitted CPU resource requests for Namespaces.
       expr: |
-        sum(kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard", resource="requests.cpu"})
+        sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard", resource="requests.cpu"})
           /
         sum(node:node_num_cpu:sum)
           > 1.5
@@ -798,7 +798,7 @@ spec:
       annotations:
         message: Cluster has overcommitted memory resource requests for Namespaces.
       expr: |
-        sum(kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard", resource="requests.memory"})
+        sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard", resource="requests.memory"})
           /
         sum(node_memory_MemTotal{job="node-exporter"})
           > 1.5
@@ -810,9 +810,9 @@ spec:
         message: Namespace {{ $labels.namespace }} is using {{ printf "%0.0f" $value
           }}% of its {{ $labels.resource }} quota.
       expr: |
-        100 * kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="used"}
+        100 * kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
-        (kube_resourcequota{namespace=~"(openshift.*|kube.*|default|logging)",job="kube-state-metrics", type="hard"} > 0)
+        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard"} > 0)
           > 90
       for: 15m
       labels:
@@ -825,9 +825,9 @@ spec:
           }} in Namespace {{ $labels.namespace }} is only {{ printf "%0.0f" $value
           }}% free.
       expr: |
-        100 * kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}
+        100 * kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
           /
-        kubelet_volume_stats_capacity_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}
+        kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
           < 3
       for: 1m
       labels:
@@ -838,7 +838,7 @@ spec:
           }} in Namespace {{ $labels.namespace }} is expected to fill up within four
           days. Currently {{ $value }} bytes are available.
       expr: |
-        kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"} and predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift.*|kube.*|default|logging)",job="kubelet"}[6h], 4 * 24 * 3600) < 0
+        kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"} and predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}[6h], 4 * 24 * 3600) < 0
       for: 5m
       labels:
         severity: critical
