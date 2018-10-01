@@ -1461,6 +1461,7 @@ func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error)
 		return nil, err
 	}
 
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("telemeter-client.%s.svc", f.namespace)
 	sm.Namespace = f.namespace
 
 	return sm, nil
