@@ -7,9 +7,13 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - interval: 30s
-    port: http
-    scheme: http
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    port: https
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      serverName: server-name-replaced-at-runtime
   jobLabel: k8s-app
   selector:
     matchLabels:

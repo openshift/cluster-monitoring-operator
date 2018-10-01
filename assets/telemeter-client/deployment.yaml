@@ -45,8 +45,32 @@ spec:
         - mountPath: /etc/telemeter
           name: credentials
           readOnly: false
+      - args:
+        - --secure-listen-address=:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/coreos/kube-rbac-proxy:v0.3.1
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+        resources:
+          limits:
+            cpu: 20m
+            memory: 40Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: telemeter-client-tls
+          readOnly: false
       serviceAccountName: telemeter-client
       volumes:
       - name: credentials
         secret:
           secretName: telemeter-client
+      - name: telemeter-client-tls
+        secret:
+          secretName: telemeter-client-tls

@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "19da1eb2f2558dad0f8d9e280cc1fe7bc835677b"
+            "version": "aa7c03c2b3ec2fb6ecf3ee709e574d6aa9f23f35"
         },
         {
             "name": "grafonnet",
@@ -78,7 +78,7 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "60fd69a06f99e9abfad2314ed625ff3bca260e89"
+            "version": "c74998267c71ef4a0fa847ce16d620b7fe3580bf"
         },
         {
             "name": "telemeter-client",
@@ -88,7 +88,7 @@
                     "subdir": "jsonnet/telemeter/client"
                 }
             },
-            "version": "c87418dea65d023ece9014ff55e898accac32bd1"
+            "version": "4ca0be791c8edeceb53edb3b23aa36979d0840d7"
         }
     ]
 }
