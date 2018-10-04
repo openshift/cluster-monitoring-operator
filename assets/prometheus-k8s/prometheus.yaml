@@ -6,6 +6,20 @@ metadata:
   name: k8s
   namespace: openshift-monitoring
 spec:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: prometheus
+              operator: In
+              values:
+              - k8s
+          namespaces:
+          - openshift-monitoring
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   alerting:
     alertmanagers:
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
