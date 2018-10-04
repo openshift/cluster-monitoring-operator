@@ -1,4 +1,5 @@
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
+           (import 'kube-prometheus/kube-prometheus-anti-affinity.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
            (import 'telemeter-client/telemeter-client.libsonnet') +
            {
@@ -10,8 +11,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  nodeExporter: 'openshift/prometheus-node-exporter',
                },
                versions+:: {
-                // Because we build OpenShift images separately to upstream,
-                // we have to ensure these versions exist before upgrading.
+                 // Because we build OpenShift images separately to upstream,
+                 // we have to ensure these versions exist before upgrading.
                  openshiftOauthProxy: 'v1.1.0',
                  prometheus: 'v2.4.2',
                  alertmanager: 'v0.15.2',
