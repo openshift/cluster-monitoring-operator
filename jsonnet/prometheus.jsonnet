@@ -80,7 +80,10 @@ local namespacesRole = policyRule.new() +
         'service.alpha.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
       }) +
       service.mixin.spec.withType('ClusterIP') +
-      service.mixin.spec.withPorts(servicePort.newNamed('web', 9091, 'web')),
+      service.mixin.spec.withPorts([
+        servicePort.newNamed('web', 9091, 'web'),
+        servicePort.newNamed('tenancy', 9092, 'tenancy'),
+      ]),
 
     // As Prometheus is protected by the oauth proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.
@@ -153,6 +156,29 @@ local namespacesRole = policyRule.new() +
 
     htpasswdSecret:
       secret.new('prometheus-k8s-htpasswd', {}) +
+      secret.mixin.metadata.withNamespace($._config.namespace) +
+      secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
+
+    kubeRbacProxySecret:
+      local config = {
+        'config.yaml': std.base64(std.manifestYamlDoc({
+          authorization: {
+            rewrites: {
+              byQueryParameter: {
+                name: 'namespace',
+              },
+            },
+            resourceAttributes: {
+              apiVersion: 'v1',
+              resource: 'node',
+              subresource: 'metrics',
+              namespace: '{{ .Value }}',
+            },
+          },
+        })),
+      };
+
+      secret.new('kube-rbac-proxy', config) +
       secret.mixin.metadata.withNamespace($._config.namespace) +
       secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
 
@@ -265,6 +291,7 @@ local namespacesRole = policyRule.new() +
             'prometheus-k8s-tls',
             'prometheus-k8s-proxy',
             'prometheus-k8s-htpasswd',
+            'kube-rbac-proxy',
           ],
           serviceMonitorSelector: selector.withMatchExpressions({ key: 'k8s-app', operator: 'Exists' }),
           serviceMonitorNamespaceSelector: selector.withMatchExpressions({ key: 'openshift.io/cluster-monitoring', operator: 'Exists' }),
@@ -311,6 +338,32 @@ local namespacesRole = policyRule.new() +
                   mountPath: '/etc/proxy/htpasswd',
                   name: 'secret-prometheus-k8s-htpasswd',
                 },
+              ],
+            },
+            {
+              name: 'kube-rbac-proxy',
+              image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
+              args: [
+                '--secure-listen-address=0.0.0.0:9092',
+                '--upstream=http://127.0.0.1:9095',
+                '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                '--logtostderr=true',
+                '--v=10',
+              ],
+              volumeMounts: [
+                {
+                  mountPath: '/etc/kube-rbac-proxy',
+                  name: 'secret-' + $.prometheus.kubeRbacProxySecret.metadata.name,
+                },
+              ],
+            },
+            {
+              name: 'prom-label-proxy',
+              image: $._config.imageRepos.promLabelProxy + ':' + $._config.versions.promLabelProxy,
+              args: [
+                '--insecure-listen-address=127.0.0.1:9095',
+                '--upstream=http://127.0.0.1:9090',
+                '--label=namespace',
               ],
             },
           ],

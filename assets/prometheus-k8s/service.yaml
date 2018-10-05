@@ -12,6 +12,9 @@ spec:
   - name: web
     port: 9091
     targetPort: web
+  - name: tenancy
+    port: 9092
+    targetPort: tenancy
   selector:
     app: prometheus
     prometheus: k8s
