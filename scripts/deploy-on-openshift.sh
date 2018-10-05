@@ -20,8 +20,9 @@ oc project openshift-monitoring
 oc annotate ns/openshift-monitoring openshift.io/node-selector=
 oc label ns/openshift-monitoring openshift.io/cluster-monitoring=true
 
-oc apply -f manifests/cluster-monitoring-operator-role.yaml
-oc apply -f manifests/cluster-monitoring-operator-role-binding.yaml
-oc apply -f manifests/cluster-monitoring-config.yaml
-oc apply -f manifests/secret-etcd-certs.yaml
-oc apply -f manifests/cluster-monitoring-operator.yaml
+oc apply -f manifests/01-namespace.yaml
+oc apply -f manifests/02-role-binding.yaml
+oc apply -f manifests/02-role.yaml
+oc apply -f manifests/03-config.yaml
+oc apply -f manifests/03-etcd-secret.yaml
+oc apply -f manifests/04-deployment.yaml
