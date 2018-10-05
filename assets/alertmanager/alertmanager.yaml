@@ -6,6 +6,20 @@ metadata:
   name: main
   namespace: openshift-monitoring
 spec:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: alertmanager
+              operator: In
+              values:
+              - main
+          namespaces:
+          - openshift-monitoring
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   baseImage: openshift/prometheus-alertmanager
   containers:
   - args:
