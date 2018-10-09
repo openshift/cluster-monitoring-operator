@@ -7,7 +7,7 @@ rules:
   resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
 - apiGroups: [""]
-  resources: ["serviceaccounts", "configmaps"]
+  resources: ["services", "serviceaccounts", "configmaps"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
 - apiGroups: ["apps"]
   resources: ["deployments", "daemonsets"]

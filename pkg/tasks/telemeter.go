@@ -23,16 +23,26 @@ import (
 type TelemeterClientTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.TelemeterClientConfig
 }
 
-func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory) *TelemeterClientTask {
+func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory, config *manifests.TelemeterClientConfig) *TelemeterClientTask {
 	return &TelemeterClientTask{
 		client:  client,
 		factory: factory,
+		config:  config,
 	}
 }
 
 func (t *TelemeterClientTask) Run() error {
+	// Default to enabled.
+	if t.config.Enabled != nil && !*t.config.Enabled {
+		return t.destroy()
+	}
+	return t.create()
+}
+
+func (t *TelemeterClientTask) create() error {
 	sm, err := t.factory.TelemeterClientServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client ServiceMonitor failed")
@@ -90,7 +100,7 @@ func (t *TelemeterClientTask) Run() error {
 
 	err = t.client.CreateOrUpdateSecret(s)
 	if err != nil {
-		return errors.Wrap(err, "creating Telemeter client Secret failed")
+		return errors.Wrap(err, "reconciling Telemeter client Secret failed")
 	}
 
 	dep, err := t.factory.TelemeterClientDeployment()
@@ -100,4 +110,74 @@ func (t *TelemeterClientTask) Run() error {
 
 	err = t.client.CreateOrUpdateDeployment(dep)
 	return errors.Wrap(err, "reconciling Telemeter client Deployment failed")
+}
+
+func (t *TelemeterClientTask) destroy() error {
+	dep, err := t.factory.TelemeterClientDeployment()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client Deployment failed")
+	}
+
+	err = t.client.DeleteDeployment(dep)
+	if err != nil {
+		return errors.Wrap(err, "deleting Telemeter client Deployment failed")
+	}
+
+	s, err := t.factory.TelemeterClientSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client Secret failed")
+	}
+
+	err = t.client.DeleteSecret(s)
+	if err != nil {
+		return errors.Wrap(err, "deleting Telemeter client Secret failed")
+	}
+
+	svc, err := t.factory.TelemeterClientService()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client Service failed")
+	}
+
+	err = t.client.DeleteService(svc)
+	if err != nil {
+		return errors.Wrap(err, "deleting Telemeter client Service failed")
+	}
+
+	crb, err := t.factory.TelemeterClientClusterRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client ClusterRoleBinding failed")
+	}
+
+	err = t.client.DeleteClusterRoleBinding(crb)
+	if err != nil {
+		return errors.Wrap(err, "deleting Telemeter client ClusterRoleBinding failed")
+	}
+
+	cr, err := t.factory.TelemeterClientClusterRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client ClusterRole failed")
+	}
+
+	err = t.client.DeleteClusterRole(cr)
+	if err != nil {
+		return errors.Wrap(err, "deleting Telemeter client ClusterRole failed")
+	}
+
+	sa, err := t.factory.TelemeterClientServiceAccount()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client Service failed")
+	}
+
+	err = t.client.DeleteServiceAccount(sa)
+	if err != nil {
+		return errors.Wrap(err, "deleting Telemeter client ServiceAccount failed")
+	}
+
+	sm, err := t.factory.TelemeterClientServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client ServiceMonitor failed")
+	}
+
+	err = t.client.DeleteServiceMonitor(sm)
+	return errors.Wrap(err, "deleting Telemeter client ServiceMonitor failed")
 }

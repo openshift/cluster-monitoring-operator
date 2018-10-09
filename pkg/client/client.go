@@ -225,7 +225,7 @@ func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	return errors.Wrap(err, "updating Alertmanager object failed")
 }
 
-func (c *Client) DeleteDeployment(d *v1beta1.Deployment) error {
+func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 	p := metav1.DeletePropagationForeground
 	err := c.kclient.AppsV1beta2().Deployments(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{PropagationPolicy: &p})
 	if apierrors.IsNotFound(err) {
@@ -268,16 +268,61 @@ func (c *Client) DeleteDaemonSet(d *v1beta1.DaemonSet) error {
 	return err
 }
 
-func (c *Client) DeleteServiceMonitor(namespace, name string) error {
-	sclient := c.mclient.MonitoringV1().ServiceMonitors(namespace)
+func (c *Client) DeleteServiceMonitor(sm *monv1.ServiceMonitor) error {
+	sclient := c.mclient.MonitoringV1().ServiceMonitors(sm.Namespace)
 
-	err := sclient.Delete(name, nil)
+	err := sclient.Delete(sm.GetName(), nil)
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrap(err, "deleting ServiceMonitor object failed")
 	}
 
 	return nil
+}
+
+func (c *Client) DeleteServiceAccount(sa *v1.ServiceAccount) error {
+	err := c.kclient.CoreV1().ServiceAccounts(sa.Namespace).Delete(sa.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+func (c *Client) DeleteClusterRole(cr *rbacv1beta1.ClusterRole) error {
+	err := c.kclient.RbacV1beta1().ClusterRoles().Delete(cr.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+func (c *Client) DeleteClusterRoleBinding(crb *rbacv1beta1.ClusterRoleBinding) error {
+	err := c.kclient.RbacV1beta1().ClusterRoleBindings().Delete(crb.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+func (c *Client) DeleteService(svc *v1.Service) error {
+	err := c.kclient.CoreV1().Services(svc.Namespace).Delete(svc.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+func (c *Client) DeleteSecret(s *v1.Secret) error {
+	err := c.kclient.CoreV1().Secrets(s.Namespace).Delete(s.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
 }
 
 func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
