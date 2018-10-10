@@ -197,28 +197,6 @@ func (t *PrometheusTask) Run() error {
 	}
 
 	if t.config.EtcdConfig != nil {
-		svc, err := t.factory.PrometheusK8sEtcdService()
-		if err != nil {
-			return errors.Wrap(err, "initializing etcd Service failed")
-		}
-
-		err = t.client.CreateOrUpdateService(svc)
-		if err != nil {
-			return errors.Wrap(err, "reconciling etcd Service failed")
-		}
-
-		if t.config.EtcdConfig.Targets.IPs != nil {
-			endpoints, err := t.factory.PrometheusK8sEtcdEndpoints()
-			if err != nil {
-				return errors.Wrap(err, "initializing etcd Endpoints failed")
-			}
-
-			err = t.client.CreateOrUpdateEndpoints(endpoints)
-			if err != nil {
-				return errors.Wrap(err, "reconciling etcd Endpoints failed")
-			}
-		}
-
 		sme, err := t.factory.PrometheusK8sEtcdServiceMonitor()
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus etcd ServiceMonitor failed")

@@ -128,16 +128,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sEtcdService()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sEtcdEndpoints()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusK8sEtcdServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
