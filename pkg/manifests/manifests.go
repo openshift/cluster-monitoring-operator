@@ -565,7 +565,7 @@ func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
-	if f.config.EtcdConfig.Enabled != nil && *f.config.EtcdConfig.Enabled == false {
+	if !f.config.EtcdConfig.IsEnabled() {
 		groups := []monv1.RuleGroup{}
 		for _, g := range r.Spec.Groups {
 			if g.Name != "etcd" {
@@ -682,7 +682,7 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		}
 	}
 
-	if f.config.EtcdConfig.Enabled != nil && *f.config.EtcdConfig.Enabled == false {
+	if !f.config.EtcdConfig.IsEnabled() {
 		secrets := []string{}
 		for _, s := range p.Spec.Secrets {
 			if s != "kube-etcd-client-certs" {
@@ -955,7 +955,7 @@ func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
 	configmaps := []v1.ConfigMap{}
 	for _, c := range cl.Items {
 		c.Namespace = f.namespace
-		if f.config.EtcdConfig.Enabled != nil && *f.config.EtcdConfig.Enabled == false {
+		if !f.config.EtcdConfig.IsEnabled() {
 			if c.GetName() != "grafana-dashboard-etcd" {
 				configmaps = append(configmaps, c)
 			}
@@ -995,7 +995,7 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.Containers[0].Image = image.String()
 	}
 
-	if f.config.EtcdConfig.Enabled != nil && *f.config.EtcdConfig.Enabled == false {
+	if !f.config.EtcdConfig.IsEnabled() {
 		vols := []v1.Volume{}
 		volMounts := []v1.VolumeMount{}
 		for _, v := range d.Spec.Template.Spec.Volumes {

@@ -201,15 +201,15 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus etcd ServiceMonitor failed")
 	}
 
-	if t.config.EtcdConfig.Enabled != nil && *t.config.EtcdConfig.Enabled == false {
-		err = t.client.DeleteServiceMonitor(sme)
-		if err != nil {
-			return errors.Wrap(err, "deleting Prometheus etcd ServiceMonitor failed")
-		}
-	} else {
+	if t.config.EtcdConfig.IsEnabled() {
 		err = t.client.CreateOrUpdateServiceMonitor(sme)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Prometheus etcd ServiceMonitor failed")
+		}
+	} else {
+		err = t.client.DeleteServiceMonitor(sme)
+		if err != nil {
+			return errors.Wrap(err, "deleting Prometheus etcd ServiceMonitor failed")
 		}
 	}
 

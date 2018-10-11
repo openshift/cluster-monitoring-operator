@@ -105,6 +105,15 @@ type EtcdConfig struct {
 	ServerName string `json:"serverName"`
 }
 
+// IsEnabled returns the underlying value of the `Enabled` boolean pointer.
+// It defaults to true if the pointer is nil.
+func (e *EtcdConfig) IsEnabled() bool {
+	if e.Enabled == nil {
+		return true
+	}
+	return *e.Enabled
+}
+
 type TelemeterClientConfig struct {
 	BaseImage          string `json:"baseImage"`
 	ClusterID          string `json:"clusterID"`
