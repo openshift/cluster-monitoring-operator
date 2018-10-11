@@ -692,7 +692,10 @@ kubeRbacProxy:
 }
 
 func TestPrometheusEtcdRulesFiltered(t *testing.T) {
-	f := NewFactory("openshift-monitoring", NewDefaultConfig())
+	enabled := false
+	cfg := NewDefaultConfig()
+	cfg.EtcdConfig.Enabled = &enabled
+	f := NewFactory("openshift-monitoring", cfg)
 
 	r, err := f.PrometheusK8sRules()
 	if err != nil {
@@ -731,7 +734,10 @@ func TestPrometheusEtcdRules(t *testing.T) {
 }
 
 func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
-	f := NewFactory("openshift-monitoring", NewDefaultConfig())
+	enabled := false
+	cfg := NewDefaultConfig()
+	cfg.EtcdConfig.Enabled = &enabled
+	f := NewFactory("openshift-monitoring", cfg)
 
 	cms, err := f.GrafanaDashboardDefinitions()
 	if err != nil {

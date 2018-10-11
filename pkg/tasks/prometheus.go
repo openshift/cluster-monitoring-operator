@@ -196,12 +196,17 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus kube-controllers ServiceMonitor failed")
 	}
 
-	if t.config.EtcdConfig != nil {
-		sme, err := t.factory.PrometheusK8sEtcdServiceMonitor()
-		if err != nil {
-			return errors.Wrap(err, "initializing Prometheus etcd ServiceMonitor failed")
-		}
+	sme, err := t.factory.PrometheusK8sEtcdServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus etcd ServiceMonitor failed")
+	}
 
+	if t.config.EtcdConfig.Enabled != nil && *t.config.EtcdConfig.Enabled == false {
+		err = t.client.DeleteServiceMonitor(sme)
+		if err != nil {
+			return errors.Wrap(err, "deleting Prometheus etcd ServiceMonitor failed")
+		}
+	} else {
 		err = t.client.CreateOrUpdateServiceMonitor(sme)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Prometheus etcd ServiceMonitor failed")
