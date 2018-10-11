@@ -78,9 +78,6 @@ var (
 	PrometheusK8sProxySecret                   = "assets/prometheus-k8s/proxy-secret.yaml"
 	PrometheusK8sRoute                         = "assets/prometheus-k8s/route.yaml"
 	PrometheusK8sHtpasswd                      = "assets/prometheus-k8s/htpasswd-secret.yaml"
-	PrometheusK8sEtcdService                   = "assets/prometheus-k8s/service-etcd.yaml"
-	PrometheusK8sEtcdEndpoints                 = "assets/prometheus-k8s/endpoints-etcd.yaml"
-	PrometheusK8sEtcdCerts                     = "assets/prometheus-k8s/secret-etcd-certs.yaml"
 	PrometheusK8sEtcdServiceMonitor            = "assets/prometheus-k8s/service-monitor-etcd.yaml"
 
 	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
@@ -568,7 +565,7 @@ func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
-	if f.config.EtcdConfig == nil {
+	if !f.config.EtcdConfig.IsEnabled() {
 		groups := []monv1.RuleGroup{}
 		for _, g := range r.Spec.Groups {
 			if g.Name != "etcd" {
@@ -622,55 +619,14 @@ func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, erro
 	return s, nil
 }
 
-func (f *Factory) PrometheusK8sEtcdService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(PrometheusK8sEtcdService))
-	if err != nil {
-		return nil, err
-	}
-
-	if f.config.EtcdConfig != nil && f.config.EtcdConfig.Targets.Selector != nil {
-		s.Spec.Selector = f.config.EtcdConfig.Targets.Selector
-	}
-
-	return s, nil
-}
-
-func (f *Factory) PrometheusK8sEtcdEndpoints() (*v1.Endpoints, error) {
-	e, err := f.NewEndpoints(MustAssetReader(PrometheusK8sEtcdEndpoints))
-	if err != nil {
-		return nil, err
-	}
-
-	if f.config.EtcdConfig != nil && f.config.EtcdConfig.Targets.IPs != nil {
-		addresses := []v1.EndpointAddress{}
-		for _, ip := range f.config.EtcdConfig.Targets.IPs {
-			addresses = append(addresses, v1.EndpointAddress{IP: ip})
-		}
-		e.Subsets[0].Addresses = addresses
-	}
-
-	return e, nil
-}
-
-func (f *Factory) PrometheusK8sEtcdCerts() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(PrometheusK8sEtcdCerts))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
 func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sEtcdServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
 
-	if f.config.EtcdConfig != nil && f.config.EtcdConfig.TLSConfig != nil && f.config.EtcdConfig.TLSConfig.ServerName != "" {
-		s.Spec.Endpoints[0].TLSConfig.ServerName = f.config.EtcdConfig.TLSConfig.ServerName
+	if f.config.EtcdConfig.ServerName != "" {
+		s.Spec.Endpoints[0].TLSConfig.ServerName = f.config.EtcdConfig.ServerName
 	}
 	s.Namespace = f.namespace
 
@@ -726,7 +682,7 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		}
 	}
 
-	if f.config.EtcdConfig == nil {
+	if !f.config.EtcdConfig.IsEnabled() {
 		secrets := []string{}
 		for _, s := range p.Spec.Secrets {
 			if s != "kube-etcd-client-certs" {
@@ -999,7 +955,7 @@ func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
 	configmaps := []v1.ConfigMap{}
 	for _, c := range cl.Items {
 		c.Namespace = f.namespace
-		if f.config.EtcdConfig == nil {
+		if !f.config.EtcdConfig.IsEnabled() {
 			if c.GetName() != "grafana-dashboard-etcd" {
 				configmaps = append(configmaps, c)
 			}
@@ -1039,7 +995,7 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.Containers[0].Image = image.String()
 	}
 
-	if f.config.EtcdConfig == nil {
+	if !f.config.EtcdConfig.IsEnabled() {
 		vols := []v1.Volume{}
 		volMounts := []v1.VolumeMount{}
 		for _, v := range d.Spec.Template.Spec.Volumes {

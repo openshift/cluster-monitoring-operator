@@ -101,18 +101,17 @@ type KubeRbacProxyConfig struct {
 }
 
 type EtcdConfig struct {
-	Enabled   *bool          `json:"enabled"`
-	Targets   EtcdTargets    `json:"targets,omitempty"`
-	TLSConfig *EtcdTLSConfig `json:"tlsConfig"`
-}
-
-type EtcdTargets struct {
-	IPs      []string          `json:"ips"`
-	Selector map[string]string `json:"selector"`
-}
-
-type EtcdTLSConfig struct {
+	Enabled    *bool  `json:"enabled"`
 	ServerName string `json:"serverName"`
+}
+
+// IsEnabled returns the underlying value of the `Enabled` boolean pointer.
+// It defaults to true if the pointer is nil.
+func (e *EtcdConfig) IsEnabled() bool {
+	if e.Enabled == nil {
+		return true
+	}
+	return *e.Enabled
 }
 
 type TelemeterClientConfig struct {
@@ -210,6 +209,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.TelemeterClientConfig.BaseImage == "" {
 		c.TelemeterClientConfig.BaseImage = "quay.io/openshift/origin-telemeter"
+	}
+	if c.EtcdConfig == nil {
+		c.EtcdConfig = &EtcdConfig{}
 	}
 }
 

@@ -23,8 +23,3 @@ data:
       baseImage: grafana/grafana
     auth:
       baseImage: openshift/oauth-proxy
-    etcd:
-      targets:
-        selector:
-          openshift.io/component: etcd
-          openshift.io/control-plane: "true"

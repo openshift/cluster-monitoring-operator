@@ -1,6 +1,17 @@
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-anti-affinity.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
+           {
+             prometheus+:: {
+               // Openshift 4.0 clusters already have an etcd service and endpoints.
+               // Additionally, the etcd client certificates secret should not be embedded in the
+               // Cluster Monitoring Operator binary.
+               // Hide these fields so they are not rendered as files.
+               serviceEtcd:: super.serviceEtcd,
+               endpointsEtcd:: super.endpointsEtcd,
+               secretEtcdCerts:: super.secretEtcdCerts,
+             },
+           } +
            (import 'telemeter-client/telemeter-client.libsonnet') +
            {
              _config+:: {
