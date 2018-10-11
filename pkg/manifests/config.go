@@ -118,6 +118,7 @@ type EtcdTLSConfig struct {
 type TelemeterClientConfig struct {
 	BaseImage          string `json:"baseImage"`
 	ClusterID          string `json:"clusterID"`
+	Enabled            *bool  `json:"enabled"`
 	Tag                string `json:"-"`
 	TelemeterServerURL string `json:"telemeterServerURL"`
 	Token              string `json:"token"`
