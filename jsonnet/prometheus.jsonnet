@@ -173,6 +173,7 @@ local namespacesRole = policyRule.new() +
           endpoints: [
             {
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+              honorLabels: true,
               interval: '30s',
               port: 'https-metrics',
               scheme: 'https',
