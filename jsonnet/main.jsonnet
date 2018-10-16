@@ -1,4 +1,8 @@
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
+           // NOTE: the `anti-affinity` package is actually the
+           // `kube-prometheus` package checked out at a specific version
+           // that includes https://github.com/coreos/prometheus-operator/pull/1935.
+           (import 'anti-affinity/kube-prometheus-anti-affinity.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
            {
              _config+:: {
@@ -34,7 +38,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
 
     kubeSchedulerSelector: 'job="kube-controllers"',
     kubeControllerManagerSelector: 'job="kube-controllers"',
-    namespaceSelector: 'namespace=~"(openshift.*|kube.*|default|logging)"',
+    namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
   },
 } + {
   local d = super.grafanaDashboards,

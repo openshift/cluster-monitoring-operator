@@ -79,6 +79,16 @@
                 }
             },
             "version": "2589353c1ffbaf8f49a83a0db20e5a7aaef1d3a9"
+        },
+        {
+            "name": "anti-affinity",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/coreos/prometheus-operator",
+                    "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
+                }
+            },
+            "version": "2fa293b8f98d890f778e191e2fdc30a616408064"
         }
     ]
 }
