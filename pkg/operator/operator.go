@@ -26,6 +26,7 @@ import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
@@ -59,8 +60,8 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(namespace, configMapName string, tagOverrides map[string]string) (*Operator, error) {
-	c, err := client.New(namespace, configMapName)
+func New(config *rest.Config, namespace, configMapName string, tagOverrides map[string]string) (*Operator, error) {
+	c, err := client.New(config, namespace, configMapName)
 	if err != nil {
 		return nil, err
 	}

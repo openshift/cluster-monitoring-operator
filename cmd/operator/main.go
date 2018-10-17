@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/sync/errgroup"
+	"k8s.io/client-go/tools/clientcmd"
 
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
@@ -79,6 +80,8 @@ func Main() int {
 	flagset := flag.CommandLine
 	namespace := flagset.String("namespace", "openshift-monitoring", "Namespace to deploy and manage cluster monitoring stack in.")
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
+	kubeconfigPath := flagset.String("kubeconfig", "", "The path to the kubeconfig to connect to the apiserver with.")
+	apiserver := flagset.String("apiserver", "", "The address of the apiserver to talk to.")
 	tags := tags{}
 	flag.Var(&tags, "tags", "Tags to use for images.")
 	flag.Parse()
@@ -104,7 +107,13 @@ func Main() int {
 		prometheus.NewProcessCollector(os.Getpid(), ""),
 	)
 
-	o, err := cmo.New(*namespace, *configMapName, tags.asMap())
+	config, err := clientcmd.BuildConfigFromFlags(*apiserver, *kubeconfigPath)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+		return 1
+	}
+
+	o, err := cmo.New(config, *namespace, *configMapName, tags.asMap())
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

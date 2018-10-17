@@ -60,11 +60,7 @@ type Client struct {
 	eclient        apiextensionsclient.Interface
 }
 
-func New(namespace string, appVersionName string) (*Client, error) {
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
+func New(cfg *rest.Config, namespace string, appVersionName string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(
 		&monv1.DefaultCrdKinds,
 		monv1.Group,
