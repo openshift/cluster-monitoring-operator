@@ -1,11 +1,7 @@
-FROM openshift/origin-base AS builder
+FROM openshift/origin-release:golang-1.10 AS builder
 
-ENV GOPATH /go
-RUN mkdir $GOPATH
-RUN yum install -y golang make git
-
-COPY . $GOPATH/src/github.com/openshift/cluster-monitoring-operator
-RUN cd $GOPATH/src/github.com/openshift/cluster-monitoring-operator && \
+COPY . /go/src/github.com/openshift/cluster-monitoring-operator
+RUN cd /go/src/github.com/openshift/cluster-monitoring-operator && \
     make operator-no-deps
 
 FROM openshift/origin-base
