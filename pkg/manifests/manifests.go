@@ -1527,7 +1527,13 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 		return nil, err
 	}
 
+	salt, err := GeneratePassword(32)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate Telemeter client salt: %v", err)
+	}
+
 	s.Data["id"] = []byte(f.config.TelemeterClientConfig.ClusterID)
+	s.Data["salt"] = []byte(salt)
 	s.Data["to"] = []byte(f.config.TelemeterClientConfig.TelemeterServerURL)
 	s.Data["token"] = []byte(f.config.TelemeterClientConfig.Token)
 	s.Namespace = f.namespace
