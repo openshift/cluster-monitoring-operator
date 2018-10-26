@@ -820,7 +820,8 @@ spec:
     - alert: CPUThrottlingHigh
       annotations:
         message: '{{ printf "%0.0f" $value }}% throttling of CPU in namespace {{ $labels.namespace
-          }} for {{ $labels.container_name }}.'
+          }} for container {{ $labels.container_name }} in pod {{ $labels.pod_name
+          }}.'
       expr: "100 * sum(increase(container_cpu_cfs_throttled_periods_total[5m])) by
         (container_name, pod_name, namespace) \n  / \nsum(increase(container_cpu_cfs_periods_total[5m]))
         by (container_name, pod_name, namespace)\n  > 25 \n"
@@ -848,7 +849,13 @@ spec:
           }} in Namespace {{ $labels.namespace }} is expected to fill up within four
           days. Currently {{ $value }} bytes are available.
       expr: |
-        kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"} and predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}[6h], 4 * 24 * 3600) < 0
+        (
+          kubelet_volume_stats_used_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
+            /
+          kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
+        ) > 0.85
+        and
+        predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}[6h], 4 * 24 * 3600) < 0
       for: 5m
       labels:
         severity: critical
@@ -960,7 +967,7 @@ spec:
         message: The configuration of the instances of the Alertmanager cluster `{{$labels.service}}`
           are out of sync.
       expr: |
-        count_values("config_hash", alertmanager_config_hash{job="alertmanager-main"}) BY (service) / ON(service) GROUP_LEFT() label_replace(prometheus_operator_alertmanager_spec_replicas{job="prometheus-operator"}, "service", "alertmanager-$1", "alertmanager", "(.*)") != 1
+        count_values("config_hash", alertmanager_config_hash{job="alertmanager-main"}) BY (service) / ON(service) GROUP_LEFT() label_replace(prometheus_operator_spec_replicas{job="prometheus-operator",controller="alertmanager"}, "service", "alertmanager-$1", "name", "(.*)") != 1
       for: 5m
       labels:
         severity: critical
@@ -1014,7 +1021,7 @@ spec:
     - alert: PrometheusConfigReloadFailed
       annotations:
         description: Reloading Prometheus' configuration has failed for {{$labels.namespace}}/{{$labels.pod}}
-        summary: Reloading Promehteus' configuration failed
+        summary: Reloading Prometheus' configuration failed
       expr: |
         prometheus_config_last_reload_successful{job="prometheus-k8s"} == 0
       for: 10m
@@ -1112,20 +1119,12 @@ spec:
         severity: warning
   - name: prometheus-operator
     rules:
-    - alert: PrometheusOperatorAlertmanagerReconcileErrors
+    - alert: PrometheusOperatorReconcileErrors
       annotations:
-        message: Errors while reconciling Alertmanager in {{ $labels.namespace }}
-          Namespace.
+        message: Errors while reconciling {{ $labels.controller }} in {{ $labels.namespace
+          }} Namespace.
       expr: |
-        rate(prometheus_operator_alertmanager_reconcile_errors_total{job="prometheus-operator"}[5m]) > 0.1
-      for: 10m
-      labels:
-        severity: warning
-    - alert: PrometheusOperatorPrometheusReconcileErrors
-      annotations:
-        message: Errors while reconciling Prometheus in {{ $labels.namespace }} Namespace.
-      expr: |
-        rate(prometheus_operator_prometheus_reconcile_errors_total{job="prometheus-operator"}[5m]) > 0.1
+        rate(prometheus_operator_reconcile_errors_total{job="prometheus-operator"}[5m]) > 0.1
       for: 10m
       labels:
         severity: warning
@@ -1144,7 +1143,7 @@ spec:
         message: 'Etcd cluster "{{ $labels.job }}": insufficient members ({{ $value
           }}).'
       expr: |
-        count(up{job=~".*etcd.*"} == 0) by (job) > (count(up{job=~".*etcd.*"}) by (job) / 2 - 1)
+        sum(up{job=~".*etcd.*"} == bool 1) by (job) < ((count(up{job=~".*etcd.*"}) by (job) + 1) / 2)
       for: 3m
       labels:
         severity: critical

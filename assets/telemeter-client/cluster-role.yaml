@@ -15,9 +15,3 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - get
