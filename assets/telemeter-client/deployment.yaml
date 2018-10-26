@@ -26,6 +26,7 @@ spec:
         - --to-token-file=/etc/telemeter/token
         - --listen=localhost:8080
         - --match-file=/etc/telemeter/match-rules
+        - --anonymize-salt-file=/etc/telemeter/salt
         env:
         - name: ID
           valueFrom:
