@@ -105,13 +105,14 @@ var (
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
 
-	TelemeterClientClusterRole        = "assets/telemeter-client/cluster-role.yaml"
-	TelemeterClientClusterRoleBinding = "assets/telemeter-client/cluster-role-binding.yaml"
-	TelemeterClientDeployment         = "assets/telemeter-client/deployment.yaml"
-	TelemeterClientSecret             = "assets/telemeter-client/secret.yaml"
-	TelemeterClientService            = "assets/telemeter-client/service.yaml"
-	TelemeterClientServiceAccount     = "assets/telemeter-client/service-account.yaml"
-	TelemeterClientServiceMonitor     = "assets/telemeter-client/service-monitor.yaml"
+	TelemeterClientClusterRole            = "assets/telemeter-client/cluster-role.yaml"
+	TelemeterClientClusterRoleBinding     = "assets/telemeter-client/cluster-role-binding.yaml"
+	TelemeterClientClusterRoleBindingView = "assets/telemeter-client/cluster-role-binding-view.yaml"
+	TelemeterClientDeployment             = "assets/telemeter-client/deployment.yaml"
+	TelemeterClientSecret                 = "assets/telemeter-client/secret.yaml"
+	TelemeterClientService                = "assets/telemeter-client/service.yaml"
+	TelemeterClientServiceAccount         = "assets/telemeter-client/service-account.yaml"
+	TelemeterClientServiceMonitor         = "assets/telemeter-client/service-monitor.yaml"
 )
 
 var (
@@ -1403,6 +1404,17 @@ func (f *Factory) TelemeterClientClusterRole() (*rbacv1beta1.ClusterRole, error)
 // TelemeterClientClusterRoleBinding generates a new ClusterRoleBinding for Telemeter client.
 func (f *Factory) TelemeterClientClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {
 	crb, err := f.NewClusterRoleBinding(MustAssetReader(TelemeterClientClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	return crb, nil
+}
+
+// TelemeterClientClusterRoleBindingView generates a new ClusterRoleBinding for Telemeter client
+// for the cluster monitoring view ClusterRole.
+func (f *Factory) TelemeterClientClusterRoleBindingView() (*rbacv1beta1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(TelemeterClientClusterRoleBindingView))
 	if err != nil {
 		return nil, err
 	}

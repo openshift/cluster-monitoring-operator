@@ -204,13 +204,6 @@ rules:
 - apiGroups:
   - ''
   resources:
-  - namespaces
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - ''
-  resources:
   - nodes
   verbs:
   - list
@@ -233,6 +226,14 @@ rules:
   - secrets
   verbs:
   - '*'
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
