@@ -181,9 +181,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus rules PrometheusRule failed")
 	}
 
-	err = t.client.CreateOrUpdatePrometheusRule(pm)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus rules PrometheusRule failed")
+	if t.config.PrometheusK8sConfig.DefaultRulesEnabled() {
+		err = t.client.CreateOrUpdatePrometheusRule(pm)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus rules PrometheusRule failed")
+		}
+	} else {
+		err = t.client.DeletePrometheusRule(pm)
+		if err != nil {
+			return errors.Wrap(err, "deleting Prometheus rules PrometheusRule failed")
+		}
 	}
 
 	smk, err := t.factory.PrometheusK8sKubeletServiceMonitor()
@@ -191,9 +198,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus kubelet ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smk)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus kubelet ServiceMonitor failed")
+	if t.config.KubeStateMetricsConfig.IsEnabled() {
+		err = t.client.CreateOrUpdateServiceMonitor(smk)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus kubelet ServiceMonitor failed")
+		}
+	} else {
+		err = t.client.DeleteServiceMonitor(smk)
+		if err != nil {
+			return errors.Wrap(err, "deleting Prometheus kubelet ServiceMonitor failed")
+		}
 	}
 
 	sma, err := t.factory.PrometheusK8sApiserverServiceMonitor()
@@ -201,9 +215,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus apiserver ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(sma)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus apiserver ServiceMonitor failed")
+	if t.config.KubeStateMetricsConfig.IsEnabled() {
+		err = t.client.CreateOrUpdateServiceMonitor(sma)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus apiserver ServiceMonitor failed")
+		}
+	} else {
+		err = t.client.DeleteServiceMonitor(sma)
+		if err != nil {
+			return errors.Wrap(err, "deleting Prometheus apiserver ServiceMonitor failed")
+		}
 	}
 
 	smkc, err := t.factory.PrometheusK8sKubeControllersServiceMonitor()
@@ -211,9 +232,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus kube-controllers ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smkc)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus kube-controllers ServiceMonitor failed")
+	if t.config.KubeStateMetricsConfig.IsEnabled() {
+		err = t.client.CreateOrUpdateServiceMonitor(smkc)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus kube-controllers ServiceMonitor failed")
+		}
+	} else {
+		err = t.client.DeleteServiceMonitor(smkc)
+		if err != nil {
+			return errors.Wrap(err, "deleting Prometheus kube-controllers ServiceMonitor failed")
+		}
 	}
 
 	sme, err := t.factory.PrometheusK8sEtcdServiceMonitor()

@@ -223,13 +223,22 @@ func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1beta1.ClusterRoleBind
 		return nil, err
 	}
 
+	crb.Name = crb.Name + f.config.RoleSuffix
+	crb.RoleRef.Name = crb.RoleRef.Name + f.config.RoleSuffix
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
 }
 
 func (f *Factory) AlertmanagerClusterRole() (*rbacv1beta1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(AlertmanagerClusterRole))
+	cr, err := f.NewClusterRole(MustAssetReader(AlertmanagerClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	cr.Name = cr.Name + f.config.RoleSuffix
+
+	return cr, nil
 }
 
 func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -282,6 +291,12 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 	}
 
 	for c := range a.Spec.Containers {
+		for pos, arg := range a.Spec.Containers[c].Args {
+			if strings.HasPrefix(arg,"-openshift-sar") || strings.HasPrefix(arg,"-openshift-delegate-urls") {
+				a.Spec.Containers[c].Args[pos] = strings.Replace(arg, "openshift-monitoring", f.namespace, 1)
+			}
+		}
+
 		for e := range a.Spec.Containers[c].Env {
 			switch a.Spec.Containers[c].Env[e].Name {
 			case "HTTP_PROXY":
@@ -319,13 +334,22 @@ func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1beta1.ClusterRole
 		return nil, err
 	}
 
+	crb.Name = crb.Name + f.config.RoleSuffix
+	crb.RoleRef.Name = crb.RoleRef.Name + f.config.RoleSuffix
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
 }
 
 func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1beta1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(KubeStateMetricsClusterRole))
+	cr, err := f.NewClusterRole(MustAssetReader(KubeStateMetricsClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	cr.Name = cr.Name + f.config.RoleSuffix
+
+	return cr, nil
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -489,13 +513,22 @@ func (f *Factory) NodeExporterClusterRoleBinding() (*rbacv1beta1.ClusterRoleBind
 		return nil, err
 	}
 
+	crb.Name = crb.Name + f.config.RoleSuffix
+	crb.RoleRef.Name = crb.RoleRef.Name + f.config.RoleSuffix
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
 }
 
 func (f *Factory) NodeExporterClusterRole() (*rbacv1beta1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(NodeExporterClusterRole))
+	cr, err := f.NewClusterRole(MustAssetReader(NodeExporterClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	cr.Name = cr.Name + f.config.RoleSuffix
+
+	return cr, nil
 }
 
 func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {
@@ -504,13 +537,23 @@ func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1beta1.ClusterRoleBin
 		return nil, err
 	}
 
+	crb.Name = crb.Name + f.config.RoleSuffix
+	crb.RoleRef.Name = crb.RoleRef.Name + f.config.RoleSuffix
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
 }
 
 func (f *Factory) PrometheusK8sClusterRole() (*rbacv1beta1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusK8sClusterRole))
+
+	cr, err := f.NewClusterRole(MustAssetReader(PrometheusK8sClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	cr.Name = cr.Name + f.config.RoleSuffix
+
+	return cr, nil
 }
 
 func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1beta1.Role, error) {
@@ -530,9 +573,25 @@ func (f *Factory) PrometheusK8sRoleBindingList() (*rbacv1beta1.RoleBindingList, 
 		return nil, err
 	}
 
+	roleBindingList := []rbacv1beta1.RoleBinding{}
 	for _, rb := range rbl.Items {
+		if rb.GetNamespace() == "openshift-monitoring" {
+			rb.SetNamespace(f.namespace)
+		}
+
+		if !f.config.KubeStateMetricsConfig.IsEnabled() {
+			if rb.Namespace != f.namespace {
+				continue
+			}
+		}
+
+		rb.RoleRef.Name = rb.RoleRef.Name + f.config.RoleSuffix
 		rb.Subjects[0].Namespace = f.namespace
+
+		roleBindingList = append(roleBindingList, rb)
 	}
+
+	rbl.Items = roleBindingList
 
 	return rbl, nil
 }
@@ -544,6 +603,8 @@ func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1beta1.RoleBinding, er
 	}
 
 	rb.Namespace = f.namespace
+	rb.RoleRef.Name = rb.RoleRef.Name + f.config.RoleSuffix
+	rb.Subjects[0].Namespace = f.namespace
 
 	return rb, nil
 }
@@ -554,9 +615,22 @@ func (f *Factory) PrometheusK8sRoleList() (*rbacv1beta1.RoleList, error) {
 		return nil, err
 	}
 
+	roleList := []rbacv1beta1.Role{}
 	for _, r := range rl.Items {
-		r.Namespace = f.namespace
+		if r.GetNamespace()== "openshift-monitoring" {
+			r.SetNamespace(f.namespace)
+		}
+
+		if !f.config.KubeStateMetricsConfig.IsEnabled() {
+			if r.Namespace != f.namespace {
+				continue
+			}
+		}
+
+		roleList = append(roleList, r)
 	}
+
+	rl.Items = roleList
 
 	return rl, nil
 }
@@ -569,15 +643,29 @@ func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
-	if !f.config.EtcdConfig.IsEnabled() {
-		groups := []monv1.RuleGroup{}
-		for _, g := range r.Spec.Groups {
-			if g.Name != "etcd" {
-				groups = append(groups, g)
-			}
+	groups := []monv1.RuleGroup{}
+	for _, g := range r.Spec.Groups {
+		if g.Name == "etcd" && !f.config.EtcdConfig.IsEnabled() {
+			continue
 		}
-		r.Spec.Groups = groups
+
+		if (g.Name == "node.rules" ||
+			g.Name == "kube-prometheus-node-recording.rules" ||
+			strings.HasPrefix(g.Name, "node_exporter")) && !f.config.NodeExporterConfig.IsEnabled() {
+			continue
+		}
+
+		if (g.Name == "k8s.rules" ||
+			g.Name == "kubernetes.rules" ||
+			g.Name == "openshift-build.rules" ||
+			strings.HasPrefix(g.Name, "kubernetes-") ||
+			strings.HasPrefix(g.Name, "kube-")) && !f.config.KubeStateMetricsConfig.IsEnabled() {
+			continue
+		}
+
+		groups = append(groups, g)
 	}
+	r.Spec.Groups = groups
 
 	return r, nil
 }
@@ -736,6 +824,16 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespace
 
+	if f.config.PrometheusK8sConfig.AdditionalScrapeConfigs != nil {
+		p.Spec.AdditionalScrapeConfigs = f.config.PrometheusK8sConfig.AdditionalScrapeConfigs
+	}
+
+	for pos, arg := range p.Spec.Containers[0].Args {
+		if strings.HasPrefix(arg,"-openshift-sar") || strings.HasPrefix(arg,"-openshift-delegate-urls") {
+			p.Spec.Containers[0].Args[pos] = strings.Replace(arg, "openshift-monitoring", f.namespace, 1)
+		}
+	}
+
 	return p, nil
 }
 
@@ -801,13 +899,22 @@ func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1beta1.ClusterRo
 		return nil, err
 	}
 
+	crb.Name = crb.Name + f.config.RoleSuffix
+	crb.RoleRef.Name = crb.RoleRef.Name + f.config.RoleSuffix
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
 }
 
 func (f *Factory) PrometheusOperatorClusterRole() (*rbacv1beta1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusOperatorClusterRole))
+	cr, err := f.NewClusterRole(MustAssetReader(PrometheusOperatorClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	cr.Name = cr.Name + f.config.RoleSuffix
+
+	return cr, nil
 }
 
 func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error) {
@@ -916,6 +1023,7 @@ func (f *Factory) GrafanaClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, 
 		return nil, err
 	}
 
+	crb.Name = crb.Name + f.config.RoleSuffix
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
@@ -975,6 +1083,8 @@ func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
 		return nil, err
 	}
 
+	d.Datasources[0].Url = strings.Replace(d.Datasources[0].Url, "openshift-monitoring", f.namespace, 1)
+
 	b, err := json.MarshalIndent(d, "", "    ")
 	if err != nil {
 		return nil, err
@@ -997,6 +1107,10 @@ func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
 		c.Namespace = f.namespace
 		if !f.config.EtcdConfig.IsEnabled() {
 			if c.GetName() != "grafana-dashboard-etcd" {
+				configmaps = append(configmaps, c)
+			}
+		} else if !f.config.KubeStateMetricsConfig.IsEnabled() {
+			if !strings.HasPrefix(c.GetName(), "grafana-dashboard-k8s") {
 				configmaps = append(configmaps, c)
 			}
 		} else {
@@ -1053,6 +1167,24 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.Containers[0].VolumeMounts = volMounts
 	}
 
+	if !f.config.KubeStateMetricsConfig.IsEnabled() {
+		vols := []v1.Volume{}
+		volMounts := []v1.VolumeMount{}
+		for _, v := range d.Spec.Template.Spec.Volumes {
+			if !strings.HasPrefix(v.Name, "grafana-dashboard-k8s") {
+				vols = append(vols, v)
+			}
+		}
+		for _, vm := range d.Spec.Template.Spec.Containers[0].VolumeMounts {
+			if !strings.HasPrefix(vm.Name, "grafana-dashboard-k8s") {
+				volMounts = append(volMounts, vm)
+			}
+		}
+
+		d.Spec.Template.Spec.Volumes = vols
+		d.Spec.Template.Spec.Containers[0].VolumeMounts = volMounts
+	}
+
 	if f.config.AuthConfig.BaseImage != "" {
 		image, err := imageFromString(d.Spec.Template.Spec.Containers[1].Image)
 		if err != nil {
@@ -1065,6 +1197,31 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 
 	if f.config.GrafanaConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.GrafanaConfig.NodeSelector
+	}
+
+	if f.config.GrafanaConfig.PersistentVolumeClaim != nil {
+		for pos, v := range d.Spec.Template.Spec.Volumes {
+			if v.Name == "grafana-storage" {
+				v.PersistentVolumeClaim = f.config.GrafanaConfig.PersistentVolumeClaim
+				v.EmptyDir = nil
+				d.Spec.Template.Spec.Volumes[pos] = v
+				break
+			}
+		}
+
+		d.Spec.Strategy.Type = "Recreate"
+	}
+
+	if f.config.GrafanaConfig.AdminUser != "" {
+		envs := []v1.EnvVar{}
+		envs = append(envs, v1.EnvVar{Name: "GF_SECURITY_ADMIN_USER", Value: f.config.GrafanaConfig.AdminUser})
+		d.Spec.Template.Spec.Containers[0].Env = envs
+	}
+
+	for pos, arg := range d.Spec.Template.Spec.Containers[1].Args {
+		if strings.HasPrefix(arg,"-openshift-sar") || strings.HasPrefix(arg,"-openshift-delegate-urls") {
+			d.Spec.Template.Spec.Containers[1].Args[pos] = strings.Replace(arg, "openshift-monitoring", f.namespace, 1)
+		}
 	}
 
 	d.Namespace = f.namespace
@@ -1249,6 +1406,8 @@ func (f *Factory) NewRoleBinding(manifest io.Reader) (*rbacv1beta1.RoleBinding, 
 		return nil, err
 	}
 
+	rb.SetName(rb.Name + f.config.RoleSuffix)
+
 	if rb.GetNamespace() == "" {
 		rb.SetNamespace(f.namespace)
 	}
@@ -1262,10 +1421,14 @@ func (f *Factory) NewRoleList(manifest io.Reader) (*rbacv1beta1.RoleList, error)
 		return nil, err
 	}
 
-	for _, r := range rl.Items {
+	for pos, r := range rl.Items {
+		r.SetName(r.Name + f.config.RoleSuffix)
+
 		if r.GetNamespace() == "" {
 			r.SetNamespace(f.namespace)
 		}
+
+		rl.Items[pos] = r
 	}
 
 	return rl, nil
@@ -1277,10 +1440,14 @@ func (f *Factory) NewRoleBindingList(manifest io.Reader) (*rbacv1beta1.RoleBindi
 		return nil, err
 	}
 
-	for _, rb := range rbl.Items {
+	for pos, rb := range rbl.Items {
+		rb.SetName(rb.Name + f.config.RoleSuffix)
+
 		if rb.GetNamespace() == "" {
 			rb.SetNamespace(f.namespace)
 		}
+
+		rbl.Items[pos] = rb
 	}
 
 	return rbl, nil
@@ -1291,6 +1458,8 @@ func (f *Factory) NewRole(manifest io.Reader) (*rbacv1beta1.Role, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	r.SetName(r.Name + f.config.RoleSuffix)
 
 	if r.GetNamespace() == "" {
 		r.SetNamespace(f.namespace)
@@ -1318,10 +1487,12 @@ func (f *Factory) NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error
 		return nil, err
 	}
 
-	for _, cm := range cml.Items {
+	for pos, cm := range cml.Items {
 		if cm.GetNamespace() == "" {
 			cm.SetNamespace(f.namespace)
 		}
+
+		cml.Items[pos] = cm
 	}
 
 	return cml, nil
@@ -1446,6 +1617,8 @@ func (f *Factory) TelemeterClientClusterRoleBinding() (*rbacv1beta1.ClusterRoleB
 	if err != nil {
 		return nil, err
 	}
+
+	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
 }

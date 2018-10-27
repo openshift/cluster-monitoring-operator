@@ -40,8 +40,10 @@ spec:
     - -upstream=http://localhost:9090
     - -htpasswd-file=/etc/proxy/htpasswd/auth
     - -openshift-service-account=prometheus-k8s
-    - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
-    - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+    - '-openshift-sar={"namespace": "openshift-monitoring", "resource": "namespaces",
+      "verb": "get"}'
+    - '-openshift-delegate-urls={"/": {"namespace": "openshift-monitoring", "resource":
+      "namespaces", "verb": "get"}}'
     - -tls-cert=/etc/tls/private/tls.crt
     - -tls-key=/etc/tls/private/tls.key
     - -client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token

@@ -23,81 +23,93 @@ import (
 type NodeExporterTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.NodeExporterConfig
+
 }
 
-func NewNodeExporterTask(client *client.Client, factory *manifests.Factory) *NodeExporterTask {
+func NewNodeExporterTask(client *client.Client, factory *manifests.Factory, config *manifests.NodeExporterConfig) *NodeExporterTask {
 	return &NodeExporterTask{
 		client:  client,
 		factory: factory,
+		config: config,
 	}
 }
 
 func (t *NodeExporterTask) Run() error {
-	smn, err := t.factory.NodeExporterServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
-	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smn)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
-	}
+	// Default to enabled.
+	if t.config.IsEnabled() {
 
-	scc, err := t.factory.NodeExporterSecurityContextConstraints()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter SecurityContextConstraints failed")
-	}
+		smn, err := t.factory.NodeExporterServiceMonitor()
+		if err != nil {
+			return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
+		}
 
-	err = t.client.CreateOrUpdateSecurityContextConstraints(scc)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter SecurityContextConstraints failed")
-	}
+		err = t.client.CreateOrUpdateServiceMonitor(smn)
+		if err != nil {
+			return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
+		}
 
-	sa, err := t.factory.NodeExporterServiceAccount()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter Service failed")
-	}
+		scc, err := t.factory.NodeExporterSecurityContextConstraints()
+		if err != nil {
+			return errors.Wrap(err, "initializing node-exporter SecurityContextConstraints failed")
+		}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ServiceAccount failed")
-	}
+		err = t.client.CreateOrUpdateSecurityContextConstraints(scc)
+		if err != nil {
+			return errors.Wrap(err, "reconciling node-exporter SecurityContextConstraints failed")
+		}
 
-	cr, err := t.factory.NodeExporterClusterRole()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ClusterRole failed")
-	}
+		sa, err := t.factory.NodeExporterServiceAccount()
+		if err != nil {
+			return errors.Wrap(err, "initializing node-exporter Service failed")
+		}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ClusterRole failed")
-	}
+		err = t.client.CreateOrUpdateServiceAccount(sa)
+		if err != nil {
+			return errors.Wrap(err, "reconciling node-exporter ServiceAccount failed")
+		}
 
-	crb, err := t.factory.NodeExporterClusterRoleBinding()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ClusterRoleBinding failed")
-	}
+		cr, err := t.factory.NodeExporterClusterRole()
+		if err != nil {
+			return errors.Wrap(err, "initializing node-exporter ClusterRole failed")
+		}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ClusterRoleBinding failed")
-	}
+		err = t.client.CreateOrUpdateClusterRole(cr)
+		if err != nil {
+			return errors.Wrap(err, "reconciling node-exporter ClusterRole failed")
+		}
 
-	svc, err := t.factory.NodeExporterService()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter Service failed")
-	}
+		crb, err := t.factory.NodeExporterClusterRoleBinding()
+		if err != nil {
+			return errors.Wrap(err, "initializing node-exporter ClusterRoleBinding failed")
+		}
 
-	err = t.client.CreateOrUpdateService(svc)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter Service failed")
-	}
+		err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+		if err != nil {
+			return errors.Wrap(err, "reconciling node-exporter ClusterRoleBinding failed")
+		}
 
-	ds, err := t.factory.NodeExporterDaemonSet()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter DaemonSet failed")
-	}
+		svc, err := t.factory.NodeExporterService()
+		if err != nil {
+			return errors.Wrap(err, "initializing node-exporter Service failed")
+		}
 
-	err = t.client.CreateOrUpdateDaemonSet(ds)
-	return errors.Wrap(err, "reconciling node-exporter DaemonSet failed")
+		err = t.client.CreateOrUpdateService(svc)
+		if err != nil {
+			return errors.Wrap(err, "reconciling node-exporter Service failed")
+		}
+
+		ds, err := t.factory.NodeExporterDaemonSet()
+		if err != nil {
+			return errors.Wrap(err, "initializing node-exporter DaemonSet failed")
+		}
+
+		err = t.client.CreateOrUpdateDaemonSet(ds)
+		return errors.Wrap(err, "reconciling node-exporter DaemonSet failed")
+
+	} else {
+
+		return nil
+	}
 }

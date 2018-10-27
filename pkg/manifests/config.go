@@ -34,6 +34,7 @@ type Config struct {
 	EtcdConfig               *EtcdConfig               `json:"etcd"`
 	HTTPConfig               *HTTPConfig               `json:"http"`
 	TelemeterClientConfig    *TelemeterClientConfig    `json:"telemeterClient"`
+	RoleSuffix               string                    `json:"roleSuffix"`
 }
 
 type HTTPConfig struct {
@@ -53,14 +54,16 @@ type PrometheusOperatorConfig struct {
 }
 
 type PrometheusK8sConfig struct {
-	Retention           string                    `json:"retention"`
-	BaseImage           string                    `json:"baseImage"`
-	Tag                 string                    `json:"-"`
-	NodeSelector        map[string]string         `json:"nodeSelector"`
-	Resources           *v1.ResourceRequirements  `json:"resources"`
-	ExternalLabels      map[string]string         `json:"externalLabels"`
-	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
-	Hostport            string                    `json:"hostport"`
+	Retention                string                    `json:"retention"`
+	BaseImage                string                    `json:"baseImage"`
+	Tag                      string                    `json:"-"`
+	NodeSelector             map[string]string         `json:"nodeSelector"`
+	Resources                *v1.ResourceRequirements  `json:"resources"`
+	ExternalLabels           map[string]string         `json:"externalLabels"`
+	VolumeClaimTemplate      *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
+	Hostport                 string                    `json:"hostport"`
+	RulesEnabled             *bool                     `json:"rulesEnabled"`
+	AdditionalScrapeConfigs  *v1.SecretKeySelector     `json:"additionalScrapeConfigs"`
 }
 
 type AlertmanagerMainConfig struct {
@@ -73,10 +76,12 @@ type AlertmanagerMainConfig struct {
 }
 
 type GrafanaConfig struct {
-	BaseImage    string            `json:"baseImage"`
-	Tag          string            `json:"-"`
-	NodeSelector map[string]string `json:"nodeSelector"`
-	Hostport     string            `json:"hostport"`
+	BaseImage                 string                                `json:"baseImage"`
+	Tag                       string                                `json:"-"`
+	NodeSelector              map[string]string                     `json:"nodeSelector"`
+	Hostport                  string                                `json:"hostport"`
+	PersistentVolumeClaim     *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim"`
+	AdminUser                 string                                `json:"adminUser"`
 }
 
 type AuthConfig struct {
@@ -85,11 +90,13 @@ type AuthConfig struct {
 }
 
 type NodeExporterConfig struct {
+	Enabled   *bool  `json:"enabled"`
 	BaseImage string `json:"baseImage"`
 	Tag       string `json:"-"`
 }
 
 type KubeStateMetricsConfig struct {
+	Enabled      *bool             `json:"enabled"`
 	BaseImage    string            `json:"baseImage"`
 	Tag          string            `json:"-"`
 	NodeSelector map[string]string `json:"nodeSelector"`
@@ -112,6 +119,27 @@ func (e *EtcdConfig) IsEnabled() bool {
 		return true
 	}
 	return *e.Enabled
+}
+
+func (e *NodeExporterConfig) IsEnabled() bool {
+	if e.Enabled == nil {
+		return true
+	}
+	return *e.Enabled
+}
+
+func (e *KubeStateMetricsConfig) IsEnabled() bool {
+	if e.Enabled == nil {
+		return true
+	}
+	return *e.Enabled
+}
+
+func (e *PrometheusK8sConfig) DefaultRulesEnabled() bool {
+	if e.RulesEnabled == nil {
+		return true
+	}
+	return *e.RulesEnabled
 }
 
 type TelemeterClientConfig struct {

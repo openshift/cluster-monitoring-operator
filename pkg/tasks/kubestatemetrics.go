@@ -23,71 +23,82 @@ import (
 type KubeStateMetricsTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.KubeStateMetricsConfig
 }
 
-func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) *KubeStateMetricsTask {
+func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory, config *manifests.KubeStateMetricsConfig) *KubeStateMetricsTask {
 	return &KubeStateMetricsTask{
 		client:  client,
 		factory: factory,
+		config: config,
 	}
 }
 
 func (t *KubeStateMetricsTask) Run() error {
-	sm, err := t.factory.KubeStateMetricsServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")
-	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(sm)
-	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
-	}
+	// Default to enabled.
+	if t.config.IsEnabled() {
 
-	sa, err := t.factory.KubeStateMetricsServiceAccount()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics Service failed")
-	}
+		sm, err := t.factory.KubeStateMetricsServiceMonitor()
+		if err != nil {
+			return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")
+		}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
-	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics ServiceAccount failed")
-	}
+		err = t.client.CreateOrUpdateServiceMonitor(sm)
+		if err != nil {
+			return errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
+		}
 
-	cr, err := t.factory.KubeStateMetricsClusterRole()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics ClusterRole failed")
-	}
+		sa, err := t.factory.KubeStateMetricsServiceAccount()
+		if err != nil {
+			return errors.Wrap(err, "initializing kube-state-metrics Service failed")
+		}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics ClusterRole failed")
-	}
+		err = t.client.CreateOrUpdateServiceAccount(sa)
+		if err != nil {
+			return errors.Wrap(err, "reconciling kube-state-metrics ServiceAccount failed")
+		}
 
-	crb, err := t.factory.KubeStateMetricsClusterRoleBinding()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics ClusterRoleBinding failed")
-	}
+		cr, err := t.factory.KubeStateMetricsClusterRole()
+		if err != nil {
+			return errors.Wrap(err, "initializing kube-state-metrics ClusterRole failed")
+		}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
-	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics ClusterRoleBinding failed")
-	}
+		err = t.client.CreateOrUpdateClusterRole(cr)
+		if err != nil {
+			return errors.Wrap(err, "reconciling kube-state-metrics ClusterRole failed")
+		}
 
-	svc, err := t.factory.KubeStateMetricsService()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics Service failed")
-	}
+		crb, err := t.factory.KubeStateMetricsClusterRoleBinding()
+		if err != nil {
+			return errors.Wrap(err, "initializing kube-state-metrics ClusterRoleBinding failed")
+		}
 
-	err = t.client.CreateOrUpdateService(svc)
-	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics Service failed")
-	}
+		err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+		if err != nil {
+			return errors.Wrap(err, "reconciling kube-state-metrics ClusterRoleBinding failed")
+		}
 
-	dep, err := t.factory.KubeStateMetricsDeployment()
-	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics Deployment failed")
-	}
+		svc, err := t.factory.KubeStateMetricsService()
+		if err != nil {
+			return errors.Wrap(err, "initializing kube-state-metrics Service failed")
+		}
 
-	err = t.client.CreateOrUpdateDeployment(dep)
-	return errors.Wrap(err, "reconciling kube-state-metrics Deployment failed")
+		err = t.client.CreateOrUpdateService(svc)
+		if err != nil {
+			return errors.Wrap(err, "reconciling kube-state-metrics Service failed")
+		}
+
+		dep, err := t.factory.KubeStateMetricsDeployment()
+		if err != nil {
+			return errors.Wrap(err, "initializing kube-state-metrics Deployment failed")
+		}
+
+		err = t.client.CreateOrUpdateDeployment(dep)
+		return errors.Wrap(err, "reconciling kube-state-metrics Deployment failed")
+
+	} else {
+
+		return nil
+	}
 }

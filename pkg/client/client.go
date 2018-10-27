@@ -264,6 +264,18 @@ func (c *Client) DeleteDaemonSet(d *v1beta1.DaemonSet) error {
 	return err
 }
 
+func (c *Client) DeletePrometheusRule(sm *monv1.PrometheusRule) error {
+	pclient := c.mclient.MonitoringV1().PrometheusRules(sm.Namespace)
+
+	err := pclient.Delete(sm.GetName(), nil)
+	// if the object does not exist then everything is good here
+	if err != nil && !apierrors.IsNotFound(err) {
+		return errors.Wrap(err, "deleting PrometheusRule object failed")
+	}
+
+	return nil
+}
+
 func (c *Client) DeleteServiceMonitor(sm *monv1.ServiceMonitor) error {
 	sclient := c.mclient.MonitoringV1().ServiceMonitors(sm.Namespace)
 
