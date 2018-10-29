@@ -3,6 +3,7 @@ local service = k.core.v1.service;
 local deployment = k.apps.v1beta2.deployment;
 local container = deployment.mixin.spec.template.spec.containersType;
 local volume = deployment.mixin.spec.template.spec.volumesType;
+local configmap = k.core.v1.configMap;
 local containerPort = container.portsType;
 local containerVolumeMount = container.volumeMountsType;
 local tmpVolumeName = 'volume-directive-shadow';
@@ -34,7 +35,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
               port: 'https-main',
               scheme: 'https',
               tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt',
+                caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'server-name-replaced-at-runtime',
               },
             },
@@ -45,7 +46,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
               port: 'https-self',
               scheme: 'https',
               tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt',
+                caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'server-name-replaced-at-runtime',
               },
             },

@@ -82,6 +82,7 @@ var (
 	PrometheusK8sConsoleRoute                  = "assets/prometheus-k8s/route-console.yaml"
 	PrometheusK8sHtpasswd                      = "assets/prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sEtcdServiceMonitor            = "assets/prometheus-k8s/service-monitor-etcd.yaml"
+	PrometheusK8sServingCertsCABundle          = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
 
 	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole        = "assets/prometheus-operator/cluster-role.yaml"
@@ -632,6 +633,17 @@ func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(PrometheusK8sServingCertsCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+
+	return c, nil
 }
 
 func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {

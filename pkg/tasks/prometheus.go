@@ -39,6 +39,16 @@ func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config
 }
 
 func (t *PrometheusTask) Run() error {
+	cacm, err := t.factory.PrometheusK8sServingCertsCABundle()
+	if err != nil {
+		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
+	}
+
+	err = t.client.CreateIfNotExistConfigMap(cacm)
+	if err != nil {
+		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
+	}
+
 	r, err := t.factory.PrometheusK8sRoute()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Route failed")

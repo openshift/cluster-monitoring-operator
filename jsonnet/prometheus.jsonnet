@@ -3,6 +3,7 @@ local serviceAccount = k.core.v1.serviceAccount;
 local service = k.core.v1.service;
 local servicePort = k.core.v1.service.mixin.spec.portsType;
 local secret = k.core.v1.secret;
+local configmap = k.core.v1.configMap;
 local clusterRole = k.rbac.v1.clusterRole;
 local policyRule = clusterRole.rulesType;
 local selector = k.apps.v1beta2.deployment.mixin.spec.selectorType;
@@ -84,6 +85,11 @@ local namespacesRole = policyRule.new() +
         servicePort.newNamed('web', 9091, 'web'),
         servicePort.newNamed('tenancy', 9092, 'tenancy'),
       ]),
+
+    servingCertsCaBundle+:
+      configmap.new('prometheus-serving-certs-ca-bundle', {}) +
+      configmap.mixin.metadata.withNamespace($._config.namespace) +
+      configmap.mixin.metadata.withAnnotations({ 'service.alpha.openshift.io/inject-cabundle': 'true' }),
 
     // As Prometheus is protected by the oauth proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.
@@ -255,7 +261,7 @@ local namespacesRole = policyRule.new() +
               interval: '30s',
               scheme: 'https',
               tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt',
+                caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'prometheus-k8s',
               },
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
@@ -277,7 +283,7 @@ local namespacesRole = policyRule.new() +
                 function(a) a {
                   scheme: 'https',
                   tlsConfig: {
-                    caFile: '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt',
+                    caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
                     serverName: 'alertmanager-main',
                   },
                   bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
@@ -293,6 +299,7 @@ local namespacesRole = policyRule.new() +
             'prometheus-k8s-htpasswd',
             'kube-rbac-proxy',
           ],
+          configMaps: ['prometheus-serving-certs-ca-bundle'],
           serviceMonitorSelector: selector.withMatchExpressions({ key: 'k8s-app', operator: 'Exists' }),
           serviceMonitorNamespaceSelector: selector.withMatchExpressions({ key: 'openshift.io/cluster-monitoring', operator: 'Exists' }),
           listenLocal: true,
