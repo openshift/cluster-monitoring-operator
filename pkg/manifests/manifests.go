@@ -79,7 +79,6 @@ var (
 	PrometheusK8sProxySecret                   = "assets/prometheus-k8s/proxy-secret.yaml"
 	PrometheusRBACProxySecret                  = "assets/prometheus-k8s/kube-rbac-proxy-secret.yaml"
 	PrometheusK8sRoute                         = "assets/prometheus-k8s/route.yaml"
-	PrometheusK8sConsoleRoute                  = "assets/prometheus-k8s/route-console.yaml"
 	PrometheusK8sHtpasswd                      = "assets/prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sEtcdServiceMonitor            = "assets/prometheus-k8s/service-monitor-etcd.yaml"
 	PrometheusK8sServingCertsCABundle          = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
@@ -662,20 +661,6 @@ func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, erro
 
 func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 	r, err := f.NewRoute(MustAssetReader(PrometheusK8sRoute))
-	if err != nil {
-		return nil, err
-	}
-
-	if f.config.PrometheusK8sConfig.Hostport != "" {
-		r.Spec.Host = f.config.PrometheusK8sConfig.Hostport
-	}
-	r.Namespace = f.namespace
-
-	return r, nil
-}
-
-func (f *Factory) PrometheusK8sConsoleRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(MustAssetReader(PrometheusK8sConsoleRoute))
 	if err != nil {
 		return nil, err
 	}

@@ -59,16 +59,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "creating Prometheus Route failed")
 	}
 
-	r, err = t.factory.PrometheusK8sConsoleRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Route for console failed")
-	}
-
-	err = t.client.CreateRouteIfNotExists(r)
-	if err != nil {
-		return errors.Wrap(err, "creating Prometheus Route for console failed")
-	}
-
 	host, err := t.client.WaitForRouteReady(r)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Prometheus Route to become ready failed")
