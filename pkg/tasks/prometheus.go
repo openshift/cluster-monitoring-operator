@@ -253,16 +253,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Service failed")
 	}
 
-	svc, err = t.factory.PrometheusK8sConsoleService()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Service for console failed")
-	}
-
-	err = t.client.CreateOrUpdateService(svc)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Service for console failed")
-	}
-
 	kcmsvc, err := t.factory.KubeControllersService()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-controllers Service failed")

@@ -75,7 +75,6 @@ var (
 	PrometheusK8sPrometheusServiceMonitor      = "assets/prometheus-k8s/service-monitor.yaml"
 	PrometheusK8sKubeControllersServiceMonitor = "assets/prometheus-k8s/service-monitor-kube-controllers.yaml"
 	PrometheusK8sService                       = "assets/prometheus-k8s/service.yaml"
-	PrometheusK8sConsoleService                = "assets/prometheus-k8s/service-console.yaml"
 	PrometheusK8sProxySecret                   = "assets/prometheus-k8s/proxy-secret.yaml"
 	PrometheusRBACProxySecret                  = "assets/prometheus-k8s/kube-rbac-proxy-secret.yaml"
 	PrometheusK8sRoute                         = "assets/prometheus-k8s/route.yaml"
@@ -883,17 +882,6 @@ func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
 
 func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
 	s, err := f.NewService(MustAssetReader(PrometheusK8sService))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) PrometheusK8sConsoleService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(PrometheusK8sConsoleService))
 	if err != nil {
 		return nil, err
 	}
