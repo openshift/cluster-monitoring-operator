@@ -122,7 +122,7 @@ var (
 var (
 	PrometheusConfigReloaderFlag    = "--prometheus-config-reloader="
 	ConfigReloaderImageFlag         = "--config-reloader-image="
-	PrometheusOperatorNamespaceFlag = "--namespace="
+	PrometheusOperatorNamespaceFlag = "--namespaces="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
