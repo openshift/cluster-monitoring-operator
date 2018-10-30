@@ -38,6 +38,9 @@ type Config struct {
 	Kind                  string
 	Version               string
 	Plural                string
+	SpecReplicasPath      string
+	StatusReplicasPath    string
+	LabelSelectorPath     string
 	Categories            []string
 	ShortNames            []string
 	GetOpenAPIDefinitions GetAPIDefinitions
@@ -83,6 +86,7 @@ func (labels *Labels) Set(value string) error {
 }
 
 func NewCustomResourceDefinition(config Config) *extensionsobj.CustomResourceDefinition {
+
 	crd := &extensionsobj.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        config.Plural + "." + config.Group,
@@ -99,6 +103,15 @@ func NewCustomResourceDefinition(config Config) *extensionsobj.CustomResourceDef
 				Kind:       config.Kind,
 				Categories: config.Categories,
 				ShortNames: config.ShortNames,
+			},
+			Subresources: &extensionsobj.CustomResourceSubresources{
+				Status: &extensionsobj.CustomResourceSubresourceStatus {
+				},
+				Scale: &extensionsobj.CustomResourceSubresourceScale {
+					SpecReplicasPath:	config.SpecReplicasPath,
+					StatusReplicasPath:	config.StatusReplicasPath,
+					LabelSelectorPath:	&config.LabelSelectorPath,
+				},
 			},
 		},
 	}
@@ -165,5 +178,8 @@ func InitFlags(cfg *Config, flagset *flag.FlagSet) *flag.FlagSet {
 	flagset.StringVar(&cfg.ResourceScope, "scope", string(extensionsobj.NamespaceScoped), "CRD scope: 'Namespaced' | 'Cluster'.  Default: Namespaced")
 	flagset.StringVar(&cfg.Version, "version", "v1", "CRD version, default: 'v1'")
 	flagset.StringVar(&cfg.Plural, "plural", "", "CRD plural name")
+	flagset.StringVar(&cfg.SpecReplicasPath, "spec-replicas-path", ".spec.replicas", "CRD spec replicas path")
+	flagset.StringVar(&cfg.StatusReplicasPath, "status-replicas-path", ".status.replicas", "CRD status replicas path")
+	flagset.StringVar(&cfg.LabelSelectorPath, "label-selector-path", ".status.labelSelector", "CRD label selector path")
 	return flagset
 }

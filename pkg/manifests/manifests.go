@@ -75,13 +75,12 @@ var (
 	PrometheusK8sPrometheusServiceMonitor      = "assets/prometheus-k8s/service-monitor.yaml"
 	PrometheusK8sKubeControllersServiceMonitor = "assets/prometheus-k8s/service-monitor-kube-controllers.yaml"
 	PrometheusK8sService                       = "assets/prometheus-k8s/service.yaml"
-	PrometheusK8sConsoleService                = "assets/prometheus-k8s/service-console.yaml"
 	PrometheusK8sProxySecret                   = "assets/prometheus-k8s/proxy-secret.yaml"
 	PrometheusRBACProxySecret                  = "assets/prometheus-k8s/kube-rbac-proxy-secret.yaml"
 	PrometheusK8sRoute                         = "assets/prometheus-k8s/route.yaml"
-	PrometheusK8sConsoleRoute                  = "assets/prometheus-k8s/route-console.yaml"
 	PrometheusK8sHtpasswd                      = "assets/prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sEtcdServiceMonitor            = "assets/prometheus-k8s/service-monitor-etcd.yaml"
+	PrometheusK8sServingCertsCABundle          = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
 
 	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole        = "assets/prometheus-operator/cluster-role.yaml"
@@ -121,7 +120,7 @@ var (
 var (
 	PrometheusConfigReloaderFlag    = "--prometheus-config-reloader="
 	ConfigReloaderImageFlag         = "--config-reloader-image="
-	PrometheusOperatorNamespaceFlag = "--namespace="
+	PrometheusOperatorNamespaceFlag = "--namespaces="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -634,6 +633,17 @@ func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(PrometheusK8sServingCertsCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+
+	return c, nil
+}
+
 func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sEtcdServiceMonitor))
 	if err != nil {
@@ -650,20 +660,6 @@ func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, erro
 
 func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 	r, err := f.NewRoute(MustAssetReader(PrometheusK8sRoute))
-	if err != nil {
-		return nil, err
-	}
-
-	if f.config.PrometheusK8sConfig.Hostport != "" {
-		r.Spec.Host = f.config.PrometheusK8sConfig.Hostport
-	}
-	r.Namespace = f.namespace
-
-	return r, nil
-}
-
-func (f *Factory) PrometheusK8sConsoleRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(MustAssetReader(PrometheusK8sConsoleRoute))
 	if err != nil {
 		return nil, err
 	}
@@ -886,17 +882,6 @@ func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
 
 func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
 	s, err := f.NewService(MustAssetReader(PrometheusK8sService))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) PrometheusK8sConsoleService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(PrometheusK8sConsoleService))
 	if err != nil {
 		return nil, err
 	}
@@ -1531,11 +1516,18 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate Telemeter client salt: %v", err)
 	}
-
-	s.Data["id"] = []byte(f.config.TelemeterClientConfig.ClusterID)
 	s.Data["salt"] = []byte(salt)
-	s.Data["to"] = []byte(f.config.TelemeterClientConfig.TelemeterServerURL)
-	s.Data["token"] = []byte(f.config.TelemeterClientConfig.Token)
+
+	if f.config.TelemeterClientConfig.ClusterID != "" {
+		s.Data["id"] = []byte(f.config.TelemeterClientConfig.ClusterID)
+	}
+	if f.config.TelemeterClientConfig.TelemeterServerURL != "" {
+		s.Data["to"] = []byte(f.config.TelemeterClientConfig.TelemeterServerURL)
+	}
+	if f.config.TelemeterClientConfig.Token != "" {
+		s.Data["token"] = []byte(f.config.TelemeterClientConfig.Token)
+	}
+
 	s.Namespace = f.namespace
 
 	return s, nil

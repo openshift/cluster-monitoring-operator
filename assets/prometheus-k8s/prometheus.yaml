@@ -28,9 +28,11 @@ spec:
       port: web
       scheme: https
       tlsConfig:
-        caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+        caFile: /etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt
         serverName: alertmanager-main
   baseImage: openshift/prometheus
+  configMaps:
+  - prometheus-serving-certs-ca-bundle
   containers:
   - args:
     - -provider=openshift

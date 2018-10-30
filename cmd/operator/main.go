@@ -104,7 +104,7 @@ func Main() int {
 	r := prometheus.NewRegistry()
 	r.MustRegister(
 		prometheus.NewGoCollector(),
-		prometheus.NewProcessCollector(os.Getpid(), ""),
+		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
 	)
 
 	config, err := clientcmd.BuildConfigFromFlags(*apiserver, *kubeconfigPath)

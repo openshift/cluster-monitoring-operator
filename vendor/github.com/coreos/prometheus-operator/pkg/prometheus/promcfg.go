@@ -104,6 +104,7 @@ func (cg *configGenerator) generateConfig(
 	mons map[string]*v1.ServiceMonitor,
 	basicAuthSecrets map[string]BasicAuthCredentials,
 	additionalScrapeConfigs []byte,
+	additionalAlertRelabelConfigs []byte,
 	additionalAlertManagerConfigs []byte,
 	ruleConfigMapNames []string,
 ) ([]byte, error) {
@@ -202,12 +203,18 @@ func (cg *configGenerator) generateConfig(
 		})
 	}
 
+	var additionalAlertRelabelConfigsYaml []yaml.MapSlice
+	err = yaml.Unmarshal([]byte(additionalAlertRelabelConfigs), &additionalAlertRelabelConfigsYaml)
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshalling additional alerting relabel configs failed")
+	}
+
 	cfg = append(cfg, yaml.MapItem{
 		Key: "alerting",
 		Value: yaml.MapSlice{
 			{
 				Key:   "alert_relabel_configs",
-				Value: alertRelabelConfigs,
+				Value: append(alertRelabelConfigs, additionalAlertRelabelConfigsYaml...),
 			},
 			{
 				Key:   "alertmanagers",
@@ -396,7 +403,17 @@ func (cg *configGenerator) generateServiceMonitorConfig(version semver.Version, 
 			{Key: "target_label", Value: "namespace"},
 		},
 		{
-			{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_name"}},
+			{Key: "source_labels", Value: []string{"__meta_kubernetes_endpoint_address_target_kind", "__meta_kubernetes_endpoint_address_target_name"}},
+			{Key: "separator", Value: ";"},
+			{Key: "regex", Value: "Node;(.*)"},
+			{Key: "replacement", Value: "${1}"},
+			{Key: "target_label", Value: "node"},
+		},
+		{
+			{Key: "source_labels", Value: []string{"__meta_kubernetes_endpoint_address_target_kind", "__meta_kubernetes_endpoint_address_target_name"}},
+			{Key: "separator", Value: ";"},
+			{Key: "regex", Value: "Pod;(.*)"},
+			{Key: "replacement", Value: "${1}"},
 			{Key: "target_label", Value: "pod"},
 		},
 		{
@@ -409,6 +426,15 @@ func (cg *configGenerator) generateServiceMonitorConfig(version semver.Version, 
 	for _, l := range m.Spec.TargetLabels {
 		relabelings = append(relabelings, yaml.MapSlice{
 			{Key: "source_labels", Value: []string{"__meta_kubernetes_service_label_" + sanitizeLabelName(l)}},
+			{Key: "target_label", Value: sanitizeLabelName(l)},
+			{Key: "regex", Value: "(.+)"},
+			{Key: "replacement", Value: "${1}"},
+		})
+	}
+
+	for _, l := range m.Spec.PodTargetLabels {
+		relabelings = append(relabelings, yaml.MapSlice{
+			{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_label_" + sanitizeLabelName(l)}},
 			{Key: "target_label", Value: sanitizeLabelName(l)},
 			{Key: "regex", Value: "(.+)"},
 			{Key: "replacement", Value: "${1}"},
@@ -447,40 +473,22 @@ func (cg *configGenerator) generateServiceMonitorConfig(version semver.Version, 
 		})
 	}
 
+	if ep.RelabelConfigs != nil {
+		for _, c := range ep.RelabelConfigs {
+			relabelings = append(relabelings, generateRelabelConfig(c))
+		}
+	}
+
 	cfg = append(cfg, yaml.MapItem{Key: "relabel_configs", Value: relabelings})
+
+	if m.Spec.SampleLimit > 0 {
+		cfg = append(cfg, yaml.MapItem{Key: "sample_limit", Value: m.Spec.SampleLimit})
+	}
 
 	if ep.MetricRelabelConfigs != nil {
 		var metricRelabelings []yaml.MapSlice
 		for _, c := range ep.MetricRelabelConfigs {
-			relabeling := yaml.MapSlice{}
-
-			if len(c.SourceLabels) > 0 {
-				relabeling = append(relabeling, yaml.MapItem{Key: "source_labels", Value: c.SourceLabels})
-			}
-
-			if c.Separator != "" {
-				relabeling = append(relabeling, yaml.MapItem{Key: "separator", Value: c.Separator})
-			}
-
-			if c.TargetLabel != "" {
-				relabeling = append(relabeling, yaml.MapItem{Key: "target_label", Value: c.TargetLabel})
-			}
-
-			if c.Regex != "" {
-				relabeling = append(relabeling, yaml.MapItem{Key: "regex", Value: c.Regex})
-			}
-
-			if c.Modulus != uint64(0) {
-				relabeling = append(relabeling, yaml.MapItem{Key: "modulus", Value: c.Modulus})
-			}
-
-			if c.Replacement != "" {
-				relabeling = append(relabeling, yaml.MapItem{Key: "replacement", Value: c.Replacement})
-			}
-
-			if c.Action != "" {
-				relabeling = append(relabeling, yaml.MapItem{Key: "action", Value: c.Action})
-			}
+			relabeling := generateRelabelConfig(c)
 
 			metricRelabelings = append(metricRelabelings, relabeling)
 		}
@@ -488,6 +496,40 @@ func (cg *configGenerator) generateServiceMonitorConfig(version semver.Version, 
 	}
 
 	return cfg
+}
+
+func generateRelabelConfig(c *v1.RelabelConfig) yaml.MapSlice {
+	relabeling := yaml.MapSlice{}
+
+	if len(c.SourceLabels) > 0 {
+		relabeling = append(relabeling, yaml.MapItem{Key: "source_labels", Value: c.SourceLabels})
+	}
+
+	if c.Separator != "" {
+		relabeling = append(relabeling, yaml.MapItem{Key: "separator", Value: c.Separator})
+	}
+
+	if c.TargetLabel != "" {
+		relabeling = append(relabeling, yaml.MapItem{Key: "target_label", Value: c.TargetLabel})
+	}
+
+	if c.Regex != "" {
+		relabeling = append(relabeling, yaml.MapItem{Key: "regex", Value: c.Regex})
+	}
+
+	if c.Modulus != uint64(0) {
+		relabeling = append(relabeling, yaml.MapItem{Key: "modulus", Value: c.Modulus})
+	}
+
+	if c.Replacement != "" {
+		relabeling = append(relabeling, yaml.MapItem{Key: "replacement", Value: c.Replacement})
+	}
+
+	if c.Action != "" {
+		relabeling = append(relabeling, yaml.MapItem{Key: "action", Value: c.Action})
+	}
+
+	return relabeling
 }
 
 func getNamespacesFromServiceMonitor(m *v1.ServiceMonitor) []string {
@@ -660,6 +702,10 @@ func (cg *configGenerator) generateRemoteReadConfig(version semver.Version, spec
 					},
 				})
 			}
+		}
+
+		if spec.BearerToken != "" {
+			cfg = append(cfg, yaml.MapItem{Key: "bearer_token", Value: spec.BearerToken})
 		}
 
 		if spec.BearerTokenFile != "" {

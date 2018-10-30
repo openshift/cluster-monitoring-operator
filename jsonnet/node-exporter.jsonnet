@@ -3,6 +3,7 @@ local service = k.core.v1.service;
 local daemonset = k.apps.v1beta2.daemonSet;
 local container = daemonset.mixin.spec.template.spec.containersType;
 local volume = daemonset.mixin.spec.template.spec.volumesType;
+local configmap = k.core.v1.configMap;
 local containerPort = container.portsType;
 local containerVolumeMount = container.volumeMountsType;
 local tlsVolumeName = 'node-exporter-tls';
@@ -31,7 +32,7 @@ local tlsVolumeName = 'node-exporter-tls';
               port: 'https',
               scheme: 'https',
               tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt',
+                caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'server-name-replaced-at-runtime',
               },
             },

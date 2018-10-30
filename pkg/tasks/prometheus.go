@@ -39,6 +39,16 @@ func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config
 }
 
 func (t *PrometheusTask) Run() error {
+	cacm, err := t.factory.PrometheusK8sServingCertsCABundle()
+	if err != nil {
+		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
+	}
+
+	err = t.client.CreateIfNotExistConfigMap(cacm)
+	if err != nil {
+		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
+	}
+
 	r, err := t.factory.PrometheusK8sRoute()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Route failed")
@@ -47,16 +57,6 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.CreateRouteIfNotExists(r)
 	if err != nil {
 		return errors.Wrap(err, "creating Prometheus Route failed")
-	}
-
-	r, err = t.factory.PrometheusK8sConsoleRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Route for console failed")
-	}
-
-	err = t.client.CreateRouteIfNotExists(r)
-	if err != nil {
-		return errors.Wrap(err, "creating Prometheus Route for console failed")
 	}
 
 	host, err := t.client.WaitForRouteReady(r)
@@ -251,16 +251,6 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.CreateOrUpdateService(svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Service failed")
-	}
-
-	svc, err = t.factory.PrometheusK8sConsoleService()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Service for console failed")
-	}
-
-	err = t.client.CreateOrUpdateService(svc)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Service for console failed")
 	}
 
 	kcmsvc, err := t.factory.KubeControllersService()

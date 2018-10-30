@@ -3,6 +3,7 @@ local serviceAccount = k.core.v1.serviceAccount;
 local service = k.core.v1.service;
 local servicePort = k.core.v1.service.mixin.spec.portsType;
 local secret = k.core.v1.secret;
+local configmap = k.core.v1.configMap;
 local clusterRole = k.rbac.v1.clusterRole;
 local policyRule = clusterRole.rulesType;
 
@@ -113,7 +114,7 @@ local authorizationRole = policyRule.new() +
               interval: '30s',
               scheme: 'https',
               tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt',
+                caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'alertmanager-main',
               },
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',

@@ -35,8 +35,9 @@ import (
 func (f *Framework) MakeBasicPrometheus(ns, name, group string, replicas int32) *monitoringv1.Prometheus {
 	return &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
+			Name:        name,
+			Namespace:   ns,
+			Annotations: map[string]string{},
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			Replicas: &replicas,
@@ -235,11 +236,11 @@ func (f *Framework) WaitForPrometheusReady(p *monitoringv1.Prometheus, timeout t
 func (f *Framework) DeletePrometheusAndWaitUntilGone(ns, name string) error {
 	_, err := f.MonClientV1.Prometheuses(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("requesting Prometheus tpr %v failed", name))
+		return errors.Wrap(err, fmt.Sprintf("requesting Prometheus custom resource %v failed", name))
 	}
 
 	if err := f.MonClientV1.Prometheuses(ns).Delete(name, nil); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("deleting Prometheus tpr %v failed", name))
+		return errors.Wrap(err, fmt.Sprintf("deleting Prometheus custom resource %v failed", name))
 	}
 
 	if err := WaitForPodsReady(
@@ -249,7 +250,10 @@ func (f *Framework) DeletePrometheusAndWaitUntilGone(ns, name string) error {
 		0,
 		prometheus.ListOptions(name),
 	); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("waiting for Prometheus tpr (%s) to vanish timed out", name))
+		return errors.Wrap(
+			err,
+			fmt.Sprintf("waiting for Prometheus custom resource (%s) to vanish timed out", name),
+		)
 	}
 
 	return nil
@@ -314,7 +318,7 @@ func (f *Framework) GetActiveTargets(ns, svcName string) ([]*Target, error) {
 	return rt.Data.ActiveTargets, nil
 }
 
-func (f *Framework) checkPrometheusFiringAlert(ns, svcName, alertName string) (bool, error) {
+func (f *Framework) CheckPrometheusFiringAlert(ns, svcName, alertName string) (bool, error) {
 	response, err := f.QueryPrometheusSVC(
 		ns,
 		svcName,
@@ -347,7 +351,7 @@ func (f *Framework) WaitForPrometheusFiringAlert(ns, svcName, alertName string) 
 
 	err := wait.Poll(time.Second, 5*f.DefaultTimeout, func() (bool, error) {
 		var firing bool
-		firing, loopError = f.checkPrometheusFiringAlert(ns, svcName, alertName)
+		firing, loopError = f.CheckPrometheusFiringAlert(ns, svcName, alertName)
 		return firing, nil
 	})
 
