@@ -87,7 +87,7 @@ local namespacesRole = policyRule.new() +
       ]),
 
     servingCertsCaBundle+:
-      configmap.new('prometheus-serving-certs-ca-bundle', {}) +
+      configmap.new('prometheus-serving-certs-ca-bundle', { 'service-ca.crt': '' }) +
       configmap.mixin.metadata.withNamespace($._config.namespace) +
       configmap.mixin.metadata.withAnnotations({ 'service.alpha.openshift.io/inject-cabundle': 'true' }),
 
