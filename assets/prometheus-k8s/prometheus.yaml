@@ -98,12 +98,6 @@ spec:
   - kube-rbac-proxy
   securityContext: {}
   serviceAccountName: prometheus-k8s
-  serviceMonitorNamespaceSelector:
-    matchExpressions:
-    - key: openshift.io/cluster-monitoring
-      operator: Exists
-  serviceMonitorSelector:
-    matchExpressions:
-    - key: k8s-app
-      operator: Exists
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector: {}
   version: v2.4.2

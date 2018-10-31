@@ -817,7 +817,7 @@ func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error)
 	return s, nil
 }
 
-func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(MustAssetReader(PrometheusOperatorDeployment))
 	if err != nil {
 		return nil, err
@@ -840,7 +840,7 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
 		if strings.HasPrefix(args[i], PrometheusOperatorNamespaceFlag) {
-			args[i] = PrometheusOperatorNamespaceFlag + f.namespace
+			args[i] = PrometheusOperatorNamespaceFlag + strings.Join(namespaces, ",")
 		}
 
 		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.PrometheusOperatorConfig.PrometheusConfigReloader != "" {

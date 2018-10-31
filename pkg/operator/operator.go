@@ -45,7 +45,8 @@ const (
 )
 
 type Operator struct {
-	namespace     string
+	namespace string
+
 	configMapName string
 	tagOverrides  map[string]string
 
@@ -60,8 +61,8 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(config *rest.Config, namespace, configMapName string, tagOverrides map[string]string) (*Operator, error) {
-	c, err := client.New(config, namespace, configMapName)
+func New(config *rest.Config, namespace, namespaceSelector, configMapName string, tagOverrides map[string]string) (*Operator, error) {
+	c, err := client.New(config, namespace, namespaceSelector, configMapName)
 	if err != nil {
 		return nil, err
 	}

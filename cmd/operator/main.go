@@ -79,6 +79,7 @@ func (t *tags) Type() string {
 func Main() int {
 	flagset := flag.CommandLine
 	namespace := flagset.String("namespace", "openshift-monitoring", "Namespace to deploy and manage cluster monitoring stack in.")
+	namespaceSelector := flagset.String("namespace-selector", "openshift.io/cluster-monitoring=true", "Selector for namespaces to monitor.")
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
 	kubeconfigPath := flagset.String("kubeconfig", "", "The path to the kubeconfig to connect to the apiserver with.")
 	apiserver := flagset.String("apiserver", "", "The address of the apiserver to talk to.")
@@ -113,7 +114,7 @@ func Main() int {
 		return 1
 	}
 
-	o, err := cmo.New(config, *namespace, *configMapName, tags.asMap())
+	o, err := cmo.New(config, *namespace, *namespaceSelector, *configMapName, tags.asMap())
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
