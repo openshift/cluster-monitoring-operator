@@ -177,7 +177,7 @@ func (c *Client) CreateRouteIfNotExists(r *routev1.Route) error {
 	return nil
 }
 
-func (c *Client) NamespaceToMonitor() ([]string, error) {
+func (c *Client) NamespacesToMonitor() ([]string, error) {
 	namespaces, err := c.kclient.CoreV1().Namespaces().List(metav1.ListOptions{
 		LabelSelector: c.namespaceSelector,
 	})
