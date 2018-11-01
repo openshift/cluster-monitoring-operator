@@ -51,16 +51,17 @@ const (
 )
 
 type Client struct {
-	namespace      string
-	appVersionName string
-	kclient        kubernetes.Interface
-	ossclient      openshiftsecurityclientset.Interface
-	osrclient      openshiftrouteclientset.Interface
-	mclient        monitoring.Interface
-	eclient        apiextensionsclient.Interface
+	namespace         string
+	namespaceSelector string
+	appVersionName    string
+	kclient           kubernetes.Interface
+	ossclient         openshiftsecurityclientset.Interface
+	osrclient         openshiftrouteclientset.Interface
+	mclient           monitoring.Interface
+	eclient           apiextensionsclient.Interface
 }
 
-func New(cfg *rest.Config, namespace string, appVersionName string) (*Client, error) {
+func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersionName string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(
 		&monv1.DefaultCrdKinds,
 		monv1.Group,
@@ -174,6 +175,22 @@ func (c *Client) CreateRouteIfNotExists(r *routev1.Route) error {
 		return errors.Wrap(err, "creating Route object failed")
 	}
 	return nil
+}
+
+func (c *Client) NamespacesToMonitor() ([]string, error) {
+	namespaces, err := c.kclient.CoreV1().Namespaces().List(metav1.ListOptions{
+		LabelSelector: c.namespaceSelector,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing namespaces failed")
+	}
+
+	namespaceNames := make([]string, len(namespaces.Items))
+	for i, namespace := range namespaces.Items {
+		namespaceNames[i] = namespace.Name
+	}
+
+	return namespaceNames, nil
 }
 
 func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {

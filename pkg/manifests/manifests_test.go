@@ -183,7 +183,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusOperatorDeployment()
+	_, err = f.PrometheusOperatorDeployment([]string{"default", "openshift-monitoring"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -448,7 +448,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 
 	f := NewFactory("openshift-monitoring", c)
-	d, err := f.PrometheusOperatorDeployment()
+	d, err := f.PrometheusOperatorDeployment([]string{"default", "openshift-monitoring"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -467,12 +467,16 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 
 	configReloaderFound := false
 	prometheusReloaderFound := false
+	namespacesFound := false
 	for i := range d.Spec.Template.Spec.Containers[0].Args {
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"quay.io/test/prometheus-config-reloader") {
 			prometheusReloaderFound = true
 		}
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], ConfigReloaderImageFlag+"quay.io/test/configmap-reload") {
 			configReloaderFound = true
+		}
+		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorNamespaceFlag+"default,openshift-monitoring") {
+			namespacesFound = true
 		}
 	}
 
@@ -482,6 +486,10 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 
 	if !prometheusReloaderFound {
 		t.Fatal("Configuring the Prometheus Reloader base image failed")
+	}
+
+	if !namespacesFound {
+		t.Fatal("Configuring the namespaces to watch failed")
 	}
 }
 
@@ -698,9 +706,9 @@ kubeRbacProxy:
 
 func TestPrometheusEtcdRulesFiltered(t *testing.T) {
 	enabled := false
-	cfg := NewDefaultConfig()
-	cfg.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", cfg)
+	c := NewDefaultConfig()
+	c.EtcdConfig.Enabled = &enabled
+	f := NewFactory("openshift-monitoring", c)
 
 	r, err := f.PrometheusK8sRules()
 	if err != nil {
@@ -740,9 +748,9 @@ func TestPrometheusEtcdRules(t *testing.T) {
 
 func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
 	enabled := false
-	cfg := NewDefaultConfig()
-	cfg.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", cfg)
+	c := NewDefaultConfig()
+	c.EtcdConfig.Enabled = &enabled
+	f := NewFactory("openshift-monitoring", c)
 
 	cms, err := f.GrafanaDashboardDefinitions()
 	if err != nil {

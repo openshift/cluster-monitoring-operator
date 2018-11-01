@@ -300,8 +300,8 @@ local namespacesRole = policyRule.new() +
             'kube-rbac-proxy',
           ],
           configMaps: ['prometheus-serving-certs-ca-bundle'],
-          serviceMonitorSelector: selector.withMatchExpressions({ key: 'k8s-app', operator: 'Exists' }),
-          serviceMonitorNamespaceSelector: selector.withMatchExpressions({ key: 'openshift.io/cluster-monitoring', operator: 'Exists' }),
+          serviceMonitorSelector: {},
+          serviceMonitorNamespaceSelector: {},
           listenLocal: true,
           containers: [
             {

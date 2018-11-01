@@ -73,7 +73,12 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Operator Service failed")
 	}
 
-	d, err := t.factory.PrometheusOperatorDeployment()
+	namespaces, err := t.client.NamespacesToMonitor()
+	if err != nil {
+		return errors.Wrap(err, "listing namespaces to monitor failed")
+	}
+
+	d, err := t.factory.PrometheusOperatorDeployment(namespaces)
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Operator Deployment failed")
 	}
