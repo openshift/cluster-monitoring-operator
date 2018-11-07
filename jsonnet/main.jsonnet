@@ -27,7 +27,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  // Because we build OpenShift images separately to upstream,
                  // we have to ensure these versions exist before upgrading.
                  openshiftOauthProxy: 'v1.1.0',
-                 prometheus: 'v2.4.2',
+                 prometheus: 'v2.5.0',
                  alertmanager: 'v0.15.2',
                  nodeExporter: 'v0.16.0',
                  promLabelProxy: 'v0.1.0',

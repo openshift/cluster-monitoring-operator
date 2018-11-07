@@ -8,26 +8,29 @@ local clusterRole = k.rbac.v1.clusterRole;
 local policyRule = clusterRole.rulesType;
 local selector = k.apps.v1beta2.deployment.mixin.spec.selectorType;
 
-local authenticationRole = policyRule.new() +
-                           policyRule.withApiGroups(['authentication.k8s.io']) +
-                           policyRule.withResources([
-                             'tokenreviews',
-                           ]) +
-                           policyRule.withVerbs(['create']);
+local authenticationRole =
+  policyRule.new() +
+  policyRule.withApiGroups(['authentication.k8s.io']) +
+  policyRule.withResources([
+    'tokenreviews',
+  ]) +
+  policyRule.withVerbs(['create']);
 
-local authorizationRole = policyRule.new() +
-                          policyRule.withApiGroups(['authorization.k8s.io']) +
-                          policyRule.withResources([
-                            'subjectaccessreviews',
-                          ]) +
-                          policyRule.withVerbs(['create']);
+local authorizationRole =
+  policyRule.new() +
+  policyRule.withApiGroups(['authorization.k8s.io']) +
+  policyRule.withResources([
+    'subjectaccessreviews',
+  ]) +
+  policyRule.withVerbs(['create']);
 
-local namespacesRole = policyRule.new() +
-                       policyRule.withApiGroups(['']) +
-                       policyRule.withResources([
-                         'namespaces',
-                       ]) +
-                       policyRule.withVerbs(['get']);
+local namespacesRole =
+  policyRule.new() +
+  policyRule.withApiGroups(['']) +
+  policyRule.withResources([
+    'namespaces',
+  ]) +
+  policyRule.withVerbs(['get']);
 
 {
   prometheus+:: {
