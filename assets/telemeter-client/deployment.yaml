@@ -20,14 +20,20 @@ spec:
         - /usr/bin/telemeter-client
         - --id=$(ID)
         - --from=https://prometheus-k8s.openshift-monitoring.svc:9091
-        - --from-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+        - --from-ca-file=/etc/serving-certs-ca-bundle/service-ca.crt
         - --from-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
         - --to=$(TO)
         - --to-token-file=/etc/telemeter/token
         - --listen=localhost:8080
         - --match-file=/etc/telemeter/match-rules
         - --anonymize-salt-file=/etc/telemeter/salt
+        - --anonymize-labels=$(ANONYMIZE_LABELS)
         env:
+        - name: ANONYMIZE_LABELS
+          valueFrom:
+            secretKeyRef:
+              key: anonymizeLabels
+              name: telemeter-client
         - name: ID
           valueFrom:
             secretKeyRef:
@@ -44,8 +50,20 @@ spec:
         - containerPort: 8080
           name: http
         volumeMounts:
+        - mountPath: /etc/serving-certs-ca-bundle
+          name: serving-certs-ca-bundle
+          readOnly: false
         - mountPath: /etc/telemeter
           name: secret-telemeter-client
+          readOnly: false
+      - args:
+        - --webhook-url=http://localhost:9000/-/reload
+        - --volume-dir=/etc/serving-certs-ca-bundle
+        image: quay.io/openshift/origin-configmap-reload:v3.11
+        name: reload
+        volumeMounts:
+        - mountPath: /etc/serving-certs-ca-bundle
+          name: serving-certs-ca-bundle
           readOnly: false
       - args:
         - --secure-listen-address=:8443
@@ -70,6 +88,11 @@ spec:
           readOnly: false
       serviceAccountName: telemeter-client
       volumes:
+      - configMap:
+          items:
+          - service-ca.crt
+          name: serving-certs-ca-bundle
+        name: serving-certs-ca-bundle
       - name: secret-telemeter-client
         secret:
           secretName: telemeter-client
