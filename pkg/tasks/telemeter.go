@@ -43,6 +43,16 @@ func (t *TelemeterClientTask) Run() error {
 }
 
 func (t *TelemeterClientTask) create() error {
+	cacm, err := t.factory.TelemeterClientServingCertsCABundle()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter Client serving certs CA Bundle ConfigMap failed")
+	}
+
+	err = t.client.CreateIfNotExistConfigMap(cacm)
+	if err != nil {
+		return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
+	}
+
 	sm, err := t.factory.TelemeterClientServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client ServiceMonitor failed")
@@ -189,5 +199,15 @@ func (t *TelemeterClientTask) destroy() error {
 	}
 
 	err = t.client.DeleteServiceMonitor(sm)
-	return errors.Wrap(err, "deleting Telemeter client ServiceMonitor failed")
+	if err != nil {
+		return errors.Wrap(err, "deleting Telemeter client ServiceMonitor failed")
+	}
+
+	cacm, err := t.factory.TelemeterClientServingCertsCABundle()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter Client serving certs CA Bundle ConfigMap failed")
+	}
+
+	err = t.client.DeleteConfigMap(cacm)
+	return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
 }

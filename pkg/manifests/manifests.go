@@ -115,6 +115,7 @@ var (
 	TelemeterClientService                = "assets/telemeter-client/service.yaml"
 	TelemeterClientServiceAccount         = "assets/telemeter-client/service-account.yaml"
 	TelemeterClientServiceMonitor         = "assets/telemeter-client/service-monitor.yaml"
+	TelemeterClientServingCertsCABundle   = "assets/telemeter-client/serving-certs-c-a-bundle.yaml"
 )
 
 var (
@@ -1413,6 +1414,18 @@ func (f *Factory) NewClusterRoleBinding(manifest io.Reader) (*rbacv1beta1.Cluste
 
 func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1beta1.ClusterRole, error) {
 	return NewClusterRole(manifest)
+}
+
+// TelemeterClientServingCertsCABundle generates a new servinc certs CA bundle ConfigMap for TelemeterClient.
+func (f *Factory) TelemeterClientServingCertsCABundle() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(PrometheusK8sServingCertsCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+
+	return c, nil
 }
 
 // TelemeterClientClusterRole generates a new ClusterRole for Telemeter client.
