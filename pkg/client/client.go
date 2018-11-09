@@ -238,6 +238,15 @@ func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	return errors.Wrap(err, "updating Alertmanager object failed")
 }
 
+func (c *Client) DeleteConfigMap(cm *v1.ConfigMap) error {
+	err := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace()).Delete(cm.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
 func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 	p := metav1.DeletePropagationForeground
 	err := c.kclient.AppsV1beta2().Deployments(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{PropagationPolicy: &p})

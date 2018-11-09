@@ -2026,7 +2026,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "sum(max(node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"} - node_filesystem_avail{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"}) by (device,pod,namespace)) by (pod,namespace)\n/ scalar(sum(max(node_filesystem_size{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"}) by (device,pod,namespace)))\n* on (namespace, pod) group_left (node) node_namespace_pod:kube_pod_info:\n",
+                                  "expr": "sum(max(node_filesystem_size_bytes{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"} - node_filesystem_avail_bytes{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"}) by (device,pod,namespace)) by (pod,namespace)\n/ scalar(sum(max(node_filesystem_size_bytes{fstype=\u007e\"ext[234]|btrfs|xfs|zfs\"}) by (device,pod,namespace)))\n* on (namespace, pod) group_left (node) node_namespace_pod:kube_pod_info:\n",
                                   "format": "time_series",
                                   "intervalFactor": 2,
                                   "legendFormat": "{{node}}",
@@ -3150,7 +3150,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "1 - avg(rate(node_cpu{mode=\"idle\"}[1m]))",
+                                  "expr": "1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[1m]))",
                                   "format": "time_series",
                                   "instant": true,
                                   "intervalFactor": 2,
@@ -3402,7 +3402,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "1 - sum(:node_memory_MemFreeCachedBuffers:sum) / sum(:node_memory_MemTotal:sum)",
+                                  "expr": "1 - sum(:node_memory_MemFreeCachedBuffers_bytes:sum) / sum(:node_memory_MemTotal_bytes:sum)",
                                   "format": "time_series",
                                   "instant": true,
                                   "intervalFactor": 2,
@@ -3486,7 +3486,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "sum(kube_pod_container_resource_requests_memory_bytes) / sum(:node_memory_MemTotal:sum)",
+                                  "expr": "sum(kube_pod_container_resource_requests_memory_bytes) / sum(:node_memory_MemTotal_bytes:sum)",
                                   "format": "time_series",
                                   "instant": true,
                                   "intervalFactor": 2,
@@ -3570,7 +3570,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "sum(kube_pod_container_resource_limits_memory_bytes) / sum(:node_memory_MemTotal:sum)",
+                                  "expr": "sum(kube_pod_container_resource_limits_memory_bytes) / sum(:node_memory_MemTotal_bytes:sum)",
                                   "format": "time_series",
                                   "instant": true,
                                   "intervalFactor": 2,
