@@ -89,9 +89,7 @@ spec:
       serviceAccountName: telemeter-client
       volumes:
       - configMap:
-          items:
-          - service-ca.crt
-          name: serving-certs-ca-bundle
+          name: telemeter-client-serving-certs-ca-bundle
         name: serving-certs-ca-bundle
       - name: secret-telemeter-client
         secret:

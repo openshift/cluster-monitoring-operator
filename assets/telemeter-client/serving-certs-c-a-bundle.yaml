@@ -5,5 +5,5 @@ kind: ConfigMap
 metadata:
   annotations:
     service.alpha.openshift.io/inject-cabundle: "true"
-  name: telemeter-serving-certs-ca-bundle
+  name: telemeter-client-serving-certs-ca-bundle
   namespace: openshift-monitoring

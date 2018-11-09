@@ -859,6 +859,15 @@ spec:
       for: 5m
       labels:
         severity: critical
+    - alert: KubePersistentVolumeErrors
+      annotations:
+        message: The persistent volume {{ $labels.persistentvolume }} has status {{
+          $labels.phase }}.
+      expr: |
+        kube_persistentvolume_status_phase{phase=~"Failed|Pending",namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
+      for: 5m
+      labels:
+        severity: critical
   - name: kubernetes-system
     rules:
     - alert: KubeNodeNotReady
