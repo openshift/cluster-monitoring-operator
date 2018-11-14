@@ -1418,7 +1418,7 @@ func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1beta1.ClusterRole, 
 
 // TelemeterClientServingCertsCABundle generates a new servinc certs CA bundle ConfigMap for TelemeterClient.
 func (f *Factory) TelemeterClientServingCertsCABundle() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(PrometheusK8sServingCertsCABundle))
+	c, err := f.NewConfigMap(MustAssetReader(TelemeterClientServingCertsCABundle))
 	if err != nil {
 		return nil, err
 	}
