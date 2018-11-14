@@ -13,21 +13,16 @@ mkdir tmp
 
 jsonnet -J jsonnet/vendor jsonnet/main.jsonnet > tmp/main.json
 
-mapfile -t files < <(jq -r 'keys[]' tmp/main.json)
-
-for file in "${files[@]}"
+jq -r 'keys[]' tmp/main.json | while read -r file
 do
-	dir=$(dirname "${file}")
-	path="${prefix}/${dir}"
-	mkdir -p ${path}
+    dir=$(dirname "${file}")
+    path="${prefix}/${dir}"
+    mkdir -p "${path}"
     # convert file name from camelCase to snake-case
     fullfile=$(echo "${file}" | awk '{
-
-  while ( match($0, /(.*)([a-z0-9])([A-Z])(.*)/, cap))
-      $0 = cap[1] cap[2] "-" tolower(cap[3]) cap[4];
-
-    print
-
+while ( match($0, /(.*)([a-z0-9])([A-Z])(.*)/, cap))
+    $0 = cap[1] cap[2] "-" tolower(cap[3]) cap[4];
+print
 }')
     jq -r ".[\"${file}\"]" tmp/main.json | gojsontoyaml > "${prefix}/${fullfile}.yaml"
 done
