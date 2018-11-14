@@ -106,10 +106,10 @@ type EtcdConfig struct {
 }
 
 // IsEnabled returns the underlying value of the `Enabled` boolean pointer.
-// It defaults to true if the pointer is nil.
+// It defaults to false if the pointer is nil.
 func (e *EtcdConfig) IsEnabled() bool {
 	if e.Enabled == nil {
-		return true
+		return false
 	}
 	return *e.Enabled
 }

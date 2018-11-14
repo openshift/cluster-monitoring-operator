@@ -136,3 +136,20 @@ func TestTelemeterClientConfig(t *testing.T) {
 		}
 	}
 }
+
+func TestEtcdDefaultsToDisabled(t *testing.T) {
+	c, err := NewConfigFromString("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.EtcdConfig.IsEnabled() {
+		t.Error("an empty configuration should have etcd disabled")
+	}
+	c, err = NewConfigFromString(`{"etcd":{}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.EtcdConfig.IsEnabled() {
+		t.Error("an empty etcd configuration should have etcd disabled")
+	}
+}

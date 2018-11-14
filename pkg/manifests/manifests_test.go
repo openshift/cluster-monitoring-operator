@@ -723,7 +723,7 @@ func TestPrometheusEtcdRulesFiltered(t *testing.T) {
 }
 
 func TestPrometheusEtcdRules(t *testing.T) {
-	c, err := NewConfigFromString(`etcd: {}`)
+	c, err := NewConfigFromString(`etcd: {enabled: true}`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -765,7 +765,7 @@ func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
 }
 
 func TestEtcdGrafanaDashboard(t *testing.T) {
-	c, err := NewConfigFromString(`etcd: {}`)
+	c, err := NewConfigFromString(`etcd: {enabled: true}`)
 	if err != nil {
 		t.Fatal(err)
 	}
