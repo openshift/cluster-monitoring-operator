@@ -178,9 +178,8 @@ local namespacesRole =
               },
             },
             resourceAttributes: {
-              apiVersion: 'v1',
-              resource: 'node',
-              subresource: 'metrics',
+              apiVersion: 'metrics.k8s.io/v1beta1',
+              resource: 'pods',
               namespace: '{{ .Value }}',
             },
           },
