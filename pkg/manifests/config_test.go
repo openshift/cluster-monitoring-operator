@@ -37,3 +37,102 @@ func TestEmptyConfigIsValid(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTelemeterClientConfig(t *testing.T) {
+	truev, falsev := true, false
+
+	tcs := []struct {
+		enabled bool
+		cfg     *TelemeterClientConfig
+	}{
+		{
+			cfg:     nil,
+			enabled: false,
+		},
+		{
+			cfg:     &TelemeterClientConfig{},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				Enabled: &truev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				Enabled: &falsev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				ClusterID: "test",
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				ClusterID: "test",
+				Enabled:   &falsev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				ClusterID: "test",
+				Enabled:   &truev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				Token: "test",
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				Token:   "test",
+				Enabled: &falsev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				Token:   "test",
+				Enabled: &truev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				ClusterID: "test",
+				Token:     "test",
+			},
+			enabled: true, // opt-in by default
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				ClusterID: "test",
+				Token:     "test",
+				Enabled:   &truev,
+			},
+			enabled: true,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				ClusterID: "test",
+				Token:     "test",
+				Enabled:   &falsev, // explicitely opt-out
+			},
+			enabled: false,
+		},
+	}
+
+	for i, tc := range tcs {
+		if got := tc.cfg.IsEnabled(); got != tc.enabled {
+			t.Errorf("testcase %d: expected enabled %t, got %t", i, tc.enabled, got)
+		}
+	}
+}
