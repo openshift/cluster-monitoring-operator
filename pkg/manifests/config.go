@@ -123,6 +123,20 @@ type TelemeterClientConfig struct {
 	Token              string `json:"token"`
 }
 
+func (cfg *TelemeterClientConfig) IsEnabled() bool {
+	if cfg == nil {
+		return false
+	}
+
+	if (cfg.Enabled != nil && *cfg.Enabled == false) ||
+		cfg.ClusterID == "" ||
+		cfg.Token == "" {
+		return false
+	}
+
+	return true
+}
+
 func NewConfig(content io.Reader) (*Config, error) {
 	c := Config{}
 

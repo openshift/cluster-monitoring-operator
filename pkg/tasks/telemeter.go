@@ -35,11 +35,11 @@ func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory, c
 }
 
 func (t *TelemeterClientTask) Run() error {
-	// Default to enabled.
-	if t.config.Enabled != nil && !*t.config.Enabled {
-		return t.destroy()
+	if t.config.IsEnabled() {
+		return t.create()
 	}
-	return t.create()
+
+	return t.destroy()
 }
 
 func (t *TelemeterClientTask) create() error {
