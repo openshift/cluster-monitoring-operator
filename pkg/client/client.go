@@ -177,6 +177,15 @@ func (c *Client) CreateRouteIfNotExists(r *routev1.Route) error {
 	return nil
 }
 
+func (c *Client) GetRouteHost(r *routev1.Route) (string, error) {
+	rclient := c.osrclient.RouteV1().Routes(r.GetNamespace())
+	newRoute, err := rclient.Get(r.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "getting Route object failed")
+	}
+	return newRoute.Spec.Host, nil
+}
+
 func (c *Client) NamespacesToMonitor() ([]string, error) {
 	namespaces, err := c.kclient.CoreV1().Namespaces().List(metav1.ListOptions{
 		LabelSelector: c.namespaceSelector,

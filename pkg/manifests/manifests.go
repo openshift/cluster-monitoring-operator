@@ -32,6 +32,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -671,6 +672,19 @@ func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 	r.Namespace = f.namespace
 
 	return r, nil
+}
+
+func (f *Factory) SharingConfig(promHost, amHost string) *v1.ConfigMap {
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sharing-config",
+			Namespace: f.namespace,
+		},
+		Data: map[string]string{
+			"prometheusHost":   promHost,
+			"alertmanagerHost": amHost,
+		},
+	}
 }
 
 func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
