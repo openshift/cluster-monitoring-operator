@@ -15,7 +15,7 @@
             "source": {
                 "git": {
                     "remote": "https://github.com/openshift/telemeter",
-                    "subdir": "jsonnet/telemeter/client"
+                    "subdir": "jsonnet/telemeter"
                 }
             },
             "version": "master"

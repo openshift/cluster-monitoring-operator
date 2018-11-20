@@ -8,7 +8,7 @@
                     "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
                 }
             },
-            "version": "518b95c737df11a0fc00ef4a315d395ba2084d0a"
+            "version": "31f621c4b76a55e011a50af808db59f7403f2feb"
         },
         {
             "name": "ksonnet",
@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "f7ca48cca5d9cadc9a2203b8c0b3bb3eb85f3294"
+            "version": "c0b31ea63564966021f9e6010090acded475b192"
         },
         {
             "name": "grafonnet",
@@ -38,7 +38,7 @@
                     "subdir": "grafonnet"
                 }
             },
-            "version": "d407225c5a2e087eb68843528aab2be0507c73b8"
+            "version": "eea8b5ba6b8883cf2df5a17c39a42c4b57c0d63e"
         },
         {
             "name": "grafana-builder",
@@ -48,7 +48,7 @@
                     "subdir": "grafana-builder"
                 }
             },
-            "version": "90fbdbf08cf0d4bdc78ab52151041da36a7b0abc"
+            "version": "5b6050e8e883f24b508a18d4b02d1637ec4a540a"
         },
         {
             "name": "grafana",
@@ -58,7 +58,7 @@
                     "subdir": "grafana"
                 }
             },
-            "version": "455e08134e1a135f41e1032576487921a759cf51"
+            "version": "3df5e36ecbf348a13e155e12c495ac9fd05030b6"
         },
         {
             "name": "prometheus-operator",
@@ -78,17 +78,17 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "83304cfc808cf6303d48c45a696f169fae422e68"
+            "version": "b4d200174e2727d07b6935c64c2c6553510f51fb"
         },
         {
             "name": "telemeter-client",
             "source": {
                 "git": {
                     "remote": "https://github.com/openshift/telemeter",
-                    "subdir": "jsonnet/telemeter/client"
+                    "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "22fd41cafab4120580e97384d670aadfde393ccf"
+            "version": "ac67628fab155d27d684f83fcb23df3c9870aa8c"
         }
     ]
 }

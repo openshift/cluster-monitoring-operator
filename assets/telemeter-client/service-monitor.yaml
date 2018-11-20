@@ -12,7 +12,7 @@ spec:
     port: https
     scheme: https
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      caFile: /etc/prometheus/configmaps/telemeter-client-serving-certs-ca-bundle/service-ca.crt
       serverName: server-name-replaced-at-runtime
   jobLabel: k8s-app
   selector:

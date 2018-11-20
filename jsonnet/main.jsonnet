@@ -12,7 +12,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                secretEtcdCerts:: super.secretEtcdCerts,
              },
            } +
-           (import 'telemeter-client/telemeter-client.libsonnet') +
+           (import 'telemeter-client/client.libsonnet') +
            {
              _config+:: {
                imageRepos+:: {
