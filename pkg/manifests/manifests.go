@@ -34,7 +34,7 @@ import (
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
 var (
@@ -918,14 +918,7 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 }
 
 func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1beta1.APIService, error) {
-	s, err := f.NewAPIService(MustAssetReader(PrometheusAdapterAPIService))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Spec.Service.Namespace = f.namespace
-
-	return s, nil
+	return f.NewAPIService(MustAssetReader(PrometheusAdapterAPIService))
 }
 
 func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
