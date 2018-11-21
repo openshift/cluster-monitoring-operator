@@ -58,3 +58,7 @@
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   version = "v2.2.1"
+
+[[constraint]]
+  name = "k8s.io/kube-aggregator"
+  version = "kubernetes-1.12.0"
