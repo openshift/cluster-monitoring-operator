@@ -168,6 +168,56 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.PrometheusAdapterClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterClusterRoleServerResources()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterClusterRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterClusterRoleBindingDelegator()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterRoleBindingAuthReader()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterServiceAccount()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterConfigMap()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterAPIService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.PrometheusOperatorClusterRoleBinding()
 	if err != nil {
 		t.Fatal(err)
