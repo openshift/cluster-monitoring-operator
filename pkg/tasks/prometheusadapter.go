@@ -118,7 +118,18 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "reconciling PrometheusAdapter Service failed")
 		}
 	}
-	//PrometheusAdapterAPIService
+	{
+		api, err := t.factory.PrometheusAdapterAPIService()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter APIService failed")
+		}
+
+		err = t.client.CreateOrUpdateAPIService(api)
+		if err != nil {
+			return errors.Wrap(err, "reconciling PrometheusAdapter APIService failed")
+		}
+
+	}
 
 	return nil
 }

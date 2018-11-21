@@ -44,6 +44,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 const (
@@ -59,6 +61,7 @@ type Client struct {
 	osrclient         openshiftrouteclientset.Interface
 	mclient           monitoring.Interface
 	eclient           apiextensionsclient.Interface
+	aggclient         aggregatorclient.Interface
 }
 
 func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersionName string) (*Client, error) {
@@ -90,6 +93,11 @@ func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersio
 		return nil, errors.Wrap(err, "creating openshift route client")
 	}
 
+	aggclient, err := aggregatorclient.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating kubernetes aggregator")
+	}
+
 	return &Client{
 		namespace:      namespace,
 		appVersionName: appVersionName,
@@ -98,6 +106,7 @@ func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersio
 		osrclient:      osrclient,
 		mclient:        mclient,
 		eclient:        eclient,
+		aggclient:      aggclient,
 	}, nil
 }
 
@@ -725,7 +734,23 @@ func (c *Client) CreateOrUpdateIngress(ing *v1betaextensions.Ingress) error {
 	}
 
 	_, err = ic.Update(ing)
-	return errors.Wrap(err, "creating Ingress object failed")
+	return errors.Wrap(err, "updating Ingress object failed")
+}
+
+func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.APIService) error {
+	apsc := c.aggclient.ApiregistrationV1beta1().APIServices()
+	_, err := apsc.Get(apiService.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err = apsc.Create(apiService)
+		return errors.Wrap(err, "creating APIService object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving APIService object failed")
+	}
+
+	_, err = apsc.Update(apiService)
+	return errors.Wrap(err, "updating APIService object failed")
+
 }
 
 func (c *Client) WaitForCRDReady(crd *extensionsobj.CustomResourceDefinition) error {
