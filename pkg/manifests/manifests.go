@@ -34,6 +34,7 @@ import (
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration"
 )
 
 var (
@@ -84,6 +85,17 @@ var (
 	PrometheusK8sHtpasswd                             = "assets/prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sEtcdServiceMonitor                   = "assets/prometheus-k8s/service-monitor-etcd.yaml"
 	PrometheusK8sServingCertsCABundle                 = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
+
+	PrometheusAdapterAPIService                  = "assets/prometheus-adapter/api-service.yaml"
+	PrometheusAdapterClusterRole                 = "assets/prometheus-adapter/cluster-role.yaml"
+	PrometheusAdapterClusterRoleBinding          = "assets/prometheus-adapter/cluster-role-binding.yaml"
+	PrometheusAdapterClusterRoleBindingDelegator = "assets/prometheus-adapter/cluster-role-binding-delegator.yaml"
+	PrometheusAdapterClusterRoleServerResources  = "assets/prometheus-adapter/cluster-role-server-resources.yaml"
+	PrometheusAdapterConfigMap                   = "assets/prometheus-adapter/config-map.yaml"
+	PrometheusAdapterDeployment                  = "assets/prometheus-adapter/deployment.yaml"
+	PrometheusAdapterRoleBindingAuthReader       = "assets/prometheus-adapter/role-binding-auth-reader.yaml"
+	PrometheusAdapterService                     = "assets/prometheus-adapter/service.yaml"
+	PrometheusAdapterServiceAccount              = "assets/prometheus-adapter/service-account.yaml"
 
 	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole        = "assets/prometheus-operator/cluster-role.yaml"
@@ -820,6 +832,102 @@ func (f *Factory) PrometheusK8sServiceMonitorOpenShiftApiserver() (*monv1.Servic
 	return s, nil
 }
 
+func (f *Factory) PrometheusAdapterClusterRole() (*rbacv1beta1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(PrometheusAdapterClusterRole))
+}
+
+func (f *Factory) PrometheusAdapterClusterRoleServerResources() (*rbacv1beta1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(PrometheusAdapterClusterRoleServerResources))
+}
+
+func (f *Factory) PrometheusAdapterClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusAdapterClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespace
+
+	return crb, nil
+}
+
+func (f *Factory) PrometheusAdapterClusterRoleBindingDelegator() (*rbacv1beta1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusAdapterClusterRoleBindingDelegator))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespace
+
+	return crb, nil
+}
+
+func (f *Factory) PrometheusAdapterRoleBindingAuthReader() (*rbacv1beta1.RoleBinding, error) {
+	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusAdapterRoleBindingAuthReader))
+	if err != nil {
+		return nil, err
+	}
+
+	rb.Subjects[0].Namespace = f.namespace
+
+	return rb, nil
+}
+
+func (f *Factory) PrometheusAdapterServiceAccount() (*v1.ServiceAccount, error) {
+	sa, err := f.NewServiceAccount(MustAssetReader(PrometheusAdapterServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	sa.Namespace = f.namespace
+
+	return sa, nil
+}
+
+func (f *Factory) PrometheusAdapterConfigMap() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(PrometheusAdapterConfigMap))
+	if err != nil {
+		return nil, err
+	}
+
+	cm.Namespace = f.namespace
+
+	return cm, nil
+}
+
+func (f *Factory) PrometheusAdapterDeployment() (*appsv1.Deployment, error) {
+	dep, err := f.NewDeployment(MustAssetReader(PrometheusAdapterDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	dep.Namespace = f.namespace
+
+	return dep, nil
+}
+
+func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(PrometheusAdapterService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1beta1.APIService, error) {
+	s, err := f.NewAPIService(MustAssetReader(PrometheusAdapterAPIService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Spec.Service.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
 	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusOperatorServiceMonitor))
 	if err != nil {
@@ -1443,6 +1551,10 @@ func (f *Factory) NewIngress(manifest io.Reader) (*v1beta1.Ingress, error) {
 	return i, nil
 }
 
+func (f *Factory) NewAPIService(manifest io.Reader) (*apiregistrationv1beta1.APIService, error) {
+	return NewAPIService(manifest)
+}
+
 func (f *Factory) NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityContextConstraints, error) {
 	return NewSecurityContextConstraints(manifest)
 }
@@ -1782,6 +1894,16 @@ func NewIngress(manifest io.Reader) (*v1beta1.Ingress, error) {
 	}
 
 	return &i, nil
+}
+
+func NewAPIService(manifest io.Reader) (*apiregistrationv1beta1.APIService, error) {
+	s := apiregistrationv1beta1.APIService{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
 func NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityContextConstraints, error) {
