@@ -11,16 +11,37 @@ local tlsVolumeName = 'kube-state-metrics-tls';
 
 {
   prometheusAdapter+:: {
-    service+:
-      service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': 'kube-state-metrics-tls',
-      }),
-
     deployment+:
       {
         spec+: {
           template+: {
             spec+: {
+              local servingCertsCABundle = 'serving-certs-ca-bundle',
+              local servingCertsCABundleFileName = 'service-ca.crt',
+              local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundle,
+
+              containers:
+                std.map(
+                  function(c)
+                    if c.name == 'prometheus-adapter' then
+                      c
+                      {
+                        args+: [
+                          '--prometheus-ca-file=%s/%s' % [servingCertsCABundleMountPath, servingCertsCABundleFileName],
+                        ],
+                        volumeMouns+: [
+                          containerVolumeMount.new(servingCertsCABundle, servingCertsCABundleMountPath),
+                        ],
+                      }
+                    else
+                      c,
+                  super.containers,
+                ),
+
+              volumes+: [
+                volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('prometheus-serving-certs-ca-bundle'),
+              ],
+
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
             },
