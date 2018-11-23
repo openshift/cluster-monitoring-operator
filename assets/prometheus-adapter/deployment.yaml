@@ -19,12 +19,17 @@ spec:
         - --config=/etc/adapter/config.yaml
         - --logtostderr=true
         - --metrics-relist-interval=1m
-        - --prometheus-url=http://prometheus-k8s.openshift-monitoring.svc:9090/
+        - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
         - --secure-port=6443
-        image: quay.io/coreos/k8s-prometheus-adapter-amd64:v0.3.0
+        - --prometheus-ca-file=/etc/serving-certs-ca-bundle/service-ca.crt
+        image: quay.io/metalmatze/k8s-prometheus-adapter-amd64:bdd028393e02
         name: prometheus-adapter
         ports:
         - containerPort: 6443
+        volumeMouns:
+        - mountPath: /etc/serving-certs-ca-bundle
+          name: serving-certs-ca-bundle
+          readOnly: false
         volumeMounts:
         - mountPath: /tmp
           name: tmpfs
@@ -35,6 +40,8 @@ spec:
         - mountPath: /etc/adapter
           name: config
           readOnly: false
+      priorityClassName: system-cluster-critical
+      securityContext: {}
       serviceAccountName: prometheus-adapter
       volumes:
       - emptyDir: {}
@@ -44,3 +51,6 @@ spec:
       - configMap:
           name: adapter-config
         name: config
+      - configMap:
+          name: prometheus-serving-certs-ca-bundle
+        name: serving-certs-ca-bundle
