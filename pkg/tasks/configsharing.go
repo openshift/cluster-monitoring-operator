@@ -53,7 +53,17 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "failed to retrieve Alertmanager host")
 	}
 
-	cm := t.factory.SharingConfig(promHost, amHost)
+	grafanaRoute, err := t.factory.GrafanaRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Route failed")
+	}
+
+	grafanaHost, err := t.client.GetRouteHost(grafanaRoute)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve Grafana host")
+	}
+
+	cm := t.factory.SharingConfig(promHost, amHost, grafanaHost)
 	err = t.client.CreateOrUpdateConfigMap(cm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Sharing Config ConfigMap failed")
