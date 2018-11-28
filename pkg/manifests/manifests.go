@@ -681,9 +681,9 @@ func (f *Factory) SharingConfig(promHost, amHost, grafanaHost *url.URL) *v1.Conf
 			Namespace: f.namespace,
 		},
 		Data: map[string]string{
-			"grafanaUrl":      grafanaHost.String(),
-			"prometheusUrl":   promHost.String(),
-			"alertmanagerUrl": amHost.String(),
+			"grafanaURL":      grafanaHost.String(),
+			"prometheusURL":   promHost.String(),
+			"alertmanagerURL": amHost.String(),
 		},
 	}
 }
