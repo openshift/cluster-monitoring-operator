@@ -674,16 +674,16 @@ func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 	return r, nil
 }
 
-func (f *Factory) SharingConfig(promHost, amHost, grafanaHost string) *v1.ConfigMap {
+func (f *Factory) SharingConfig(promHost, amHost, grafanaHost *url.URL) *v1.ConfigMap {
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sharing-config",
 			Namespace: f.namespace,
 		},
 		Data: map[string]string{
-			"grafanaHost":      grafanaHost,
-			"prometheusHost":   promHost,
-			"alertmanagerHost": amHost,
+			"grafanaUrl":      grafanaHost.String(),
+			"prometheusUrl":   promHost.String(),
+			"alertmanagerUrl": amHost.String(),
 		},
 	}
 }

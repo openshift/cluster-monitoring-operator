@@ -38,7 +38,7 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus Route failed")
 	}
 
-	promHost, err := t.client.GetRouteHost(promRoute)
+	promURL, err := t.client.GetRouteURL(promRoute)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve Prometheus host")
 	}
@@ -48,7 +48,7 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager Route failed")
 	}
 
-	amHost, err := t.client.GetRouteHost(amRoute)
+	amURL, err := t.client.GetRouteURL(amRoute)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve Alertmanager host")
 	}
@@ -58,12 +58,12 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "initializing Grafana Route failed")
 	}
 
-	grafanaHost, err := t.client.GetRouteHost(grafanaRoute)
+	grafanaURL, err := t.client.GetRouteURL(grafanaRoute)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve Grafana host")
 	}
 
-	cm := t.factory.SharingConfig(promHost, amHost, grafanaHost)
+	cm := t.factory.SharingConfig(promURL, amURL, grafanaURL)
 	err = t.client.CreateOrUpdateConfigMap(cm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Sharing Config ConfigMap failed")

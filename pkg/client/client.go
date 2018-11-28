@@ -16,6 +16,7 @@ package client
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
 	"time"
 
@@ -177,13 +178,23 @@ func (c *Client) CreateRouteIfNotExists(r *routev1.Route) error {
 	return nil
 }
 
-func (c *Client) GetRouteHost(r *routev1.Route) (string, error) {
+func (c *Client) GetRouteURL(r *routev1.Route) (*url.URL, error) {
 	rclient := c.osrclient.RouteV1().Routes(r.GetNamespace())
 	newRoute, err := rclient.Get(r.GetName(), metav1.GetOptions{})
 	if err != nil {
-		return "", errors.Wrap(err, "getting Route object failed")
+		return nil, errors.Wrap(err, "getting Route object failed")
 	}
-	return newRoute.Spec.Host, nil
+	u := &url.URL{
+		Scheme: "http",
+		Host:   newRoute.Spec.Host,
+		Path:   newRoute.Spec.Path,
+	}
+
+	if newRoute.Spec.TLS != nil && newRoute.Spec.TLS.Termination != "" {
+		u.Scheme = "https"
+	}
+
+	return u, nil
 }
 
 func (c *Client) NamespacesToMonitor() ([]string, error) {
