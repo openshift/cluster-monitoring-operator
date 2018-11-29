@@ -163,8 +163,11 @@ local authorizationRole = policyRule.new() +
               containers: [
                 super.containers[0] +
                 container.withPorts(containerPort.newNamed('http', 3001)) +
-                container.mixin.readinessProbe.httpGet.withHost('127.0.0.1'),
+                {
+                  readinessProbe:: null,
+                },
                 container.new('grafana-proxy', $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy) +
+                container.mixin.readinessProbe.tcpSocket.withPort('https') +
                 container.withArgs([
                   '-provider=openshift',
                   '-https-address=:3000',
