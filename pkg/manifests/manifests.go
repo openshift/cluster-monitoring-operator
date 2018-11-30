@@ -90,6 +90,7 @@ var (
 	PrometheusAdapterClusterRole                 = "assets/prometheus-adapter/cluster-role.yaml"
 	PrometheusAdapterClusterRoleBinding          = "assets/prometheus-adapter/cluster-role-binding.yaml"
 	PrometheusAdapterClusterRoleBindingDelegator = "assets/prometheus-adapter/cluster-role-binding-delegator.yaml"
+	PrometheusAdapterClusterRoleBindingView      = "assets/prometheus-adapter/cluster-role-binding-view.yaml"
 	PrometheusAdapterClusterRoleServerResources  = "assets/prometheus-adapter/cluster-role-server-resources.yaml"
 	PrometheusAdapterConfigMap                   = "assets/prometheus-adapter/config-map.yaml"
 	PrometheusAdapterDeployment                  = "assets/prometheus-adapter/deployment.yaml"
@@ -853,6 +854,17 @@ func (f *Factory) PrometheusAdapterClusterRoleBinding() (*rbacv1beta1.ClusterRol
 
 func (f *Factory) PrometheusAdapterClusterRoleBindingDelegator() (*rbacv1beta1.ClusterRoleBinding, error) {
 	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusAdapterClusterRoleBindingDelegator))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespace
+
+	return crb, nil
+}
+
+func (f *Factory) PrometheusAdapterClusterRoleBindingView() (*rbacv1beta1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusAdapterClusterRoleBindingView))
 	if err != nil {
 		return nil, err
 	}

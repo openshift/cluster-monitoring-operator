@@ -64,6 +64,17 @@ func (t *PrometheusAdapterTask) Run() error {
 		}
 	}
 	{
+		crb, err := t.factory.PrometheusAdapterClusterRoleBindingView()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRoleBinding for view failed")
+		}
+
+		err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+		if err != nil {
+			return errors.Wrap(err, "reconciling PrometheusAdapter ClusterRoleBinding for view failed")
+		}
+	}
+	{
 		rb, err := t.factory.PrometheusAdapterRoleBindingAuthReader()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter RoleBinding for auth-reader failed")

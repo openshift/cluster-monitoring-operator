@@ -48,5 +48,19 @@ local tlsVolumeName = 'kube-state-metrics-tls';
           },
         },
       },
+
+    clusterRoleBindingView:
+      local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
+
+      clusterRoleBinding.new() +
+      clusterRoleBinding.mixin.metadata.withName('prometheus-adapter-view') +
+      clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
+      clusterRoleBinding.mixin.roleRef.withName('cluster-monitoring-view') +
+      clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
+      clusterRoleBinding.withSubjects([{
+        kind: 'ServiceAccount',
+        name: 'prometheus-adapter',
+        namespace: $._config.namespace,
+      }]),
   },
 }
