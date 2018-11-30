@@ -113,6 +113,11 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "reconciling Telemeter client Service failed")
 	}
 
+	err = t.client.WaitForServingCertSecret(svc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Telemeter client Service serving certificate failed")
+	}
+
 	s, err := t.factory.TelemeterClientSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client Secret failed")

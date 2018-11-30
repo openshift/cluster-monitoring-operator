@@ -367,6 +367,27 @@ func (c *Client) DeleteSecret(s *v1.Secret) error {
 	return err
 }
 
+func (c *Client) WaitForServingCertSecret(svc *v1.Service) error {
+	return wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+		name, ok := svc.GetAnnotations()["service.alpha.openshift.io/serving-cert-secret-name"]
+		if !ok {
+			return false, errors.New("service has no serving cert secret defined")
+		}
+
+		_, err := c.kclient.CoreV1().Secrets(svc.GetNamespace()).Get(name, metav1.GetOptions{})
+
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		if err != nil {
+			return false, errors.Wrap(err, "retrieving Prometheus status failed")
+		}
+
+		return true, nil
+	})
+}
+
 func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 	return wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
 		p, err := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace()).Get(p.GetName(), metav1.GetOptions{})
