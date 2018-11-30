@@ -26,10 +26,6 @@ spec:
         name: prometheus-adapter
         ports:
         - containerPort: 6443
-        volumeMouns:
-        - mountPath: /etc/serving-certs-ca-bundle
-          name: serving-certs-ca-bundle
-          readOnly: false
         volumeMounts:
         - mountPath: /tmp
           name: tmpfs
@@ -39,6 +35,9 @@ spec:
           readOnly: false
         - mountPath: /etc/adapter
           name: config
+          readOnly: false
+        - mountPath: /etc/serving-certs-ca-bundle
+          name: serving-certs-ca-bundle
           readOnly: false
       priorityClassName: system-cluster-critical
       securityContext: {}

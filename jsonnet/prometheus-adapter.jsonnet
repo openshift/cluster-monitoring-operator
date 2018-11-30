@@ -29,7 +29,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                         args+: [
                           '--prometheus-ca-file=%s/%s' % [servingCertsCABundleMountPath, servingCertsCABundleFileName],
                         ],
-                        volumeMouns+: [
+                        volumeMounts+: [
                           containerVolumeMount.new(servingCertsCABundle, servingCertsCABundleMountPath),
                         ],
                       }
