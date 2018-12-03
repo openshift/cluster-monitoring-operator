@@ -269,6 +269,34 @@ local namespacesRole =
         },
       },
 
+    serviceMonitorOpenShiftApiserver:
+      {
+        apiVersion: 'monitoring.coreos.com/v1',
+        kind: 'ServiceMonitor',
+        metadata: {
+          name: 'openshift-apiserver',
+        },
+        spec: {
+          endpoints: [
+            {
+              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+              interval: '30s',
+              port: 'https',
+              scheme: 'https',
+              tlsConfig: {
+                caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                serverName: 'api.openshift-apiserver.svc',
+              },
+            },
+          ],
+          namespaceSelector: {
+            matchNames: ['openshift-apiserver'],
+          },
+          selector: {
+          },
+        },
+      },
+
     serviceMonitorEtcd+:
       {
         metadata+: {

@@ -226,6 +226,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus cluster-version-operator ServiceMonitor failed")
 	}
 
+	smoapi, err := t.factory.PrometheusK8sServiceMonitorOpenShiftApiserver()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus OpenShift apiserver ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smoapi)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus OpenShift apiserver ServiceMonitor failed")
+	}
+
 	sme, err := t.factory.PrometheusK8sEtcdServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus etcd ServiceMonitor failed")

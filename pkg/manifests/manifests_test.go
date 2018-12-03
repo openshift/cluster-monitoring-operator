@@ -168,6 +168,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.PrometheusK8sServiceMonitorOpenShiftApiserver()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.PrometheusK8sServingCertsCABundle()
 	if err != nil {
 		t.Fatal(err)
