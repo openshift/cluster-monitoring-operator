@@ -22,7 +22,7 @@ spec:
         - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
         - --secure-port=6443
         - --prometheus-ca-file=/etc/ssl/certs/service-ca.crt
-        image: quay.io/metalmatze/k8s-prometheus-adapter-amd64:bdd028393e02
+        image: quay.io/metalmatze/k8s-prometheus-adapter-amd64:b1b76b6159eb
         name: prometheus-adapter
         ports:
         - containerPort: 6443
