@@ -21,7 +21,7 @@ spec:
         - --metrics-relist-interval=1m
         - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
         - --secure-port=6443
-        - --prometheus-ca-file=/etc/serving-certs-ca-bundle/service-ca.crt
+        - --prometheus-ca-file=/etc/ssl/certs/service-ca.crt
         image: quay.io/metalmatze/k8s-prometheus-adapter-amd64:bdd028393e02
         name: prometheus-adapter
         ports:
@@ -36,7 +36,7 @@ spec:
         - mountPath: /etc/adapter
           name: config
           readOnly: false
-        - mountPath: /etc/serving-certs-ca-bundle
+        - mountPath: /etc/ssl/certs
           name: serving-certs-ca-bundle
           readOnly: false
       priorityClassName: system-cluster-critical

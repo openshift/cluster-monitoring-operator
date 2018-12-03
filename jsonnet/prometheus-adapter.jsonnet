@@ -17,8 +17,9 @@ local tlsVolumeName = 'kube-state-metrics-tls';
           template+: {
             spec+: {
               local servingCertsCABundle = 'serving-certs-ca-bundle',
+              local servingCertsCABundleDirectory = 'ssl/certs',
               local servingCertsCABundleFileName = 'service-ca.crt',
-              local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundle,
+              local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory,
 
               containers:
                 std.map(
