@@ -32,7 +32,7 @@ local tlsVolumeName = 'node-exporter-tls';
               port: 'https',
               scheme: 'https',
               tlsConfig: {
-                caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
+                caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'server-name-replaced-at-runtime',
               },
             },

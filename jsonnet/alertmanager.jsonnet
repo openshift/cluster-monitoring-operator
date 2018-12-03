@@ -114,7 +114,7 @@ local authorizationRole = policyRule.new() +
               interval: '30s',
               scheme: 'https',
               tlsConfig: {
-                caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
+                caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'alertmanager-main',
               },
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
