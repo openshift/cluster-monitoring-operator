@@ -5,5 +5,5 @@ kind: ConfigMap
 metadata:
   annotations:
     service.alpha.openshift.io/inject-cabundle: "true"
-  name: prometheus-serving-certs-ca-bundle
+  name: serving-certs-ca-bundle
   namespace: openshift-monitoring

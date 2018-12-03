@@ -90,7 +90,7 @@ local namespacesRole =
       ]),
 
     servingCertsCaBundle+:
-      configmap.new('prometheus-serving-certs-ca-bundle', { 'service-ca.crt': '' }) +
+      configmap.new('serving-certs-ca-bundle', { 'service-ca.crt': '' }) +
       configmap.mixin.metadata.withNamespace($._config.namespace) +
       configmap.mixin.metadata.withAnnotations({ 'service.alpha.openshift.io/inject-cabundle': 'true' }),
 
@@ -263,7 +263,7 @@ local namespacesRole =
               interval: '30s',
               scheme: 'https',
               tlsConfig: {
-                caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
+                caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'prometheus-k8s',
               },
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
@@ -285,7 +285,7 @@ local namespacesRole =
                 function(a) a {
                   scheme: 'https',
                   tlsConfig: {
-                    caFile: '/etc/prometheus/configmaps/prometheus-serving-certs-ca-bundle/service-ca.crt',
+                    caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                     serverName: 'alertmanager-main',
                   },
                   bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
@@ -301,7 +301,7 @@ local namespacesRole =
             'prometheus-k8s-htpasswd',
             'kube-rbac-proxy',
           ],
-          configMaps: ['prometheus-serving-certs-ca-bundle'],
+          configMaps: ['serving-certs-ca-bundle'],
           serviceMonitorSelector: {},
           serviceMonitorNamespaceSelector: {},
           listenLocal: true,
