@@ -30,7 +30,7 @@ items:
   kind: RoleBinding
   metadata:
     name: prometheus-k8s
-    namespace: openshift-cluster-version
+    namespace: openshift-monitoring
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
@@ -43,7 +43,7 @@ items:
   kind: RoleBinding
   metadata:
     name: prometheus-k8s
-    namespace: openshift-monitoring
+    namespace: openshift-cluster-version
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role

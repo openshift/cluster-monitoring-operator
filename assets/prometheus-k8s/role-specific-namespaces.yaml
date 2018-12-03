@@ -38,7 +38,7 @@ items:
   kind: Role
   metadata:
     name: prometheus-k8s
-    namespace: openshift-cluster-version
+    namespace: openshift-monitoring
   rules:
   - apiGroups:
     - ""
@@ -55,7 +55,7 @@ items:
   kind: Role
   metadata:
     name: prometheus-k8s
-    namespace: openshift-monitoring
+    namespace: openshift-cluster-version
   rules:
   - apiGroups:
     - ""
