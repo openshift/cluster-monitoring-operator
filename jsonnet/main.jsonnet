@@ -40,6 +40,11 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  clientCert: '',
                  serverName: '',
                },
+               prometheus+:: {
+                 namespaces+: [
+                   'openshift-cluster-version',
+                 ],
+               },
              },
            } +
            (import 'rules.jsonnet') +
