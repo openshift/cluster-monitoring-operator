@@ -156,7 +156,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sKubeControllersServiceMonitor()
+	_, err = f.PrometheusK8sKubeControllerManagerServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusK8sKubeSchedulerServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,11 +257,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.PrometheusK8sService()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.KubeControllersService()
 	if err != nil {
 		t.Fatal(err)
 	}

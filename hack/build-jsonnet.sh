@@ -39,16 +39,10 @@ done
 #
 # * CoreDNS is not used in OpenShift
 #
-# * kube-controller-manager and kube-scheduler don't exist in OpenShift, but
-#   instead are grouped into the kube-scheduler component, which is separately
-#   handled in `jsonnet/prometheus.jsonnet`.
 
 rm -rf "assets/prometheus-operator/0alertmanager-custom-resource-definition.yaml"
 rm -rf "assets/prometheus-operator/0prometheus-custom-resource-definition.yaml"
 rm -rf "assets/prometheus-operator/0prometheusrule-custom-resource-definition.yaml"
 rm -rf "assets/prometheus-operator/0servicemonitor-custom-resource-definition.yaml"
 rm -rf "assets/prometheus-k8s/service-monitor-core-d-n-s.yaml"
-rm -rf "assets/prometheus-k8s/service-monitor-kube-controller-manager.yaml"
-rm -rf "assets/prometheus-k8s/service-monitor-kube-scheduler.yaml"
-rm -rf "assets/prometheus-k8s/service-monitor-kube-scheduler.yaml"
 

@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    k8s-app: kube-controller-manager
+  name: kube-controller-manager
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - interval: 30s
+    metricRelabelings:
+    - action: drop
+      regex: etcd_(debugging|disk|request|server).*
+      sourceLabels:
+      - __name__
+    port: https
+    relabelings:
+    - action: replace
+      regex: (.+)(?::\d+)
+      replacement: $1:10252
+      sourceLabels:
+      - __address__
+      targetLabel: __address__
+  jobLabel: null
+  namespaceSelector:
+    matchNames:
+    - openshift-kube-controller-manager
+  selector: {}
