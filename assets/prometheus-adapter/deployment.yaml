@@ -22,6 +22,8 @@ spec:
         - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
         - --secure-port=6443
         - --prometheus-ca-file=/etc/ssl/certs/service-ca.crt
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
         image: quay.io/coreos/k8s-prometheus-adapter-amd64:v0.4.0
         name: prometheus-adapter
         ports:
@@ -39,6 +41,9 @@ spec:
         - mountPath: /etc/ssl/certs
           name: serving-certs-ca-bundle
           readOnly: false
+        - mountPath: /etc/tls/private
+          name: prometheus-adapter-tls
+          readOnly: false
       priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: prometheus-adapter
@@ -53,3 +58,6 @@ spec:
       - configMap:
           name: prometheus-serving-certs-ca-bundle
         name: serving-certs-ca-bundle
+      - name: prometheus-adapter-tls
+        secret:
+          secretName: prometheus-adapter-tls

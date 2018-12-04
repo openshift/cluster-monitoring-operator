@@ -11,12 +11,25 @@ local tlsVolumeName = 'kube-state-metrics-tls';
 
 {
   prometheusAdapter+:: {
+    local tlsVolumeName = 'prometheus-adapter-tls',
+    local tlsPath = '/etc/tls/private',
+
     apiService+:
       {
         metadata+: {
           annotations+: {
-            'service.alpha.openshift.io/inject-cabundle:': 'true',
+            'service.alpha.openshift.io/inject-cabundle': 'true',
           },
+        },
+    service+:
+      {
+        metadata+: {
+          annotations+: {
+            'service.alpha.openshift.io/serving-cert-secret-name': tlsVolumeName,
+          },
+        },
+        spec+: {
+          type: 'ClusterIP',
         },
       },
 
@@ -38,9 +51,12 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                       {
                         args+: [
                           '--prometheus-ca-file=%s/%s' % [servingCertsCABundleMountPath, servingCertsCABundleFileName],
+                          '--tls-cert-file=%s/%s' % [tlsPath, 'tls.crt'],
+                          '--tls-private-key-file=%s/%s' % [tlsPath, 'tls.key'],
                         ],
                         volumeMounts+: [
                           containerVolumeMount.new(servingCertsCABundle, servingCertsCABundleMountPath),
+                          containerVolumeMount.new(tlsVolumeName, tlsPath),
                         ],
                       }
                     else
@@ -50,6 +66,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
 
               volumes+: [
                 volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('prometheus-serving-certs-ca-bundle'),
+                volume.fromSecret(tlsVolumeName, tlsVolumeName),
               ],
 
               securityContext: {},
