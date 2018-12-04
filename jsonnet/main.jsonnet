@@ -43,6 +43,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                prometheus+:: {
                  namespaces+: [
                    'openshift-cluster-version',
+                   'openshift-apiserver',
                  ],
                },
              },
