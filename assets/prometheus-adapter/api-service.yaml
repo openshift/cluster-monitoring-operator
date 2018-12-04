@@ -1,6 +1,8 @@
 apiVersion: apiregistration.k8s.io/v1beta1
 kind: APIService
 metadata:
+  annotations:
+    'service.alpha.openshift.io/inject-cabundle:': "true"
   name: v1beta1.metrics.k8s.io
 spec:
   group: metrics.k8s.io

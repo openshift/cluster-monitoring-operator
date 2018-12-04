@@ -11,6 +11,15 @@ local tlsVolumeName = 'kube-state-metrics-tls';
 
 {
   prometheusAdapter+:: {
+    apiService+:
+      {
+        metadata+: {
+          annotations+: {
+            'service.alpha.openshift.io/inject-cabundle:': 'true',
+          },
+        },
+      },
+
     deployment+:
       {
         spec+: {
