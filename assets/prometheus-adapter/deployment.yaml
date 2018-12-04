@@ -56,7 +56,7 @@ spec:
           name: adapter-config
         name: config
       - configMap:
-          name: prometheus-serving-certs-ca-bundle
+          name: serving-certs-ca-bundle
         name: serving-certs-ca-bundle
       - name: prometheus-adapter-tls
         secret:

@@ -21,6 +21,8 @@ local tlsVolumeName = 'kube-state-metrics-tls';
             'service.alpha.openshift.io/inject-cabundle': 'true',
           },
         },
+      },
+
     service+:
       {
         metadata+: {
@@ -65,7 +67,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                 ),
 
               volumes+: [
-                volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('prometheus-serving-certs-ca-bundle'),
+                volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('serving-certs-ca-bundle'),
                 volume.fromSecret(tlsVolumeName, tlsVolumeName),
               ],
 
