@@ -108,17 +108,6 @@ func (t *PrometheusAdapterTask) Run() error {
 		}
 	}
 	{
-		dep, err := t.factory.PrometheusAdapterDeployment()
-		if err != nil {
-			return errors.Wrap(err, "initializing PrometheusAdapter Deployment failed")
-		}
-
-		err = t.client.CreateOrUpdateDeployment(dep)
-		if err != nil {
-			return errors.Wrap(err, "reconciling PrometheusAdapter Deployment failed")
-		}
-	}
-	{
 		s, err := t.factory.PrometheusAdapterService()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter Service failed")
@@ -127,6 +116,17 @@ func (t *PrometheusAdapterTask) Run() error {
 		err = t.client.CreateOrUpdateService(s)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter Service failed")
+		}
+	}
+	{
+		dep, err := t.factory.PrometheusAdapterDeployment()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter Deployment failed")
+		}
+
+		err = t.client.CreateOrUpdateDeployment(dep)
+		if err != nil {
+			return errors.Wrap(err, "reconciling PrometheusAdapter Deployment failed")
 		}
 	}
 	{
@@ -139,7 +139,6 @@ func (t *PrometheusAdapterTask) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter APIService failed")
 		}
-
 	}
 
 	return nil
