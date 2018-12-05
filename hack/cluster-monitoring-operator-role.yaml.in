@@ -18,3 +18,6 @@ rules:
 - apiGroups: ["security.openshift.io"]
   resources: ["securitycontextconstraints"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
+- apiGroups: ["apiregistration.k8s.io"]
+  resources: ["apiservices"]
+  verbs: ["create", "get", "list", "watch", "update", "delete"]

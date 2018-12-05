@@ -9,6 +9,8 @@
 # 	assets/kube-state-metrics/cluster-role.yaml
 # 	assets/kube-state-metrics/role.yaml
 # 	assets/node-exporter/cluster-role.yaml
+# 	assets/prometheus-adapter/cluster-role-server-resources.yaml
+# 	assets/prometheus-adapter/cluster-role.yaml
 # 	assets/prometheus-k8s/cluster-role.yaml
 # 	assets/prometheus-k8s/role-config.yaml
 # 	assets/prometheus-k8s/role-specific-namespaces.yaml
@@ -73,6 +75,17 @@ rules:
   - security.openshift.io
   resources:
   - securitycontextconstraints
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - apiregistration.k8s.io
+  resources:
+  - apiservices
   verbs:
   - create
   - delete
@@ -174,6 +187,23 @@ rules:
   verbs:
   - get
   - update
+- apiGroups:
+  - metrics.k8s.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  - nodes
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - ''
   resources:
