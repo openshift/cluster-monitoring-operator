@@ -22,7 +22,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  nodeExporter: 'openshift/prometheus-node-exporter',
                  promLabelProxy: 'quay.io/coreos/prom-label-proxy',
                  kubeRbacProxy: 'quay.io/coreos/kube-rbac-proxy',
-                 prometheusAdapter: 'quay.io/coreos/k8s-prometheus-adapter-amd64',
+                 prometheusAdapter: 'quay.io/surbania/k8s-prometheus-adapter-amd64',
                },
                versions+:: {
                  // Because we build OpenShift images separately to upstream,
@@ -33,7 +33,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  nodeExporter: 'v0.16.0',
                  promLabelProxy: 'v0.1.0',
                  kubeRbacProxy: 'v0.4.0',
-                 prometheusAdapter: 'v0.4.0',
+                 prometheusAdapter: '326bf3c',
                },
                prometheusAdapter+:: {
                  prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
