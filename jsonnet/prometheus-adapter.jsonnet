@@ -53,6 +53,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                       {
                         args+: [
                           '--prometheus-ca-file=%s/%s' % [servingCertsCABundleMountPath, servingCertsCABundleFileName],
+                          '--prometheus-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
                           '--tls-cert-file=%s/%s' % [tlsPath, 'tls.crt'],
                           '--tls-private-key-file=%s/%s' % [tlsPath, 'tls.key'],
                         ],
