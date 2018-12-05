@@ -243,7 +243,6 @@ local namespacesRole =
               scheme: 'https',
               tlsConfig: {
                 caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-                insecureSkipVerify: true, // Remove when kubelet finally has working certs
               },
             },
             {
@@ -255,7 +254,6 @@ local namespacesRole =
               scheme: 'https',
               tlsConfig: {
                 caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-                insecureSkipVerify: true, // Remove when kubelet finally has working certs
               },
             },
           ],
