@@ -108,6 +108,17 @@ func (t *PrometheusAdapterTask) Run() error {
 		}
 	}
 	{
+		cm, err := t.factory.PrometheusAdapterConfigMapPrometheus()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter ConfigMap for Prometheus failed")
+		}
+
+		err = t.client.CreateOrUpdateConfigMap(cm)
+		if err != nil {
+			return errors.Wrap(err, "reconciling PrometheusAdapter ConfigMap for Prometheus failed")
+		}
+	}
+	{
 		s, err := t.factory.PrometheusAdapterService()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter Service failed")

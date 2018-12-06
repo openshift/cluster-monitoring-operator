@@ -93,6 +93,7 @@ var (
 	PrometheusAdapterClusterRoleBindingView      = "assets/prometheus-adapter/cluster-role-binding-view.yaml"
 	PrometheusAdapterClusterRoleServerResources  = "assets/prometheus-adapter/cluster-role-server-resources.yaml"
 	PrometheusAdapterConfigMap                   = "assets/prometheus-adapter/config-map.yaml"
+	PrometheusAdapterConfigMapPrometheus         = "assets/prometheus-adapter/configmap-prometheus.yaml"
 	PrometheusAdapterDeployment                  = "assets/prometheus-adapter/deployment.yaml"
 	PrometheusAdapterRoleBindingAuthReader       = "assets/prometheus-adapter/role-binding-auth-reader.yaml"
 	PrometheusAdapterService                     = "assets/prometheus-adapter/service.yaml"
@@ -898,6 +899,17 @@ func (f *Factory) PrometheusAdapterServiceAccount() (*v1.ServiceAccount, error) 
 
 func (f *Factory) PrometheusAdapterConfigMap() (*v1.ConfigMap, error) {
 	cm, err := f.NewConfigMap(MustAssetReader(PrometheusAdapterConfigMap))
+	if err != nil {
+		return nil, err
+	}
+
+	cm.Namespace = f.namespace
+
+	return cm, nil
+}
+
+func (f *Factory) PrometheusAdapterConfigMapPrometheus() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(PrometheusAdapterConfigMapPrometheus))
 	if err != nil {
 		return nil, err
 	}

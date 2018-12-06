@@ -21,8 +21,7 @@ spec:
         - --metrics-relist-interval=1m
         - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
         - --secure-port=6443
-        - --prometheus-ca-file=/etc/ssl/certs/service-ca.crt
-        - --prometheus-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
+        - --prometheus-auth-config=/etc/prometheus-config/prometheus-config.yaml
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         image: quay.io/surbania/k8s-prometheus-adapter-amd64:326bf3c
@@ -38,6 +37,9 @@ spec:
           readOnly: false
         - mountPath: /etc/adapter
           name: config
+          readOnly: false
+        - mountPath: /etc/prometheus-config
+          name: prometheus-adapter-prometheus-config
           readOnly: false
         - mountPath: /etc/ssl/certs
           name: serving-certs-ca-bundle
@@ -56,6 +58,9 @@ spec:
       - configMap:
           name: adapter-config
         name: config
+      - configMap:
+          name: prometheus-adapter-prometheus-config
+        name: prometheus-adapter-prometheus-config
       - configMap:
           name: serving-certs-ca-bundle
         name: serving-certs-ca-bundle

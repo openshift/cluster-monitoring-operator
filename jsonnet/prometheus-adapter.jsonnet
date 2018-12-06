@@ -14,6 +14,14 @@ local tlsVolumeName = 'kube-state-metrics-tls';
     local tlsVolumeName = 'prometheus-adapter-tls',
     local tlsPath = '/etc/tls/private',
 
+    local prometheusAdapterPrometheusConfig = 'prometheus-adapter-prometheus-config',
+    local prometheusAdapterPrometheusConfigPath = '/etc/prometheus-config',
+
+    local servingCertsCABundle = 'serving-certs-ca-bundle',
+    local servingCertsCABundleDirectory = 'ssl/certs',
+    local servingCertsCABundleFileName = 'service-ca.crt',
+    local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory,
+
     apiService+:
       {
         metadata+: {
@@ -40,11 +48,6 @@ local tlsVolumeName = 'kube-state-metrics-tls';
         spec+: {
           template+: {
             spec+: {
-              local servingCertsCABundle = 'serving-certs-ca-bundle',
-              local servingCertsCABundleDirectory = 'ssl/certs',
-              local servingCertsCABundleFileName = 'service-ca.crt',
-              local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory,
-
               containers:
                 std.map(
                   function(c)
@@ -52,12 +55,14 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                       c
                       {
                         args+: [
-                          '--prometheus-ca-file=%s/%s' % [servingCertsCABundleMountPath, servingCertsCABundleFileName],
-                          '--prometheus-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
+                          // '--prometheus-ca-file=%s/%s' % [servingCertsCABundleMountPath, servingCertsCABundleFileName],
+                          // '--prometheus-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
+                          '--prometheus-auth-config=%s/%s' % [prometheusAdapterPrometheusConfigPath, 'prometheus-config.yaml'],
                           '--tls-cert-file=%s/%s' % [tlsPath, 'tls.crt'],
                           '--tls-private-key-file=%s/%s' % [tlsPath, 'tls.key'],
                         ],
                         volumeMounts+: [
+                          containerVolumeMount.new(prometheusAdapterPrometheusConfig, prometheusAdapterPrometheusConfigPath),
                           containerVolumeMount.new(servingCertsCABundle, servingCertsCABundleMountPath),
                           containerVolumeMount.new(tlsVolumeName, tlsPath),
                         ],
@@ -68,6 +73,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                 ),
 
               volumes+: [
+                volume.withName(prometheusAdapterPrometheusConfig) + volume.mixin.configMap.withName(prometheusAdapterPrometheusConfig),
                 volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('serving-certs-ca-bundle'),
                 volume.fromSecret(tlsVolumeName, tlsVolumeName),
               ],
@@ -92,5 +98,33 @@ local tlsVolumeName = 'kube-state-metrics-tls';
         name: 'prometheus-adapter',
         namespace: $._config.namespace,
       }]),
+
+    configmapPrometheus:
+      local config = |||
+        apiVersion: v1
+        clusters:
+        - cluster:
+            certificate-authority: %s
+            server: %s
+          name: prometheus-k8s
+        contexts:
+        - context:
+            cluster: prometheus-k8s
+            user: prometheus-k8s
+          name: prometheus-k8s
+        current-context: prometheus-k8s
+        kind: Config
+        preferences: {}
+        users:
+        - name: prometheus-k8s
+          user:
+            tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      ||| % [
+        servingCertsCABundleMountPath + '/' + servingCertsCABundleFileName,
+        $._config.prometheusAdapter.prometheusURL,
+      ];
+
+      configmap.new(prometheusAdapterPrometheusConfig, { 'prometheus-config.yaml': config }) +
+      configmap.mixin.metadata.withNamespace($._config.namespace),
   },
 }

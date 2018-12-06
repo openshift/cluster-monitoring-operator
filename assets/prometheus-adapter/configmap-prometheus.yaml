@@ -1,0 +1,25 @@
+apiVersion: v1
+data:
+  prometheus-config.yaml: |
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority: /etc/ssl/certs/service-ca.crt
+        server: https://prometheus-k8s.openshift-monitoring.svc:9091
+      name: prometheus-k8s
+    contexts:
+    - context:
+        cluster: prometheus-k8s
+        user: prometheus-k8s
+      name: prometheus-k8s
+    current-context: prometheus-k8s
+    kind: Config
+    preferences: {}
+    users:
+    - name: prometheus-k8s
+      user:
+        tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+kind: ConfigMap
+metadata:
+  name: prometheus-adapter-prometheus-config
+  namespace: openshift-monitoring

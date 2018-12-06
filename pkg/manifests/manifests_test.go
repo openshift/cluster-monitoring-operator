@@ -213,6 +213,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.PrometheusAdapterConfigMapPrometheus()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.PrometheusAdapterDeployment()
 	if err != nil {
 		t.Fatal(err)
