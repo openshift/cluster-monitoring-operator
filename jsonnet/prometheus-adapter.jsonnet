@@ -29,6 +29,9 @@ local tlsVolumeName = 'kube-state-metrics-tls';
             'service.alpha.openshift.io/inject-cabundle': 'true',
           },
         },
+        spec+: {
+          insecureSkipTLSVerify: false,
+        },
       },
 
     service+:
