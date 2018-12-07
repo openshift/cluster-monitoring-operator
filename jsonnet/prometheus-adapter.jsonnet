@@ -58,6 +58,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                       c
                       {
                         args+: [
+                          // Keeping until decided how to move on: https://github.com/DirectXMan12/k8s-prometheus-adapter/issues/144
                           // '--prometheus-ca-file=%s/%s' % [servingCertsCABundleMountPath, servingCertsCABundleFileName],
                           // '--prometheus-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
                           '--prometheus-auth-config=%s/%s' % [prometheusAdapterPrometheusConfigPath, 'prometheus-config.yaml'],
