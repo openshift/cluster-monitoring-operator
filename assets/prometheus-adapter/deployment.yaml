@@ -24,7 +24,7 @@ spec:
         - --prometheus-auth-config=/etc/prometheus-config/prometheus-config.yaml
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/surbania/k8s-prometheus-adapter-amd64:326bf3c
+        image: quay.io/coreos/k8s-prometheus-adapter-amd64:v0.4.0
         name: prometheus-adapter
         ports:
         - containerPort: 6443
