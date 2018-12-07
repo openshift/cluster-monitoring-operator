@@ -1,0 +1,69 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: prometheus-adapter
+  namespace: openshift-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: prometheus-adapter
+  template:
+    metadata:
+      labels:
+        name: prometheus-adapter
+    spec:
+      containers:
+      - args:
+        - --cert-dir=/var/run/serving-cert
+        - --config=/etc/adapter/config.yaml
+        - --logtostderr=true
+        - --metrics-relist-interval=1m
+        - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
+        - --secure-port=6443
+        - --prometheus-auth-config=/etc/prometheus-config/prometheus-config.yaml
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/surbania/k8s-prometheus-adapter-amd64:326bf3c
+        name: prometheus-adapter
+        ports:
+        - containerPort: 6443
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmpfs
+          readOnly: false
+        - mountPath: /var/run/serving-cert
+          name: volume-serving-cert
+          readOnly: false
+        - mountPath: /etc/adapter
+          name: config
+          readOnly: false
+        - mountPath: /etc/prometheus-config
+          name: prometheus-adapter-prometheus-config
+          readOnly: false
+        - mountPath: /etc/ssl/certs
+          name: serving-certs-ca-bundle
+          readOnly: false
+        - mountPath: /etc/tls/private
+          name: prometheus-adapter-tls
+          readOnly: false
+      priorityClassName: system-cluster-critical
+      securityContext: {}
+      serviceAccountName: prometheus-adapter
+      volumes:
+      - emptyDir: {}
+        name: tmpfs
+      - emptyDir: {}
+        name: volume-serving-cert
+      - configMap:
+          name: adapter-config
+        name: config
+      - configMap:
+          name: prometheus-adapter-prometheus-config
+        name: prometheus-adapter-prometheus-config
+      - configMap:
+          name: serving-certs-ca-bundle
+        name: serving-certs-ca-bundle
+      - name: prometheus-adapter-tls
+        secret:
+          secretName: prometheus-adapter-tls

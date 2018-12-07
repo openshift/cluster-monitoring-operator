@@ -22,6 +22,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  nodeExporter: 'openshift/prometheus-node-exporter',
                  promLabelProxy: 'quay.io/coreos/prom-label-proxy',
                  kubeRbacProxy: 'quay.io/coreos/kube-rbac-proxy',
+                 prometheusAdapter: 'quay.io/surbania/k8s-prometheus-adapter-amd64',
                },
                versions+:: {
                  // Because we build OpenShift images separately to upstream,
@@ -32,6 +33,10 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  nodeExporter: 'v0.16.0',
                  promLabelProxy: 'v0.1.0',
                  kubeRbacProxy: 'v0.4.0',
+                 prometheusAdapter: '326bf3c',
+               },
+               prometheusAdapter+:: {
+                 prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
                },
                etcd+:: {
                  ips: [],
@@ -55,6 +60,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'grafana.jsonnet') +
            (import 'alertmanager.jsonnet') +
            (import 'prometheus.jsonnet') +
+           (import 'prometheus-adapter.jsonnet') +
            (import 'cluster-monitoring-operator.jsonnet') +
            (import 'remove_runbook.libsonnet') + {
   _config+:: {
@@ -78,6 +84,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
 { ['kube-state-metrics/' + name]: kp.kubeStateMetrics[name] for name in std.objectFields(kp.kubeStateMetrics) } +
 { ['alertmanager/' + name]: kp.alertmanager[name] for name in std.objectFields(kp.alertmanager) } +
 { ['prometheus-k8s/' + name]: kp.prometheus[name] for name in std.objectFields(kp.prometheus) } +
+{ ['prometheus-adapter/' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) } +
 { ['grafana/' + name]: kp.grafana[name] for name in std.objectFields(kp.grafana) } +
 { ['telemeter-client/' + name]: kp.telemeterClient[name] for name in std.objectFields(kp.telemeterClient) } +
 { ['cluster-monitoring-operator/' + name]: kp.clusterMonitoringOperator[name] for name in std.objectFields(kp.clusterMonitoringOperator) }
