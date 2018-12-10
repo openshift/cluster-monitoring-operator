@@ -100,14 +100,15 @@ func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersio
 	}
 
 	return &Client{
-		namespace:      namespace,
-		appVersionName: appVersionName,
-		kclient:        kclient,
-		ossclient:      ossclient,
-		osrclient:      osrclient,
-		mclient:        mclient,
-		eclient:        eclient,
-		aggclient:      aggclient,
+		namespace:         namespace,
+		namespaceSelector: namespaceSelector,
+		appVersionName:    appVersionName,
+		kclient:           kclient,
+		ossclient:         ossclient,
+		osrclient:         osrclient,
+		mclient:           mclient,
+		eclient:           eclient,
+		aggclient:         aggclient,
 	}, nil
 }
 
