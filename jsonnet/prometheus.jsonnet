@@ -410,6 +410,12 @@ local namespacesRole =
             {
               name: 'kube-rbac-proxy',
               image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
+              ports: [
+                {
+                  containerPort: 9092,
+                  name: 'tenancy',
+                },
+              ],
               args: [
                 '--secure-listen-address=0.0.0.0:9092',
                 '--upstream=http://127.0.0.1:9095',
