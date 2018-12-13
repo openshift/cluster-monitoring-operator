@@ -17,8 +17,8 @@ package e2e
 import (
 	"flag"
 	"log"
-	"os"
 	"os/user"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,19 +43,20 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	// Wait for Prometheus operator
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.Apps().Deployments(f.Ns).Get("prometheus-operator", metav1.GetOptions{})
-		if err != nil {
-			return false, nil
-		}
-		return true, nil
-	})
+	list, err := f.KubeClient.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	os.Exit(m.Run())
+	if list == nil {
+		log.Fatal("expected list of pods not to be nil")
+	}
+
+	podNames := []string{}
+	for _, p := range list.Items {
+		podNames = append(podNames, p.GetName())
+	}
+	log.Printf("Found the following pods in kube-system namespace: %v", strings.Join(podNames, ","))
 }
 
 func TestQueryPrometheus(t *testing.T) {
