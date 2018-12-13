@@ -72,6 +72,9 @@ spec:
     - --v=10
     image: quay.io/coreos/kube-rbac-proxy:v0.4.0
     name: kube-rbac-proxy
+    ports:
+    - containerPort: 9092
+      name: tenancy
     volumeMounts:
     - mountPath: /etc/kube-rbac-proxy
       name: secret-kube-rbac-proxy
