@@ -87,6 +87,7 @@ spec:
   listenLocal: true
   nodeSelector:
     beta.kubernetes.io/os: linux
+  podManagementPolicy: Parallel
   replicas: 2
   resources: {}
   ruleSelector:
