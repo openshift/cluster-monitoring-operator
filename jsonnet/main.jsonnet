@@ -33,7 +33,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  nodeExporter: 'v0.16.0',
                  promLabelProxy: 'v0.1.0',
                  kubeRbacProxy: 'v0.4.0',
-                 prometheusAdapter: 'v0.4.0',
+                 prometheusAdapter: 'v0.4.1',
                },
                prometheusAdapter+:: {
                  prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
