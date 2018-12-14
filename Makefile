@@ -89,12 +89,10 @@ $(JSONNET_BIN):
 test-unit:
 	go test $(PKGS)
 
-test: e2e-test
-
 vendor:
 	govendor add +external
 
-e2e-test:
+test-e2e:
 	go test -v -timeout=20m ./test/e2e/ --operator-image=$(REPO):$(TAG) --kubeconfig $(KUBECONFIG)
 
 e2e-clean:
