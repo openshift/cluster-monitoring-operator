@@ -17,7 +17,6 @@ package e2e
 import (
 	"flag"
 	"log"
-	"os/user"
 	"strings"
 	"testing"
 	"time"
@@ -26,13 +25,13 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var f *framework.Framework
 
 func TestMain(m *testing.M) {
-	usr, _ := user.Current()
-	kubeConfigPath := flag.String("kubeconfig", usr.HomeDir+"/.kube/config", "kube config path, default: $HOME/.kube/config")
+	kubeConfigPath := flag.String("kubeconfig", clientcmd.RecommendedHomeFile, "kube config path, default: $HOME/.kube/config")
 	opImageName := flag.String("operator-image", "", "operator image, e.g. quay.io/coreos/cluster-monitoring-operator")
 
 	flag.Parse()
