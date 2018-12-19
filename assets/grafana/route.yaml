@@ -7,6 +7,7 @@ spec:
   port:
     targetPort: https
   tls:
+    insecureEdgeTerminationPolicy: Redirect
     termination: Reencrypt
   to:
     kind: Service
