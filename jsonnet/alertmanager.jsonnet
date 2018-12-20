@@ -43,6 +43,7 @@ local authorizationRole = policyRule.new() +
         },
         tls: {
           termination: 'Reencrypt',
+          insecureEdgeTerminationPolicy: 'Redirect',
         },
       },
     },

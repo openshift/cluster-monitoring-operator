@@ -54,6 +54,7 @@ local namespacesRole =
         },
         tls: {
           termination: 'Reencrypt',
+          insecureEdgeTerminationPolicy: 'Redirect',
         },
       },
     },
