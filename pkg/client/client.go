@@ -751,7 +751,7 @@ func (c *Client) CreateOrUpdateIngress(ing *v1betaextensions.Ingress) error {
 
 func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.APIService) error {
 	apsc := c.aggclient.ApiregistrationV1beta1().APIServices()
-	_, err := apsc.Get(apiService.GetName(), metav1.GetOptions{})
+	apiService, err := apsc.Get(apiService.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err = apsc.Create(apiService)
 		return errors.Wrap(err, "creating APIService object failed")
