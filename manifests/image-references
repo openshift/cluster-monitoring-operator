@@ -46,7 +46,7 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-kube-rbac-proxy:latest
-  - name: telemeter-client
+  - name: telemeter
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-telemeter:latest
