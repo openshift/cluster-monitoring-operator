@@ -22,7 +22,7 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-prometheus:latest
-  - name: alertmanager
+  - name: prometheus-alertmanager
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-prometheus-alertmanager:latest
@@ -34,7 +34,7 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/oauth-proxy:latest
-  - name: node-exporter
+  - name: prometheus-node-exporter
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-prometheus-node-exporter:latest
