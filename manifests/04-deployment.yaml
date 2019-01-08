@@ -31,7 +31,7 @@ spec:
         - "-images=alertmanager=docker.io/openshift/origin-prometheus-alertmanager:latest"
         - "-images=grafana=docker.io/grafana/grafana:latest"
         - "-images=oauth-proxy=docker.io/openshift/oauth-proxy:latest"
-        - "-images=node-exporter=docker.io/openshift/origin-prometheus-alertmanager:latest"
+        - "-images=node-exporter=docker.io/openshift/origin-prometheus-node-exporter:latest"
         - "-images=kube-state-metrics=docker.io/openshift/origin-kube-state-metrics:latest"
         - "-images=kube-rbac-proxy=docker.io/openshift/origin-kube-rbac-proxy:latest"
         - "-images=telemeter-client=docker.io/openshift/origin-telemeter:latest"

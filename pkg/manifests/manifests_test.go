@@ -17,8 +17,6 @@ package manifests
 import (
 	"errors"
 	"fmt"
-	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
@@ -504,10 +502,17 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusOperator:
   nodeSelector:
     type: master
-  baseImage: quay.io/test/prometheus-operator
-  prometheusConfigReloaderBaseImage: quay.io/test/prometheus-config-reloader
-  configReloaderBaseImage: quay.io/test/configmap-reload
+  image: quay.io/test/prometheus-operator
+  prometheusConfigReloaderImage: quay.io/test/prometheus-config-reloader
+  configReloaderImage: quay.io/test/configmap-reload
 `)
+
+	c.SetImages(map[string]string{
+		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
+		"prometheus-config-reloader": "docker.io/openshift/origin-prometheus-config-reloader:latest",
+		"config-reloader":            "docker.io/openshift/origin-configmap-reload:latest",
+	})
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -526,18 +531,20 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatalf("expected node selector to be master, got %q", got)
 	}
 
-	if !strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Image, "quay.io/test/prometheus-operator") {
-		t.Fatal("Configuring the Prometheus Operator base image failed")
+	expectedPromOpImage := "docker.io/openshift/origin-prometheus-operator:latest"
+	resPromOpImage := d.Spec.Template.Spec.Containers[0].Image
+	if resPromOpImage != expectedPromOpImage {
+		t.Fatalf("Configuring the Prometheus Operator image failed, expected: %v, got %v", expectedPromOpImage, resPromOpImage)
 	}
 
 	configReloaderFound := false
 	prometheusReloaderFound := false
 	namespacesFound := false
 	for i := range d.Spec.Template.Spec.Containers[0].Args {
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"quay.io/test/prometheus-config-reloader") {
+		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest") {
 			prometheusReloaderFound = true
 		}
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], ConfigReloaderImageFlag+"quay.io/test/configmap-reload") {
+		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], ConfigReloaderImageFlag+"docker.io/openshift/origin-configmap-reload:latest") {
 			configReloaderFound = true
 		}
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorNamespaceFlag+"default,openshift-monitoring") {
@@ -546,11 +553,11 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 
 	if !configReloaderFound {
-		t.Fatal("Configuring the Config reloader base image failed")
+		t.Fatal("Configuring the Config reloader image failed")
 	}
 
 	if !prometheusReloaderFound {
-		t.Fatal("Configuring the Prometheus Reloader base image failed")
+		t.Fatal("Configuring the Prometheus Reloader image failed")
 	}
 
 	if !namespacesFound {
@@ -561,7 +568,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 func TestPrometheusK8sConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusK8s:
   retention: 25h
-  baseImage: quay.io/test/prometheus
   nodeSelector:
     type: master
   volumeClaimTemplate:
@@ -584,6 +590,9 @@ ingress:
 	if err != nil {
 		t.Fatal(err)
 	}
+	c.SetImages(map[string]string{
+		"prometheus": "docker.io/openshift/origin-prometheus:latest",
+	})
 
 	f := NewFactory("openshift-monitoring", c)
 	p, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc")
@@ -595,8 +604,8 @@ ingress:
 		t.Fatal("Retention is not configured correctly")
 	}
 
-	if p.Spec.BaseImage != "quay.io/test/prometheus" {
-		t.Fatal("Prometheus base image is not configured correctly")
+	if *p.Spec.Image != "docker.io/openshift/origin-prometheus:latest" {
+		t.Fatal("Prometheus image is not configured correctly")
 	}
 
 	cpuLimit := p.Spec.Resources.Limits[v1.ResourceCPU]
@@ -657,6 +666,9 @@ ingress:
 	if err != nil {
 		t.Fatal(err)
 	}
+	c.SetImages(map[string]string{
+		"alertmanager": "docker.io/openshift/origin-prometheus-alertmanager:latest",
+	})
 
 	f := NewFactory("openshift-monitoring", c)
 	a, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc")
@@ -664,8 +676,8 @@ ingress:
 		t.Fatal(err)
 	}
 
-	if a.Spec.BaseImage != "quay.io/test/alertmanager" {
-		t.Fatal("Alertmanager base image is not configured correctly")
+	if *a.Spec.Image != "docker.io/openshift/origin-prometheus-alertmanager:latest" {
+		t.Fatal("Alertmanager image is not configured correctly")
 	}
 
 	cpuLimit := a.Spec.Resources.Limits[v1.ResourceCPU]
@@ -701,14 +713,14 @@ ingress:
 }
 
 func TestNodeExporter(t *testing.T) {
-	c, err := NewConfigFromString(`nodeExporter:
-  baseImage: quay.io/test/node-exporter
-kubeRbacProxy:
-  baseImage: quay.io/test/kube-rbac-proxy
-`)
+	c, err := NewConfigFromString(``)
 	if err != nil {
 		t.Fatal(err)
 	}
+	c.SetImages(map[string]string{
+		"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
+		"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
+	})
 
 	f := NewFactory("openshift-monitoring", c)
 
@@ -716,31 +728,23 @@ kubeRbacProxy:
 	if err != nil {
 		t.Fatal(err)
 	}
-	image, err := imageFromString(ds.Spec.Template.Spec.Containers[0].Image)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if image.repo != "quay.io/test/node-exporter" {
+	if ds.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-prometheus-node-exporter:latest" {
 		t.Fatalf("image for node-exporter daemonset is wrong: %s", ds.Spec.Template.Spec.Containers[0].Image)
 	}
-	image, err = imageFromString(ds.Spec.Template.Spec.Containers[1].Image)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if image.repo != "quay.io/test/kube-rbac-proxy" {
+	if ds.Spec.Template.Spec.Containers[1].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 		t.Fatalf("image for kube-rbac-proxy in node-exporter daemonset is wrong: %s", ds.Spec.Template.Spec.Containers[1].Image)
 	}
 }
 
 func TestKubeStateMetrics(t *testing.T) {
-	c, err := NewConfigFromString(`kubeStateMetrics:
-  baseImage: quay.io/test/kube-state-metrics
-kubeRbacProxy:
-  baseImage: quay.io/test/kube-rbac-proxy
-`)
+	c, err := NewConfigFromString(``)
 	if err != nil {
 		t.Fatal(err)
 	}
+	c.SetImages(map[string]string{
+		"kube-state-metrics": "docker.io/openshift/origin-kube-state-metrics:latest",
+		"kube-rbac-proxy":    "docker.io/openshift/origin-kube-rbac-proxy:latest",
+	})
 
 	f := NewFactory("openshift-monitoring", c)
 
@@ -749,23 +753,14 @@ kubeRbacProxy:
 		t.Fatal(err)
 	}
 
-	expected := []string{
-		"quay.io/test/kube-rbac-proxy",
-		"quay.io/test/kube-rbac-proxy",
-		"quay.io/test/kube-state-metrics",
+	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+		t.Fatal("kube-rbac-proxy image incorrectly configured")
 	}
-	actual := []string{}
-	for _, c := range d.Spec.Template.Spec.Containers {
-		image, err := imageFromString(c.Image)
-		if err != nil {
-			t.Fatal(err)
-		}
-		actual = append(actual, image.repo)
+	if d.Spec.Template.Spec.Containers[1].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+		t.Fatal("kube-rbac-proxy image incorrectly configured")
 	}
-	sort.Strings(expected)
-	sort.Strings(actual)
-	if !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("expected: %v\ngot:\n%s", expected, actual)
+	if d.Spec.Template.Spec.Containers[2].Image != "docker.io/openshift/origin-kube-state-metrics:latest" {
+		t.Fatal("kube-state-metrics image incorrectly configured")
 	}
 }
 
