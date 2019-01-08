@@ -48,7 +48,7 @@ type Operator struct {
 	namespace string
 
 	configMapName string
-	tagOverrides  map[string]string
+	images        map[string]string
 
 	client *client.Client
 
@@ -61,14 +61,14 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(config *rest.Config, namespace, namespaceSelector, configMapName string, tagOverrides map[string]string) (*Operator, error) {
+func New(config *rest.Config, namespace, namespaceSelector, configMapName string, images map[string]string) (*Operator, error) {
 	c, err := client.New(config, namespace, namespaceSelector, configMapName)
 	if err != nil {
 		return nil, err
 	}
 
 	o := &Operator{
-		tagOverrides:  tagOverrides,
+		images:        images,
 		configMapName: configMapName,
 		namespace:     namespace,
 		client:        c,
@@ -233,7 +233,7 @@ func (o *Operator) enqueue(obj interface{}) {
 
 func (o *Operator) sync(key string) error {
 	config := o.Config()
-	config.SetTagOverrides(o.tagOverrides)
+	config.SetImages(o.images)
 
 	factory := manifests.NewFactory(o.namespace, config)
 

@@ -43,19 +43,15 @@ type HTTPConfig struct {
 }
 
 type PrometheusOperatorConfig struct {
-	BaseImage                   string            `json:"baseImage"`
-	Tag                         string            `json:"-"`
-	PrometheusConfigReloader    string            `json:"prometheusConfigReloaderBaseImage"`
-	PrometheusConfigReloaderTag string            `json:"-"`
-	ConfigReloaderImage         string            `json:"configReloaderBaseImage"`
-	ConfigReloaderTag           string            `json:"-"`
-	NodeSelector                map[string]string `json:"nodeSelector"`
+	Image                         string            `json:"-"`
+	PrometheusConfigReloaderImage string            `json:"-"`
+	ConfigReloaderImage           string            `json:"-"`
+	NodeSelector                  map[string]string `json:"nodeSelector"`
 }
 
 type PrometheusK8sConfig struct {
 	Retention           string                    `json:"retention"`
-	BaseImage           string                    `json:"baseImage"`
-	Tag                 string                    `json:"-"`
+	Image               string                    `json:"-"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	ExternalLabels      map[string]string         `json:"externalLabels"`
@@ -64,8 +60,7 @@ type PrometheusK8sConfig struct {
 }
 
 type AlertmanagerMainConfig struct {
-	BaseImage           string                    `json:"baseImage"`
-	Tag                 string                    `json:"-"`
+	Image               string                    `json:"-"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
@@ -73,31 +68,26 @@ type AlertmanagerMainConfig struct {
 }
 
 type GrafanaConfig struct {
-	BaseImage    string            `json:"baseImage"`
-	Tag          string            `json:"-"`
+	Image        string            `json:"-"`
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Hostport     string            `json:"hostport"`
 }
 
 type AuthConfig struct {
-	BaseImage string `json:"baseImage"`
-	Tag       string `json:"-"`
+	Image string `json:"-"`
 }
 
 type NodeExporterConfig struct {
-	BaseImage string `json:"baseImage"`
-	Tag       string `json:"-"`
+	Image string `json:"-"`
 }
 
 type KubeStateMetricsConfig struct {
-	BaseImage    string            `json:"baseImage"`
-	Tag          string            `json:"-"`
+	Image        string            `json:"-"`
 	NodeSelector map[string]string `json:"nodeSelector"`
 }
 
 type KubeRbacProxyConfig struct {
-	BaseImage string `json:"baseImage"`
-	Tag       string `json:"-"`
+	Image string `json:"-"`
 }
 
 type EtcdConfig struct {
@@ -115,10 +105,9 @@ func (e *EtcdConfig) IsEnabled() bool {
 }
 
 type TelemeterClientConfig struct {
-	BaseImage          string `json:"baseImage"`
+	Image              string `json:"-"`
 	ClusterID          string `json:"clusterID"`
 	Enabled            *bool  `json:"enabled"`
-	Tag                string `json:"-"`
 	TelemeterServerURL string `json:"telemeterServerURL"`
 	Token              string `json:"token"`
 }
@@ -155,20 +144,8 @@ func (c *Config) applyDefaults() {
 	if c.PrometheusOperatorConfig == nil {
 		c.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
 	}
-	if c.PrometheusOperatorConfig.BaseImage == "" {
-		c.PrometheusOperatorConfig.BaseImage = "quay.io/coreos/prometheus-operator"
-	}
-	if c.PrometheusOperatorConfig.PrometheusConfigReloader == "" {
-		c.PrometheusOperatorConfig.PrometheusConfigReloader = "quay.io/coreos/prometheus-config-reloader"
-	}
-	if c.PrometheusOperatorConfig.ConfigReloaderImage == "" {
-		c.PrometheusOperatorConfig.ConfigReloaderImage = "quay.io/coreos/configmap-reload"
-	}
 	if c.PrometheusK8sConfig == nil {
 		c.PrometheusK8sConfig = &PrometheusK8sConfig{}
-	}
-	if c.PrometheusK8sConfig.BaseImage == "" {
-		c.PrometheusK8sConfig.BaseImage = "quay.io/prometheus/prometheus"
 	}
 	if c.PrometheusK8sConfig.Retention == "" {
 		c.PrometheusK8sConfig.Retention = "15d"
@@ -179,41 +156,23 @@ func (c *Config) applyDefaults() {
 	if c.AlertmanagerMainConfig == nil {
 		c.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
 	}
-	if c.AlertmanagerMainConfig.BaseImage == "" {
-		c.AlertmanagerMainConfig.BaseImage = "quay.io/prometheus/alertmanager"
-	}
 	if c.AlertmanagerMainConfig.Resources == nil {
 		c.AlertmanagerMainConfig.Resources = &v1.ResourceRequirements{}
 	}
 	if c.GrafanaConfig == nil {
 		c.GrafanaConfig = &GrafanaConfig{}
 	}
-	if c.GrafanaConfig.BaseImage == "" {
-		c.GrafanaConfig.BaseImage = "grafana/grafana"
-	}
 	if c.AuthConfig == nil {
 		c.AuthConfig = &AuthConfig{}
-	}
-	if c.AuthConfig.BaseImage == "" {
-		c.AuthConfig.BaseImage = "openshift/oauth-proxy"
 	}
 	if c.NodeExporterConfig == nil {
 		c.NodeExporterConfig = &NodeExporterConfig{}
 	}
-	if c.NodeExporterConfig.BaseImage == "" {
-		c.NodeExporterConfig.BaseImage = "quay.io/prometheus/node-exporter"
-	}
 	if c.KubeStateMetricsConfig == nil {
 		c.KubeStateMetricsConfig = &KubeStateMetricsConfig{}
 	}
-	if c.KubeStateMetricsConfig.BaseImage == "" {
-		c.KubeStateMetricsConfig.BaseImage = "quay.io/coreos/kube-state-metrics"
-	}
 	if c.KubeRbacProxyConfig == nil {
 		c.KubeRbacProxyConfig = &KubeRbacProxyConfig{}
-	}
-	if c.KubeRbacProxyConfig.BaseImage == "" {
-		c.KubeRbacProxyConfig.BaseImage = "quay.io/brancz/kube-rbac-proxy"
 	}
 	if c.HTTPConfig == nil {
 		c.HTTPConfig = &HTTPConfig{}
@@ -221,26 +180,23 @@ func (c *Config) applyDefaults() {
 	if c.TelemeterClientConfig == nil {
 		c.TelemeterClientConfig = &TelemeterClientConfig{}
 	}
-	if c.TelemeterClientConfig.BaseImage == "" {
-		c.TelemeterClientConfig.BaseImage = "quay.io/openshift/origin-telemeter"
-	}
 	if c.EtcdConfig == nil {
 		c.EtcdConfig = &EtcdConfig{}
 	}
 }
 
-func (c *Config) SetTagOverrides(tagOverrides map[string]string) {
-	c.PrometheusOperatorConfig.Tag, _ = tagOverrides["prometheus-operator"]
-	c.PrometheusOperatorConfig.PrometheusConfigReloaderTag, _ = tagOverrides["prometheus-config-reloader"]
-	c.PrometheusOperatorConfig.ConfigReloaderTag, _ = tagOverrides["config-reloader"]
-	c.PrometheusK8sConfig.Tag, _ = tagOverrides["prometheus"]
-	c.AlertmanagerMainConfig.Tag, _ = tagOverrides["alertmanager"]
-	c.GrafanaConfig.Tag, _ = tagOverrides["grafana"]
-	c.AuthConfig.Tag, _ = tagOverrides["oauth-proxy"]
-	c.NodeExporterConfig.Tag, _ = tagOverrides["node-exporter"]
-	c.KubeStateMetricsConfig.Tag, _ = tagOverrides["kube-state-metrics"]
-	c.KubeRbacProxyConfig.Tag, _ = tagOverrides["kube-rbac-proxy"]
-	c.TelemeterClientConfig.Tag, _ = tagOverrides["telemeter-client"]
+func (c *Config) SetImages(images map[string]string) {
+	c.PrometheusOperatorConfig.Image = images["prometheus-operator"]
+	c.PrometheusOperatorConfig.PrometheusConfigReloaderImage = images["prometheus-config-reloader"]
+	c.PrometheusOperatorConfig.ConfigReloaderImage = images["config-reloader"]
+	c.PrometheusK8sConfig.Image = images["prometheus"]
+	c.AlertmanagerMainConfig.Image = images["alertmanager"]
+	c.GrafanaConfig.Image = images["grafana"]
+	c.AuthConfig.Image = images["oauth-proxy"]
+	c.NodeExporterConfig.Image = images["node-exporter"]
+	c.KubeStateMetricsConfig.Image = images["kube-state-metrics"]
+	c.KubeRbacProxyConfig.Image = images["kube-rbac-proxy"]
+	c.TelemeterClientConfig.Image = images["telemeter-client"]
 }
 
 func NewConfigFromString(content string) (*Config, error) {

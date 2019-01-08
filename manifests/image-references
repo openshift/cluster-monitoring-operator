@@ -6,3 +6,47 @@ spec:
     from:
       kind: DockerImage
       name: docker.io/openshift/origin-cluster-monitoring-operator:latest
+  - name: prometheus-operator
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-prometheus-operator:latest
+  - name: prometheus-config-reloader
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-prometheus-config-reloader:latest
+  - name: config-reloader
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-configmap-reload:latest
+  - name: prometheus
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-prometheus:latest
+  - name: alertmanager
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-prometheus-alertmanager:latest
+  - name: grafana
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/grafana:latest
+  - name: oauth-proxy
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/oauth-proxy:latest
+  - name: node-exporter
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-prometheus-alertmanager:latest
+  - name: kube-state-metrics
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-kube-state-metrics:latest
+  - name: kube-rbac-proxy
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-kube-rbac-proxy:latest
+  - name: telemeter-client
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-telemeter:latest
