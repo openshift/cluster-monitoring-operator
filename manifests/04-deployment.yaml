@@ -17,24 +17,24 @@ spec:
     spec:
       serviceAccountName: cluster-monitoring-operator
       containers:
-      - image: docker.io/openshift/origin-cluster-monitoring-operator:latest
+      - image: quay.io/openshift/origin-cluster-monitoring-operator:latest
         name: cluster-monitoring-operator
         args:
         - "-namespace=openshift-monitoring"
         - "-configmap=cluster-monitoring-config"
         - "-logtostderr=true"
         - "-v=4"
-        - "-images=prometheus-operator=docker.io/openshift/origin-prometheus-operator:latest"
-        - "-images=prometheus-config-reloader=docker.io/openshift/origin-prometheus-config-reloader:latest"
-        - "-images=config-reloader=docker.io/openshift/origin-configmap-reload:latest"
-        - "-images=prometheus=docker.io/openshift/origin-prometheus:latest"
-        - "-images=alertmanager=docker.io/openshift/origin-prometheus-alertmanager:latest"
-        - "-images=grafana=docker.io/grafana/grafana:latest"
-        - "-images=oauth-proxy=docker.io/openshift/oauth-proxy:latest"
-        - "-images=node-exporter=docker.io/openshift/origin-prometheus-node-exporter:latest"
-        - "-images=kube-state-metrics=docker.io/openshift/origin-kube-state-metrics:latest"
-        - "-images=kube-rbac-proxy=docker.io/openshift/origin-kube-rbac-proxy:latest"
-        - "-images=telemeter-client=docker.io/openshift/origin-telemeter:latest"
+        - "-images=prometheus-operator=quay.io/openshift/origin-prometheus-operator:latest"
+        - "-images=prometheus-config-reloader=quay.io/openshift/origin-prometheus-config-reloader:latest"
+        - "-images=config-reloader=quay.io/openshift/origin-configmap-reload:latest"
+        - "-images=prometheus=quay.io/openshift/origin-prometheus:latest"
+        - "-images=alertmanager=quay.io/openshift/origin-prometheus-alertmanager:latest"
+        - "-images=grafana=quay.io/openshift/origin-grafana:latest"
+        - "-images=oauth-proxy=quay.io/openshift/origin-oauth-proxy:latest"
+        - "-images=node-exporter=quay.io/openshift/origin-prometheus-node-exporter:latest"
+        - "-images=kube-state-metrics=quay.io/openshift/origin-kube-state-metrics:latest"
+        - "-images=kube-rbac-proxy=quay.io/openshift/origin-kube-rbac-proxy:latest"
+        - "-images=telemeter-client=quay.io/openshift/origin-telemeter:latest"
         ports:
         - containerPort: 8080
           name: http
