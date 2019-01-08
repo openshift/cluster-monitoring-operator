@@ -421,10 +421,16 @@ local namespacesRole =
                 '--secure-listen-address=0.0.0.0:9092',
                 '--upstream=http://127.0.0.1:9095',
                 '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                '--tls-cert-file=/etc/tls/private/tls.crt',
+                '--tls-private-key-file=/etc/tls/private/tls.key',
                 '--logtostderr=true',
                 '--v=10',
               ],
               volumeMounts: [
+                {
+                  mountPath: '/etc/tls/private',
+                  name: 'secret-prometheus-k8s-tls',
+                },
                 {
                   mountPath: '/etc/kube-rbac-proxy',
                   name: 'secret-' + $.prometheus.kubeRbacProxySecret.metadata.name,
