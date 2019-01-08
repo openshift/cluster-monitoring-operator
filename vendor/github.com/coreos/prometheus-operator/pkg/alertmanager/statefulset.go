@@ -27,14 +27,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/blang/semver"
-	monitoringv1 "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 	"github.com/pkg/errors"
 )
 
 const (
 	governingServiceName   = "alertmanager-operated"
-	defaultVersion         = "v0.15.2"
+	defaultVersion         = "v0.15.3"
 	defaultRetention       = "120h"
 	secretsDir             = "/etc/alertmanager/secrets/"
 	configmapsDir          = "/etc/alertmanager/configmaps/"
@@ -146,6 +146,14 @@ func makeStatefulSetService(p *monitoringv1.Alertmanager, config Config) *v1.Ser
 			Labels: config.Labels.Merge(map[string]string{
 				"operated-alertmanager": "true",
 			}),
+			OwnerReferences: []metav1.OwnerReference{
+				metav1.OwnerReference{
+					Name:       p.GetName(),
+					Kind:       p.Kind,
+					APIVersion: p.APIVersion,
+					UID:        p.GetUID(),
+				},
+			},
 		},
 		Spec: v1.ServiceSpec{
 			ClusterIP: "None",
@@ -186,6 +194,9 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 	}
 	if a.Spec.SHA != "" {
 		image = fmt.Sprintf("%s@sha256:%s", a.Spec.BaseImage, a.Spec.SHA)
+	}
+	if a.Spec.Image != nil && *a.Spec.Image != "" {
+		image = *a.Spec.Image
 	}
 
 	versionStr := strings.TrimLeft(a.Spec.Version, "v")
@@ -295,16 +306,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 		}, ports...)
 	}
 
-	gid := int64(2000)
-	uid := int64(1000)
-	nr := true
-	securityContext := &v1.PodSecurityContext{
-		RunAsNonRoot: &nr,
-	}
-	if !config.DisableAutoUserGroup {
-		securityContext.FSGroup = &gid
-		securityContext.RunAsUser = &uid
-	}
+	var securityContext *v1.PodSecurityContext = nil
 	if a.Spec.SecurityContext != nil {
 		securityContext = a.Spec.SecurityContext
 	}
@@ -460,7 +462,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 						},
 						Resources: v1.ResourceRequirements{
 							Limits: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("5m"),
+								v1.ResourceCPU:    resource.MustParse("50m"),
 								v1.ResourceMemory: resource.MustParse("10Mi"),
 							},
 						},

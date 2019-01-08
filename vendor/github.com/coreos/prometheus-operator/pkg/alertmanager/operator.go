@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/prometheus-operator/pkg/client/monitoring"
-	monitoringv1 "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 	"github.com/coreos/prometheus-operator/pkg/listwatch"
 	prometheusoperator "github.com/coreos/prometheus-operator/pkg/prometheus"
@@ -54,7 +54,7 @@ const (
 // monitoring configurations.
 type Operator struct {
 	kclient   kubernetes.Interface
-	mclient   monitoring.Interface
+	mclient   monitoringclient.Interface
 	crdclient apiextensionsclient.Interface
 	logger    log.Logger
 
@@ -79,7 +79,6 @@ type Config struct {
 	CrdKinds                     monitoringv1.CrdKinds
 	CrdGroup                     string
 	EnableValidation             bool
-	DisableAutoUserGroup         bool
 	ManageCRDs                   bool
 }
 
@@ -95,7 +94,7 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 		return nil, errors.Wrap(err, "instantiating kubernetes client failed")
 	}
 
-	mclient, err := monitoring.NewForConfig(&c.CrdKinds, c.CrdGroup, cfg)
+	mclient, err := monitoringclient.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating monitoring client failed")
 	}
@@ -121,7 +120,6 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 			CrdKinds:                     c.CrdKinds,
 			Labels:                       c.Labels,
 			EnableValidation:             c.EnableValidation,
-			DisableAutoUserGroup:         c.DisableAutoUserGroup,
 			ManageCRDs:                   c.ManageCRDs,
 		},
 	}
@@ -129,7 +127,9 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 	o.alrtInf = cache.NewSharedIndexInformer(
 		listwatch.MultiNamespaceListerWatcher(o.config.Namespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
-				ListFunc:  o.mclient.MonitoringV1().Alertmanagers(namespace).List,
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					return o.mclient.MonitoringV1().Alertmanagers(namespace).List(options)
+				},
 				WatchFunc: o.mclient.MonitoringV1().Alertmanagers(namespace).Watch,
 			}
 		}),
@@ -441,6 +441,10 @@ func (c *Operator) sync(key string) error {
 	}
 
 	am := obj.(*monitoringv1.Alertmanager)
+	am = am.DeepCopy()
+	am.APIVersion = monitoringv1.SchemeGroupVersion.String()
+	am.Kind = monitoringv1.AlertmanagersKind
+
 	if am.Spec.Paused {
 		return nil
 	}
@@ -635,7 +639,11 @@ func (c *Operator) createCRDs() error {
 		{
 			"Alertmanager",
 			listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
-				return &cache.ListWatch{ListFunc: c.mclient.MonitoringV1().Alertmanagers(namespace).List}
+				return &cache.ListWatch{
+					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+						return c.mclient.MonitoringV1().Alertmanagers(namespace).List(options)
+					},
+				}
 			}).List,
 		},
 	}
