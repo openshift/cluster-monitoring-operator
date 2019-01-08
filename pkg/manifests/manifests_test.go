@@ -510,7 +510,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
 		"prometheus-config-reloader": "docker.io/openshift/origin-prometheus-config-reloader:latest",
-		"config-reloader":            "docker.io/openshift/origin-configmap-reload:latest",
+		"configmap-reload":           "docker.io/openshift/origin-configmap-reload:latest",
 	})
 
 	if err != nil {

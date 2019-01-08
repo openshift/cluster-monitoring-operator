@@ -188,7 +188,7 @@ func (c *Config) applyDefaults() {
 func (c *Config) SetImages(images map[string]string) {
 	c.PrometheusOperatorConfig.Image = images["prometheus-operator"]
 	c.PrometheusOperatorConfig.PrometheusConfigReloaderImage = images["prometheus-config-reloader"]
-	c.PrometheusOperatorConfig.ConfigReloaderImage = images["config-reloader"]
+	c.PrometheusOperatorConfig.ConfigReloaderImage = images["configmap-reload"]
 	c.PrometheusK8sConfig.Image = images["prometheus"]
 	c.AlertmanagerMainConfig.Image = images["alertmanager"]
 	c.GrafanaConfig.Image = images["grafana"]

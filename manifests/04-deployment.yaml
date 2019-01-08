@@ -26,7 +26,7 @@ spec:
         - "-v=4"
         - "-images=prometheus-operator=quay.io/openshift/origin-prometheus-operator:latest"
         - "-images=prometheus-config-reloader=quay.io/openshift/origin-prometheus-config-reloader:latest"
-        - "-images=config-reloader=quay.io/openshift/origin-configmap-reload:latest"
+        - "-images=configmap-reload=quay.io/openshift/origin-configmap-reload:latest"
         - "-images=prometheus=quay.io/openshift/origin-prometheus:latest"
         - "-images=alertmanager=quay.io/openshift/origin-prometheus-alertmanager:latest"
         - "-images=grafana=quay.io/openshift/origin-grafana:latest"
