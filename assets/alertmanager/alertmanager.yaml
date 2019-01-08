@@ -45,7 +45,7 @@ spec:
       value: ""
     - name: NO_PROXY
       value: ""
-    image: openshift/oauth-proxy:v1.1.0
+    image: openshift/oauth-proxy:latest
     name: alertmanager-proxy
     ports:
     - containerPort: 9094
