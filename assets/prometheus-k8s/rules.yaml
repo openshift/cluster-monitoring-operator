@@ -264,6 +264,28 @@ spec:
           node_namespace_pod:kube_pod_info:
         )
       record: node:node_net_saturation:sum_irate
+    - expr: |
+        max(
+          max(
+            kube_pod_info{job="kube-state-metrics", host_ip!=""}
+          ) by (node, host_ip)
+          * on (host_ip) group_right (node)
+          label_replace(
+            (max(node_filesystem_files{job="node-exporter", mountpoint="/"}) by (instance)), "host_ip", "$1", "instance", "(.*):.*"
+          )
+        ) by (node)
+      record: 'node:node_inodes_total:'
+    - expr: |
+        max(
+          max(
+            kube_pod_info{job="kube-state-metrics", host_ip!=""}
+          ) by (node, host_ip)
+          * on (host_ip) group_right (node)
+          label_replace(
+            (max(node_filesystem_files_free{job="node-exporter", mountpoint="/"}) by (instance)), "host_ip", "$1", "instance", "(.*):.*"
+          )
+        ) by (node)
+      record: 'node:node_inodes_free:'
   - name: kube-prometheus-node-recording.rules
     rules:
     - expr: sum(rate(node_cpu{mode!="idle",mode!="iowait"}[3m])) BY (instance)
@@ -705,7 +727,7 @@ spec:
         message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
           }}' is experiencing {{ printf "%0.0f" $value }}% errors.'
       expr: |
-        (sum(rate(rest_client_requests_total{code!~"2..|404"}[5m])) by (instance, job)
+        (sum(rate(rest_client_requests_total{code=~"5.."}[5m])) by (instance, job)
           /
         sum(rate(rest_client_requests_total[5m])) by (instance, job))
         * 100 > 1

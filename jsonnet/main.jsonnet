@@ -75,7 +75,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
   grafanaDashboards:: {
     [k]: d[k]
     for k in std.objectFields(d)
-    if !std.setMember(k, ['nodes.json', 'pods.json', 'statefulset.json'])
+    if !std.setMember(k, ['nodes.json', 'persistentvolumesusage.json', 'pods.json', 'statefulset.json'])
   },
 };
 
