@@ -23,6 +23,7 @@ import (
 )
 
 type Config struct {
+	Images                   *Images                   `json:"-"`
 	PrometheusOperatorConfig *PrometheusOperatorConfig `json:"prometheusOperator"`
 	PrometheusK8sConfig      *PrometheusK8sConfig      `json:"prometheusK8s"`
 	AlertmanagerMainConfig   *AlertmanagerMainConfig   `json:"alertmanagerMain"`
@@ -34,6 +35,11 @@ type Config struct {
 	EtcdConfig               *EtcdConfig               `json:"etcd"`
 	HTTPConfig               *HTTPConfig               `json:"http"`
 	TelemeterClientConfig    *TelemeterClientConfig    `json:"telemeterClient"`
+}
+
+type Images struct {
+	K8sPrometheusAdapter string
+	PromLabelProxy       string
 }
 
 type HTTPConfig struct {
@@ -141,6 +147,9 @@ func NewConfig(content io.Reader) (*Config, error) {
 }
 
 func (c *Config) applyDefaults() {
+	if c.Images == nil {
+		c.Images = &Images{}
+	}
 	if c.PrometheusOperatorConfig == nil {
 		c.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
 	}
@@ -197,6 +206,8 @@ func (c *Config) SetImages(images map[string]string) {
 	c.KubeStateMetricsConfig.Image = images["kube-state-metrics"]
 	c.KubeRbacProxyConfig.Image = images["kube-rbac-proxy"]
 	c.TelemeterClientConfig.Image = images["telemeter-client"]
+	c.Images.PromLabelProxy = images["prom-label-proxy"]
+	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
 }
 
 func NewConfigFromString(content string) (*Config, error) {

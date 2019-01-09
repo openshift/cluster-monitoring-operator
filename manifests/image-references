@@ -50,3 +50,11 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-telemeter:latest
+  - name: k8s-prometheus-adapter
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-k8s-prometheus-adapter:latest
+  - name: prom-label-proxy
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-prom-label-proxy:latest

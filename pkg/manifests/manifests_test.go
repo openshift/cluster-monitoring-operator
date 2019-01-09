@@ -591,7 +591,10 @@ ingress:
 		t.Fatal(err)
 	}
 	c.SetImages(map[string]string{
-		"prometheus": "docker.io/openshift/origin-prometheus:latest",
+		"prometheus":       "docker.io/openshift/origin-prometheus:latest",
+		"oauth-proxy":      "docker.io/openshift/origin-oauth-proxy:latest",
+		"kube-rbac-proxy":  "docker.io/openshift/origin-kube-rbac-proxy:latest",
+		"prom-label-proxy": "docker.io/openshift/origin-prom-label-proxy:latest",
 	})
 
 	f := NewFactory("openshift-monitoring", c)
@@ -606,6 +609,18 @@ ingress:
 
 	if *p.Spec.Image != "docker.io/openshift/origin-prometheus:latest" {
 		t.Fatal("Prometheus image is not configured correctly")
+	}
+
+	if p.Spec.Containers[0].Image != "docker.io/openshift/origin-oauth-proxy:latest" {
+		t.Fatal("oauth-proxy image is not configured correctly")
+	}
+
+	if p.Spec.Containers[1].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+		t.Fatal("kube-rbac-proxy image is not configured correctly")
+	}
+
+	if p.Spec.Containers[2].Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
+		t.Fatal("prom-label-proxy image is not configured correctly")
 	}
 
 	cpuLimit := p.Spec.Resources.Limits[v1.ResourceCPU]
@@ -640,6 +655,26 @@ ingress:
 	storageRequestPtr := &storageRequest
 	if storageRequestPtr.String() != "15Gi" {
 		t.Fatal("Prometheus volumeClaimTemplate not configured correctly, expected 15Gi storage request, but found", storageRequestPtr.String())
+	}
+}
+
+func TestK8sPrometheusAdapterConfiguration(t *testing.T) {
+	c, err := NewConfigFromString(``)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.SetImages(map[string]string{
+		"k8s-prometheus-adapter": "docker.io/openshift/origin-k8s-prometheus-adapter:latest",
+	})
+
+	f := NewFactory("openshift-monitoring", c)
+	d, err := f.PrometheusAdapterDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-k8s-prometheus-adapter:latest" {
+		t.Fatal("k8s-prometheus-adapter image is not configured correctly")
 	}
 }
 

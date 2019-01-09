@@ -695,6 +695,7 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 
 	p.Spec.Containers[0].Image = f.config.AuthConfig.Image
 	p.Spec.Containers[1].Image = f.config.KubeRbacProxyConfig.Image
+	p.Spec.Containers[2].Image = f.config.Images.PromLabelProxy
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespace
@@ -860,6 +861,7 @@ func (f *Factory) PrometheusAdapterDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
+	dep.Spec.Template.Spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
 	dep.Namespace = f.namespace
 
 	return dep, nil
