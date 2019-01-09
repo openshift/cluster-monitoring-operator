@@ -16,6 +16,8 @@ spec:
         app: cluster-monitoring-operator
     spec:
       serviceAccountName: cluster-monitoring-operator
+      nodeSelector:
+        beta.kubernetes.io/os: linux
       containers:
       - image: quay.io/openshift/origin-cluster-monitoring-operator:latest
         name: cluster-monitoring-operator
