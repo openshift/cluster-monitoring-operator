@@ -37,6 +37,8 @@ spec:
         - "-images=kube-state-metrics=quay.io/openshift/origin-kube-state-metrics:latest"
         - "-images=kube-rbac-proxy=quay.io/openshift/origin-kube-rbac-proxy:latest"
         - "-images=telemeter-client=quay.io/openshift/origin-telemeter:latest"
+          #- "-images=prom-label-proxy=quay.io/openshift/origin-prom-label-proxy:latest"
+          #- "-images=k8s-prometheus-adapter=quay.io/openshift/origin-k8s-prometheus-adapter:latest"
         ports:
         - containerPort: 8080
           name: http

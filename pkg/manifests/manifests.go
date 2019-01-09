@@ -1547,6 +1547,8 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 	}
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.TelemeterClientConfig.Image
+	d.Spec.Template.Spec.Containers[1].Image = f.config.PrometheusOperatorConfig.ConfigReloaderImage
+	d.Spec.Template.Spec.Containers[2].Image = f.config.KubeRbacProxyConfig.Image
 	d.Namespace = f.namespace
 
 	return d, nil
