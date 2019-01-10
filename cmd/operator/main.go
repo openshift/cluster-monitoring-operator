@@ -33,16 +33,16 @@ import (
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
 
-type tags map[string]string
+type images map[string]string
 
-func (t *tags) String() string {
-	m := *t
+func (i *images) String() string {
+	m := *i
 	slice := m.asSlice()
 	return strings.Join(slice, ",")
 }
 
-func (t *tags) Set(value string) error {
-	m := *t
+func (i *images) Set(value string) error {
+	m := *i
 	pairs := strings.Split(value, ",")
 	for _, pair := range pairs {
 		splitPair := strings.Split(pair, "=")
@@ -56,23 +56,23 @@ func (t *tags) Set(value string) error {
 	return nil
 }
 
-func (t tags) asSlice() []string {
+func (i images) asSlice() []string {
 	pairs := []string{}
-	for name, tag := range t {
+	for name, tag := range i {
 		pairs = append(pairs, name+"="+tag)
 	}
 	return pairs
 }
 
-func (t tags) asMap() map[string]string {
-	res := make(map[string]string, len(t))
-	for k, v := range t {
+func (i images) asMap() map[string]string {
+	res := make(map[string]string, len(i))
+	for k, v := range i {
 		res[k] = v
 	}
 	return res
 }
 
-func (t *tags) Type() string {
+func (i *images) Type() string {
 	return "map[string]string"
 }
 
@@ -83,8 +83,8 @@ func Main() int {
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
 	kubeconfigPath := flagset.String("kubeconfig", "", "The path to the kubeconfig to connect to the apiserver with.")
 	apiserver := flagset.String("apiserver", "", "The address of the apiserver to talk to.")
-	tags := tags{}
-	flag.Var(&tags, "tags", "Tags to use for images.")
+	images := images{}
+	flag.Var(&images, "images", "Images to use for containers managed by the cluster-monitoring-operator.")
 	flag.Parse()
 
 	ok := true
@@ -114,7 +114,7 @@ func Main() int {
 		return 1
 	}
 
-	o, err := cmo.New(config, *namespace, *namespaceSelector, *configMapName, tags.asMap())
+	o, err := cmo.New(config, *namespace, *namespaceSelector, *configMapName, images.asMap())
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/Jeffail/gabs"
-	monClient "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
+	monClient "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"github.com/pkg/errors"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	crdc "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -30,7 +30,7 @@ var namespaceName = "openshift-monitoring"
 type Framework struct {
 	CRDClient        crdc.CustomResourceDefinitionInterface
 	KubeClient       kubernetes.Interface
-	MonitoringClient *monClient.MonitoringV1alpha1Client
+	MonitoringClient *monClient.MonitoringV1Client
 	Ns               string
 	OpImageName      string
 }

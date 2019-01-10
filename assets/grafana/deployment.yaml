@@ -92,6 +92,8 @@ spec:
         - mountPath: /etc/proxy/secrets
           name: secret-grafana-proxy
           readOnly: false
+      nodeSelector:
+        beta.kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: grafana

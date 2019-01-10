@@ -21,8 +21,9 @@ import (
 	"time"
 
 	"github.com/coreos/prometheus-operator/pkg/alertmanager"
-	"github.com/coreos/prometheus-operator/pkg/client/monitoring"
-	monv1 "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	mon "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
+	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoring "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 	prometheusoperator "github.com/coreos/prometheus-operator/pkg/prometheus"
 	"github.com/golang/glog"
@@ -66,10 +67,7 @@ type Client struct {
 }
 
 func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersionName string) (*Client, error) {
-	mclient, err := monitoring.NewForConfig(
-		&monv1.DefaultCrdKinds,
-		monv1.Group,
-		cfg)
+	mclient, err := monitoring.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -127,17 +125,17 @@ func (c *Client) ConfigMapListWatch() *cache.ListWatch {
 
 func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
 	wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
-		err := c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.Prometheus, monv1.Group, map[string]string{}, false))
+		err := c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.Prometheus, mon.GroupName, map[string]string{}, false))
 		if err != nil {
 			return false, err
 		}
 
-		err = c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.Alertmanager, monv1.Group, map[string]string{}, false))
+		err = c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.Alertmanager, mon.GroupName, map[string]string{}, false))
 		if err != nil {
 			return false, err
 		}
 
-		err = c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.ServiceMonitor, monv1.Group, map[string]string{}, false))
+		err = c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.ServiceMonitor, mon.GroupName, map[string]string{}, false))
 		if err != nil {
 			return false, err
 		}
@@ -225,7 +223,7 @@ func (c *Client) NamespacesToMonitor() ([]string, error) {
 
 func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
-	_, err := pclient.Get(p.GetName(), metav1.GetOptions{})
+	oldProm, err := pclient.Get(p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pclient.Create(p)
 		return errors.Wrap(err, "creating Prometheus object failed")
@@ -234,13 +232,14 @@ func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 		return errors.Wrap(err, "retrieving Prometheus object failed")
 	}
 
+	p.ResourceVersion = oldProm.ResourceVersion
 	_, err = pclient.Update(p)
 	return errors.Wrap(err, "updating Prometheus object failed")
 }
 
 func (c *Client) CreateOrUpdatePrometheusRule(p *monv1.PrometheusRule) error {
 	pclient := c.mclient.MonitoringV1().PrometheusRules(p.GetNamespace())
-	_, err := pclient.Get(p.GetName(), metav1.GetOptions{})
+	oldRule, err := pclient.Get(p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pclient.Create(p)
 		return errors.Wrap(err, "creating PrometheusRule object failed")
@@ -249,13 +248,14 @@ func (c *Client) CreateOrUpdatePrometheusRule(p *monv1.PrometheusRule) error {
 		return errors.Wrap(err, "retrieving PrometheusRule object failed")
 	}
 
+	p.ResourceVersion = oldRule.ResourceVersion
 	_, err = pclient.Update(p)
 	return errors.Wrap(err, "updating PrometheusRule object failed")
 }
 
 func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	aclient := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace())
-	_, err := aclient.Get(a.GetName(), metav1.GetOptions{})
+	oldAm, err := aclient.Get(a.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := aclient.Create(a)
 		return errors.Wrap(err, "creating Alertmanager object failed")
@@ -264,6 +264,7 @@ func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 		return errors.Wrap(err, "retrieving Alertmanager object failed")
 	}
 
+	a.ResourceVersion = oldAm.ResourceVersion
 	_, err = aclient.Update(a)
 	return errors.Wrap(err, "updating Alertmanager object failed")
 }
@@ -721,7 +722,7 @@ func (c *Client) CreateOrUpdateServiceAccount(sa *v1.ServiceAccount) error {
 
 func (c *Client) CreateOrUpdateServiceMonitor(sm *monv1.ServiceMonitor) error {
 	smClient := c.mclient.MonitoringV1().ServiceMonitors(sm.GetNamespace())
-	_, err := smClient.Get(sm.GetName(), metav1.GetOptions{})
+	oldSm, err := smClient.Get(sm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := smClient.Create(sm)
 		return errors.Wrap(err, "creating ServiceMonitor object failed")
@@ -730,6 +731,7 @@ func (c *Client) CreateOrUpdateServiceMonitor(sm *monv1.ServiceMonitor) error {
 		return errors.Wrap(err, "retrieving ServiceMonitor object failed")
 	}
 
+	sm.ResourceVersion = oldSm.ResourceVersion
 	_, err = smClient.Update(sm)
 	return errors.Wrap(err, "updating ServiceMonitor object failed")
 }
@@ -751,7 +753,7 @@ func (c *Client) CreateOrUpdateIngress(ing *v1betaextensions.Ingress) error {
 
 func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.APIService) error {
 	apsc := c.aggclient.ApiregistrationV1beta1().APIServices()
-	apiService, err := apsc.Get(apiService.GetName(), metav1.GetOptions{})
+	oldAPIService, err := apsc.Get(apiService.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err = apsc.Create(apiService)
 		return errors.Wrap(err, "creating APIService object failed")
@@ -760,6 +762,10 @@ func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.API
 		return errors.Wrap(err, "retrieving APIService object failed")
 	}
 
+	apiService.ResourceVersion = oldAPIService.ResourceVersion
+	if len(oldAPIService.Spec.CABundle) > 0 {
+		apiService.Spec.CABundle = oldAPIService.Spec.CABundle
+	}
 	_, err = apsc.Update(apiService)
 	return errors.Wrap(err, "updating APIService object failed")
 

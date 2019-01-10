@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/prometheus-operator/pkg/client/monitoring"
-	monitoringv1 "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 	"github.com/coreos/prometheus-operator/pkg/listwatch"
 
@@ -43,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -56,7 +57,7 @@ const (
 // monitoring configurations.
 type Operator struct {
 	kclient   kubernetes.Interface
-	mclient   monitoring.Interface
+	mclient   monitoringclient.Interface
 	crdclient apiextensionsclient.Interface
 	logger    log.Logger
 
@@ -143,7 +144,6 @@ type Config struct {
 	CrdGroup                     string
 	CrdKinds                     monitoringv1.CrdKinds
 	EnableValidation             bool
-	DisableAutoUserGroup         bool
 	LocalHost                    string
 	LogLevel                     string
 	LogFormat                    string
@@ -159,21 +159,22 @@ type BasicAuthCredentials struct {
 func New(conf Config, logger log.Logger) (*Operator, error) {
 	cfg, err := k8sutil.NewClusterConfig(conf.Host, conf.TLSInsecure, &conf.TLSConfig)
 	if err != nil {
-		return nil, err
-	}
-	client, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "instantiating cluster config failed")
 	}
 
-	mclient, err := monitoring.NewForConfig(&conf.CrdKinds, conf.CrdGroup, cfg)
+	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "instantiating kubernetes client failed")
 	}
 
 	crdclient, err := apiextensionsclient.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating apiextensions client failed")
+	}
+
+	mclient, err := monitoringclient.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "instantiating monitoring client failed")
 	}
 
 	kubeletObjectName := ""
@@ -207,7 +208,9 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	c.promInf = cache.NewSharedIndexInformer(
 		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
-				ListFunc:  mclient.MonitoringV1().Prometheuses(namespace).List,
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					return mclient.MonitoringV1().Prometheuses(namespace).List(options)
+				},
 				WatchFunc: mclient.MonitoringV1().Prometheuses(namespace).Watch,
 			}
 		}),
@@ -217,7 +220,9 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	c.smonInf = cache.NewSharedIndexInformer(
 		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
-				ListFunc:  mclient.MonitoringV1().ServiceMonitors(namespace).List,
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					return mclient.MonitoringV1().ServiceMonitors(namespace).List(options)
+				},
 				WatchFunc: mclient.MonitoringV1().ServiceMonitors(namespace).Watch,
 			}
 		}),
@@ -227,7 +232,9 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	c.ruleInf = cache.NewSharedIndexInformer(
 		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
-				ListFunc:  mclient.MonitoringV1().PrometheusRules(namespace).List,
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					return mclient.MonitoringV1().PrometheusRules(namespace).List(options)
+				},
 				WatchFunc: mclient.MonitoringV1().PrometheusRules(namespace).Watch,
 			}
 		}),
@@ -949,6 +956,10 @@ func (c *Operator) sync(key string) error {
 	}
 
 	p := obj.(*monitoringv1.Prometheus)
+	p = p.DeepCopy()
+	p.APIVersion = monitoringv1.SchemeGroupVersion.String()
+	p.Kind = monitoringv1.PrometheusesKind
+
 	if p.Spec.Paused {
 		return nil
 	}
@@ -1003,13 +1014,13 @@ func (c *Operator) sync(key string) error {
 		return err
 	}
 
+	sset, err := makeStatefulSet(*p, &c.config, ruleConfigMapNames, newSSetInputHash)
+	if err != nil {
+		return errors.Wrap(err, "making statefulset failed")
+	}
+
 	if !exists {
 		level.Debug(c.logger).Log("msg", "no current Prometheus statefulset found")
-		sset, err := makeStatefulSet(*p, "", &c.config, ruleConfigMapNames, newSSetInputHash)
-		if err != nil {
-			return errors.Wrap(err, "making statefulset failed")
-		}
-
 		level.Debug(c.logger).Log("msg", "creating Prometheus statefulset")
 		if _, err := ssetClient.Create(sset); err != nil {
 			return errors.Wrap(err, "creating statefulset failed")
@@ -1021,11 +1032,6 @@ func (c *Operator) sync(key string) error {
 	if newSSetInputHash == oldSSetInputHash {
 		level.Debug(c.logger).Log("msg", "new statefulset generation inputs match current, skipping any actions")
 		return nil
-	}
-
-	sset, err := makeStatefulSet(*p, obj.(*appsv1.StatefulSet).Spec.PodManagementPolicy, &c.config, ruleConfigMapNames, newSSetInputHash)
-	if err != nil {
-		return errors.Wrap(err, "making statefulset failed")
 	}
 
 	level.Debug(c.logger).Log("msg", "updating current Prometheus statefulset")
@@ -1149,28 +1155,60 @@ func loadAdditionalScrapeConfigsSecret(additionalScrapeConfigs *v1.SecretKeySele
 	return nil, nil
 }
 
+func extractCredKey(secret *v1.Secret, sel v1.SecretKeySelector, cred string) (string, error) {
+	if s, ok := secret.Data[sel.Key]; ok {
+		return string(s), nil
+	}
+	return "", fmt.Errorf("secret %s key %q in secret %q not found", cred, sel.Key, sel.Name)
+}
+
+func getCredFromSecret(c corev1client.SecretInterface, sel v1.SecretKeySelector, cred string, cacheKey string, cache map[string]*v1.Secret) (_ string, err error) {
+	var s *v1.Secret
+	var ok bool
+
+	if s, ok = cache[cacheKey]; !ok {
+		if s, err = c.Get(sel.Name, metav1.GetOptions{}); err != nil {
+			return "", fmt.Errorf("unable to fetch %s secret %q: %s", cred, sel.Name, err)
+		}
+		cache[cacheKey] = s
+	}
+	return extractCredKey(s, sel, cred)
+}
+
+func loadBasicAuthSecretFromAPI(basicAuth *monitoringv1.BasicAuth, c corev1client.CoreV1Interface, ns string, cache map[string]*v1.Secret) (BasicAuthCredentials, error) {
+	var username string
+	var password string
+	var err error
+
+	sClient := c.Secrets(ns)
+
+	if username, err = getCredFromSecret(sClient, basicAuth.Username, "username", ns+"/"+basicAuth.Username.Name, cache); err != nil {
+		return BasicAuthCredentials{}, err
+	}
+
+	if password, err = getCredFromSecret(sClient, basicAuth.Password, "password", ns+"/"+basicAuth.Password.Name, cache); err != nil {
+		return BasicAuthCredentials{}, err
+	}
+
+	return BasicAuthCredentials{username: username, password: password}, nil
+}
+
 func loadBasicAuthSecret(basicAuth *monitoringv1.BasicAuth, s *v1.SecretList) (BasicAuthCredentials, error) {
 	var username string
 	var password string
+	var err error
 
 	for _, secret := range s.Items {
 
 		if secret.Name == basicAuth.Username.Name {
-
-			if u, ok := secret.Data[basicAuth.Username.Key]; ok {
-				username = string(u)
-			} else {
-				return BasicAuthCredentials{}, fmt.Errorf("secret username key %q in secret %q not found", basicAuth.Username.Key, secret.Name)
+			if username, err = extractCredKey(&secret, basicAuth.Username, "username"); err != nil {
+				return BasicAuthCredentials{}, err
 			}
-
 		}
 
 		if secret.Name == basicAuth.Password.Name {
-
-			if p, ok := secret.Data[basicAuth.Password.Key]; ok {
-				password = string(p)
-			} else {
-				return BasicAuthCredentials{}, fmt.Errorf("secret password key %q in secret %q not found", basicAuth.Password.Key, secret.Name)
+			if password, err = extractCredKey(&secret, basicAuth.Password, "password"); err != nil {
+				return BasicAuthCredentials{}, err
 			}
 
 		}
@@ -1195,25 +1233,12 @@ func (c *Operator) loadBasicAuthSecrets(
 	SecretsInPromNS *v1.SecretList,
 ) (map[string]BasicAuthCredentials, error) {
 
-	sMonSecretMap := make(map[string]*v1.SecretList)
-	for _, mon := range mons {
-		smNamespace := mon.Namespace
-		if sMonSecretMap[smNamespace] == nil {
-			msClient := c.kclient.CoreV1().Secrets(smNamespace)
-			listSecrets, err := msClient.List(metav1.ListOptions{})
-
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to retrieve secrets in namespace '%v' for servicemonitor '%v'", smNamespace, mon.Name)
-			}
-			sMonSecretMap[smNamespace] = listSecrets
-		}
-	}
-
 	secrets := map[string]BasicAuthCredentials{}
+	nsSecretCache := make(map[string]*v1.Secret)
 	for _, mon := range mons {
 		for i, ep := range mon.Spec.Endpoints {
 			if ep.BasicAuth != nil {
-				credentials, err := loadBasicAuthSecret(ep.BasicAuth, sMonSecretMap[mon.Namespace])
+				credentials, err := loadBasicAuthSecretFromAPI(ep.BasicAuth, c.kclient.CoreV1(), mon.Namespace, nsSecretCache)
 				if err != nil {
 					return nil, fmt.Errorf("could not generate basicAuth for servicemonitor %s. %s", mon.Name, err)
 				}
@@ -1423,21 +1448,33 @@ func (c *Operator) createCRDs() error {
 		listFunc func(opts metav1.ListOptions) (runtime.Object, error)
 	}{
 		{
-			"Prometheus",
+			monitoringv1.PrometheusesKind,
 			listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
-				return &cache.ListWatch{ListFunc: c.mclient.MonitoringV1().Prometheuses(namespace).List}
+				return &cache.ListWatch{
+					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+						return c.mclient.MonitoringV1().Prometheuses(namespace).List(options)
+					},
+				}
 			}).List,
 		},
 		{
-			"ServiceMonitor",
+			monitoringv1.ServiceMonitorsKind,
 			listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
-				return &cache.ListWatch{ListFunc: c.mclient.MonitoringV1().ServiceMonitors(namespace).List}
+				return &cache.ListWatch{
+					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+						return c.mclient.MonitoringV1().ServiceMonitors(namespace).List(options)
+					},
+				}
 			}).List,
 		},
 		{
-			"PrometheusRule",
+			monitoringv1.PrometheusRuleKind,
 			listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
-				return &cache.ListWatch{ListFunc: c.mclient.MonitoringV1().PrometheusRules(namespace).List}
+				return &cache.ListWatch{
+					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+						return c.mclient.MonitoringV1().PrometheusRules(namespace).List(options)
+					},
+				}
 			}).List,
 		},
 	}

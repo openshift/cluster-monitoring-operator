@@ -51,6 +51,8 @@ spec:
         - mountPath: /etc/tls/private
           name: prometheus-adapter-tls
           readOnly: false
+      nodeSelector:
+        beta.kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: prometheus-adapter

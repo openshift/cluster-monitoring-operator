@@ -3,6 +3,8 @@ kind: Service
 metadata:
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: grafana-tls
+  labels:
+    app: grafana
   name: grafana
   namespace: openshift-monitoring
 spec:

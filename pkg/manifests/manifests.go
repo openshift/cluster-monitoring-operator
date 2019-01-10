@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"strings"
 
-	monv1 "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	appsv1 "k8s.io/api/apps/v1beta2"
@@ -267,10 +267,7 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 		return nil, err
 	}
 
-	if f.config.AlertmanagerMainConfig.BaseImage != "" {
-		a.Spec.BaseImage = f.config.AlertmanagerMainConfig.BaseImage
-		a.Spec.Tag = f.config.AlertmanagerMainConfig.Tag
-	}
+	a.Spec.Image = &f.config.AlertmanagerMainConfig.Image
 
 	a.Spec.ExternalURL = f.AlertmanagerExternalURL(host).String()
 
@@ -288,15 +285,7 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 		a.Spec.NodeSelector = f.config.AlertmanagerMainConfig.NodeSelector
 	}
 
-	if f.config.AuthConfig.BaseImage != "" {
-		image, err := imageFromString(a.Spec.Containers[0].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.AuthConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.AuthConfig.Tag)
-		a.Spec.Containers[0].Image = image.String()
-	}
+	a.Spec.Containers[0].Image = f.config.AuthConfig.Image
 
 	for c := range a.Spec.Containers {
 		for e := range a.Spec.Containers[c].Env {
@@ -364,35 +353,9 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
-	if f.config.KubeRbacProxyConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.KubeRbacProxyConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.KubeRbacProxyConfig.Tag)
-		d.Spec.Template.Spec.Containers[0].Image = image.String()
-	}
-
-	if f.config.KubeRbacProxyConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[1].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.KubeRbacProxyConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.KubeRbacProxyConfig.Tag)
-		d.Spec.Template.Spec.Containers[1].Image = image.String()
-	}
-
-	if f.config.KubeStateMetricsConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[2].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.KubeStateMetricsConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.KubeStateMetricsConfig.Tag)
-		d.Spec.Template.Spec.Containers[2].Image = image.String()
-	}
+	d.Spec.Template.Spec.Containers[0].Image = f.config.KubeRbacProxyConfig.Image
+	d.Spec.Template.Spec.Containers[1].Image = f.config.KubeRbacProxyConfig.Image
+	d.Spec.Template.Spec.Containers[2].Image = f.config.KubeStateMetricsConfig.Image
 
 	if f.config.KubeStateMetricsConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.KubeStateMetricsConfig.NodeSelector
@@ -443,25 +406,9 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	if f.config.NodeExporterConfig.BaseImage != "" {
-		image, err := imageFromString(ds.Spec.Template.Spec.Containers[0].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.NodeExporterConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.NodeExporterConfig.Tag)
-		ds.Spec.Template.Spec.Containers[0].Image = image.String()
-	}
+	ds.Spec.Template.Spec.Containers[0].Image = f.config.NodeExporterConfig.Image
+	ds.Spec.Template.Spec.Containers[1].Image = f.config.KubeRbacProxyConfig.Image
 
-	if f.config.KubeRbacProxyConfig.BaseImage != "" {
-		image, err := imageFromString(ds.Spec.Template.Spec.Containers[1].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.KubeRbacProxyConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.KubeRbacProxyConfig.Tag)
-		ds.Spec.Template.Spec.Containers[1].Image = image.String()
-	}
 	ds.Namespace = f.namespace
 
 	return ds, nil
@@ -714,11 +661,7 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		p.Spec.Retention = f.config.PrometheusK8sConfig.Retention
 	}
 
-	if f.config.PrometheusK8sConfig.BaseImage != "" {
-		p.Spec.BaseImage = f.config.PrometheusK8sConfig.BaseImage
-		p.Spec.Tag = f.config.PrometheusK8sConfig.Tag
-	}
-
+	p.Spec.Image = &f.config.PrometheusK8sConfig.Image
 	p.Spec.ExternalURL = f.PrometheusExternalURL(host).String()
 
 	if f.config.PrometheusK8sConfig.Resources != nil {
@@ -750,16 +693,9 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		p.Spec.Secrets = secrets
 	}
 
-	if f.config.AuthConfig.BaseImage != "" {
-		image, err := imageFromString(p.Spec.Containers[0].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.AuthConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.AuthConfig.Tag)
-		p.Spec.Containers[0].Image = image.String()
-	}
-
+	p.Spec.Containers[0].Image = f.config.AuthConfig.Image
+	p.Spec.Containers[1].Image = f.config.KubeRbacProxyConfig.Image
+	p.Spec.Containers[2].Image = f.config.Images.PromLabelProxy
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespace
@@ -925,6 +861,7 @@ func (f *Factory) PrometheusAdapterDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
+	dep.Spec.Template.Spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
 	dep.Namespace = f.namespace
 
 	return dep, nil
@@ -992,15 +929,7 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 		d.Spec.Template.Spec.NodeSelector = f.config.PrometheusOperatorConfig.NodeSelector
 	}
 
-	if f.config.PrometheusOperatorConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.PrometheusOperatorConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.PrometheusOperatorConfig.Tag)
-		d.Spec.Template.Spec.Containers[0].Image = image.String()
-	}
+	d.Spec.Template.Spec.Containers[0].Image = f.config.PrometheusOperatorConfig.Image
 
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
@@ -1008,24 +937,12 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 			args[i] = PrometheusOperatorNamespaceFlag + strings.Join(namespaces, ",")
 		}
 
-		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.PrometheusOperatorConfig.PrometheusConfigReloader != "" {
-			image, err := imageFromString(strings.TrimSuffix(args[i], PrometheusConfigReloaderFlag))
-			if err != nil {
-				return nil, err
-			}
-			image.repo = f.config.PrometheusOperatorConfig.PrometheusConfigReloader
-			image.SetTagIfNotEmpty(f.config.PrometheusOperatorConfig.PrometheusConfigReloaderTag)
-			args[i] = PrometheusConfigReloaderFlag + image.String()
+		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) {
+			args[i] = PrometheusConfigReloaderFlag + f.config.PrometheusOperatorConfig.PrometheusConfigReloaderImage
 		}
 
-		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) && f.config.PrometheusOperatorConfig.ConfigReloaderImage != "" {
-			image, err := imageFromString(strings.TrimSuffix(args[i], ConfigReloaderImageFlag))
-			if err != nil {
-				return nil, err
-			}
-			image.repo = f.config.PrometheusOperatorConfig.ConfigReloaderImage
-			image.SetTagIfNotEmpty(f.config.PrometheusOperatorConfig.ConfigReloaderTag)
-			args[i] = ConfigReloaderImageFlag + image.String()
+		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) {
+			args[i] = ConfigReloaderImageFlag + f.config.PrometheusOperatorConfig.ConfigReloaderImage
 		}
 	}
 	d.Spec.Template.Spec.Containers[0].Args = args
@@ -1175,15 +1092,7 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
-	if f.config.GrafanaConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.GrafanaConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.GrafanaConfig.Tag)
-		d.Spec.Template.Spec.Containers[0].Image = image.String()
-	}
+	d.Spec.Template.Spec.Containers[0].Image = f.config.GrafanaConfig.Image
 
 	if !f.config.EtcdConfig.IsEnabled() {
 		vols := []v1.Volume{}
@@ -1203,15 +1112,7 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.Containers[0].VolumeMounts = volMounts
 	}
 
-	if f.config.AuthConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[1].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.AuthConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.AuthConfig.Tag)
-		d.Spec.Template.Spec.Containers[1].Image = image.String()
-	}
+	d.Spec.Template.Spec.Containers[1].Image = f.config.AuthConfig.Image
 
 	if f.config.GrafanaConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.GrafanaConfig.NodeSelector
@@ -1647,16 +1548,9 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
-	if f.config.TelemeterClientConfig.BaseImage != "" {
-		image, err := imageFromString(d.Spec.Template.Spec.Containers[0].Image)
-		if err != nil {
-			return nil, err
-		}
-		image.repo = f.config.TelemeterClientConfig.BaseImage
-		image.SetTagIfNotEmpty(f.config.TelemeterClientConfig.Tag)
-		d.Spec.Template.Spec.Containers[0].Image = image.String()
-	}
-
+	d.Spec.Template.Spec.Containers[0].Image = f.config.TelemeterClientConfig.Image
+	d.Spec.Template.Spec.Containers[1].Image = f.config.PrometheusOperatorConfig.ConfigReloaderImage
+	d.Spec.Template.Spec.Containers[2].Image = f.config.KubeRbacProxyConfig.Image
 	d.Namespace = f.namespace
 
 	return d, nil

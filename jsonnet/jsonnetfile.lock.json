@@ -8,7 +8,7 @@
                     "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
                 }
             },
-            "version": "72fb940dbd18f6c5c695e53ee6c555d51b774e50"
+            "version": "b210fb765c8cbd3c0c7b8363d2a78c9a4a4dd707"
         },
         {
             "name": "ksonnet",
@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "64a06754786ca1a28929b9fb05c381085dcdd44c"
+            "version": "4c23c06fff9ef50744f5ed306c9ab0c4bd78a144"
         },
         {
             "name": "grafonnet",
@@ -38,7 +38,7 @@
                     "subdir": "grafonnet"
                 }
             },
-            "version": "eea8b5ba6b8883cf2df5a17c39a42c4b57c0d63e"
+            "version": "d05a9bd3adfba39ed3b1987a428d9e9863428df5"
         },
         {
             "name": "grafana-builder",
@@ -48,7 +48,7 @@
                     "subdir": "grafana-builder"
                 }
             },
-            "version": "d60a39a5c01f651fdfef2db7a710bb5319b0dbc4"
+            "version": "d75c3b260c1077c924d7ea0240250afc235c4cb3"
         },
         {
             "name": "grafana",
@@ -58,7 +58,7 @@
                     "subdir": "grafana"
                 }
             },
-            "version": "da19aef6f5b378fb5281e6f61dbadbbf734d45ee"
+            "version": "9ddf5a198b0f7c898dc061158ea427112acbae11"
         },
         {
             "name": "prometheus-operator",
@@ -68,7 +68,7 @@
                     "subdir": "jsonnet/prometheus-operator"
                 }
             },
-            "version": "72ec4b9b16ef11700724dc71fec77112536eed40"
+            "version": "174c9bf17bec78b055e8e63c6ae3a3dc9bb0a3a8"
         },
         {
             "name": "etcd-mixin",
@@ -78,7 +78,7 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "7f450bf6967638673dd88fd4e730b01d1303d5ff"
+            "version": "1e42503bea073b559fca682219242a801cf4d587"
         },
         {
             "name": "telemeter-client",
@@ -88,7 +88,7 @@
                     "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "77e7beae9bb77bbc19e0ce739f05ba28190fb274"
+            "version": "c652edc0b0eb239f9d22e0a6ff64162eeabf1171"
         }
     ]
 }
