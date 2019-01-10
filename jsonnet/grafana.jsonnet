@@ -101,6 +101,24 @@ local authorizationRole = policyRule.new() +
       },
     },
 
+    serviceMonitor+:
+      {
+        spec+: {
+          endpoints: [
+            {
+              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+              interval: '30s',
+              port: 'https',
+              scheme: 'https',
+              tlsConfig: {
+                caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                serverName: 'server-name-replaced-at-runtime',
+              },
+            },
+          ],
+        },
+      },
+
     // The ServiceAccount needs this annotation, to signify the identity
     // provider, that when a users it doing the oauth flow through the oauth
     // proxy, that it should redirect to the alertmanager-main route on

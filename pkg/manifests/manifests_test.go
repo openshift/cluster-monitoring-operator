@@ -316,6 +316,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.GrafanaServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.ClusterMonitoringClusterRole()
 	if err != nil {
 		t.Fatal(err)

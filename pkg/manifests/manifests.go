@@ -119,6 +119,7 @@ var (
 	GrafanaRoute                = "assets/grafana/route.yaml"
 	GrafanaServiceAccount       = "assets/grafana/service-account.yaml"
 	GrafanaService              = "assets/grafana/service.yaml"
+	GrafanaServiceMonitor       = "assets/grafana/service-monitor.yaml"
 
 	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
@@ -1173,6 +1174,18 @@ func (f *Factory) GrafanaService() (*v1.Service, error) {
 		return nil, err
 	}
 
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) GrafanaServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(MustAssetReader(GrafanaServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("grafana.%s.svc", f.namespace)
 	s.Namespace = f.namespace
 
 	return s, nil

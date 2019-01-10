@@ -138,6 +138,16 @@ func (t *GrafanaTask) Run() error {
 		return errors.Wrap(err, "reconciling Grafana Service failed")
 	}
 
+	sm, err := t.factory.GrafanaServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(sm)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Grafana ServiceMonitor failed")
+	}
+
 	d, err := t.factory.GrafanaDeployment()
 	if err != nil {
 		return errors.Wrap(err, "initializing Grafana Deployment failed")
