@@ -284,25 +284,26 @@ func (o *Operator) Config() *manifests.Config {
 		return c
 	}
 
-	cmap, err = o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
-	if err != nil {
-		glog.V(4).Infof("Could not fetch cluster configuration from API. Proceeding without it.")
-		return c
-	}
-	ic := make(map[string]interface{})
-	if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
-		glog.V(4).Infof("Could not parse cluster configuration. Proceeding without it.")
-		return c
-	}
-	var ok bool
 	if c.TelemeterClientConfig.ClusterID == "" {
-		c.TelemeterClientConfig.ClusterID, ok = ic["clusterID"].(string)
-		if !ok {
-			glog.V(4).Infof("Could not parse cluster ID. Proceeding without it.")
+		cv, err := o.client.GetClusterVersion("version")
+		if err != nil {
+			glog.V(4).Infof("Could not fetch cluster version from API. Proceeding without it.")
 			return c
 		}
+		c.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
 	}
 	if c.TelemeterClientConfig.Token == "" {
+		cmap, err = o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
+		if err != nil {
+			glog.V(4).Infof("Could not fetch cluster configuration from API. Proceeding without it.")
+			return c
+		}
+		ic := make(map[string]interface{})
+		if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
+			glog.V(4).Infof("Could not parse cluster configuration. Proceeding without it.")
+			return c
+		}
+
 		ps := struct {
 			Auths struct {
 				COC struct {
