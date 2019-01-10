@@ -5,8 +5,13 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - interval: 15s
-    port: http
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    port: https
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      serverName: server-name-replaced-at-runtime
   selector:
     matchLabels:
       app: grafana

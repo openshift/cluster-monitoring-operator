@@ -27,19 +27,28 @@ type Config struct {
 	PrometheusOperatorConfig *PrometheusOperatorConfig `json:"prometheusOperator"`
 	PrometheusK8sConfig      *PrometheusK8sConfig      `json:"prometheusK8s"`
 	AlertmanagerMainConfig   *AlertmanagerMainConfig   `json:"alertmanagerMain"`
-	AuthConfig               *AuthConfig               `json:"auth"`
-	NodeExporterConfig       *NodeExporterConfig       `json:"nodeExporter"`
 	KubeStateMetricsConfig   *KubeStateMetricsConfig   `json:"kubeStateMetrics"`
-	KubeRbacProxyConfig      *KubeRbacProxyConfig      `json:"kubeRbacProxy"`
 	GrafanaConfig            *GrafanaConfig            `json:"grafana"`
 	EtcdConfig               *EtcdConfig               `json:"etcd"`
 	HTTPConfig               *HTTPConfig               `json:"http"`
 	TelemeterClientConfig    *TelemeterClientConfig    `json:"telemeterClient"`
+	K8sPrometheusAdapter     *K8sPrometheusAdapter     `json:"k8sPrometheusAdapter"`
 }
 
 type Images struct {
-	K8sPrometheusAdapter string
-	PromLabelProxy       string
+	K8sPrometheusAdapter     string
+	PromLabelProxy           string
+	PrometheusOperator       string
+	PrometheusConfigReloader string
+	ConfigmapReload          string
+	Prometheus               string
+	Alertmanager             string
+	Grafana                  string
+	OauthProxy               string
+	NodeExporter             string
+	KubeStateMetrics         string
+	KubeRbacProxy            string
+	TelemeterClient          string
 }
 
 type HTTPConfig struct {
@@ -49,15 +58,11 @@ type HTTPConfig struct {
 }
 
 type PrometheusOperatorConfig struct {
-	Image                         string            `json:"-"`
-	PrometheusConfigReloaderImage string            `json:"-"`
-	ConfigReloaderImage           string            `json:"-"`
-	NodeSelector                  map[string]string `json:"nodeSelector"`
+	NodeSelector map[string]string `json:"nodeSelector"`
 }
 
 type PrometheusK8sConfig struct {
 	Retention           string                    `json:"retention"`
-	Image               string                    `json:"-"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	ExternalLabels      map[string]string         `json:"externalLabels"`
@@ -66,7 +71,6 @@ type PrometheusK8sConfig struct {
 }
 
 type AlertmanagerMainConfig struct {
-	Image               string                    `json:"-"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
@@ -74,26 +78,16 @@ type AlertmanagerMainConfig struct {
 }
 
 type GrafanaConfig struct {
-	Image        string            `json:"-"`
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Hostport     string            `json:"hostport"`
 }
 
-type AuthConfig struct {
-	Image string `json:"-"`
-}
-
-type NodeExporterConfig struct {
-	Image string `json:"-"`
-}
-
 type KubeStateMetricsConfig struct {
-	Image        string            `json:"-"`
 	NodeSelector map[string]string `json:"nodeSelector"`
 }
 
-type KubeRbacProxyConfig struct {
-	Image string `json:"-"`
+type K8sPrometheusAdapter struct {
+	NodeSelector map[string]string `json:"nodeSelector"`
 }
 
 type EtcdConfig struct {
@@ -111,11 +105,11 @@ func (e *EtcdConfig) IsEnabled() bool {
 }
 
 type TelemeterClientConfig struct {
-	Image              string `json:"-"`
-	ClusterID          string `json:"clusterID"`
-	Enabled            *bool  `json:"enabled"`
-	TelemeterServerURL string `json:"telemeterServerURL"`
-	Token              string `json:"token"`
+	ClusterID          string            `json:"clusterID"`
+	Enabled            *bool             `json:"enabled"`
+	TelemeterServerURL string            `json:"telemeterServerURL"`
+	Token              string            `json:"token"`
+	NodeSelector       map[string]string `json:"nodeSelector"`
 }
 
 func (cfg *TelemeterClientConfig) IsEnabled() bool {
@@ -171,17 +165,8 @@ func (c *Config) applyDefaults() {
 	if c.GrafanaConfig == nil {
 		c.GrafanaConfig = &GrafanaConfig{}
 	}
-	if c.AuthConfig == nil {
-		c.AuthConfig = &AuthConfig{}
-	}
-	if c.NodeExporterConfig == nil {
-		c.NodeExporterConfig = &NodeExporterConfig{}
-	}
 	if c.KubeStateMetricsConfig == nil {
 		c.KubeStateMetricsConfig = &KubeStateMetricsConfig{}
-	}
-	if c.KubeRbacProxyConfig == nil {
-		c.KubeRbacProxyConfig = &KubeRbacProxyConfig{}
 	}
 	if c.HTTPConfig == nil {
 		c.HTTPConfig = &HTTPConfig{}
@@ -189,23 +174,26 @@ func (c *Config) applyDefaults() {
 	if c.TelemeterClientConfig == nil {
 		c.TelemeterClientConfig = &TelemeterClientConfig{}
 	}
+	if c.K8sPrometheusAdapter == nil {
+		c.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
+	}
 	if c.EtcdConfig == nil {
 		c.EtcdConfig = &EtcdConfig{}
 	}
 }
 
 func (c *Config) SetImages(images map[string]string) {
-	c.PrometheusOperatorConfig.Image = images["prometheus-operator"]
-	c.PrometheusOperatorConfig.PrometheusConfigReloaderImage = images["prometheus-config-reloader"]
-	c.PrometheusOperatorConfig.ConfigReloaderImage = images["configmap-reload"]
-	c.PrometheusK8sConfig.Image = images["prometheus"]
-	c.AlertmanagerMainConfig.Image = images["alertmanager"]
-	c.GrafanaConfig.Image = images["grafana"]
-	c.AuthConfig.Image = images["oauth-proxy"]
-	c.NodeExporterConfig.Image = images["node-exporter"]
-	c.KubeStateMetricsConfig.Image = images["kube-state-metrics"]
-	c.KubeRbacProxyConfig.Image = images["kube-rbac-proxy"]
-	c.TelemeterClientConfig.Image = images["telemeter-client"]
+	c.Images.PrometheusOperator = images["prometheus-operator"]
+	c.Images.PrometheusConfigReloader = images["prometheus-config-reloader"]
+	c.Images.ConfigmapReload = images["configmap-reload"]
+	c.Images.Prometheus = images["prometheus"]
+	c.Images.Alertmanager = images["alertmanager"]
+	c.Images.Grafana = images["grafana"]
+	c.Images.OauthProxy = images["oauth-proxy"]
+	c.Images.NodeExporter = images["node-exporter"]
+	c.Images.KubeStateMetrics = images["kube-state-metrics"]
+	c.Images.KubeRbacProxy = images["kube-rbac-proxy"]
+	c.Images.TelemeterClient = images["telemeter-client"]
 	c.Images.PromLabelProxy = images["prom-label-proxy"]
 	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
 }
