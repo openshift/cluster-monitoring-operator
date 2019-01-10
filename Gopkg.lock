@@ -305,20 +305,25 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:b12984136609958cca24bb8779b8c5360f21fe5ebb795c76cd4c20d2725e2705"
+  branch = "master"
+  digest = "1:5c9342260d51780a609310faef8774e9878b9270407b447d884f5cb471fbe14f"
   name = "github.com/openshift/api"
   packages = [
+    "config/v1",
     "route/v1",
     "security/v1",
   ]
   pruneopts = "NUT"
-  revision = "0d921e363e951d89f583292c60d013c318df64dc"
-  version = "v3.9.0"
+  revision = "84404551741398f2300f84b16fb97ef351749982"
 
 [[projects]]
-  digest = "1:6acff2ade50f70d60150ab50d63537ba4fc27e01744043f5bcee6831548c4522"
+  branch = "master"
+  digest = "1:1af0519d2513adff7c4e4d4821462fe1ec77670de353f3b67eea57adbb44df40"
   name = "github.com/openshift/client-go"
   packages = [
+    "config/clientset/versioned",
+    "config/clientset/versioned/scheme",
+    "config/clientset/versioned/typed/config/v1",
     "route/clientset/versioned",
     "route/clientset/versioned/scheme",
     "route/clientset/versioned/typed/route/v1",
@@ -327,8 +332,7 @@
     "security/clientset/versioned/typed/security/v1",
   ]
   pruneopts = "NUT"
-  revision = "1fa528d3be060e4c7178eb69e76d37cf7e699e3c"
-  version = "v3.9.0"
+  revision = "2f38d042c79762d5bf2ba3c795d4ad72101289e9"
 
 [[projects]]
   branch = "master"
@@ -723,6 +727,7 @@
   input-imports = [
     "github.com/Jeffail/gabs",
     "github.com/coreos/prometheus-operator/pkg/alertmanager",
+    "github.com/coreos/prometheus-operator/pkg/apis/monitoring",
     "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1",
     "github.com/coreos/prometheus-operator/pkg/client/versioned",
     "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1",
@@ -730,8 +735,10 @@
     "github.com/coreos/prometheus-operator/pkg/prometheus",
     "github.com/coreos/prometheus-operator/test/framework",
     "github.com/golang/glog",
+    "github.com/openshift/api/config/v1",
     "github.com/openshift/api/route/v1",
     "github.com/openshift/api/security/v1",
+    "github.com/openshift/client-go/config/clientset/versioned",
     "github.com/openshift/client-go/route/clientset/versioned",
     "github.com/openshift/client-go/security/clientset/versioned",
     "github.com/pkg/errors",
