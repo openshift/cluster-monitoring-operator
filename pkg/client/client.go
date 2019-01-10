@@ -27,8 +27,10 @@ import (
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 	prometheusoperator "github.com/coreos/prometheus-operator/pkg/prometheus"
 	"github.com/golang/glog"
+	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
+	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/pkg/errors"
@@ -59,6 +61,7 @@ type Client struct {
 	namespaceSelector string
 	appVersionName    string
 	kclient           kubernetes.Interface
+	oscclient         openshiftconfigclientset.Interface
 	ossclient         openshiftsecurityclientset.Interface
 	osrclient         openshiftrouteclientset.Interface
 	mclient           monitoring.Interface
@@ -82,6 +85,11 @@ func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersio
 		return nil, errors.Wrap(err, "creating apiextensions client")
 	}
 
+	oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating openshift config client")
+	}
+
 	ossclient, err := openshiftsecurityclientset.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating openshift security client")
@@ -102,6 +110,7 @@ func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersio
 		namespaceSelector: namespaceSelector,
 		appVersionName:    appVersionName,
 		kclient:           kclient,
+		oscclient:         oscclient,
 		ossclient:         ossclient,
 		osrclient:         osrclient,
 		mclient:           mclient,
@@ -203,6 +212,10 @@ func (c *Client) GetRouteURL(r *routev1.Route) (*url.URL, error) {
 	}
 
 	return u, nil
+}
+
+func (c *Client) GetClusterVersion(name string) (*configv1.ClusterVersion, error) {
+	return c.oscclient.ConfigV1().ClusterVersions().Get(name, metav1.GetOptions{})
 }
 
 func (c *Client) NamespacesToMonitor() ([]string, error) {
