@@ -75,7 +75,8 @@ var (
 	PrometheusK8sKubeletServiceMonitor                = "assets/prometheus-k8s/service-monitor-kubelet.yaml"
 	PrometheusK8sApiserverServiceMonitor              = "assets/prometheus-k8s/service-monitor-apiserver.yaml"
 	PrometheusK8sPrometheusServiceMonitor             = "assets/prometheus-k8s/service-monitor.yaml"
-	PrometheusK8sKubeControllersServiceMonitor        = "assets/prometheus-k8s/service-monitor-kube-controllers.yaml"
+	PrometheusK8sKubeControllerManagerServiceMonitor  = "assets/prometheus-k8s/service-monitor-kube-controller-manager.yaml"
+	PrometheusK8sKubeSchedulerServiceMonitor          = "assets/prometheus-k8s/service-monitor-kube-scheduler.yaml"
 	PrometheusK8sServiceMonitorClusterVersionOperator = "assets/prometheus-k8s/service-monitor-cluster-version-operator.yaml"
 	PrometheusK8sServiceMonitorOpenShiftApiserver     = "assets/prometheus-k8s/service-monitor-open-shift-apiserver.yaml"
 	PrometheusK8sService                              = "assets/prometheus-k8s/service.yaml"
@@ -105,8 +106,6 @@ var (
 	PrometheusOperatorDeployment         = "assets/prometheus-operator/deployment.yaml"
 	PrometheusOperatorService            = "assets/prometheus-operator/service.yaml"
 	PrometheusOperatorServiceMonitor     = "assets/prometheus-operator/service-monitor.yaml"
-
-	KubeControllersService = "assets/prometheus-k8s/kube-controllers-service.yaml"
 
 	GrafanaClusterRoleBinding   = "assets/grafana/cluster-role-binding.yaml"
 	GrafanaClusterRole          = "assets/grafana/cluster-role.yaml"
@@ -738,8 +737,19 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor
 	return sm, nil
 }
 
-func (f *Factory) PrometheusK8sKubeControllersServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeControllersServiceMonitor))
+func (f *Factory) PrometheusK8sKubeSchedulerServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeSchedulerServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusK8sKubeControllerManagerServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeControllerManagerServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -975,10 +985,6 @@ func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
-}
-
-func (f *Factory) KubeControllersService() (*v1.Service, error) {
-	return f.NewService(MustAssetReader(KubeControllersService))
 }
 
 func (f *Factory) GrafanaClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {

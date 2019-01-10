@@ -104,59 +104,8 @@ local namespacesRole =
     clusterRole+:
       clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole]),
 
-    // OpenShift currently has the kube-controller-manager and
-    // kube-scheduler combined in one component called the
-    // kube-controllers. This Service and ServiceMonitor enable scraping
-    // its metrics.
-
-    kubeControllersService:
-      local service = k.core.v1.service;
-      local servicePort = k.core.v1.service.mixin.spec.portsType;
-
-      local kubeControllersPort = servicePort.newNamed('http-metrics', 8444, 8444);
-
-      service.new('kube-controllers', {
-        'openshift.io/component': 'controllers',
-        'openshift.io/control-plane': 'true',
-      }, kubeControllersPort) +
-      service.mixin.metadata.withNamespace('kube-system') +
-      service.mixin.metadata.withLabels({ 'k8s-app': 'kube-controllers' }) +
-      service.mixin.spec.withClusterIp('None'),
-
-    serviceMonitorKubeControllers:
-      {
-        apiVersion: 'monitoring.coreos.com/v1',
-        kind: 'ServiceMonitor',
-        metadata: {
-          labels: {
-            'k8s-app': 'kube-controllers',
-          },
-          name: 'kube-controllers',
-        },
-        spec: {
-          endpoints: [
-            {
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-              interval: '30s',
-              port: 'http-metrics',
-              scheme: 'https',
-              tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-              },
-            },
-          ],
-          jobLabel: 'k8s-app',
-          namespaceSelector: {
-            matchNames: ['kube-system'],
-          },
-          selector: {
-            matchLabels: {
-              'k8s-app': 'kube-controllers',
-            },
-          },
-        },
-      },
-
+    // OpenShift has the kube-apiserver as well as an aggregated API called
+    // OpenShift apiserver, containing all the extended APIs.
     serviceMonitorClusterVersionOperator:
       {
         apiVersion: 'monitoring.coreos.com/v1',
@@ -328,6 +277,92 @@ local namespacesRole =
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
             },
           ],
+        },
+      },
+
+    // In OpenShift the kube-scheduler runs in its own namespace, and has a TLS
+    // cert from the serving certs controller.
+
+    serviceMonitorKubeScheduler+:
+      {
+        spec+: {
+          jobLabel: null,
+          namespaceSelector: {
+            matchNames: [
+              'openshift-kube-scheduler',
+            ],
+          },
+          selector: {},
+          endpoints:
+            std.map(
+              function(a) a {
+
+                //TODO(brancz): Once OpenShift is based on Kubernetes 1.12 the
+                //scheduler will serve metrics on a secure port, then the below
+                //commented out code is what we will need without the relabel
+                //configs.
+
+                //bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+                interval: '30s',
+                port: 'https',
+                //scheme: 'https',
+                //tlsConfig: {
+                //  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                //  serverName: 'scheduler.openshift-kube-scheduler.svc',
+                //},
+                relabelings: [{
+                  sourceLabels: ['__address__'],
+                  action: 'replace',
+                  targetLabel: '__address__',
+                  regex: '(.+)(?::\\d+)',
+                  replacement: '$1:10251',
+                }],
+              },
+              super.endpoints,
+            ),
+        },
+      },
+
+    // In OpenShift the kube-controller-manager runs in its own namespace, and
+    // has a TLS cert from the serving certs controller.
+
+    serviceMonitorKubeControllerManager+:
+      {
+        spec+: {
+          jobLabel: null,
+          namespaceSelector: {
+            matchNames: [
+              'openshift-kube-controller-manager',
+            ],
+          },
+          selector: {},
+          endpoints:
+            std.map(
+              function(a) a {
+
+                //TODO(brancz): Once OpenShift is based on Kubernetes 1.12 the
+                //controller-manager will serve metrics on a secure port, then
+                //the below commented out code is what we will need without the
+                //relabel configs.
+
+                //bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+                interval: '30s',
+                port: 'https',
+                //scheme: 'https',
+                //tlsConfig: {
+                //  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                //  serverName: 'controller-manager.openshift-kube-controller-manager.svc',
+                //},
+                relabelings: [{
+                  sourceLabels: ['__address__'],
+                  action: 'replace',
+                  targetLabel: '__address__',
+                  regex: '(.+)(?::\\d+)',
+                  replacement: '$1:10252',
+                }],
+              },
+              super.endpoints,
+            ),
         },
       },
 
