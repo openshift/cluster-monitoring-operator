@@ -141,7 +141,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 	k, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		glog.V(4).Infof("creating key failed, err: %s", err)
+		glog.Errorf("creating key failed, err: %s", err)
 		return k, false
 	}
 	return k, true
@@ -259,7 +259,7 @@ func (o *Operator) sync(key string) error {
 func (o *Operator) Config() *manifests.Config {
 	obj, exists, err := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
 	if err != nil {
-		glog.V(4).Infof("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults.")
+		glog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
 		return manifests.NewDefaultConfig()
 	}
 	if !exists {
@@ -269,13 +269,13 @@ func (o *Operator) Config() *manifests.Config {
 	cmap := obj.(*v1.ConfigMap)
 	configContent, found := cmap.Data["config.yaml"]
 	if !found {
-		glog.V(4).Infof("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
+		glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
 		return manifests.NewDefaultConfig()
 	}
 
 	c, err := manifests.NewConfigFromString(configContent)
 	if err != nil {
-		glog.V(4).Infof("Cluster Monitoring config could not be parsed. Using defaults.")
+		glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
 		return manifests.NewDefaultConfig()
 	}
 
@@ -287,7 +287,7 @@ func (o *Operator) Config() *manifests.Config {
 	if c.TelemeterClientConfig.ClusterID == "" {
 		cv, err := o.client.GetClusterVersion("version")
 		if err != nil {
-			glog.V(4).Infof("Could not fetch cluster version from API. Proceeding without it.")
+			glog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
 			return c
 		}
 		c.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
@@ -295,12 +295,12 @@ func (o *Operator) Config() *manifests.Config {
 	if c.TelemeterClientConfig.Token == "" {
 		cmap, err = o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
 		if err != nil {
-			glog.V(4).Infof("Could not fetch cluster configuration from API. Proceeding without it.")
+			glog.Warningf("Could not fetch cluster configuration from API. Proceeding without it: %v", err)
 			return c
 		}
 		ic := make(map[string]interface{})
 		if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
-			glog.V(4).Infof("Could not parse cluster configuration. Proceeding without it.")
+			glog.Warningf("Could not parse cluster configuration. Proceeding without it: %v", err)
 			return c
 		}
 
@@ -312,11 +312,11 @@ func (o *Operator) Config() *manifests.Config {
 			} `json:"auths"`
 		}{}
 		if _, ok := ic["pullSecret"].(string); !ok {
-			glog.V(4).Infof("Could not find pull secret. Proceeding without it.")
+			glog.Warningf("Could not find pull secret. Proceeding without it.")
 			return c
 		}
 		if err := json.Unmarshal([]byte(ic["pullSecret"].(string)), &ps); err != nil {
-			glog.V(4).Infof("Could not parse pull secret. Proceeding without it.")
+			glog.Warningf("Could not parse pull secret. Proceeding without it: %v", err)
 			return c
 		}
 		c.TelemeterClientConfig.Token = ps.Auths.COC.Auth
