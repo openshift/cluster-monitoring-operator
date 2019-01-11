@@ -259,7 +259,7 @@ func (o *Operator) sync(key string) error {
 func (o *Operator) Config() *manifests.Config {
 	obj, exists, err := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
 	if err != nil {
-		glog.Errorf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
+		glog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
 		return manifests.NewDefaultConfig()
 	}
 	if !exists {
@@ -275,7 +275,7 @@ func (o *Operator) Config() *manifests.Config {
 
 	c, err := manifests.NewConfigFromString(configContent)
 	if err != nil {
-		glog.Errorf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
+		glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
 		return manifests.NewDefaultConfig()
 	}
 
@@ -287,7 +287,7 @@ func (o *Operator) Config() *manifests.Config {
 	if c.TelemeterClientConfig.ClusterID == "" {
 		cv, err := o.client.GetClusterVersion("version")
 		if err != nil {
-			glog.Errorf("Could not fetch cluster version from API. Proceeding without it: %v", err)
+			glog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
 			return c
 		}
 		c.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
@@ -295,12 +295,12 @@ func (o *Operator) Config() *manifests.Config {
 	if c.TelemeterClientConfig.Token == "" {
 		cmap, err = o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
 		if err != nil {
-			glog.Errorf("Could not fetch cluster configuration from API. Proceeding without it: %v", err)
+			glog.Warningf("Could not fetch cluster configuration from API. Proceeding without it: %v", err)
 			return c
 		}
 		ic := make(map[string]interface{})
 		if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
-			glog.Errorf("Could not parse cluster configuration. Proceeding without it: %v", err)
+			glog.Warningf("Could not parse cluster configuration. Proceeding without it: %v", err)
 			return c
 		}
 
@@ -316,7 +316,7 @@ func (o *Operator) Config() *manifests.Config {
 			return c
 		}
 		if err := json.Unmarshal([]byte(ic["pullSecret"].(string)), &ps); err != nil {
-			glog.Errorf("Could not parse pull secret. Proceeding without it: %v", err)
+			glog.Warningf("Could not parse pull secret. Proceeding without it: %v", err)
 			return c
 		}
 		c.TelemeterClientConfig.Token = ps.Auths.COC.Auth
