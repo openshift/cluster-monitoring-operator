@@ -273,7 +273,27 @@ func (o *Operator) sync(key string) error {
 		},
 	)
 
-	return tl.RunAll()
+	glog.Info("Updating ClusterOperator status to in progress.")
+	err := o.client.StatusReporter().SetInProgress()
+	if err != nil {
+		glog.Errorf("error occurred while setting status to in progress: %v", err)
+	}
+	err = tl.RunAll()
+	if err != nil {
+		glog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
+		reportErr := o.client.StatusReporter().SetFailed(err)
+		if reportErr != nil {
+			glog.Errorf("error occurred while setting status to in progress: %v", reportErr)
+		}
+		return err
+	}
+	glog.Info("Updating ClusterOperator status to done.")
+	err = o.client.StatusReporter().SetDone()
+	if err != nil {
+		glog.Errorf("error occurred while setting status to done: %v", err)
+	}
+
+	return nil
 }
 
 func (o *Operator) loadConfig() *manifests.Config {

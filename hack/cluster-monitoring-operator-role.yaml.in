@@ -27,4 +27,6 @@ rules:
 - apiGroups: ["config.openshift.io"]
   resources: ["proxies"]
   verbs: ["get"]
-  resourceNames: ["cluster"]
+- apiGroups: ["config.openshift.io"]
+  resources: ["clusteroperators","clusteroperators/status"]
+  verbs: ["get", "update", "create"]
