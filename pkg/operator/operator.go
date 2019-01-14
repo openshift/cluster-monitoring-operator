@@ -251,8 +251,24 @@ func (o *Operator) sync(key string) error {
 			tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory)),
 		},
 	)
+	err := o.client.StatusReporter().SetInProgress()
+	if err != nil {
+		glog.Errorf("error occurred while setting status to in progress: %v", err)
+	}
+	err = tl.RunAll()
+	if err != nil {
+		reportErr := o.client.StatusReporter().SetFailed()
+		if reportErr != nil {
+			glog.Errorf("error occurred while setting status to in progress: %v", reportErr)
+		}
+		return err
+	}
+	err = o.client.StatusReporter().SetDone()
+	if err != nil {
+		glog.Errorf("error occurred while setting status to done: %v", err)
+	}
 
-	return tl.RunAll()
+	return nil
 }
 
 func (o *Operator) loadConfig() *manifests.Config {
