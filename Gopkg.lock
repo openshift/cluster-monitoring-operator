@@ -376,7 +376,7 @@
   name = "github.com/prometheus/client_model"
   packages = ["go"]
   pruneopts = "NUT"
-  revision = "5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f"
+  revision = "f287a105a20ec685d797f65cd0ce8fbeaef42da1"
 
 [[projects]]
   branch = "master"
@@ -432,7 +432,7 @@
     "idna",
   ]
   pruneopts = "NUT"
-  revision = "395948e2f546cb82afa9e1f6d1a6e87849b9af1d"
+  revision = "915654e7eabcea33ae277abbecf52f0d8b7a9fdc"
 
 [[projects]]
   branch = "master"
@@ -443,7 +443,7 @@
     "internal",
   ]
   pruneopts = "NUT"
-  revision = "d668ce993890a79bda886613ee587a69dd5da7a6"
+  revision = "fd3eaa146cbb5c89ce187c275fb79bd3a36a5ffc"
 
 [[projects]]
   branch = "master"
@@ -455,14 +455,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:29edb5eca830bfe65f504139807795dbc79844ebf1a44345aac6ecf644f73885"
+  digest = "1:a387cb801e1eacd9a2369522ea11d73077dcb6b7d9525d73c56d12754a0e8afc"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "NUT"
-  revision = "7fbe1cd0fcc20051e1fcb87fbabec4a1bacaaeba"
+  revision = "48ac38b7c8cbedd50b1613c0fccacfc7d88dfcdf"
 
 [[projects]]
   digest = "1:e33513a825fcd765e97b5de639a2f7547542d1a8245df0cef18e1fd390b778a9"
