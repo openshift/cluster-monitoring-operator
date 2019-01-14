@@ -21,3 +21,6 @@ rules:
 - apiGroups: ["apiregistration.k8s.io"]
   resources: ["apiservices"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
+- apiGroups: ["config.openshift.io"]
+  resources: ["clusterversions"]
+  verbs: ["get"]
