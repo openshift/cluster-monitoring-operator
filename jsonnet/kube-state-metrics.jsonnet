@@ -80,6 +80,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
                         ],
+                        resources: {},
                       }
                     else
                       c +
