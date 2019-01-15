@@ -17,6 +17,7 @@ package manifests
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -664,7 +665,11 @@ ingress:
 }
 
 func TestK8sPrometheusAdapterConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(``)
+	c, err := NewConfigFromString(`
+k8sPrometheusAdapter:
+  nodeSelector:
+    test: value
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -680,6 +685,10 @@ func TestK8sPrometheusAdapterConfiguration(t *testing.T) {
 
 	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-k8s-prometheus-adapter:latest" {
 		t.Fatal("k8s-prometheus-adapter image is not configured correctly")
+	}
+	expected := map[string]string{"test": "value"}
+	if !reflect.DeepEqual(d.Spec.Template.Spec.NodeSelector, expected) {
+		t.Fatalf("k8s-prometheus-adapter nodeSelector is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", d.Spec.Template.Spec.NodeSelector, expected)
 	}
 }
 
