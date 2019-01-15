@@ -515,7 +515,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
 		"prometheus-config-reloader": "docker.io/openshift/origin-prometheus-config-reloader:latest",
-		"configmap-reload":           "docker.io/openshift/origin-configmap-reload:latest",
+		"configmap-reloader":         "docker.io/openshift/origin-configmap-reloader:latest",
 	})
 
 	if err != nil {
@@ -549,7 +549,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest") {
 			prometheusReloaderFound = true
 		}
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], ConfigReloaderImageFlag+"docker.io/openshift/origin-configmap-reload:latest") {
+		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], ConfigReloaderImageFlag+"docker.io/openshift/origin-configmap-reloader:latest") {
 			configReloaderFound = true
 		}
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorNamespaceFlag+"default,openshift-monitoring") {

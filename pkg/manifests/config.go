@@ -40,7 +40,7 @@ type Images struct {
 	PromLabelProxy           string
 	PrometheusOperator       string
 	PrometheusConfigReloader string
-	ConfigmapReload          string
+	ConfigmapReloader        string
 	Prometheus               string
 	Alertmanager             string
 	Grafana                  string
@@ -185,7 +185,7 @@ func (c *Config) applyDefaults() {
 func (c *Config) SetImages(images map[string]string) {
 	c.Images.PrometheusOperator = images["prometheus-operator"]
 	c.Images.PrometheusConfigReloader = images["prometheus-config-reloader"]
-	c.Images.ConfigmapReload = images["configmap-reload"]
+	c.Images.ConfigmapReloader = images["configmap-reloader"]
 	c.Images.Prometheus = images["prometheus"]
 	c.Images.Alertmanager = images["alertmanager"]
 	c.Images.Grafana = images["grafana"]
