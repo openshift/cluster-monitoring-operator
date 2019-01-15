@@ -366,14 +366,6 @@ spec:
       for: 15m
       labels:
         severity: critical
-    - alert: CoreDNSDown
-      annotations:
-        message: CoreDNS has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="kube-dns"} == 1)
-      for: 15m
-      labels:
-        severity: critical
     - alert: KubeAPIDown
       annotations:
         message: KubeAPI has disappeared from Prometheus target discovery.

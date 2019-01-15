@@ -79,6 +79,15 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     for k in std.objectFields(d)
     if !std.setMember(k, ['nodes.json', 'persistentvolumesusage.json', 'pods.json', 'statefulset.json'])
   },
+} + {
+  _config+:: {
+    local j = super.jobs,
+    jobs: {
+      [k]: j[k]
+      for k in std.objectFields(j)
+      if !std.setMember(k, ['CoreDNS'])
+    },
+  },
 };
 
 { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
