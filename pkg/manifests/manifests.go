@@ -956,7 +956,7 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 		}
 
 		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) {
-			args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReload
+			args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
 		}
 	}
 	d.Spec.Template.Spec.Containers[0].Args = args
@@ -1571,7 +1571,7 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 	}
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
-	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReload
+	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
 	if len(f.config.TelemeterClientConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.TelemeterClientConfig.NodeSelector
