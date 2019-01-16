@@ -873,7 +873,7 @@ func (f *Factory) PrometheusAdapterDeployment() (*appsv1.Deployment, error) {
 	}
 
 	dep.Spec.Template.Spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
-	if len(f.config.K8sPrometheusAdapter.NodeSelector) > 0 {
+	if f.config.K8sPrometheusAdapter != nil && len(f.config.K8sPrometheusAdapter.NodeSelector) > 0 {
 		dep.Spec.Template.Spec.NodeSelector = f.config.K8sPrometheusAdapter.NodeSelector
 	}
 	dep.Namespace = f.namespace
