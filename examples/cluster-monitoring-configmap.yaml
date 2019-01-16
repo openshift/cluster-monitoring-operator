@@ -13,18 +13,12 @@ data:
       retention: 24h
       baseImage: quay.io/prometheus/prometheus
       resources:
-        limits:
-          cpu: 400m
-          memory: 2000Mi
         requests:
           cpu: 200m
-          memory: 1500Mi
+          memory: 2Gi
     alertmanagerMain:
       baseImage: quay.io/prometheus/alertmanager
       resources:
-        limits:
-          cpu: 40m
-          memory: 200Mi
         requests:
           cpu: 20m
-          memory: 150Mi
+          memory: 50Mi
