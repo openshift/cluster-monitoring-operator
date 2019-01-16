@@ -68,8 +68,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
   _config+:: {
     namespace: 'openshift-monitoring',
 
-    kubeSchedulerSelector: 'job="kube-controllers"',
-    kubeControllerManagerSelector: 'job="kube-controllers"',
+    kubeSchedulerSelector: 'job="scheduler"',
+
     namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
   },
 } + {
@@ -78,6 +78,15 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     [k]: d[k]
     for k in std.objectFields(d)
     if !std.setMember(k, ['nodes.json', 'persistentvolumesusage.json', 'pods.json', 'statefulset.json'])
+  },
+} + {
+  _config+:: {
+    local j = super.jobs,
+    jobs: {
+      [k]: j[k]
+      for k in std.objectFields(j)
+      if !std.setMember(k, ['CoreDNS'])
+    },
   },
 };
 
