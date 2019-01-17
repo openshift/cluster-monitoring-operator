@@ -6,6 +6,32 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
            {
              _config+:: {
+
+               tlsCipherSuites: [
+                 // 'TLS_RSA_WITH_RC4_128_SHA',            // insecure: https://access.redhat.com/security/cve/cve-2013-2566
+                 // 'TLS_RSA_WITH_3DES_EDE_CBC_SHA',       // insecure: https://access.redhat.com/articles/2548661
+                 'TLS_RSA_WITH_AES_128_CBC_SHA',
+                 'TLS_RSA_WITH_AES_256_CBC_SHA',
+                 'TLS_RSA_WITH_AES_128_CBC_SHA256',
+                 'TLS_RSA_WITH_AES_128_GCM_SHA256',
+                 'TLS_RSA_WITH_AES_256_GCM_SHA384',
+                 // 'TLS_ECDHE_ECDSA_WITH_RC4_128_SHA',    // insecure: https://access.redhat.com/security/cve/cve-2013-2566
+                 'TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA',
+                 'TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA',
+                 // 'TLS_ECDHE_RSA_WITH_RC4_128_SHA',      // insecure: https://access.redhat.com/security/cve/cve-2013-2566
+                 // 'TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA', // insecure: https://access.redhat.com/articles/2548661
+                 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA',
+                 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA',
+                 'TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256',
+                 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256',
+                 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256',
+                 'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
+                 'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384',
+                 'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384',
+                 'TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305',
+                 'TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
+               ],
+
                imageRepos+:: {
                  openshiftOauthProxy: 'openshift/oauth-proxy',
                  prometheus: 'openshift/prometheus',
