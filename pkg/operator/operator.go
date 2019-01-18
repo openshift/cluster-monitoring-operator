@@ -255,32 +255,43 @@ func (o *Operator) sync(key string) error {
 	return tl.RunAll()
 }
 
-func (o *Operator) Config() *manifests.Config {
+func (o *Operator) loadConfig() *manifests.Config {
 	c := manifests.NewDefaultConfig()
 
 	obj, found, err := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
 	if err != nil {
 		glog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
+		return c
 	}
 
-	if found {
-		cmap := obj.(*v1.ConfigMap)
-		configContent, found := cmap.Data["config.yaml"]
-		if found {
-			cParsed, err := manifests.NewConfigFromString(configContent)
-			if err != nil {
-				glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
-			} else {
-				c = cParsed
-			}
-		} else {
-			glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
-		}
+	if !found {
+		glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
+		return c
 	}
+
+	cmap := obj.(*v1.ConfigMap)
+	configContent, found := cmap.Data["config.yaml"]
+
+	if !found {
+		glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
+		return c
+	}
+
+	cParsed, err := manifests.NewConfigFromString(configContent)
+	if err != nil {
+		glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
+		return c
+	}
+
+	return cParsed
+}
+
+func (o *Operator) Config() *manifests.Config {
+	c := o.loadConfig()
 
 	// Only fetch the the token and cluster ID if they have not been specified in the config.
 	if c.TelemeterClientConfig.ClusterID == "" || c.TelemeterClientConfig.Token == "" {
-		err = c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
+		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
 			return o.client.GetClusterVersion("version")
 		})
 
@@ -297,7 +308,7 @@ func (o *Operator) Config() *manifests.Config {
 		}
 	}
 
-	err = c.LoadProxy(func() (*configv1.Proxy, error) {
+	err := c.LoadProxy(func() (*configv1.Proxy, error) {
 		return o.client.GetProxy("cluster")
 	})
 
