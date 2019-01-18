@@ -198,6 +198,55 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
 }
 
+func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) error {
+	if c.TelemeterClientConfig.ClusterID != "" {
+		return nil
+	}
+
+	cv, err := load()
+	if err != nil {
+		return fmt.Errorf("error loading cluster version: %v", err)
+	}
+
+	c.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
+	return nil
+}
+
+func (c *Config) LoadToken(load func() (*v1.ConfigMap, error)) error {
+	if c.TelemeterClientConfig.Token != "" {
+		return nil
+	}
+
+	cmap, err := load()
+	if err != nil {
+		return fmt.Errorf("error loading configmap: %v", err)
+	}
+
+	ic := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
+		return fmt.Errorf("unmarshaling install config failed: %v", err)
+	}
+
+	if _, ok := ic["pullSecret"].(string); !ok {
+		return errors.New("could not find pull secret")
+	}
+
+	ps := struct {
+		Auths struct {
+			COC struct {
+				Auth string `json:"auth"`
+			} `json:"cloud.openshift.com"`
+		} `json:"auths"`
+	}{}
+
+	if err := json.Unmarshal([]byte(ic["pullSecret"].(string)), &ps); err != nil {
+		return fmt.Errorf("unmarshaling pull secret failed: %v", err)
+	}
+
+	c.TelemeterClientConfig.Token = ps.Auths.COC.Auth
+	return nil
+}
+
 func NewConfigFromString(content string) (*Config, error) {
 	if content == "" {
 		return NewDefaultConfig(), nil

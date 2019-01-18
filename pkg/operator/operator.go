@@ -280,29 +280,23 @@ func (o *Operator) Config() *manifests.Config {
 	}
 
 	// Only fetch the the token and cluster ID if they have not been specified in the config.
-	if c.TelemeterClientConfig.ClusterID != "" && c.TelemeterClientConfig.Token != "" {
-		return c
-	}
+	if c.TelemeterClientConfig.ClusterID == "" || c.TelemeterClientConfig.Token == "" {
+		err = c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
+			return o.client.GetClusterVersion("version")
+		})
 
-	if c.TelemeterClientConfig.ClusterID == "" {
-		cv, err := o.client.GetClusterVersion("version")
 		if err != nil {
 			glog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
-			return c
 		}
-		c.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
-	}
-	if c.TelemeterClientConfig.Token == "" {
-		cmap, err = o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
+
+		err = c.LoadToken(func() (*v1.ConfigMap, error) {
+			return o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
+		})
+
 		if err != nil {
-			glog.Warningf("Could not fetch cluster configuration from API. Proceeding without it: %v", err)
-			return c
+			glog.Warningf("Error loading token from API. Proceeding without it: %v", err)
 		}
-		ic := make(map[string]interface{})
-		if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
-			glog.Warningf("Could not parse cluster configuration. Proceeding without it: %v", err)
-			return c
-		}
+	}
 
 		ps := struct {
 			Auths struct {
