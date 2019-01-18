@@ -16,10 +16,15 @@ package manifests
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 
-	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	configv1 "github.com/openshift/api/config/v1"
+	yaml "gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 type Config struct {
@@ -129,7 +134,7 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 func NewConfig(content io.Reader) (*Config, error) {
 	c := Config{}
 
-	err := yaml.NewYAMLOrJSONDecoder(content, 100).Decode(&c)
+	err := k8syaml.NewYAMLOrJSONDecoder(content, 100).Decode(&c)
 	if err != nil {
 		return nil, err
 	}
@@ -244,6 +249,23 @@ func (c *Config) LoadToken(load func() (*v1.ConfigMap, error)) error {
 	}
 
 	c.TelemeterClientConfig.Token = ps.Auths.COC.Auth
+	return nil
+}
+
+func (c *Config) LoadProxy(load func() (*configv1.Proxy, error)) error {
+	if c.HTTPConfig.HTTPProxy != "" || c.HTTPConfig.HTTPSProxy != "" || c.HTTPConfig.NoProxy != "" {
+		return nil
+	}
+
+	p, err := load()
+	if err != nil {
+		return fmt.Errorf("error loading proxy: %v", err)
+	}
+
+	c.HTTPConfig.HTTPProxy = p.Spec.HTTPProxy
+	c.HTTPConfig.HTTPSProxy = p.Spec.HTTPSProxy
+	c.HTTPConfig.NoProxy = p.Spec.NoProxy
+
 	return nil
 }
 

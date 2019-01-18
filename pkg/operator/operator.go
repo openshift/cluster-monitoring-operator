@@ -297,5 +297,13 @@ func (o *Operator) Config() *manifests.Config {
 		}
 	}
 
+	err = c.LoadProxy(func() (*configv1.Proxy, error) {
+		return o.client.GetProxy("cluster")
+	})
+
+	if err != nil {
+		glog.Warningf("Error loading proxy from API. Proceeding without it: %v", err)
+	}
+
 	return c
 }
