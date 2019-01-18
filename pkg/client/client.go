@@ -133,7 +133,7 @@ func (c *Client) ConfigMapListWatch() *cache.ListWatch {
 }
 
 func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
-	wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
+	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
 		err := c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.Prometheus, mon.GroupName, map[string]string{}, false))
 		if err != nil {
 			return false, err
@@ -166,8 +166,6 @@ func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
 
 		return true, nil
 	})
-
-	return nil
 }
 
 func (c *Client) CreateOrUpdateSecurityContextConstraints(s *secv1.SecurityContextConstraints) error {
