@@ -15,15 +15,14 @@
 package operator
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/golang/glog"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/rest"
@@ -257,26 +256,26 @@ func (o *Operator) sync(key string) error {
 }
 
 func (o *Operator) Config() *manifests.Config {
-	obj, exists, err := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
+	c := manifests.NewDefaultConfig()
+
+	obj, found, err := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
 	if err != nil {
 		glog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
-		return manifests.NewDefaultConfig()
-	}
-	if !exists {
-		return manifests.NewDefaultConfig()
 	}
 
-	cmap := obj.(*v1.ConfigMap)
-	configContent, found := cmap.Data["config.yaml"]
-	if !found {
-		glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
-		return manifests.NewDefaultConfig()
-	}
-
-	c, err := manifests.NewConfigFromString(configContent)
-	if err != nil {
-		glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
-		return manifests.NewDefaultConfig()
+	if found {
+		cmap := obj.(*v1.ConfigMap)
+		configContent, found := cmap.Data["config.yaml"]
+		if found {
+			cParsed, err := manifests.NewConfigFromString(configContent)
+			if err != nil {
+				glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
+			} else {
+				c = cParsed
+			}
+		} else {
+			glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
+		}
 	}
 
 	// Only fetch the the token and cluster ID if they have not been specified in the config.
@@ -296,24 +295,6 @@ func (o *Operator) Config() *manifests.Config {
 		if err != nil {
 			glog.Warningf("Error loading token from API. Proceeding without it: %v", err)
 		}
-	}
-
-		ps := struct {
-			Auths struct {
-				COC struct {
-					Auth string `json:"auth"`
-				} `json:"cloud.openshift.com"`
-			} `json:"auths"`
-		}{}
-		if _, ok := ic["pullSecret"].(string); !ok {
-			glog.Warningf("Could not find pull secret. Proceeding without it.")
-			return c
-		}
-		if err := json.Unmarshal([]byte(ic["pullSecret"].(string)), &ps); err != nil {
-			glog.Warningf("Could not parse pull secret. Proceeding without it: %v", err)
-			return c
-		}
-		c.TelemeterClientConfig.Token = ps.Auths.COC.Auth
 	}
 
 	return c
