@@ -16,10 +16,15 @@ package manifests
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 
-	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	configv1 "github.com/openshift/api/config/v1"
+	yaml "gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 type Config struct {
@@ -129,7 +134,7 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 func NewConfig(content io.Reader) (*Config, error) {
 	c := Config{}
 
-	err := yaml.NewYAMLOrJSONDecoder(content, 100).Decode(&c)
+	err := k8syaml.NewYAMLOrJSONDecoder(content, 100).Decode(&c)
 	if err != nil {
 		return nil, err
 	}
@@ -196,6 +201,72 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.TelemeterClient = images["telemeter-client"]
 	c.Images.PromLabelProxy = images["prom-label-proxy"]
 	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
+}
+
+func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) error {
+	if c.TelemeterClientConfig.ClusterID != "" {
+		return nil
+	}
+
+	cv, err := load()
+	if err != nil {
+		return fmt.Errorf("error loading cluster version: %v", err)
+	}
+
+	c.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
+	return nil
+}
+
+func (c *Config) LoadToken(load func() (*v1.ConfigMap, error)) error {
+	if c.TelemeterClientConfig.Token != "" {
+		return nil
+	}
+
+	cmap, err := load()
+	if err != nil {
+		return fmt.Errorf("error loading configmap: %v", err)
+	}
+
+	ic := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
+		return fmt.Errorf("unmarshaling install config failed: %v", err)
+	}
+
+	if _, ok := ic["pullSecret"].(string); !ok {
+		return errors.New("could not find pull secret")
+	}
+
+	ps := struct {
+		Auths struct {
+			COC struct {
+				Auth string `json:"auth"`
+			} `json:"cloud.openshift.com"`
+		} `json:"auths"`
+	}{}
+
+	if err := json.Unmarshal([]byte(ic["pullSecret"].(string)), &ps); err != nil {
+		return fmt.Errorf("unmarshaling pull secret failed: %v", err)
+	}
+
+	c.TelemeterClientConfig.Token = ps.Auths.COC.Auth
+	return nil
+}
+
+func (c *Config) LoadProxy(load func() (*configv1.Proxy, error)) error {
+	if c.HTTPConfig.HTTPProxy != "" || c.HTTPConfig.HTTPSProxy != "" || c.HTTPConfig.NoProxy != "" {
+		return nil
+	}
+
+	p, err := load()
+	if err != nil {
+		return fmt.Errorf("error loading proxy: %v", err)
+	}
+
+	c.HTTPConfig.HTTPProxy = p.Spec.HTTPProxy
+	c.HTTPConfig.HTTPSProxy = p.Spec.HTTPSProxy
+	c.HTTPConfig.NoProxy = p.Spec.NoProxy
+
+	return nil
 }
 
 func NewConfigFromString(content string) (*Config, error) {

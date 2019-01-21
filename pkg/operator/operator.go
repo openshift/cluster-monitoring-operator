@@ -15,15 +15,14 @@
 package operator
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/golang/glog"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/rest"
@@ -256,70 +255,65 @@ func (o *Operator) sync(key string) error {
 	return tl.RunAll()
 }
 
-func (o *Operator) Config() *manifests.Config {
-	obj, exists, err := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
+func (o *Operator) loadConfig() *manifests.Config {
+	c := manifests.NewDefaultConfig()
+
+	obj, found, err := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
 	if err != nil {
 		glog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
-		return manifests.NewDefaultConfig()
+		return c
 	}
-	if !exists {
-		return manifests.NewDefaultConfig()
+
+	if !found {
+		glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
+		return c
 	}
 
 	cmap := obj.(*v1.ConfigMap)
 	configContent, found := cmap.Data["config.yaml"]
+
 	if !found {
 		glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
-		return manifests.NewDefaultConfig()
-	}
-
-	c, err := manifests.NewConfigFromString(configContent)
-	if err != nil {
-		glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
-		return manifests.NewDefaultConfig()
-	}
-
-	// Only fetch the the token and cluster ID if they have not been specified in the config.
-	if c.TelemeterClientConfig.ClusterID != "" && c.TelemeterClientConfig.Token != "" {
 		return c
 	}
 
-	if c.TelemeterClientConfig.ClusterID == "" {
-		cv, err := o.client.GetClusterVersion("version")
+	cParsed, err := manifests.NewConfigFromString(configContent)
+	if err != nil {
+		glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
+		return c
+	}
+
+	return cParsed
+}
+
+func (o *Operator) Config() *manifests.Config {
+	c := o.loadConfig()
+
+	// Only fetch the the token and cluster ID if they have not been specified in the config.
+	if c.TelemeterClientConfig.ClusterID == "" || c.TelemeterClientConfig.Token == "" {
+		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
+			return o.client.GetClusterVersion("version")
+		})
+
 		if err != nil {
 			glog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
-			return c
-		}
-		c.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
-	}
-	if c.TelemeterClientConfig.Token == "" {
-		cmap, err = o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
-		if err != nil {
-			glog.Warningf("Could not fetch cluster configuration from API. Proceeding without it: %v", err)
-			return c
-		}
-		ic := make(map[string]interface{})
-		if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
-			glog.Warningf("Could not parse cluster configuration. Proceeding without it: %v", err)
-			return c
 		}
 
-		ps := struct {
-			Auths struct {
-				COC struct {
-					Auth string `json:"auth"`
-				} `json:"cloud.openshift.com"`
-			} `json:"auths"`
-		}{}
-		if _, ok := ic["pullSecret"].(string); !ok {
-			glog.Warningf("Could not find pull secret. Proceeding without it.")
-			return c
+		err = c.LoadToken(func() (*v1.ConfigMap, error) {
+			return o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
+		})
+
+		if err != nil {
+			glog.Warningf("Error loading token from API. Proceeding without it: %v", err)
 		}
-		if err := json.Unmarshal([]byte(ic["pullSecret"].(string)), &ps); err != nil {
-			glog.Warningf("Could not parse pull secret. Proceeding without it: %v", err)
-			return c
-		}
-		c.TelemeterClientConfig.Token = ps.Auths.COC.Auth
+	}
+
+	err := c.LoadProxy(func() (*configv1.Proxy, error) {
+		return o.client.GetProxy("cluster")
+	})
+
+	if err != nil {
+		glog.Warningf("Error loading proxy from API. Proceeding without it: %v", err)
 	}
 
 	return c

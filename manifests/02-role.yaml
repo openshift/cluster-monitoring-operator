@@ -100,6 +100,14 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - config.openshift.io
+  resourceNames:
+  - cluster
+  resources:
+  - proxies
+  verbs:
+  - get
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews

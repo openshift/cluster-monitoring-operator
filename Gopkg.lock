@@ -306,7 +306,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5c9342260d51780a609310faef8774e9878b9270407b447d884f5cb471fbe14f"
+  digest = "1:3397479fab399f95071a003c58305d6ef58fe9e3480047de922a450b1cbdd04a"
   name = "github.com/openshift/api"
   packages = [
     "config/v1",
@@ -314,11 +314,11 @@
     "security/v1",
   ]
   pruneopts = "NUT"
-  revision = "84404551741398f2300f84b16fb97ef351749982"
+  revision = "c3ef7090a436a4ce1334e8a0401083b072dc7ab8"
 
 [[projects]]
   branch = "master"
-  digest = "1:1af0519d2513adff7c4e4d4821462fe1ec77670de353f3b67eea57adbb44df40"
+  digest = "1:9ccfc2c3dea7afcb35919c0f632fe5d9592e04d2d15427040b1307bc64e88ac6"
   name = "github.com/openshift/client-go"
   packages = [
     "config/clientset/versioned",
@@ -332,7 +332,7 @@
     "security/clientset/versioned/typed/security/v1",
   ]
   pruneopts = "NUT"
-  revision = "2f38d042c79762d5bf2ba3c795d4ad72101289e9"
+  revision = "f3714b1f9df49ae0d998d882f510ed1d8d10f4aa"
 
 [[projects]]
   branch = "master"

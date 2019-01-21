@@ -216,6 +216,10 @@ func (c *Client) GetClusterVersion(name string) (*configv1.ClusterVersion, error
 	return c.oscclient.ConfigV1().ClusterVersions().Get(name, metav1.GetOptions{})
 }
 
+func (c *Client) GetProxy(name string) (*configv1.Proxy, error) {
+	return c.oscclient.ConfigV1().Proxies().Get(name, metav1.GetOptions{})
+}
+
 func (c *Client) NamespacesToMonitor() ([]string, error) {
 	namespaces, err := c.kclient.CoreV1().Namespaces().List(metav1.ListOptions{
 		LabelSelector: c.namespaceSelector,
