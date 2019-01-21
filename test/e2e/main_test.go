@@ -97,12 +97,13 @@ func TestQueryPrometheus(t *testing.T) {
 	}
 
 	// Wait for pod to respond at queries at all. Then start verifying their results.
+	var loopErr error
 	err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.QueryPrometheus("prometheus-k8s-0", "up")
-		return err == nil, nil
+		_, loopErr := f.QueryPrometheus("prometheus-k8s-0", "up")
+		return loopErr == nil, nil
 	})
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "wait for prometheus-k8s"))
+		t.Fatal(errors.Wrapf(err, "wait for prometheus-k8s: %v", loopErr))
 	}
 
 	err = wait.Poll(5*time.Second, 10*time.Minute, func() (bool, error) {
