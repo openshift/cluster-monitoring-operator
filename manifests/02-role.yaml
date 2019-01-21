@@ -101,24 +101,18 @@ rules:
   - get
 - apiGroups:
   - config.openshift.io
-  resourceNames:
-  - cluster
   resources:
   - proxies
   verbs:
   - get
 - apiGroups:
   - config.openshift.io
-  resourceNames:
-  - cluster-monitoring-operator
   resources:
   - clusteroperators
   verbs:
   - get
 - apiGroups:
   - config.openshift.io
-  resourceNames:
-  - cluster-monitoring-operator
   resources:
   - clusteroperators/status
   verbs:
