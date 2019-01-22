@@ -13,6 +13,10 @@ spec:
       regex: etcd_(debugging|disk|request|server).*
       sourceLabels:
       - __name__
+    - action: drop
+      regex: rest_client_request_latency_seconds_(bucket|count|sum)
+      sourceLabels:
+      - __name__
     port: https
     relabelings:
     - action: replace
