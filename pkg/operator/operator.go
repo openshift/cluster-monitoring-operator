@@ -130,10 +130,31 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	}
 
 	go o.worker()
-
 	go o.cmapInf.Run(stopc)
 
-	<-stopc
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	time.Sleep(10 * time.Second)
+	_, exists, _ := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
+	if !exists {
+		glog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
+		o.enqueue(o.namespace + "/" + o.configMapName)
+	}
+
+	for {
+		select {
+		case <-stopc:
+			return nil
+		case <-ticker.C:
+			_, exists, _ := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
+			if !exists {
+				glog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
+				o.enqueue(o.namespace + "/" + o.configMapName)
+			}
+		}
+	}
+
 	return nil
 }
 
