@@ -353,6 +353,13 @@ local namespacesRole =
                 //  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 //  serverName: 'controller-manager.openshift-kube-controller-manager.svc',
                 //},
+                metricRelabelings+: [{
+                  action: 'drop',
+                  regex: 'rest_client_request_latency_seconds_(bucket|count|sum)',
+                  sourceLabels: [
+                    '__name__',
+                  ],
+                }],
                 relabelings: [{
                   sourceLabels: ['__address__'],
                   action: 'replace',
