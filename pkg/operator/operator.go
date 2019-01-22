@@ -129,17 +129,25 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 		return nil
 	}
 
-	go o.worker()
 	go o.cmapInf.Run(stopc)
+
+	glog.V(4).Info("Waiting for initial cache sync.")
+	ok := cache.WaitForCacheSync(stopc, o.cmapInf.HasSynced)
+	if !ok {
+		return errors.New("failed to sync informers")
+	}
+	glog.V(4).Info("Initial cache sync done.")
+
+	go o.worker()
 
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
 
-	time.Sleep(10 * time.Second)
-	_, exists, _ := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
+	key := o.namespace + "/" + o.configMapName
+	_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
 	if !exists {
-		glog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
-		o.enqueue(o.namespace + "/" + o.configMapName)
+		glog.Info("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
+		o.enqueue(key)
 	}
 
 	for {
@@ -147,10 +155,10 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 		case <-stopc:
 			return nil
 		case <-ticker.C:
-			_, exists, _ := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
+			_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
 			if !exists {
-				glog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
-				o.enqueue(o.namespace + "/" + o.configMapName)
+				glog.Info("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
+				o.enqueue(key)
 			}
 		}
 	}
@@ -187,29 +195,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 }
 
 func (o *Operator) worker() {
-	glog.V(4).Info("Waiting for initial cache sync.")
-	waitForInformerInitialSync(o.cmapInf)
-	glog.V(4).Info("Initial cache sync done.")
-
 	for o.processNextWorkItem() {
-	}
-}
-
-func waitForInformerInitialSync(i ...cache.SharedInformer) {
-	t := time.NewTicker(time.Second)
-	defer t.Stop()
-
-	for {
-		select {
-		case <-t.C:
-			allSynced := true
-			for _, inf := range i {
-				allSynced = allSynced && inf.HasSynced()
-			}
-			if allSynced {
-				return
-			}
-		}
 	}
 }
 
@@ -252,7 +238,7 @@ func (o *Operator) enqueue(obj interface{}) {
 }
 
 func (o *Operator) sync(key string) error {
-	config := o.Config()
+	config := o.Config(key)
 	config.SetImages(o.images)
 
 	factory := manifests.NewFactory(o.namespace, config)
@@ -276,17 +262,17 @@ func (o *Operator) sync(key string) error {
 	return tl.RunAll()
 }
 
-func (o *Operator) loadConfig() *manifests.Config {
+func (o *Operator) loadConfig(key string) *manifests.Config {
 	c := manifests.NewDefaultConfig()
 
-	obj, found, err := o.cmapInf.GetStore().GetByKey(o.namespace + "/" + o.configMapName)
+	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
 		glog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
 		return c
 	}
 
 	if !found {
-		glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
+		glog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
 		return c
 	}
 
@@ -294,7 +280,7 @@ func (o *Operator) loadConfig() *manifests.Config {
 	configContent, found := cmap.Data["config.yaml"]
 
 	if !found {
-		glog.Warningf("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
+		glog.Warning("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
 		return c
 	}
 
@@ -307,8 +293,8 @@ func (o *Operator) loadConfig() *manifests.Config {
 	return cParsed
 }
 
-func (o *Operator) Config() *manifests.Config {
-	c := o.loadConfig()
+func (o *Operator) Config(key string) *manifests.Config {
+	c := o.loadConfig(key)
 
 	// Only fetch the the token and cluster ID if they have not been specified in the config.
 	if c.TelemeterClientConfig.ClusterID == "" || c.TelemeterClientConfig.Token == "" {
