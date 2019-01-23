@@ -813,3 +813,7 @@ func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, er
 	}
 	return false, err
 }
+
+func (c *Client) StatusReporter() *StatusReporter {
+	return NewStatusReporter(c.oscclient.Config().ClusterOperators(), "cluster-monitoring-operator", "0.0.1")
+}
