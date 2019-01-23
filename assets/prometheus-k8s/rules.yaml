@@ -334,6 +334,18 @@ spec:
     - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m]))
         / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
+    - expr: sum(node:node_num_cpu:sum)
+      record: cluster:node_num_cpu:sum
+    - expr: sum(node:node_cpu_utilisation:avg1m * node:node_num_cpu:sum)
+      record: cluster:node_cpu_usage:avg1m
+    - expr: sum(node:node_memory_bytes_total:sum)
+      record: cluster:node_memory_bytes_total:sum
+    - expr: sum(node:node_memory_utilisation:ratio * node:node_memory_bytes_total:sum)
+      record: cluster:node_memory_usage
+    - expr: sum(max by(instance, device) (node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"}))
+      record: cluster:node_filesystem_size_bytes:userfstypes
+    - expr: sum(max by(instance, device) (node_filesystem_free_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"}))
+      record: cluster:node_filesystem_free_bytes:userfstypes
     - alert: ClusterMonitoringOperatorErrors
       annotations:
         message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value

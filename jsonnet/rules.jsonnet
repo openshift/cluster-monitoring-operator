@@ -45,6 +45,30 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
+            expr: 'sum(node:node_num_cpu:sum)',
+            record: 'cluster:node_num_cpu:sum',
+          },
+          {
+            expr: 'sum(node:node_cpu_utilisation:avg1m * node:node_num_cpu:sum)',
+            record: 'cluster:node_cpu_usage:avg1m',
+          },
+          {
+            expr: 'sum(node:node_memory_bytes_total:sum)',
+            record: 'cluster:node_memory_bytes_total:sum',
+          },
+          {
+            expr: 'sum(node:node_memory_utilisation:ratio * node:node_memory_bytes_total:sum)',
+            record: 'cluster:node_memory_usage',
+          },
+          {
+            expr: 'sum(max by(instance, device) (node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"}))',
+            record: 'cluster:node_filesystem_size_bytes:userfstypes',
+          },
+          {
+            expr: 'sum(max by(instance, device) (node_filesystem_free_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"}))',
+            record: 'cluster:node_filesystem_free_bytes:userfstypes',
+          },
+          {
             expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
             alert: 'ClusterMonitoringOperatorErrors',
             'for': '15m',
