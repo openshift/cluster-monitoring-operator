@@ -40,7 +40,7 @@ func (r *StatusReporter) SetDone() error {
 	conditions = setCondition(conditions, v1.OperatorProgressing, v1.ConditionFalse, "", time)
 	conditions = setCondition(conditions, v1.OperatorFailing, v1.ConditionFalse, "", time)
 	co.Status.Conditions = conditions
-	co.Status.Version = r.version
+	//co.Status.Version = r.version
 
 	_, err = r.client.UpdateStatus(co)
 	return err
@@ -61,7 +61,7 @@ func (r *StatusReporter) SetInProgress() error {
 	conditions := ensureConditionsInitialized(co.Status.Conditions, time)
 	conditions = setCondition(conditions, v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
 	co.Status.Conditions = conditions
-	co.Status.Version = r.version
+	//co.Status.Version = r.version
 
 	_, err = r.client.UpdateStatus(co)
 	return err
@@ -84,7 +84,7 @@ func (r *StatusReporter) SetFailed(statusErr error) error {
 	conditions = setCondition(conditions, v1.OperatorProgressing, v1.ConditionFalse, "", time)
 	conditions = setCondition(conditions, v1.OperatorFailing, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
 	co.Status.Conditions = conditions
-	co.Status.Version = r.version
+	//co.Status.Version = r.version
 
 	_, err = r.client.UpdateStatus(co)
 	return err
