@@ -33,12 +33,13 @@ func NewTaskRunner(client *client.Client, tasks []*TaskSpec) *TaskRunner {
 }
 
 func (tl *TaskRunner) RunAll() error {
-	for _, ts := range tl.tasks {
-		glog.V(4).Infof("running task %v", ts.Name)
+	for i, ts := range tl.tasks {
+		glog.V(4).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
 		err := tl.ExecuteTask(ts)
 		if err != nil {
 			return errors.Wrapf(err, "running task %v failed", ts.Name)
 		}
+		glog.V(4).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
 	}
 
 	return nil
