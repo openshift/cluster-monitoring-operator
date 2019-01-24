@@ -740,6 +740,7 @@
     "github.com/openshift/api/security/v1",
     "github.com/openshift/client-go/config/clientset/versioned",
     "github.com/openshift/client-go/route/clientset/versioned",
+    "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1",
     "github.com/openshift/client-go/security/clientset/versioned",
     "github.com/pkg/errors",
     "github.com/prometheus/client_golang/prometheus",
