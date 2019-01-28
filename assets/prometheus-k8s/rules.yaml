@@ -649,8 +649,8 @@ spec:
         message: '{{ printf "%0.0f" $value }}% throttling of CPU in namespace {{ $labels.namespace
           }} for container {{ $labels.container_name }} in pod {{ $labels.pod_name
           }}.'
-      expr: "100 * sum(increase(container_cpu_cfs_throttled_periods_total{}[5m]))
-        by (container_name, pod_name, namespace) \n  / \nsum(increase(container_cpu_cfs_periods_total{}[5m]))
+      expr: "100 * sum(increase(container_cpu_cfs_throttled_periods_total{container_name!=\"\",
+        }[5m])) by (container_name, pod_name, namespace)\n  /\nsum(increase(container_cpu_cfs_periods_total{}[5m]))
         by (container_name, pod_name, namespace)\n  > 25 \n"
       for: 15m
       labels:
@@ -784,14 +784,16 @@ spec:
         severity: warning
     - alert: KubeClientCertificateExpiration
       annotations:
-        message: Kubernetes API certificate is expiring in less than 7 days.
+        message: A client certificate used to authenticate to the apiserver is expiring
+          in less than 7 days.
       expr: |
         histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
       labels:
         severity: warning
     - alert: KubeClientCertificateExpiration
       annotations:
-        message: Kubernetes API certificate is expiring in less than 24 hours.
+        message: A client certificate used to authenticate to the apiserver is expiring
+          in less than 24 hours.
       expr: |
         histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
       labels:
