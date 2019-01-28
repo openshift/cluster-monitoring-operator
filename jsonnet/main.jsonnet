@@ -32,7 +32,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  alertmanager: 'v0.15.2',
                  nodeExporter: 'v0.16.0',
                  promLabelProxy: 'v0.1.0',
-                 kubeRbacProxy: 'v0.4.0',
+                 kubeRbacProxy: 'v0.4.1',
                  prometheusAdapter: 'v0.4.1',
                },
                prometheusAdapter+:: {
