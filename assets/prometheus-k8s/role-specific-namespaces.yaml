@@ -9,7 +9,6 @@ items:
   - apiGroups:
     - ""
     resources:
-    - nodes
     - services
     - endpoints
     - pods
@@ -26,7 +25,6 @@ items:
   - apiGroups:
     - ""
     resources:
-    - nodes
     - services
     - endpoints
     - pods
@@ -43,7 +41,6 @@ items:
   - apiGroups:
     - ""
     resources:
-    - nodes
     - services
     - endpoints
     - pods
@@ -60,7 +57,6 @@ items:
   - apiGroups:
     - ""
     resources:
-    - nodes
     - services
     - endpoints
     - pods
@@ -77,7 +73,6 @@ items:
   - apiGroups:
     - ""
     resources:
-    - nodes
     - services
     - endpoints
     - pods
@@ -94,7 +89,6 @@ items:
   - apiGroups:
     - ""
     resources:
-    - nodes
     - services
     - endpoints
     - pods
@@ -111,7 +105,6 @@ items:
   - apiGroups:
     - ""
     resources:
-    - nodes
     - services
     - endpoints
     - pods
