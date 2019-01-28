@@ -17,7 +17,7 @@ package e2e
 import (
 	"flag"
 	"log"
-	"strings"
+	"os"
 	"testing"
 	"time"
 
@@ -31,8 +31,24 @@ import (
 var f *framework.Framework
 
 func TestMain(m *testing.M) {
-	kubeConfigPath := flag.String("kubeconfig", clientcmd.RecommendedHomeFile, "kube config path, default: $HOME/.kube/config")
-	opImageName := flag.String("operator-image", "", "operator image, e.g. quay.io/coreos/cluster-monitoring-operator")
+	os.Exit(testMain(m))
+}
+
+// testMain circumvents the issue, that one can not call `defer` in TestMain, as
+// `os.Exit` does not honor `defer` statements. For more details see:
+// http://blog.englund.nu/golang,/testing/2017/03/12/using-defer-in-testmain.html
+func testMain(m *testing.M) int {
+	kubeConfigPath := flag.String(
+		"kubeconfig",
+		clientcmd.RecommendedHomeFile,
+		"kube config path, default: $HOME/.kube/config",
+	)
+
+	opImageName := flag.String(
+		"operator-image",
+		"",
+		"operator image, e.g. quay.io/coreos/cluster-monitoring-operator",
+	)
 
 	flag.Parse()
 
@@ -42,24 +58,38 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	list, err := f.KubeClient.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
+	cleanUp, err := f.Setup()
+	// Check cleanUp first, in case of an err, we still want to clean up.
+	if cleanUp != nil {
+		defer cleanUp()
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if list == nil {
-		log.Fatal("expected list of pods not to be nil")
+	// Wait for Prometheus operator.
+	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		_, err := f.KubeClient.Apps().Deployments(f.Ns).Get("prometheus-operator", metav1.GetOptions{})
+		if err != nil {
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	podNames := []string{}
-	for _, p := range list.Items {
-		podNames = append(podNames, p.GetName())
-	}
-	log.Printf("Found the following pods in kube-system namespace: %v", strings.Join(podNames, ","))
+	return m.Run()
 }
 
 func TestQueryPrometheus(t *testing.T) {
 	t.Parallel()
+
+	promClient, err := framework.NewPrometheusClient(f.OpenshiftRouteClient, f.KubeClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	queries := []struct {
 		query   string
 		expectN int
@@ -71,7 +101,7 @@ func TestQueryPrometheus(t *testing.T) {
 			query:   `up{job="kubelet"} == 1`,
 			expectN: 1,
 		}, {
-			query:   `up{job="kube-scheduler"} == 1`,
+			query:   `up{job="scheduler"} == 1`,
 			expectN: 1,
 		}, {
 			query:   `up{job="kube-controller-manager"} == 1`,
@@ -83,7 +113,7 @@ func TestQueryPrometheus(t *testing.T) {
 			query:   `up{job="kube-state-metrics"} == 1`,
 			expectN: 1,
 		}, {
-			query:   `up{job="prometheus"} == 1`,
+			query:   `up{job="prometheus-k8s"} == 1`,
 			expectN: 1,
 		}, {
 			query:   `up{job="prometheus-operator"} == 1`,
@@ -98,19 +128,20 @@ func TestQueryPrometheus(t *testing.T) {
 	}
 
 	// Wait for pod to respond at queries at all. Then start verifying their results.
-	err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.QueryPrometheus("prometheus-k8s-0", "up")
-		return err == nil, nil
+	var loopErr error
+	err = wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
+		_, loopErr := promClient.Query("up")
+		return loopErr == nil, nil
 	})
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "wait for prometheus-k8s"))
+		t.Fatal(errors.Wrapf(err, "wait for prometheus-k8s: %v", loopErr))
 	}
 
-	err = wait.Poll(5*time.Second, 10*time.Minute, func() (bool, error) {
+	err = wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
 		defer t.Log("---------------------------\n")
 
 		for _, q := range queries {
-			n, err := f.QueryPrometheus("prometheus-k8s-0", q.query)
+			n, err := promClient.Query(q.query)
 			if err != nil {
 				return false, err
 			}

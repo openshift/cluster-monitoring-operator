@@ -15,10 +15,16 @@
 package framework
 
 import (
+	"strings"
+
+	"k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/Jeffail/gabs"
+	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
+
 	monClient "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"github.com/pkg/errors"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -28,8 +34,10 @@ import (
 var namespaceName = "openshift-monitoring"
 
 type Framework struct {
-	CRDClient        crdc.CustomResourceDefinitionInterface
-	KubeClient       kubernetes.Interface
+	CRDClient            crdc.CustomResourceDefinitionInterface
+	KubeClient           kubernetes.Interface
+	OpenshiftRouteClient routev1.RouteV1Interface
+
 	MonitoringClient *monClient.MonitoringV1Client
 	Ns               string
 	OpImageName      string
@@ -46,6 +54,11 @@ func New(kubeConfigPath string, opImageName string) (*Framework, error) {
 		return nil, errors.Wrap(err, "creating kubeClient failed")
 	}
 
+	openshiftRouteClient, err := routev1.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating openshiftClient failed")
+	}
+
 	mClient, err := monClient.NewForConfig(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating monitoring client failed")
@@ -58,33 +71,101 @@ func New(kubeConfigPath string, opImageName string) (*Framework, error) {
 	crdClient := eclient.ApiextensionsV1beta1().CustomResourceDefinitions()
 
 	f := &Framework{
-		KubeClient:       kubeClient,
-		CRDClient:        crdClient,
-		MonitoringClient: mClient,
-		Ns:               namespaceName,
-		OpImageName:      opImageName,
+		KubeClient:           kubeClient,
+		OpenshiftRouteClient: openshiftRouteClient,
+		CRDClient:            crdClient,
+		MonitoringClient:     mClient,
+		Ns:                   namespaceName,
+		OpImageName:          opImageName,
 	}
 
 	return f, nil
 }
 
-func (f *Framework) QueryPrometheus(name, query string) (int, error) {
-	req := f.KubeClient.CoreV1().RESTClient().Get().
-		Prefix("proxy").
-		Namespace(namespaceName).
-		Resource("pods").Name(name+":9090").
-		Suffix("/api/v1/query").Param("query", query)
+type cleanUpFunc func() error
 
-	b, err := req.DoRaw()
+// Setup creates everything necessary to use the test framework.
+func (f *Framework) Setup() (cleanUpFunc, error) {
+	cleanUpFuncs := []cleanUpFunc{}
+
+	cf, err := f.CreateServiceAccount()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	res, err := gabs.ParseJSON(b)
+	cleanUpFuncs = append(cleanUpFuncs, cf)
+
+	cf, err = f.CreateClusterRoleBinding()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	n, err := res.ArrayCountP("data.result")
-	return n, err
+	cleanUpFuncs = append(cleanUpFuncs, cf)
+
+	return func() error {
+		var errs []error
+		for _, f := range cleanUpFuncs {
+			err := f()
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+
+		if len(errs) != 0 {
+			var combined []string
+			for _, err := range errs {
+				combined = append(combined, err.Error())
+			}
+			return errors.Errorf("failed to run clean up functions of clean up function: %v", strings.Join(combined, ","))
+		}
+
+		return nil
+	}, nil
+}
+
+func (f *Framework) CreateServiceAccount() (cleanUpFunc, error) {
+	serviceAccount := &v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-monitoring-operator-e2e",
+			Namespace: "openshift-monitoring",
+		},
+	}
+
+	serviceAccount, err := f.KubeClient.CoreV1().ServiceAccounts("openshift-monitoring").Create(serviceAccount)
+	if err != nil {
+		return nil, err
+	}
+
+	return func() error {
+		return f.KubeClient.CoreV1().ServiceAccounts("openshift-monitoring").Delete(serviceAccount.Name, &metav1.DeleteOptions{})
+	}, nil
+}
+
+func (f *Framework) CreateClusterRoleBinding() (cleanUpFunc, error) {
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster-monitoring-operator-e2e",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "cluster-monitoring-operator-e2e",
+				Namespace: "openshift-monitoring",
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     "cluster-monitoring-view",
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+
+	clusterRoleBinding, err := f.KubeClient.RbacV1().ClusterRoleBindings().Create(clusterRoleBinding)
+	if err != nil {
+		return nil, err
+	}
+
+	return func() error {
+		return f.KubeClient.RbacV1().ClusterRoleBindings().Delete(clusterRoleBinding.Name, &metav1.DeleteOptions{})
+	}, nil
 }
