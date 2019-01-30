@@ -68,6 +68,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
   _config+:: {
     namespace: 'openshift-monitoring',
 
+    hostNetworkInterfaceSelector: 'device!~"veth.+"',
+
     kubeSchedulerSelector: 'job="scheduler"',
 
     namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
