@@ -186,7 +186,31 @@ local namespacesRole =
                   },
                 },
               super.endpoints,
-            ),
+            ) +
+            [{
+              interval: '30s',
+              port: 'https-metrics',
+              relabelings: [
+                {
+                  sourceLabels: ['__address__'],
+                  action: 'replace',
+                  targetLabel: '__address__',
+                  regex: '(.+)(?::\\d+)',
+                  replacement: '$1:9537',
+                },
+                {
+                  sourceLabels: ['endpoint'],
+                  action: 'replace',
+                  targetLabel: 'endpoint',
+                  replacement: 'crio',
+                },
+                {
+                  action: 'replace',
+                  targetLabel: 'job',
+                  replacement: 'crio',
+                },
+              ],
+            }],
         },
       },
 
