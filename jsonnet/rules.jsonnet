@@ -45,6 +45,14 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
+            expr: 'sum(pod:kube_pod_container_status_restarts_total{container_name!="", namespace=openshift-console, namespace=openshift-ingress}[1h]) BY (namespace)',
+            record: 'pod_name:kube_pod_container_status_restarts_total:sum',
+          },
+          {
+            expr: 'sum(pod:kube_pod_container_status_terminated_reason{container_name!="", reason="OOMKilled", namespace=openshift-console, namespace=openshift-ingress}[1h]) BY (namespace)',
+            record: 'pod_name:kube_pod_container_status_terminated_reason:sum',
+          },
+          {
             expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
             alert: 'ClusterMonitoringOperatorErrors',
             'for': '15m',
@@ -66,6 +74,6 @@
           },
         ],
       },
-    ],
+      ],
   },
 }
