@@ -1,5 +1,5 @@
 apiVersion: config.openshift.io/v1
 kind: ClusterOperator
 metadata:
-  name: cluster-monitoring-operator
+  name: cluster-monitoring
 spec: {}
