@@ -57,6 +57,7 @@ const (
 )
 
 type Client struct {
+	version           string
 	namespace         string
 	namespaceSelector string
 	appVersionName    string
@@ -69,7 +70,7 @@ type Client struct {
 	aggclient         aggregatorclient.Interface
 }
 
-func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersionName string) (*Client, error) {
+func New(cfg *rest.Config, version string, namespace string, namespaceSelector string, appVersionName string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -106,6 +107,7 @@ func New(cfg *rest.Config, namespace string, namespaceSelector string, appVersio
 	}
 
 	return &Client{
+		version:           version,
 		namespace:         namespace,
 		namespaceSelector: namespaceSelector,
 		appVersionName:    appVersionName,
@@ -815,5 +817,5 @@ func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, er
 }
 
 func (c *Client) StatusReporter() *StatusReporter {
-	return NewStatusReporter(c.oscclient.Config().ClusterOperators(), "cluster-monitoring-operator", "0.0.1")
+	return NewStatusReporter(c.oscclient.Config().ClusterOperators(), "monitoring", c.version)
 }

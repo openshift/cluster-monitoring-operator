@@ -26,7 +26,7 @@ func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, version s
 func (r *StatusReporter) SetDone() error {
 	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		co = newClusterOperator()
+		co = r.newClusterOperator()
 		co, err = r.client.Create(co)
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -49,7 +49,7 @@ func (r *StatusReporter) SetDone() error {
 func (r *StatusReporter) SetInProgress() error {
 	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		co = newClusterOperator()
+		co = r.newClusterOperator()
 		co, err = r.client.Create(co)
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -70,7 +70,7 @@ func (r *StatusReporter) SetInProgress() error {
 func (r *StatusReporter) SetFailed(statusErr error) error {
 	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		co = newClusterOperator()
+		co = r.newClusterOperator()
 		co, err = r.client.Create(co)
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -88,6 +88,24 @@ func (r *StatusReporter) SetFailed(statusErr error) error {
 
 	_, err = r.client.UpdateStatus(co)
 	return err
+}
+
+func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
+	time := metav1.Now()
+	co := &v1.ClusterOperator{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "config.openshift.io/v1",
+			Kind:       "ClusterOperator",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: r.clusterOperatorName,
+		},
+		Spec:   v1.ClusterOperatorSpec{},
+		Status: v1.ClusterOperatorStatus{},
+	}
+	co.Status.Conditions = ensureConditionsInitialized(co.Status.Conditions, time)
+
+	return co
 }
 
 func ensureConditionsInitialized(conditions []v1.ClusterOperatorStatusCondition, time metav1.Time) []v1.ClusterOperatorStatusCondition {
@@ -112,24 +130,6 @@ func ensureConditionsInitialized(conditions []v1.ClusterOperatorStatusCondition,
 	}
 
 	return conditions
-}
-
-func newClusterOperator() *v1.ClusterOperator {
-	time := metav1.Now()
-	co := &v1.ClusterOperator{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "config.openshift.io/v1",
-			Kind:       "ClusterOperator",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster-monitoring-operator",
-		},
-		Spec:   v1.ClusterOperatorSpec{},
-		Status: v1.ClusterOperatorStatus{},
-	}
-	co.Status.Conditions = ensureConditionsInitialized(co.Status.Conditions, time)
-
-	return co
 }
 
 func setCondition(conditions []v1.ClusterOperatorStatusCondition, condition v1.ClusterStatusConditionType, status v1.ConditionStatus, message string, time metav1.Time) []v1.ClusterOperatorStatusCondition {
