@@ -8,7 +8,7 @@
                     "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
                 }
             },
-            "version": "9567c110c2807f26bbcd1ea7460e1c40cb901480"
+            "version": "7b73aa0466c497955009918eba91f57199131942"
         },
         {
             "name": "ksonnet",
@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "3b031fd4bb5c3027ab5e76a342758c203b535db0"
+            "version": "a16ec1d098eb45e7cfb44d7e4b73ba7b766f0e0a"
         },
         {
             "name": "grafonnet",
@@ -38,7 +38,7 @@
                     "subdir": "grafonnet"
                 }
             },
-            "version": "d05a9bd3adfba39ed3b1987a428d9e9863428df5"
+            "version": "11022f5e920ac1ea960556193e3f0ab57d70d7c5"
         },
         {
             "name": "grafana-builder",
@@ -48,7 +48,7 @@
                     "subdir": "grafana-builder"
                 }
             },
-            "version": "d75c3b260c1077c924d7ea0240250afc235c4cb3"
+            "version": "24590e90dcfc9d581c4208b4bb3d15df50f1328e"
         },
         {
             "name": "grafana",
@@ -68,7 +68,7 @@
                     "subdir": "jsonnet/prometheus-operator"
                 }
             },
-            "version": "174c9bf17bec78b055e8e63c6ae3a3dc9bb0a3a8"
+            "version": "338addbabc8a29b46840df0bb0355c12b96a6f21"
         },
         {
             "name": "etcd-mixin",
@@ -78,7 +78,7 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "fcc29894c2e929d07aac3ec22db1d9b6aab15422"
+            "version": "1fe6f109c87c4fa47775426a6a60c3b954ed5c33"
         },
         {
             "name": "telemeter-client",
@@ -88,7 +88,7 @@
                     "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "50b4e7377ef6e4cd13e780fa2ea7f5446093f4f0"
+            "version": "e548f690281c1b9046f44d7eee34d8fdd002c578"
         }
     ]
 }
