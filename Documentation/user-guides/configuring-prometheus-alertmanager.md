@@ -142,9 +142,31 @@ receivers:
 
 ### Dead man's switch PagerDuty
 
-[PagerDuty][pagerduty] supports this mechanism through an integration called [Dead Man's Snitch][deadman-snitch]. Simply add a `PagerDuty` configuration to the default `deadmansswitch` receiver. Use the process described above to add this configuration.
+[PagerDuty][pagerduty] supports this mechanism through an integration called [Dead Man's Snitch][deadman-snitch].  Once you have signed up for Dead Man's Snitch and created a snitch, set up a webhook to talk to its unique URL:
 
-Configure Dead Man's Snitch to page the operator if the Dead man's switch alert is silent for 15 minutes. With the default Alertmanager configuration, the Dead man's switch alert is repeated every five minutes. If Dead Man's Snitch triggers after 15 minutes, it indicates that the notification has been unsuccessful at least twice.
+```
+global:
+  resolve_timeout: 5m
+route:
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: default
+  routes:
+  - match:
+      alertname: DeadMansSwitch
+    repeat_interval: 5m
+    receiver: deadmansswitch
+receivers:
+- name: default
+  pagerduty_configs:
+  - service_key: "XXXXXX"
+- name: deadmansswitch
+  webhook_configs:
+    - url: "https://nosnch.in/XXXXXX
+```
+
+Configure a Dead Man's Snitch integration with PagerDuty, along with an excalation on PagerDuty to page the operator if the Dead man's switch alert is silent for 15 minutes. With the default Alertmanager configuration, the Dead man's switch alert is repeated every five minutes. If Dead Man's Snitch triggers after 15 minutes, it indicates that the notification has been unsuccessful at least twice.
 
 Learn how to [configure Dead Man's Snitch for PagerDuty][configure-snitch].
 
