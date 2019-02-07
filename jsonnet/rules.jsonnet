@@ -45,7 +45,7 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
-            expr: 'sum(pod:kube_pod_container_status_restarts_total{container_name!="", namespace=openshift-console, namespace=openshift-ingress}[1h]) BY (namespace)',
+            expr: 'sum(rate(pod:kube_pod_container_status_restarts_total{container_name!="", namespace=openshift-console, namespace=openshift-ingress}[1h])) BY (namespace)',
             record: 'pod_name:kube_pod_container_status_restarts_total:sum',
           },
           {
