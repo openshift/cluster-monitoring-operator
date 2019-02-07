@@ -73,6 +73,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     kubeSchedulerSelector: 'job="scheduler"',
 
     namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+
+    kubeletPodLimit: 250,
   },
 } + {
   local d = super.grafanaDashboards,
