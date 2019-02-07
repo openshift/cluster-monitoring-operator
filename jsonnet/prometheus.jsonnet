@@ -173,49 +173,20 @@ local namespacesRole =
     // This changes the kubelet's certificates to be validated when
     // scraping.
 
-    serviceMonitorKubelet:
+    serviceMonitorKubelet+:
       {
-        apiVersion: 'monitoring.coreos.com/v1',
-        kind: 'ServiceMonitor',
-        metadata: {
-          labels: {
-            'k8s-app': 'kubelet',
-          },
-          name: 'kubelet',
-        },
-        spec: {
-          endpoints: [
-            {
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-              honorLabels: true,
-              interval: '30s',
-              port: 'https-metrics',
-              scheme: 'https',
-              tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-              },
-            },
-            {
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-              honorLabels: true,
-              interval: '30s',
-              path: '/metrics/cadvisor',
-              port: 'https-metrics',
-              scheme: 'https',
-              tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-              },
-            },
-          ],
-          jobLabel: 'k8s-app',
-          namespaceSelector: {
-            matchNames: ['kube-system'],
-          },
-          selector: {
-            matchLabels: {
-              'k8s-app': 'kubelet',
-            },
-          },
+        spec+: {
+          endpoints:
+            std.map(
+              function(e)
+                e {
+                  tlsConfig+: {
+                    caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+                    insecureSkipVerify: false,
+                  },
+                },
+              super.endpoints,
+            ),
         },
       },
 
