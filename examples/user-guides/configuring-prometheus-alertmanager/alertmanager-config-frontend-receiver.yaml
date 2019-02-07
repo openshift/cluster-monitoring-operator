@@ -20,7 +20,7 @@ receivers:
 - name: default
 - name: deadmansswitch
   webhook_configs:
-    - url: "https://nosnch.in/XXXXXX"
+  - url: "https://nosnch.in/XXXXXX"
 - name: team-frontend-page
   pagerduty_configs:
   - service_key: "<key>"
