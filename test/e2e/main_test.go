@@ -122,6 +122,9 @@ func TestQueryPrometheus(t *testing.T) {
 			query:   `up{job="alertmanager-main"} == 1`,
 			expectN: 2,
 		}, {
+			query:   `up{job="crio"} == 1`,
+			expectN: 1,
+		}, {
 			query:   `namespace:container_memory_usage_bytes:sum`,
 			expectN: 1,
 		},
