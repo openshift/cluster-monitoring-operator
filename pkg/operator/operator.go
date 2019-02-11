@@ -51,7 +51,6 @@ type Operator struct {
 
 	client *client.Client
 
-	appvInf cache.SharedIndexInformer
 	cmapInf cache.SharedIndexInformer
 
 	queue workqueue.RateLimitingInterface
@@ -61,7 +60,7 @@ type Operator struct {
 }
 
 func New(config *rest.Config, namespace, namespaceSelector, configMapName string, images map[string]string) (*Operator, error) {
-	c, err := client.New(config, Version, namespace, namespaceSelector, configMapName)
+	c, err := client.New(config, Version, namespace, namespaceSelector)
 	if err != nil {
 		return nil, err
 	}

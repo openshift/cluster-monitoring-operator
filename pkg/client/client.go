@@ -35,7 +35,7 @@ import (
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1beta2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	v1betaextensions "k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
@@ -60,7 +60,6 @@ type Client struct {
 	version           string
 	namespace         string
 	namespaceSelector string
-	appVersionName    string
 	kclient           kubernetes.Interface
 	oscclient         openshiftconfigclientset.Interface
 	ossclient         openshiftsecurityclientset.Interface
@@ -70,7 +69,7 @@ type Client struct {
 	aggclient         aggregatorclient.Interface
 }
 
-func New(cfg *rest.Config, version string, namespace string, namespaceSelector string, appVersionName string) (*Client, error) {
+func New(cfg *rest.Config, version string, namespace string, namespaceSelector string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -110,7 +109,6 @@ func New(cfg *rest.Config, version string, namespace string, namespaceSelector s
 		version:           version,
 		namespace:         namespace,
 		namespaceSelector: namespaceSelector,
-		appVersionName:    appVersionName,
 		kclient:           kclient,
 		oscclient:         oscclient,
 		ossclient:         ossclient,
