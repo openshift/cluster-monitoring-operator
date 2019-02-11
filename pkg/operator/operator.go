@@ -41,6 +41,9 @@ var (
 
 const (
 	resyncPeriod = 5 * time.Minute
+
+	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
+	apiAuthenticationConfigMapName = "kube-system/extension-apiserver-authentication"
 )
 
 type Operator struct {
@@ -51,7 +54,8 @@ type Operator struct {
 
 	client *client.Client
 
-	cmapInf cache.SharedIndexInformer
+	cmapInf           cache.SharedIndexInformer
+	kubeSystemCmapInf cache.SharedIndexInformer
 
 	queue workqueue.RateLimitingInterface
 
@@ -78,8 +82,16 @@ func New(config *rest.Config, namespace, namespaceSelector, configMapName string
 	)
 	o.cmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
-		UpdateFunc: o.handleConfigMapUpdate,
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 		DeleteFunc: o.handleEvent,
+	})
+
+	o.kubeSystemCmapInf = cache.NewSharedIndexInformer(
+		o.client.ConfigMapListWatchForNamespace("kube-system"),
+		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
+	)
+	o.kubeSystemCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
 
 	return o, nil
@@ -129,9 +141,10 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	}
 
 	go o.cmapInf.Run(stopc)
+	go o.kubeSystemCmapInf.Run(stopc)
 
 	glog.V(4).Info("Waiting for initial cache sync.")
-	ok := cache.WaitForCacheSync(stopc, o.cmapInf.HasSynced)
+	ok := cache.WaitForCacheSync(stopc, o.cmapInf.HasSynced, o.kubeSystemCmapInf.HasSynced)
 	if !ok {
 		return errors.New("failed to sync informers")
 	}
@@ -174,10 +187,6 @@ func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 	return k, true
 }
 
-func (o *Operator) handleConfigMapUpdate(_, cur interface{}) {
-	o.handleEvent(cur)
-}
-
 func (o *Operator) handleEvent(obj interface{}) {
 	key, ok := o.keyFunc(obj)
 	if !ok {
@@ -185,12 +194,20 @@ func (o *Operator) handleEvent(obj interface{}) {
 	}
 
 	glog.V(4).Infof("ConfigMap updated: %s", key)
-	monitoringConfigMapKey := o.namespace + "/" + o.configMapName
-	if key != monitoringConfigMapKey {
-		glog.V(4).Infof("ConfigMap (%s) not triggering an update. Only changes to %s configure the cluster monitoring stack.", key, monitoringConfigMapKey)
+
+	cmoConfigMap := o.namespace + "/" + o.configMapName
+
+	switch key {
+	case cmoConfigMap:
+	case apiAuthenticationConfigMapName:
+	default:
+		glog.V(4).Infof("ConfigMap (%s) not triggering an update.", key)
 		return
 	}
-	o.enqueue(key)
+
+	// Always enqueue the cluster monitoring operator configmap.
+	// That way we reuse the same synchronization logic for all triggering object changes.
+	o.enqueue(cmoConfigMap)
 }
 
 func (o *Operator) worker() {
