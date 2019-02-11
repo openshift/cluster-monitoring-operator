@@ -44,6 +44,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                },
                versions+:: {
                  openshiftOauthProxy: 'v1.1.0',
+                 kubeRbacProxy: 'v0.4.1',
                },
                etcd+:: {
                  ips: [],
