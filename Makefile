@@ -52,9 +52,9 @@ clean:
 docs:
 	embedmd -w `find Documentation -name "*.md"`
 
-pkg/manifests/bindata.go: $(ASSETS)
+pkg/manifests/bindata.go: $(ASSETS) $(GOBINDATA_BIN)
 	# Using "-modtime 1" to make generate target deterministic. It sets all file time stamps to unix timestamp 1
-	go-bindata -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
+	$(GOBINDATA_BIN) -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
 
 $(ASSETS): $(JSONNET_SRC) $(JSONNET_VENDOR) hack/build-jsonnet.sh
 	./hack/build-jsonnet.sh
@@ -64,7 +64,13 @@ $(JSONNET_VENDOR): jsonnet/jsonnetfile.json
 
 generate: clean
 	docker build -t tpo-generate -f Dockerfile.generate .
-	docker run --rm --security-opt label=disable -v `pwd`:/go/src/github.com/openshift/cluster-monitoring-operator -w /go/src/github.com/openshift/cluster-monitoring-operator tpo-generate make dependencies merge-cluster-roles docs
+	docker run \
+		--rm \
+		--security-opt label=disable \
+		-v `pwd`:/go/src/github.com/openshift/cluster-monitoring-operator \
+		-w /go/src/github.com/openshift/cluster-monitoring-operator \
+		tpo-generate \
+		make dependencies pkg/manifests/bindata.go merge-cluster-roles docs
 
 dependencies: $(JB_BIN) $(JSONNET_BIN) $(GOBINDATA_BIN) $(GOJSONTOYAML_BIN) $(EMBEDMD_BIN)
 
