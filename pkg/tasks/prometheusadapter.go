@@ -4,17 +4,21 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type PrometheusAdapterTask struct {
-	client  *client.Client
-	factory *manifests.Factory
+	client    *client.Client
+	factory   *manifests.Factory
+	namespace string
 }
 
-func NewPrometheusAdapterTaks(client *client.Client, factory *manifests.Factory) *PrometheusAdapterTask {
+func NewPrometheusAdapterTaks(namespace string, client *client.Client, factory *manifests.Factory) *PrometheusAdapterTask {
 	return &PrometheusAdapterTask{
-		client:  client,
-		factory: factory,
+		client:    client,
+		factory:   factory,
+		namespace: namespace,
 	}
 }
 
@@ -130,7 +134,27 @@ func (t *PrometheusAdapterTask) Run() error {
 		}
 	}
 	{
-		dep, err := t.factory.PrometheusAdapterDeployment()
+		apiAuthConfigmap, err := t.client.GetConfigmap("kube-system", "extension-apiserver-authentication")
+		if err != nil {
+			return errors.Wrap(err, "failed to load kube-system/extension-apiserver-authentication configmap")
+		}
+
+		apiAuthSecret, err := t.factory.PrometheusAdapterAPIAuthSecret(apiAuthConfigmap.Data)
+		if err != nil {
+			return errors.Wrap(err, "failed to create prometheus adapter api auth secret")
+		}
+
+		err = t.deleteOldPrometheusAdapterAPIAuthenticationSecret(apiAuthSecret.Name)
+		if err != nil {
+			return errors.Wrap(err, "deleting existing API authentication secret failed")
+		}
+
+		err = t.client.CreateOrUpdateSecret(apiAuthSecret)
+		if err != nil {
+			return errors.Wrap(err, "reconciling PrometheusAdapter Deployment failed")
+		}
+
+		dep, err := t.factory.PrometheusAdapterDeployment(apiAuthSecret.Name, apiAuthConfigmap.Data)
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter Deployment failed")
 		}
@@ -153,4 +177,30 @@ func (t *PrometheusAdapterTask) Run() error {
 	}
 
 	return nil
+}
+
+func (t *PrometheusAdapterTask) deleteOldPrometheusAdapterAPIAuthenticationSecret(newName string) error {
+	deployment, err := t.client.KubernetesInterface().AppsV1beta2().Deployments(t.namespace).Get("prometheus-adapter", metav1.GetOptions{})
+
+	switch {
+	case apierrors.IsNotFound(err):
+		return nil
+	case err != nil:
+		return err
+	}
+
+	var name string
+	vs := deployment.Spec.Template.Spec.Volumes
+	for i := range vs {
+		if vs[i].Name == "api-auth" && vs[i].Secret != nil {
+			name = vs[i].Secret.SecretName
+			break
+		}
+	}
+
+	if name == "" || name == newName {
+		return nil
+	}
+
+	return t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).Delete(name, &metav1.DeleteOptions{})
 }

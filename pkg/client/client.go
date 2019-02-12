@@ -35,7 +35,7 @@ import (
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1beta2"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	v1betaextensions "k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
@@ -222,6 +222,10 @@ func (c *Client) GetClusterVersion(name string) (*configv1.ClusterVersion, error
 
 func (c *Client) GetProxy(name string) (*configv1.Proxy, error) {
 	return c.oscclient.ConfigV1().Proxies().Get(name, metav1.GetOptions{})
+}
+
+func (c *Client) GetConfigmap(namespace, name string) (*v1.ConfigMap, error) {
+	return c.kclient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 }
 
 func (c *Client) NamespacesToMonitor() ([]string, error) {

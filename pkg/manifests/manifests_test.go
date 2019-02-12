@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestUnconfiguredManifests(t *testing.T) {
@@ -222,7 +222,20 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusAdapterDeployment()
+	_, err = f.PrometheusAdapterAPIAuthSecret(map[string]string{
+		"client-ca-file":               "",
+		"requestheader-client-ca-file": "",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusAdapterDeployment("foo", map[string]string{
+		"requestheader-allowed-names":        "",
+		"requestheader-extra-headers-prefix": "",
+		"requestheader-group-headers":        "",
+		"requestheader-username-headers":     "",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -678,7 +691,12 @@ k8sPrometheusAdapter:
 	})
 
 	f := NewFactory("openshift-monitoring", c)
-	d, err := f.PrometheusAdapterDeployment()
+	d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
+		"requestheader-allowed-names":        "",
+		"requestheader-extra-headers-prefix": "",
+		"requestheader-group-headers":        "",
+		"requestheader-username-headers":     "",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
