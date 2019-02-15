@@ -43,7 +43,8 @@ const (
 	resyncPeriod = 5 * time.Minute
 
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
-	apiAuthenticationConfigMapName = "kube-system/extension-apiserver-authentication"
+	apiAuthenticationConfigMap = "kube-system/extension-apiserver-authentication"
+	csrControllerCAConfigMap   = "openshift-config-managed/csr-controller-ca"
 )
 
 type Operator struct {
@@ -54,8 +55,9 @@ type Operator struct {
 
 	client *client.Client
 
-	cmapInf           cache.SharedIndexInformer
-	kubeSystemCmapInf cache.SharedIndexInformer
+	cmapInf                       cache.SharedIndexInformer
+	kubeSystemCmapInf             cache.SharedIndexInformer
+	openshiftConfigManagedCmapInf cache.SharedIndexInformer
 
 	queue workqueue.RateLimitingInterface
 
@@ -91,6 +93,14 @@ func New(config *rest.Config, namespace, namespaceSelector, configMapName string
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
 	o.kubeSystemCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+	})
+
+	o.openshiftConfigManagedCmapInf = cache.NewSharedIndexInformer(
+		o.client.ConfigMapListWatchForNamespace("openshift-config-managed"),
+		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
+	)
+	o.openshiftConfigManagedCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
 
@@ -199,7 +209,8 @@ func (o *Operator) handleEvent(obj interface{}) {
 
 	switch key {
 	case cmoConfigMap:
-	case apiAuthenticationConfigMapName:
+	case apiAuthenticationConfigMap:
+	case csrControllerCAConfigMap:
 	default:
 		glog.V(4).Infof("ConfigMap (%s) not triggering an update.", key)
 		return

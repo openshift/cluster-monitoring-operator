@@ -95,6 +95,14 @@ local namespacesRole =
       configmap.mixin.metadata.withNamespace($._config.namespace) +
       configmap.mixin.metadata.withAnnotations({ 'service.alpha.openshift.io/inject-cabundle': 'true' }),
 
+    // Even though this bundle will be frequently rotated by the CSR
+    // controller, there is no need to add a ConfigMap reloader to
+    // the Prometheus Pods because Prometheus automatically reloads
+    // its cert pool every 5 seconds.
+    csrControllerCaBundle+:
+      configmap.new('csr-controller-ca-bundle', { 'ca-bundle.crt': '' }) +
+      configmap.mixin.metadata.withNamespace($._config.namespace),
+
     // As Prometheus is protected by the oauth proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.
     // Additionally in order to authenticate with the Alertmanager it
@@ -181,7 +189,7 @@ local namespacesRole =
               function(e)
                 e {
                   tlsConfig+: {
-                    caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+                    caFile: '/etc/prometheus/configmaps/csr-controller-ca-bundle/ca-bundle.crt',
                     insecureSkipVerify: false,
                   },
                 },
@@ -397,7 +405,7 @@ local namespacesRole =
             'prometheus-k8s-htpasswd',
             'kube-rbac-proxy',
           ],
-          configMaps: ['serving-certs-ca-bundle'],
+          configMaps: ['serving-certs-ca-bundle', 'csr-controller-ca-bundle'],
           serviceMonitorSelector: {},
           serviceMonitorNamespaceSelector: {},
           listenLocal: true,
