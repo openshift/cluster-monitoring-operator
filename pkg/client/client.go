@@ -60,7 +60,6 @@ type Client struct {
 	version           string
 	namespace         string
 	namespaceSelector string
-	appVersionName    string
 	kclient           kubernetes.Interface
 	oscclient         openshiftconfigclientset.Interface
 	ossclient         openshiftsecurityclientset.Interface
@@ -70,7 +69,7 @@ type Client struct {
 	aggclient         aggregatorclient.Interface
 }
 
-func New(cfg *rest.Config, version string, namespace string, namespaceSelector string, appVersionName string) (*Client, error) {
+func New(cfg *rest.Config, version string, namespace string, namespaceSelector string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -110,7 +109,6 @@ func New(cfg *rest.Config, version string, namespace string, namespaceSelector s
 		version:           version,
 		namespace:         namespace,
 		namespaceSelector: namespaceSelector,
-		appVersionName:    appVersionName,
 		kclient:           kclient,
 		oscclient:         oscclient,
 		ossclient:         ossclient,
@@ -131,7 +129,11 @@ func (c *Client) Namespace() string {
 
 // ConfigMapListWatch returns a new ListWatch on the ConfigMap resource.
 func (c *Client) ConfigMapListWatch() *cache.ListWatch {
-	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", c.namespace, fields.Everything())
+	return c.ConfigMapListWatchForNamespace(c.namespace)
+}
+
+func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
 
 func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
@@ -220,6 +222,10 @@ func (c *Client) GetClusterVersion(name string) (*configv1.ClusterVersion, error
 
 func (c *Client) GetProxy(name string) (*configv1.Proxy, error) {
 	return c.oscclient.ConfigV1().Proxies().Get(name, metav1.GetOptions{})
+}
+
+func (c *Client) GetConfigmap(namespace, name string) (*v1.ConfigMap, error) {
+	return c.kclient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 }
 
 func (c *Client) NamespacesToMonitor() ([]string, error) {

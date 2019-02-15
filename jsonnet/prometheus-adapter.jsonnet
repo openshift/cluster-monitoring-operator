@@ -49,6 +49,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
     deployment+:
       {
         spec+: {
+          replicas: 2,
           template+: {
             spec+: {
               containers:

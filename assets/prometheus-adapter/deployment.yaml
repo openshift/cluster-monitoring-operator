@@ -4,7 +4,7 @@ metadata:
   name: prometheus-adapter
   namespace: openshift-monitoring
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       name: prometheus-adapter
