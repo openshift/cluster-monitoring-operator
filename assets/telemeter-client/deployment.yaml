@@ -19,7 +19,7 @@ spec:
       - command:
         - /usr/bin/telemeter-client
         - --id=$(ID)
-        - --from=https://prometheus-k8s.openshift-monitoring.svc:9091
+        - --from=$(FROM)
         - --from-ca-file=/etc/serving-certs-ca-bundle/service-ca.crt
         - --from-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
         - --to=$(TO)
@@ -30,20 +30,13 @@ spec:
         - --anonymize-labels=$(ANONYMIZE_LABELS)
         env:
         - name: ANONYMIZE_LABELS
-          valueFrom:
-            secretKeyRef:
-              key: anonymizeLabels
-              name: telemeter-client
+          value: ""
+        - name: FROM
+          value: https://prometheus-k8s.openshift-monitoring.svc:9091
         - name: ID
-          valueFrom:
-            secretKeyRef:
-              key: id
-              name: telemeter-client
+          value: ""
         - name: TO
-          valueFrom:
-            secretKeyRef:
-              key: to
-              name: telemeter-client
+          value: https://infogw.api.openshift.com
         image: quay.io/openshift/origin-telemeter:v4.0
         name: telemeter-client
         ports:

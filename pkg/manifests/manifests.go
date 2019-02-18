@@ -1658,6 +1658,21 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
+	setEnv := func(name, value string) {
+		for i := range d.Spec.Template.Spec.Containers[0].Env {
+			if d.Spec.Template.Spec.Containers[0].Env[i].Name == name {
+				d.Spec.Template.Spec.Containers[0].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.TelemeterClientConfig.ClusterID != "" {
+		setEnv("ID", f.config.TelemeterClientConfig.ClusterID)
+	}
+	if f.config.TelemeterClientConfig.TelemeterServerURL != "" {
+		setEnv("TO", f.config.TelemeterClientConfig.TelemeterServerURL)
+	}
+
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
@@ -1706,12 +1721,6 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 	}
 	s.Data["salt"] = []byte(salt)
 
-	if f.config.TelemeterClientConfig.ClusterID != "" {
-		s.Data["id"] = []byte(f.config.TelemeterClientConfig.ClusterID)
-	}
-	if f.config.TelemeterClientConfig.TelemeterServerURL != "" {
-		s.Data["to"] = []byte(f.config.TelemeterClientConfig.TelemeterServerURL)
-	}
 	if f.config.TelemeterClientConfig.Token != "" {
 		s.Data["token"] = []byte(f.config.TelemeterClientConfig.Token)
 	}
