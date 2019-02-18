@@ -77,7 +77,7 @@ spec:
         - -openshift-ca=/etc/pki/tls/cert.pem
         - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         - -skip-auth-regex=^/metrics
-        image: openshift/oauth-proxy:latest
+        image: quay.io/openshift/oauth-proxy:latest
         name: grafana-proxy
         ports:
         - containerPort: 3000
