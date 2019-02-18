@@ -319,7 +319,8 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 		return errors.Wrap(err, "deleting Prometheus object failed")
 	}
 
-	err = wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
+	var lastErr error
+	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
 		pods, err := c.KubernetesInterface().Core().Pods(p.GetNamespace()).List(prometheusoperator.ListOptions(p.GetName()))
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving pods during polling failed")
@@ -328,10 +329,16 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 		glog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
 		glog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
 
+		lastErr = fmt.Errorf("waiting for %d Pods to be deleted", len(pods.Items))
 		return len(pods.Items) == 0, nil
-	})
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrap(err, "waiting for Prometheus Pods to be gone failed")
+	}
 
-	return errors.Wrap(err, "waiting for Prometheus Pods to be gone failed")
+	return nil
 }
 
 func (c *Client) DeleteDaemonSet(d *v1beta1.DaemonSet) error {
@@ -402,7 +409,8 @@ func (c *Client) DeleteSecret(s *v1.Secret) error {
 }
 
 func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
-	return wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+	var lastErr error
+	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
 		p, err := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace()).Get(p.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Prometheus object failed")
@@ -416,13 +424,20 @@ func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
 			return true, nil
 		}
-
+		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
 		return false, nil
-	})
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrap(err, "waiting for Prometheus")
+	}
+	return nil
 }
 
 func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
-	return wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+	var lastErr error
+	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
 		a, err := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace()).Get(a.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Alertmanager object failed")
@@ -436,9 +451,15 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
 			return true, nil
 		}
-
+		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
 		return false, nil
-	})
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrap(err, "waiting for Alertmanager")
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
@@ -480,7 +501,8 @@ func (c *Client) UpdateDeployment(dep *appsv1.Deployment) error {
 }
 
 func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
-	return wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	var lastErr error
+	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
 		d, err := c.kclient.AppsV1beta2().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
@@ -488,18 +510,28 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedReplicas == d.Status.Replicas && d.Status.UnavailableReplicas == 0 {
 			return true, nil
 		}
+		lastErr = fmt.Errorf("deployment %s is not ready. status: (replicas: %d, updated: %d, ready: %d, unavailable: %d)",
+			d.Name, d.Status.Replicas, d.Status.UpdatedReplicas, d.Status.ReadyReplicas, d.Status.UnavailableReplicas)
 		return false, nil
-	})
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrapf(err, "waiting for DeploymentRollout of %s", dep.GetName())
+	}
+	return nil
 }
 
 func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 	host := ""
-	err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	var lastErr error
+	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
 		newRoute, err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Get(r.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
 		if len(newRoute.Status.Ingress) == 0 {
+			lastErr = fmt.Errorf("no status available for %s", newRoute.GetName())
 			return false, nil
 		}
 		for _, c := range newRoute.Status.Ingress[0].Conditions {
@@ -508,10 +540,15 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 				return true, nil
 			}
 		}
+		lastErr = fmt.Errorf("route %s is not yet Admitted", newRoute.GetName())
 		return false, nil
-	})
-
-	return host, err
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return host, errors.Wrapf(err, "waiting for RouteReady of %s", r.GetName())
+	}
+	return host, nil
 }
 
 func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
@@ -547,7 +584,8 @@ func (c *Client) UpdateDaemonSet(ds *appsv1.DaemonSet) error {
 }
 
 func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
-	return wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	var lastErr error
+	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
 		d, err := c.kclient.AppsV1beta2().DaemonSets(ds.GetNamespace()).Get(ds.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
@@ -555,8 +593,16 @@ func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedNumberScheduled == d.Status.DesiredNumberScheduled && d.Status.NumberUnavailable == 0 {
 			return true, nil
 		}
+		lastErr = fmt.Errorf("daemonset %s is not ready. status: (desired: %d, updated: %d, ready: %d, unavailable: %d)",
+			d.Name, d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled, d.Status.NumberReady, d.Status.NumberAvailable)
 		return false, nil
-	})
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrapf(err, "waiting for DaemonSetRollout of %s", ds.GetName())
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateSecret(s *v1.Secret) error {
