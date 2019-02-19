@@ -99,8 +99,8 @@ local namespacesRole =
     // controller, there is no need to add a ConfigMap reloader to
     // the Prometheus Pods because Prometheus automatically reloads
     // its cert pool every 5 seconds.
-    csrControllerCaBundle+:
-      configmap.new('csr-controller-ca-bundle', { 'ca-bundle.crt': '' }) +
+    kubeletServingCaBundle+:
+      configmap.new('kubelet-serving-ca-bundle', { 'ca-bundle.crt': '' }) +
       configmap.mixin.metadata.withNamespace($._config.namespace),
 
     // As Prometheus is protected by the oauth proxy it requires the
@@ -189,7 +189,7 @@ local namespacesRole =
               function(e)
                 e {
                   tlsConfig+: {
-                    caFile: '/etc/prometheus/configmaps/csr-controller-ca-bundle/ca-bundle.crt',
+                    caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
                     insecureSkipVerify: false,
                   },
                 },
@@ -405,7 +405,7 @@ local namespacesRole =
             'prometheus-k8s-htpasswd',
             'kube-rbac-proxy',
           ],
-          configMaps: ['serving-certs-ca-bundle', 'csr-controller-ca-bundle'],
+          configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
           serviceMonitorSelector: {},
           serviceMonitorNamespaceSelector: {},
           listenLocal: true,

@@ -44,7 +44,7 @@ const (
 
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap = "kube-system/extension-apiserver-authentication"
-	csrControllerCAConfigMap   = "openshift-config-managed/csr-controller-ca"
+	kubeletServingCAConfigMap  = "openshift-config-managed/kubelet-serving-ca"
 )
 
 type Operator struct {
@@ -210,7 +210,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	switch key {
 	case cmoConfigMap:
 	case apiAuthenticationConfigMap:
-	case csrControllerCAConfigMap:
+	case kubeletServingCAConfigMap:
 	default:
 		glog.V(4).Infof("ConfigMap (%s) not triggering an update.", key)
 		return
