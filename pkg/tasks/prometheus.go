@@ -49,19 +49,19 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
 	}
 
-	csrcm, err := t.client.GetConfigmap("openshift-config-managed", "csr-controller-ca")
+	kscm, err := t.client.GetConfigmap("openshift-config-managed", "kubelet-serving-ca")
 	if err != nil {
-		return errors.Wrap(err, "openshift-config-managed/csr-controller-ca")
+		return errors.Wrap(err, "openshift-config-managed/kubelet-serving-ca")
 	}
 
-	cacm, err = t.factory.PrometheusK8sCSRControllerCABundle(csrcm.Data)
+	cacm, err = t.factory.PrometheusK8sKubeletServingCABundle(kscm.Data)
 	if err != nil {
-		return errors.Wrap(err, "initializing CSR controller CA Bundle ConfigMap failed")
+		return errors.Wrap(err, "initializing kubelet serving CA Bundle ConfigMap failed")
 	}
 
 	err = t.client.CreateIfNotExistConfigMap(cacm)
 	if err != nil {
-		return errors.Wrap(err, "creating CSR controller CA Bundle ConfigMap failed")
+		return errors.Wrap(err, "creating kubelet serving CA Bundle ConfigMap failed")
 	}
 
 	r, err := t.factory.PrometheusK8sRoute()

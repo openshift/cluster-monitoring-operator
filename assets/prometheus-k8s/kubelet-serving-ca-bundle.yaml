@@ -3,5 +3,5 @@ data:
   ca-bundle.crt: ""
 kind: ConfigMap
 metadata:
-  name: csr-controller-ca-bundle
+  name: kubelet-serving-ca-bundle
   namespace: openshift-monitoring
