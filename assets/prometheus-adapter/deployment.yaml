@@ -19,15 +19,12 @@ spec:
     spec:
       containers:
       - args:
-        - --cert-dir=/var/run/serving-cert
+        - --prometheus-auth-config=/etc/prometheus-config/prometheus-config.yaml
         - --config=/etc/adapter/config.yaml
         - --logtostderr=true
         - --metrics-relist-interval=1m
         - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
         - --secure-port=6443
-        - --prometheus-auth-config=/etc/prometheus-config/prometheus-config.yaml
-        - --tls-cert-file=/etc/tls/private/tls.crt
-        - --tls-private-key-file=/etc/tls/private/tls.key
         image: quay.io/coreos/k8s-prometheus-adapter-amd64:v0.4.1
         name: prometheus-adapter
         ports:
@@ -35,9 +32,6 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: tmpfs
-          readOnly: false
-        - mountPath: /var/run/serving-cert
-          name: volume-serving-cert
           readOnly: false
         - mountPath: /etc/adapter
           name: config
@@ -48,9 +42,6 @@ spec:
         - mountPath: /etc/ssl/certs
           name: serving-certs-ca-bundle
           readOnly: false
-        - mountPath: /etc/tls/private
-          name: prometheus-adapter-tls
-          readOnly: false
       nodeSelector:
         beta.kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -59,8 +50,6 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmpfs
-      - emptyDir: {}
-        name: volume-serving-cert
       - configMap:
           name: adapter-config
         name: config
@@ -70,6 +59,3 @@ spec:
       - configMap:
           name: serving-certs-ca-bundle
         name: serving-certs-ca-bundle
-      - name: prometheus-adapter-tls
-        secret:
-          secretName: prometheus-adapter-tls
