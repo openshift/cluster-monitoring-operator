@@ -222,10 +222,21 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusAdapterAPIAuthSecret(map[string]string{
-		"client-ca-file":               "",
-		"requestheader-client-ca-file": "",
-	})
+	tlsSecret := &v1.Secret{
+		Data: map[string][]byte{
+			"tls.crt": []byte("foo"),
+			"tls.key": []byte("bar"),
+		},
+	}
+
+	apiAuthConfigmap := &v1.ConfigMap{
+		Data: map[string]string{
+			"client-ca-file":               "foo",
+			"requestheader-client-ca-file": "bar",
+		},
+	}
+
+	_, err = f.PrometheusAdapterSecret(tlsSecret, apiAuthConfigmap)
 	if err != nil {
 		t.Fatal(err)
 	}

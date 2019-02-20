@@ -35,7 +35,7 @@ import (
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1beta2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	v1betaextensions "k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
@@ -136,6 +136,10 @@ func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
 
+func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "secrets", ns, fields.Everything())
+}
+
 func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
 	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
 		err := c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.Prometheus, mon.GroupName, map[string]string{}, false))
@@ -226,6 +230,10 @@ func (c *Client) GetProxy(name string) (*configv1.Proxy, error) {
 
 func (c *Client) GetConfigmap(namespace, name string) (*v1.ConfigMap, error) {
 	return c.kclient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
+}
+
+func (c *Client) GetSecret(namespace, name string) (*v1.Secret, error) {
+	return c.kclient.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 }
 
 func (c *Client) NamespacesToMonitor() ([]string, error) {

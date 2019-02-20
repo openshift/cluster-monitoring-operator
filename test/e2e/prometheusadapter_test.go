@@ -44,8 +44,12 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	cmClient := f.KubeClient.CoreV1().ConfigMaps("kube-system")
-	cm, err := cmClient.Get("extension-apiserver-authentication", metav1.GetOptions{})
+	apiAuth, err := f.KubeClient.CoreV1().ConfigMaps("kube-system").Get("extension-apiserver-authentication", metav1.GetOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tls, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get("prometheus-adapter-tls", metav1.GetOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,14 +57,14 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 	// Simulate rotation by simply adding a newline to existing certs.
 	// This change will be propagated to the cluster monitoring operator,
 	// causing a new secret to be created.
-	cm.Data["requestheader-client-ca-file"] = cm.Data["requestheader-client-ca-file"] + "\n"
-	cm, err = cmClient.Update(cm)
+	apiAuth.Data["requestheader-client-ca-file"] = apiAuth.Data["requestheader-client-ca-file"] + "\n"
+	apiAuth, err = f.KubeClient.CoreV1().ConfigMaps("kube-system").Update(apiAuth)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	factory := manifests.NewFactory("openshift-monitoring", nil)
-	newSecret, err := factory.PrometheusAdapterAPIAuthSecret(cm.Data)
+	newSecret, err := factory.PrometheusAdapterSecret(tls, apiAuth)
 	if err != nil {
 		log.Fatal(err)
 	}

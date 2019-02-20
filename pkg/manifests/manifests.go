@@ -32,7 +32,7 @@ import (
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1beta2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -910,8 +910,8 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	}
 
 	spec.Containers[0].Args = append(spec.Containers[0].Args,
-		"--client-ca-file=/etc/tls/api/client-ca-file",
-		"--requestheader-client-ca-file=/etc/tls/api/requestheader-client-ca-file",
+		"--client-ca-file=/etc/tls/private/client-ca-file",
+		"--requestheader-client-ca-file=/etc/tls/private/requestheader-client-ca-file",
 		"--requestheader-allowed-names="+requestheaderAllowedNames,
 		"--requestheader-extra-headers-prefix="+requestheaderExtraHeadersPrefix,
 		"--requestheader-group-headers="+requestheaderGroupHeaders,
@@ -922,15 +922,15 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 
 	spec.Containers[0].VolumeMounts = append(spec.Containers[0].VolumeMounts,
 		v1.VolumeMount{
-			Name:      "api-auth",
+			Name:      "tls",
 			ReadOnly:  true,
-			MountPath: "/etc/tls/api",
+			MountPath: "/etc/tls/private",
 		},
 	)
 
 	spec.Volumes = append(spec.Volumes,
 		v1.Volume{
-			Name: "api-auth",
+			Name: "tls",
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
 					SecretName: apiAuthSecretName,
@@ -955,12 +955,24 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 	return s, nil
 }
 
-func (f *Factory) PrometheusAdapterAPIAuthSecret(cas map[string]string) (*v1.Secret, error) {
-	r := newErrMapReader(cas)
+func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1.ConfigMap) (*v1.Secret, error) {
+	data := make(map[string]string)
+
+	for k, v := range tlsSecret.Data {
+		data[k] = string(v)
+	}
+
+	for k, v := range apiAuthConfigmap.Data {
+		data[k] = v
+	}
+
+	r := newErrMapReader(data)
 
 	var (
 		clientCA              = r.value("client-ca-file")
 		requestheaderClientCA = r.value("requestheader-client-ca-file")
+		tlsCA                 = r.value("tls.crt")
+		tlsKey                = r.value("tls.key")
 	)
 
 	if r.Error() != nil {
@@ -968,16 +980,23 @@ func (f *Factory) PrometheusAdapterAPIAuthSecret(cas map[string]string) (*v1.Sec
 	}
 
 	h := fnv.New64()
-	h.Write([]byte(clientCA + requestheaderClientCA))
+	h.Write([]byte(clientCA + requestheaderClientCA + tlsCA + tlsKey))
+	hash := strconv.FormatUint(h.Sum64(), 32)
 
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: f.namespace,
-			Name:      fmt.Sprintf("prometheus-adapter-api-auth-%s", strconv.FormatUint(h.Sum64(), 32)),
+			Name:      fmt.Sprintf("prometheus-adapter-%s", hash),
+			Labels: map[string]string{
+				"monitoring.openshift.io/name": "prometheus-adapter",
+				"monitoring.openshift.io/hash": hash,
+			},
 		},
 		Data: map[string][]byte{
 			"client-ca-file":               []byte(clientCA),
 			"requestheader-client-ca-file": []byte(requestheaderClientCA),
+			"tls.crt":                      []byte(tlsCA),
+			"tls.key":                      []byte(tlsKey),
 		},
 	}, nil
 }
