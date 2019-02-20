@@ -916,6 +916,8 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 		"--requestheader-extra-headers-prefix="+requestheaderExtraHeadersPrefix,
 		"--requestheader-group-headers="+requestheaderGroupHeaders,
 		"--requestheader-username-headers="+requestheaderUsernameHeaders,
+		"--tls-cert-file=/etc/tls/private/tls.crt",
+		"--tls-private-key-file=/etc/tls/private/tls.key",
 	)
 
 	spec.Containers[0].VolumeMounts = append(spec.Containers[0].VolumeMounts,
