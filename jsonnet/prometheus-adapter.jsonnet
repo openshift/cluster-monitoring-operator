@@ -85,7 +85,6 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                 { name: 'config', configMap: { name: 'adapter-config' } },
                 volume.withName(prometheusAdapterPrometheusConfig) + volume.mixin.configMap.withName(prometheusAdapterPrometheusConfig),
                 volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('serving-certs-ca-bundle'),
-                volume.fromSecret(tlsVolumeName, tlsVolumeName),
               ],
 
               securityContext: {},
