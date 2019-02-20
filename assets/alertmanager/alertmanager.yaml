@@ -45,7 +45,7 @@ spec:
       value: ""
     - name: NO_PROXY
       value: ""
-    image: openshift/oauth-proxy:latest
+    image: quay.io/openshift/oauth-proxy:latest
     name: alertmanager-proxy
     ports:
     - containerPort: 9094
