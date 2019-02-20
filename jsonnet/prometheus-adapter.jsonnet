@@ -68,7 +68,9 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                           '--prometheus-url=' + $._config.prometheusAdapter.prometheusURL,
                           '--secure-port=6443',
                         ],
-                        volumeMounts+: [
+                        volumeMounts: [
+                          containerVolumeMount.new('tmpfs', '/tmp'),
+                          containerVolumeMount.new('config', '/etc/adapter'),
                           containerVolumeMount.new(prometheusAdapterPrometheusConfig, prometheusAdapterPrometheusConfigPath),
                           containerVolumeMount.new(servingCertsCABundle, servingCertsCABundleMountPath),
                         ],
@@ -78,7 +80,9 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                   super.containers,
                 ),
 
-              volumes+: [
+              volumes: [
+                volume.fromEmptyDir(name='tmpfs'),
+                { name: 'config', configMap: { name: 'adapter-config' } },
                 volume.withName(prometheusAdapterPrometheusConfig) + volume.mixin.configMap.withName(prometheusAdapterPrometheusConfig),
                 volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('serving-certs-ca-bundle'),
                 volume.fromSecret(tlsVolumeName, tlsVolumeName),
