@@ -8,4 +8,5 @@ metadata:
 spec:
   staticProvidedAPIs: true
   selector:
-    openshift.io/cluster-monitoring: "true"
+    matchLabels:
+      openshift.io/cluster-monitoring: "true"
