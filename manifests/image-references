@@ -29,11 +29,11 @@ spec:
   - name: grafana
     from:
       kind: DockerImage
-      name: quay.io/openshift/grafana:latest
+      name: quay.io/openshift/origin-grafana:latest
   - name: oauth-proxy
     from:
       kind: DockerImage
-      name: quay.io/openshift/oauth-proxy:latest
+      name: quay.io/openshift/origin-oauth-proxy:latest
   - name: prometheus-node-exporter
     from:
       kind: DockerImage
