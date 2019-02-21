@@ -337,6 +337,13 @@ spec:
     - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m]))
         / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
+    - expr: sum(rate(pod:kube_pod_container_status_restarts_total{container_name!="",
+        namespace=openshift-console, namespace=openshift-ingress}[1h])) BY (namespace)
+      record: pod_name:kube_pod_container_status_restarts_total:sum
+    - expr: sum(pod:kube_pod_container_status_terminated_reason{container_name!="",
+        reason="OOMKilled", namespace=openshift-console, namespace=openshift-ingress}[1h])
+        BY (namespace)
+      record: pod_name:kube_pod_container_status_terminated_reason:sum
     - alert: ClusterMonitoringOperatorErrors
       annotations:
         message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value
