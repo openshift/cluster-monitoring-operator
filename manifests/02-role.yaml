@@ -298,14 +298,11 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - ''
+  - apiextensions.k8s.io
   resources:
-  - endpoints
-  - services
+  - customresourcedefinitions
   verbs:
-  - create
-  - get
-  - update
+  - '*'
 - apiGroups:
   - ''
   resources:
@@ -314,9 +311,14 @@ rules:
   - delete
   - list
 - apiGroups:
-  - apiextensions.k8s.io
+  - ''
   resources:
-  - customresourcedefinitions
+  - endpoints
+  - services
+  - services/finalizers
   verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - update
 

@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  ca-bundle.crt: ""
+kind: ConfigMap
+metadata:
+  name: kubelet-serving-ca-bundle
+  namespace: openshift-monitoring

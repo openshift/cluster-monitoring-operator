@@ -16,7 +16,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            {
              _config+:: {
                imageRepos+:: {
-                 openshiftOauthProxy: 'openshift/oauth-proxy',
+                 openshiftOauthProxy: 'quay.io/openshift/oauth-proxy',
                  prometheus: 'openshift/prometheus',
                  alertmanager: 'openshift/prometheus-alertmanager',
                  nodeExporter: 'openshift/prometheus-node-exporter',
@@ -73,6 +73,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     kubeSchedulerSelector: 'job="scheduler"',
 
     namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+
+    kubeletPodLimit: 250,
   },
 } + {
   local d = super.grafanaDashboards,

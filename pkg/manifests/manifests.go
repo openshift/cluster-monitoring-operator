@@ -20,14 +20,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1beta2"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -86,6 +89,7 @@ var (
 	PrometheusK8sHtpasswd                             = "assets/prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sEtcdServiceMonitor                   = "assets/prometheus-k8s/service-monitor-etcd.yaml"
 	PrometheusK8sServingCertsCABundle                 = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
+	PrometheusK8sKubeletServingCABundle               = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 
 	PrometheusAdapterAPIService                  = "assets/prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                 = "assets/prometheus-adapter/cluster-role.yaml"
@@ -609,6 +613,18 @@ func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
 	return c, nil
 }
 
+func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(PrometheusK8sKubeletServingCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+	c.Data = data
+
+	return c, nil
+}
+
 func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sEtcdServiceMonitor))
 	if err != nil {
@@ -866,17 +882,62 @@ func (f *Factory) PrometheusAdapterConfigMapPrometheus() (*v1.ConfigMap, error) 
 	return cm, nil
 }
 
-func (f *Factory) PrometheusAdapterDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string) (*appsv1.Deployment, error) {
 	dep, err := f.NewDeployment(MustAssetReader(PrometheusAdapterDeployment))
 	if err != nil {
 		return nil, err
 	}
 
-	dep.Spec.Template.Spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
+	spec := dep.Spec.Template.Spec
+
+	spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
 	if f.config.K8sPrometheusAdapter != nil && len(f.config.K8sPrometheusAdapter.NodeSelector) > 0 {
-		dep.Spec.Template.Spec.NodeSelector = f.config.K8sPrometheusAdapter.NodeSelector
+		spec.NodeSelector = f.config.K8sPrometheusAdapter.NodeSelector
 	}
 	dep.Namespace = f.namespace
+
+	r := newErrMapReader(requestheader)
+
+	var (
+		requestheaderAllowedNames       = strings.Join(r.slice("requestheader-allowed-names"), ",")
+		requestheaderExtraHeadersPrefix = strings.Join(r.slice("requestheader-extra-headers-prefix"), ",")
+		requestheaderGroupHeaders       = strings.Join(r.slice("requestheader-group-headers"), ",")
+		requestheaderUsernameHeaders    = strings.Join(r.slice("requestheader-username-headers"), ",")
+	)
+
+	if r.Error() != nil {
+		return nil, errors.Wrap(r.err, "value not found in extension api server authentication configmap")
+	}
+
+	spec.Containers[0].Args = append(spec.Containers[0].Args,
+		"--client-ca-file=/etc/tls/api/client-ca-file",
+		"--requestheader-client-ca-file=/etc/tls/api/requestheader-client-ca-file",
+		"--requestheader-allowed-names="+requestheaderAllowedNames,
+		"--requestheader-extra-headers-prefix="+requestheaderExtraHeadersPrefix,
+		"--requestheader-group-headers="+requestheaderGroupHeaders,
+		"--requestheader-username-headers="+requestheaderUsernameHeaders,
+	)
+
+	spec.Containers[0].VolumeMounts = append(spec.Containers[0].VolumeMounts,
+		v1.VolumeMount{
+			Name:      "api-auth",
+			ReadOnly:  true,
+			MountPath: "/etc/tls/api",
+		},
+	)
+
+	spec.Volumes = append(spec.Volumes,
+		v1.Volume{
+			Name: "api-auth",
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: apiAuthSecretName,
+				},
+			},
+		},
+	)
+
+	dep.Spec.Template.Spec = spec
 
 	return dep, nil
 }
@@ -890,6 +951,33 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) PrometheusAdapterAPIAuthSecret(cas map[string]string) (*v1.Secret, error) {
+	r := newErrMapReader(cas)
+
+	var (
+		clientCA              = r.value("client-ca-file")
+		requestheaderClientCA = r.value("requestheader-client-ca-file")
+	)
+
+	if r.Error() != nil {
+		return nil, errors.Wrap(r.err, "value not found in extension api server authentication configmap")
+	}
+
+	h := fnv.New64()
+	h.Write([]byte(clientCA + requestheaderClientCA))
+
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: f.namespace,
+			Name:      fmt.Sprintf("prometheus-adapter-api-auth-%s", strconv.FormatUint(h.Sum64(), 32)),
+		},
+		Data: map[string][]byte{
+			"client-ca-file":               []byte(clientCA),
+			"requestheader-client-ca-file": []byte(requestheaderClientCA),
+		},
+	}, nil
 }
 
 func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1beta1.APIService, error) {
@@ -1570,6 +1658,21 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 
+	setEnv := func(name, value string) {
+		for i := range d.Spec.Template.Spec.Containers[0].Env {
+			if d.Spec.Template.Spec.Containers[0].Env[i].Name == name {
+				d.Spec.Template.Spec.Containers[0].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.TelemeterClientConfig.ClusterID != "" {
+		setEnv("ID", f.config.TelemeterClientConfig.ClusterID)
+	}
+	if f.config.TelemeterClientConfig.TelemeterServerURL != "" {
+		setEnv("TO", f.config.TelemeterClientConfig.TelemeterServerURL)
+	}
+
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
@@ -1618,12 +1721,6 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 	}
 	s.Data["salt"] = []byte(salt)
 
-	if f.config.TelemeterClientConfig.ClusterID != "" {
-		s.Data["id"] = []byte(f.config.TelemeterClientConfig.ClusterID)
-	}
-	if f.config.TelemeterClientConfig.TelemeterServerURL != "" {
-		s.Data["to"] = []byte(f.config.TelemeterClientConfig.TelemeterServerURL)
-	}
 	if f.config.TelemeterClientConfig.Token != "" {
 		s.Data["token"] = []byte(f.config.TelemeterClientConfig.Token)
 	}

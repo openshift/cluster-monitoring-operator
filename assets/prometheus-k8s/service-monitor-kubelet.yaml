@@ -4,6 +4,7 @@ metadata:
   labels:
     k8s-app: kubelet
   name: kubelet
+  namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -12,15 +13,44 @@ spec:
     port: https-metrics
     scheme: https
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
+      insecureSkipVerify: false
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     honorLabels: true
     interval: 30s
+    metricRelabelings:
+    - action: drop
+      regex: container_([a-z_]+);
+      sourceLabels:
+      - __name__
+      - image
+    - action: drop
+      regex: container_(network_tcp_usage_total|network_udp_usage_total|tasks_state|cpu_load_average_10s)
+      sourceLabels:
+      - __name__
     path: /metrics/cadvisor
     port: https-metrics
     scheme: https
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
+      insecureSkipVerify: false
+  - interval: 30s
+    port: https-metrics
+    relabelings:
+    - action: replace
+      regex: (.+)(?::\d+)
+      replacement: $1:9537
+      sourceLabels:
+      - __address__
+      targetLabel: __address__
+    - action: replace
+      replacement: crio
+      sourceLabels:
+      - endpoint
+      targetLabel: endpoint
+    - action: replace
+      replacement: crio
+      targetLabel: job
   jobLabel: k8s-app
   namespaceSelector:
     matchNames:

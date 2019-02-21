@@ -95,6 +95,14 @@ local namespacesRole =
       configmap.mixin.metadata.withNamespace($._config.namespace) +
       configmap.mixin.metadata.withAnnotations({ 'service.alpha.openshift.io/inject-cabundle': 'true' }),
 
+    // Even though this bundle will be frequently rotated by the CSR
+    // controller, there is no need to add a ConfigMap reloader to
+    // the Prometheus Pods because Prometheus automatically reloads
+    // its cert pool every 5 seconds.
+    kubeletServingCaBundle+:
+      configmap.new('kubelet-serving-ca-bundle', { 'ca-bundle.crt': '' }) +
+      configmap.mixin.metadata.withNamespace($._config.namespace),
+
     // As Prometheus is protected by the oauth proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.
     // Additionally in order to authenticate with the Alertmanager it
@@ -173,49 +181,44 @@ local namespacesRole =
     // This changes the kubelet's certificates to be validated when
     // scraping.
 
-    serviceMonitorKubelet:
+    serviceMonitorKubelet+:
       {
-        apiVersion: 'monitoring.coreos.com/v1',
-        kind: 'ServiceMonitor',
-        metadata: {
-          labels: {
-            'k8s-app': 'kubelet',
-          },
-          name: 'kubelet',
-        },
-        spec: {
-          endpoints: [
-            {
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-              honorLabels: true,
+        spec+: {
+          endpoints:
+            std.map(
+              function(e)
+                e {
+                  tlsConfig+: {
+                    caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
+                    insecureSkipVerify: false,
+                  },
+                },
+              super.endpoints,
+            ) +
+            [{
               interval: '30s',
               port: 'https-metrics',
-              scheme: 'https',
-              tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-              },
-            },
-            {
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-              honorLabels: true,
-              interval: '30s',
-              path: '/metrics/cadvisor',
-              port: 'https-metrics',
-              scheme: 'https',
-              tlsConfig: {
-                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-              },
-            },
-          ],
-          jobLabel: 'k8s-app',
-          namespaceSelector: {
-            matchNames: ['kube-system'],
-          },
-          selector: {
-            matchLabels: {
-              'k8s-app': 'kubelet',
-            },
-          },
+              relabelings: [
+                {
+                  sourceLabels: ['__address__'],
+                  action: 'replace',
+                  targetLabel: '__address__',
+                  regex: '(.+)(?::\\d+)',
+                  replacement: '$1:9537',
+                },
+                {
+                  sourceLabels: ['endpoint'],
+                  action: 'replace',
+                  targetLabel: 'endpoint',
+                  replacement: 'crio',
+                },
+                {
+                  action: 'replace',
+                  targetLabel: 'job',
+                  replacement: 'crio',
+                },
+              ],
+            }],
         },
       },
 
@@ -402,7 +405,7 @@ local namespacesRole =
             'prometheus-k8s-htpasswd',
             'kube-rbac-proxy',
           ],
-          configMaps: ['serving-certs-ca-bundle'],
+          configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
           serviceMonitorSelector: {},
           serviceMonitorNamespaceSelector: {},
           listenLocal: true,

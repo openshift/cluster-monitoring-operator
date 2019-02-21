@@ -18,7 +18,7 @@ spec:
       containers:
       - args:
         - -config=/etc/grafana/grafana.ini
-        image: grafana/grafana:5.2.4
+        image: grafana/grafana:6.0.0-beta1
         name: grafana
         ports:
         - containerPort: 3001
@@ -77,7 +77,7 @@ spec:
         - -openshift-ca=/etc/pki/tls/cert.pem
         - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         - -skip-auth-regex=^/metrics
-        image: openshift/oauth-proxy:latest
+        image: quay.io/openshift/oauth-proxy:latest
         name: grafana-proxy
         ports:
         - containerPort: 3000
