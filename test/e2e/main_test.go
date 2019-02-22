@@ -82,57 +82,62 @@ func testMain(m *testing.M) int {
 	return m.Run()
 }
 
+type Query struct {
+	Query   string
+	ExpectN int
+}
+
 func TestQueryPrometheus(t *testing.T) {
 	t.Parallel()
 
+	queries := []Query{
+		{
+			Query:   `up{job="node-exporter"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `up{job="kubelet"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `up{job="scheduler"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `up{job="kube-controller-manager"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `up{job="apiserver"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `up{job="kube-state-metrics"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `up{job="prometheus-k8s"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `up{job="prometheus-operator"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `up{job="alertmanager-main"} == 1`,
+			ExpectN: 2,
+		}, {
+			Query:   `up{job="crio"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `ALERTS{alertname="Watchdog"} == 1`,
+			ExpectN: 1,
+		}, {
+			Query:   `namespace:container_memory_usage_bytes:sum`,
+			ExpectN: 1,
+		},
+	}
+
+	RunTestQueries(t, queries)
+}
+
+func RunTestQueries(t *testing.T, queries []Query) {
 	promClient, err := framework.NewPrometheusClient(f.OpenshiftRouteClient, f.KubeClient)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	queries := []struct {
-		query   string
-		expectN int
-	}{
-		{
-			query:   `up{job="node-exporter"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `up{job="kubelet"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `up{job="scheduler"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `up{job="kube-controller-manager"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `up{job="apiserver"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `up{job="kube-state-metrics"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `up{job="prometheus-k8s"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `up{job="prometheus-operator"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `up{job="alertmanager-main"} == 1`,
-			expectN: 2,
-		}, {
-			query:   `up{job="crio"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `ALERTS{alertname="Watchdog"} == 1`,
-			expectN: 1,
-		}, {
-			query:   `namespace:container_memory_usage_bytes:sum`,
-			expectN: 1,
-		},
-	}
-
 	// Wait for pod to respond at queries at all. Then start verifying their results.
 	var loopErr error
 	err = wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
@@ -147,16 +152,16 @@ func TestQueryPrometheus(t *testing.T) {
 		defer t.Log("---------------------------\n")
 
 		for _, q := range queries {
-			n, err := promClient.Query(q.query)
+			n, err := promClient.Query(q.Query)
 			if err != nil {
 				return false, err
 			}
-			if n < q.expectN {
+			if n < q.ExpectN {
 				// Don't return an error as targets may only become visible after a while.
-				t.Logf("expected at least %d results for %q but got %d", q.expectN, q.query, n)
+				t.Logf("expected at least %d results for %q but got %d", q.ExpectN, q.Query, n)
 				return false, nil
 			}
-			t.Logf("query %q succeeded", q.query)
+			t.Logf("query %q succeeded", q.Query)
 		}
 		return true, nil
 	})
