@@ -408,6 +408,8 @@ local namespacesRole =
           configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
           serviceMonitorSelector: {},
           serviceMonitorNamespaceSelector: {},
+          ruleSelector: {},
+          ruleNamespaceSelector: {},
           listenLocal: true,
           containers: [
             {

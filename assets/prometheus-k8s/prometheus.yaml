@@ -95,10 +95,8 @@ spec:
     beta.kubernetes.io/os: linux
   replicas: 2
   resources: {}
-  ruleSelector:
-    matchLabels:
-      prometheus: k8s
-      role: alert-rules
+  ruleNamespaceSelector: {}
+  ruleSelector: {}
   secrets:
   - kube-etcd-client-certs
   - prometheus-k8s-tls
