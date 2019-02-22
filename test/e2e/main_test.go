@@ -125,6 +125,9 @@ func TestQueryPrometheus(t *testing.T) {
 			query:   `up{job="crio"} == 1`,
 			expectN: 1,
 		}, {
+			query:   `ALERTS{alertname="Watchdog"} == 1`,
+			expectN: 1,
+		}, {
 			query:   `namespace:container_memory_usage_bytes:sum`,
 			expectN: 1,
 		},
