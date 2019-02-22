@@ -264,6 +264,9 @@ func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 	}
 
 	p.ResourceVersion = oldProm.ResourceVersion
+	if p.Spec.Storage != nil {
+		p.Spec.Storage.VolumeClaimTemplate.CreationTimestamp = metav1.Unix(0, 0)
+	}
 	_, err = pclient.Update(p)
 	return errors.Wrap(err, "updating Prometheus object failed")
 }
@@ -280,6 +283,7 @@ func (c *Client) CreateOrUpdatePrometheusRule(p *monv1.PrometheusRule) error {
 	}
 
 	p.ResourceVersion = oldRule.ResourceVersion
+
 	_, err = pclient.Update(p)
 	return errors.Wrap(err, "updating PrometheusRule object failed")
 }
@@ -296,6 +300,10 @@ func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	}
 
 	a.ResourceVersion = oldAm.ResourceVersion
+	if a.Spec.Storage != nil {
+		a.Spec.Storage.VolumeClaimTemplate.CreationTimestamp = metav1.Unix(0, 0)
+	}
+
 	_, err = aclient.Update(a)
 	return errors.Wrap(err, "updating Alertmanager object failed")
 }
@@ -526,6 +534,28 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for DeploymentRollout of %s", dep.GetName())
+	}
+	return nil
+}
+
+func (c *Client) WaitForStatefulsetRollout(sts *appsv1.StatefulSet) error {
+	var lastErr error
+	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+		d, err := c.kclient.AppsV1beta2().StatefulSets(sts.GetNamespace()).Get(sts.GetName(), metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedReplicas == d.Status.Replicas && d.Status.ReadyReplicas == d.Status.Replicas {
+			return true, nil
+		}
+		lastErr = fmt.Errorf("statefulset %s is not ready. status: (replicas: %d, updated: %d, ready: %d)",
+			d.Name, d.Status.Replicas, d.Status.UpdatedReplicas, d.Status.ReadyReplicas)
+		return false, nil
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrapf(err, "waiting for StatefulsetRollout of %s", sts.GetName())
 	}
 	return nil
 }
