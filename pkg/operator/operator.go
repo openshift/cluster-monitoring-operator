@@ -46,6 +46,8 @@ const (
 	apiAuthenticationConfigMap = "kube-system/extension-apiserver-authentication"
 	kubeletServingCAConfigMap  = "openshift-config-managed/kubelet-serving-ca"
 	prometheusAdapterTLSSecret = "openshift-monitoring/prometheus-adapter-tls"
+
+	prometheusEtcdCertSecretName = "kube-etcd-client-certs"
 )
 
 type Operator struct {
@@ -380,6 +382,24 @@ func (o *Operator) Config(key string) *manifests.Config {
 
 	if err != nil {
 		glog.Warningf("Error loading proxy from API. Proceeding without it: %v", err)
+	}
+
+	s, err := o.client.GetSecret(o.namespace, prometheusEtcdCertSecretName)
+	if err != nil {
+		glog.Warningf("Error loading etcd certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+	}
+	if err == nil {
+		caContent, caFound := s.Data["etcd-client-ca.crt"]
+		certContent, certFound := s.Data["etcd-client.crt"]
+		keyContent, keyFound := s.Data["etcd-client.key"]
+
+		if caFound && len(caContent) > 0 &&
+			certFound && len(certContent) > 0 &&
+			keyFound && len(keyContent) > 0 {
+
+			trueBool := true
+			c.EtcdConfig.Enabled = &trueBool
+		}
 	}
 
 	return c
