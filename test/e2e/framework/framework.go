@@ -17,13 +17,14 @@ package framework
 import (
 	"strings"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 
 	monClient "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"github.com/pkg/errors"
@@ -34,6 +35,7 @@ import (
 var namespaceName = "openshift-monitoring"
 
 type Framework struct {
+	OperatorClient       *client.Client
 	CRDClient            crdc.CustomResourceDefinitionInterface
 	KubeClient           kubernetes.Interface
 	OpenshiftRouteClient routev1.RouteV1Interface
@@ -70,7 +72,13 @@ func New(kubeConfigPath string, opImageName string) (*Framework, error) {
 	}
 	crdClient := eclient.ApiextensionsV1beta1().CustomResourceDefinitions()
 
+	operatorClient, err := client.New(config, "", namespaceName, "")
+	if err != nil {
+		return nil, errors.Wrap(err, "creating operator client failed")
+	}
+
 	f := &Framework{
+		OperatorClient:       operatorClient,
 		KubeClient:           kubeClient,
 		OpenshiftRouteClient: openshiftRouteClient,
 		CRDClient:            crdClient,
