@@ -12,7 +12,6 @@ local tlsVolumeName = 'kube-state-metrics-tls';
 {
   prometheusAdapter+:: {
     local tlsVolumeName = 'prometheus-adapter-tls',
-    local tlsPath = '/etc/tls/private',
 
     local prometheusAdapterPrometheusConfig = 'prometheus-adapter-prometheus-config',
     local prometheusAdapterPrometheusConfigPath = '/etc/prometheus-config',
@@ -58,18 +57,22 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                     if c.name == 'prometheus-adapter' then
                       c
                       {
-                        args+: [
+                        args: [
                           // Keeping until decided how to move on: https://github.com/DirectXMan12/k8s-prometheus-adapter/issues/144
                           // '--prometheus-ca-file=%s/%s' % [servingCertsCABundleMountPath, servingCertsCABundleFileName],
                           // '--prometheus-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
                           '--prometheus-auth-config=%s/%s' % [prometheusAdapterPrometheusConfigPath, 'prometheus-config.yaml'],
-                          '--tls-cert-file=%s/%s' % [tlsPath, 'tls.crt'],
-                          '--tls-private-key-file=%s/%s' % [tlsPath, 'tls.key'],
+                          '--config=/etc/adapter/config.yaml',
+                          '--logtostderr=true',
+                          '--metrics-relist-interval=1m',
+                          '--prometheus-url=' + $._config.prometheusAdapter.prometheusURL,
+                          '--secure-port=6443',
                         ],
-                        volumeMounts+: [
+                        volumeMounts: [
+                          containerVolumeMount.new('tmpfs', '/tmp'),
+                          containerVolumeMount.new('config', '/etc/adapter'),
                           containerVolumeMount.new(prometheusAdapterPrometheusConfig, prometheusAdapterPrometheusConfigPath),
                           containerVolumeMount.new(servingCertsCABundle, servingCertsCABundleMountPath),
-                          containerVolumeMount.new(tlsVolumeName, tlsPath),
                         ],
                       }
                     else
@@ -77,10 +80,11 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                   super.containers,
                 ),
 
-              volumes+: [
+              volumes: [
+                volume.fromEmptyDir(name='tmpfs'),
+                { name: 'config', configMap: { name: 'adapter-config' } },
                 volume.withName(prometheusAdapterPrometheusConfig) + volume.mixin.configMap.withName(prometheusAdapterPrometheusConfig),
                 volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('serving-certs-ca-bundle'),
-                volume.fromSecret(tlsVolumeName, tlsVolumeName),
               ],
 
               securityContext: {},

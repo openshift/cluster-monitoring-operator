@@ -45,6 +45,7 @@ const (
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap = "kube-system/extension-apiserver-authentication"
 	kubeletServingCAConfigMap  = "openshift-config-managed/kubelet-serving-ca"
+	prometheusAdapterTLSSecret = "openshift-monitoring/prometheus-adapter-tls"
 )
 
 type Operator struct {
@@ -58,6 +59,7 @@ type Operator struct {
 	cmapInf                       cache.SharedIndexInformer
 	kubeSystemCmapInf             cache.SharedIndexInformer
 	openshiftConfigManagedCmapInf cache.SharedIndexInformer
+	secretInf                     cache.SharedIndexInformer
 
 	queue workqueue.RateLimitingInterface
 
@@ -78,6 +80,15 @@ func New(config *rest.Config, namespace, namespaceSelector, configMapName string
 		client:        c,
 		queue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
 	}
+
+	o.secretInf = cache.NewSharedIndexInformer(
+		o.client.SecretListWatchForNamespace(namespace), &v1.Secret{}, resyncPeriod, cache.Indexers{},
+	)
+	o.secretInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    o.handleEvent,
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+		DeleteFunc: o.handleEvent,
+	})
 
 	o.cmapInf = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatch(), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
@@ -203,7 +214,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("ConfigMap updated: %s", key)
+	glog.V(5).Infof("ConfigMap updated: %s", key)
 
 	cmoConfigMap := o.namespace + "/" + o.configMapName
 
@@ -211,8 +222,9 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case cmoConfigMap:
 	case apiAuthenticationConfigMap:
 	case kubeletServingCAConfigMap:
+	case prometheusAdapterTLSSecret:
 	default:
-		glog.V(4).Infof("ConfigMap (%s) not triggering an update.", key)
+		glog.V(5).Infof("ConfigMap (%s) not triggering an update.", key)
 		return
 	}
 
