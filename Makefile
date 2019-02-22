@@ -71,6 +71,7 @@ generate: clean
 		--rm \
 		--security-opt label=disable \
 		-v `pwd`:/go/src/github.com/openshift/cluster-monitoring-operator \
+		-u=$(shell id -u $(USER)):$(shell id -g $(USER)) \
 		-w /go/src/github.com/openshift/cluster-monitoring-operator \
 		tpo-generate \
 		make dependencies pkg/manifests/bindata.go merge-cluster-roles docs
