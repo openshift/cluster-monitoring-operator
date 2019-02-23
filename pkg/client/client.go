@@ -694,6 +694,21 @@ func (c *Client) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 	return errors.Wrap(err, "updating ConfigMap object failed")
 }
 
+func (c *Client) CreateOrUpdateNamespace(n *v1.Namespace) error {
+	nClient := c.kclient.CoreV1().Namespaces()
+	_, err := nClient.Get(n.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := nClient.Create(n)
+		return errors.Wrap(err, "creating Namespace object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving Namespace object failed")
+	}
+
+	_, err = nClient.Update(n)
+	return errors.Wrap(err, "updating ConfigMap object failed")
+}
+
 func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) error {
 	cClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
 	_, err := cClient.Get(cm.GetName(), metav1.GetOptions{})
