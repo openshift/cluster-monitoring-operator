@@ -85,3 +85,17 @@ func TestPrometheusVolumeClaim(t *testing.T) {
 		log.Fatal(err)
 	}
 }
+
+func TestPrometheusOnlyFiringWatchdogAlert(t *testing.T) {
+	f.PrometheusK8sClient.WaitForQueryReturnOne(
+		t,
+		time.Minute,
+		`count(ALERTS{alertstate="firing"} == 1)`,
+	)
+
+	f.PrometheusK8sClient.WaitForQueryReturnOne(
+		t,
+		time.Minute,
+		`count(ALERTS{alertname="Watchdog",alertstate="firing"} == 1)`,
+	)
+}
