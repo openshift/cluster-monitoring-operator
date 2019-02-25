@@ -130,10 +130,10 @@ func TestQueryPrometheus(t *testing.T) {
 		},
 	}
 
-	RunTestQueries(t, queries)
+	RunTestQueries(t, time.Minute, queries)
 }
 
-func RunTestQueries(t *testing.T, queries []Query) {
+func RunTestQueries(t *testing.T, timeout time.Duration, queries []Query) {
 	promClient, err := framework.NewPrometheusClient(f.OpenshiftRouteClient, f.KubeClient)
 	if err != nil {
 		t.Fatal(err)
@@ -148,7 +148,7 @@ func RunTestQueries(t *testing.T, queries []Query) {
 		t.Fatal(errors.Wrapf(err, "wait for prometheus-k8s: %v", loopErr))
 	}
 
-	err = wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
+	err = wait.Poll(5*time.Second, timeout, func() (bool, error) {
 		defer t.Log("---------------------------\n")
 
 		for _, q := range queries {

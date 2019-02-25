@@ -67,7 +67,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	RunTestQueries(t, []Query{
+	RunTestQueries(t, 10*time.Minute, []Query{
 		{
 			Query:   `ALERTS{alertname="AdditionalTestAlertRule"} == 1`,
 			ExpectN: 1,
