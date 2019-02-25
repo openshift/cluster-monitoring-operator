@@ -18,6 +18,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 type TaskRunner struct {
@@ -33,16 +34,22 @@ func NewTaskRunner(client *client.Client, tasks []*TaskSpec) *TaskRunner {
 }
 
 func (tl *TaskRunner) RunAll() error {
+	var g errgroup.Group
+
 	for i, ts := range tl.tasks {
-		glog.V(4).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
-		err := tl.ExecuteTask(ts)
-		if err != nil {
+		// shadow vars due to concurrency
+		ts := ts
+		i := i
+
+		g.Go(func() error {
+			glog.V(4).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
+			err := tl.ExecuteTask(ts)
+			glog.V(4).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
 			return errors.Wrapf(err, "running task %v failed", ts.Name)
-		}
-		glog.V(4).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
+		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
 func (tl *TaskRunner) ExecuteTask(ts *TaskSpec) error {
