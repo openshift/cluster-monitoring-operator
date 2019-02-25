@@ -16,7 +16,9 @@ package e2e
 
 import (
 	"log"
+	"strconv"
 	"testing"
+	"time"
 
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/api/core/v1"
@@ -27,7 +29,7 @@ import (
 func TestMultinamespacePrometheusRule(t *testing.T) {
 	t.Parallel()
 
-	nsName := "openshift-test-prometheus-rules"
+	nsName := "openshift-test-prometheus-rules" + strconv.FormatInt(time.Now().Unix(), 36)
 
 	err := f.OperatorClient.CreateOrUpdateNamespace(&v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -40,6 +42,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer f.OperatorClient.DeleteIfExists(nsName)
 
 	err = f.OperatorClient.CreateOrUpdatePrometheusRule(&monv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -64,7 +67,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	RunTestQueries(t, []Query{
+	RunTestQueries(t, 10*time.Minute, []Query{
 		{
 			Query:   `ALERTS{alertname="AdditionalTestAlertRule"} == 1`,
 			ExpectN: 1,

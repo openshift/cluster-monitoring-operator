@@ -709,6 +709,21 @@ func (c *Client) CreateOrUpdateNamespace(n *v1.Namespace) error {
 	return errors.Wrap(err, "updating ConfigMap object failed")
 }
 
+func (c *Client) DeleteIfExists(nsName string) error {
+	nClient := c.kclient.CoreV1().Namespaces()
+	_, err := nClient.Get(nsName, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		// Namespace already deleted
+		return nil
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving Namespace object failed")
+	}
+
+	err = nClient.Delete(nsName, &metav1.DeleteOptions{})
+	return errors.Wrap(err, "deleting ConfigMap object failed")
+}
+
 func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) error {
 	cClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
 	_, err := cClient.Get(cm.GetName(), metav1.GetOptions{})
