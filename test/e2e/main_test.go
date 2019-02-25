@@ -16,8 +16,8 @@ package e2e
 
 import (
 	"flag"
+	"fmt"
 	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -31,13 +31,15 @@ import (
 var f *framework.Framework
 
 func TestMain(m *testing.M) {
-	os.Exit(testMain(m))
+	if err := testMain(m); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // testMain circumvents the issue, that one can not call `defer` in TestMain, as
 // `os.Exit` does not honor `defer` statements. For more details see:
 // http://blog.englund.nu/golang,/testing/2017/03/12/using-defer-in-testmain.html
-func testMain(m *testing.M) int {
+func testMain(m *testing.M) error {
 	kubeConfigPath := flag.String(
 		"kubeconfig",
 		clientcmd.RecommendedHomeFile,
@@ -46,19 +48,17 @@ func testMain(m *testing.M) int {
 
 	flag.Parse()
 
-	var err error
-	f, err = framework.New(*kubeConfigPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cleanUp, err := f.Setup()
+	var (
+		err     error
+		cleanUp func() error
+	)
+	f, cleanUp, err = framework.New(*kubeConfigPath)
 	// Check cleanUp first, in case of an err, we still want to clean up.
 	if cleanUp != nil {
 		defer cleanUp()
 	}
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Wait for Prometheus operator.
@@ -70,96 +70,77 @@ func testMain(m *testing.M) int {
 		return true, nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	return m.Run()
-}
-
-type Query struct {
-	Query   string
-	ExpectN int
-}
-
-func TestQueryPrometheus(t *testing.T) {
-	t.Parallel()
-
-	queries := []Query{
-		{
-			Query:   `up{job="node-exporter"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `up{job="kubelet"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `up{job="scheduler"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `up{job="kube-controller-manager"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `up{job="apiserver"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `up{job="kube-state-metrics"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `up{job="prometheus-k8s"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `up{job="prometheus-operator"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `up{job="alertmanager-main"} == 1`,
-			ExpectN: 2,
-		}, {
-			Query:   `up{job="crio"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `ALERTS{alertname="Watchdog"} == 1`,
-			ExpectN: 1,
-		}, {
-			Query:   `namespace:container_memory_usage_bytes:sum`,
-			ExpectN: 1,
-		},
-	}
-
-	RunTestQueries(t, time.Minute, queries)
-}
-
-func RunTestQueries(t *testing.T, timeout time.Duration, queries []Query) {
-	promClient, err := framework.NewPrometheusClient(f.OpenshiftRouteClient, f.KubeClient)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Wait for pod to respond at queries at all. Then start verifying their results.
+	// Wait for Prometheus.
 	var loopErr error
 	err = wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
-		_, loopErr := promClient.Query("up")
-		return loopErr == nil, nil
-	})
-	if err != nil {
-		t.Fatal(errors.Wrapf(err, "wait for prometheus-k8s: %v", loopErr))
-	}
-
-	err = wait.Poll(5*time.Second, timeout, func() (bool, error) {
-		defer t.Log("---------------------------\n")
-
-		for _, q := range queries {
-			n, err := promClient.Query(q.Query)
-			if err != nil {
-				return false, err
-			}
-			if n < q.ExpectN {
-				// Don't return an error as targets may only become visible after a while.
-				t.Logf("expected at least %d results for %q but got %d", q.ExpectN, q.Query, n)
-				return false, nil
-			}
-			t.Logf("query %q succeeded", q.Query)
+		var (
+			body []byte
+			v    int
+		)
+		body, loopErr = f.PrometheusK8sClient.Query("count(up{job=\"prometheus-k8s\"})")
+		if loopErr != nil {
+			return false, nil
 		}
+
+		v, loopErr = framework.GetFirstValueFromPromQuery(body)
+		if loopErr != nil {
+			return false, nil
+		}
+
+		if v != 2 {
+			loopErr = fmt.Errorf("expected 2 Prometheus instances but got: %v", v)
+			return false, nil
+		}
+
 		return true, nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		return errors.Wrapf(err, "wait for prometheus-k8s: %v", loopErr)
 	}
+
+	if m.Run() != 0 {
+		return errors.New("tests failed")
+	}
+
+	return nil
+}
+
+func TestTargetsUp(t *testing.T) {
+	// Don't run this test in parallel, as metrics might be influenced by other
+	// tests.
+
+	targets := []string{
+		"node-exporter",
+		"kubelet",
+		"scheduler",
+		"kube-controller-manager",
+		"apiserver",
+		"kube-state-metrics",
+		"prometheus-k8s",
+		"prometheus-operator",
+		"alertmanager-main",
+		"crio",
+	}
+
+	for _, target := range targets {
+		f.PrometheusK8sClient.WaitForQueryReturnOne(
+			t,
+			time.Minute,
+			"max(up{job=\""+target+"\"})",
+		)
+	}
+
+}
+
+// Once we have the need to test multiple recording rules, we can unite them in
+// a single test function.
+func TestMemoryUsageRecordingRule(t *testing.T) {
+	f.PrometheusK8sClient.WaitForQueryReturnGreaterEqualOne(
+		t,
+		time.Minute,
+		"count(namespace:container_memory_usage_bytes:sum)",
+	)
 }
