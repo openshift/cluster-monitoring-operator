@@ -35,63 +35,76 @@ import (
 var namespaceName = "openshift-monitoring"
 
 type Framework struct {
-	OperatorClient       *client.Client
-	CRDClient            crdc.CustomResourceDefinitionInterface
-	KubeClient           kubernetes.Interface
-	OpenshiftRouteClient routev1.RouteV1Interface
+	OperatorClient      *client.Client
+	CRDClient           crdc.CustomResourceDefinitionInterface
+	KubeClient          kubernetes.Interface
+	PrometheusK8sClient *PrometheusClient
 
 	MonitoringClient *monClient.MonitoringV1Client
 	Ns               string
 }
 
-func New(kubeConfigPath string) (*Framework, error) {
+// New returns a new cluster monitoring operator end-to-end test framework and
+// triggers all the setup logic.
+func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating kubeClient failed")
+		return nil, nil, errors.Wrap(err, "creating kubeClient failed")
 	}
 
+	// So far only necessary for prometheusK8sClient.
 	openshiftRouteClient, err := routev1.NewForConfig(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating openshiftClient failed")
+		return nil, nil, errors.Wrap(err, "creating openshiftClient failed")
 	}
 
 	mClient, err := monClient.NewForConfig(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating monitoring client failed")
+		return nil, nil, errors.Wrap(err, "creating monitoring client failed")
 	}
 
 	eclient, err := apiextensionsclient.NewForConfig(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating extensions client failed")
+		return nil, nil, errors.Wrap(err, "creating extensions client failed")
 	}
 	crdClient := eclient.ApiextensionsV1beta1().CustomResourceDefinitions()
 
 	operatorClient, err := client.New(config, "", namespaceName, "")
 	if err != nil {
-		return nil, errors.Wrap(err, "creating operator client failed")
+		return nil, nil, errors.Wrap(err, "creating operator client failed")
 	}
 
 	f := &Framework{
-		OperatorClient:       operatorClient,
-		KubeClient:           kubeClient,
-		OpenshiftRouteClient: openshiftRouteClient,
-		CRDClient:            crdClient,
-		MonitoringClient:     mClient,
-		Ns:                   namespaceName,
+		OperatorClient:   operatorClient,
+		KubeClient:       kubeClient,
+		CRDClient:        crdClient,
+		MonitoringClient: mClient,
+		Ns:               namespaceName,
 	}
 
-	return f, nil
+	cleanUp, err := f.setup()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to setup test framework")
+	}
+
+	// Prometheus client depends on setup above.
+	f.PrometheusK8sClient, err = NewPrometheusClient(openshiftRouteClient, kubeClient)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating prometheusK8sClient failed")
+	}
+
+	return f, cleanUp, nil
 }
 
 type cleanUpFunc func() error
 
-// Setup creates everything necessary to use the test framework.
-func (f *Framework) Setup() (cleanUpFunc, error) {
+// setup creates everything necessary to use the test framework.
+func (f *Framework) setup() (cleanUpFunc, error) {
 	cleanUpFuncs := []cleanUpFunc{}
 
 	cf, err := f.CreateServiceAccount()
