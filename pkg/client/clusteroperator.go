@@ -35,17 +35,24 @@ func (r *StatusReporter) SetDone() error {
 
 	time := metav1.Now()
 
-	conditions := ensureConditionsInitialized(co.Status.Conditions, time)
-	conditions = setCondition(conditions, v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", time)
-	conditions = setCondition(conditions, v1.OperatorProgressing, v1.ConditionFalse, "", time)
-	conditions = setCondition(conditions, v1.OperatorFailing, v1.ConditionFalse, "", time)
-	co.Status.Conditions = conditions
+	conditions := newConditions(co.Status.Conditions, time)
+	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
+	conditions.setCondition(v1.OperatorFailing, v1.ConditionFalse, "", time)
+	co.Status.Conditions = conditions.entries()
 	//co.Status.Version = r.version
 
 	_, err = r.client.UpdateStatus(co)
 	return err
 }
 
+// SetInProgress sets the OperatorProgressing condition to true, either:
+// 1. If there has been no previous status yet
+// 2. If the previous ClusterOperator OperatorAvailable condition was false
+//
+// This will ensure that the progressing state will be only set initially or in case of failure.
+// Once controller operator versions are available, an additional check will be introduced that toggles
+// the OperatorProgressing state in case of version upgrades.
 func (r *StatusReporter) SetInProgress() error {
 	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
@@ -58,9 +65,9 @@ func (r *StatusReporter) SetInProgress() error {
 
 	time := metav1.Now()
 
-	conditions := ensureConditionsInitialized(co.Status.Conditions, time)
-	conditions = setCondition(conditions, v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
-	co.Status.Conditions = conditions
+	conditions := newConditions(co.Status.Conditions, time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
+	co.Status.Conditions = conditions.entries()
 	//co.Status.Version = r.version
 
 	_, err = r.client.UpdateStatus(co)
@@ -79,11 +86,11 @@ func (r *StatusReporter) SetFailed(statusErr error) error {
 
 	time := metav1.Now()
 
-	conditions := ensureConditionsInitialized(co.Status.Conditions, time)
-	conditions = setCondition(conditions, v1.OperatorAvailable, v1.ConditionFalse, "", time)
-	conditions = setCondition(conditions, v1.OperatorProgressing, v1.ConditionFalse, "", time)
-	conditions = setCondition(conditions, v1.OperatorFailing, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
-	co.Status.Conditions = conditions
+	conditions := newConditions(co.Status.Conditions, time)
+	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, "", time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
+	conditions.setCondition(v1.OperatorFailing, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
+	co.Status.Conditions = conditions.entries()
 	//co.Status.Version = r.version
 
 	_, err = r.client.UpdateStatus(co)
@@ -103,62 +110,7 @@ func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
 		Spec:   v1.ClusterOperatorSpec{},
 		Status: v1.ClusterOperatorStatus{},
 	}
-	co.Status.Conditions = ensureConditionsInitialized(co.Status.Conditions, time)
+	co.Status.Conditions = newConditions(co.Status.Conditions, time).entries()
 
 	return co
-}
-
-func ensureConditionsInitialized(conditions []v1.ClusterOperatorStatusCondition, time metav1.Time) []v1.ClusterOperatorStatusCondition {
-	if len(conditions) == 0 {
-		return []v1.ClusterOperatorStatusCondition{
-			{
-				Type:               v1.OperatorAvailable,
-				Status:             v1.ConditionUnknown,
-				LastTransitionTime: time,
-			},
-			{
-				Type:               v1.OperatorProgressing,
-				Status:             v1.ConditionUnknown,
-				LastTransitionTime: time,
-			},
-			{
-				Type:               v1.OperatorFailing,
-				Status:             v1.ConditionUnknown,
-				LastTransitionTime: time,
-			},
-		}
-	}
-
-	return conditions
-}
-
-func setCondition(conditions []v1.ClusterOperatorStatusCondition, condition v1.ClusterStatusConditionType, status v1.ConditionStatus, message string, time metav1.Time) []v1.ClusterOperatorStatusCondition {
-	newConditions := []v1.ClusterOperatorStatusCondition{}
-	found := false
-	for _, c := range conditions {
-		if c.Type == condition {
-			found = true
-
-			if c.Status != status || c.Message != message {
-				newConditions = append(newConditions, v1.ClusterOperatorStatusCondition{
-					Type:               condition,
-					Status:             status,
-					LastTransitionTime: time,
-					Message:            message,
-				})
-				continue
-			}
-		}
-		newConditions = append(newConditions, c)
-	}
-	if !found {
-		newConditions = append(newConditions, v1.ClusterOperatorStatusCondition{
-			Type:               condition,
-			Status:             status,
-			LastTransitionTime: time,
-			Message:            message,
-		})
-	}
-
-	return newConditions
 }
