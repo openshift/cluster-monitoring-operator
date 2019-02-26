@@ -42,7 +42,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.OperatorClient.DeleteIfExists(nsName)
+	defer f.OperatorClient.DeleteNamespaceIfExists(nsName)
 
 	err = f.OperatorClient.CreateOrUpdatePrometheusRule(&monv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
