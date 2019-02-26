@@ -137,6 +137,13 @@ spec:
           node_namespace_pod:kube_pod_info:)
       record: node:node_cpu_utilisation:avg1m
     - expr: |
+        node:node_cpu_utilisation:avg1m
+          *
+        node:node_num_cpu:sum
+          /
+        scalar(sum(node:node_num_cpu:sum))
+      record: node:cluster_cpu_utilisation:ratio
+    - expr: |
         sum(node_load1{job="node-exporter"})
         /
         sum(node:node_num_cpu:sum)
@@ -179,8 +186,13 @@ spec:
     - expr: |
         (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
         /
-        scalar(sum(node:node_memory_bytes_total:sum))
+        node:node_memory_bytes_total:sum
       record: node:node_memory_utilisation:ratio
+    - expr: |
+        (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
+        /
+        scalar(sum(node:node_memory_bytes_total:sum))
+      record: node:cluster_memory_utilisation:ratio
     - expr: |
         1e3 * sum(
           (rate(node_vmstat_pgpgin{job="node-exporter"}[1m])
@@ -1014,7 +1026,7 @@ spec:
     - alert: etcdHighNumberOfLeaderChanges
       annotations:
         message: 'etcd cluster "{{ $labels.job }}": instance {{ $labels.instance }}
-          has seen {{ $value }} leader changes within the last hour.'
+          has seen {{ $value }} leader changes within the last 30 minutes.'
       expr: |
         rate(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}[15m]) > 3
       for: 15m
@@ -1067,7 +1079,7 @@ spec:
     - alert: etcdHighNumberOfFailedProposals
       annotations:
         message: 'etcd cluster "{{ $labels.job }}": {{ $value }} proposal failures
-          within the last hour on etcd instance {{ $labels.instance }}.'
+          within the last 30 minutes on etcd instance {{ $labels.instance }}.'
       expr: |
         rate(etcd_server_proposals_failed_total{job=~".*etcd.*"}[15m]) > 5
       for: 15m
