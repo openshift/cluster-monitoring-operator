@@ -42,10 +42,9 @@ type Framework struct {
 
 	MonitoringClient *monClient.MonitoringV1Client
 	Ns               string
-	OpImageName      string
 }
 
-func New(kubeConfigPath string, opImageName string) (*Framework, error) {
+func New(kubeConfigPath string) (*Framework, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
 		return nil, err
@@ -84,7 +83,6 @@ func New(kubeConfigPath string, opImageName string) (*Framework, error) {
 		CRDClient:            crdClient,
 		MonitoringClient:     mClient,
 		Ns:                   namespaceName,
-		OpImageName:          opImageName,
 	}
 
 	return f, nil
