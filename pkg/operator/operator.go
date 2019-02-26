@@ -303,6 +303,7 @@ func (o *Operator) sync(key string) error {
 	if err != nil {
 		glog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
+
 	err = tl.RunAll()
 	if err != nil {
 		glog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
@@ -312,6 +313,7 @@ func (o *Operator) sync(key string) error {
 		}
 		return err
 	}
+
 	glog.Info("Updating ClusterOperator status to done.")
 	err = o.client.StatusReporter().SetDone()
 	if err != nil {
