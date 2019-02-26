@@ -1,4 +1,4 @@
-FROM openshift/origin-base
+FROM openshift/origin-base:v3.11
 
 ENV GOPATH /go
 ENV PATH="${PATH}:${GOPATH}/bin"
