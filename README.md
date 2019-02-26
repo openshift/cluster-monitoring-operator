@@ -53,7 +53,6 @@ Run `make pkg/manifests/bindata.go` after you modify the files and make sure to 
 
 ## Testing
 
-### End-to-end tests
+- **Unit tests**: `make test-unit`
 
-Run e2e-tests with `make e2e-test`.
-Clean up after e2e-tests with `make e2e-clean`
+- **End-to-end tests**: `make test-e2e`

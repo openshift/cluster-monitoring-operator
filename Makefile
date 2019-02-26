@@ -96,25 +96,14 @@ $(JSONNET_BIN):
 test-unit:
 	go test $(PKGS)
 
+test-e2e:
+	go test -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+
 vendor:
 	govendor add +external
-
-test-e2e:
-	go test -v -timeout=20m ./test/e2e/ --operator-image=$(REPO):$(TAG) --kubeconfig $(KUBECONFIG)
-
-e2e-clean:
-	kubectl -n $(NAMESPACE) delete appversion,prometheus,alertmanager,servicemonitor,statefulsets,deploy,svc,endpoints,pods,cm,secrets,replicationcontrollers,thirdpartyresource --all --ignore-not-found
-	kubectl delete namespace $(NAMESPACE)
-
-build-docker-test:
-	sed 's/DOCKER_IMAGE_TAG/$(TAG)/' Dockerfile.test > Dockerfile.test.generated
-	docker build -f Dockerfile.test.generated -t quay.io/coreos/cluster-monitoring-operator-test:$(TAG) .
-
-run-docker-test-minikube:
-	docker run --rm -it --env KUBECONFIG=/kubeconfig -v /home/$(USER)/.kube/config:/kubeconfig -v /home/$(USER)/.minikube:/home/$(USER)/.minikube quay.io/coreos/cluster-monitoring-operator-test:$(TAG)
 
 merge-cluster-roles: manifests/02-role.yaml
 manifests/02-role.yaml: $(ASSETS) hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in
 	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/02-role.yaml
 
-.PHONY: all build operator-no-deps run crossbuild container push clean deps generate dependencies test e2e-test e2e-clean merge-cluster-roles
+.PHONY: all build operator-no-deps run crossbuild container push clean deps generate dependencies test test-e2e merge-cluster-roles

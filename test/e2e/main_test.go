@@ -44,16 +44,10 @@ func testMain(m *testing.M) int {
 		"kube config path, default: $HOME/.kube/config",
 	)
 
-	opImageName := flag.String(
-		"operator-image",
-		"",
-		"operator image, e.g. quay.io/coreos/cluster-monitoring-operator",
-	)
-
 	flag.Parse()
 
 	var err error
-	f, err = framework.New(*kubeConfigPath, *opImageName)
+	f, err = framework.New(*kubeConfigPath)
 	if err != nil {
 		log.Fatal(err)
 	}
