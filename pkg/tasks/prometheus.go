@@ -59,7 +59,7 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "initializing kubelet serving CA Bundle ConfigMap failed")
 	}
 
-	err = t.client.CreateIfNotExistConfigMap(cacm)
+	err = t.client.CreateOrUpdateConfigMap(cacm)
 	if err != nil {
 		return errors.Wrap(err, "creating kubelet serving CA Bundle ConfigMap failed")
 	}
