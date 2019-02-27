@@ -33,16 +33,6 @@ func NewNodeExporterTask(client *client.Client, factory *manifests.Factory) *Nod
 }
 
 func (t *NodeExporterTask) Run() error {
-	smn, err := t.factory.NodeExporterServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smn)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
-	}
-
 	scc, err := t.factory.NodeExporterSecurityContextConstraints()
 	if err != nil {
 		return errors.Wrap(err, "initializing node-exporter SecurityContextConstraints failed")
@@ -99,5 +89,15 @@ func (t *NodeExporterTask) Run() error {
 	}
 
 	err = t.client.CreateOrUpdateDaemonSet(ds)
-	return errors.Wrap(err, "reconciling node-exporter DaemonSet failed")
+	if err != nil {
+		return errors.Wrap(err, "reconciling node-exporter DaemonSet failed")
+	}
+
+	smn, err := t.factory.NodeExporterServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smn)
+	return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
 }
