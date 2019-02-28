@@ -62,10 +62,6 @@ type BuildDefaults struct {
 	// Resources defines resource requirements to execute the build.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// RegistriesConfig controls the registries allowed for image pull and push.
-	// +optional
-	RegistriesConfig RegistriesConfig `json:"registriesConfig,omitempty"`
 }
 
 type ImageLabel struct {
@@ -75,28 +71,6 @@ type ImageLabel struct {
 	// Value defines the literal value of the label.
 	// +optional
 	Value string `json:"value,omitempty"`
-}
-
-type RegistriesConfig struct {
-	// SearchRegistries lists the registries to search for images if an image repository is not specified in an image pull spec.
-	//
-	// If this is not set, builds will search Docker Hub (docker.io) when a repository is not specified.
-	// Setting this to an empty list will require all builds to fully qualify their image pull specs.
-	// +optional
-	SearchRegistries *[]string `json:"searchRegistries,omitempty"`
-	// InsecureRegistries are registries which do not have a valid SSL certificate or only support HTTP connections.
-	// +optional
-	InsecureRegistries []string `json:"insecureRegistries,omitempty"`
-	// BlockedRegistries are blacklisted from image pull/push. All other registries are allowed.
-	//
-	// Only one of BlockedRegistries or AllowedRegistries may be set.
-	// +optional
-	BlockedRegistries []string `json:"blockedRegistries,omitempty"`
-	// AllowedRegistries are whitelisted for image pull/push. All other registries are blocked.
-	//
-	// Only one of BlockedRegistries or AllowedRegistries may be set.
-	// +optional
-	AllowedRegistries []string `json:"allowedRegistries,omitempty"`
 }
 
 type BuildOverrides struct {
