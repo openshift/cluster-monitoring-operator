@@ -34,7 +34,7 @@ type Config struct {
 	AlertmanagerMainConfig   *AlertmanagerMainConfig   `json:"alertmanagerMain"`
 	KubeStateMetricsConfig   *KubeStateMetricsConfig   `json:"kubeStateMetrics"`
 	GrafanaConfig            *GrafanaConfig            `json:"grafana"`
-	EtcdConfig               *EtcdConfig               `json:"etcd"`
+	EtcdConfig               *EtcdConfig               `json:"-"`
 	HTTPConfig               *HTTPConfig               `json:"http"`
 	TelemeterClientConfig    *TelemeterClientConfig    `json:"telemeterClient"`
 	K8sPrometheusAdapter     *K8sPrometheusAdapter     `json:"k8sPrometheusAdapter"`
@@ -96,8 +96,7 @@ type K8sPrometheusAdapter struct {
 }
 
 type EtcdConfig struct {
-	Enabled    *bool  `json:"enabled"`
-	ServerName string `json:"serverName"`
+	Enabled *bool `json:"-"`
 }
 
 // IsEnabled returns the underlying value of the `Enabled` boolean pointer.

@@ -631,9 +631,6 @@ func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, erro
 		return nil, err
 	}
 
-	if f.config.EtcdConfig.ServerName != "" {
-		s.Spec.Endpoints[0].TLSConfig.ServerName = f.config.EtcdConfig.ServerName
-	}
 	s.Namespace = f.namespace
 
 	return s, nil
