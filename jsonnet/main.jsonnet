@@ -76,6 +76,10 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
 
     kubeletPodLimit: 250,
+
+    // Certificates are issued for 4h.
+    certExpirationWarningSeconds: 90 * 60,  // 1.5h
+    certExpirationCriticalSeconds: 60 * 60, // 1h
   },
 } + {
   local d = super.grafanaDashboards,
