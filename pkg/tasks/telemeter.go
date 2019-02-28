@@ -53,16 +53,6 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
 	}
 
-	sm, err := t.factory.TelemeterClientServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Telemeter client ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(sm)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Telemeter client ServiceMonitor failed")
-	}
-
 	sa, err := t.factory.TelemeterClientServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client Service failed")
@@ -129,7 +119,17 @@ func (t *TelemeterClientTask) create() error {
 	}
 
 	err = t.client.CreateOrUpdateDeployment(dep)
-	return errors.Wrap(err, "reconciling Telemeter client Deployment failed")
+	if err != nil {
+		return errors.Wrap(err, "reconciling Telemeter client Deployment failed")
+	}
+
+	sm, err := t.factory.TelemeterClientServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(sm)
+	return errors.Wrap(err, "reconciling Telemeter client ServiceMonitor failed")
 }
 
 func (t *TelemeterClientTask) destroy() error {

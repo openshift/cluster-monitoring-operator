@@ -201,6 +201,34 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus rules PrometheusRule failed")
 	}
 
+	svc, err := t.factory.PrometheusK8sService()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Service failed")
+	}
+
+	err = t.client.CreateOrUpdateService(svc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Service failed")
+	}
+
+	glog.V(4).Info("initializing Prometheus object")
+	p, err := t.factory.PrometheusK8s(host)
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus object failed")
+	}
+
+	glog.V(4).Info("reconciling Prometheus object")
+	err = t.client.CreateOrUpdatePrometheus(p)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus object failed")
+	}
+
+	glog.V(4).Info("waiting for Prometheus object changes")
+	err = t.client.WaitForPrometheus(p)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Prometheus object changes failed")
+	}
+
 	smk, err := t.factory.PrometheusK8sKubeletServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus kubelet ServiceMonitor failed")
@@ -284,33 +312,5 @@ func (t *PrometheusTask) Run() error {
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(smp)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Prometheus ServiceMonitor failed")
-	}
-
-	svc, err := t.factory.PrometheusK8sService()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Service failed")
-	}
-
-	err = t.client.CreateOrUpdateService(svc)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Service failed")
-	}
-
-	glog.V(4).Info("initializing Prometheus object")
-	p, err := t.factory.PrometheusK8s(host)
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus object failed")
-	}
-
-	glog.V(4).Info("reconciling Prometheus object")
-	err = t.client.CreateOrUpdatePrometheus(p)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus object failed")
-	}
-
-	glog.V(4).Info("waiting for Prometheus object changes")
-	err = t.client.WaitForPrometheus(p)
-	return errors.Wrap(err, "waiting for Prometheus object changes failed")
+	return errors.Wrap(err, "reconciling Prometheus Prometheus ServiceMonitor failed")
 }
