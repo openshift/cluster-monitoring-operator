@@ -240,6 +240,23 @@ local namespacesRole =
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'api.openshift-apiserver.svc',
               },
+              metricRelabelings: [
+                {
+                  sourceLabels: ['__name__'],
+                  regex: 'etcd_(debugging|disk|request|server).*',
+                  action: 'drop',
+                },
+                {
+                  sourceLabels: ['__name__'],
+                  regex: 'apiserver_admission_controller_admission_latencies_seconds_.*',
+                  action: 'drop',
+                },
+                {
+                  sourceLabels: ['__name__'],
+                  regex: 'apiserver_admission_step_admission_latencies_seconds_.*',
+                  action: 'drop',
+                },
+              ],
             },
           ],
           namespaceSelector: {
