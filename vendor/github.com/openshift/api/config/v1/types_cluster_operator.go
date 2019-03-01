@@ -36,9 +36,10 @@ type ClusterOperatorStatus struct {
 	// +patchStrategy=merge
 	Conditions []ClusterOperatorStatusCondition `json:"conditions"  patchStrategy:"merge" patchMergeKey:"type"`
 
-	// version indicates which version of the operator updated the current
-	// status object.
-	Version string `json:"version"`
+	// versions is a slice of operand version tuples.  Operators which manage multiple operands will have multiple
+	// entries in the array.  If an operator is Available, it must have at least one entry.  You must report the version of
+	// the operator itself with the name "operator".
+	Versions []OperandVersion `json:"versions"`
 
 	// relatedObjects is a list of objects that are "interesting" or related to this operator.  Common uses are:
 	// 1. the detailed resource driving the operator
@@ -49,6 +50,16 @@ type ClusterOperatorStatus struct {
 	// extension contains any additional status information specific to the
 	// operator which owns this status object.
 	Extension runtime.RawExtension `json:"extension,omitempty"`
+}
+
+type OperandVersion struct {
+	// name is the name of the particular operand this version is for.  It usually matches container images, not operators.
+	Name string `json:"name"`
+
+	// version indicates which version of a particular operand is currently being manage.  It must always match the Available
+	// condition.  If 1.0.0 is Available, then this must indicate 1.0.0 even if the operator is trying to rollout
+	// 1.1.0
+	Version string `json:"version"`
 }
 
 // ObjectReference contains enough information to let you inspect or modify the referred object.
@@ -101,18 +112,24 @@ type ClusterOperatorStatusCondition struct {
 type ClusterStatusConditionType string
 
 const (
-	// OperatorAvailable indicates that the binary maintained by the operator (eg: openshift-apiserver for the
+	// Available indicates that the binary maintained by the operator (eg: openshift-apiserver for the
 	// openshift-apiserver-operator), is functional and available in the cluster.
 	OperatorAvailable ClusterStatusConditionType = "Available"
 
-	// OperatorProgressing indicates that the operator is actively making changes to the binary maintained by the
+	// Progressing indicates that the operator is actively making changes to the binary maintained by the
 	// operator (eg: openshift-apiserver for the openshift-apiserver-operator).
 	OperatorProgressing ClusterStatusConditionType = "Progressing"
 
-	// OperatorFailing indicates that the operator has encountered an error that is preventing it from working properly.
+	// Failing indicates that the operator has encountered an error that is preventing it from working properly.
 	// The binary maintained by the operator (eg: openshift-apiserver for the openshift-apiserver-operator) may still be
 	// available, but the user intent cannot be fulfilled.
 	OperatorFailing ClusterStatusConditionType = "Failing"
+
+	// Upgradeable indicates whether the operator is in a state that is safe to upgrade. When status is `False`
+	// administrators should not upgrade their cluster and the message field should contain a human readable description
+	// of what the administrator should do to allow the operator to successfully update.  A missing condition, True,
+	// and Unknown are all treated by the CVO as allowing an upgrade.
+	OperatorUpgradeable ClusterStatusConditionType = "Upgradeable"
 )
 
 // ClusterOperatorList is a list of OperatorStatus resources.
