@@ -34,11 +34,6 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
 )
 
-var (
-	// This variable is intended to be overridden at build time.
-	Version = "dev"
-)
-
 const (
 	resyncPeriod = 5 * time.Minute
 
@@ -69,8 +64,8 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(config *rest.Config, namespace, namespaceSelector, configMapName string, images map[string]string) (*Operator, error) {
-	c, err := client.New(config, Version, namespace, namespaceSelector)
+func New(config *rest.Config, version, namespace, namespaceSelector, configMapName string, images map[string]string) (*Operator, error) {
+	c, err := client.New(config, version, namespace, namespaceSelector)
 	if err != nil {
 		return nil, err
 	}

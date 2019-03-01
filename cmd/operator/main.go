@@ -83,6 +83,7 @@ func Main() int {
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
 	kubeconfigPath := flagset.String("kubeconfig", "", "The path to the kubeconfig to connect to the apiserver with.")
 	apiserver := flagset.String("apiserver", "", "The address of the apiserver to talk to.")
+	releaseVersion := flagset.String("release-version", "", "Currently targeted release version to be reconciled against.")
 	images := images{}
 	flag.Var(&images, "images", "Images to use for containers managed by the cluster-monitoring-operator.")
 	flag.Parse()
@@ -96,6 +97,13 @@ func Main() int {
 	if *configMapName == "" {
 		ok = false
 		fmt.Fprint(os.Stderr, "`--configmap` flag is required, but not specified.")
+	}
+
+	if releaseVersion == nil || *releaseVersion == "" {
+		fmt.Fprint(os.Stderr, "`--release-version` flag is not set.")
+	}
+	if releaseVersion != nil {
+		glog.V(4).Infof("Release version set to %v", *releaseVersion)
 	}
 
 	if !ok {
@@ -114,7 +122,7 @@ func Main() int {
 		return 1
 	}
 
-	o, err := cmo.New(config, *namespace, *namespaceSelector, *configMapName, images.asMap())
+	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceSelector, *configMapName, images.asMap())
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

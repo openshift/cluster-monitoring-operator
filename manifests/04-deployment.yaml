@@ -33,6 +33,7 @@ spec:
         args:
         - "-namespace=openshift-monitoring"
         - "-configmap=cluster-monitoring-config"
+        - "-release-version=$(RELEASE_VERSION)"
         - "-logtostderr=true"
         - "-v=4"
         - "-images=prometheus-operator=quay.io/openshift/origin-prometheus-operator:latest"

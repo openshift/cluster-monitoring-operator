@@ -2,7 +2,6 @@ package client
 
 import (
 	"fmt"
-	"os"
 
 	v1 "github.com/openshift/api/config/v1"
 	clientv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
@@ -45,11 +44,11 @@ func (r *StatusReporter) SetDone() error {
 	// If we have reached "level" for the operator, report that we are at the version
 	// injected into us during update. We require that all components be rolled out
 	// and available at the new version before reporting this value.
-	if releaseVersion := os.Getenv("RELEASE_VERSION"); len(releaseVersion) > 0 {
+	if len(r.version) > 0 {
 		co.Status.Versions = []v1.OperandVersion{
 			{
 				Name:    "operator",
-				Version: releaseVersion,
+				Version: r.version,
 			},
 		}
 	} else {
@@ -82,7 +81,6 @@ func (r *StatusReporter) SetInProgress() error {
 	conditions := newConditions(co.Status.Conditions, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
 	co.Status.Conditions = conditions.entries()
-	//co.Status.Version = r.version
 
 	_, err = r.client.UpdateStatus(co)
 	return err
@@ -105,7 +103,6 @@ func (r *StatusReporter) SetFailed(statusErr error) error {
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
 	conditions.setCondition(v1.OperatorFailing, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
 	co.Status.Conditions = conditions.entries()
-	//co.Status.Version = r.version
 
 	_, err = r.client.UpdateStatus(co)
 	return err
