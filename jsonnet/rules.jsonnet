@@ -66,6 +66,15 @@
           },
         ],
       },
+      {
+        name: 'openshift-sre.rules',
+        rules: [
+          {
+            expr: 'sum(rate(apiserver_request_count{job="apiserver"}[10m])) by (code)',
+            record: 'code:apiserver_request_count:rate:sum',
+          },
+        ],
+      },
     ],
   },
 }
