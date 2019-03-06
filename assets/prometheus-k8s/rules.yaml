@@ -362,6 +362,10 @@ spec:
     rules:
     - expr: sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))
       record: build_error_rate
+  - name: openshift-sre.rules
+    rules:
+    - expr: sum(rate(apiserver_request_count{job="apiserver"}[10m])) by (code)
+      record: code:apiserver_request_count:rate:sum
   - name: kubernetes-absent
     rules:
     - alert: AlertmanagerDown
