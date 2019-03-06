@@ -17,12 +17,10 @@ package manifests
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 
 	configv1 "github.com/openshift/api/config/v1"
-	yaml "gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -216,23 +214,18 @@ func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) er
 	return nil
 }
 
-func (c *Config) LoadToken(load func() (*v1.ConfigMap, error)) error {
+func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 	if c.TelemeterClientConfig.Token != "" {
 		return nil
 	}
 
-	cmap, err := load()
+	secret, err := load()
 	if err != nil {
-		return fmt.Errorf("error loading configmap: %v", err)
+		return fmt.Errorf("error loading secret: %v", err)
 	}
 
-	ic := make(map[string]interface{})
-	if err := yaml.Unmarshal([]byte(cmap.Data["install-config"]), &ic); err != nil {
-		return fmt.Errorf("unmarshaling install config failed: %v", err)
-	}
-
-	if _, ok := ic["pullSecret"].(string); !ok {
-		return errors.New("could not find pull secret")
+	if secret.Type != v1.SecretTypeDockerConfigJson {
+		return fmt.Errorf("error expecting secret type %s got %s", v1.SecretTypeDockerConfigJson, secret.Type)
 	}
 
 	ps := struct {
@@ -243,7 +236,7 @@ func (c *Config) LoadToken(load func() (*v1.ConfigMap, error)) error {
 		} `json:"auths"`
 	}{}
 
-	if err := json.Unmarshal([]byte(ic["pullSecret"].(string)), &ps); err != nil {
+	if err := json.Unmarshal(secret.Data[v1.DockerConfigJsonKey], &ps); err != nil {
 		return fmt.Errorf("unmarshaling pull secret failed: %v", err)
 	}
 

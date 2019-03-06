@@ -364,8 +364,8 @@ func (o *Operator) Config(key string) *manifests.Config {
 			glog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
 		}
 
-		err = c.LoadToken(func() (*v1.ConfigMap, error) {
-			return o.client.KubernetesInterface().CoreV1().ConfigMaps("kube-system").Get("cluster-config-v1", metav1.GetOptions{})
+		err = c.LoadToken(func() (*v1.Secret, error) {
+			return o.client.KubernetesInterface().CoreV1().Secrets("kube-system").Get("coreos-pull-secret", metav1.GetOptions{})
 		})
 
 		if err != nil {
