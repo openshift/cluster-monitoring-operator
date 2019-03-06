@@ -129,6 +129,7 @@ local namespacesRole = policyRule.new() +
               scheme: 'https',
               tlsConfig: {
                 caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+                serverName: 'kubernetes',
               },
             },
           ],
