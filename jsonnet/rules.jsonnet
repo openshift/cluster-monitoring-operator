@@ -45,6 +45,14 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
+            expr: 'sum(kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io_compute, label_node_role_kubernetes_io_master)',
+            record: 'cluster:cluster_capacity_cpu_cores:sum',
+          },
+          {
+            expr: 'count(kube_node_labels) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io_compute, label_node_role_kubernetes_io_master)',
+            record: 'cluster:node_instance_type_count:sum',
+          },
+          {
             expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
             alert: 'ClusterMonitoringOperatorErrors',
             'for': '15m',

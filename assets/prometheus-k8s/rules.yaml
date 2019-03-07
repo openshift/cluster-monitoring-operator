@@ -349,6 +349,13 @@ spec:
     - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m]))
         / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
+    - expr: sum(kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)
+        BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io_compute,
+        label_node_role_kubernetes_io_master)
+      record: cluster:cluster_capacity_cpu_cores:sum
+    - expr: count(kube_node_labels) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io_compute,
+        label_node_role_kubernetes_io_master)
+      record: cluster:node_instance_type_count:sum
     - alert: ClusterMonitoringOperatorErrors
       annotations:
         message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value
