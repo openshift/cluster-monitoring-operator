@@ -45,6 +45,13 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
+            expr: 'kube_node_labels and on(node) kube_node_spec_taint{key="node-role.kubernetes.io/master"}',
+            labels: {
+              label_node_role_kubernetes_io: 'master',
+            },
+            record: 'cluster:master_nodes',
+          },
+          {
             expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
             alert: 'ClusterMonitoringOperatorErrors',
             'for': '15m',
