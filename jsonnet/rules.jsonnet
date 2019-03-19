@@ -60,6 +60,22 @@
             record: 'cluster:capacity_memory_bytes:sum',
           },
           {
+            expr: 'sum(1 - rate(node_cpu_seconds_total{mode="idle"}[1m]) * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{})',
+            record: 'cluster:cpu_usage_cores:sum',
+          },
+          {
+            expr: 'sum(node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)',
+            record: 'cluster:memory_usage_bytes:sum',
+          },
+          {
+            expr: 'sum(rate(container_cpu_usage_seconds_total{namespace=~"openshift-.+"}[1m]))',
+            record: 'openshift:cpu_usage_cores:sum',
+          },
+          {
+            expr: 'sum(container_memory_working_set_bytes{namespace=~"openshift-.+"})',
+            record: 'openshift:memory_usage_bytes:sum',
+          },
+          {
             expr: 'sum(cluster:master_nodes or on(node) kube_node_labels ) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
             record: 'cluster:node_instance_type_count:sum',
           },
