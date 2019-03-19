@@ -52,6 +52,18 @@
             record: 'cluster:master_nodes',
           },
           {
+            expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
+            record: 'cluster:capacity_cpu_cores:sum',
+          },
+          {
+            expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_memory_bytes) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_memory_bytes)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
+            record: 'cluster:capacity_memory_bytes:sum',
+          },
+          {
+            expr: 'sum(cluster:master_nodes or on(node) kube_node_labels ) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
+            record: 'cluster:node_instance_type_count:sum',
+          },
+          {
             expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
             alert: 'ClusterMonitoringOperatorErrors',
             'for': '15m',
@@ -77,16 +89,16 @@
         name: 'openshift-sre.rules',
         rules: [
           {
-            expr: 'sum(rate(apiserver_request_count{job="apiserver"}[10m])) by (code)',
+            expr: 'sum(rate(apiserver_request_count{job="apiserver"}[10m])) BY (code)',
             record: 'code:apiserver_request_count:rate:sum',
           },
           {
-            expr:'sum(kube_pod_status_ready{condition="true",namespace="kube-system",pod=~"etcd.*"}) by(condition)',
-            record:'kube_pod_status_ready:etcd:sum',
+            expr: 'sum(kube_pod_status_ready{condition="true",namespace="kube-system",pod=~"etcd.*"}) by(condition)',
+            record: 'kube_pod_status_ready:etcd:sum',
           },
           {
-            expr:'sum(kube_pod_status_ready{condition="true",namespace="openshift-image-registry",pod=~"image-registry.*"}) by(condition)',
-            record:'kube_pod_status_ready:image_registry:sum',
+            expr: 'sum(kube_pod_status_ready{condition="true",namespace="openshift-image-registry",pod=~"image-registry.*"}) by(condition)',
+            record: 'kube_pod_status_ready:image_registry:sum',
           },
         ],
       },
