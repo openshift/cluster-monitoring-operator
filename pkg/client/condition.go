@@ -20,10 +20,11 @@ import (
 )
 
 type conditions struct {
-	entryMap map[v1.ClusterStatusConditionType]v1.ClusterOperatorStatusCondition
+	entryMap                      map[v1.ClusterStatusConditionType]v1.ClusterOperatorStatusCondition
+	currentVersion, targetVersion string
 }
 
-func newConditions(cs []v1.ClusterOperatorStatusCondition, time metav1.Time) *conditions {
+func newConditions(cos v1.ClusterOperatorStatus, targetVersion string, time metav1.Time) *conditions {
 	entries := map[v1.ClusterStatusConditionType]v1.ClusterOperatorStatusCondition{
 		v1.OperatorAvailable: {
 			Type:               v1.OperatorAvailable,
@@ -42,13 +43,21 @@ func newConditions(cs []v1.ClusterOperatorStatusCondition, time metav1.Time) *co
 		},
 	}
 
-	for _, c := range cs {
+	for _, c := range cos.Conditions {
 		entries[c.Type] = c
 	}
 
-	return &conditions{
+	cs := &conditions{
 		entryMap: entries,
 	}
+
+	if len(cos.Versions) > 0 {
+		cs.currentVersion = cos.Versions[0].Version
+	}
+
+	cs.targetVersion = targetVersion
+
+	return cs
 }
 
 func (cs *conditions) setCondition(condition v1.ClusterStatusConditionType, status v1.ConditionStatus, message string, time metav1.Time) {
@@ -68,12 +77,16 @@ func (cs *conditions) setCondition(condition v1.ClusterStatusConditionType, stat
 		}
 	}
 
-	// If the operator is already available, we don't set it into progressing state again.
-	if condition == v1.OperatorProgressing && status == v1.ConditionTrue {
-		available, ok := cs.entryMap[v1.OperatorAvailable]
-		if ok && available.Status == v1.ConditionTrue {
-			return
-		}
+	wantsProgressing := condition == v1.OperatorProgressing && status == v1.ConditionTrue
+	available, hasAvailable := cs.entryMap[v1.OperatorAvailable]
+
+	// If the operator is already available, don't set it into progressing state again.
+	// If the target and current versions differ in this case though, set it to progressing.
+	abort := wantsProgressing && hasAvailable && available.Status == v1.ConditionTrue
+	abort = abort && cs.targetVersion == cs.currentVersion
+
+	if abort {
+		return
 	}
 
 	cs.entryMap = entries

@@ -35,7 +35,7 @@ func (r *StatusReporter) SetDone() error {
 
 	time := metav1.Now()
 
-	conditions := newConditions(co.Status.Conditions, time)
+	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
 	conditions.setCondition(v1.OperatorFailing, v1.ConditionFalse, "", time)
@@ -78,7 +78,7 @@ func (r *StatusReporter) SetInProgress() error {
 
 	time := metav1.Now()
 
-	conditions := newConditions(co.Status.Conditions, time)
+	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
 	co.Status.Conditions = conditions.entries()
 
@@ -98,7 +98,7 @@ func (r *StatusReporter) SetFailed(statusErr error) error {
 
 	time := metav1.Now()
 
-	conditions := newConditions(co.Status.Conditions, time)
+	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, "", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
 	conditions.setCondition(v1.OperatorFailing, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
@@ -121,7 +121,7 @@ func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
 		Spec:   v1.ClusterOperatorSpec{},
 		Status: v1.ClusterOperatorStatus{},
 	}
-	co.Status.Conditions = newConditions(co.Status.Conditions, time).entries()
+	co.Status.Conditions = newConditions(co.Status, r.version, time).entries()
 
 	return co
 }
