@@ -25,9 +25,29 @@ spec:
         - --to=$(TO)
         - --to-token-file=/etc/telemeter/token
         - --listen=localhost:8080
-        - --match-file=/etc/telemeter/match-rules
         - --anonymize-salt-file=/etc/telemeter/salt
         - --anonymize-labels=$(ANONYMIZE_LABELS)
+        - --match={__name__="up"}
+        - --match={__name__="cluster_version"}
+        - --match={__name__="cluster_version_available_updates"}
+        - --match={__name__="cluster_operator_up"}
+        - --match={__name__="cluster_operator_conditions"}
+        - --match={__name__="cluster_version_payload"}
+        - --match={__name__="cluster_version_payload_errors"}
+        - --match={__name__="machine_cpu_cores"}
+        - --match={__name__="machine_memory_bytes"}
+        - --match={__name__="etcd_object_counts"}
+        - --match={__name__="ALERTS",alertstate="firing"}
+        - --match={__name__="code:apiserver_request_count:rate:sum"}
+        - --match={__name__="kube_pod_status_ready:etcd:sum"}
+        - --match={__name__="kube_pod_status_ready:image_registry:sum"}
+        - --match={__name__="cluster:capacity_cpu_cores:sum"}
+        - --match={__name__="cluster:capacity_memory_bytes:sum"}
+        - --match={__name__="cluster:cpu_usage_cores:sum"}
+        - --match={__name__="cluster:memory_usage_bytes:sum"}
+        - --match={__name__="openshift:cpu_usage_cores:sum"}
+        - --match={__name__="openshift:memory_usage_bytes:sum"}
+        - --match={__name__="cluster:node_instance_type_count:sum"}
         env:
         - name: ANONYMIZE_LABELS
           value: ""
