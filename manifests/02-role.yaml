@@ -216,6 +216,14 @@ rules:
   - get
   - update
 - apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - node-exporter
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+- apiGroups:
   - metrics.k8s.io
   resources:
   - '*'
