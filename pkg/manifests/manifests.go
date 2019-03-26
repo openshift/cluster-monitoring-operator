@@ -435,8 +435,6 @@ func (f *Factory) NodeExporterSecurityContextConstraints() (*securityv1.Security
 		return nil, err
 	}
 
-	scc.Users = append(scc.Users, fmt.Sprintf("system:serviceaccount:%s:node-exporter", f.namespace))
-
 	return scc, nil
 }
 
