@@ -123,6 +123,7 @@ func TestTargetsUp(t *testing.T) {
 		"prometheus-operator",
 		"alertmanager-main",
 		"crio",
+		"telemeter-client",
 	}
 
 	for _, target := range targets {
