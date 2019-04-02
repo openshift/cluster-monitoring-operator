@@ -378,7 +378,7 @@ func (o *Operator) Config(key string) *manifests.Config {
 	})
 
 	if err != nil {
-		glog.Warningf("Error loading proxy from API. Proceeding without it: %v", err)
+		glog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
 	}
 
 	s, err := o.client.GetSecret(o.namespace, prometheusEtcdCertSecretName)
