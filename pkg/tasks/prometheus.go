@@ -211,6 +211,28 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Service failed")
 	}
 
+	if t.config.EtcdConfig.IsEnabled() {
+		etcdCA, err := t.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
+		if err != nil {
+			return errors.Wrap(err, "failed to load etcd client CA")
+		}
+
+		etcdClientSecret, err := t.client.GetSecret("openshift-config", "etcd-metric-client")
+		if err != nil {
+			return errors.Wrap(err, "failed to load etcd client secret")
+		}
+
+		promEtcdSecret, err := t.factory.PrometheusK8sEtcdSecret(etcdClientSecret, etcdCA)
+		if err != nil {
+			return errors.Wrap(err, "initializing prometheus etcd service monitor secret failed")
+		}
+
+		err = t.client.CreateOrUpdateSecret(promEtcdSecret)
+		if err != nil {
+			return errors.Wrap(err, "reconciling prometheus etcd service monitor secret")
+		}
+	}
+
 	glog.V(4).Info("initializing Prometheus object")
 	p, err := t.factory.PrometheusK8s(host)
 	if err != nil {

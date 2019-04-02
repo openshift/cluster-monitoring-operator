@@ -11,6 +11,22 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                serviceEtcd:: super.serviceEtcd,
                endpointsEtcd:: super.endpointsEtcd,
                secretEtcdCerts:: super.secretEtcdCerts,
+               serviceMonitorEtcd+: {
+                 spec+: {
+                   endpoints: [
+                     {
+                       port: 'etcd-metrics',
+                       interval: '30s',
+                       scheme: 'https',
+                       tlsConfig: {
+                         caFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client-ca.crt',
+                         keyFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.key',
+                         certFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.crt',
+                       },
+                     },
+                   ],
+                 },
+               },
              },
            } +
            (import 'telemeter-client/client.libsonnet') +
