@@ -1,3 +1,4 @@
+local utils = import 'kubernetes-mixin/lib/utils.libsonnet';
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            // NOTE: the `anti-affinity` package is actually the
            // `kube-prometheus` package checked out at a specific version
@@ -79,6 +80,44 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     for k in std.objectFields(d)
     if !std.setMember(k, ['nodes.json', 'pods.json', 'statefulset.json'])
   },
+} + {
+  // This patches the way we calculate memory requests and only takes pending and running Pods into account:
+  // https://bugzilla.redhat.com/show_bug.cgi?id=1691893
+  prometheusRules+::
+    local replaceMemoryRule(rule) = (
+      if ('record' in rule) && (rule.record == 'namespace_name:kube_pod_container_resource_requests_memory_bytes:sum') then
+        rule {
+          expr: |||
+            sum by (namespace, label_name) (
+              sum(kube_pod_container_resource_requests_memory_bytes{%(kubeStateMetricsSelector)s} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"^(Pending|Running)$"} == 1)) by (namespace, pod)
+            * on (namespace, pod) group_left(label_name)
+              label_replace(kube_pod_labels{%(kubeStateMetricsSelector)s}, "pod_name", "$1", "pod", "(.*)")
+            )
+          ||| % $._config,
+        }
+      else
+        rule
+    );
+    utils.mapRuleGroups(replaceMemoryRule),
+} + {
+  // This patches the way we calculate CPU requests and only takes pending and running Pods into account:
+  // https://bugzilla.redhat.com/show_bug.cgi?id=1691893
+  prometheusRules+::
+    local replaceCPURule(rule) = (
+      if ('record' in rule) && (rule.record == 'namespace_name:kube_pod_container_resource_requests_cpu_cores:sum') then
+        rule {
+          expr: |||
+            sum by (namespace, label_name) (
+              sum(kube_pod_container_resource_requests_cpu_cores{%(kubeStateMetricsSelector)s} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"^(Pending|Running)$"} == 1)) by (namespace, pod)
+            * on (namespace, pod) group_left(label_name)
+              label_replace(kube_pod_labels{%(kubeStateMetricsSelector)s}, "pod_name", "$1", "pod", "(.*)")
+            )
+          ||| % $._config,
+        }
+      else
+        rule
+    );
+    utils.mapRuleGroups(replaceCPURule),
 };
 
 { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
