@@ -87,7 +87,7 @@ $(JB_BIN):
 	go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
 
 $(JSONNET_BIN):
-	go get -u github.com/google/go-jsonnet/jsonnet
+	go get -u github.com/google/go-jsonnet/cmd/jsonnet
 
 test-unit:
 	go test $(PKGS)
