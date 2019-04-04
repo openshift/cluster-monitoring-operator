@@ -4,13 +4,9 @@ go:
 - "1.10"
 services:
 - docker
-before_install:
-- sudo apt-get -qq update
-- sudo apt-get install -y python-pip
-- sudo pip install yamllint
 jobs:
   include:
-  - script: yamllint .
+  - script: ./hack/yamllint.sh .
   - script: make test-unit
   - stage: Build
     script: make dependencies build
