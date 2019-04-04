@@ -33,6 +33,7 @@ import (
 	"github.com/pkg/errors"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	crdc "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 var namespaceName = "openshift-monitoring"
@@ -42,6 +43,7 @@ type Framework struct {
 	CRDClient           crdc.CustomResourceDefinitionInterface
 	KubeClient          kubernetes.Interface
 	PrometheusK8sClient *PrometheusClient
+	APIServicesClient   *apiservicesclient.Clientset
 
 	MonitoringClient *monClient.MonitoringV1Client
 	Ns               string
@@ -82,12 +84,18 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating operator client failed")
 	}
 
+	apiServicesClient, err := apiservicesclient.NewForConfig(config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating API services client failed")
+	}
+
 	f := &Framework{
-		OperatorClient:   operatorClient,
-		KubeClient:       kubeClient,
-		CRDClient:        crdClient,
-		MonitoringClient: mClient,
-		Ns:               namespaceName,
+		OperatorClient:    operatorClient,
+		KubeClient:        kubeClient,
+		CRDClient:         crdClient,
+		APIServicesClient: apiServicesClient,
+		MonitoringClient:  mClient,
+		Ns:                namespaceName,
 	}
 
 	cleanUp, err := f.setup()

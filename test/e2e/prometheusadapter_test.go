@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	apiservicesv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 func TestAggregatedMetricPermissions(t *testing.T) {
@@ -91,6 +92,37 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 				t.Error(err)
 			}
 		})
+	}
+}
+
+func isAvailable(conditions []apiservicesv1.APIServiceCondition) bool {
+	for _, condition := range conditions {
+		if condition.Type == apiservicesv1.Available && condition.Status == apiservicesv1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
+func TestMetricsAPIAvailability(t *testing.T) {
+	var lastErr error
+	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		metricsService, err := f.APIServicesClient.ApiregistrationV1().APIServices().Get("v1beta1.metrics.k8s.io", metav1.GetOptions{})
+		lastErr = errors.Wrap(err, "getting metrics APIService failed")
+		if err != nil {
+			return false, nil
+		}
+		if !isAvailable(metricsService.Status.Conditions) {
+			lastErr = errors.New("v1beta1.metrics.k8s.io apiservice is not available")
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		log.Fatal(err)
 	}
 }
 
