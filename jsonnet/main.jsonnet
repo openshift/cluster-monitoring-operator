@@ -69,6 +69,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
 
     hostNetworkInterfaceSelector: 'device!~"veth.+"',
 
+    kubeletTooManyPods: 250,
+
     kubeSchedulerSelector: 'job="kube-controllers"',
     kubeControllerManagerSelector: 'job="kube-controllers"',
     namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',

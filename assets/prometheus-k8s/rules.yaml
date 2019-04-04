@@ -857,7 +857,7 @@ spec:
         message: Kubelet {{$labels.instance}} is running {{$value}} pods, close to
           the limit of 110.
       expr: |
-        kubelet_running_pod_count{job="kubelet"} > 100
+        kubelet_running_pod_count{job="kubelet"} > 250
       for: 15m
       labels:
         severity: warning
