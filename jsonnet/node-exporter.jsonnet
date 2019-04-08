@@ -5,6 +5,7 @@ local container = daemonset.mixin.spec.template.spec.containersType;
 local volume = daemonset.mixin.spec.template.spec.volumesType;
 local containerPort = container.portsType;
 local containerVolumeMount = container.volumeMountsType;
+local toleration = daemonset.mixin.spec.template.spec.tolerationsType;
 local tlsVolumeName = 'node-exporter-tls';
 
 {
@@ -93,6 +94,10 @@ local tlsVolumeName = 'node-exporter-tls';
                 ),
               volumes+: [volume.fromSecret(tlsVolumeName, 'node-exporter-tls')],
               securityContext: {},
+              tolerations: [
+                toleration.new() + toleration.withOperator('Exists') + toleration.withEffect('NoExecute'),
+                toleration.new() + toleration.withOperator('Exists') + toleration.withEffect('NoSchedule'),
+              ],
             },
           },
         },
