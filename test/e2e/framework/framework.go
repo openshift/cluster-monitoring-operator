@@ -34,6 +34,8 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	crdc "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
+
+	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 var namespaceName = "openshift-monitoring"
@@ -44,6 +46,7 @@ type Framework struct {
 	KubeClient          kubernetes.Interface
 	PrometheusK8sClient *PrometheusClient
 	APIServicesClient   *apiservicesclient.Clientset
+	MetricsClient       *metricsclient.Clientset
 
 	MonitoringClient *monClient.MonitoringV1Client
 	Ns               string
@@ -89,11 +92,17 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating API services client failed")
 	}
 
+	metricsClient, err := metricsclient.NewForConfig(config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating metrics client failed")
+	}
+
 	f := &Framework{
 		OperatorClient:    operatorClient,
 		KubeClient:        kubeClient,
 		CRDClient:         crdClient,
 		APIServicesClient: apiServicesClient,
+		MetricsClient:     metricsClient,
 		MonitoringClient:  mClient,
 		Ns:                namespaceName,
 	}
