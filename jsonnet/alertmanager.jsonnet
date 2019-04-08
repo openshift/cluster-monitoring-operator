@@ -131,6 +131,7 @@ local authorizationRole = policyRule.new() +
       {
         spec+: {
           securityContext: {},
+          priorityClassName: 'system-cluster-critical',
           secrets: [
             'alertmanager-main-tls',
             'alertmanager-main-proxy',

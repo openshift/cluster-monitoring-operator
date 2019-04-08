@@ -428,6 +428,7 @@ local namespacesRole =
           ruleSelector: {},
           ruleNamespaceSelector: {},
           listenLocal: true,
+          priorityClassName: 'system-cluster-critical',
           containers: [
             {
               name: 'prometheus-proxy',
