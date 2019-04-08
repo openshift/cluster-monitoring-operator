@@ -80,6 +80,7 @@ local namespacesRole = policyRule.new() +
         'service.alpha.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
       }) +
       service.mixin.spec.withType('ClusterIP') +
+      service.mixin.spec.withSessionAffinity('ClientIP') +
       service.mixin.spec.withPorts(servicePort.newNamed('web', 9091, 'web')),
 
     // As Prometheus is protected by the oauth proxy it requires the
