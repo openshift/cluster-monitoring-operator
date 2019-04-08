@@ -97,6 +97,7 @@ spec:
         - mountPath: /etc/tls/private
           name: telemeter-client-tls
           readOnly: false
+      priorityClassName: system-cluster-critical
       serviceAccountName: telemeter-client
       volumes:
       - configMap:

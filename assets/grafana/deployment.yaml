@@ -55,6 +55,12 @@ spec:
         - mountPath: /grafana-dashboard-definitions/0/k8s-resources-pod
           name: grafana-dashboard-k8s-resources-pod
           readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/k8s-resources-workload
+          name: grafana-dashboard-k8s-resources-workload
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/k8s-resources-workloads-namespace
+          name: grafana-dashboard-k8s-resources-workloads-namespace
+          readOnly: false
         - mountPath: /etc/grafana
           name: grafana-config
           readOnly: false
@@ -121,6 +127,12 @@ spec:
       - configMap:
           name: grafana-dashboard-k8s-resources-pod
         name: grafana-dashboard-k8s-resources-pod
+      - configMap:
+          name: grafana-dashboard-k8s-resources-workload
+        name: grafana-dashboard-k8s-resources-workload
+      - configMap:
+          name: grafana-dashboard-k8s-resources-workloads-namespace
+        name: grafana-dashboard-k8s-resources-workloads-namespace
       - name: grafana-config
         secret:
           secretName: grafana-config
