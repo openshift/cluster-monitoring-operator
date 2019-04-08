@@ -72,6 +72,7 @@ local authorizationRole = policyRule.new() +
         'service.alpha.openshift.io/serving-cert-secret-name': 'alertmanager-main-tls',
       }) +
       service.mixin.spec.withType('ClusterIP') +
+      service.mixin.spec.withSessionAffinity('ClientIP') +
       service.mixin.spec.withPorts(servicePort.newNamed('web', 9094, 'web')),
 
     // The proxy secret is there to encrypt session created by the oauth proxy.
