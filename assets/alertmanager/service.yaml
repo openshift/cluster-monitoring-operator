@@ -15,4 +15,5 @@ spec:
   selector:
     alertmanager: main
     app: alertmanager
+  sessionAffinity: ClientIP
   type: ClusterIP
