@@ -120,6 +120,24 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
         rule
     );
     utils.mapRuleGroups(replaceCPURule),
+} + {
+  // This patches the KubeletTooManyPods alert message
+  // https://bugzilla.redhat.com/show_bug.cgi?id=1690951#c6
+  prometheusAlerts+::
+    local replaceKubeletTooManyPodsMessage(rule) = (
+      if ('alert' in rule) && (rule.alert == 'KubeletTooManyPods') then
+        rule {
+          expr: |||
+            kubelet_running_pod_count{%(kubeletSelector)s} > %(kubeletTooManyPods)s * 0.9
+          ||| % $._config,
+          annotations: {
+            message: 'Kubelet {{ $labels.instance }} is running {{ $value }} Pods, close to the limit of %d.' % $._config.kubeletTooManyPods,
+          },
+        }
+      else
+        rule
+    );
+    utils.mapRuleGroups(replaceKubeletTooManyPodsMessage),
 };
 
 { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
