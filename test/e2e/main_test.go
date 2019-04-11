@@ -115,8 +115,8 @@ func TestTargetsUp(t *testing.T) {
 	targets := []string{
 		"node-exporter",
 		"kubelet",
-		"scheduler",
-		"kube-controller-manager",
+		//"scheduler",
+		//"kube-controller-manager",
 		"apiserver",
 		"kube-state-metrics",
 		"prometheus-k8s",
