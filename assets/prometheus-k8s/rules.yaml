@@ -854,10 +854,10 @@ spec:
         severity: warning
     - alert: KubeletTooManyPods
       annotations:
-        message: Kubelet {{$labels.instance}} is running {{$value}} pods, close to
-          the limit of 110.
+        message: Kubelet {{ $labels.instance }} is running {{ $value }} Pods, close
+          to the limit of 250.
       expr: |
-        kubelet_running_pod_count{job="kubelet"} > 250
+        kubelet_running_pod_count{job="kubelet"} > 250 * 0.9
       for: 15m
       labels:
         severity: warning
