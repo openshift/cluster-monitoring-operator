@@ -93,6 +93,7 @@ spec:
   listenLocal: true
   nodeSelector:
     beta.kubernetes.io/os: linux
+  priorityClassName: system-cluster-critical
   replicas: 2
   resources: {}
   ruleNamespaceSelector: {}
