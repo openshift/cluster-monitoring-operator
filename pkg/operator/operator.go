@@ -365,7 +365,7 @@ func (o *Operator) Config(key string) *manifests.Config {
 		}
 
 		err = c.LoadToken(func() (*v1.Secret, error) {
-			return o.client.KubernetesInterface().CoreV1().Secrets("kube-system").Get("coreos-pull-secret", metav1.GetOptions{})
+			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get("pull-secret", metav1.GetOptions{})
 		})
 
 		if err != nil {
