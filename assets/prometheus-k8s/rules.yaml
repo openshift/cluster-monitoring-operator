@@ -406,6 +406,8 @@ spec:
     - expr: sum(cluster:master_nodes or on(node) kube_node_labels ) BY (label_beta_kubernetes_io_instance_type,
         label_node_role_kubernetes_io)
       record: cluster:node_instance_type_count:sum
+    - expr: sum(etcd_object_counts) BY (instance)
+      record: instance:etcd_object_counts:sum
     - alert: ClusterMonitoringOperatorErrors
       annotations:
         message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value

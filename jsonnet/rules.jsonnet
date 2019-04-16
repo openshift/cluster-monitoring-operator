@@ -80,6 +80,10 @@
             record: 'cluster:node_instance_type_count:sum',
           },
           {
+            expr: 'sum(etcd_object_counts) BY (instance)',
+            record: 'instance:etcd_object_counts:sum',
+          },
+          {
             expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
             alert: 'ClusterMonitoringOperatorErrors',
             'for': '15m',
