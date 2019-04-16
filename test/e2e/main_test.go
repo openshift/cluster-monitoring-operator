@@ -124,6 +124,7 @@ func TestTargetsUp(t *testing.T) {
 		"alertmanager-main",
 		"crio",
 		"telemeter-client",
+		"etcd",
 	}
 
 	for _, target := range targets {

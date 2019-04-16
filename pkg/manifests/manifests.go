@@ -634,6 +634,42 @@ func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, erro
 	return s, nil
 }
 
+func (f *Factory) PrometheusK8sEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap) (*v1.Secret, error) {
+	data := make(map[string]string)
+
+	for k, v := range tlsClient.Data {
+		data[k] = string(v)
+	}
+
+	for k, v := range ca.Data {
+		data[k] = v
+	}
+
+	r := newErrMapReader(data)
+
+	var (
+		clientCA   = r.value("ca-bundle.crt")
+		clientCert = r.value("tls.crt")
+		clientKey  = r.value("tls.key")
+	)
+
+	if r.Error() != nil {
+		return nil, errors.Wrap(r.err, "couldn't find etcd certificate data")
+	}
+
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: f.namespace,
+			Name:      "kube-etcd-client-certs",
+		},
+		StringData: map[string]string{
+			"etcd-client-ca.crt": clientCA,
+			"etcd-client.key":    clientKey,
+			"etcd-client.crt":    clientCert,
+		},
+	}, nil
+}
+
 func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 	r, err := f.NewRoute(MustAssetReader(PrometheusK8sRoute))
 	if err != nil {

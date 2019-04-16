@@ -41,8 +41,7 @@ const (
 	apiAuthenticationConfigMap = "kube-system/extension-apiserver-authentication"
 	kubeletServingCAConfigMap  = "openshift-config-managed/kubelet-serving-ca"
 	prometheusAdapterTLSSecret = "openshift-monitoring/prometheus-adapter-tls"
-
-	prometheusEtcdCertSecretName = "kube-etcd-client-certs"
+	etcdClientCAConfigMap      = "openshift-config/etcd-metrics-serving-ca"
 )
 
 type Operator struct {
@@ -56,6 +55,7 @@ type Operator struct {
 	cmapInf                       cache.SharedIndexInformer
 	kubeSystemCmapInf             cache.SharedIndexInformer
 	openshiftConfigManagedCmapInf cache.SharedIndexInformer
+	openshiftConfigCmapInf        cache.SharedIndexInformer
 	secretInf                     cache.SharedIndexInformer
 
 	queue workqueue.RateLimitingInterface
@@ -109,6 +109,14 @@ func New(config *rest.Config, version, namespace, namespaceSelector, configMapNa
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
 	o.openshiftConfigManagedCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+	})
+
+	o.openshiftConfigCmapInf = cache.NewSharedIndexInformer(
+		o.client.ConfigMapListWatchForNamespace("openshift-config"),
+		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
+	)
+	o.openshiftConfigCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
 
@@ -220,6 +228,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case apiAuthenticationConfigMap:
 	case kubeletServingCAConfigMap:
 	case prometheusAdapterTLSSecret:
+	case etcdClientCAConfigMap:
 	default:
 		glog.V(5).Infof("ConfigMap (%s) not triggering an update.", key)
 		return
@@ -381,14 +390,20 @@ func (o *Operator) Config(key string) *manifests.Config {
 		glog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
 	}
 
-	s, err := o.client.GetSecret(o.namespace, prometheusEtcdCertSecretName)
+	cm, err := o.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
 	if err != nil {
-		glog.Warningf("Error loading etcd certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+		glog.Warningf("Error loading etcd CA certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
 	}
+
+	s, err := o.client.GetSecret("openshift-config", "etcd-metric-client")
+	if err != nil {
+		glog.Warningf("Error loading etcd client secrets for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+	}
+
 	if err == nil {
-		caContent, caFound := s.Data["etcd-client-ca.crt"]
-		certContent, certFound := s.Data["etcd-client.crt"]
-		keyContent, keyFound := s.Data["etcd-client.key"]
+		caContent, caFound := cm.Data["ca-bundle.crt"]
+		certContent, certFound := s.Data["tls.crt"]
+		keyContent, keyFound := s.Data["tls.key"]
 
 		if caFound && len(caContent) > 0 &&
 			certFound && len(certContent) > 0 &&
