@@ -751,7 +751,7 @@ func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
 		svc.Spec.ClusterIP = s.Spec.ClusterIP
 	}
 
-	if reflect.DeepEqual(svc, s) {
+	if reflect.DeepEqual(svc.Spec, s.Spec) && reflect.DeepEqual(svc.Annotations, s.Annotations) && reflect.DeepEqual(svc.Labels, s.Labels) {
 		return nil
 	}
 
