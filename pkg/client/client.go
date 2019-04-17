@@ -750,6 +750,11 @@ func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
 	if svc.Spec.Type == v1.ServiceTypeClusterIP {
 		svc.Spec.ClusterIP = s.Spec.ClusterIP
 	}
+
+	if reflect.DeepEqual(svc, s) {
+		return nil
+	}
+
 	_, err = sclient.Update(svc)
 	return errors.Wrap(err, "updating Service object failed")
 }
