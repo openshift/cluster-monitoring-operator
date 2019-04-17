@@ -316,27 +316,17 @@ local namespacesRole =
           endpoints:
             std.map(
               function(a) a {
-
-                //TODO(brancz): Once OpenShift is based on Kubernetes 1.12 the
-                //scheduler will serve metrics on a secure port, then the below
-                //commented out code is what we will need without the relabel
-                //configs.
-
-                //bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+                bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
                 interval: '30s',
                 port: 'https',
-                //scheme: 'https',
-                //tlsConfig: {
-                //  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                //  serverName: 'scheduler.openshift-kube-scheduler.svc',
-                //},
-                relabelings: [{
-                  sourceLabels: ['__address__'],
-                  action: 'replace',
-                  targetLabel: '__address__',
-                  regex: '(.+)(?::\\d+)',
-                  replacement: '$1:10251',
-                }],
+                scheme: 'https',
+                tlsConfig: {
+                  // TODO: currently, kube scheduler operator doesn't enroll target certificates correctly.
+                  // Once this is resolved, reenable TLS verification.
+                  insecureSkipVerify: true,
+                  // caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                  // serverName: 'scheduler.openshift-kube-scheduler.svc',
+                },
               },
               super.endpoints,
             ),
@@ -359,33 +349,23 @@ local namespacesRole =
           endpoints:
             std.map(
               function(a) a {
-
-                //TODO(brancz): Once OpenShift is based on Kubernetes 1.12 the
-                //controller-manager will serve metrics on a secure port, then
-                //the below commented out code is what we will need without the
-                //relabel configs.
-
-                //bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+                bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
                 interval: '30s',
                 port: 'https',
-                //scheme: 'https',
-                //tlsConfig: {
-                //  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                //  serverName: 'controller-manager.openshift-kube-controller-manager.svc',
-                //},
+                scheme: 'https',
+                tlsConfig: {
+                  // TODO: currently, kube controller manager operator doesn't enroll target certificates correctly.
+                  // Once this is resolved, reenable TLS verification.
+                  insecureSkipVerify: true,
+                  // caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                  // serverName: 'controller-manager.openshift-kube-controller-manager.svc',
+                },
                 metricRelabelings+: [{
                   action: 'drop',
                   regex: 'rest_client_request_latency_seconds_(bucket|count|sum)',
                   sourceLabels: [
                     '__name__',
                   ],
-                }],
-                relabelings: [{
-                  sourceLabels: ['__address__'],
-                  action: 'replace',
-                  targetLabel: '__address__',
-                  regex: '(.+)(?::\\d+)',
-                  replacement: '$1:10252',
                 }],
               },
               super.endpoints,

@@ -7,7 +7,8 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - interval: 30s
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
     metricRelabelings:
     - action: drop
       regex: etcd_(debugging|disk|request|server).*
@@ -18,13 +19,9 @@ spec:
       sourceLabels:
       - __name__
     port: https
-    relabelings:
-    - action: replace
-      regex: (.+)(?::\d+)
-      replacement: $1:10252
-      sourceLabels:
-      - __address__
-      targetLabel: __address__
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
   jobLabel: null
   namespaceSelector:
     matchNames:
