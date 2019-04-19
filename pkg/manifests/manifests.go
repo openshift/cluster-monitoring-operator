@@ -29,7 +29,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	appsv1 "k8s.io/api/apps/v1beta2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -244,6 +244,10 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 	if f.config.AlertmanagerMainConfig.BaseImage != "" {
 		a.Spec.BaseImage = f.config.AlertmanagerMainConfig.BaseImage
 		a.Spec.Tag = f.config.AlertmanagerMainConfig.Tag
+	}
+
+	if f.config.AlertmanagerMainConfig.Replicas != 0 {
+		a.Spec.Replicas = &f.config.AlertmanagerMainConfig.Replicas
 	}
 
 	a.Spec.ExternalURL = f.AlertmanagerExternalURL(host).String()
@@ -696,6 +700,10 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 	if f.config.PrometheusK8sConfig.BaseImage != "" {
 		p.Spec.BaseImage = f.config.PrometheusK8sConfig.BaseImage
 		p.Spec.Tag = f.config.PrometheusK8sConfig.Tag
+	}
+
+	if f.config.PrometheusK8sConfig.Replicas != 0 {
+		p.Spec.Replicas = &f.config.PrometheusK8sConfig.Replicas
 	}
 
 	p.Spec.ExternalURL = f.PrometheusExternalURL(host).String()

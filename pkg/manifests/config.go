@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"io"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -54,6 +54,7 @@ type PrometheusOperatorConfig struct {
 type PrometheusK8sConfig struct {
 	Retention           string                    `json:"retention"`
 	BaseImage           string                    `json:"baseImage"`
+	Replicas            int32                     `json:"replicas"`
 	Tag                 string                    `json:"-"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
@@ -64,6 +65,7 @@ type PrometheusK8sConfig struct {
 
 type AlertmanagerMainConfig struct {
 	BaseImage           string                    `json:"baseImage"`
+	Replicas            int32                     `json:"replicas"`
 	Tag                 string                    `json:"-"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
@@ -147,6 +149,9 @@ func (c *Config) applyDefaults() {
 	if c.PrometheusK8sConfig.BaseImage == "" {
 		c.PrometheusK8sConfig.BaseImage = "quay.io/prometheus/prometheus"
 	}
+	if c.PrometheusK8sConfig.Replicas == 0 {
+		c.PrometheusK8sConfig.Replicas = 2
+	}
 	if c.PrometheusK8sConfig.Retention == "" {
 		c.PrometheusK8sConfig.Retention = "15d"
 	}
@@ -158,6 +163,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.AlertmanagerMainConfig.BaseImage == "" {
 		c.AlertmanagerMainConfig.BaseImage = "quay.io/prometheus/alertmanager"
+	}
+	if c.AlertmanagerMainConfig.Replicas == 0 {
+		c.AlertmanagerMainConfig.Replicas = 3
 	}
 	if c.AlertmanagerMainConfig.Resources == nil {
 		c.AlertmanagerMainConfig.Resources = &v1.ResourceRequirements{}
