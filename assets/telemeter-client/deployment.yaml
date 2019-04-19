@@ -34,7 +34,7 @@ spec:
         - --match={__name__="cluster_operator_conditions"}
         - --match={__name__="cluster_version_payload"}
         - --match={__name__="cluster_version_payload_errors"}
-        - --match={__name__="etcd_object_counts"}
+        - --match={__name__="instance:etcd_object_counts:sum"}
         - --match={__name__="ALERTS",alertstate="firing"}
         - --match={__name__="code:apiserver_request_count:rate:sum"}
         - --match={__name__="kube_pod_status_ready:etcd:sum"}
