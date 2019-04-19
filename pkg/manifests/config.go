@@ -66,6 +66,7 @@ type PrometheusOperatorConfig struct {
 
 type PrometheusK8sConfig struct {
 	Retention           string                    `json:"retention"`
+	Replicas            int32                     `json:"replicas"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	ExternalLabels      map[string]string         `json:"externalLabels"`
@@ -74,6 +75,7 @@ type PrometheusK8sConfig struct {
 }
 
 type AlertmanagerMainConfig struct {
+	Replicas            int32                     `json:"replicas"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
@@ -152,6 +154,9 @@ func (c *Config) applyDefaults() {
 	if c.PrometheusK8sConfig == nil {
 		c.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}
+	if c.PrometheusK8sConfig.Replicas == 0 {
+		c.PrometheusK8sConfig.Replicas = 2
+	}
 	if c.PrometheusK8sConfig.Retention == "" {
 		c.PrometheusK8sConfig.Retention = "15d"
 	}
@@ -160,6 +165,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.AlertmanagerMainConfig == nil {
 		c.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
+	}
+	if c.AlertmanagerMainConfig.Replicas == 0 {
+		c.AlertmanagerMainConfig.Replicas = 3
 	}
 	if c.AlertmanagerMainConfig.Resources == nil {
 		c.AlertmanagerMainConfig.Resources = &v1.ResourceRequirements{}

@@ -273,6 +273,10 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 
 	a.Spec.Image = &f.config.Images.Alertmanager
 
+	if f.config.AlertmanagerMainConfig.Replicas != 0 {
+		a.Spec.Replicas = &f.config.AlertmanagerMainConfig.Replicas
+	}
+
 	a.Spec.ExternalURL = f.AlertmanagerExternalURL(host).String()
 
 	if f.config.AlertmanagerMainConfig.Resources != nil {
@@ -709,6 +713,11 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 	}
 
 	p.Spec.Image = &f.config.Images.Prometheus
+
+	if f.config.PrometheusK8sConfig.Replicas != 0 {
+		p.Spec.Replicas = &f.config.PrometheusK8sConfig.Replicas
+	}
+
 	p.Spec.ExternalURL = f.PrometheusExternalURL(host).String()
 
 	if f.config.PrometheusK8sConfig.Resources != nil {

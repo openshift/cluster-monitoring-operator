@@ -8,7 +8,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist, or is 
 
 In certain environments it may be required that container images are downloaded from a custom registry rather than from the canonical container image repositories on [quay.io][quay].
 
-This is an example configuration with all image parameters set to a custom registry:
+This is an example configuration with all image parameters set to a custom registry and reduced number of replicas for AlertManager:
 
 [embedmd]:# (../../examples/user-guides/configuring-cluster-monitoring/custom-image-config.yaml)
 ```yaml
@@ -20,6 +20,7 @@ prometheusK8s:
   baseImage: custom-registry.com/prometheus
 alertmanagerMain:
   baseImage: custom-registry.com/alertmanager
+  replicas: 2
 auth:
   baseImage: custom-registry.com/openshift-oauth-proxy
 nodeExporter:
@@ -71,6 +72,8 @@ Use PrometheusK8sConfig to customize the Prometheus instance used for cluster mo
 retention: <string>
 # baseImage references a base container image. Defaults to "quay.io/prometheus/prometheus".
 baseImage: <string>
+# replicas defines the amount of replicas for Prometheus StatefulSet. Defaults to 2.
+replicas: <int>
 # nodeSelector defines the nodes on which the Prometheus server will be scheduled.
 nodeSelector:
   [ - <labelname>: <labelvalue> ]
@@ -89,6 +92,8 @@ Use AlertmanagerMainConfig to customize the central Alertmanager cluster.
 ```yaml
 # baseImage references a base container image. Defaults to "quay.io/prometheus/alertmanager".
 baseImage: <string>
+# replicas defines the amount of replicas for AlertManager StatefulSet. Defaults to 3.
+replicas: <int>
 # nodeSelector defines the nodes on which Alertmanager instances will be scheduled.
 nodeSelector:
   [ - <labelname>: <labelvalue> ]
