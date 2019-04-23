@@ -15,11 +15,14 @@
 package framework
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -187,4 +190,28 @@ func (f *Framework) CreateClusterRoleBinding() (cleanUpFunc, error) {
 	return func() error {
 		return f.KubeClient.RbacV1().ClusterRoleBindings().Delete(clusterRoleBinding.Name, &metav1.DeleteOptions{})
 	}, nil
+}
+
+// Poll calls the given function f every given interval
+// until it returns no error or the given timeout occurs.
+// If a timeout occurs, the last observed error is returned
+// or wait.ErrWaitTimeout if no error occurred.
+func Poll(interval, timeout time.Duration, f func() error) error {
+	var lastErr error
+
+	err := wait.Poll(interval, timeout, func() (bool, error) {
+		lastErr = f()
+		if lastErr != nil {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = fmt.Errorf("%v: %v", err, lastErr)
+		}
+	}
+
+	return err
 }

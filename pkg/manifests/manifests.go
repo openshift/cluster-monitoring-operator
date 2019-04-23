@@ -91,18 +91,19 @@ var (
 	PrometheusK8sServingCertsCABundle                 = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle               = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 
-	PrometheusAdapterAPIService                  = "assets/prometheus-adapter/api-service.yaml"
-	PrometheusAdapterClusterRole                 = "assets/prometheus-adapter/cluster-role.yaml"
-	PrometheusAdapterClusterRoleBinding          = "assets/prometheus-adapter/cluster-role-binding.yaml"
-	PrometheusAdapterClusterRoleBindingDelegator = "assets/prometheus-adapter/cluster-role-binding-delegator.yaml"
-	PrometheusAdapterClusterRoleBindingView      = "assets/prometheus-adapter/cluster-role-binding-view.yaml"
-	PrometheusAdapterClusterRoleServerResources  = "assets/prometheus-adapter/cluster-role-server-resources.yaml"
-	PrometheusAdapterConfigMap                   = "assets/prometheus-adapter/config-map.yaml"
-	PrometheusAdapterConfigMapPrometheus         = "assets/prometheus-adapter/configmap-prometheus.yaml"
-	PrometheusAdapterDeployment                  = "assets/prometheus-adapter/deployment.yaml"
-	PrometheusAdapterRoleBindingAuthReader       = "assets/prometheus-adapter/role-binding-auth-reader.yaml"
-	PrometheusAdapterService                     = "assets/prometheus-adapter/service.yaml"
-	PrometheusAdapterServiceAccount              = "assets/prometheus-adapter/service-account.yaml"
+	PrometheusAdapterAPIService                         = "assets/prometheus-adapter/api-service.yaml"
+	PrometheusAdapterClusterRole                        = "assets/prometheus-adapter/cluster-role.yaml"
+	PrometheusAdapterClusterRoleBinding                 = "assets/prometheus-adapter/cluster-role-binding.yaml"
+	PrometheusAdapterClusterRoleBindingDelegator        = "assets/prometheus-adapter/cluster-role-binding-delegator.yaml"
+	PrometheusAdapterClusterRoleBindingView             = "assets/prometheus-adapter/cluster-role-binding-view.yaml"
+	PrometheusAdapterClusterRoleServerResources         = "assets/prometheus-adapter/cluster-role-server-resources.yaml"
+	PrometheusAdapterClusterRoleAggregatedMetricsReader = "assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml"
+	PrometheusAdapterConfigMap                          = "assets/prometheus-adapter/config-map.yaml"
+	PrometheusAdapterConfigMapPrometheus                = "assets/prometheus-adapter/configmap-prometheus.yaml"
+	PrometheusAdapterDeployment                         = "assets/prometheus-adapter/deployment.yaml"
+	PrometheusAdapterRoleBindingAuthReader              = "assets/prometheus-adapter/role-binding-auth-reader.yaml"
+	PrometheusAdapterService                            = "assets/prometheus-adapter/service.yaml"
+	PrometheusAdapterServiceAccount                     = "assets/prometheus-adapter/service-account.yaml"
 
 	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole        = "assets/prometheus-operator/cluster-role.yaml"
@@ -834,6 +835,10 @@ func (f *Factory) PrometheusAdapterClusterRole() (*rbacv1beta1.ClusterRole, erro
 
 func (f *Factory) PrometheusAdapterClusterRoleServerResources() (*rbacv1beta1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(PrometheusAdapterClusterRoleServerResources))
+}
+
+func (f *Factory) PrometheusAdapterClusterRoleAggregatedMetricsReader() (*rbacv1beta1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(PrometheusAdapterClusterRoleAggregatedMetricsReader))
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleBinding() (*rbacv1beta1.ClusterRoleBinding, error) {
