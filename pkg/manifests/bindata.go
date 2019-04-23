@@ -40,6 +40,7 @@
 // assets/node-exporter/service-monitor.yaml
 // assets/node-exporter/service.yaml
 // assets/prometheus-adapter/api-service.yaml
+// assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml
 // assets/prometheus-adapter/cluster-role-binding-delegator.yaml
 // assets/prometheus-adapter/cluster-role-binding-view.yaml
 // assets/prometheus-adapter/cluster-role-binding.yaml
@@ -953,6 +954,26 @@ func assetsPrometheusAdapterApiServiceYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/prometheus-adapter/api-service.yaml", size: 373, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _assetsPrometheusAdapterClusterRoleAggregatedMetricsReaderYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x8f\x3d\x4b\x04\x41\x0c\x86\xfb\xf9\x15\xe1\xfa\x59\xb1\x93\x69\x2d\xec\x2d\xec\xb3\x3b\x2f\x7b\xe1\xe6\x63\x49\x32\x7b\xe8\xaf\x17\xcf\x45\xac\x04\xaf\xca\x4b\xf2\x3c\x09\xe1\x4d\xde\xa0\x26\xbd\x25\xd2\x99\x97\x89\x87\x9f\xbb\xca\x07\xbb\xf4\x36\x5d\x9e\x6c\x92\xfe\xb0\x3f\x86\x8b\xb4\x9c\xe8\xb9\x0c\x73\xe8\x6b\x2f\x08\x15\xce\x99\x9d\x53\x20\x2a\x3c\xa3\xd8\x57\xa2\x3f\xd6\xf0\xba\x2a\x56\x76\x44\xef\x91\x73\x95\x96\xe8\xe4\x3a\x70\xfa\x8f\x88\x2c\x7e\x8f\xb7\x0b\xae\xbf\xbc\xc6\x15\x89\xec\xdd\x1c\x35\xfd\x80\x39\x56\xb8\xca\x62\x51\xc1\x19\x1a\x74\x14\x58\x0a\x91\x78\x93\x17\xed\x63\xbb\x7d\x19\xe9\xc0\x8e\x4b\x81\x48\x61\x7d\xe8\x82\x63\xbe\xf5\x6c\x81\x68\x87\xce\x47\x67\x85\xdf\x6a\x11\xfb\x0e\x57\xf6\xe5\x1c\x3e\x03\x00\x00\xff\xff\x06\xc1\x51\xa4\x82\x01\x00\x00")
+
+func assetsPrometheusAdapterClusterRoleAggregatedMetricsReaderYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsPrometheusAdapterClusterRoleAggregatedMetricsReaderYaml,
+		"assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml",
+	)
+}
+
+func assetsPrometheusAdapterClusterRoleAggregatedMetricsReaderYaml() (*asset, error) {
+	bytes, err := assetsPrometheusAdapterClusterRoleAggregatedMetricsReaderYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml", size: 386, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2049,6 +2070,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/node-exporter/service-monitor.yaml": assetsNodeExporterServiceMonitorYaml,
 	"assets/node-exporter/service.yaml": assetsNodeExporterServiceYaml,
 	"assets/prometheus-adapter/api-service.yaml": assetsPrometheusAdapterApiServiceYaml,
+	"assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml": assetsPrometheusAdapterClusterRoleAggregatedMetricsReaderYaml,
 	"assets/prometheus-adapter/cluster-role-binding-delegator.yaml": assetsPrometheusAdapterClusterRoleBindingDelegatorYaml,
 	"assets/prometheus-adapter/cluster-role-binding-view.yaml": assetsPrometheusAdapterClusterRoleBindingViewYaml,
 	"assets/prometheus-adapter/cluster-role-binding.yaml": assetsPrometheusAdapterClusterRoleBindingYaml,
@@ -2193,6 +2215,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		}},
 		"prometheus-adapter": &bintree{nil, map[string]*bintree{
 			"api-service.yaml": &bintree{assetsPrometheusAdapterApiServiceYaml, map[string]*bintree{}},
+			"cluster-role-aggregated-metrics-reader.yaml": &bintree{assetsPrometheusAdapterClusterRoleAggregatedMetricsReaderYaml, map[string]*bintree{}},
 			"cluster-role-binding-delegator.yaml": &bintree{assetsPrometheusAdapterClusterRoleBindingDelegatorYaml, map[string]*bintree{}},
 			"cluster-role-binding-view.yaml": &bintree{assetsPrometheusAdapterClusterRoleBindingViewYaml, map[string]*bintree{}},
 			"cluster-role-binding.yaml": &bintree{assetsPrometheusAdapterClusterRoleBindingYaml, map[string]*bintree{}},

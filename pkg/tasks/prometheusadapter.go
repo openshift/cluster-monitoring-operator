@@ -45,6 +45,17 @@ func (t *PrometheusAdapterTask) Run() error {
 		}
 	}
 	{
+		cr, err := t.factory.PrometheusAdapterClusterRoleAggregatedMetricsReader()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRole aggregating resource metrics read permissions failed")
+		}
+
+		err = t.client.CreateOrUpdateClusterRole(cr)
+		if err != nil {
+			return errors.Wrap(err, "reconciling PrometheusAdapter ClusterRole aggregating resource metrics read permissions failed")
+		}
+	}
+	{
 		crb, err := t.factory.PrometheusAdapterClusterRoleBinding()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRoleBinding failed")
