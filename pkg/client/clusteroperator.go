@@ -38,7 +38,7 @@ func (r *StatusReporter) SetDone() error {
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
-	conditions.setCondition(v1.OperatorFailing, v1.ConditionFalse, "", time)
+	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, "", time)
 	co.Status.Conditions = conditions.entries()
 
 	// If we have reached "level" for the operator, report that we are at the version
@@ -101,7 +101,7 @@ func (r *StatusReporter) SetFailed(statusErr error) error {
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, "", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
-	conditions.setCondition(v1.OperatorFailing, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
+	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
 	co.Status.Conditions = conditions.entries()
 
 	_, err = r.client.UpdateStatus(co)

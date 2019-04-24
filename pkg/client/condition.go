@@ -36,8 +36,8 @@ func newConditions(cos v1.ClusterOperatorStatus, targetVersion string, time meta
 			Status:             v1.ConditionUnknown,
 			LastTransitionTime: time,
 		},
-		v1.OperatorFailing: {
-			Type:               v1.OperatorFailing,
+		v1.OperatorDegraded: {
+			Type:               v1.OperatorDegraded,
 			Status:             v1.ConditionUnknown,
 			LastTransitionTime: time,
 		},
