@@ -6,16 +6,18 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Features holds cluster-wide information about feature gates.  The canonical name is `cluster`
-type Features struct {
+// Feature holds cluster-wide information about feature gates.  The canonical name is `cluster`
+type FeatureGate struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec holds user settable values for configuration
-	Spec FeaturesSpec `json:"spec"`
+	// +required
+	Spec FeatureGateSpec `json:"spec"`
 	// status holds observed values from the cluster. They may not be overridden.
-	Status FeaturesStatus `json:"status"`
+	// +optional
+	Status FeatureGateStatus `json:"status"`
 }
 
 type FeatureSet string
@@ -29,30 +31,30 @@ var (
 	TechPreviewNoUpgrade FeatureSet = "TechPreviewNoUpgrade"
 )
 
-type FeaturesSpec struct {
+type FeatureGateSpec struct {
 	// featureSet changes the list of features in the cluster.  The default is empty.  Be very careful adjusting this setting.
 	// Turning on or off features may cause irreversible changes in your cluster which cannot be undone.
 	FeatureSet FeatureSet `json:"featureSet,omitempty"`
 }
 
-type FeaturesStatus struct {
+type FeatureGateStatus struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type FeaturesList struct {
+type FeatureGateList struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Features `json:"items"`
+	metav1.ListMeta `json:"metadata"`
+	Items           []FeatureGate `json:"items"`
 }
 
-type FeatureEnabledDisabled struct {
+type FeatureGateEnabledDisabled struct {
 	Enabled  []string
 	Disabled []string
 }
 
-// FeatureSets Contains a map of Feature names to Enabled/Disabled Features.
+// FeatureSets Contains a map of Feature names to Enabled/Disabled Feature.
 //
 // NOTE: The caller needs to make sure to check for the existence of the value
 // using golang's existence field. A possible scenario is an upgrade where new
@@ -60,15 +62,29 @@ type FeatureEnabledDisabled struct {
 // version of this file. In this upgrade scenario the map could return nil.
 //
 // example:
-//   if featureSet, ok := FeaturesSets["SomeNewFeature"]; ok { }
+//   if featureSet, ok := FeatureSets["SomeNewFeature"]; ok { }
 //
-var FeatureSets = map[FeatureSet]*FeatureEnabledDisabled{
-	Default: &FeatureEnabledDisabled{
-		Enabled:  []string{},
-		Disabled: []string{"PersistentLocalVolumes"},
+// If you put an item in either of these lists, put your area and name on it so we can find owners.
+var FeatureSets = map[FeatureSet]*FeatureGateEnabledDisabled{
+	Default: {
+		Enabled: []string{
+			"ExperimentalCriticalPodAnnotation", // sig-pod, sjenning
+			"RotateKubeletServerCertificate",    // sig-pod, sjenning
+			"SupportPodPidsLimit",               // sig-pod, sjenning
+		},
+		Disabled: []string{
+			"LocalStorageCapacityIsolation", // sig-pod, sjenning
+		},
 	},
-	TechPreviewNoUpgrade: &FeatureEnabledDisabled{
-		Enabled:  []string{},
-		Disabled: []string{},
+	TechPreviewNoUpgrade: {
+		Enabled: []string{
+			"ExperimentalCriticalPodAnnotation", // sig-pod, sjenning
+			"RotateKubeletServerCertificate",    // sig-pod, sjenning
+			"SupportPodPidsLimit",               // sig-pod, sjenning
+			"CSIBlockVolume",                    // sig-storage, j-griffith
+		},
+		Disabled: []string{
+			"LocalStorageCapacityIsolation", // sig-pod, sjenning
+		},
 	},
 }
