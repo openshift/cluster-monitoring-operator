@@ -16,7 +16,6 @@ package e2e
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"testing"
 	"time"
@@ -109,17 +108,17 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	apiAuth, err := f.KubeClient.CoreV1().ConfigMaps("kube-system").Get("extension-apiserver-authentication", metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	tls, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get("prometheus-adapter-tls", metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	// Simulate rotation by simply adding a newline to existing certs.
@@ -128,13 +127,13 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 	apiAuth.Data["requestheader-client-ca-file"] = apiAuth.Data["requestheader-client-ca-file"] + "\n"
 	apiAuth, err = f.KubeClient.CoreV1().ConfigMaps("kube-system").Update(apiAuth)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	factory := manifests.NewFactory("openshift-monitoring", nil)
 	newSecret, err := factory.PrometheusAdapterSecret(tls, apiAuth)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	// Wait for the new secret to be created
@@ -150,7 +149,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	// Wait for new Prometheus adapter to roll out
@@ -168,6 +167,6 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 }

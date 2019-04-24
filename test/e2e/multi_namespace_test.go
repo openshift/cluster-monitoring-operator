@@ -15,13 +15,12 @@
 package e2e
 
 import (
-	"log"
 	"strconv"
 	"testing"
 	"time"
 
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -40,7 +39,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 		},
 	})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	defer f.OperatorClient.DeleteIfExists(nsName)
 
@@ -64,7 +63,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 		},
 	})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	f.PrometheusK8sClient.WaitForQueryReturnOne(
