@@ -17,7 +17,7 @@ spec:
   jobLabel: k8s-app
   namespaceSelector:
     matchNames:
-    - kube-system
+    - openshift-etcd
   selector:
     matchLabels:
       k8s-app: etcd

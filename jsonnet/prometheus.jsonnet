@@ -274,7 +274,7 @@ local namespacesRole =
         },
         spec+: {
           namespaceSelector: {
-            matchNames: ['kube-system'],
+            matchNames: ['openshift-etcd'],
           },
         },
       },
