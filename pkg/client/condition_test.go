@@ -53,7 +53,7 @@ func TestConditions(t *testing.T) {
 			Message:            "",
 		},
 		{
-			Type:               configv1.OperatorFailing,
+			Type:               configv1.OperatorDegraded,
 			Status:             configv1.ConditionUnknown,
 			LastTransitionTime: v1.Time{},
 			Message:            "",
@@ -88,7 +88,7 @@ func TestConditions(t *testing.T) {
 					configv1.ClusterOperatorStatus{
 						Conditions: []configv1.ClusterOperatorStatusCondition{
 							{
-								Type:   configv1.OperatorFailing,
+								Type:   configv1.OperatorDegraded,
 								Status: configv1.ConditionTrue,
 							},
 						},
@@ -109,7 +109,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -139,7 +139,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -152,7 +152,7 @@ func TestConditions(t *testing.T) {
 					configv1.ClusterOperatorStatus{}, "", v1.Time{},
 				)
 				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionFalse, "", v1.Time{})
-				cs.setCondition(configv1.OperatorFailing, configv1.ConditionFalse, "", v1.Time{})
+				cs.setCondition(configv1.OperatorDegraded, configv1.ConditionFalse, "", v1.Time{})
 				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
 				return cs
 			},
@@ -170,7 +170,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -183,7 +183,7 @@ func TestConditions(t *testing.T) {
 					configv1.ClusterOperatorStatus{
 						Conditions: []configv1.ClusterOperatorStatusCondition{
 							{
-								Type:   configv1.OperatorFailing,
+								Type:   configv1.OperatorDegraded,
 								Status: configv1.ConditionFalse,
 							},
 							{
@@ -215,7 +215,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -229,7 +229,7 @@ func TestConditions(t *testing.T) {
 						Versions: []configv1.OperandVersion{{Version: "1.0"}},
 						Conditions: []configv1.ClusterOperatorStatusCondition{
 							{
-								Type:   configv1.OperatorFailing,
+								Type:   configv1.OperatorDegraded,
 								Status: configv1.ConditionFalse,
 							},
 							{
@@ -261,7 +261,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -275,7 +275,7 @@ func TestConditions(t *testing.T) {
 						Versions: []configv1.OperandVersion{{Version: "1.0"}},
 						Conditions: []configv1.ClusterOperatorStatusCondition{
 							{
-								Type:   configv1.OperatorFailing,
+								Type:   configv1.OperatorDegraded,
 								Status: configv1.ConditionFalse,
 							},
 							{
@@ -307,7 +307,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -321,7 +321,7 @@ func TestConditions(t *testing.T) {
 						Versions: []configv1.OperandVersion{{Version: "1.0"}},
 						Conditions: []configv1.ClusterOperatorStatusCondition{
 							{
-								Type:   configv1.OperatorFailing,
+								Type:   configv1.OperatorDegraded,
 								Status: configv1.ConditionFalse,
 							},
 							{
@@ -353,7 +353,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -367,7 +367,7 @@ func TestConditions(t *testing.T) {
 						Versions: []configv1.OperandVersion{{Version: "1.0"}},
 						Conditions: []configv1.ClusterOperatorStatusCondition{
 							{
-								Type:   configv1.OperatorFailing,
+								Type:   configv1.OperatorDegraded,
 								Status: configv1.ConditionFalse,
 							},
 							{
@@ -399,7 +399,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -437,7 +437,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -475,7 +475,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -513,7 +513,7 @@ func TestConditions(t *testing.T) {
 					Message:            "",
 				},
 				{
-					Type:               configv1.OperatorFailing,
+					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
