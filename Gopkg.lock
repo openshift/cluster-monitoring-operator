@@ -305,8 +305,7 @@
   version = "1.0.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:44cecd100c886ca1a064c51647d853bd368c6865e092e91632170f9c8d6492ef"
+  digest = "1:236da957750a9f2630ef59dcc64b76af8b062a11cf778c2ea09b15c238385f81"
   name = "github.com/openshift/api"
   packages = [
     "config/v1",
@@ -314,11 +313,11 @@
     "security/v1",
   ]
   pruneopts = "NUT"
-  revision = "5eb2215fbabe96f19654a85c6cb99700cef4e734"
+  revision = "8e476cb7322e59919cbb6482fd076ec5a214df25"
 
 [[projects]]
   branch = "master"
-  digest = "1:9ccfc2c3dea7afcb35919c0f632fe5d9592e04d2d15427040b1307bc64e88ac6"
+  digest = "1:65108b4d92ba2b9e88b6e0ea23f2129b7d747aad2c99131758c14028c0a35dc1"
   name = "github.com/openshift/client-go"
   packages = [
     "config/clientset/versioned",
@@ -332,7 +331,7 @@
     "security/clientset/versioned/typed/security/v1",
   ]
   pruneopts = "NUT"
-  revision = "f3714b1f9df49ae0d998d882f510ed1d8d10f4aa"
+  revision = "0255926f53935175fe90b8e7672c4c06c17d79e6"
 
 [[projects]]
   branch = "master"
@@ -747,7 +746,6 @@
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "golang.org/x/sync/errgroup",
-    "gopkg.in/yaml.v2",
     "k8s.io/api/apps/v1beta2",
     "k8s.io/api/core/v1",
     "k8s.io/api/extensions/v1beta1",
