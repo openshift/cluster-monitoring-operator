@@ -64,5 +64,10 @@
   version = "kubernetes-1.12.0"
 
 [[constraint]]
-  branch = "master"
+  name = "github.com/openshift/api"
+  # this revision has both Failing and Degraded. The next bump will remove the depracted Failing
+  revision = "8e476cb7322e59919cbb6482fd076ec5a214df25"
+
+[[constraint]]
   name = "github.com/openshift/client-go"
+  branch = "master"
