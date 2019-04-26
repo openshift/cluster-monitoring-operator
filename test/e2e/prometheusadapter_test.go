@@ -120,7 +120,7 @@ func TestNodeMetricsPresence(t *testing.T) {
 func TestPodMetricsPresence(t *testing.T) {
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		pods, err := f.KubeClient.CoreV1().Pods("").List(metav1.ListOptions{})
+		pods, err := f.KubeClient.CoreV1().Pods("").List(metav1.ListOptions{FieldSelector: "status.phase=Running"})
 		lastErr = errors.Wrap(err, "getting pods list failed")
 		if err != nil {
 			return false, nil
@@ -131,7 +131,7 @@ func TestPodMetricsPresence(t *testing.T) {
 			return false, nil
 		}
 		if len(pods.Items) != len(podMetrics.Items) {
-			lastErr = errors.New("number of pods doesn't match number of pod metrics reported")
+			lastErr = fmt.Errorf("number of running pods (%d) doesn't match number of pods reporting metrics (%d)", len(pods.Items), len(podMetrics.Items))
 			return false, nil
 		}
 
