@@ -15,7 +15,6 @@
 package e2e
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -34,7 +33,7 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
 		},
 	})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	cm := &v1.ConfigMap{
@@ -55,7 +54,7 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
 	}
 
 	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	var lastErr error
@@ -72,7 +71,7 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	err = f.OperatorClient.WaitForStatefulsetRollout(&v1beta2.StatefulSet{
@@ -82,6 +81,6 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
 		},
 	})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 }
