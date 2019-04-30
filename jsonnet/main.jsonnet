@@ -68,6 +68,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                    'openshift-apiserver',
                    'openshift-kube-scheduler',
                    'openshift-kube-controller-manager',
+                   'openshift-etcd',
                  ],
                },
              },
@@ -95,7 +96,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
 
     // Certificates are issued for 4h.
     certExpirationWarningSeconds: 90 * 60,  // 1.5h
-    certExpirationCriticalSeconds: 60 * 60, // 1h
+    certExpirationCriticalSeconds: 60 * 60,  // 1h
   },
 } + {
   local d = super.grafanaDashboards,
