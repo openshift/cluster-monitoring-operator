@@ -28,6 +28,18 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  },
                },
              },
+           } + {
+             prometheusAlerts+:: {
+               groups:
+                 std.map(
+                   function(ruleGroup)
+                     if ruleGroup.name == 'etcd' then
+                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'etcdHighNumberOfFailedGRPCRequests'), ruleGroup.rules) }
+                     else
+                       ruleGroup,
+                   super.groups,
+                 ),
+             },
            } +
            (import 'telemeter-client/client.libsonnet') +
            {
