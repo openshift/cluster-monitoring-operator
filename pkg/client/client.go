@@ -178,7 +178,7 @@ func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
 
 func (c *Client) CreateOrUpdateSecurityContextConstraints(s *secv1.SecurityContextConstraints) error {
 	sccclient := c.ossclient.SecurityV1().SecurityContextConstraints()
-	_, err := sccclient.Get(s.GetName(), metav1.GetOptions{})
+	existing, err := sccclient.Get(s.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := sccclient.Create(s)
 		return errors.Wrap(err, "creating SecurityContextConstraints object failed")
@@ -187,7 +187,11 @@ func (c *Client) CreateOrUpdateSecurityContextConstraints(s *secv1.SecurityConte
 		return errors.Wrap(err, "retrieving SecurityContextConstraints object failed")
 	}
 
-	_, err = sccclient.Update(s)
+	// the CRD version of SCC appears to require this.  We can try to chase why later.
+	required := s.DeepCopy()
+	required.ResourceVersion = existing.ResourceVersion
+
+	_, err = sccclient.Update(required)
 	return errors.Wrap(err, "updating SecurityContextConstraints object failed")
 }
 
