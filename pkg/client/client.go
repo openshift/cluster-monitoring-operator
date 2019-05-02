@@ -90,7 +90,12 @@ func New(cfg *rest.Config, version string, namespace string, namespaceSelector s
 		return nil, errors.Wrap(err, "creating openshift config client")
 	}
 
-	ossclient, err := openshiftsecurityclientset.NewForConfig(cfg)
+	// SCC moved to CRD and CRD does not handle protobuf. Force the SCC client to use JSON instead.
+	jsonClientConfig := rest.CopyConfig(cfg)
+	jsonClientConfig.ContentConfig.AcceptContentTypes = "application/json"
+	jsonClientConfig.ContentConfig.ContentType = "application/json"
+
+	ossclient, err := openshiftsecurityclientset.NewForConfig(jsonClientConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating openshift security client")
 	}
