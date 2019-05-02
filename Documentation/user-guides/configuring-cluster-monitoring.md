@@ -74,6 +74,9 @@ baseImage: <string>
 # nodeSelector defines the nodes on which the Prometheus server will be scheduled.
 nodeSelector:
   [ - <labelname>: <labelvalue> ]
+# tolerations allow Prometheus server instances to be scheduled onto nodes with matching taints
+tolerations:
+  - [v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#toleration-v1-core)
 # resources defines the resource requests and limits for the Prometheus instance.
 resources: [v1.ResourceRequirements](https://kubernetes.io/docs/api-reference/v1.6/#resourcerequirements-v1-core)
 # externalLabels allows the external labels configuration of Prometheus to be
@@ -92,6 +95,9 @@ baseImage: <string>
 # nodeSelector defines the nodes on which Alertmanager instances will be scheduled.
 nodeSelector:
   [ - <labelname>: <labelvalue> ]
+# tolerations allow Alertmanager instances to be scheduled onto nodes with matching taints
+tolerations:
+  - [v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#toleration-v1-core)
 # resources defines the resource requests and limits for the Alertmanager instances.
 resources: [v1.ResourceRequirements](https://kubernetes.io/docs/api-reference/v1.6/#resourcerequirements-v1-core)
 # volumeClaimTemplate defines the template to use for persistent storage for Alertmanager nodes.
