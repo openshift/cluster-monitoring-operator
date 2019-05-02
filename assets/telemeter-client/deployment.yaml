@@ -95,6 +95,8 @@ spec:
         - mountPath: /etc/tls/private
           name: telemeter-client-tls
           readOnly: false
+      nodeSelector:
+        beta.kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
       serviceAccountName: telemeter-client
       volumes:
