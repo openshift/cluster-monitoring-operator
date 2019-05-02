@@ -66,3 +66,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/openshift/client-go"
+
+[[constraint]]
+  name = "k8s.io/metrics"
+  version = "kubernetes-1.12.0"

@@ -24,9 +24,137 @@ import (
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	apiservicesv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
+
+func isNodeInNodesList(node string, nodes []corev1.Node) bool {
+	for _, n := range nodes {
+		if n.Name == node {
+			return true
+		}
+	}
+	return false
+}
+
+func isPodInPodsList(pod string, ns string, pods []corev1.Pod) bool {
+	for _, p := range pods {
+		if p.Name == pod && p.Namespace == ns {
+			return true
+		}
+	}
+	return false
+}
+
+func isAPIServiceAvailable(conditions []apiservicesv1.APIServiceCondition) bool {
+	for _, condition := range conditions {
+		if condition.Type == apiservicesv1.Available && condition.Status == apiservicesv1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
+func TestMetricsAPIAvailability(t *testing.T) {
+	var lastErr error
+	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		metricsService, err := f.APIServicesClient.ApiregistrationV1().APIServices().Get("v1beta1.metrics.k8s.io", metav1.GetOptions{})
+		lastErr = errors.Wrap(err, "getting metrics APIService failed")
+		if err != nil {
+			return false, nil
+		}
+		if !isAPIServiceAvailable(metricsService.Status.Conditions) {
+			lastErr = errors.New("v1beta1.metrics.k8s.io apiservice is not available")
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		t.Fatal(err)
+	}
+}
+
+func TestNodeMetricsPresence(t *testing.T) {
+	var lastErr error
+	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		nodes, err := f.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+		lastErr = errors.Wrap(err, "getting nodes list failed")
+		if err != nil {
+			return false, nil
+		}
+		nodeMetrics, err := f.MetricsClient.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+		lastErr = errors.Wrap(err, "getting metrics list failed")
+		if err != nil {
+			return false, nil
+		}
+		if len(nodes.Items) != len(nodeMetrics.Items) {
+			lastErr = errors.New("number of nodes doesn't match number of node metrics reported")
+			return false, nil
+		}
+		for _, item := range nodeMetrics.Items {
+			if !isNodeInNodesList(item.Name, nodes.Items) {
+				lastErr = errors.New("node reporting metrics couldn't be found in nodes list")
+				return false, nil
+			}
+			if item.Usage.Cpu() == nil || item.Usage.Memory() == nil {
+				lastErr = errors.New("node cpu or memory metric not found")
+				return false, nil
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		t.Fatal(err)
+	}
+}
+
+func TestPodMetricsPresence(t *testing.T) {
+	var lastErr error
+	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		pods, err := f.KubeClient.CoreV1().Pods("").List(metav1.ListOptions{FieldSelector: "status.phase=Running"})
+		lastErr = errors.Wrap(err, "getting pods list failed")
+		if err != nil {
+			return false, nil
+		}
+		podMetrics, err := f.MetricsClient.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
+		lastErr = errors.Wrap(err, "getting metrics list failed")
+		if err != nil {
+			return false, nil
+		}
+		if len(pods.Items) != len(podMetrics.Items) {
+			lastErr = fmt.Errorf("number of running pods (%d) doesn't match number of pods reporting metrics (%d)", len(pods.Items), len(podMetrics.Items))
+			return false, nil
+		}
+
+		for _, pod := range podMetrics.Items {
+			if !isPodInPodsList(pod.Name, pod.Namespace, pods.Items) {
+				lastErr = errors.New("pod reporting metrics couldn't be found in pods list")
+				return false, nil
+			}
+			for _, item := range pod.Containers {
+				if item.Usage.Cpu() == nil || item.Usage.Memory() == nil {
+					lastErr = errors.New("container cpu or memory metric not found")
+					return false, nil
+				}
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		t.Fatal(err)
+	}
+}
 
 func TestAggregatedMetricPermissions(t *testing.T) {
 	present := func(where []string, what string) bool {
