@@ -48,7 +48,7 @@ Run `make pkg/manifests/bindata.go` after you modify the files and make sure to 
 
 ## Roadmap
 
-* Monitor etcd
+* Monitor etcd.
 * Adapt Tectonic inherited alerts with OpenShift operational knowledge
 
 ## Testing
