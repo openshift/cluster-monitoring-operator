@@ -91,7 +91,8 @@ $(JB_BIN):
 	go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
 
 $(JSONNET_BIN):
-	go get -u github.com/google/go-jsonnet/cmd/jsonnet
+	go get -u -d github.com/google/go-jsonnet/cmd/jsonnet
+	cd $(GOPATH)/src/github.com/google/go-jsonnet && git checkout v0.12.1 && git submodule update && go install -a ./jsonnet
 
 test-unit:
 	go test $(PKGS)
