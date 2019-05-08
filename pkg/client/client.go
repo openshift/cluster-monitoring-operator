@@ -786,13 +786,20 @@ func (c *Client) CreateOrUpdateEndpoints(endpoints *v1.Endpoints) error {
 
 func (c *Client) CreateOrUpdateRoleBinding(rb *rbacv1beta1.RoleBinding) error {
 	rbClient := c.kclient.RbacV1beta1().RoleBindings(rb.GetNamespace())
-	_, err := rbClient.Get(rb.GetName(), metav1.GetOptions{})
+	r, err := rbClient.Get(rb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := rbClient.Create(rb)
 		return errors.Wrap(err, "creating RoleBinding object failed")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving RoleBinding object failed")
+	}
+
+	if reflect.DeepEqual(rb.RoleRef, r.RoleRef) &&
+		reflect.DeepEqual(rb.Subjects, r.Subjects) &&
+		reflect.DeepEqual(rb.Labels, r.Labels) &&
+		reflect.DeepEqual(rb.Annotations, r.Annotations) {
+		return nil
 	}
 
 	_, err = rbClient.Update(rb)
