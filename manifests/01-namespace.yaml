@@ -6,3 +6,5 @@ metadata:
     openshift.io/node-selector: ""
   labels:
     openshift.io/cluster-monitoring: "true"
+    name: openshift-monitoring
+    network.openshift.io/policy-group: monitoring
