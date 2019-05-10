@@ -28,6 +28,7 @@
 // assets/kube-state-metrics/deployment.yaml
 // assets/kube-state-metrics/role-binding.yaml
 // assets/kube-state-metrics/role.yaml
+// assets/kube-state-metrics/security-context-constraints.yaml
 // assets/kube-state-metrics/service-account.yaml
 // assets/kube-state-metrics/service-monitor.yaml
 // assets/kube-state-metrics/service.yaml
@@ -689,6 +690,26 @@ func assetsKubeStateMetricsRoleYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/kube-state-metrics/role.yaml", size: 433, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _assetsKubeStateMetricsSecurityContextConstraintsYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\x90\xc1\x6a\x5b\x31\x10\x45\xf7\xfa\x8a\xf9\x81\xd8\x74\xfb\x76\x21\xa1\xb4\x50\xda\x90\xd2\x6c\x4a\x21\x63\xbd\xeb\x78\xb0\x34\xf3\xd0\x8c\x92\xbc\x7e\x7d\x91\x71\x42\x21\xde\x49\xf7\x8c\xce\xa0\xcb\xa5\xd8\xcb\x17\xf3\xb8\x95\xf6\x60\xa5\x57\xdc\x95\xfe\x24\x3a\x51\xb4\x8e\xf4\x8e\xbf\x23\x5e\xac\x1d\x27\xda\x73\xf1\xff\xf2\xbb\xaf\xb7\x1f\x33\x6b\xe1\xef\xe9\x22\x0f\x68\x2e\xa6\x13\x39\x72\x6f\x12\xeb\xc6\x16\xa8\x1f\x64\x1f\x1b\xb1\xed\xf3\xa7\x74\x14\x9d\x27\xfa\x79\xc6\x37\xa6\x81\xd7\xb8\x31\xf5\x68\x2c\x1a\x9e\x2a\x82\x67\x0e\x9e\x12\x11\xab\x5a\x70\x88\xa9\x8f\x2b\xd1\xb1\xef\xd0\x14\x01\x1f\xba\x19\x9e\x9b\x2c\x71\xda\x38\xd0\x95\x07\x07\xae\x2a\xa2\x49\x76\xf2\x9c\x49\x9c\xba\x63\xa6\xbd\x35\x8a\x03\x2e\x8c\x9d\xc4\x44\xd9\xea\x62\x0a\x0d\x0a\xa3\x1d\x88\x77\x05\xe3\x58\xad\x6b\xd0\xe3\x16\x91\xb7\xc5\x32\x97\x90\x8a\xc7\x41\x0e\xfc\x7c\xc9\x47\x3b\x9c\x95\x6f\x8a\xd3\xe0\x58\xee\x5c\x41\xe3\xfd\x5f\x53\x90\x23\x42\xf4\xc9\x89\xfd\x44\x0f\xe6\xb1\x49\x44\xca\x15\x97\xfe\x93\x1a\x78\xfe\xa1\x65\xbd\x37\x8b\xcf\x52\xe0\xab\x07\xea\x5b\xfd\xad\xeb\xb5\xff\x72\xb4\x51\x55\xac\x0b\x26\xba\x1f\xd1\xb5\xae\xc9\xf1\x4d\xb4\xbf\x9e\xeb\xbe\x30\xd0\x1d\xcd\x27\xfa\xfd\x27\xfd\x0b\x00\x00\xff\xff\xfe\x63\xd7\x24\x27\x02\x00\x00")
+
+func assetsKubeStateMetricsSecurityContextConstraintsYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsKubeStateMetricsSecurityContextConstraintsYaml,
+		"assets/kube-state-metrics/security-context-constraints.yaml",
+	)
+}
+
+func assetsKubeStateMetricsSecurityContextConstraintsYaml() (*asset, error) {
+	bytes, err := assetsKubeStateMetricsSecurityContextConstraintsYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/kube-state-metrics/security-context-constraints.yaml", size: 551, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1533,6 +1554,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/kube-state-metrics/deployment.yaml": assetsKubeStateMetricsDeploymentYaml,
 	"assets/kube-state-metrics/role-binding.yaml": assetsKubeStateMetricsRoleBindingYaml,
 	"assets/kube-state-metrics/role.yaml": assetsKubeStateMetricsRoleYaml,
+	"assets/kube-state-metrics/security-context-constraints.yaml": assetsKubeStateMetricsSecurityContextConstraintsYaml,
 	"assets/kube-state-metrics/service-account.yaml": assetsKubeStateMetricsServiceAccountYaml,
 	"assets/kube-state-metrics/service-monitor.yaml": assetsKubeStateMetricsServiceMonitorYaml,
 	"assets/kube-state-metrics/service.yaml": assetsKubeStateMetricsServiceYaml,
@@ -1649,6 +1671,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"deployment.yaml": &bintree{assetsKubeStateMetricsDeploymentYaml, map[string]*bintree{}},
 			"role-binding.yaml": &bintree{assetsKubeStateMetricsRoleBindingYaml, map[string]*bintree{}},
 			"role.yaml": &bintree{assetsKubeStateMetricsRoleYaml, map[string]*bintree{}},
+			"security-context-constraints.yaml": &bintree{assetsKubeStateMetricsSecurityContextConstraintsYaml, map[string]*bintree{}},
 			"service-account.yaml": &bintree{assetsKubeStateMetricsServiceAccountYaml, map[string]*bintree{}},
 			"service-monitor.yaml": &bintree{assetsKubeStateMetricsServiceMonitorYaml, map[string]*bintree{}},
 			"service.yaml": &bintree{assetsKubeStateMetricsServiceYaml, map[string]*bintree{}},

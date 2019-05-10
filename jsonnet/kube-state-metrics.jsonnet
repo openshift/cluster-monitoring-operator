@@ -54,6 +54,30 @@ local timezoneVolumeName = 'timezone';
         },
       },
 
+    securityContextConstraints:
+      {
+        allowHostDirVolumePlugin: true,
+        allowHostNetwork: false,
+        allowHostPID: false,
+        allowHostPorts: false,
+        apiVersion: 'security.openshift.io/v1',
+        kind: 'SecurityContextConstraints',
+        metadata: {
+          annotations: {
+            'kubernetes.io/description': 'kube-state-metrics scc is used for the kube-state-metrics component to be able to mount `/etc/localtime` to have kube-state-metrics be able to have the same timezone settings as the host.',
+          },
+          name: 'kube-state-metrics',
+        },
+        readOnlyRootFilesystem: false,
+        runAsUser: {
+          type: 'RunAsAny',
+        },
+        seLinuxContext: {
+          type: 'RunAsAny',
+        },
+        users: [],
+      },
+
     // This removes the upstream addon-resizer and all resource requests and
     // limits. Additionally configures the kube-rbac-proxies to use the serving
     // cert configured on the `Service` above.

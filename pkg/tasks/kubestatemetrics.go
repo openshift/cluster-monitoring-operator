@@ -37,6 +37,16 @@ func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) 
 }
 
 func (t *KubeStateMetricsTask) Run() error {
+	sccksm, err := t.factory.KubeStateMetricsSecurityContextConstraints()
+	if err != nil {
+		return errors.Wrap(err, "initializing kube-state-metrics SecurityContextConstraints failed")
+	}
+
+	err = t.client.CreateOrUpdateSecurityContextConstraints(sccksm)
+	if err != nil {
+		return errors.Wrap(err, "reconciling kube-state-metrics SecurityContextConstraints failed")
+	}
+
 	smksm, err := t.factory.KubeStateMetricsServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")

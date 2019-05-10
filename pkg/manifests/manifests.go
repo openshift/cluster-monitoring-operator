@@ -46,12 +46,13 @@ var (
 	AlertmanagerRoute              = "assets/alertmanager/route.yaml"
 	AlertmanagerServiceMonitor     = "assets/alertmanager/service-monitor.yaml"
 
-	KubeStateMetricsClusterRoleBinding = "assets/kube-state-metrics/cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole        = "assets/kube-state-metrics/cluster-role.yaml"
-	KubeStateMetricsDeployment         = "assets/kube-state-metrics/deployment.yaml"
-	KubeStateMetricsServiceAccount     = "assets/kube-state-metrics/service-account.yaml"
-	KubeStateMetricsService            = "assets/kube-state-metrics/service.yaml"
-	KubeStateMetricsServiceMonitor     = "assets/kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsClusterRoleBinding         = "assets/kube-state-metrics/cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole                = "assets/kube-state-metrics/cluster-role.yaml"
+	KubeStateMetricsDeployment                 = "assets/kube-state-metrics/deployment.yaml"
+	KubeStateMetricsServiceAccount             = "assets/kube-state-metrics/service-account.yaml"
+	KubeStateMetricsService                    = "assets/kube-state-metrics/service.yaml"
+	KubeStateMetricsServiceMonitor             = "assets/kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsSecurityContextConstraints = "assets/kube-state-metrics/security-context-constraints.yaml"
 
 	NodeExporterDaemonSet                  = "assets/node-exporter/daemonset.yaml"
 	NodeExporterService                    = "assets/node-exporter/service.yaml"
@@ -397,6 +398,17 @@ func (f *Factory) KubeStateMetricsService() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) KubeStateMetricsSecurityContextConstraints() (*securityv1.SecurityContextConstraints, error) {
+	scc, err := f.NewSecurityContextConstraints(MustAssetReader(KubeStateMetricsSecurityContextConstraints))
+	if err != nil {
+		return nil, err
+	}
+
+	scc.Users = append(scc.Users, fmt.Sprintf("system:serviceaccount:%s:kube-state-metrics", f.namespace))
+
+	return scc, nil
 }
 
 func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
