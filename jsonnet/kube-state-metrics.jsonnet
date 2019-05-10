@@ -7,6 +7,7 @@ local containerPort = container.portsType;
 local containerVolumeMount = container.volumeMountsType;
 local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
+local timezoneVolumeName = 'timezone';
 
 {
   kubeStateMetrics+:: {
@@ -83,13 +84,17 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                       }
                     else
                       c +
-                      container.withVolumeMounts([containerVolumeMount.new(tmpVolumeName, '/tmp')]) +
+                      container.withVolumeMounts([
+                        containerVolumeMount.new(tmpVolumeName, '/tmp'),
+                        containerVolumeMount.new(timezoneVolumeName, '/etc/localtime') + containerVolumeMount.withReadOnly(true),
+                      ]) +
                       { resources: {} },
                   super.containers,
                 ),
               volumes+: [
                 volume.fromEmptyDir(tmpVolumeName),
                 volume.fromSecret(tlsVolumeName, 'kube-state-metrics-tls'),
+                volume.fromHostPath(timezoneVolumeName, '/etc/localtime'),
               ],
               securityContext: {},
             },

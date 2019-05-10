@@ -72,6 +72,9 @@ spec:
         - mountPath: /tmp
           name: volume-directive-shadow
           readOnly: false
+        - mountPath: /etc/localtime
+          name: timezone
+          readOnly: true
       nodeSelector:
         beta.kubernetes.io/os: linux
       securityContext: {}
@@ -82,3 +85,6 @@ spec:
       - name: kube-state-metrics-tls
         secret:
           secretName: kube-state-metrics-tls
+      - hostPath:
+          path: /etc/localtime
+        name: timezone
