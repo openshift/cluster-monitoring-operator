@@ -17,7 +17,7 @@ items:
           "links": [
 
           ],
-          "refresh": false,
+          "refresh": "10s",
           "rows": [
               {
                   "collapse": false,
