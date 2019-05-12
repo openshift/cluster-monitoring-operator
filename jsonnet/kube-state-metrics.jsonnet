@@ -7,6 +7,7 @@ local containerPort = container.portsType;
 local containerVolumeMount = container.volumeMountsType;
 local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
+local timezoneVolumeName = 'timezone';
 
 {
   kubeStateMetrics+:: {
@@ -53,6 +54,30 @@ local tlsVolumeName = 'kube-state-metrics-tls';
         },
       },
 
+    securityContextConstraints:
+      {
+        allowHostDirVolumePlugin: true,
+        allowHostNetwork: false,
+        allowHostPID: false,
+        allowHostPorts: false,
+        apiVersion: 'security.openshift.io/v1',
+        kind: 'SecurityContextConstraints',
+        metadata: {
+          annotations: {
+            'kubernetes.io/description': 'kube-state-metrics scc is used for the kube-state-metrics component to be able to mount `/etc/localtime` to have kube-state-metrics be able to have the same timezone settings as the host.',
+          },
+          name: 'kube-state-metrics',
+        },
+        readOnlyRootFilesystem: false,
+        runAsUser: {
+          type: 'RunAsAny',
+        },
+        seLinuxContext: {
+          type: 'RunAsAny',
+        },
+        users: [],
+      },
+
     // This removes the upstream addon-resizer and all resource requests and
     // limits. Additionally configures the kube-rbac-proxies to use the serving
     // cert configured on the `Service` above.
@@ -83,13 +108,17 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                       }
                     else
                       c +
-                      container.withVolumeMounts([containerVolumeMount.new(tmpVolumeName, '/tmp')]) +
+                      container.withVolumeMounts([
+                        containerVolumeMount.new(tmpVolumeName, '/tmp'),
+                        containerVolumeMount.new(timezoneVolumeName, '/etc/localtime') + containerVolumeMount.withReadOnly(true),
+                      ]) +
                       { resources: {} },
                   super.containers,
                 ),
               volumes+: [
                 volume.fromEmptyDir(tmpVolumeName),
                 volume.fromSecret(tlsVolumeName, 'kube-state-metrics-tls'),
+                volume.fromHostPath(timezoneVolumeName, '/etc/localtime'),
               ],
               securityContext: {},
             },
