@@ -62,11 +62,13 @@ type HTTPConfig struct {
 
 type PrometheusOperatorConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
+	Tolerations  []v1.Toleration   `json:"tolerations"`
 }
 
 type PrometheusK8sConfig struct {
 	Retention           string                    `json:"retention"`
 	NodeSelector        map[string]string         `json:"nodeSelector"`
+	Tolerations         []v1.Toleration           `json:"tolerations"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	ExternalLabels      map[string]string         `json:"externalLabels"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
@@ -75,6 +77,7 @@ type PrometheusK8sConfig struct {
 
 type AlertmanagerMainConfig struct {
 	NodeSelector        map[string]string         `json:"nodeSelector"`
+	Tolerations         []v1.Toleration           `json:"tolerations"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	Hostport            string                    `json:"hostport"`
@@ -82,15 +85,18 @@ type AlertmanagerMainConfig struct {
 
 type GrafanaConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
+	Tolerations  []v1.Toleration   `json:"tolerations"`
 	Hostport     string            `json:"hostport"`
 }
 
 type KubeStateMetricsConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
+	Tolerations  []v1.Toleration   `json:"tolerations"`
 }
 
 type K8sPrometheusAdapter struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
+	Tolerations  []v1.Toleration   `json:"tolerations"`
 }
 
 type EtcdConfig struct {
@@ -112,6 +118,7 @@ type TelemeterClientConfig struct {
 	TelemeterServerURL string            `json:"telemeterServerURL"`
 	Token              string            `json:"token"`
 	NodeSelector       map[string]string `json:"nodeSelector"`
+	Tolerations        []v1.Toleration   `json:"tolerations"`
 }
 
 func (cfg *TelemeterClientConfig) IsEnabled() bool {

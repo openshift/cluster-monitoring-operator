@@ -290,6 +290,10 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 		a.Spec.NodeSelector = f.config.AlertmanagerMainConfig.NodeSelector
 	}
 
+	if len(f.config.AlertmanagerMainConfig.Tolerations) > 0 {
+		a.Spec.Tolerations = f.config.AlertmanagerMainConfig.Tolerations
+	}
+
 	a.Spec.Containers[0].Image = f.config.Images.OauthProxy
 
 	for c := range a.Spec.Containers {
@@ -364,6 +368,10 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 
 	if f.config.KubeStateMetricsConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.KubeStateMetricsConfig.NodeSelector
+	}
+
+	if len(f.config.KubeStateMetricsConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.KubeStateMetricsConfig.Tolerations
 	}
 
 	d.Namespace = f.namespace
@@ -720,6 +728,10 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		p.Spec.NodeSelector = f.config.PrometheusK8sConfig.NodeSelector
 	}
 
+	if len(f.config.PrometheusK8sConfig.Tolerations) > 0 {
+		p.Spec.Tolerations = f.config.PrometheusK8sConfig.Tolerations
+	}
+
 	if f.config.PrometheusK8sConfig.ExternalLabels != nil {
 		p.Spec.ExternalLabels = f.config.PrometheusK8sConfig.ExternalLabels
 	}
@@ -930,6 +942,10 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	if f.config.K8sPrometheusAdapter != nil && len(f.config.K8sPrometheusAdapter.NodeSelector) > 0 {
 		spec.NodeSelector = f.config.K8sPrometheusAdapter.NodeSelector
 	}
+
+	if f.config.K8sPrometheusAdapter != nil && len(f.config.K8sPrometheusAdapter.Tolerations) > 0 {
+		spec.Tolerations = f.config.K8sPrometheusAdapter.Tolerations
+	}
 	dep.Namespace = f.namespace
 
 	r := newErrMapReader(requestheader)
@@ -1086,6 +1102,10 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 
 	if len(f.config.PrometheusOperatorConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.PrometheusOperatorConfig.NodeSelector
+	}
+
+	if len(f.config.PrometheusOperatorConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.PrometheusOperatorConfig.Tolerations
 	}
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
@@ -1271,6 +1291,10 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 
 	if f.config.GrafanaConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.GrafanaConfig.NodeSelector
+	}
+
+	if len(f.config.GrafanaConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.GrafanaConfig.Tolerations
 	}
 
 	d.Namespace = f.namespace
@@ -1735,6 +1759,9 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
 	if len(f.config.TelemeterClientConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.TelemeterClientConfig.NodeSelector
+	}
+	if len(f.config.TelemeterClientConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.TelemeterClientConfig.Tolerations
 	}
 	d.Namespace = f.namespace
 

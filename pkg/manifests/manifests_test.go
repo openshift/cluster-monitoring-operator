@@ -605,6 +605,9 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   retention: 25h
   nodeSelector:
     type: master
+  tolerations:
+  - effect: PreferNoSchedule
+    operator: Exists
   volumeClaimTemplate:
     spec:
       resources:
@@ -683,6 +686,13 @@ ingress:
 		t.Fatal("Prometheus node selector not configured correctly")
 	}
 
+	if p.Spec.Tolerations[0].Effect != "PreferNoSchedule" {
+		t.Fatal("Prometheus toleration effect not configured correctly")
+	}
+	if p.Spec.Tolerations[0].Operator != "Exists" {
+		t.Fatal("Prometheus toleration effect not configured correctly")
+	}
+
 	if p.Spec.ExternalLabels["datacenter"] != "eu-west" {
 		t.Fatal("Prometheus external labels are not configured correctly")
 	}
@@ -731,6 +741,9 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
   baseImage: quay.io/test/alertmanager
   nodeSelector:
     type: worker
+  tolerations:
+  - effect: PreferNoSchedule
+    operator: Exists
   resources:
     limits:
       cpu: 20m
@@ -786,6 +799,13 @@ ingress:
 
 	if a.Spec.NodeSelector["type"] != "worker" {
 		t.Fatal("Alertmanager node selector not configured correctly")
+	}
+
+	if a.Spec.Tolerations[0].Effect != "PreferNoSchedule" {
+		t.Fatal("Prometheus toleration effect not configured correctly")
+	}
+	if a.Spec.Tolerations[0].Operator != "Exists" {
+		t.Fatal("Prometheus toleration effect not configured correctly")
 	}
 
 	storageRequest := a.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
