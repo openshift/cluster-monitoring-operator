@@ -1,7 +1,19 @@
+---
 sudo: required
+dist: xenial
 language: go
 go:
 - "1.10"
+# TODO(paulfantom): uncomment when moving to go 1.12
+#- "1.12.x"
+go_import_path: github.com/openshift/cluster-monitoring-operator
+# TODO(paulfantom): uncomment when moving to go 1.12
+#env:
+#  - GO111MODULE=on
+cache:
+  directories:
+  - $GOCACHE
+  - $GOPATH/pkg/mod
 services:
 - docker
 jobs:
@@ -9,6 +21,6 @@ jobs:
   - script: ./hack/yamllint.sh .
   - script: make test-unit
   - stage: Build
-    script: make dependencies build
-  - script: make generate && git diff --exit-code
-  - script: make container
+    script: make build-in-docker
+  - script: make generate-in-docker && git diff --exit-code
+  - script: make image

@@ -1,82 +1,135 @@
-all: build
+SHELL=/bin/bash -o pipefail
 
-APP_NAME=cluster-monitoring-operator
-BIN=operator
-MAIN_PKG=github.com/openshift/$(APP_NAME)/cmd/operator
-REPO?=quay.io/openshift/$(APP_NAME)
+GO_PKG=github.com/openshift/cluster-monitoring-operator
+REPO?=quay.io/openshift/cluster-monitoring-operator
 TAG?=$(shell git rev-parse --short HEAD)
-ENVVAR=GOOS=linux GOARCH=amd64 CGO_ENABLED=0
-NAMESPACE=openshift-monitoring
-KUBECONFIG?=$(HOME)/.kube/config
-PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
-GOOS=linux
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
-SRC=$(shell find . -type f -name '*.go') pkg/manifests/bindata.go
+
+PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
+GOLANG_FILES:=$(shell find . -name \*.go -print) pkg/manifests/bindata.go
 FIRST_GOPATH:=$(firstword $(subst :, ,$(shell go env GOPATH)))
 EMBEDMD_BIN=$(FIRST_GOPATH)/bin/embedmd
 GOBINDATA_BIN=$(FIRST_GOPATH)/bin/go-bindata
-GOJSONTOYAML_BIN=$(FIRST_GOPATH)/bin/gojsontoyaml
-# We need jsonnet on Travis; here we default to the user's installed jsonnet binary; if nothing is installed, then install go-jsonnet.
-JSONNET_BIN=$(if $(shell which jsonnet 2>/dev/null),$(shell which jsonnet 2>/dev/null),$(FIRST_GOPATH)/bin/jsonnet)
-JB_BIN=$(FIRST_GOPATH)/bin/jb
+JB_BINARY=$(FIRST_GOPATH)/bin/jb
+GOJSONTOYAML_BINARY=$(FIRST_GOPATH)/bin/gojsontoyaml
 ASSETS=$(shell grep -oh 'assets/.*\.yaml' pkg/manifests/manifests.go)
 JSONNET_SRC=$(shell find ./jsonnet -type f)
 JSONNET_VENDOR=jsonnet/jsonnetfile.lock.json jsonnet/vendor
-GO_BUILD_RECIPE=GOOS=$(GOOS) go build --ldflags="-s -X github.com/openshift/cluster-monitoring-operator/pkg/operator.Version=$(VERSION)" -o $(BIN) $(MAIN_PKG)
 
-build: $(BIN)
+GO_BUILD_RECIPE=GOOS=linux CGO_ENABLED=0 go build --ldflags="-s -X $(GO_PKG)/pkg/operator.Version=$(VERSION)"
+# TODO(paulfantom): add '-e GO111MODULE=on' when moving to go 1.12
+CONTAINER_CMD:=docker run --rm \
+		-u="$(shell id -u):$(shell id -g)" \
+		-v "$(shell go env GOCACHE):/.cache/go-build" \
+		-v "$(PWD):/go/src/$(GO_PKG):Z" \
+		-w "/go/src/$(GO_PKG)" \
+		quay.io/coreos/jsonnet-ci
 
-$(BIN): $(SRC)
-	$(GO_BUILD_RECIPE)
+.PHONY: all
+all: format generate build test
+
+.PHONY: clean
+clean:
+	# Remove all files and directories ignored by git.
+	git clean -Xfd .
+
+############
+# Building #
+############
+
+.PHONY: build-in-docker
+build-in-docker:
+	$(CONTAINER_CMD) $(MAKE) $(MFLAGS) build
+
+.PHONY: build
+build: operator
+
+.PHONY: operator
+operator: $(GOLANG_FILES)
+	$(GO_BUILD_RECIPE) -o operator $(GO_PKG)/cmd/operator
 
 # We need this Make target so that we can build the operator depending
 # only on what is checked into the repo, without calling to the internet.
+.PHONY: operator-no-deps
 operator-no-deps:
-	$(GO_BUILD_RECIPE)
+	$(GO_BUILD_RECIPE) -o operator $(GO_PKG)/cmd/operator
 
-run: build
-	./$(BIN)
+.PHONY: image
+image: .hack-operator-image
 
-crossbuild:
-	$(ENVVAR) $(MAKE) build
-
-container:
+.hack-operator-image: Dockerfile
+# Create empty target file, for the sole purpose of recording when this target
+# was last executed via the last-modification timestamp on the file. See
+# https://www.gnu.org/software/make/manual/make.html#Empty-Targets
 	docker build -t $(REPO):$(TAG) .
+	touch $@
 
-push: container
-	docker push $(REPO):$(TAG)
+##############
+# Generating #
+##############
 
-clean:
-	rm -f $(BIN)
-	go clean -r $(MAIN_PKG)
-	docker images -q $(REPO) | xargs --no-run-if-empty docker rmi --force
-	rm -rf jsonnet/vendor
+vendor:
+	govendor add +external
 
-docs:
-	embedmd -w `find Documentation -name "*.md"`
+.PHONY: generate
+generate: $(EMBEDMD_BIN) merge-cluster-roles pkg/manifests/bindata.go docs
 
-pkg/manifests/bindata.go: $(ASSETS) $(GOBINDATA_BIN)
-	# Using "-modtime 1" to make generate target deterministic. It sets all file time stamps to unix timestamp 1
-	$(GOBINDATA_BIN) -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
+.PHONY: generate-in-docker
+generate-in-docker:
+	$(CONTAINER_CMD) $(MAKE) $(MFLAGS) generate
+
+jsonnet/vendor: jsonnet/jsonnetfile.json
+	cd jsonnet && jb install
 
 $(ASSETS): $(JSONNET_SRC) $(JSONNET_VENDOR) hack/build-jsonnet.sh
 	./hack/build-jsonnet.sh
 
-$(JSONNET_VENDOR): jsonnet/jsonnetfile.json
-	cd jsonnet && jb install
+pkg/manifests/bindata.go: $(GOBINDATA_BIN) $(ASSETS)
+	# Using "-modtime 1" to make generate target deterministic. It sets all file time stamps to unix timestamp 1
+	go-bindata -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
 
-generate: clean
-	docker build -t tpo-generate -f Dockerfile.generate .
-	docker run \
-		--rm \
-		--security-opt label=disable \
-		-v `pwd`:/go/src/github.com/openshift/cluster-monitoring-operator \
-		-u=$(shell id -u $(USER)):$(shell id -g $(USER)) \
-		-w /go/src/github.com/openshift/cluster-monitoring-operator \
-		tpo-generate \
-		make dependencies pkg/manifests/bindata.go merge-cluster-roles docs
+merge-cluster-roles: manifests/02-role.yaml
+manifests/02-role.yaml: $(ASSETS) hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in
+	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/02-role.yaml
 
-dependencies: $(JB_BIN) $(JSONNET_BIN) $(GOBINDATA_BIN) $(GOJSONTOYAML_BIN) $(EMBEDMD_BIN)
+.PHONY: docs
+docs:
+	embedmd -w `find Documentation -name "*.md"`
+
+##############
+# Formatting #
+##############
+
+.PHONY: format
+format: go-fmt shellcheck
+
+.PHONY: go-fmt
+go-fmt:
+	go fmt $(PKGS)
+
+.PHONY: shellcheck
+shellcheck:
+	docker run -v "${PWD}:/mnt" koalaman/shellcheck:stable $(shell find . -type f -name "*.sh" -not -path "*vendor*")
+
+###########
+# Testing #
+###########
+
+.PHONY: test
+test: test-unit test-e2e
+
+.PHONY: test-unit
+test-unit:
+	go test -race -short $(PKGS) -count=1
+
+.PHONY: test-e2e
+test-e2e: KUBECONFIG?=$(HOME)/.kube/config
+test-e2e:
+	go test -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+
+############
+# Binaries #
+############
 
 $(EMBEDMD_BIN):
 	go get -u github.com/campoy/embedmd
@@ -84,27 +137,8 @@ $(EMBEDMD_BIN):
 $(GOBINDATA_BIN):
 	go get -u github.com/jteeuwen/go-bindata/...
 
-$(GOJSONTOYAML_BIN):
-	go get -u github.com/brancz/gojsontoyaml
-
-$(JB_BIN):
+$(JB_BINARY):
 	go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
 
-$(JSONNET_BIN):
-	go get -u -d github.com/google/go-jsonnet/cmd/jsonnet
-	cd $(GOPATH)/src/github.com/google/go-jsonnet && git checkout v0.12.1 && git submodule update && go install -a ./jsonnet
-
-test-unit:
-	go test $(PKGS)
-
-test-e2e:
-	go test -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG)
-
-vendor:
-	govendor add +external
-
-merge-cluster-roles: manifests/02-role.yaml
-manifests/02-role.yaml: $(ASSETS) hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in
-	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/02-role.yaml
-
-.PHONY: all build operator-no-deps run crossbuild container push clean deps generate dependencies test test-e2e merge-cluster-roles
+$(GOJSONTOYAML_BINARY):
+	go get -u github.com/brancz/gojsontoyaml
