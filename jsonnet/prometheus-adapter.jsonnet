@@ -86,7 +86,12 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                 volume.withName(prometheusAdapterPrometheusConfig) + volume.mixin.configMap.withName(prometheusAdapterPrometheusConfig),
                 volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('serving-certs-ca-bundle'),
               ],
-
+              resources: {
+                requests: {
+                  memory: '50Mi',
+                  cpu: '10m',
+                },
+              },
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
             },

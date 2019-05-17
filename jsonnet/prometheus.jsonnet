@@ -395,7 +395,12 @@ local namespacesRole =
               ),
           },
           securityContext: {},
-          resources: {},
+          resources: {
+            requests: {
+              memory: '1Gi',
+              cpu: '200m',
+            },
+          },
           secrets+: [
             'prometheus-k8s-tls',
             'prometheus-k8s-proxy',
