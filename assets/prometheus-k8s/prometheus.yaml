@@ -95,7 +95,10 @@ spec:
     beta.kubernetes.io/os: linux
   priorityClassName: system-cluster-critical
   replicas: 2
-  resources: {}
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1Gi
   ruleNamespaceSelector: {}
   ruleSelector: {}
   secrets:

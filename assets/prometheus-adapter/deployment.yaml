@@ -45,6 +45,10 @@ spec:
       nodeSelector:
         beta.kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
+      resources:
+        requests:
+          cpu: 10m
+          memory: 50Mi
       securityContext: {}
       serviceAccountName: prometheus-adapter
       volumes:

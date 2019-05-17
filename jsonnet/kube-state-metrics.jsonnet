@@ -94,6 +94,12 @@ local tlsVolumeName = 'kube-state-metrics-tls';
               ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
+              resources: {
+                requests: {
+                  memory: '120Mi',
+                  cpu: '10m',
+                },
+              },
             },
           },
         },

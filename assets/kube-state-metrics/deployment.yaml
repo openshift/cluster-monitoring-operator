@@ -65,6 +65,10 @@ spec:
       nodeSelector:
         beta.kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
+      resources:
+        requests:
+          cpu: 10m
+          memory: 120Mi
       securityContext: {}
       serviceAccountName: kube-state-metrics
       volumes:
