@@ -113,7 +113,7 @@
             record: 'code:apiserver_request_count:rate:sum',
           },
           {
-            expr: 'sum(kube_pod_status_ready{condition="true",namespace="kube-system",pod=~"etcd.*"}) by(condition)',
+            expr: 'sum(kube_pod_status_ready{condition="true",namespace="openshift-etcd",pod=~"etcd.*"}) by(condition)',
             record: 'kube_pod_status_ready:etcd:sum',
           },
           {
