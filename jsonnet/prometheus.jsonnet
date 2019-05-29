@@ -394,13 +394,13 @@ local namespacesRole =
                 super.alertmanagers,
               ),
           },
-          securityContext: {},
           resources: {
             requests: {
               memory: '1Gi',
               cpu: '200m',
             },
           },
+          securityContext: {},
           secrets+: [
             'prometheus-k8s-tls',
             'prometheus-k8s-proxy',
@@ -418,7 +418,6 @@ local namespacesRole =
             {
               name: 'prometheus-proxy',
               image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
-              resources: {},
               ports: [
                 {
                   containerPort: 9091,

@@ -80,12 +80,24 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
                         ],
-                        resources: {},
+                        resources: {
+                          requests: {
+                            memory: '40Mi',
+                            cpu: '10m',
+                          },
+                        },
                       }
                     else
                       c +
                       container.withVolumeMounts([containerVolumeMount.new(tmpVolumeName, '/tmp')]) +
-                      { resources: {} },
+                      { 
+                        resources: {
+                          requests: {
+                            memory: '40Mi',
+                            cpu: '10m',
+                          },
+                        },
+                      },
                   super.containers,
                 ),
               volumes+: [
@@ -94,12 +106,6 @@ local tlsVolumeName = 'kube-state-metrics-tls';
               ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
-              resources: {
-                requests: {
-                  memory: '120Mi',
-                  cpu: '10m',
-                },
-              },
             },
           },
         },
