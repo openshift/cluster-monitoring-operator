@@ -29,6 +29,10 @@ spec:
         name: prometheus-adapter
         ports:
         - containerPort: 6443
+        resources:
+          requests:
+            cpu: 10m
+            memory: 20Mi
         volumeMounts:
         - mountPath: /tmp
           name: tmpfs
@@ -45,10 +49,6 @@ spec:
       nodeSelector:
         beta.kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
-      resources:
-        requests:
-          cpu: 10m
-          memory: 50Mi
       securityContext: {}
       serviceAccountName: prometheus-adapter
       volumes:
