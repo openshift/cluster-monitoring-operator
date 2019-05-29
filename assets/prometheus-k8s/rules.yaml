@@ -501,6 +501,14 @@ spec:
       for: 15m
       labels:
         severity: critical
+    - alert: OpenShiftStateMetricsDown
+      annotations:
+        message: OpenShiftStateMetrics has disappeared from Prometheus target discovery.
+      expr: |
+        absent(up{job="openshift-state-metrics"} == 1)
+      for: 15m
+      labels:
+        severity: critical
     - alert: PrometheusDown
       annotations:
         message: Prometheus has disappeared from Prometheus target discovery.

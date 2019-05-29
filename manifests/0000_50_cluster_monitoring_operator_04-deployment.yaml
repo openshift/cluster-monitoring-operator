@@ -57,6 +57,7 @@ spec:
         - "-images=oauth-proxy=quay.io/openshift/origin-oauth-proxy:latest"
         - "-images=node-exporter=quay.io/openshift/origin-prometheus-node-exporter:latest"
         - "-images=kube-state-metrics=quay.io/openshift/origin-kube-state-metrics:latest"
+        - "-images=openshift-state-metrics=quay.io/openshift/origin-openshift-state-metrics:latest"
         - "-images=kube-rbac-proxy=quay.io/openshift/origin-kube-rbac-proxy:latest"
         - "-images=telemeter-client=quay.io/openshift/origin-telemeter:latest"
         - "-images=prom-label-proxy=quay.io/openshift/origin-prom-label-proxy:latest"

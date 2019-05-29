@@ -9,6 +9,8 @@
 # 	assets/kube-state-metrics/cluster-role.yaml
 # 	assets/kube-state-metrics/role.yaml
 # 	assets/node-exporter/cluster-role.yaml
+# 	assets/openshift-state-metrics/cluster-role.yaml
+# 	assets/openshift-state-metrics/role.yaml
 # 	assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml
 # 	assets/prometheus-adapter/cluster-role-server-resources.yaml
 # 	assets/prometheus-adapter/cluster-role.yaml
@@ -224,6 +226,53 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
+- apiGroups:
+  - build.openshift.io
+  resources:
+  - buildconfigs
+  - builds
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - quota.openshift.io
+  resources:
+  - clusterresourcequotas
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resourceNames:
+  - openshift-state-metrics
+  resources:
+  - deployments
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - apps
+  resourceNames:
+  - openshift-state-metrics
+  resources:
+  - deployments
+  verbs:
+  - get
+  - update
 - apiGroups:
   - metrics.k8s.io
   resources:

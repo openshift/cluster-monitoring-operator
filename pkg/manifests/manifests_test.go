@@ -77,6 +77,36 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.OpenShiftStateMetricsClusterRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.OpenShiftStateMetricsClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.OpenShiftStateMetricsServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.OpenShiftStateMetricsDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.OpenShiftStateMetricsServiceAccount()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.OpenShiftStateMetricsService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.NodeExporterServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
@@ -855,6 +885,34 @@ func TestKubeStateMetrics(t *testing.T) {
 	}
 	if d.Spec.Template.Spec.Containers[2].Image != "docker.io/openshift/origin-kube-state-metrics:latest" {
 		t.Fatal("kube-state-metrics image incorrectly configured")
+	}
+}
+
+func TestOpenShiftStateMetrics(t *testing.T) {
+	c, err := NewConfigFromString(``)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.SetImages(map[string]string{
+		"openshift-state-metrics": "docker.io/openshift/origin-openshift-state-metrics:latest",
+		"kube-rbac-proxy":         "docker.io/openshift/origin-kube-rbac-proxy:latest",
+	})
+
+	f := NewFactory("openshift-monitoring", c)
+
+	d, err := f.OpenShiftStateMetricsDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+		t.Fatal("kube-rbac-proxy image incorrectly configured")
+	}
+	if d.Spec.Template.Spec.Containers[1].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+		t.Fatal("kube-rbac-proxy image incorrectly configured")
+	}
+	if d.Spec.Template.Spec.Containers[2].Image != "docker.io/openshift/origin-openshift-state-metrics:latest" {
+		t.Fatal("openshift-state-metrics image incorrectly configured")
 	}
 }
 

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: openshift-state-metrics
+  name: openshift-state-metrics
+  namespace: openshift-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: openshift-state-metrics
+  template:
+    metadata:
+      labels:
+        k8s-app: openshift-state-metrics
+    spec:
+      containers:
+      - args:
+        - --logtostderr
+        - --secure-listen-address=:8443
+        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+        - --upstream=http://127.0.0.1:8081/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+        name: kube-rbac-proxy-main
+        ports:
+        - containerPort: 8443
+          name: https-main
+        resources:
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: openshift-state-metrics-tls
+          readOnly: false
+      - args:
+        - --logtostderr
+        - --secure-listen-address=:9443
+        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+        - --upstream=http://127.0.0.1:8082/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+        name: kube-rbac-proxy-self
+        ports:
+        - containerPort: 9443
+          name: https-self
+        resources:
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: openshift-state-metrics-tls
+          readOnly: false
+      - args:
+        - --host=127.0.0.1
+        - --port=8081
+        - --telemetry-host=127.0.0.1
+        - --telemetry-port=8082
+        image: quay.io/openshift/origin-openshift-state-metrics:4.2
+        name: openshift-state-metrics
+        resources:
+          requests:
+            cpu: 100m
+            memory: 150Mi
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+      serviceAccountName: openshift-state-metrics
+      volumes:
+      - name: openshift-state-metrics-tls
+        secret:
+          secretName: openshift-state-metrics-tls

@@ -2,6 +2,7 @@ local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-anti-affinity.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
+           (import 'openshift-state-metrics/openshift-state-metrics.libsonnet') +
            {
              prometheus+:: {
                // Openshift 4.0 clusters already have an etcd service and endpoints.
@@ -127,12 +128,18 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
       if !std.setMember(k, ['CoreDNS'])
     },
   },
+} + {
+  _config+:: {
+    openshiftStateMetricsSelector: 'job="openshift-state-metrics"',
+    jobs+:: { OpenShiftStateMetrics: $._config.openshiftStateMetricsSelector },
+  },
 };
 
 removeLimits(
   { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
   { ['node-exporter/' + name]: kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
   { ['kube-state-metrics/' + name]: kp.kubeStateMetrics[name] for name in std.objectFields(kp.kubeStateMetrics) } +
+  { ['openshift-state-metrics/' + name]: kp.openshiftStateMetrics[name] for name in std.objectFields(kp.openshiftStateMetrics) } +
   { ['alertmanager/' + name]: kp.alertmanager[name] for name in std.objectFields(kp.alertmanager) } +
   { ['prometheus-k8s/' + name]: kp.prometheus[name] for name in std.objectFields(kp.prometheus) } +
   { ['prometheus-adapter/' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) } +

@@ -42,6 +42,10 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-kube-state-metrics:latest
+  - name: openshift-state-metrics
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-openshift-state-metrics:latest
   - name: kube-rbac-proxy
     from:
       kind: DockerImage
