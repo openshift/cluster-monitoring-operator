@@ -58,6 +58,13 @@ local authorizationRole = policyRule.new() +
             http_addr: '127.0.0.1',
             http_port: '3001',
           },
+          security: {
+            // OpenShift users are limited to 63 characters, with this we are
+            // setting the Grafana user to something that can never be created
+            // in OpenShift. This prevents users from getting proxied with an
+            // identity that has superuser permissions in Grafana.
+            admin_user: 'WHAT_YOU_ARE_DOING_IS_VOIDING_SUPPORT_0000000000000000000000000000000000000000000000000000000000000000',
+          },
           auth: {
             disable_login_form: true,
             disable_signout_menu: true,
