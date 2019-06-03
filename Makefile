@@ -69,7 +69,9 @@ image: .hack-operator-image
 ##############
 
 vendor:
-	govendor add +external
+	go mod vendor
+	go mod tidy
+	go mod verify
 
 .PHONY: generate
 generate: $(EMBEDMD_BIN) merge-cluster-roles pkg/manifests/bindata.go docs
