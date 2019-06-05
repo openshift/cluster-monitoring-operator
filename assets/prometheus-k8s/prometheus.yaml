@@ -57,6 +57,10 @@ spec:
     ports:
     - containerPort: 9091
       name: web
+    resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-k8s-tls
@@ -78,6 +82,10 @@ spec:
     ports:
     - containerPort: 9092
       name: tenancy
+    resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-k8s-tls
