@@ -134,13 +134,13 @@ test-e2e:
 ############
 
 $(EMBEDMD_BIN):
-	go get -u github.com/campoy/embedmd
+	GO111MODULE=off go get -u github.com/campoy/embedmd
 
 $(GOBINDATA_BIN):
-	go get -u github.com/jteeuwen/go-bindata/...
+	GO111MODULE=off go get -u github.com/jteeuwen/go-bindata/...
 
 $(JB_BINARY):
-	go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
+	GO111MODULE=off go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
 
 $(GOJSONTOYAML_BINARY):
-	go get -u github.com/brancz/gojsontoyaml
+	GO111MODULE=off go get -u github.com/brancz/gojsontoyaml
