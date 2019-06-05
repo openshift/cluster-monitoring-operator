@@ -162,14 +162,8 @@ func (c *Config) applyDefaults() {
 	if c.PrometheusK8sConfig.Retention == "" {
 		c.PrometheusK8sConfig.Retention = "15d"
 	}
-	if c.PrometheusK8sConfig.Resources == nil {
-		c.PrometheusK8sConfig.Resources = &v1.ResourceRequirements{}
-	}
 	if c.AlertmanagerMainConfig == nil {
 		c.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
-	}
-	if c.AlertmanagerMainConfig.Resources == nil {
-		c.AlertmanagerMainConfig.Resources = &v1.ResourceRequirements{}
 	}
 	if c.GrafanaConfig == nil {
 		c.GrafanaConfig = &GrafanaConfig{}
