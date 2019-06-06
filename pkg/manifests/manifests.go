@@ -284,6 +284,7 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 		a.Spec.Storage = &monv1.StorageSpec{
 			VolumeClaimTemplate: *f.config.AlertmanagerMainConfig.VolumeClaimTemplate,
 		}
+		a.Spec.Storage.VolumeClaimTemplate.Spec.DataSource = nil
 	}
 
 	if f.config.AlertmanagerMainConfig.NodeSelector != nil {
@@ -740,6 +741,7 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		p.Spec.Storage = &monv1.StorageSpec{
 			VolumeClaimTemplate: *f.config.PrometheusK8sConfig.VolumeClaimTemplate,
 		}
+		p.Spec.Storage.VolumeClaimTemplate.Spec.DataSource = nil
 	}
 
 	if !f.config.EtcdConfig.IsEnabled() {
