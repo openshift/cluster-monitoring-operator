@@ -20,8 +20,8 @@ import (
 	"path"
 	"strings"
 
-	appsv1 "k8s.io/api/apps/v1beta2"
-	"k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -33,19 +33,20 @@ import (
 )
 
 const (
-	governingServiceName     = "prometheus-operated"
-	DefaultPrometheusVersion = "v2.5.0"
-	DefaultThanosVersion     = "v0.1.0"
-	defaultRetention         = "24h"
-	storageDir               = "/prometheus"
-	confDir                  = "/etc/prometheus/config"
-	confOutDir               = "/etc/prometheus/config_out"
-	rulesDir                 = "/etc/prometheus/rules"
-	secretsDir               = "/etc/prometheus/secrets/"
-	configmapsDir            = "/etc/prometheus/configmaps/"
-	configFilename           = "prometheus.yaml"
-	configEnvsubstFilename   = "prometheus.env.yaml"
-	sSetInputHashName        = "prometheus-operator-input-hash"
+	governingServiceName            = "prometheus-operated"
+	DefaultPrometheusVersion        = "v2.7.1"
+	DefaultThanosVersion            = "v0.2.1"
+	defaultRetention                = "24h"
+	defaultReplicaExternalLabelName = "prometheus_replica"
+	storageDir                      = "/prometheus"
+	confDir                         = "/etc/prometheus/config"
+	confOutDir                      = "/etc/prometheus/config_out"
+	rulesDir                        = "/etc/prometheus/rules"
+	secretsDir                      = "/etc/prometheus/secrets/"
+	configmapsDir                   = "/etc/prometheus/configmaps/"
+	configFilename                  = "prometheus.yaml.gz"
+	configEnvsubstFilename          = "prometheus.env.yaml"
+	sSetInputHashName               = "prometheus-operator-input-hash"
 )
 
 var (
@@ -82,6 +83,10 @@ var (
 		"v2.4.2",
 		"v2.4.3",
 		"v2.5.0",
+		"v2.6.0",
+		"v2.6.1",
+		"v2.7.0",
+		"v2.7.1",
 	}
 )
 
@@ -331,10 +336,14 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			)
 		}
 	case 2:
+		retentionTimeFlag := "-storage.tsdb.retention="
+		if version.Minor >= 7 {
+			retentionTimeFlag = "-storage.tsdb.retention.time="
+		}
 		promArgs = append(promArgs,
 			fmt.Sprintf("-config.file=%s", path.Join(confOutDir, configEnvsubstFilename)),
 			fmt.Sprintf("-storage.tsdb.path=%s", storageDir),
-			"-storage.tsdb.retention="+p.Spec.Retention,
+			retentionTimeFlag+p.Spec.Retention,
 			"-web.enable-lifecycle",
 			"-storage.tsdb.no-lockfile",
 		)
@@ -343,6 +352,26 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			promArgs = append(promArgs,
 				fmt.Sprintf("-query.lookback-delta=%s", *p.Spec.Query.LookbackDelta),
 			)
+		}
+
+		if version.Minor >= 4 {
+			if p.Spec.Rules.Alert.ForOutageTolerance != "" {
+				promArgs = append(promArgs, "-rules.alert.for-outage-tolerance="+p.Spec.Rules.Alert.ForOutageTolerance)
+			}
+			if p.Spec.Rules.Alert.ForGracePeriod != "" {
+				promArgs = append(promArgs, "-rules.alert.for-grace-period="+p.Spec.Rules.Alert.ForGracePeriod)
+			}
+			if p.Spec.Rules.Alert.ResendDelay != "" {
+				promArgs = append(promArgs, "-rules.alert.resend-delay="+p.Spec.Rules.Alert.ResendDelay)
+			}
+		}
+
+		if version.Minor >= 5 {
+			if p.Spec.Query != nil && p.Spec.Query.MaxSamples != nil {
+				promArgs = append(promArgs,
+					fmt.Sprintf("-query.max-samples=%d", *p.Spec.Query.MaxSamples),
+				)
+			}
 		}
 	default:
 		return nil, errors.Errorf("unsupported Prometheus major version %s", version)
@@ -369,6 +398,10 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		securityContext = p.Spec.SecurityContext
 	}
 
+	if p.Spec.EnableAdminAPI {
+		promArgs = append(promArgs, "-web.enable-admin-api")
+	}
+
 	if p.Spec.ExternalURL != "" {
 		promArgs = append(promArgs, "-web.external-url="+p.Spec.ExternalURL)
 	}
@@ -381,6 +414,11 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 
 	if p.Spec.LogLevel != "" && p.Spec.LogLevel != "info" {
 		promArgs = append(promArgs, fmt.Sprintf("-log.level=%s", p.Spec.LogLevel))
+	}
+	if version.GTE(semver.MustParse("2.6.0")) {
+		if p.Spec.LogFormat != "" && p.Spec.LogFormat != "logfmt" {
+			promArgs = append(promArgs, fmt.Sprintf("-log.format=%s", p.Spec.LogFormat))
+		}
 	}
 
 	var ports []v1.ContainerPort
@@ -584,7 +622,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 
 	finalLabels := c.Labels.Merge(podLabels)
 
-	additionalContainers := p.Spec.Containers
+	var additionalContainers []v1.Container
 
 	if len(ruleConfigMapNames) != 0 {
 		container := v1.Container{
@@ -594,12 +632,14 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 				fmt.Sprintf("--webhook-url=%s", localReloadURL),
 			},
 			VolumeMounts: []v1.VolumeMount{},
-			Resources: v1.ResourceRequirements{
-				Limits: v1.ResourceList{
-					v1.ResourceCPU:    resource.MustParse("25m"),
-					v1.ResourceMemory: resource.MustParse("10Mi"),
-				},
-			},
+			Resources:    v1.ResourceRequirements{Limits: v1.ResourceList{}},
+		}
+
+		if c.ConfigReloaderCPU != "0" {
+			container.Resources.Limits[v1.ResourceCPU] = resource.MustParse(c.ConfigReloaderCPU)
+		}
+		if c.ConfigReloaderMemory != "0" {
+			container.Resources.Limits[v1.ResourceMemory] = resource.MustParse(c.ConfigReloaderMemory)
 		}
 
 		for _, name := range ruleConfigMapNames {
@@ -637,7 +677,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 
 		thanosArgs := []string{
 			"sidecar",
-			fmt.Sprintf("--prometheus.url=http://%s:9090", c.LocalHost),
+			fmt.Sprintf("--prometheus.url=http://%s:9090%s", c.LocalHost, path.Clean(webRoutePrefix)),
 			fmt.Sprintf("--tsdb.path=%s", storageDir),
 			fmt.Sprintf("--cluster.address=[$(POD_IP)]:%d", 10900),
 			fmt.Sprintf("--grpc-address=[$(POD_IP)]:%d", 10901),
@@ -646,8 +686,20 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		if p.Spec.Thanos.Peers != nil {
 			thanosArgs = append(thanosArgs, fmt.Sprintf("--cluster.peers=%s", *p.Spec.Thanos.Peers))
 		}
+		if p.Spec.Thanos.ClusterAdvertiseAddress != nil {
+			thanosArgs = append(thanosArgs, fmt.Sprintf("--cluster.advertise-address=%s", *p.Spec.Thanos.ClusterAdvertiseAddress))
+		}
+		if p.Spec.Thanos.GrpcAdvertiseAddress != nil {
+			thanosArgs = append(thanosArgs, fmt.Sprintf("--grpc-advertise-address=%s", *p.Spec.Thanos.GrpcAdvertiseAddress))
+		}
 		if p.Spec.LogLevel != "" && p.Spec.LogLevel != "info" {
 			thanosArgs = append(thanosArgs, fmt.Sprintf("--log.level=%s", p.Spec.LogLevel))
+		}
+		thanosVersion := semver.MustParse(strings.TrimPrefix(*p.Spec.Thanos.Version, "v"))
+		if thanosVersion.GTE(semver.MustParse("0.2.0")) {
+			if p.Spec.LogFormat != "" && p.Spec.LogFormat != "logfmt" {
+				thanosArgs = append(thanosArgs, fmt.Sprintf("--log.format=%s", p.Spec.LogFormat))
+			}
 		}
 
 		thanosVolumeMounts := []v1.VolumeMount{
@@ -668,7 +720,26 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 					},
 				},
 			},
+			{
+				Name: "HOST_IP",
+				ValueFrom: &v1.EnvVarSource{
+					FieldRef: &v1.ObjectFieldSelector{
+						FieldPath: "status.hostIP",
+					},
+				},
+			},
 		}
+
+		if p.Spec.Thanos.ObjectStorageConfig != nil {
+			envVars = append(envVars, v1.EnvVar{
+				Name: "OBJSTORE_CONFIG",
+				ValueFrom: &v1.EnvVarSource{
+					SecretKeyRef: p.Spec.Thanos.ObjectStorageConfig,
+				},
+			})
+			thanosArgs = append(thanosArgs, "--objstore.config=$(OBJSTORE_CONFIG)")
+		}
+
 		if p.Spec.Thanos.GCS != nil {
 			if p.Spec.Thanos.GCS.Bucket != nil {
 				thanosArgs = append(thanosArgs, fmt.Sprintf("--gcs.bucket=%s", *p.Spec.Thanos.GCS.Bucket))
@@ -776,6 +847,47 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		prometheusImage = *p.Spec.Image
 	}
 
+	prometheusConfigReloaderResources := v1.ResourceRequirements{Limits: v1.ResourceList{}}
+	if c.ConfigReloaderCPU != "0" {
+		prometheusConfigReloaderResources.Limits[v1.ResourceCPU] = resource.MustParse(c.ConfigReloaderCPU)
+	}
+	if c.ConfigReloaderMemory != "0" {
+		prometheusConfigReloaderResources.Limits[v1.ResourceMemory] = resource.MustParse(c.ConfigReloaderMemory)
+	}
+
+	operatorContainers := append([]v1.Container{
+		{
+			Name:           "prometheus",
+			Image:          prometheusImage,
+			Ports:          ports,
+			Args:           promArgs,
+			VolumeMounts:   promVolumeMounts,
+			LivenessProbe:  livenessProbe,
+			ReadinessProbe: readinessProbe,
+			Resources:      p.Spec.Resources,
+		}, {
+			Name:  "prometheus-config-reloader",
+			Image: c.PrometheusConfigReloaderImage,
+			Env: []v1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &v1.EnvVarSource{
+						FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"},
+					},
+				},
+			},
+			Command:      []string{"/bin/prometheus-config-reloader"},
+			Args:         configReloadArgs,
+			VolumeMounts: configReloadVolumeMounts,
+			Resources:    prometheusConfigReloaderResources,
+		},
+	}, additionalContainers...)
+
+	containers, err := k8sutil.MergePatchContainers(operatorContainers, p.Spec.Containers)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to merge containers spec")
+	}
+
 	return &appsv1.StatefulSetSpec{
 		ServiceName:         governingServiceName,
 		Replicas:            p.Spec.Replicas,
@@ -792,38 +904,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 				Annotations: podAnnotations,
 			},
 			Spec: v1.PodSpec{
-				Containers: append([]v1.Container{
-					{
-						Name:           "prometheus",
-						Image:          prometheusImage,
-						Ports:          ports,
-						Args:           promArgs,
-						VolumeMounts:   promVolumeMounts,
-						LivenessProbe:  livenessProbe,
-						ReadinessProbe: readinessProbe,
-						Resources:      p.Spec.Resources,
-					}, {
-						Name:  "prometheus-config-reloader",
-						Image: c.PrometheusConfigReloader,
-						Env: []v1.EnvVar{
-							{
-								Name: "POD_NAME",
-								ValueFrom: &v1.EnvVarSource{
-									FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"},
-								},
-							},
-						},
-						Command:      []string{"/bin/prometheus-config-reloader"},
-						Args:         configReloadArgs,
-						VolumeMounts: configReloadVolumeMounts,
-						Resources: v1.ResourceRequirements{
-							Limits: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("50m"),
-								v1.ResourceMemory: resource.MustParse("50Mi"),
-							},
-						},
-					},
-				}, additionalContainers...),
+				Containers:                    containers,
 				SecurityContext:               securityContext,
 				ServiceAccountName:            p.Spec.ServiceAccountName,
 				NodeSelector:                  p.Spec.NodeSelector,
