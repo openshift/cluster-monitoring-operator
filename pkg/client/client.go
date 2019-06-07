@@ -346,7 +346,7 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
-		pods, err := c.KubernetesInterface().Core().Pods(p.GetNamespace()).List(prometheusoperator.ListOptions(p.GetName()))
+		pods, err := c.KubernetesInterface().CoreV1().Pods(p.GetNamespace()).List(prometheusoperator.ListOptions(p.GetName()))
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving pods during polling failed")
 		}

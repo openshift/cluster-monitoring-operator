@@ -225,7 +225,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 	var lastErr error
 	// Wait for Prometheus adapter
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.Apps().Deployments(f.Ns).Get("prometheus-adapter", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get("prometheus-adapter", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting prometheus-adapter deployment failed")
 		if err != nil {
 			return false, nil
@@ -282,7 +282,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 
 	// Wait for new Prometheus adapter to roll out
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		d, err := f.KubeClient.Apps().Deployments(f.Ns).Get("prometheus-adapter", metav1.GetOptions{})
+		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get("prometheus-adapter", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting new prometheus adapter deployment failed")
 		if err != nil {
 			return false, nil

@@ -63,7 +63,7 @@ func testMain(m *testing.M) error {
 
 	// Wait for Prometheus operator.
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.Apps().Deployments(f.Ns).Get("prometheus-operator", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get("prometheus-operator", metav1.GetOptions{})
 		if err != nil {
 			return false, nil
 		}
