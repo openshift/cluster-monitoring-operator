@@ -418,6 +418,12 @@ local namespacesRole =
             {
               name: 'prometheus-proxy',
               image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
+              resources: {
+                requests: {
+                  memory: '20Mi',
+                  cpu: '10m',
+                },
+              },
               ports: [
                 {
                   containerPort: 9091,
@@ -460,6 +466,12 @@ local namespacesRole =
             {
               name: 'kube-rbac-proxy',
               image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
+              resources: {
+                requests: {
+                  memory: '20Mi',
+                  cpu: '10m',
+                },
+              },
               ports: [
                 {
                   containerPort: 9092,
