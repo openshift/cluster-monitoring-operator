@@ -1,4 +1,4 @@
-SHELL=/bin/bash -o pipefail
+SHELL=/usr/bin/env bash -o pipefail
 
 GO_PKG=github.com/openshift/cluster-monitoring-operator
 REPO?=quay.io/openshift/cluster-monitoring-operator
@@ -70,6 +70,7 @@ image: .hack-operator-image
 # Generating #
 ##############
 
+.PHONY: vendor
 vendor:
 	go mod tidy
 	go mod vendor
@@ -82,10 +83,10 @@ generate: $(EMBEDMD_BIN) merge-cluster-roles pkg/manifests/bindata.go docs
 generate-in-docker:
 	$(CONTAINER_CMD) $(MAKE) $(MFLAGS) generate
 
-jsonnet/vendor: jsonnet/jsonnetfile.json
+jsonnet/vendor: $(JB_BINARY) jsonnet/jsonnetfile.json
 	cd jsonnet && jb install
 
-$(ASSETS): $(JSONNET_SRC) $(JSONNET_VENDOR) hack/build-jsonnet.sh
+$(ASSETS): $(JSONNET_SRC) $(JSONNET_VENDOR) $(GOJSONTOYAML_BINARY) hack/build-jsonnet.sh
 	./hack/build-jsonnet.sh
 
 pkg/manifests/bindata.go: $(GOBINDATA_BIN) $(ASSETS)
