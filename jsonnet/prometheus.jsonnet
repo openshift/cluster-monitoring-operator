@@ -507,6 +507,12 @@ local namespacesRole =
                 '--upstream=http://127.0.0.1:9090',
                 '--label=namespace',
               ],
+              resources: {
+                requests: {
+                  memory: '20Mi',
+                  cpu: '10m',
+                },
+              },
             },
           ],
         },

@@ -97,6 +97,10 @@ spec:
     - --label=namespace
     image: quay.io/coreos/prom-label-proxy:v0.1.0
     name: prom-label-proxy
+    resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
   listenLocal: true
   nodeSelector:
     beta.kubernetes.io/os: linux
