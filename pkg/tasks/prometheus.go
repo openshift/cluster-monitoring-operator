@@ -261,16 +261,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus kubelet ServiceMonitor failed")
 	}
 
-	sma, err := t.factory.PrometheusK8sApiserverServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus apiserver ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(sma)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus apiserver ServiceMonitor failed")
-	}
-
 	smks, err := t.factory.PrometheusK8sKubeSchedulerServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus kube-scheduler ServiceMonitor failed")

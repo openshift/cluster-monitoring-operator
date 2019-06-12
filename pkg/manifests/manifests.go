@@ -76,7 +76,6 @@ var (
 	PrometheusK8sServiceAccount                       = "assets/prometheus-k8s/service-account.yaml"
 	PrometheusK8s                                     = "assets/prometheus-k8s/prometheus.yaml"
 	PrometheusK8sKubeletServiceMonitor                = "assets/prometheus-k8s/service-monitor-kubelet.yaml"
-	PrometheusK8sApiserverServiceMonitor              = "assets/prometheus-k8s/service-monitor-apiserver.yaml"
 	PrometheusK8sPrometheusServiceMonitor             = "assets/prometheus-k8s/service-monitor.yaml"
 	PrometheusK8sKubeControllerManagerServiceMonitor  = "assets/prometheus-k8s/service-monitor-kube-controller-manager.yaml"
 	PrometheusK8sKubeSchedulerServiceMonitor          = "assets/prometheus-k8s/service-monitor-kube-scheduler.yaml"
@@ -765,17 +764,6 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 
 func (f *Factory) PrometheusK8sKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeletServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) PrometheusK8sApiserverServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sApiserverServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
