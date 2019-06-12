@@ -4,6 +4,8 @@ GO_PKG=github.com/openshift/cluster-monitoring-operator
 REPO?=quay.io/openshift/cluster-monitoring-operator
 TAG?=$(shell git rev-parse --short HEAD)
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
+GO111MODULE?=on
+export GO111MODULE
 
 PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
 GOLANG_FILES:=$(shell find . -name \*.go -print) pkg/manifests/bindata.go
@@ -22,7 +24,7 @@ CONTAINER_CMD:=docker run --rm \
 		-v "$(shell go env GOCACHE):/.cache/go-build" \
 		-v "$(PWD):/go/src/$(GO_PKG):Z" \
 		-w "/go/src/$(GO_PKG)" \
-		-e GO111MODULE=on \
+		-e GO111MODULE=$(GO111MODULE) \
 		quay.io/coreos/jsonnet-ci
 
 .PHONY: all
