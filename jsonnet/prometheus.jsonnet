@@ -222,6 +222,8 @@ local namespacesRole =
         },
       },
 
+    serviceMonitorApiserver:: {},
+
     serviceMonitorOpenShiftApiserver:
       {
         apiVersion: 'monitoring.coreos.com/v1',
