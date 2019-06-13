@@ -25,6 +25,13 @@ func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, namespace
 	}
 }
 
+func newRelatedObjects(namespace string) []v1.ObjectReference {
+	return []v1.ObjectReference{
+		{Group: "operator.openshift.io", Resource: "monitoring", Name: "cluster"},
+		{Resource: "namespaces", Name: namespace},
+	}
+}
+
 func (r *StatusReporter) SetDone() error {
 	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
@@ -83,6 +90,7 @@ func (r *StatusReporter) SetInProgress() error {
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
 	co.Status.Conditions = conditions.entries()
+	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
 
 	_, err = r.client.UpdateStatus(co)
 	return err
@@ -123,11 +131,7 @@ func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
 		Spec:   v1.ClusterOperatorSpec{},
 		Status: v1.ClusterOperatorStatus{},
 	}
-	co.Status.RelatedObjects = []v1.ObjectReference{
-		{Group: "operator.openshift.io", Resource: "monitoring", Name: "cluster"},
-		{Resource: "namespaces", Name: r.namespace},
-	}
-
+	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
 	co.Status.Conditions = newConditions(co.Status, r.version, time).entries()
 
 	return co
