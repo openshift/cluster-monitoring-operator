@@ -138,6 +138,24 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
         rule
     );
     utils.mapRuleGroups(replaceKubeletTooManyPodsMessage),
+} + {
+  // This patches the KubePodCrashLooping alert expression to use 5 minute range
+  // https://bugzilla.redhat.com/show_bug.cgi?id=1700195
+  prometheusAlerts+::
+    local replaceKubePodCrashLoopingExpression(rule) = (
+      if ('alert' in rule) && (rule.alert == 'KubePodCrashLooping') then
+        rule {
+          expr: |||
+            rate(kube_pod_container_status_restarts_total{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[15m]) * 60 * 5 > 0
+          ||| % $._config,
+          annotations: {
+            message: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.',
+          },
+        }
+      else
+        rule
+    );
+    utils.mapRuleGroups(replaceKubePodCrashLoopingExpression),
 };
 
 { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
