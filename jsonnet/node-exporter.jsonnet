@@ -95,8 +95,7 @@ local tlsVolumeName = 'node-exporter-tls';
               volumes+: [volume.fromSecret(tlsVolumeName, 'node-exporter-tls')],
               securityContext: {},
               tolerations: [
-                toleration.new() + toleration.withOperator('Exists') + toleration.withEffect('NoExecute'),
-                toleration.new() + toleration.withOperator('Exists') + toleration.withEffect('NoSchedule'),
+                { operator: "Exists" },
               ],
             },
           },
