@@ -71,10 +71,7 @@ spec:
       securityContext: {}
       serviceAccountName: node-exporter
       tolerations:
-      - effect: NoExecute
-        operator: Exists
-      - effect: NoSchedule
-        operator: Exists
+      - operator: Exists
       volumes:
       - hostPath:
           path: /proc
