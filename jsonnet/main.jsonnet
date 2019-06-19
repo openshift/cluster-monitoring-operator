@@ -156,6 +156,20 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
         rule
     );
     utils.mapRuleGroups(replaceKubePodCrashLoopingExpression),
+} + {
+  // Remove constantly firing etcd gRPC alerts.
+  // https://bugzilla.redhat.com/show_bug.cgi?id=1717398
+  prometheusAlerts+:: {
+    groups:
+      std.map(
+        function(ruleGroup)
+          if ruleGroup.name == 'etcd' then
+            ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'EtcdHighNumberOfFailedGRPCRequests'), ruleGroup.rules) }
+          else
+            ruleGroup,
+        super.groups,
+      ),
+  },
 };
 
 { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
