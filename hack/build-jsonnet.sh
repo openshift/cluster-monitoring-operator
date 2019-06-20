@@ -48,5 +48,6 @@ rm -rf "assets/prometheus-operator/0alertmanager-custom-resource-definition.yaml
 rm -rf "assets/prometheus-operator/0prometheus-custom-resource-definition.yaml"
 rm -rf "assets/prometheus-operator/0prometheusrule-custom-resource-definition.yaml"
 rm -rf "assets/prometheus-operator/0servicemonitor-custom-resource-definition.yaml"
+rm -rf "assets/prometheus-operator/0podmonitor-custom-resource-definition.yaml"
 rm -rf "assets/prometheus-k8s/service-monitor-core-d-n-s.yaml"
 
