@@ -3,7 +3,7 @@ module github.com/openshift/cluster-monitoring-operator
 go 1.12
 
 replace (
-	github.com/coreos/prometheus-operator => github.com/coreos/prometheus-operator v0.30.1
+	github.com/coreos/prometheus-operator => github.com/coreos/prometheus-operator v0.31.1-0.20190621140400-7b51b28a4853
 	k8s.io/api => k8s.io/api v0.0.0-20190606204050-af9c91bd2759
 	k8s.io/client-go => k8s.io/client-go v11.0.1-0.20190606204521-b8faab9c5193+incompatible
 )
@@ -17,7 +17,6 @@ require (
 	github.com/go-openapi/swag v0.18.0 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
-	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
@@ -26,15 +25,12 @@ require (
 	github.com/openshift/api v0.0.0-20190424103643-f9c19755eb3e
 	github.com/openshift/client-go v0.0.0-20190412095722-0255926f5393
 	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v0.9.2
-	github.com/prometheus/common v0.0.0-20190107103113-2998b132700a // indirect
-	github.com/prometheus/procfs v0.0.0-20190104112138-b1a0a9a36d74 // indirect
+	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
-	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/api v0.0.0-20190313235455-40a48860b5ab
-	k8s.io/apiextensions-apiserver v0.0.0-20190315093550-53c4693659ed
-	k8s.io/apimachinery v0.0.0-20190313205120-d7deff9243b1
+	k8s.io/api v0.0.0-20190620084959-7cf5895f2711
+	k8s.io/apiextensions-apiserver v0.0.0-20190620085554-14e95df34f1f
+	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/klog v0.3.2 // indirect
 	k8s.io/kube-aggregator v0.0.0-20181004124448-331c5a816775
