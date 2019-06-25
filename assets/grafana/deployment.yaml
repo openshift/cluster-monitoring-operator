@@ -37,6 +37,12 @@ spec:
         - mountPath: /etc/grafana/provisioning/dashboards
           name: grafana-dashboards
           readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/apiserver
+          name: grafana-dashboard-apiserver
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/controller-manager
+          name: grafana-dashboard-controller-manager
+          readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/etcd
           name: grafana-dashboard-etcd
           readOnly: false
@@ -60,6 +66,15 @@ spec:
           readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/k8s-resources-workloads-namespace
           name: grafana-dashboard-k8s-resources-workloads-namespace
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/kubelet
+          name: grafana-dashboard-kubelet
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/proxy
+          name: grafana-dashboard-proxy
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/scheduler
+          name: grafana-dashboard-scheduler
           readOnly: false
         - mountPath: /etc/grafana
           name: grafana-config
@@ -110,6 +125,12 @@ spec:
           name: grafana-dashboards
         name: grafana-dashboards
       - configMap:
+          name: grafana-dashboard-apiserver
+        name: grafana-dashboard-apiserver
+      - configMap:
+          name: grafana-dashboard-controller-manager
+        name: grafana-dashboard-controller-manager
+      - configMap:
           name: grafana-dashboard-etcd
         name: grafana-dashboard-etcd
       - configMap:
@@ -133,6 +154,15 @@ spec:
       - configMap:
           name: grafana-dashboard-k8s-resources-workloads-namespace
         name: grafana-dashboard-k8s-resources-workloads-namespace
+      - configMap:
+          name: grafana-dashboard-kubelet
+        name: grafana-dashboard-kubelet
+      - configMap:
+          name: grafana-dashboard-proxy
+        name: grafana-dashboard-proxy
+      - configMap:
+          name: grafana-dashboard-scheduler
+        name: grafana-dashboard-scheduler
       - name: grafana-config
         secret:
           secretName: grafana-config
