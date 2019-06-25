@@ -78,7 +78,6 @@ var (
 	PrometheusK8sKubeletServiceMonitor                = "assets/prometheus-k8s/service-monitor-kubelet.yaml"
 	PrometheusK8sApiserverServiceMonitor              = "assets/prometheus-k8s/service-monitor-apiserver.yaml"
 	PrometheusK8sPrometheusServiceMonitor             = "assets/prometheus-k8s/service-monitor.yaml"
-	PrometheusK8sKubeControllerManagerServiceMonitor  = "assets/prometheus-k8s/service-monitor-kube-controller-manager.yaml"
 	PrometheusK8sKubeSchedulerServiceMonitor          = "assets/prometheus-k8s/service-monitor-kube-scheduler.yaml"
 	PrometheusK8sServiceMonitorClusterVersionOperator = "assets/prometheus-k8s/service-monitor-cluster-version-operator.yaml"
 	PrometheusK8sServiceMonitorOpenShiftApiserver     = "assets/prometheus-k8s/service-monitor-open-shift-apiserver.yaml"
@@ -799,17 +798,6 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor
 
 func (f *Factory) PrometheusK8sKubeSchedulerServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeSchedulerServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) PrometheusK8sKubeControllerManagerServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeControllerManagerServiceMonitor))
 	if err != nil {
 		return nil, err
 	}

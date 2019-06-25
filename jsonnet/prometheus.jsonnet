@@ -333,45 +333,7 @@ local namespacesRole =
         },
       },
 
-    // In OpenShift the kube-controller-manager runs in its own namespace, and
-    // has a TLS cert from the serving certs controller.
-
-    serviceMonitorKubeControllerManager+:
-      {
-        spec+: {
-          jobLabel: null,
-          namespaceSelector: {
-            matchNames: [
-              'openshift-kube-controller-manager',
-            ],
-          },
-          selector: {},
-          endpoints:
-            std.map(
-              function(a) a {
-                bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-                interval: '30s',
-                port: 'https',
-                scheme: 'https',
-                tlsConfig: {
-                  // TODO: currently, kube controller manager operator doesn't enroll target certificates correctly.
-                  // Once this is resolved, reenable TLS verification.
-                  insecureSkipVerify: true,
-                  // caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                  // serverName: 'controller-manager.openshift-kube-controller-manager.svc',
-                },
-                metricRelabelings+: [{
-                  action: 'drop',
-                  regex: 'rest_client_request_latency_seconds_(bucket|count|sum)',
-                  sourceLabels: [
-                    '__name__',
-                  ],
-                }],
-              },
-              super.endpoints,
-            ),
-        },
-      },
+    serviceMonitorKubeControllerManager:: {},
 
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and

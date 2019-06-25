@@ -281,16 +281,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus kube-scheduler ServiceMonitor failed")
 	}
 
-	smkcm, err := t.factory.PrometheusK8sKubeControllerManagerServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus kube-controller-manager ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smkcm)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus kube-controller-manager ServiceMonitor failed")
-	}
-
 	smcvo, err := t.factory.PrometheusK8sServiceMonitorClusterVersionOperator()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus cluster-version-operator ServiceMonitor failed")
