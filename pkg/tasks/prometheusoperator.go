@@ -18,6 +18,8 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type PrometheusOperatorTask struct {
@@ -81,6 +83,23 @@ func (t *PrometheusOperatorTask) Run() error {
 	d, err := t.factory.PrometheusOperatorDeployment(namespaces)
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Operator Deployment failed")
+	}
+
+	// TODO: this is a migration from 4.1 to 4.2, it can be removed afterwards.
+	// This is necessary as the .spec.selector of the Prometheus Operator
+	// deployment changed.
+	dep, err := t.client.KubernetesInterface().AppsV1beta2().Deployments(d.GetNamespace()).Get(d.GetName(), metav1.GetOptions{})
+	if err == nil {
+		if v, exists := dep.Labels["k8s-app"]; exists && v == "prometheus-operator" {
+			propagationPolicy := metav1.DeletePropagationForeground
+			err := t.client.KubernetesInterface().AppsV1beta2().Deployments(dep.GetNamespace()).Delete(dep.GetName(), &metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil {
+				return errors.Wrap(err, "deleting old prometheus-operator deployment failed")
+			}
+		}
+	}
+	if err != nil && !apierrors.IsNotFound(err) {
+		return errors.Wrap(err, "retrieving existing prometheus-operator deployment failed")
 	}
 
 	err = t.client.CreateOrUpdateDeployment(d)
