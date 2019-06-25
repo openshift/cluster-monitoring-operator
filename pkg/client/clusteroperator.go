@@ -12,14 +12,23 @@ import (
 type StatusReporter struct {
 	client              clientv1.ClusterOperatorInterface
 	clusterOperatorName string
+	namespace           string
 	version             string
 }
 
-func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, version string) *StatusReporter {
+func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, namespace, version string) *StatusReporter {
 	return &StatusReporter{
 		client:              client,
 		clusterOperatorName: name,
+		namespace:           namespace,
 		version:             version,
+	}
+}
+
+func newRelatedObjects(namespace string) []v1.ObjectReference {
+	return []v1.ObjectReference{
+		{Group: "operator.openshift.io", Resource: "monitoring", Name: "cluster"},
+		{Resource: "namespaces", Name: namespace},
 	}
 }
 
@@ -81,6 +90,7 @@ func (r *StatusReporter) SetInProgress() error {
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
 	co.Status.Conditions = conditions.entries()
+	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
 
 	_, err = r.client.UpdateStatus(co)
 	return err
@@ -121,6 +131,7 @@ func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
 		Spec:   v1.ClusterOperatorSpec{},
 		Status: v1.ClusterOperatorStatus{},
 	}
+	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
 	co.Status.Conditions = newConditions(co.Status, r.version, time).entries()
 
 	return co
