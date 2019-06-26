@@ -142,11 +142,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sKubeletServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusK8sPrometheusServiceMonitor()
 	if err != nil {
 		t.Fatal(err)

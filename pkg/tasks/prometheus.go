@@ -49,21 +49,6 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
 	}
 
-	kscm, err := t.client.GetConfigmap("openshift-config-managed", "kubelet-serving-ca")
-	if err != nil {
-		return errors.Wrap(err, "openshift-config-managed/kubelet-serving-ca")
-	}
-
-	cacm, err = t.factory.PrometheusK8sKubeletServingCABundle(kscm.Data)
-	if err != nil {
-		return errors.Wrap(err, "initializing kubelet serving CA Bundle ConfigMap failed")
-	}
-
-	err = t.client.CreateOrUpdateConfigMap(cacm)
-	if err != nil {
-		return errors.Wrap(err, "creating kubelet serving CA Bundle ConfigMap failed")
-	}
-
 	r, err := t.factory.PrometheusK8sRoute()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Route failed")
@@ -249,16 +234,6 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.WaitForPrometheus(p)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Prometheus object changes failed")
-	}
-
-	smk, err := t.factory.PrometheusK8sKubeletServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus kubelet ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smk)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus kubelet ServiceMonitor failed")
 	}
 
 	smks, err := t.factory.PrometheusK8sKubeSchedulerServiceMonitor()

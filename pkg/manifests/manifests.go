@@ -75,7 +75,6 @@ var (
 	PrometheusK8sRules                                = "assets/prometheus-k8s/rules.yaml"
 	PrometheusK8sServiceAccount                       = "assets/prometheus-k8s/service-account.yaml"
 	PrometheusK8s                                     = "assets/prometheus-k8s/prometheus.yaml"
-	PrometheusK8sKubeletServiceMonitor                = "assets/prometheus-k8s/service-monitor-kubelet.yaml"
 	PrometheusK8sPrometheusServiceMonitor             = "assets/prometheus-k8s/service-monitor.yaml"
 	PrometheusK8sKubeSchedulerServiceMonitor          = "assets/prometheus-k8s/service-monitor-kube-scheduler.yaml"
 	PrometheusK8sServiceMonitorClusterVersionOperator = "assets/prometheus-k8s/service-monitor-cluster-version-operator.yaml"
@@ -86,7 +85,6 @@ var (
 	PrometheusK8sHtpasswd                             = "assets/prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sEtcdServiceMonitor                   = "assets/prometheus-k8s/service-monitor-etcd.yaml"
 	PrometheusK8sServingCertsCABundle                 = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
-	PrometheusK8sKubeletServingCABundle               = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 
 	PrometheusAdapterAPIService                         = "assets/prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "assets/prometheus-adapter/cluster-role.yaml"
@@ -617,18 +615,6 @@ func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
 	return c, nil
 }
 
-func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(PrometheusK8sKubeletServingCABundle))
-	if err != nil {
-		return nil, err
-	}
-
-	c.Namespace = f.namespace
-	c.Data = data
-
-	return c, nil
-}
-
 func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sEtcdServiceMonitor))
 	if err != nil {
@@ -758,17 +744,6 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 	p.Namespace = f.namespace
 
 	return p, nil
-}
-
-func (f *Factory) PrometheusK8sKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeletServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
 }
 
 func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {

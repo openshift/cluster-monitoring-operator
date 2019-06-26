@@ -95,14 +95,6 @@ local namespacesRole =
       configmap.mixin.metadata.withNamespace($._config.namespace) +
       configmap.mixin.metadata.withAnnotations({ 'service.alpha.openshift.io/inject-cabundle': 'true' }),
 
-    // Even though this bundle will be frequently rotated by the CSR
-    // controller, there is no need to add a ConfigMap reloader to
-    // the Prometheus Pods because Prometheus automatically reloads
-    // its cert pool every 5 seconds.
-    kubeletServingCaBundle+:
-      configmap.new('kubelet-serving-ca-bundle', { 'ca-bundle.crt': '' }) +
-      configmap.mixin.metadata.withNamespace($._config.namespace),
-
     // As Prometheus is protected by the oauth proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.
     // Additionally in order to authenticate with the Alertmanager it
@@ -178,50 +170,6 @@ local namespacesRole =
       secret.mixin.metadata.withNamespace($._config.namespace) +
       secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
 
-    // This changes the kubelet's certificates to be validated when
-    // scraping.
-
-    serviceMonitorKubelet+:
-      {
-        spec+: {
-          endpoints:
-            std.map(
-              function(e)
-                e {
-                  tlsConfig+: {
-                    caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
-                    insecureSkipVerify: false,
-                  },
-                },
-              super.endpoints,
-            ) +
-            [{
-              interval: '30s',
-              port: 'https-metrics',
-              relabelings: [
-                {
-                  sourceLabels: ['__address__'],
-                  action: 'replace',
-                  targetLabel: '__address__',
-                  regex: '(.+)(?::\\d+)',
-                  replacement: '$1:9537',
-                },
-                {
-                  sourceLabels: ['endpoint'],
-                  action: 'replace',
-                  targetLabel: 'endpoint',
-                  replacement: 'crio',
-                },
-                {
-                  action: 'replace',
-                  targetLabel: 'job',
-                  replacement: 'crio',
-                },
-              ],
-            }],
-        },
-      },
-
     serviceMonitorEtcd+:
       {
         metadata+: {
@@ -289,6 +237,7 @@ local namespacesRole =
       },
 
     serviceMonitorKubeControllerManager:: {},
+    serviceMonitorKubelet:: {},
 
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and
@@ -324,7 +273,7 @@ local namespacesRole =
             'prometheus-k8s-htpasswd',
             'kube-rbac-proxy',
           ],
-          configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
+          configMaps: ['serving-certs-ca-bundle'],
           serviceMonitorSelector: {},
           serviceMonitorNamespaceSelector: {},
           ruleSelector: {},
