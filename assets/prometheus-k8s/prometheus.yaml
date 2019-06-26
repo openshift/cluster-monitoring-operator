@@ -33,7 +33,6 @@ spec:
   baseImage: openshift/prometheus
   configMaps:
   - serving-certs-ca-bundle
-  - kubelet-serving-ca-bundle
   containers:
   - args:
     - -provider=openshift
