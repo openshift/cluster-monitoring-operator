@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "d49eebaf0e92d7109cff234bb7f9a2c00447a55e"
+            "version": "3596bcd93d15aad44a8403314c37c2ede04e3d8d"
         },
         {
             "name": "grafonnet",
@@ -48,7 +48,7 @@
                     "subdir": "grafana-builder"
                 }
             },
-            "version": "76258e92c20a2bca74e7f2630c3f8d562919ec86"
+            "version": "45313aeba512858da2974bd44f9adab619cb8f71"
         },
         {
             "name": "grafana",
@@ -68,7 +68,7 @@
                     "subdir": "jsonnet/prometheus-operator"
                 }
             },
-            "version": "f05d5228fe02bcd370acaa234c15f3d9fdef4a60"
+            "version": "6efd4e5e12213021516c10b3ebd0699260ddd804"
         },
         {
             "name": "etcd-mixin",
