@@ -1,6 +1,7 @@
 FROM registry.svc.ci.openshift.org/openshift/release:golang-1.12 AS builder
 WORKDIR /go/src/github.com/openshift/cluster-monitoring-operator
 COPY . .
+ENV GOFLAGS="-mod=vendor"
 RUN make operator-no-deps
 
 FROM registry.svc.ci.openshift.org/openshift/origin-v4.0:base
