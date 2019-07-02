@@ -115,7 +115,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
   grafanaDashboards:: {
     [k]: d[k]
     for k in std.objectFields(d)
-    if !std.setMember(k, ['nodes.json', 'persistentvolumesusage.json', 'pods.json', 'statefulset.json'])
+                         // This array must be sorted for `std.setMember` to work.
+    if !std.setMember(k, ['apiserver.json', 'controller-manager.json', 'kubelet.json', 'nodes.json', 'persistentvolumesusage.json', 'pods.json', 'proxy.json', 'scheduler.json', 'statefulset.json'])
   },
 } + {
   _config+:: {
