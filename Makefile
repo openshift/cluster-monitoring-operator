@@ -132,6 +132,11 @@ test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
 	go test -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG)
 
+.PHONY: test-sec
+test-sec:
+	@which gosec 2> /dev/null >&1 || { echo "gosec must be installed to lint code";  exit 1; }
+	gosec -severity medium --confidence medium -quiet ./...
+
 ############
 # Binaries #
 ############
