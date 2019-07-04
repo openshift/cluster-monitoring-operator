@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"bytes"
+	// #nosec
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
@@ -587,6 +588,8 @@ func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, erro
 		return nil, err
 	}
 
+	// #nosec
+	// TODO: Replace this with a safer algorithm
 	h := sha1.New()
 	h.Write([]byte(password))
 	s.Data["auth"] = []byte("internal:{SHA}" + base64.StdEncoding.EncodeToString(h.Sum(nil)))
