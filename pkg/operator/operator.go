@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -28,6 +27,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -152,7 +152,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 			errChan <- errors.Wrap(err, "communicating with server failed")
 			return
 		}
-		glog.V(4).Infof("Connection established (cluster-version: %s)", v)
+		klog.V(4).Infof("Connection established (cluster-version: %s)", v)
 
 		errChan <- nil
 	}()
@@ -169,12 +169,12 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	go o.cmapInf.Run(stopc)
 	go o.kubeSystemCmapInf.Run(stopc)
 
-	glog.V(4).Info("Waiting for initial cache sync.")
+	klog.V(4).Info("Waiting for initial cache sync.")
 	ok := cache.WaitForCacheSync(stopc, o.cmapInf.HasSynced, o.kubeSystemCmapInf.HasSynced)
 	if !ok {
 		return errors.New("failed to sync informers")
 	}
-	glog.V(4).Info("Initial cache sync done.")
+	klog.V(4).Info("Initial cache sync done.")
 
 	go o.worker()
 
@@ -184,7 +184,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	key := o.namespace + "/" + o.configMapName
 	_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
 	if !exists {
-		glog.Info("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
+		klog.Info("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
 		o.enqueue(key)
 	}
 
@@ -195,7 +195,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 		case <-ticker.C:
 			_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
 			if !exists {
-				glog.Info("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
+				klog.Info("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
 				o.enqueue(key)
 			}
 		}
@@ -207,7 +207,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 	k, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		glog.Errorf("creating key failed, err: %s", err)
+		klog.Errorf("creating key failed, err: %s", err)
 		return k, false
 	}
 	return k, true
@@ -219,7 +219,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 		return
 	}
 
-	glog.V(5).Infof("ConfigMap updated: %s", key)
+	klog.V(5).Infof("ConfigMap updated: %s", key)
 
 	cmoConfigMap := o.namespace + "/" + o.configMapName
 
@@ -230,7 +230,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case prometheusAdapterTLSSecret:
 	case etcdClientCAConfigMap:
 	default:
-		glog.V(5).Infof("ConfigMap (%s) not triggering an update.", key)
+		klog.V(5).Infof("ConfigMap (%s) not triggering an update.", key)
 		return
 	}
 
@@ -259,7 +259,7 @@ func (o *Operator) processNextWorkItem() bool {
 	}
 
 	o.reconcileErrors.Inc()
-	glog.Errorf("Syncing %q failed", key)
+	klog.Errorf("Syncing %q failed", key)
 	utilruntime.HandleError(errors.Wrap(err, fmt.Sprintf("sync %q failed", key)))
 	o.queue.AddRateLimited(key)
 
@@ -304,26 +304,26 @@ func (o *Operator) sync(key string) error {
 		},
 	)
 
-	glog.Info("Updating ClusterOperator status to in progress.")
+	klog.Info("Updating ClusterOperator status to in progress.")
 	err := o.client.StatusReporter().SetInProgress()
 	if err != nil {
-		glog.Errorf("error occurred while setting status to in progress: %v", err)
+		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
 
 	err = tl.RunAll()
 	if err != nil {
-		glog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
+		klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
 		reportErr := o.client.StatusReporter().SetFailed(err)
 		if reportErr != nil {
-			glog.Errorf("error occurred while setting status to in progress: %v", reportErr)
+			klog.Errorf("error occurred while setting status to in progress: %v", reportErr)
 		}
 		return err
 	}
 
-	glog.Info("Updating ClusterOperator status to done.")
+	klog.Info("Updating ClusterOperator status to done.")
 	err = o.client.StatusReporter().SetDone()
 	if err != nil {
-		glog.Errorf("error occurred while setting status to done: %v", err)
+		klog.Errorf("error occurred while setting status to done: %v", err)
 	}
 
 	return nil
@@ -334,12 +334,12 @@ func (o *Operator) loadConfig(key string) *manifests.Config {
 
 	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
-		glog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
+		klog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
 		return c
 	}
 
 	if !found {
-		glog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
+		klog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
 		return c
 	}
 
@@ -347,13 +347,13 @@ func (o *Operator) loadConfig(key string) *manifests.Config {
 	configContent, found := cmap.Data["config.yaml"]
 
 	if !found {
-		glog.Warning("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
+		klog.Warning("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
 		return c
 	}
 
 	cParsed, err := manifests.NewConfigFromString(configContent)
 	if err != nil {
-		glog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
+		klog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
 		return c
 	}
 
@@ -370,7 +370,7 @@ func (o *Operator) Config(key string) *manifests.Config {
 		})
 
 		if err != nil {
-			glog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
+			klog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
 		}
 
 		err = c.LoadToken(func() (*v1.Secret, error) {
@@ -378,7 +378,7 @@ func (o *Operator) Config(key string) *manifests.Config {
 		})
 
 		if err != nil {
-			glog.Warningf("Error loading token from API. Proceeding without it: %v", err)
+			klog.Warningf("Error loading token from API. Proceeding without it: %v", err)
 		}
 	}
 
@@ -387,17 +387,17 @@ func (o *Operator) Config(key string) *manifests.Config {
 	})
 
 	if err != nil {
-		glog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
+		klog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
 	}
 
 	cm, err := o.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
 	if err != nil {
-		glog.Warningf("Error loading etcd CA certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+		klog.Warningf("Error loading etcd CA certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
 	}
 
 	s, err := o.client.GetSecret("openshift-config", "etcd-metric-client")
 	if err != nil {
-		glog.Warningf("Error loading etcd client secrets for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+		klog.Warningf("Error loading etcd client secrets for Prometheus. Proceeding with etcd disabled. Error: %v", err)
 	}
 
 	if err == nil {

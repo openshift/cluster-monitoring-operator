@@ -26,7 +26,6 @@ import (
 	monitoring "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 	prometheusoperator "github.com/coreos/prometheus-operator/pkg/prometheus"
-	"github.com/golang/glog"
 	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
@@ -48,6 +47,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
@@ -351,8 +351,8 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 			return false, errors.Wrap(err, "retrieving pods during polling failed")
 		}
 
-		glog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
-		glog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
+		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
+		klog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
 
 		lastErr = fmt.Errorf("waiting for %d Pods to be deleted", len(pods.Items))
 		return len(pods.Items) == 0, nil

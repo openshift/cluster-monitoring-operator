@@ -17,11 +17,11 @@ package tasks
 import (
 	"encoding/json"
 
-	"github.com/golang/glog"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 )
 
 type PrometheusTask struct {
@@ -233,19 +233,19 @@ func (t *PrometheusTask) Run() error {
 		}
 	}
 
-	glog.V(4).Info("initializing Prometheus object")
+	klog.V(4).Info("initializing Prometheus object")
 	p, err := t.factory.PrometheusK8s(host)
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus object failed")
 	}
 
-	glog.V(4).Info("reconciling Prometheus object")
+	klog.V(4).Info("reconciling Prometheus object")
 	err = t.client.CreateOrUpdatePrometheus(p)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus object failed")
 	}
 
-	glog.V(4).Info("waiting for Prometheus object changes")
+	klog.V(4).Info("waiting for Prometheus object changes")
 	err = t.client.WaitForPrometheus(p)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Prometheus object changes failed")

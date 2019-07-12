@@ -15,7 +15,6 @@ require (
 	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
 	github.com/go-openapi/spec v0.18.0 // indirect
 	github.com/go-openapi/swag v0.18.0 // indirect
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
@@ -36,7 +35,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20190315093550-53c4693659ed
 	k8s.io/apimachinery v0.0.0-20190313205120-d7deff9243b1
 	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/klog v0.3.2 // indirect
+	k8s.io/klog v0.3.2
 	k8s.io/kube-aggregator v0.0.0-20181004124448-331c5a816775
 	k8s.io/metrics v0.0.0-20181004124939-8b490d15bb19
 	k8s.io/utils v0.0.0-20190529001817-6999998975a7 // indirect
