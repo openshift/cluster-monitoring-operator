@@ -76,6 +76,7 @@ func NewPrometheusClient(
 // Query runs an http get request against the Prometheus query api and returns
 // the response body.
 func (c *PrometheusClient) Query(query string) ([]byte, error) {
+	// #nosec
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
