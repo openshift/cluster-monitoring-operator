@@ -113,6 +113,10 @@
             record: 'code:apiserver_request_count:rate:sum',
           },
           {
+            expr: 'sum(rate(apiserver_request_count{job="apiserver",resource=~"image.*",verb!="WATCH"}[10m])) BY (code)',
+            record: 'code:registry_api_request_count:rate:sum',
+          },
+          {
             expr: 'sum(kube_pod_status_ready{condition="true",namespace="openshift-etcd",pod=~"etcd.*"}) by(condition)',
             record: 'kube_pod_status_ready:etcd:sum',
           },
