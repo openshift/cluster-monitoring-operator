@@ -24,11 +24,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
@@ -78,6 +78,7 @@ func (i *images) Type() string {
 
 func Main() int {
 	flagset := flag.CommandLine
+	klog.InitFlags(flagset)
 	namespace := flagset.String("namespace", "openshift-monitoring", "Namespace to deploy and manage cluster monitoring stack in.")
 	namespaceSelector := flagset.String("namespace-selector", "openshift.io/cluster-monitoring=true", "Selector for namespaces to monitor.")
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
@@ -103,7 +104,7 @@ func Main() int {
 		fmt.Fprint(os.Stderr, "`--release-version` flag is not set.")
 	}
 	if releaseVersion != nil {
-		glog.V(4).Infof("Release version set to %v", *releaseVersion)
+		klog.V(4).Infof("Release version set to %v", *releaseVersion)
 	}
 
 	if !ok {
@@ -143,13 +144,13 @@ func Main() int {
 
 	select {
 	case <-term:
-		glog.V(4).Info("Received SIGTERM, exiting gracefully...")
+		klog.V(4).Info("Received SIGTERM, exiting gracefully...")
 	case <-ctx.Done():
 	}
 
 	cancel()
 	if err := wg.Wait(); err != nil {
-		glog.V(4).Infof("Unhandled error received. Exiting...err: %s", err)
+		klog.V(4).Infof("Unhandled error received. Exiting...err: %s", err)
 		return 1
 	}
 

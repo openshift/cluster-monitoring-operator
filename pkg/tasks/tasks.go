@@ -15,10 +15,10 @@
 package tasks
 
 import (
-	"github.com/golang/glog"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
+	"k8s.io/klog"
 )
 
 type TaskRunner struct {
@@ -42,9 +42,9 @@ func (tl *TaskRunner) RunAll() error {
 		i := i
 
 		g.Go(func() error {
-			glog.V(4).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
+			klog.V(4).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
 			err := tl.ExecuteTask(ts)
-			glog.V(4).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
+			klog.V(4).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
 			return errors.Wrapf(err, "running task %v failed", ts.Name)
 		})
 	}
