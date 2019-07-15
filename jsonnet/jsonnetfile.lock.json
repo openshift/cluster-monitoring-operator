@@ -89,6 +89,16 @@
                 }
             },
             "version": "ce206ba40660c4ff39d4d01c795049724d60eff3"
+        },
+        {
+            "name": "openshift-state-metrics",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/openshift/openshift-state-metrics",
+                    "subdir": "jsonnet"
+                }
+            },
+            "version": "2c9a2905bf63b2ceaa0ef295364ebba512f3a428"
         }
     ]
 }

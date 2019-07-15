@@ -27,16 +27,17 @@ import (
 )
 
 type Config struct {
-	Images                   *Images                   `json:"-"`
-	PrometheusOperatorConfig *PrometheusOperatorConfig `json:"prometheusOperator"`
-	PrometheusK8sConfig      *PrometheusK8sConfig      `json:"prometheusK8s"`
-	AlertmanagerMainConfig   *AlertmanagerMainConfig   `json:"alertmanagerMain"`
-	KubeStateMetricsConfig   *KubeStateMetricsConfig   `json:"kubeStateMetrics"`
-	GrafanaConfig            *GrafanaConfig            `json:"grafana"`
-	EtcdConfig               *EtcdConfig               `json:"-"`
-	HTTPConfig               *HTTPConfig               `json:"http"`
-	TelemeterClientConfig    *TelemeterClientConfig    `json:"telemeterClient"`
-	K8sPrometheusAdapter     *K8sPrometheusAdapter     `json:"k8sPrometheusAdapter"`
+	Images                   *Images                      `json:"-"`
+	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
+	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`
+	AlertmanagerMainConfig   *AlertmanagerMainConfig      `json:"alertmanagerMain"`
+	KubeStateMetricsConfig   *KubeStateMetricsConfig      `json:"kubeStateMetrics"`
+	OpenShiftMetricsConfig   *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics"`
+	GrafanaConfig            *GrafanaConfig               `json:"grafana"`
+	EtcdConfig               *EtcdConfig                  `json:"-"`
+	HTTPConfig               *HTTPConfig                  `json:"http"`
+	TelemeterClientConfig    *TelemeterClientConfig       `json:"telemeterClient"`
+	K8sPrometheusAdapter     *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
 }
 
 type Images struct {
@@ -51,6 +52,7 @@ type Images struct {
 	OauthProxy               string
 	NodeExporter             string
 	KubeStateMetrics         string
+	OpenShiftStateMetrics    string
 	KubeRbacProxy            string
 	TelemeterClient          string
 }
@@ -92,6 +94,11 @@ type GrafanaConfig struct {
 }
 
 type KubeStateMetricsConfig struct {
+	NodeSelector map[string]string `json:"nodeSelector"`
+	Tolerations  []v1.Toleration   `json:"tolerations"`
+}
+
+type OpenShiftStateMetricsConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Tolerations  []v1.Toleration   `json:"tolerations"`
 }
@@ -173,6 +180,9 @@ func (c *Config) applyDefaults() {
 	if c.KubeStateMetricsConfig == nil {
 		c.KubeStateMetricsConfig = &KubeStateMetricsConfig{}
 	}
+	if c.OpenShiftMetricsConfig == nil {
+		c.OpenShiftMetricsConfig = &OpenShiftStateMetricsConfig{}
+	}
 	if c.HTTPConfig == nil {
 		c.HTTPConfig = &HTTPConfig{}
 	}
@@ -201,6 +211,7 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.TelemeterClient = images["telemeter-client"]
 	c.Images.PromLabelProxy = images["prom-label-proxy"]
 	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
+	c.Images.OpenShiftStateMetrics = images["openshift-state-metrics"]
 }
 
 func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) error {

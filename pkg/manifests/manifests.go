@@ -59,6 +59,13 @@ var (
 	KubeStateMetricsService            = "assets/kube-state-metrics/service.yaml"
 	KubeStateMetricsServiceMonitor     = "assets/kube-state-metrics/service-monitor.yaml"
 
+	OpenShiftStateMetricsClusterRoleBinding = "assets/openshift-state-metrics/cluster-role-binding.yaml"
+	OpenShiftStateMetricsClusterRole        = "assets/openshift-state-metrics/cluster-role.yaml"
+	OpenShiftStateMetricsDeployment         = "assets/openshift-state-metrics/deployment.yaml"
+	OpenShiftStateMetricsServiceAccount     = "assets/openshift-state-metrics/service-account.yaml"
+	OpenShiftStateMetricsService            = "assets/openshift-state-metrics/service.yaml"
+	OpenShiftStateMetricsServiceMonitor     = "assets/openshift-state-metrics/service-monitor.yaml"
+
 	NodeExporterDaemonSet                  = "assets/node-exporter/daemonset.yaml"
 	NodeExporterService                    = "assets/node-exporter/service.yaml"
 	NodeExporterServiceAccount             = "assets/node-exporter/service-account.yaml"
@@ -371,7 +378,6 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 	if len(f.config.KubeStateMetricsConfig.Tolerations) > 0 {
 		d.Spec.Template.Spec.Tolerations = f.config.KubeStateMetricsConfig.Tolerations
 	}
-
 	d.Namespace = f.namespace
 
 	return d, nil
@@ -390,6 +396,78 @@ func (f *Factory) KubeStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
 
 func (f *Factory) KubeStateMetricsService() (*v1.Service, error) {
 	s, err := f.NewService(MustAssetReader(KubeStateMetricsService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) OpenShiftStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(OpenShiftStateMetricsClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespace
+
+	return crb, nil
+}
+
+func (f *Factory) OpenShiftStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(OpenShiftStateMetricsClusterRole))
+}
+
+func (f *Factory) OpenShiftStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(OpenShiftStateMetricsServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("openshift-state-metrics.%s.svc", f.namespace)
+	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("openshift-state-metrics.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
+}
+
+func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(MustAssetReader(OpenShiftStateMetricsDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.KubeRbacProxy
+	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
+	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.OpenShiftStateMetrics
+
+	if f.config.OpenShiftMetricsConfig.NodeSelector != nil {
+		d.Spec.Template.Spec.NodeSelector = f.config.OpenShiftMetricsConfig.NodeSelector
+	}
+
+	if len(f.config.OpenShiftMetricsConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.OpenShiftMetricsConfig.Tolerations
+	}
+	d.Namespace = f.namespace
+
+	return d, nil
+}
+
+func (f *Factory) OpenShiftStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(MustAssetReader(OpenShiftStateMetricsServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) OpenShiftStateMetricsService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(OpenShiftStateMetricsService))
 	if err != nil {
 		return nil, err
 	}
