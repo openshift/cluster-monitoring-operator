@@ -78,7 +78,7 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "948e276ca73d3eb09391829d8ac317dbda8c07a1"
+            "version": "465592a7188b14359988d3c807dafe434185aa44"
         },
         {
             "name": "telemeter-client",
