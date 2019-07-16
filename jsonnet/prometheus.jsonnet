@@ -255,38 +255,7 @@ local namespacesRole =
         },
       },
 
-    // In OpenShift the kube-scheduler runs in its own namespace, and has a TLS
-    // cert from the serving certs controller.
-
-    serviceMonitorKubeScheduler+:
-      {
-        spec+: {
-          jobLabel: null,
-          namespaceSelector: {
-            matchNames: [
-              'openshift-kube-scheduler',
-            ],
-          },
-          selector: {},
-          endpoints:
-            std.map(
-              function(a) a {
-                bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-                interval: '30s',
-                port: 'https',
-                scheme: 'https',
-                tlsConfig: {
-                  // TODO: currently, kube scheduler operator doesn't enroll target certificates correctly.
-                  // Once this is resolved, reenable TLS verification.
-                  insecureSkipVerify: true,
-                  // caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                  // serverName: 'scheduler.openshift-kube-scheduler.svc',
-                },
-              },
-              super.endpoints,
-            ),
-        },
-      },
+    serviceMonitorKubeScheduler:: {},
 
     serviceMonitorKubeControllerManager:: {},
 
