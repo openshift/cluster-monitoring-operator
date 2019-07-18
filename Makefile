@@ -93,9 +93,9 @@ pkg/manifests/bindata.go: $(GOBINDATA_BIN) $(ASSETS)
 	# Using "-modtime 1" to make generate target deterministic. It sets all file time stamps to unix timestamp 1
 	go-bindata -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
 
-merge-cluster-roles: manifests/02-role.yaml
-manifests/02-role.yaml: $(ASSETS) hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in
-	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > manifests/02-role.yaml
+merge-cluster-roles: manifests/0000_50_cluster_monitoring_operator_02-role.yaml
+manifests/0000_50_cluster_monitoring_operator_02-role.yaml: $(ASSETS) hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in
+	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > $@
 
 .PHONY: docs
 docs:
