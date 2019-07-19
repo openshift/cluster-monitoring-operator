@@ -23,7 +23,7 @@ for file in "${files[@]}"
 do
 	dir=$(dirname "${file}")
 	path="${prefix}/${dir}"
-	mkdir -p ${path}
+	mkdir -p "${path}"
     # convert file name from camelCase to snake-case
     fullfile=$(echo "${file}" | awk '{
 
