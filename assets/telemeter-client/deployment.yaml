@@ -33,13 +33,10 @@ spec:
         - --match={__name__="cluster_operator_up"}
         - --match={__name__="cluster_operator_conditions"}
         - --match={__name__="cluster_version_payload"}
-        - --match={__name__="cluster_version_payload_errors"}
         - --match={__name__="cluster_installer"}
         - --match={__name__="instance:etcd_object_counts:sum"}
         - --match={__name__="ALERTS",alertstate="firing"}
         - --match={__name__="code:apiserver_request_count:rate:sum"}
-        - --match={__name__="kube_pod_status_ready:etcd:sum"}
-        - --match={__name__="kube_pod_status_ready:image_registry:sum"}
         - --match={__name__="cluster:capacity_cpu_cores:sum"}
         - --match={__name__="cluster:capacity_memory_bytes:sum"}
         - --match={__name__="cluster:cpu_usage_cores:sum"}
@@ -47,6 +44,8 @@ spec:
         - --match={__name__="openshift:cpu_usage_cores:sum"}
         - --match={__name__="openshift:memory_usage_bytes:sum"}
         - --match={__name__="cluster:node_instance_type_count:sum"}
+        - --match={__name__="cnv:vmi_status_running:count"}
+        - --match={__name__="subscription_sync_total"}
         env:
         - name: ANONYMIZE_LABELS
           value: ""
@@ -56,6 +55,12 @@ spec:
           value: ""
         - name: TO
           value: https://infogw.api.openshift.com
+        - name: HTTP_PROXY
+          value: ""
+        - name: HTTPS_PROXY
+          value: ""
+        - name: NO_PROXY
+          value: ""
         image: quay.io/openshift/origin-telemeter:v4.0
         name: telemeter-client
         ports:
