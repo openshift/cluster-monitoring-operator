@@ -97,6 +97,27 @@
         ],
       },
       {
+        name: 'openshift-ingress.rules',
+        rules: [
+          {
+            expr: 'sum by (code) (rate(haproxy_server_http_responses_total[5m]) > 0)',
+            record: 'code:cluster:ingress_http_request_count:rate5m:sum',
+          },
+          {
+            expr: 'sum by (frontend) (rate(haproxy_frontend_bytes_in_total[5m]))',
+            record: 'frontend:cluster:ingress_frontend_bytes_in:rate5m:sum',
+          },
+          {
+            expr: 'sum by (frontend) (rate(haproxy_frontend_bytes_out_total[5m]))',
+            record: 'frontend:cluster:ingress_frontend_bytes_out:rate5m:sum',
+          },
+          {
+            expr: 'sum by (frontend) (haproxy_frontend_current_sessions)',
+            record: 'frontend:cluster:ingress_frontend_connections:sum',
+          }
+        ],
+      },
+      {
         name: 'openshift-build.rules',
         rules: [
           {
