@@ -10,7 +10,6 @@
 # 	assets/kube-state-metrics/role.yaml
 # 	assets/node-exporter/cluster-role.yaml
 # 	assets/openshift-state-metrics/cluster-role.yaml
-# 	assets/openshift-state-metrics/role.yaml
 # 	assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml
 # 	assets/prometheus-adapter/cluster-role-server-resources.yaml
 # 	assets/prometheus-adapter/cluster-role.yaml
@@ -255,24 +254,6 @@ rules:
   verbs:
   - list
   - watch
-- apiGroups:
-  - extensions
-  resourceNames:
-  - openshift-state-metrics
-  resources:
-  - deployments
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - apps
-  resourceNames:
-  - openshift-state-metrics
-  resources:
-  - deployments
-  verbs:
-  - get
-  - update
 - apiGroups:
   - metrics.k8s.io
   resources:
