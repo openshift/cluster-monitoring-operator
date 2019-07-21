@@ -13,8 +13,9 @@ metadata:
 data:
 EOF
 
-for f in `ls rules/$PROMETHEUS/*.rules.yaml | sort -V`
+#shellcheck disable=SC2012,SC2086
+for f in $(ls rules/${PROMETHEUS}/*.rules.yaml | sort -V)
 do
-  echo "  $(basename $f): |+"
-  cat $f | sed "s/^/    /g"
+  echo "  $(basename "$f"): |+"
+  sed "s/^/    /g" "$f"
 done

@@ -28,15 +28,15 @@ IMAGES=(
     "ose-prometheus-operator"
 )
 
-for i in ${IMAGES[@]}; do
+for i in "${IMAGES[@]}"; do
     docker pull "${SRC_REGISTRY}/${i}:${TAG}"
 done
 
-for i in ${IMAGES[@]}; do
+for i in "${IMAGES[@]}"; do
     docker tag "${SRC_REGISTRY}/${i}:${TAG}" "${DST_REGISTRY}/${i}:${TAG}"
 done
 
-for i in ${IMAGES[@]}; do
+for i in "${IMAGES[@]}"; do
     docker push "${DST_REGISTRY}/${i}:${TAG}"
 done
 

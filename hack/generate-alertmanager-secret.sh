@@ -8,5 +8,5 @@ metadata:
   labels:
     k8s-app: alertmanager
 data:
-  alertmanager.yaml: $(cat examples/config/alertmanager/default.yaml | base64 --wrap=0)
+  alertmanager.yaml: $(base64 --wrap=0 examples/config/alertmanager/default.yaml)
 EOF

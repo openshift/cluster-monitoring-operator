@@ -15,7 +15,7 @@ metadata:
   namespace: openshift-monitoring
 type: Opaque
 data:
-  etcd-client-ca.crt: "$(oc rsh -n ${NAMESPACE} ${APISERVERPODNAME} cat /etc/kubernetes/static-pod-resources/configmaps/etcd-serving-ca/ca-bundle.crt | base64 --wrap=0)"
-  etcd-client.crt: "$(oc rsh -n ${NAMESPACE} ${APISERVERPODNAME} cat /etc/kubernetes/static-pod-resources/secrets/etcd-client/tls.crt | base64 --wrap=0)"
-  etcd-client.key: "$(oc rsh -n ${NAMESPACE} ${APISERVERPODNAME} cat /etc/kubernetes/static-pod-resources/secrets/etcd-client/tls.key | base64 --wrap=0)"
+  etcd-client-ca.crt: "$(oc rsh -n ${NAMESPACE} "${APISERVERPODNAME}" cat /etc/kubernetes/static-pod-resources/configmaps/etcd-serving-ca/ca-bundle.crt | base64 --wrap=0)"
+  etcd-client.crt: "$(oc rsh -n ${NAMESPACE} "${APISERVERPODNAME}" cat /etc/kubernetes/static-pod-resources/secrets/etcd-client/tls.crt | base64 --wrap=0)"
+  etcd-client.key: "$(oc rsh -n ${NAMESPACE} "${APISERVERPODNAME}" cat /etc/kubernetes/static-pod-resources/secrets/etcd-client/tls.key | base64 --wrap=0)"
 EOF
