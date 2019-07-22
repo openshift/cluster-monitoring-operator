@@ -88,7 +88,7 @@
                     "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "0bacffce75d23d34035f56cc1c2d3cd71ad543cd"
+            "version": "798ac3d9d604ab82b981559cdaaa4e9c06f0fc2b"
         },
         {
             "name": "openshift-state-metrics",

@@ -1791,6 +1791,16 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 		setEnv("TO", f.config.TelemeterClientConfig.TelemeterServerURL)
 	}
 
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
+
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
