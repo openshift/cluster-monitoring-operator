@@ -114,7 +114,7 @@ go-fmt:
 
 .PHONY: shellcheck
 shellcheck:
-	docker run -v "${PWD}:/mnt" koalaman/shellcheck:stable $(shell find . -type f -name "*.sh" -not -path "*vendor*")
+	hack/shellcheck.sh
 
 ###########
 # Testing #
