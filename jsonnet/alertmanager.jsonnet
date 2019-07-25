@@ -144,13 +144,13 @@ local authorizationRole = policyRule.new() +
               resources: {},
               ports: [
                 {
-                  containerPort: 9094,
+                  containerPort: 9095,
                   name: 'web',
                 },
               ],
               args: [
                 '-provider=openshift',
-                '-https-address=:9094',
+                '-https-address=:9095',
                 '-http-address=',
                 '-email-domain=*',
                 '-upstream=http://localhost:9093',
