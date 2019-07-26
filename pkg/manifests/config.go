@@ -55,6 +55,7 @@ type Images struct {
 	OpenShiftStateMetrics    string
 	KubeRbacProxy            string
 	TelemeterClient          string
+	Thanos                   string
 }
 
 type HTTPConfig struct {
@@ -212,6 +213,7 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.PromLabelProxy = images["prom-label-proxy"]
 	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
 	c.Images.OpenShiftStateMetrics = images["openshift-state-metrics"]
+	c.Images.Thanos = images["thanos"]
 }
 
 func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) error {

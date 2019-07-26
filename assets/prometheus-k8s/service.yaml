@@ -15,6 +15,9 @@ spec:
   - name: tenancy
     port: 9092
     targetPort: tenancy
+  - name: grpc
+    port: 10901
+    targetPort: 10901
   selector:
     app: prometheus
     prometheus: k8s
