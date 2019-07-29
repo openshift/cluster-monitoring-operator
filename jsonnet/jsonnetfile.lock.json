@@ -8,7 +8,7 @@
                     "subdir": "jsonnet/kube-prometheus"
                 }
             },
-            "version": "026c09e6ad6911a76a1e0da07400d055beb8a51a"
+            "version": "2f1083be7e7acfa4bf18da8d0c99275a141c97de"
         },
         {
             "name": "ksonnet",
@@ -38,7 +38,7 @@
                     "subdir": "grafonnet"
                 }
             },
-            "version": "3264a8ab6efa23d55da45ea3a3d3b39e86696c76"
+            "version": "69bc267211790a1c3f4ea6e6211f3e8ffe22f987"
         },
         {
             "name": "grafana-builder",
@@ -48,7 +48,7 @@
                     "subdir": "grafana-builder"
                 }
             },
-            "version": "45313aeba512858da2974bd44f9adab619cb8f71"
+            "version": "f9e105d3a6ddf64430c40a8375d0cfb2298b7d63"
         },
         {
             "name": "grafana",
@@ -78,7 +78,17 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "948e276ca73d3eb09391829d8ac317dbda8c07a1"
+            "version": "cf4b5d9c7f0c99393a46f4b07b0b584bc880d467"
+        },
+        {
+            "name": "prometheus",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/prometheus/prometheus",
+                    "subdir": "documentation/prometheus-mixin"
+                }
+            },
+            "version": "87a0fe0c75a42d66fcfc82a0ad89bd2549fcfadf"
         },
         {
             "name": "telemeter-client",
@@ -88,7 +98,7 @@
                     "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "798ac3d9d604ab82b981559cdaaa4e9c06f0fc2b"
+            "version": "e0b23a27ac244059672c6f8698007b624beaeaad"
         },
         {
             "name": "openshift-state-metrics",
@@ -98,7 +108,7 @@
                     "subdir": "jsonnet"
                 }
             },
-            "version": "2c9a2905bf63b2ceaa0ef295364ebba512f3a428"
+            "version": "4e6b11841b7597bb8ebb70c852873945dc6c0fef"
         }
     ]
 }
