@@ -58,6 +58,12 @@ func TestConditions(t *testing.T) {
 			LastTransitionTime: v1.Time{},
 			Message:            "",
 		},
+		{
+			Type:               configv1.OperatorUpgradeable,
+			Status:             configv1.ConditionUnknown,
+			LastTransitionTime: v1.Time{},
+			Message:            "",
+		},
 	})
 
 	for _, tc := range []struct {
@@ -114,6 +120,12 @@ func TestConditions(t *testing.T) {
 					LastTransitionTime: v1.Time{},
 					Message:            "",
 				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionUnknown,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
 			}),
 		},
 		{
@@ -144,6 +156,12 @@ func TestConditions(t *testing.T) {
 					LastTransitionTime: v1.Time{},
 					Message:            "",
 				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionUnknown,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
 			}),
 		}, {
 			name: "progressing, previously unavailable",
@@ -153,6 +171,7 @@ func TestConditions(t *testing.T) {
 				)
 				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionFalse, "", v1.Time{})
 				cs.setCondition(configv1.OperatorDegraded, configv1.ConditionFalse, "", v1.Time{})
+				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", v1.Time{})
 				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
 				return cs
 			},
@@ -175,6 +194,12 @@ func TestConditions(t *testing.T) {
 					LastTransitionTime: v1.Time{},
 					Message:            "",
 				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionFalse,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
 			}),
 		}, {
 			name: "not progressing, previously available",
@@ -193,6 +218,10 @@ func TestConditions(t *testing.T) {
 							{
 								Type:   configv1.OperatorProgressing,
 								Status: configv1.ConditionFalse,
+							},
+							{
+								Type:   configv1.OperatorUpgradeable,
+								Status: configv1.ConditionTrue,
 							},
 						},
 					},
@@ -220,6 +249,12 @@ func TestConditions(t *testing.T) {
 					LastTransitionTime: v1.Time{},
 					Message:            "",
 				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionTrue,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
 			}),
 		}, {
 			name: "not progressing, previously available, same version",
@@ -239,6 +274,10 @@ func TestConditions(t *testing.T) {
 							{
 								Type:   configv1.OperatorProgressing,
 								Status: configv1.ConditionFalse,
+							},
+							{
+								Type:   configv1.OperatorUpgradeable,
+								Status: configv1.ConditionTrue,
 							},
 						},
 					},
@@ -263,6 +302,12 @@ func TestConditions(t *testing.T) {
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
 				},
@@ -286,11 +331,16 @@ func TestConditions(t *testing.T) {
 								Type:   configv1.OperatorProgressing,
 								Status: configv1.ConditionFalse,
 							},
+							{
+								Type:   configv1.OperatorUpgradeable,
+								Status: configv1.ConditionTrue,
+							},
 						},
 					},
 					"1.1", v1.Time{},
 				)
 				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -310,6 +360,12 @@ func TestConditions(t *testing.T) {
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionFalse,
+					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "",
 				},
 			}),
@@ -332,11 +388,16 @@ func TestConditions(t *testing.T) {
 								Type:   configv1.OperatorProgressing,
 								Status: configv1.ConditionFalse,
 							},
+							{
+								Type:   configv1.OperatorUpgradeable,
+								Status: configv1.ConditionTrue,
+							},
 						},
 					},
 					"1.1", v1.Time{},
 				)
 				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -358,6 +419,12 @@ func TestConditions(t *testing.T) {
 					LastTransitionTime: v1.Time{},
 					Message:            "",
 				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionFalse,
+					LastTransitionTime: v1.Unix(0, 0),
+					Message:            "",
+				},
 			}),
 		}, {
 			name: "progressing, previously unavailable, same version",
@@ -376,6 +443,10 @@ func TestConditions(t *testing.T) {
 							},
 							{
 								Type:   configv1.OperatorProgressing,
+								Status: configv1.ConditionFalse,
+							},
+							{
+								Type:   configv1.OperatorUpgradeable,
 								Status: configv1.ConditionFalse,
 							},
 						},
@@ -400,6 +471,12 @@ func TestConditions(t *testing.T) {
 				},
 				{
 					Type:               configv1.OperatorDegraded,
+					Status:             configv1.ConditionFalse,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
+				{
+					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
@@ -442,6 +519,12 @@ func TestConditions(t *testing.T) {
 					LastTransitionTime: v1.Time{},
 					Message:            "",
 				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionUnknown,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
 			}),
 		}, {
 			name: "change due to status change",
@@ -480,6 +563,12 @@ func TestConditions(t *testing.T) {
 					LastTransitionTime: v1.Time{},
 					Message:            "",
 				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionUnknown,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
 			}),
 		}, {
 			name: "no change due to no message/status change",
@@ -514,6 +603,12 @@ func TestConditions(t *testing.T) {
 				},
 				{
 					Type:               configv1.OperatorDegraded,
+					Status:             configv1.ConditionUnknown,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+				},
+				{
+					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
