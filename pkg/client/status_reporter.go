@@ -91,7 +91,7 @@ func (r *StatusReporter) SetInProgress() error {
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
 	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionFalse,
-		"Rollout of the monitoring stack is progressing. Please wait until it finishes.",
+		"Rollout of the monitoring stack is in progress. Please wait until it finishes.",
 		time,
 	)
 	co.Status.Conditions = conditions.entries()
