@@ -58,6 +58,9 @@ spec:
         - mountPath: /grafana-dashboard-definitions/0/k8s-resources-pod
           name: grafana-dashboard-k8s-resources-pod
           readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/persistentvolumesusage
+          name: grafana-dashboard-persistentvolumesusage
+          readOnly: false
         - mountPath: /etc/grafana
           name: grafana-config
           readOnly: false
@@ -118,6 +121,9 @@ spec:
       - configMap:
           name: grafana-dashboard-k8s-resources-pod
         name: grafana-dashboard-k8s-resources-pod
+      - configMap:
+          name: grafana-dashboard-persistentvolumesusage
+        name: grafana-dashboard-persistentvolumesusage
       - name: grafana-config
         secret:
           secretName: grafana-config
