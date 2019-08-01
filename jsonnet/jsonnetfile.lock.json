@@ -8,7 +8,7 @@
                     "subdir": "jsonnet/kube-prometheus"
                 }
             },
-            "version": "2f1083be7e7acfa4bf18da8d0c99275a141c97de"
+            "version": "31cf273922bd144759fda0aac244617c6956cecd"
         },
         {
             "name": "ksonnet",
@@ -48,7 +48,7 @@
                     "subdir": "grafana-builder"
                 }
             },
-            "version": "f9e105d3a6ddf64430c40a8375d0cfb2298b7d63"
+            "version": "8e77b50ee8aea319dac9964b2cc2183f3bc184d2"
         },
         {
             "name": "grafana",
@@ -78,7 +78,7 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "cf4b5d9c7f0c99393a46f4b07b0b584bc880d467"
+            "version": "5ef8f2770c63ca517f8d0c9aff680a3c92a3e3a6"
         },
         {
             "name": "prometheus",
@@ -88,7 +88,7 @@
                     "subdir": "documentation/prometheus-mixin"
                 }
             },
-            "version": "87a0fe0c75a42d66fcfc82a0ad89bd2549fcfadf"
+            "version": "a9dea68ee61dfea03d9e761e9382d2e5abcdd9e4"
         },
         {
             "name": "telemeter-client",
@@ -98,7 +98,7 @@
                     "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "e0b23a27ac244059672c6f8698007b624beaeaad"
+            "version": "2d6af01663279f8253e4dea978e5f8445c1b8b06"
         },
         {
             "name": "openshift-state-metrics",

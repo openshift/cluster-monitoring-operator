@@ -48,6 +48,7 @@ func (r *StatusReporter) SetDone() error {
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
 	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, "", time)
+	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", time)
 	co.Status.Conditions = conditions.entries()
 
 	// If we have reached "level" for the operator, report that we are at the version
@@ -89,6 +90,10 @@ func (r *StatusReporter) SetInProgress() error {
 
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
+	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionFalse,
+		"Rollout of the monitoring stack is in progress. Please wait until it finishes.",
+		time,
+	)
 	co.Status.Conditions = conditions.entries()
 	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
 
@@ -112,6 +117,10 @@ func (r *StatusReporter) SetFailed(statusErr error) error {
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, "", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
 	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
+	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionFalse,
+		"Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error.",
+		time,
+	)
 	co.Status.Conditions = conditions.entries()
 
 	_, err = r.client.UpdateStatus(co)

@@ -222,6 +222,8 @@ local namespacesRole =
         },
       },
 
+    serviceMonitorApiserver:: {},
+
     serviceMonitorEtcd+:
       {
         metadata+: {
