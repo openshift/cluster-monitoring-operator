@@ -149,7 +149,15 @@ rules:
   resources:
   - daemonsets
   - deployments
+  - ingresses
   - replicasets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
   verbs:
   - list
   - watch
@@ -190,6 +198,13 @@ rules:
   - resourcequotas
   - secrets
   - services
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
   verbs:
   - list
   - watch

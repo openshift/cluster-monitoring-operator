@@ -61,6 +61,12 @@ spec:
         - mountPath: /grafana-dashboard-definitions/0/k8s-resources-workloads-namespace
           name: grafana-dashboard-k8s-resources-workloads-namespace
           readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/prometheus-remote-write
+          name: grafana-dashboard-prometheus-remote-write
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/prometheus
+          name: grafana-dashboard-prometheus
+          readOnly: false
         - mountPath: /etc/grafana
           name: grafana-config
           readOnly: false
@@ -133,6 +139,12 @@ spec:
       - configMap:
           name: grafana-dashboard-k8s-resources-workloads-namespace
         name: grafana-dashboard-k8s-resources-workloads-namespace
+      - configMap:
+          name: grafana-dashboard-prometheus-remote-write
+        name: grafana-dashboard-prometheus-remote-write
+      - configMap:
+          name: grafana-dashboard-prometheus
+        name: grafana-dashboard-prometheus
       - name: grafana-config
         secret:
           secretName: grafana-config

@@ -58,7 +58,7 @@ spec:
       name: secret-alertmanager-main-proxy
   listenLocal: true
   nodeSelector:
-    beta.kubernetes.io/os: linux
+    kubernetes.io/os: linux
   priorityClassName: system-cluster-critical
   replicas: 3
   secrets:

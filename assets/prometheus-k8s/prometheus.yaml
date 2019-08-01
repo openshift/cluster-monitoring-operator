@@ -103,7 +103,8 @@ spec:
         memory: 20Mi
   listenLocal: true
   nodeSelector:
-    beta.kubernetes.io/os: linux
+    kubernetes.io/os: linux
+  podMonitorSelector: {}
   priorityClassName: system-cluster-critical
   replicas: 2
   resources:
