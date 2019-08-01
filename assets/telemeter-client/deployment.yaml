@@ -34,8 +34,6 @@ spec:
         - --match={__name__="cluster_operator_conditions"}
         - --match={__name__="cluster_version_payload"}
         - --match={__name__="cluster_installer"}
-        - --match={__name__="cluster_infrastructure_provider"}
-        - --match={__name__="cluster_feature_set"}
         - --match={__name__="instance:etcd_object_counts:sum"}
         - --match={__name__="ALERTS",alertstate="firing"}
         - --match={__name__="code:apiserver_request_count:rate:sum"}
@@ -48,14 +46,6 @@ spec:
         - --match={__name__="cluster:node_instance_type_count:sum"}
         - --match={__name__="cnv:vmi_status_running:count"}
         - --match={__name__="subscription_sync_total"}
-        - --match={__name__="ceph_cluster_total_bytes"}
-        - --match={__name__="ceph_cluster_total_used_raw_bytes"}
-        - --match={__name__="ceph_health_status"}
-        - --match={__name__="job:ceph_osd_metadata:count"}
-        - --match={__name__="job:kube_pv:count"}
-        - --match={__name__="job:ceph_pools_iops:total"}
-        - --match={__name__="job:ceph_pools_iops_bytes:total"}
-        - --match={__name__="job:ceph_versions_running:count"}
         env:
         - name: ANONYMIZE_LABELS
           value: ""
