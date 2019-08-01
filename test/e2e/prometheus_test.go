@@ -19,14 +19,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"k8s.io/api/apps/v1beta2"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestPrometheusVolumeClaim(t *testing.T) {
-	err := f.OperatorClient.WaitForStatefulsetRollout(&v1beta2.StatefulSet{
+	err := f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "prometheus-k8s",
 			Namespace: f.Ns,
@@ -74,7 +74,7 @@ func TestPrometheusVolumeClaim(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = f.OperatorClient.WaitForStatefulsetRollout(&v1beta2.StatefulSet{
+	err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "prometheus-k8s",
 			Namespace: f.Ns,
