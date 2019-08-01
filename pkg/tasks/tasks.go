@@ -42,9 +42,9 @@ func (tl *TaskRunner) RunAll() error {
 		i := i
 
 		g.Go(func() error {
-			klog.V(4).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
+			klog.V(3).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
 			err := tl.ExecuteTask(ts)
-			klog.V(4).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
+			klog.V(3).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
 			return errors.Wrapf(err, "running task %v failed", ts.Name)
 		})
 	}
