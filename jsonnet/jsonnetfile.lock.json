@@ -81,6 +81,16 @@
             "version": "465592a7188b14359988d3c807dafe434185aa44"
         },
         {
+            "name": "prometheus",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/prometheus/prometheus",
+                    "subdir": "documentation/prometheus-mixin"
+                }
+            },
+            "version": "5d401f1e1bf156808168e81f01e09e6a5637469f"
+        },
+        {
             "name": "telemeter-client",
             "source": {
                 "git": {
