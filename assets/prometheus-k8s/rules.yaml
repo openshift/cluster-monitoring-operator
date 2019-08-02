@@ -399,9 +399,13 @@ spec:
       record: cluster:cpu_usage_cores:sum
     - expr: sum(node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
       record: cluster:memory_usage_bytes:sum
-    - expr: sum(rate(container_cpu_usage_seconds_total{namespace=~"openshift-.+"}[1m]))
+    - expr: sum(rate(container_cpu_usage_seconds_total{namespace!~"openshift-.+",pod_name!="",container_name=""}[1m]))
+      record: workload:cpu_usage_cores:sum
+    - expr: cluster:cpu_usage_cores:sum - workload:cpu_usage_cores:sum
       record: openshift:cpu_usage_cores:sum
-    - expr: sum(container_memory_working_set_bytes{namespace=~"openshift-.+"})
+    - expr: sum(container_memory_working_set_bytes{namespace!~"openshift-.+",pod_name!="",container_name=""})
+      record: workload:memory_usage_bytes:sum
+    - expr: cluster:memory_usage_bytes:sum - workload:memory_usage_bytes:sum
       record: openshift:memory_usage_bytes:sum
     - expr: sum(cluster:master_nodes or on(node) kube_node_labels ) BY (label_beta_kubernetes_io_instance_type,
         label_node_role_kubernetes_io)
