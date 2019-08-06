@@ -25,18 +25,16 @@ local tlsVolumeName = 'node-exporter-tls';
     serviceMonitor+:
       {
         spec+: {
-          endpoints: [
-            {
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-              interval: '30s',
-              port: 'https',
-              scheme: 'https',
-              tlsConfig: {
+          endpoints: std.map(
+            function(e) e {
+              tlsConfig+: {
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'server-name-replaced-at-runtime',
+                insecureSkipVerify: false,
               },
             },
-          ],
+            super.endpoints
+          ),
         },
       },
     securityContextConstraints:
@@ -70,7 +68,7 @@ local tlsVolumeName = 'node-exporter-tls';
           resources: ['securitycontextconstraints'],
           resourceNames: ['node-exporter'],
           verbs: ['use'],
-        }]
+        }],
       },
 
     // This configures the kube-rbac-proxies to use the serving cert
@@ -105,7 +103,7 @@ local tlsVolumeName = 'node-exporter-tls';
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
               tolerations: [
-                { operator: "Exists" },
+                { operator: 'Exists' },
               ],
             },
           },
