@@ -10,9 +10,17 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     interval: 30s
     port: https
+    relabelings:
+    - action: replace
+      regex: (.*)
+      replacment: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: instance
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      insecureSkipVerify: false
       serverName: server-name-replaced-at-runtime
   jobLabel: k8s-app
   selector:
