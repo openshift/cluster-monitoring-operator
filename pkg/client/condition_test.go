@@ -45,24 +45,28 @@ func TestConditions(t *testing.T) {
 			Status:             configv1.ConditionUnknown,
 			LastTransitionTime: v1.Time{},
 			Message:            "",
+			Reason:             "",
 		},
 		{
 			Type:               configv1.OperatorAvailable,
 			Status:             configv1.ConditionUnknown,
 			LastTransitionTime: v1.Time{},
 			Message:            "",
+			Reason:             "",
 		},
 		{
 			Type:               configv1.OperatorDegraded,
 			Status:             configv1.ConditionUnknown,
 			LastTransitionTime: v1.Time{},
 			Message:            "",
+			Reason:             "",
 		},
 		{
 			Type:               configv1.OperatorUpgradeable,
 			Status:             configv1.ConditionUnknown,
 			LastTransitionTime: v1.Time{},
 			Message:            "",
+			Reason:             "",
 		},
 	})
 
@@ -107,24 +111,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorAvailable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		},
@@ -134,7 +142,7 @@ func TestConditions(t *testing.T) {
 				cs := newConditions(
 					configv1.ClusterOperatorStatus{}, "", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -143,24 +151,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorAvailable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -169,10 +181,10 @@ func TestConditions(t *testing.T) {
 				cs := newConditions(
 					configv1.ClusterOperatorStatus{}, "", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionFalse, "", v1.Time{})
-				cs.setCondition(configv1.OperatorDegraded, configv1.ConditionFalse, "", v1.Time{})
-				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", v1.Time{})
-				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionFalse, "", "", v1.Time{})
+				cs.setCondition(configv1.OperatorDegraded, configv1.ConditionFalse, "", "", v1.Time{})
+				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", "", v1.Time{})
+				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -181,24 +193,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorAvailable,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -227,7 +243,7 @@ func TestConditions(t *testing.T) {
 					},
 					"", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -236,24 +252,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorAvailable,
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -283,7 +303,7 @@ func TestConditions(t *testing.T) {
 					},
 					"1.0", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -292,24 +312,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorAvailable,
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -339,8 +363,8 @@ func TestConditions(t *testing.T) {
 					},
 					"1.1", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
-				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -349,24 +373,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorAvailable,
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -396,8 +424,8 @@ func TestConditions(t *testing.T) {
 					},
 					"1.1", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
-				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -406,24 +434,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorAvailable,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -453,7 +485,7 @@ func TestConditions(t *testing.T) {
 					},
 					"1.0", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", "", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -468,18 +500,21 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -497,7 +532,7 @@ func TestConditions(t *testing.T) {
 						},
 					}, "", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionTrue, "bar", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionTrue, "bar", "foo", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -506,24 +541,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "bar",
+					Reason:             "foo",
 				},
 				{
 					Type:               configv1.OperatorProgressing,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -541,7 +580,7 @@ func TestConditions(t *testing.T) {
 						},
 					}, "", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionFalse, "foo", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionFalse, "foo", "bar", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -550,24 +589,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionFalse,
 					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "foo",
+					Reason:             "bar",
 				},
 				{
 					Type:               configv1.OperatorProgressing,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		}, {
@@ -580,12 +623,13 @@ func TestConditions(t *testing.T) {
 								Type:               configv1.OperatorAvailable,
 								Status:             configv1.ConditionTrue,
 								Message:            "foo",
+								Reason:             "bar",
 								LastTransitionTime: v1.Time{},
 							},
 						},
 					}, "", v1.Time{},
 				)
-				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionTrue, "foo", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorAvailable, configv1.ConditionTrue, "foo", "bar", v1.Unix(0, 0))
 				return cs
 			},
 			check: hasConditions([]configv1.ClusterOperatorStatusCondition{
@@ -594,24 +638,28 @@ func TestConditions(t *testing.T) {
 					Status:             configv1.ConditionTrue,
 					LastTransitionTime: v1.Time{},
 					Message:            "foo",
+					Reason:             "bar",
 				},
 				{
 					Type:               configv1.OperatorProgressing,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorDegraded,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 				{
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
 					Message:            "",
+					Reason:             "",
 				},
 			}),
 		},
