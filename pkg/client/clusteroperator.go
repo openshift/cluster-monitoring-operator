@@ -3,6 +3,8 @@ package client
 import (
 	"fmt"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/strings"
+
 	v1 "github.com/openshift/api/config/v1"
 	clientv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,9 +47,9 @@ func (r *StatusReporter) SetDone() error {
 	time := metav1.Now()
 
 	conditions := newConditions(co.Status, r.version, time)
-	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", time)
-	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
-	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, "", time)
+	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", "RollOutDone", time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", "", time)
+	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, "", "", time)
 	co.Status.Conditions = conditions.entries()
 
 	// If we have reached "level" for the operator, report that we are at the version
@@ -86,9 +88,9 @@ func (r *StatusReporter) SetInProgress() error {
 	}
 
 	time := metav1.Now()
-
+	reasonInProgress := "RollOutInProgress"
 	conditions := newConditions(co.Status, r.version, time)
-	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", reasonInProgress, time)
 	co.Status.Conditions = conditions.entries()
 	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
 
@@ -96,7 +98,7 @@ func (r *StatusReporter) SetInProgress() error {
 	return err
 }
 
-func (r *StatusReporter) SetFailed(statusErr error) error {
+func (r *StatusReporter) SetFailed(statusErr error, reason string) error {
 	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		co = r.newClusterOperator()
@@ -107,11 +109,13 @@ func (r *StatusReporter) SetFailed(statusErr error) error {
 	}
 
 	time := metav1.Now()
+	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
+	reason = strings.ToPascalCase(reason)
 
 	conditions := newConditions(co.Status, r.version, time)
-	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, "", time)
-	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", time)
-	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), time)
+	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, "", "", time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", "", time)
+	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), reason, time)
 	co.Status.Conditions = conditions.entries()
 
 	_, err = r.client.UpdateStatus(co)
