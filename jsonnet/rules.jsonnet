@@ -68,11 +68,19 @@
             record: 'cluster:memory_usage_bytes:sum',
           },
           {
-            expr: 'sum(rate(container_cpu_usage_seconds_total{namespace=~"openshift-.+"}[1m]))',
+            expr: 'sum(rate(container_cpu_usage_seconds_total{namespace!~"openshift-.+",pod_name!="",container_name=""}[1m]))',
+            record: 'workload:cpu_usage_cores:sum',
+          },
+          {
+            expr: 'cluster:cpu_usage_cores:sum - workload:cpu_usage_cores:sum',
             record: 'openshift:cpu_usage_cores:sum',
           },
           {
-            expr: 'sum(container_memory_working_set_bytes{namespace=~"openshift-.+"})',
+            expr: 'sum(container_memory_working_set_bytes{namespace!~"openshift-.+",pod_name!="",container_name=""})',
+            record: 'workload:memory_usage_bytes:sum',
+          },
+          {
+            expr: 'cluster:memory_usage_bytes:sum - workload:memory_usage_bytes:sum',
             record: 'openshift:memory_usage_bytes:sum',
           },
           {
