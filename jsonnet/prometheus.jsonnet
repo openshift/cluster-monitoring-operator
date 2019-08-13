@@ -7,6 +7,7 @@ local configmap = k.core.v1.configMap;
 local clusterRole = k.rbac.v1.clusterRole;
 local policyRule = clusterRole.rulesType;
 local selector = k.apps.v1beta2.deployment.mixin.spec.selectorType;
+local metrics = import 'telemeter-client/metrics.jsonnet';
 
 local authenticationRole =
   policyRule.new() +

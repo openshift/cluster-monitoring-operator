@@ -15,6 +15,7 @@ require (
 	github.com/openshift/library-go v0.0.0-20191024144423-664354b88b39
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.1.0
+	github.com/prometheus/prometheus v2.9.2+incompatible
 	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7 // indirect
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	k8s.io/api v0.0.0-20191016225839-816a9b7df678

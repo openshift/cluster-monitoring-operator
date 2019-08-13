@@ -35,10 +35,17 @@ spec:
         operator: "Exists"
         effect: "NoExecute"
         tolerationSeconds: 120
+      volumes:
+      - name: telemetry-config
+        configMap:
+          name: telemetry-config
       containers:
       - image: quay.io/openshift/origin-cluster-monitoring-operator:latest
         name: cluster-monitoring-operator
         terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/cluster-monitoring-operator/telemetry
+          name: telemetry-config
         env:
         - name: RELEASE_VERSION
           value: "0.0.1-snapshot"
