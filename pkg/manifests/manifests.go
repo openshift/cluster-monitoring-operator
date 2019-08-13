@@ -300,19 +300,6 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 
 	a.Spec.Containers[0].Image = f.config.Images.OauthProxy
 
-	for c := range a.Spec.Containers {
-		for e := range a.Spec.Containers[c].Env {
-			switch a.Spec.Containers[c].Env[e].Name {
-			case "HTTP_PROXY":
-				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.HTTPProxy
-			case "HTTPS_PROXY":
-				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.HTTPSProxy
-			case "NO_PROXY":
-				a.Spec.Containers[c].Env[e].Value = f.config.HTTPConfig.NoProxy
-			}
-		}
-	}
-
 	a.Namespace = f.namespace
 
 	return a, nil

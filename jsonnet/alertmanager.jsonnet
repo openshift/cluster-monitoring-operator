@@ -175,21 +175,6 @@ local authorizationRole = policyRule.new() +
                   name: 'secret-alertmanager-main-proxy',
                 },
               ],
-              env: [
-                // Actual proxy settings will be modified at runtime.
-                {
-                  name: 'HTTP_PROXY',
-                  value: '',
-                },
-                {
-                  name: 'HTTPS_PROXY',
-                  value: '',
-                },
-                {
-                  name: 'NO_PROXY',
-                  value: '',
-                },
-              ],
             },
           ],
         },
