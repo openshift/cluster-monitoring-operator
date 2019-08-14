@@ -80,7 +80,6 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                    'openshift-cluster-version',
                    'openshift-apiserver',
                    'openshift-kube-scheduler',
-                   'openshift-kube-controller-manager',
                    'openshift-etcd',
                  ],
                },
