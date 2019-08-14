@@ -112,12 +112,7 @@ local namespacesRole =
     clusterRole+:
       clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole]),
 
-    // OpenShift has the kube-apiserver as well as an aggregated API called
-    // OpenShift apiserver, containing all the extended APIs.
-    serviceMonitorClusterVersionOperator:: {},
-
     // The proxy secret is there to encrypt session created by the oauth proxy.
-
     proxySecret:
       secret.new('prometheus-k8s-proxy', {}) +
       secret.mixin.metadata.withNamespace($._config.namespace) +
