@@ -1122,7 +1122,7 @@ spec:
         message: The configuration of the instances of the Alertmanager cluster `{{$labels.service}}`
           are out of sync.
       expr: |
-        count_values("config_hash", alertmanager_config_hash{job="alertmanager-main",namespace="openshift-monitoring"}) BY (service) / ON(service) GROUP_LEFT() label_replace(prometheus_operator_spec_replicas{job="prometheus-operator",namespace="openshift-monitoring",controller="alertmanager"}, "service", "alertmanager-$1", "name", "(.*)") != 1
+        count_values("config_hash", alertmanager_config_hash{job="alertmanager-main",namespace="openshift-monitoring"}) BY (service) / ON(service) GROUP_LEFT() label_replace(max(prometheus_operator_spec_replicas{job="prometheus-operator",namespace="openshift-monitoring",controller="alertmanager"}) by (name, job, namespace, controller), "service", "alertmanager-$1", "name", "(.*)") != 1
       for: 5m
       labels:
         severity: critical
@@ -1192,7 +1192,7 @@ spec:
         message: Clock skew detected on node-exporter {{ $labels.namespace }}/{{ $labels.pod
           }}. Ensure NTP is configured correctly on this host.
       expr: |
-        abs(node_timex_offset_seconds{job="node-exporter"}) > 0.03
+        abs(node_timex_offset_seconds{job="node-exporter"}) > 0.05
       for: 2m
       labels:
         severity: warning
