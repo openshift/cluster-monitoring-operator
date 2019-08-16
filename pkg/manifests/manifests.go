@@ -74,26 +74,25 @@ var (
 	NodeExporterSecurityContextConstraints = "assets/node-exporter/security-context-constraints.yaml"
 	NodeExporterServiceMonitor             = "assets/node-exporter/service-monitor.yaml"
 
-	PrometheusK8sClusterRoleBinding                   = "assets/prometheus-k8s/cluster-role-binding.yaml"
-	PrometheusK8sRoleBindingConfig                    = "assets/prometheus-k8s/role-binding-config.yaml"
-	PrometheusK8sRoleBindingList                      = "assets/prometheus-k8s/role-binding-specific-namespaces.yaml"
-	PrometheusK8sClusterRole                          = "assets/prometheus-k8s/cluster-role.yaml"
-	PrometheusK8sRoleConfig                           = "assets/prometheus-k8s/role-config.yaml"
-	PrometheusK8sRoleList                             = "assets/prometheus-k8s/role-specific-namespaces.yaml"
-	PrometheusK8sRules                                = "assets/prometheus-k8s/rules.yaml"
-	PrometheusK8sServiceAccount                       = "assets/prometheus-k8s/service-account.yaml"
-	PrometheusK8s                                     = "assets/prometheus-k8s/prometheus.yaml"
-	PrometheusK8sKubeletServiceMonitor                = "assets/prometheus-k8s/service-monitor-kubelet.yaml"
-	PrometheusK8sPrometheusServiceMonitor             = "assets/prometheus-k8s/service-monitor.yaml"
-	PrometheusK8sServiceMonitorClusterVersionOperator = "assets/prometheus-k8s/service-monitor-cluster-version-operator.yaml"
-	PrometheusK8sService                              = "assets/prometheus-k8s/service.yaml"
-	PrometheusK8sProxySecret                          = "assets/prometheus-k8s/proxy-secret.yaml"
-	PrometheusRBACProxySecret                         = "assets/prometheus-k8s/kube-rbac-proxy-secret.yaml"
-	PrometheusK8sRoute                                = "assets/prometheus-k8s/route.yaml"
-	PrometheusK8sHtpasswd                             = "assets/prometheus-k8s/htpasswd-secret.yaml"
-	PrometheusK8sEtcdServiceMonitor                   = "assets/prometheus-k8s/service-monitor-etcd.yaml"
-	PrometheusK8sServingCertsCABundle                 = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
-	PrometheusK8sKubeletServingCABundle               = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
+	PrometheusK8sClusterRoleBinding       = "assets/prometheus-k8s/cluster-role-binding.yaml"
+	PrometheusK8sRoleBindingConfig        = "assets/prometheus-k8s/role-binding-config.yaml"
+	PrometheusK8sRoleBindingList          = "assets/prometheus-k8s/role-binding-specific-namespaces.yaml"
+	PrometheusK8sClusterRole              = "assets/prometheus-k8s/cluster-role.yaml"
+	PrometheusK8sRoleConfig               = "assets/prometheus-k8s/role-config.yaml"
+	PrometheusK8sRoleList                 = "assets/prometheus-k8s/role-specific-namespaces.yaml"
+	PrometheusK8sRules                    = "assets/prometheus-k8s/rules.yaml"
+	PrometheusK8sServiceAccount           = "assets/prometheus-k8s/service-account.yaml"
+	PrometheusK8s                         = "assets/prometheus-k8s/prometheus.yaml"
+	PrometheusK8sKubeletServiceMonitor    = "assets/prometheus-k8s/service-monitor-kubelet.yaml"
+	PrometheusK8sPrometheusServiceMonitor = "assets/prometheus-k8s/service-monitor.yaml"
+	PrometheusK8sService                  = "assets/prometheus-k8s/service.yaml"
+	PrometheusK8sProxySecret              = "assets/prometheus-k8s/proxy-secret.yaml"
+	PrometheusRBACProxySecret             = "assets/prometheus-k8s/kube-rbac-proxy-secret.yaml"
+	PrometheusK8sRoute                    = "assets/prometheus-k8s/route.yaml"
+	PrometheusK8sHtpasswd                 = "assets/prometheus-k8s/htpasswd-secret.yaml"
+	PrometheusK8sEtcdServiceMonitor       = "assets/prometheus-k8s/service-monitor-etcd.yaml"
+	PrometheusK8sServingCertsCABundle     = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
+	PrometheusK8sKubeletServingCABundle   = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 
 	PrometheusAdapterAPIService                         = "assets/prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "assets/prometheus-adapter/cluster-role.yaml"
@@ -852,17 +851,6 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor
 	sm.Namespace = f.namespace
 
 	return sm, nil
-}
-
-func (f *Factory) PrometheusK8sServiceMonitorClusterVersionOperator() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sServiceMonitorClusterVersionOperator))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
 }
 
 func (f *Factory) PrometheusAdapterClusterRole() (*rbacv1.ClusterRole, error) {

@@ -114,35 +114,7 @@ local namespacesRole =
 
     // OpenShift has the kube-apiserver as well as an aggregated API called
     // OpenShift apiserver, containing all the extended APIs.
-    serviceMonitorClusterVersionOperator:
-      {
-        apiVersion: 'monitoring.coreos.com/v1',
-        kind: 'ServiceMonitor',
-        metadata: {
-          labels: {
-            'k8s-app': 'cluster-version-operator',
-          },
-          name: 'cluster-version-operator',
-          namespace: $._config.namespace,
-        },
-        spec: {
-          endpoints: [
-            {
-              interval: '30s',
-              port: 'metrics',
-              scheme: 'http',
-            },
-          ],
-          namespaceSelector: {
-            matchNames: ['openshift-cluster-version'],
-          },
-          selector: {
-            matchLabels: {
-              'k8s-app': 'cluster-version-operator',
-            },
-          },
-        },
-      },
+    serviceMonitorClusterVersionOperator:: {},
 
     // The proxy secret is there to encrypt session created by the oauth proxy.
 
