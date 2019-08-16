@@ -16,6 +16,7 @@ package operator
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -311,12 +312,13 @@ func (o *Operator) sync(key string) error {
 		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
 
-	err = tl.RunAll()
+	taskName, err := tl.RunAll()
 	if err != nil {
 		klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
-		reportErr := o.client.StatusReporter().SetFailed(err)
+		failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
+		reportErr := o.client.StatusReporter().SetFailed(err, failedTaskReason)
 		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to in progress: %v", reportErr)
+			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
 		}
 		return err
 	}

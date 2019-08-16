@@ -286,7 +286,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 				w(mock)
 			}
 
-			got := sr.SetFailed(tc.given.err)
+			got := sr.SetFailed(tc.given.err, "")
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {

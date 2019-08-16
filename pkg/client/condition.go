@@ -30,21 +30,25 @@ func newConditions(cos v1.ClusterOperatorStatus, targetVersion string, time meta
 			Type:               v1.OperatorAvailable,
 			Status:             v1.ConditionUnknown,
 			LastTransitionTime: time,
+			Reason:             "",
 		},
 		v1.OperatorProgressing: {
 			Type:               v1.OperatorProgressing,
 			Status:             v1.ConditionUnknown,
 			LastTransitionTime: time,
+			Reason:             "",
 		},
 		v1.OperatorDegraded: {
 			Type:               v1.OperatorDegraded,
 			Status:             v1.ConditionUnknown,
 			LastTransitionTime: time,
+			Reason:             "",
 		},
 		v1.OperatorUpgradeable: {
 			Type:               v1.OperatorUpgradeable,
 			Status:             v1.ConditionUnknown,
 			LastTransitionTime: time,
+			Reason:             "",
 		},
 	}
 
@@ -65,7 +69,7 @@ func newConditions(cos v1.ClusterOperatorStatus, targetVersion string, time meta
 	return cs
 }
 
-func (cs *conditions) setCondition(condition v1.ClusterStatusConditionType, status v1.ConditionStatus, message string, time metav1.Time) {
+func (cs *conditions) setCondition(condition v1.ClusterStatusConditionType, status v1.ConditionStatus, message, reason string, time metav1.Time) {
 	entries := make(map[v1.ClusterStatusConditionType]v1.ClusterOperatorStatusCondition)
 	for k, v := range cs.entryMap {
 		entries[k] = v
@@ -79,6 +83,7 @@ func (cs *conditions) setCondition(condition v1.ClusterStatusConditionType, stat
 			Status:             status,
 			LastTransitionTime: time,
 			Message:            message,
+			Reason:             reason,
 		}
 	}
 
