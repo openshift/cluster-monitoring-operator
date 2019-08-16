@@ -2,7 +2,7 @@
 
 jsonnet/vendor/
 tmp/
-
+*.swp
 # These are empty target files, created on every docker build. Their sole
 # purpose is to track the last target execution time to evaluate, whether the
 # container needs to be rebuilt
