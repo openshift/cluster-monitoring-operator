@@ -23,13 +23,6 @@ spec:
       record: namespace:container_memory_usage_bytes:sum
     - expr: |
         sum by (namespace, label_name) (
-            sum(rate(container_cpu_usage_seconds_total{job="kubelet", image!="", container!="POD"}[5m])) by (namespace, pod)
-          * on (namespace, pod)
-            group_left(label_name) kube_pod_labels{job="kube-state-metrics"}
-        )
-      record: namespace:container_cpu_usage_seconds_total:sum_rate
-    - expr: |
-        sum by (namespace, label_name) (
             sum(container_memory_usage_bytes{job="kubelet",image!="", container!="POD"}) by (pod, namespace)
           * on (namespace, pod)
             group_left(label_name) kube_pod_labels{job="kube-state-metrics"}
@@ -555,16 +548,16 @@ spec:
           }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
       expr: |
         rate(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[15m]) * 60 * 5 > 0
-      for: 1h
+      for: 15m
       labels:
         severity: critical
     - alert: KubePodNotReady
       annotations:
         message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
-          state for longer than an hour.
+          state for longer than 15 minutes.
       expr: |
         sum by (namespace, pod) (kube_pod_status_phase{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", phase=~"Failed|Pending|Unknown"}) > 0
-      for: 1h
+      for: 15m
       labels:
         severity: critical
     - alert: KubeDeploymentGenerationMismatch
@@ -582,12 +575,12 @@ spec:
     - alert: KubeDeploymentReplicasMismatch
       annotations:
         message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not
-          matched the expected number of replicas for longer than an hour.
+          matched the expected number of replicas for longer than 15 minutes.
       expr: |
         kube_deployment_spec_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
         kube_deployment_status_replicas_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
-      for: 1h
+      for: 15m
       labels:
         severity: critical
     - alert: KubeStatefulSetReplicasMismatch
@@ -686,7 +679,7 @@ spec:
         message: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to complete.
       expr: |
         kube_job_status_failed{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
-      for: 1h
+      for: 15m
       labels:
         severity: warning
   - name: kubernetes-resources
@@ -810,7 +803,7 @@ spec:
         message: '{{ $labels.node }} has been unready for more than an hour.'
       expr: |
         kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
-      for: 1h
+      for: 15m
       labels:
         severity: warning
     - alert: KubeVersionMismatch
@@ -818,8 +811,8 @@ spec:
         message: There are {{ $value }} different semantic versions of Kubernetes
           components running.
       expr: |
-        count(count by (gitVersion) (label_replace(kubernetes_build_info{job!="kube-dns"},"gitVersion","$1","gitVersion","(v[0-9]*.[0-9]*.[0-9]*).*"))) > 1
-      for: 1h
+        count(count by (gitVersion) (label_replace(kubernetes_build_info{job!~"kube-dns|coredns"},"gitVersion","$1","gitVersion","(v[0-9]*.[0-9]*.[0-9]*).*"))) > 1
+      for: 15m
       labels:
         severity: warning
     - alert: KubeClientErrors
