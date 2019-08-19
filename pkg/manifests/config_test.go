@@ -237,7 +237,7 @@ func TestLoadProxy(t *testing.T) {
 			name: "proxies",
 			load: func() (*configv1.Proxy, error) {
 				return &configv1.Proxy{
-					Spec: configv1.ProxySpec{
+					Status: configv1.ProxyStatus{
 						HTTPProxy:  "http://proxy",
 						HTTPSProxy: "https://proxy",
 						NoProxy:    "localhost,svc.cluster",
