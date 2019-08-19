@@ -91,6 +91,16 @@
             "version": "a9dea68ee61dfea03d9e761e9382d2e5abcdd9e4"
         },
         {
+            "name": "kube-thanos",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/metalmatze/kube-thanos",
+                    "subdir": "jsonnet/kube-thanos"
+                }
+            },
+            "version": "4c9aec2115ddab814aaae08b0c694af0d9b756ec"
+        },
+        {
             "name": "telemeter-client",
             "source": {
                 "git": {

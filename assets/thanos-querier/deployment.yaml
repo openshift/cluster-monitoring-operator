@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: thanos-querier
+  name: thanos-querier
+  namespace: openshift-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-querier
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-querier
+    spec:
+      containers:
+      - args:
+        - query
+        - --query.replica-label=replica
+        - --grpc-address=0.0.0.0:10901
+        - --http-address=0.0.0.0:9090
+        - --store=dnssrv+prometheus-k8s.openshift-monitoring.svc.cluster.local:10901
+        image: quay.io/openshift/origin-thanos:latest
+        name: thanos-querier
+        ports:
+        - containerPort: 10901
+          name: grpc
+        - containerPort: 9090
+          name: http
+        resources:
+          requests:
+            cpu: 10m
+            memory: 12Mi
+      priorityClassName: system-cluster-critical
+      securityContext: {}
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists

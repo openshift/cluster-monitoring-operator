@@ -62,3 +62,7 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-prom-label-proxy:latest
+  - name: thanos
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-thanos:latest

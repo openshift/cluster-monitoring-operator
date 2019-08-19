@@ -88,6 +88,8 @@ local namespacesRole =
       service.mixin.spec.withPorts([
         servicePort.newNamed('web', 9091, 'web'),
         servicePort.newNamed('tenancy', 9092, 'tenancy'),
+        // thanos
+        servicePort.newNamed('grpc', 10901, 10901),
       ]),
 
     servingCertsCaBundle+:
@@ -240,6 +242,12 @@ local namespacesRole =
     prometheus+:
       {
         spec+: {
+          thanos+: {
+            baseImage: $._config.imageRepos.openshiftThanos,
+            version: $._config.versions.openshiftThanos,
+            // disable thanos object storage
+            objectStorageConfig:: null,
+          },
           alerting+: {
             alertmanagers:
               std.map(

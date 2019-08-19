@@ -141,6 +141,9 @@ var (
 	TelemeterClientServiceAccount         = "assets/telemeter-client/service-account.yaml"
 	TelemeterClientServiceMonitor         = "assets/telemeter-client/service-monitor.yaml"
 	TelemeterClientServingCertsCABundle   = "assets/telemeter-client/serving-certs-c-a-bundle.yaml"
+
+	ThanosQuerierDeployment = "assets/thanos-querier/deployment.yaml"
+	ThanosQuerierService    = "assets/thanos-querier/service.yaml"
 )
 
 var (
@@ -818,6 +821,10 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		}
 
 		p.Spec.Secrets = secrets
+	}
+
+	if f.config.Images.Thanos != "" {
+		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
 	p.Spec.Containers[0].Image = f.config.Images.OauthProxy
@@ -1686,6 +1693,29 @@ func (f *Factory) NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRole
 
 func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
 	return NewClusterRole(manifest)
+}
+
+func (f *Factory) ThanosQuerierDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(MustAssetReader(ThanosQuerierDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	d.Namespace = f.namespace
+	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.Thanos
+
+	return d, nil
+}
+
+func (f *Factory) ThanosQuerierService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(ThanosQuerierService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 // TelemeterClientServingCertsCABundle generates a new servinc certs CA bundle ConfigMap for TelemeterClient.
