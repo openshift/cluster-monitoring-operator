@@ -22,7 +22,7 @@ require (
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
-	github.com/openshift/api v0.0.0-20190424103643-f9c19755eb3e
+	github.com/openshift/api v3.9.1-0.20190809235250-af7bae2945fe+incompatible
 	github.com/openshift/client-go v0.0.0-20190412095722-0255926f5393
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.2
