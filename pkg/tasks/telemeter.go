@@ -18,6 +18,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type TelemeterClientTask struct {
@@ -48,7 +49,7 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter Client serving certs CA Bundle ConfigMap failed")
 	}
 
-	err = t.client.CreateIfNotExistConfigMap(cacm)
+	_, err = t.client.CreateIfNotExistConfigMap(cacm)
 	if err != nil {
 		return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
 	}
@@ -113,14 +114,42 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "reconciling Telemeter client Secret failed")
 	}
 
-	dep, err := t.factory.TelemeterClientDeployment()
-	if err != nil {
-		return errors.Wrap(err, "initializing Telemeter client Deployment failed")
-	}
+	{
+		// Create trusted CA bundle ConfigMap.
+		trustedCA, err := t.factory.TelemeterTrustedCABundle()
+		if err != nil {
+			return errors.Wrap(err, "initializing Telemeter client trusted CA bundle ConfigMap failed")
+		}
 
-	err = t.client.CreateOrUpdateDeployment(dep)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Telemeter client Deployment failed")
+		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "creating Telemeter client trusted CA bundle ConfigMap failed")
+		}
+
+		// In the case when there is no data but the ConfigMap is there, we just continue.
+		// We will catch this on the next loop.
+		trustedCA = t.factory.HashTrustedCA(trustedCA, "telemeter")
+		if trustedCA != nil {
+			err = t.client.CreateOrUpdateConfigMap(trustedCA)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Telemeter client hashed trusted CA bundle ConfigMap failed")
+			}
+
+			err = t.deleteOldTelemeterConfigMaps(string(trustedCA.Labels["monitoring.openshift.io/hash"]))
+			if err != nil {
+				return errors.Wrap(err, "deleting old Telemeter client configmaps failed")
+			}
+		}
+
+		dep, err := t.factory.TelemeterClientDeployment(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "initializing Telemeter client Deployment failed")
+		}
+
+		err = t.client.CreateOrUpdateDeployment(dep)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Telemeter client Deployment failed")
+		}
 	}
 
 	sm, err := t.factory.TelemeterClientServiceMonitor()
@@ -133,7 +162,7 @@ func (t *TelemeterClientTask) create() error {
 }
 
 func (t *TelemeterClientTask) destroy() error {
-	dep, err := t.factory.TelemeterClientDeployment()
+	dep, err := t.factory.TelemeterClientDeployment(nil)
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client Deployment failed")
 	}
@@ -210,4 +239,22 @@ func (t *TelemeterClientTask) destroy() error {
 
 	err = t.client.DeleteConfigMap(cacm)
 	return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
+}
+
+func (t *TelemeterClientTask) deleteOldTelemeterConfigMaps(newHash string) error {
+	configMaps, err := t.client.KubernetesInterface().CoreV1().ConfigMaps("openshift-monitoring").List(metav1.ListOptions{
+		LabelSelector: "monitoring.openshift.io/name=telemeter,monitoring.openshift.io/hash!=" + newHash,
+	})
+	if err != nil {
+		return errors.Wrap(err, "error listing Telemeter configmaps while deleting old telemeter configmaps")
+	}
+
+	for i := range configMaps.Items {
+		err := t.client.KubernetesInterface().CoreV1().ConfigMaps("openshift-monitoring").Delete(configMaps.Items[i].Name, &metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "error deleting configmap: %s", configMaps.Items[i].Name)
+		}
+	}
+
+	return nil
 }

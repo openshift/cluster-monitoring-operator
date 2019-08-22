@@ -43,6 +43,7 @@ const (
 	kubeletServingCAConfigMap  = "openshift-config-managed/kubelet-serving-ca"
 	prometheusAdapterTLSSecret = "openshift-monitoring/prometheus-adapter-tls"
 	etcdClientCAConfigMap      = "openshift-config/etcd-metrics-serving-ca"
+	telemeterCABundleConfigMap = "openshift-monitoring/telemeter-trusted-ca-bundle"
 )
 
 type Operator struct {
@@ -220,7 +221,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 		return
 	}
 
-	klog.V(5).Infof("ConfigMap updated: %s", key)
+	klog.V(5).Infof("ConfigMap or Secret updated: %s", key)
 
 	cmoConfigMap := o.namespace + "/" + o.configMapName
 
@@ -230,8 +231,9 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case kubeletServingCAConfigMap:
 	case prometheusAdapterTLSSecret:
 	case etcdClientCAConfigMap:
+	case telemeterCABundleConfigMap:
 	default:
-		klog.V(5).Infof("ConfigMap (%s) not triggering an update.", key)
+		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return
 	}
 
@@ -388,7 +390,6 @@ func (o *Operator) Config(key string) *manifests.Config {
 	err := c.LoadProxy(func() (*configv1.Proxy, error) {
 		return o.client.GetProxy("cluster")
 	})
-
 	if err != nil {
 		klog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
 	}
