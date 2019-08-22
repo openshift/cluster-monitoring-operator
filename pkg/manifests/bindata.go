@@ -9,6 +9,7 @@
 // assets/alertmanager/service-account.yaml
 // assets/alertmanager/service-monitor.yaml
 // assets/alertmanager/service.yaml
+// assets/alertmanager/trusted-ca-bundle.yaml
 // assets/cluster-monitoring-operator/cluster-role.yaml
 // assets/cluster-monitoring-operator/service-monitor.yaml
 // assets/cluster-monitoring-operator/service.yaml
@@ -336,6 +337,26 @@ func assetsAlertmanagerServiceYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/alertmanager/service.yaml", size: 393, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _assetsAlertmanagerTrustedCaBundleYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\xce\xb1\x0e\xc2\x30\x0c\x04\xd0\x3d\x5f\x61\x65\x4f\x11\x6b\x56\x66\x56\x76\x37\x71\x8b\x21\x71\x22\xc7\xe5\xfb\x11\x50\x10\xdb\x0d\x4f\x77\x87\x9d\x2f\xa4\x83\x9b\x44\x78\x1c\x5d\x46\xc3\xe8\x00\x12\x86\x79\x93\x5c\x68\x4a\x6a\x11\xbc\x77\x77\x96\x1c\xe1\xd4\x64\xe1\xf5\x8c\xdd\x55\x32\xfc\xea\x82\x33\x95\xf1\x4a\x00\xe9\x2d\xa6\xd6\x49\xc6\x95\x17\x9b\xb8\x1d\x58\x6e\x94\x2c\x98\x6e\xc3\x28\x87\x84\x9f\xee\x08\xde\x74\x23\xef\x00\x04\x2b\x45\xc0\x42\x6a\x15\x05\x57\xd2\x3f\xbd\x5f\xd9\xd9\xe8\x98\x28\xc2\x6f\x20\xd4\x26\x6c\x4d\x59\x56\xf7\x0c\x00\x00\xff\xff\xd1\x9a\x5b\x01\xce\x00\x00\x00")
+
+func assetsAlertmanagerTrustedCaBundleYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsAlertmanagerTrustedCaBundleYaml,
+		"assets/alertmanager/trusted-ca-bundle.yaml",
+	)
+}
+
+func assetsAlertmanagerTrustedCaBundleYaml() (*asset, error) {
+	bytes, err := assetsAlertmanagerTrustedCaBundleYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/alertmanager/trusted-ca-bundle.yaml", size: 206, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2081,6 +2102,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/alertmanager/service-account.yaml": assetsAlertmanagerServiceAccountYaml,
 	"assets/alertmanager/service-monitor.yaml": assetsAlertmanagerServiceMonitorYaml,
 	"assets/alertmanager/service.yaml": assetsAlertmanagerServiceYaml,
+	"assets/alertmanager/trusted-ca-bundle.yaml": assetsAlertmanagerTrustedCaBundleYaml,
 	"assets/cluster-monitoring-operator/cluster-role.yaml": assetsClusterMonitoringOperatorClusterRoleYaml,
 	"assets/cluster-monitoring-operator/service-monitor.yaml": assetsClusterMonitoringOperatorServiceMonitorYaml,
 	"assets/cluster-monitoring-operator/service.yaml": assetsClusterMonitoringOperatorServiceYaml,
@@ -2218,6 +2240,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"service-account.yaml": &bintree{assetsAlertmanagerServiceAccountYaml, map[string]*bintree{}},
 			"service-monitor.yaml": &bintree{assetsAlertmanagerServiceMonitorYaml, map[string]*bintree{}},
 			"service.yaml": &bintree{assetsAlertmanagerServiceYaml, map[string]*bintree{}},
+			"trusted-ca-bundle.yaml": &bintree{assetsAlertmanagerTrustedCaBundleYaml, map[string]*bintree{}},
 		}},
 		"cluster-monitoring-operator": &bintree{nil, map[string]*bintree{
 			"cluster-role.yaml": &bintree{assetsClusterMonitoringOperatorClusterRoleYaml, map[string]*bintree{}},
