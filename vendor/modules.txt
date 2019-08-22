@@ -112,9 +112,9 @@ github.com/prometheus/procfs/xfs
 github.com/prometheus/procfs/internal/util
 # github.com/spf13/pflag v1.0.3
 github.com/spf13/pflag
-# golang.org/x/crypto v0.0.0-20190424203555-c05e17bb3b2d
+# golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6
+# golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7
 golang.org/x/net/http2
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2/hpack
@@ -126,10 +126,10 @@ golang.org/x/oauth2
 golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20190423024810-112230192c58
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20190425145619-16072639606e
+# golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.1
+# golang.org/x/text v0.3.2
 golang.org/x/text/secure/bidirule
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
