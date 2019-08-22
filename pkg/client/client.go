@@ -733,15 +733,20 @@ func (c *Client) DeleteIfExists(nsName string) error {
 	return errors.Wrap(err, "deleting ConfigMap object failed")
 }
 
-func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) error {
+func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) (*v1.ConfigMap, error) {
 	cClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
-	_, err := cClient.Get(cm.GetName(), metav1.GetOptions{})
+	res, err := cClient.Get(cm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := cClient.Create(cm)
-		return errors.Wrap(err, "creating ConfigMap object failed")
+		res, err := cClient.Create(cm)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating ConfigMap object failed")
+		}
+		return res, nil
 	}
-
-	return errors.Wrap(err, "retrieving ConfigMap object failed")
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving ConfigMap object failed")
+	}
+	return res, nil
 }
 
 func (c *Client) CreateOrUpdateService(svc *v1.Service) error {

@@ -92,6 +92,7 @@
 // assets/telemeter-client/service-monitor.yaml
 // assets/telemeter-client/service.yaml
 // assets/telemeter-client/serving-certs-c-a-bundle.yaml
+// assets/telemeter-client/trusted-ca-bundle.yaml
 // DO NOT EDIT!
 
 package manifests
@@ -1999,6 +2000,26 @@ func assetsTelemeterClientServingCertsCABundleYaml() (*asset, error) {
 	return a, nil
 }
 
+var _assetsTelemeterClientTrustedCaBundleYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\xce\x31\x0e\xc2\x30\x0c\x85\xe1\x3d\xa7\xb0\xb2\xa7\x88\xd5\x2b\x33\x2b\xbb\x9b\xb8\xc5\x90\x38\x51\xe2\x72\x7e\x04\x14\xc4\xf6\x86\x4f\xbf\x1e\x35\xb9\x70\x1f\x52\x15\xe1\x71\x74\x89\x8c\xd0\x01\x44\x0a\xf3\xa6\x29\xf3\x14\xbb\x21\x78\xef\xee\xa2\x09\xe1\x54\x75\x91\xf5\x4c\xcd\x15\x36\xfa\xea\x4c\x33\xe7\xf1\x5a\x00\xf1\x2d\xa6\xda\x58\xc7\x55\x16\x9b\xa4\x1e\x44\x6f\x1c\x2d\x58\xdf\x86\x71\x0a\x91\x3e\x6d\x04\x6f\x7d\x63\xef\x00\x94\x0a\x23\x18\x67\x2e\x6c\xdc\xff\xe8\xfe\x63\x37\xa3\x51\x64\x84\x5f\x3d\x94\xaa\x62\xb5\x8b\xae\xee\x19\x00\x00\xff\xff\x00\x0c\x06\xf7\xcb\x00\x00\x00")
+
+func assetsTelemeterClientTrustedCaBundleYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsTelemeterClientTrustedCaBundleYaml,
+		"assets/telemeter-client/trusted-ca-bundle.yaml",
+	)
+}
+
+func assetsTelemeterClientTrustedCaBundleYaml() (*asset, error) {
+	bytes, err := assetsTelemeterClientTrustedCaBundleYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/telemeter-client/trusted-ca-bundle.yaml", size: 203, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2143,6 +2164,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/telemeter-client/service-monitor.yaml": assetsTelemeterClientServiceMonitorYaml,
 	"assets/telemeter-client/service.yaml": assetsTelemeterClientServiceYaml,
 	"assets/telemeter-client/serving-certs-c-a-bundle.yaml": assetsTelemeterClientServingCertsCABundleYaml,
+	"assets/telemeter-client/trusted-ca-bundle.yaml": assetsTelemeterClientTrustedCaBundleYaml,
 }
 
 // AssetDir returns the file names below a certain
@@ -2297,6 +2319,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"service-monitor.yaml": &bintree{assetsTelemeterClientServiceMonitorYaml, map[string]*bintree{}},
 			"service.yaml": &bintree{assetsTelemeterClientServiceYaml, map[string]*bintree{}},
 			"serving-certs-c-a-bundle.yaml": &bintree{assetsTelemeterClientServingCertsCABundleYaml, map[string]*bintree{}},
+			"trusted-ca-bundle.yaml": &bintree{assetsTelemeterClientTrustedCaBundleYaml, map[string]*bintree{}},
 		}},
 	}},
 }}
