@@ -18,6 +18,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type AlertmanagerTask struct {
@@ -107,22 +108,47 @@ func (t *AlertmanagerTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "reconciling Alertmanager Service failed")
 	}
+	{
+		// Create trusted CA bundle ConfigMap.
+		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager CA bundle ConfigMap failed")
+		}
 
-	a, err := t.factory.AlertmanagerMain(host)
-	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager object failed")
+		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, " creating Alertmanager CA bundle ConfigMap failed")
+		}
+
+		err = t.deleteOldHashAlertmanagerConfigMaps(string(trustedCA.Labels["monitoring.openshift.io/hash"]))
+		if err != nil {
+			return errors.Wrap(err, "deleting old Alertmaanger configmaps failed")
+		}
+
+		// In the case when there is no data but the ConfigMap is there, we just continue.
+		// We will catch this on the next loop.
+		trustedCA = t.factory.HashTrustedCA(trustedCA, "alertmanager")
+		if trustedCA != nil {
+			err = t.client.CreateOrUpdateConfigMap(trustedCA)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Alertmanager CA bundle ConfigMap failed")
+			}
+		}
+
+		a, err := t.factory.AlertmanagerMain(host, trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager object failed")
+		}
+
+		err = t.client.CreateOrUpdateAlertmanager(a)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Alertmanager object failed")
+		}
+		err = t.client.WaitForAlertmanager(a)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Alertmanager object changes failed")
+		}
 	}
-
-	err = t.client.CreateOrUpdateAlertmanager(a)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Alertmanager object failed")
-	}
-
-	err = t.client.WaitForAlertmanager(a)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Alertmanager object changes failed")
-	}
-
 	smam, err := t.factory.AlertmanagerServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")
@@ -130,4 +156,22 @@ func (t *AlertmanagerTask) Run() error {
 
 	err = t.client.CreateOrUpdateServiceMonitor(smam)
 	return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
+}
+
+func (t *AlertmanagerTask) deleteOldHashAlertmanagerConfigMaps(newHash string) error {
+	configMaps, err := t.client.KubernetesInterface().CoreV1().ConfigMaps("openshift-monitoring").List(metav1.ListOptions{
+		LabelSelector: "monitoring.openshift.io/name=alertmanager,monitoring.openshift.io/hash!=" + newHash,
+	})
+	if err != nil {
+		return errors.Wrap(err, "error listing alertmanager configmaps while deleting old alertmanager configmaps")
+	}
+
+	for i := range configMaps.Items {
+		err := t.client.KubernetesInterface().CoreV1().ConfigMaps("openshift-monitoring").Delete(configMaps.Items[i].Name, &metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "error deleting ConfigMap: %s", configMaps.Items[i].Name)
+		}
+	}
+
+	return nil
 }

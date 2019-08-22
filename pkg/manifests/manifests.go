@@ -52,6 +52,7 @@ var (
 	AlertmanagerClusterRole        = "assets/alertmanager/cluster-role.yaml"
 	AlertmanagerRoute              = "assets/alertmanager/route.yaml"
 	AlertmanagerServiceMonitor     = "assets/alertmanager/service-monitor.yaml"
+	AlertmanagerTrustedCABundle    = "assets/alertmanager/trusted-ca-bundle.yaml"
 
 	KubeStateMetricsClusterRoleBinding = "assets/kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole        = "assets/kube-state-metrics/cluster-role.yaml"
@@ -271,7 +272,16 @@ func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return sm, nil
 }
 
-func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
+func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(AlertmanagerTrustedCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
+}
+
+func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(MustAssetReader(AlertmanagerMain))
 	if err != nil {
 		return nil, err
@@ -302,6 +312,10 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 	a.Spec.Containers[0].Image = f.config.Images.OauthProxy
 
 	a.Namespace = f.namespace
+
+	if trustedCABundleCM != nil {
+		a.Spec.ConfigMaps = append(a.Spec.ConfigMaps, trustedCABundleCM.Name)
+	}
 
 	return a, nil
 }

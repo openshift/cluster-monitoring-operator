@@ -39,7 +39,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc")
+	_, err = f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -372,6 +372,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	_, err = f.AlertmanagerTrustedCABundle()
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestPrometheusOperatorConfiguration(t *testing.T) {
@@ -614,7 +619,7 @@ ingress:
 	})
 
 	f := NewFactory("openshift-monitoring", c)
-	a, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc")
+	a, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
