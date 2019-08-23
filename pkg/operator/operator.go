@@ -39,11 +39,12 @@ const (
 	resyncPeriod = 5 * time.Minute
 
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
-	apiAuthenticationConfigMap = "kube-system/extension-apiserver-authentication"
-	kubeletServingCAConfigMap  = "openshift-config-managed/kubelet-serving-ca"
-	prometheusAdapterTLSSecret = "openshift-monitoring/prometheus-adapter-tls"
-	etcdClientCAConfigMap      = "openshift-config/etcd-metrics-serving-ca"
-	telemeterCABundleConfigMap = "openshift-monitoring/telemeter-trusted-ca-bundle"
+	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
+	kubeletServingCAConfigMap     = "openshift-config-managed/kubelet-serving-ca"
+	prometheusAdapterTLSSecret    = "openshift-monitoring/prometheus-adapter-tls"
+	etcdClientCAConfigMap         = "openshift-config/etcd-metrics-serving-ca"
+	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
+	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 )
 
 type Operator struct {
@@ -232,6 +233,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case prometheusAdapterTLSSecret:
 	case etcdClientCAConfigMap:
 	case telemeterCABundleConfigMap:
+	case alertmanagerCABundleConfigMap:
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return

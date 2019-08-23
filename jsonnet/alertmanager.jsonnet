@@ -24,6 +24,11 @@ local authorizationRole = policyRule.new() +
 {
   alertmanager+:: {
 
+    trustedCaBundle:
+      configmap.new('alertmanager-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
+      configmap.mixin.metadata.withNamespace($._config.namespace) +
+      configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+
     // OpenShift route to access the Alertmanager UI.
 
     route: {
