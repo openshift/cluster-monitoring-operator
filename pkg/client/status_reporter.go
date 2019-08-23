@@ -106,7 +106,7 @@ func (r *StatusReporter) SetInProgress() error {
 	reasonInProgress := "RollOutInProgress"
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", reasonInProgress, time)
-	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionFalse,
+	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue,
 		"Rollout of the monitoring stack is in progress. Please wait until it finishes.",
 		reasonInProgress,
 		time,
@@ -136,7 +136,7 @@ func (r *StatusReporter) SetFailed(statusErr error, reason string) error {
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, "", "", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", "", time)
 	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), reason, time)
-	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionFalse,
+	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue,
 		"Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error.",
 		reason,
 		time,
