@@ -5,6 +5,16 @@
         spec+: {
           template+: {
             spec+: {
+              nodeSelector+: {
+                'node-role.kubernetes.io/master': '',
+              },
+              tolerations: [
+                {
+                  key: 'node-role.kubernetes.io/master',
+                  operator: 'Exists',
+                  effect: 'NoSchedule',
+                },
+              ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
               containers:

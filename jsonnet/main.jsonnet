@@ -88,10 +88,10 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                },
              },
              telemeterClient+:: {
-                trustedCaBundle:
-                  configmap.new('telemeter-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
-                  configmap.mixin.metadata.withNamespace($._config.namespace) +
-                  configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+               trustedCaBundle:
+                 configmap.new('telemeter-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
+                 configmap.mixin.metadata.withNamespace($._config.namespace) +
+                 configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
              },
            } +
            (import 'rules.jsonnet') +
