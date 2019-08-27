@@ -61,6 +61,12 @@ spec:
         - mountPath: /grafana-dashboard-definitions/0/k8s-resources-workloads-namespace
           name: grafana-dashboard-k8s-resources-workloads-namespace
           readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/node-cluster-rsrc-use
+          name: grafana-dashboard-node-cluster-rsrc-use
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/node-rsrc-use
+          name: grafana-dashboard-node-rsrc-use
+          readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/prometheus-remote-write
           name: grafana-dashboard-prometheus-remote-write
           readOnly: false
@@ -139,6 +145,12 @@ spec:
       - configMap:
           name: grafana-dashboard-k8s-resources-workloads-namespace
         name: grafana-dashboard-k8s-resources-workloads-namespace
+      - configMap:
+          name: grafana-dashboard-node-cluster-rsrc-use
+        name: grafana-dashboard-node-cluster-rsrc-use
+      - configMap:
+          name: grafana-dashboard-node-rsrc-use
+        name: grafana-dashboard-node-rsrc-use
       - configMap:
           name: grafana-dashboard-prometheus-remote-write
         name: grafana-dashboard-prometheus-remote-write

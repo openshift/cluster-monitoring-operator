@@ -59,6 +59,11 @@ spec:
         - --match={__name__="job:ceph_pools_iops:total"}
         - --match={__name__="job:ceph_pools_iops_bytes:total"}
         - --match={__name__="job:ceph_versions_running:count"}
+        - --match={__name__="job:noobaa_total_unhealthy_buckets:sum"}
+        - --match={__name__="job:noobaa_bucket_count:sum"}
+        - --match={__name__="job:noobaa_total_object_count:sum"}
+        - --match={__name__="noobaa_accounts_num"}
+        - --match={__name__="noobaa_total_usage"}
         env:
         - name: ANONYMIZE_LABELS
           value: ""
