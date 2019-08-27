@@ -8,7 +8,7 @@
                     "subdir": "jsonnet/kube-prometheus"
                 }
             },
-            "version": "c4b89c941470c8328fd49090c5d27c0dbc192e57"
+            "version": "a8927ac86d80c16540be54830826b2c22e96fce9"
         },
         {
             "name": "ksonnet",
@@ -91,6 +91,26 @@
             "version": "5d401f1e1bf156808168e81f01e09e6a5637469f"
         },
         {
+            "name": "node-mixin",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/prometheus/node_exporter",
+                    "subdir": "docs/node-mixin"
+                }
+            },
+            "version": "154d59dee72b894f7245d8d78c9344d1211d521f"
+        },
+        {
+            "name": "promgrafonnet",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/kubernetes-monitoring/kubernetes-mixin",
+                    "subdir": "lib/promgrafonnet"
+                }
+            },
+            "version": "193d4934f85c9ff596d1f3e4dce7bd2da62a4d5e"
+        },
+        {
             "name": "telemeter-client",
             "source": {
                 "git": {
@@ -98,7 +118,7 @@
                     "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "4b3ea03de31f987c93967043eaf6eacc051aca99"
+            "version": "29c6954b42ca219eded5a961fc86fd5a5a51a8ea"
         },
         {
             "name": "openshift-state-metrics",
