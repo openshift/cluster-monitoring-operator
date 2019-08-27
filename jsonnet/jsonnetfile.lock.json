@@ -28,7 +28,7 @@
                     "subdir": ""
                 }
             },
-            "version": "3a6af8f5e9b16441308bcd57ad3f5bcaa03d1d68"
+            "version": "e3d6d8ebb1789af0e17fb1f60171aaf64926a3a1"
         },
         {
             "name": "grafonnet",
@@ -89,6 +89,16 @@
                 }
             },
             "version": "5d401f1e1bf156808168e81f01e09e6a5637469f"
+        },
+        {
+            "name": "promgrafonnet",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/kubernetes-monitoring/kubernetes-mixin",
+                    "subdir": "lib/promgrafonnet"
+                }
+            },
+            "version": "e3d6d8ebb1789af0e17fb1f60171aaf64926a3a1"
         },
         {
             "name": "telemeter-client",
