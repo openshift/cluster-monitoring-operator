@@ -18,7 +18,6 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type TelemeterClientTask struct {
@@ -135,7 +134,10 @@ func (t *TelemeterClientTask) create() error {
 				return errors.Wrap(err, "reconciling Telemeter client hashed trusted CA bundle ConfigMap failed")
 			}
 
-			err = t.deleteOldTelemeterConfigMaps(string(trustedCA.Labels["monitoring.openshift.io/hash"]))
+			err = t.client.DeleteHashedConfigMap(
+				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
+				"telemeter",
+			)
 			if err != nil {
 				return errors.Wrap(err, "deleting old Telemeter client configmaps failed")
 			}
@@ -239,22 +241,4 @@ func (t *TelemeterClientTask) destroy() error {
 
 	err = t.client.DeleteConfigMap(cacm)
 	return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
-}
-
-func (t *TelemeterClientTask) deleteOldTelemeterConfigMaps(newHash string) error {
-	configMaps, err := t.client.KubernetesInterface().CoreV1().ConfigMaps("openshift-monitoring").List(metav1.ListOptions{
-		LabelSelector: "monitoring.openshift.io/name=telemeter,monitoring.openshift.io/hash!=" + newHash,
-	})
-	if err != nil {
-		return errors.Wrap(err, "error listing Telemeter configmaps while deleting old telemeter configmaps")
-	}
-
-	for i := range configMaps.Items {
-		err := t.client.KubernetesInterface().CoreV1().ConfigMaps("openshift-monitoring").Delete(configMaps.Items[i].Name, &metav1.DeleteOptions{})
-		if err != nil {
-			return errors.Wrapf(err, "error deleting configmap: %s", configMaps.Items[i].Name)
-		}
-	}
-
-	return nil
 }
