@@ -326,6 +326,25 @@ func (c *Client) DeleteConfigMap(cm *v1.ConfigMap) error {
 	return err
 }
 
+func (c *Client) DeleteHashedConfigMap(newHash, prefix string) error {
+	ls := "monitoring.openshift.io/name=" + prefix + ",monitoring.openshift.io/hash!=" + newHash
+	configMaps, err := c.KubernetesInterface().CoreV1().ConfigMaps(c.namespace).List(metav1.ListOptions{
+		LabelSelector: ls,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "error listing configmaps with label selector %s", ls)
+	}
+
+	for i := range configMaps.Items {
+		err := c.KubernetesInterface().CoreV1().ConfigMaps(c.namespace).Delete(configMaps.Items[i].Name, &metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "error deleting configmap: %s", configMaps.Items[i].Name)
+		}
+	}
+
+	return nil
+}
+
 func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 	p := metav1.DeletePropagationForeground
 	err := c.kclient.AppsV1beta2().Deployments(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{PropagationPolicy: &p})
