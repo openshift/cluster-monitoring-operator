@@ -102,6 +102,10 @@
               severity: 'critical',
             },
           },
+          {
+            expr: 'sum((cluster:master_nodes * on(node) group_left(os_image, kernel_version) kube_node_info * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left(os_image, kernel_version) kube_node_info * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (node, kernel_version, os_image, label_node_openshift_io_os_id, label_beta_kubernetes_io_instance_type, label_beta_kubernetes_io_arch, label_node_role_kubernetes_io)',
+            record: 'node_role_os_version_machine:cpu_capacity_cores:sum',
+          },
         ],
       },
       {
