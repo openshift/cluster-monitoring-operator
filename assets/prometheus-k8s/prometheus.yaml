@@ -61,6 +61,7 @@ spec:
       requests:
         cpu: 10m
         memory: 20Mi
+    terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-k8s-tls
@@ -86,6 +87,7 @@ spec:
       requests:
         cpu: 10m
         memory: 20Mi
+    terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-k8s-tls
@@ -101,6 +103,7 @@ spec:
       requests:
         cpu: 10m
         memory: 20Mi
+    terminationMessagePolicy: FallbackToLogsOnError
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux

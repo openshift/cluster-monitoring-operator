@@ -28,6 +28,7 @@
                         cpu: '10m',
                       },
                     },
+                    terminationMessagePolicy: 'FallbackToLogsOnError',
                   },
                   super.containers,
                 ),

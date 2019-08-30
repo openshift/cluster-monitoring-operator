@@ -59,6 +59,7 @@ spec:
           requests:
             cpu: 10m
             memory: 20Mi
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
           name: node-exporter-tls

@@ -170,6 +170,7 @@ local authorizationRole = policyRule.new() +
                 '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
                 '-skip-auth-regex=^/metrics',
               ],
+              terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [
                 {
                   mountPath: '/etc/tls/private',
