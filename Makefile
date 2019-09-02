@@ -5,7 +5,9 @@ REPO?=quay.io/openshift/cluster-monitoring-operator
 TAG?=$(shell git rev-parse --short HEAD)
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
 GO111MODULE?=on
+GOPROXY?=http://proxy.golang.org
 export GO111MODULE
+export GOPROXY
 
 PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
 GOLANG_FILES:=$(shell find . -name \*.go -print) pkg/manifests/bindata.go
