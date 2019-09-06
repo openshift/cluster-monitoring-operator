@@ -710,7 +710,7 @@ spec:
       annotations:
         message: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to complete.
       expr: |
-        kube_job_status_failed{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
+        kube_job_failed{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
       for: 15m
       labels:
         severity: warning
