@@ -44,7 +44,7 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
 	}
 
-	err = t.client.CreateIfNotExistConfigMap(cacm)
+	_, err = t.client.CreateIfNotExistConfigMap(cacm)
 	if err != nil {
 		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
 	}

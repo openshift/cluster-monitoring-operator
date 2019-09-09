@@ -44,6 +44,7 @@ spec:
     - containerPort: 9095
       name: web
     resources: {}
+    terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-alertmanager-main-tls

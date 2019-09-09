@@ -316,6 +316,7 @@ local namespacesRole =
                 '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
                 '-skip-auth-regex=^/metrics',
               ],
+              terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [
                 {
                   mountPath: '/etc/tls/private',
@@ -356,6 +357,7 @@ local namespacesRole =
                 '--logtostderr=true',
                 '--v=10',
               ],
+              terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [
                 {
                   mountPath: '/etc/tls/private',
@@ -381,6 +383,7 @@ local namespacesRole =
                   cpu: '10m',
                 },
               },
+              terminationMessagePolicy: 'FallbackToLogsOnError',
             },
           ],
         },

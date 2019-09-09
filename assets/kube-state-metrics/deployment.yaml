@@ -32,6 +32,7 @@ spec:
           requests:
             cpu: 10m
             memory: 40Mi
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
           name: kube-state-metrics-tls
@@ -52,6 +53,7 @@ spec:
           requests:
             cpu: 10m
             memory: 40Mi
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
           name: kube-state-metrics-tls

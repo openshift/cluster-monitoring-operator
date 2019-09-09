@@ -107,22 +107,50 @@ func (t *AlertmanagerTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "reconciling Alertmanager Service failed")
 	}
+	{
+		// Create trusted CA bundle ConfigMap.
+		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager CA bundle ConfigMap failed")
+		}
 
-	a, err := t.factory.AlertmanagerMain(host)
-	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager object failed")
+		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, " creating Alertmanager CA bundle ConfigMap failed")
+		}
+
+		// In the case when there is no data but the ConfigMap is there, we just continue.
+		// We will catch this on the next loop.
+		trustedCA = t.factory.HashTrustedCA(trustedCA, "alertmanager")
+		if trustedCA != nil {
+			err = t.client.CreateOrUpdateConfigMap(trustedCA)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Alertmanager CA bundle ConfigMap failed")
+			}
+
+			err = t.client.DeleteHashedConfigMap(
+				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
+				"alertmanager",
+			)
+			if err != nil {
+				return errors.Wrap(err, "deleting old Alertmanager configmaps failed")
+			}
+		}
+
+		a, err := t.factory.AlertmanagerMain(host, trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager object failed")
+		}
+
+		err = t.client.CreateOrUpdateAlertmanager(a)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Alertmanager object failed")
+		}
+		err = t.client.WaitForAlertmanager(a)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Alertmanager object changes failed")
+		}
 	}
-
-	err = t.client.CreateOrUpdateAlertmanager(a)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Alertmanager object failed")
-	}
-
-	err = t.client.WaitForAlertmanager(a)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Alertmanager object changes failed")
-	}
-
 	smam, err := t.factory.AlertmanagerServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")
