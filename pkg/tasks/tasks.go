@@ -33,9 +33,8 @@ func NewTaskRunner(client *client.Client, tasks []*TaskSpec) *TaskRunner {
 	}
 }
 
-func (tl *TaskRunner) RunAll() error {
+func (tl *TaskRunner) RunAll() (string, error) {
 	var g errgroup.Group
-
 	for i, ts := range tl.tasks {
 		// shadow vars due to concurrency
 		ts := ts
@@ -45,11 +44,22 @@ func (tl *TaskRunner) RunAll() error {
 			glog.V(4).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
 			err := tl.ExecuteTask(ts)
 			glog.V(4).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
-			return errors.Wrapf(err, "running task %v failed", ts.Name)
+			if err != nil {
+				return taskErr{error: errors.Wrapf(err, "running task %v failed", ts.Name), name: ts.Name}
+			}
+			return nil
 		})
 	}
+	if err := g.Wait(); err != nil {
+		taskName := ""
+		if tErr, ok := err.(taskErr); ok {
+			taskName = tErr.name
+			err = tErr.error
 
-	return g.Wait()
+		}
+		return taskName, err
+	}
+	return "", nil
 }
 
 func (tl *TaskRunner) ExecuteTask(ts *TaskSpec) error {
@@ -70,4 +80,9 @@ type TaskSpec struct {
 
 type Task interface {
 	Run() error
+}
+
+type taskErr struct {
+	error
+	name string
 }

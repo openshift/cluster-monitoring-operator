@@ -16,6 +16,7 @@ package operator
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -310,12 +311,13 @@ func (o *Operator) sync(key string) error {
 		glog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
 
-	err = tl.RunAll()
+	taskName, err := tl.RunAll()
 	if err != nil {
 		glog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
-		reportErr := o.client.StatusReporter().SetFailed(err)
+		failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
+		reportErr := o.client.StatusReporter().SetFailed(err, failedTaskReason)
 		if reportErr != nil {
-			glog.Errorf("error occurred while setting status to in progress: %v", reportErr)
+			glog.Errorf("error occurred while setting status to failed: %v", reportErr)
 		}
 		return err
 	}
