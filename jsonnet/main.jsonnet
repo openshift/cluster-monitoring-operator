@@ -1,3 +1,5 @@
+local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
+local configmap = k.core.v1.configMap;
 local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-anti-affinity.libsonnet') +
@@ -46,6 +48,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            } +
            (import 'telemeter-client/client.libsonnet') +
            {
+
              _config+:: {
                imageRepos+:: {
                  openshiftOauthProxy: 'quay.io/openshift/oauth-proxy',
@@ -88,6 +91,12 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  ],
                },
              },
+             telemeterClient+:: {
+               trustedCaBundle:
+                 configmap.new('telemeter-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
+                 configmap.mixin.metadata.withNamespace($._config.namespace) +
+                 configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+             },
            } +
            (import 'rules.jsonnet') +
            (import 'prometheus-operator.jsonnet') +
@@ -120,7 +129,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
   grafanaDashboards:: {
     [k]: d[k]
     for k in std.objectFields(d)
-                         // This array must be sorted for `std.setMember` to work.
+    // This array must be sorted for `std.setMember` to work.
     if !std.setMember(k, ['apiserver.json', 'controller-manager.json', 'kubelet.json', 'nodes.json', 'persistentvolumesusage.json', 'pods.json', 'proxy.json', 'scheduler.json', 'statefulset.json'])
   },
 } + {

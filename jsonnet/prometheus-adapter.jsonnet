@@ -68,6 +68,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                           '--prometheus-url=' + $._config.prometheusAdapter.prometheusURL,
                           '--secure-port=6443',
                         ],
+                        terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [
                           containerVolumeMount.new('tmpfs', '/tmp'),
                           containerVolumeMount.new('config', '/etc/adapter'),

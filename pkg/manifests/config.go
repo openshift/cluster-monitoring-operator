@@ -270,9 +270,9 @@ func (c *Config) LoadProxy(load func() (*configv1.Proxy, error)) error {
 		return fmt.Errorf("error loading proxy: %v", err)
 	}
 
-	c.HTTPConfig.HTTPProxy = p.Spec.HTTPProxy
-	c.HTTPConfig.HTTPSProxy = p.Spec.HTTPSProxy
-	c.HTTPConfig.NoProxy = p.Spec.NoProxy
+	c.HTTPConfig.HTTPProxy = p.Status.HTTPProxy
+	c.HTTPConfig.HTTPSProxy = p.Status.HTTPSProxy
+	c.HTTPConfig.NoProxy = p.Status.NoProxy
 
 	return nil
 }

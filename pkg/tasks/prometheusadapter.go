@@ -166,7 +166,7 @@ func (t *PrometheusAdapterTask) Run() error {
 
 		err = t.client.CreateOrUpdateSecret(secret)
 		if err != nil {
-			return errors.Wrap(err, "reconciling PrometheusAdapter Deployment failed")
+			return errors.Wrap(err, "reconciling PrometheusAdapter Secret failed")
 		}
 
 		dep, err := t.factory.PrometheusAdapterDeployment(secret.Name, apiAuthConfigmap.Data)

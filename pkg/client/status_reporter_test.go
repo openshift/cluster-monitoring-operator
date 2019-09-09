@@ -150,7 +150,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 					"Available", "Unknown",
 					"Degraded", "Unknown",
 					"Progressing", "True",
-					"Upgradeable", "False",
+					"Upgradeable", "True",
 				),
 			},
 		},
@@ -176,7 +176,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 					"Available", "Unknown",
 					"Degraded", "Unknown",
 					"Progressing", "True",
-					"Upgradeable", "False",
+					"Upgradeable", "True",
 				),
 			},
 		},
@@ -199,7 +199,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
-					t.Error(err)
+					t.Errorf("test case name '%s' failed with error: %v", tc.name, err)
 				}
 			}
 		})
@@ -241,7 +241,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 					"Available", "False",
 					"Degraded", "True",
 					"Progressing", "False",
-					"Upgradeable", "False",
+					"Upgradeable", "True",
 				),
 			},
 		},
@@ -267,7 +267,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 					"Available", "False",
 					"Degraded", "True",
 					"Progressing", "False",
-					"Upgradeable", "False",
+					"Upgradeable", "True",
 				),
 			},
 		},
@@ -290,7 +290,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
-					t.Error(err)
+					t.Errorf("test case name '%s' failed with error: %v", tc.name, err)
 				}
 			}
 		})

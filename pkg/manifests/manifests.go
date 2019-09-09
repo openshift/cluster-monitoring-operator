@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"bytes"
+
 	// #nosec
 	"crypto/sha1"
 	"encoding/base64"
@@ -51,6 +52,7 @@ var (
 	AlertmanagerClusterRole        = "assets/alertmanager/cluster-role.yaml"
 	AlertmanagerRoute              = "assets/alertmanager/route.yaml"
 	AlertmanagerServiceMonitor     = "assets/alertmanager/service-monitor.yaml"
+	AlertmanagerTrustedCABundle    = "assets/alertmanager/trusted-ca-bundle.yaml"
 
 	KubeStateMetricsClusterRoleBinding = "assets/kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole        = "assets/kube-state-metrics/cluster-role.yaml"
@@ -144,6 +146,8 @@ var (
 
 	ThanosQuerierDeployment = "assets/thanos-querier/deployment.yaml"
 	ThanosQuerierService    = "assets/thanos-querier/service.yaml"
+
+	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
 )
 
 var (
@@ -272,7 +276,16 @@ func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return sm, nil
 }
 
-func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
+func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(AlertmanagerTrustedCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
+}
+
+func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(MustAssetReader(AlertmanagerMain))
 	if err != nil {
 		return nil, err
@@ -303,6 +316,10 @@ func (f *Factory) AlertmanagerMain(host string) (*monv1.Alertmanager, error) {
 	a.Spec.Containers[0].Image = f.config.Images.OauthProxy
 
 	a.Namespace = f.namespace
+
+	if trustedCABundleCM != nil {
+		a.Spec.ConfigMaps = append(a.Spec.ConfigMaps, trustedCABundleCM.Name)
+	}
 
 	return a, nil
 }
@@ -1718,6 +1735,15 @@ func (f *Factory) ThanosQuerierService() (*v1.Service, error) {
 	return s, nil
 }
 
+func (f *Factory) TelemeterTrustedCABundle() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(TelemeterTrustedCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
+}
+
 // TelemeterClientServingCertsCABundle generates a new servinc certs CA bundle ConfigMap for TelemeterClient.
 func (f *Factory) TelemeterClientServingCertsCABundle() (*v1.ConfigMap, error) {
 	c, err := f.NewConfigMap(MustAssetReader(TelemeterClientServingCertsCABundle))
@@ -1775,7 +1801,9 @@ func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error)
 }
 
 // TelemeterClientDeployment generates a new Deployment for Telemeter client.
-func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
+// If the passed ConfigMap is not empty it mounts the Trusted CA Bundle as a VolumeMount to
+// /etc/pki/ca-trust/extracted/pem/ location.
+func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(MustAssetReader(TelemeterClientDeployment))
 	if err != nil {
 		return nil, err
@@ -1816,7 +1844,36 @@ func (f *Factory) TelemeterClientDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.Tolerations = f.config.TelemeterClientConfig.Tolerations
 	}
 	d.Namespace = f.namespace
+	if proxyCABundleCM != nil {
+		yes := true
+		trustedCABundle := "telemeter-trusted-ca-bundle"
+		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts,
+			v1.VolumeMount{
+				Name:      trustedCABundle,
+				ReadOnly:  true,
+				MountPath: "/etc/pki/ca-trust/extracted/pem/",
+			},
+		)
 
+		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes,
+			v1.Volume{
+				Name: trustedCABundle,
+				VolumeSource: v1.VolumeSource{
+					ConfigMap: &v1.ConfigMapVolumeSource{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: proxyCABundleCM.Name,
+						},
+						Items: []v1.KeyToPath{
+							{
+								Key:  "ca-bundle.crt",
+								Path: "tls-ca-bundle.pem",
+							},
+						},
+						Optional: &yes,
+					},
+				},
+			})
+	}
 	return d, nil
 }
 
@@ -2083,4 +2140,40 @@ func NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityCont
 	}
 
 	return &s, nil
+}
+
+// HashTrustedCA synthesizes a configmap just by copying "ca-bundle.crt" from the given configmap
+// and naming it by hashing the contents of "ca-bundle.crt".
+// It adds "monitoring.openshift.io/name" and "monitoring.openshift.io/hash" labels.
+// Any other labels from the given configmap are discarded.
+//
+// It returns nil, if the given configmap does not contain the "ca-bundle.crt" the data key
+// or data is empty string.
+func (f *Factory) HashTrustedCA(caBundleCM *v1.ConfigMap, prefix string) *v1.ConfigMap {
+	caBundle, ok := caBundleCM.Data["ca-bundle.crt"]
+	if !ok || caBundle == "" {
+		// We return here instead of erroring out as we need
+		// "ca-bundle.crt" to be there. This can mean that
+		// the CA was not propagated yet. In that case we
+		// will catch this on next sync loop.
+		return nil
+	}
+
+	h := fnv.New64()
+	h.Write([]byte(caBundle))
+	hash := strconv.FormatUint(h.Sum64(), 32)
+
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "openshift-monitoring",
+			Name:      fmt.Sprintf("%s-trusted-ca-bundle-%s", prefix, hash),
+			Labels: map[string]string{
+				"monitoring.openshift.io/name": prefix,
+				"monitoring.openshift.io/hash": hash,
+			},
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": caBundle,
+		},
+	}
 }
