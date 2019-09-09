@@ -45,11 +45,26 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
-            expr: 'kube_node_labels and on(node) kube_node_spec_taint{key="node-role.kubernetes.io/master"}',
+            expr: 'kube_node_labels and on(node) kube_node_role{role="master"}',
             labels: {
               label_node_role_kubernetes_io: 'master',
+              label_node_role_kubernetes_io_master: 'true',
             },
             record: 'cluster:master_nodes',
+          },
+          {
+            expr: 'kube_node_labels and on(node) kube_node_role{role="infra"}',
+            labels: {
+              label_node_role_kubernetes_io_infra: 'true',
+            },
+            record: 'cluster:infra_nodes',
+          },
+          {
+            expr: 'kube_node_labels and on(node) kube_node_role{role="worker"}',
+            labels: {
+              label_node_role_kubernetes_io_worker: 'true',
+            },
+            record: 'cluster:worker_nodes',
           },
           {
             expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
@@ -90,6 +105,10 @@
           {
             expr: 'sum(etcd_object_counts) BY (instance)',
             record: 'instance:etcd_object_counts:sum',
+          },
+          {
+            expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:worker_nodes * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra, label_node_role_kubernetes_io_worker)',
+            record: 'node_role_os_version_machine:cpu_capacity_cores:sum',
           },
           {
             expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
