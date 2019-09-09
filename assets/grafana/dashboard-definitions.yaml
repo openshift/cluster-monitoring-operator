@@ -4311,7 +4311,7 @@ items:
                                   "unit": "bytes"
                               },
                               {
-                                  "alias": "Memory Usage (Swap",
+                                  "alias": "Memory Usage (Swap)",
                                   "colorMode": null,
                                   "colors": [
 
