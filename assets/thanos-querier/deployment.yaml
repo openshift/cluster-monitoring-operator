@@ -21,7 +21,7 @@ spec:
         - --query.replica-label=replica
         - --grpc-address=0.0.0.0:10901
         - --http-address=0.0.0.0:9090
-        - --store=dnssrv+prometheus-k8s.openshift-monitoring.svc.cluster.local:10901
+        - --store=dnssrv+_grpc._tcp.prometheus-k8s.openshift-monitoring.svc.cluster.local
         image: quay.io/openshift/origin-thanos:latest
         name: thanos-querier
         ports:
