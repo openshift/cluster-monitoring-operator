@@ -38,7 +38,10 @@ local servicePort = service.spec.portsType;
                 containers: [
                     super.containers[0] +
                     container.withArgsMixin([
-                      '--store=dnssrv+prometheus-k8s.openshift-monitoring.svc.cluster.local:10901',
+                      '--store=dnssrv+_grpc._tcp.%s.%s.svc.cluster.local' % [
+                          'prometheus-k8s',
+                          'openshift-monitoring',
+                      ],
                     ]) + {
                       resources: {
                         requests: {
