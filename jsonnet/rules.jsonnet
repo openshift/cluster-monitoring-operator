@@ -60,11 +60,11 @@
             record: 'cluster:infra_nodes',
           },
           {
-            expr: 'kube_node_labels and on(node) kube_node_role{role="worker"}',
+            expr: 'cluster:master_nodes and on(node) cluster:infra_nodes',
             labels: {
-              label_node_role_kubernetes_io_worker: 'true',
+              label_node_role_kubernetes_io_master_infra: 'true',
             },
-            record: 'cluster:worker_nodes',
+            record: 'cluster:master_infra_nodes',
           },
           {
             expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
@@ -107,7 +107,7 @@
             record: 'instance:etcd_object_counts:sum',
           },
           {
-            expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:worker_nodes * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra, label_node_role_kubernetes_io_worker)',
+            expr: 'sum((cluster:master_infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_role_kubernetes_io_master_infra, label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)',
             record: 'node_role_os_version_machine:cpu_capacity_cores:sum',
           },
           {
