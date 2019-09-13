@@ -8,7 +8,7 @@
                     "subdir": "jsonnet/kube-prometheus"
                 }
             },
-            "version": "6710ef8739710b70595a0a294c7cf1f0b27df7e2"
+            "version": "6458803cee8e204a0aa0359243f9b325f2f719b4"
         },
         {
             "name": "ksonnet",
@@ -68,7 +68,7 @@
                     "subdir": "jsonnet/prometheus-operator"
                 }
             },
-            "version": "d6ba399c064c47fea536f08d438a572588b256da"
+            "version": "908ee0372a9ac2c6574d589fdc56a4f3cb5f12d1"
         },
         {
             "name": "etcd-mixin",
@@ -118,7 +118,7 @@
                     "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "090ba1aeaced0ed861eb430ee58db908ea8cbb02"
+            "version": "fd41cbbb34a93b61d651bdc373e9541bee654df4"
         },
         {
             "name": "openshift-state-metrics",
