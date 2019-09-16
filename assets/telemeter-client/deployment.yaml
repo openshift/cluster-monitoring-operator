@@ -50,6 +50,7 @@ spec:
         - --match={__name__="workload:memory_usage_bytes:sum"}
         - --match={__name__="cluster:node_instance_type_count:sum"}
         - --match={__name__="cnv:vmi_status_running:count"}
+        - --match={__name__="node_role_os_version_machine:cpu_capacity_cores:sum"}
         - --match={__name__="subscription_sync_total"}
         - --match={__name__="ceph_cluster_total_bytes"}
         - --match={__name__="ceph_cluster_total_used_raw_bytes"}
