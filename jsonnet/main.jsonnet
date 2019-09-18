@@ -38,6 +38,18 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                    function(ruleGroup)
                      if ruleGroup.name == 'etcd' then
                        ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'etcdHighNumberOfFailedGRPCRequests'), ruleGroup.rules) }
+                     else if ruleGroup.name == 'prometheus' then
+                       ruleGroup {
+                         rules:
+                           std.map(
+                             function(rule)
+                               if 'alert' in rule && (rule.alert == 'PrometheusDuplicateTimestamps' || rule.alert == 'PrometheusOutOfOrderTimestamps') then
+                                 rule { 'for': '1h' }
+                               else
+                                 rule,
+                             ruleGroup.rules,
+                           ),
+                       }
                      else
                        ruleGroup,
                    super.groups,
