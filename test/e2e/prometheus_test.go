@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -82,5 +83,87 @@ func TestPrometheusVolumeClaim(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
+	pods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(metav1.ListOptions{FieldSelector: "status.phase=Running"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var alm = `affinity:
+	   podAntiAffinity:
+	      preferredDuringSchedulingIgnoredDuringExecution:
+	      - podAffinityTerm:
+	          labelSelector:
+	            matchExpressions:
+	            - key: alertmanager
+	              operator: In
+	              values:
+	              - main`
+
+	var k8s = `affinity:
+	   podAntiAffinity:
+	      preferredDuringSchedulingIgnoredDuringExecution:
+	      - podAffinityTerm:
+	          labelSelector:
+	            matchExpressions:
+	            - key: prometheus
+	              operator: In
+	              values:
+	              - k8s`
+
+	var (
+		testPod1      = "alertmanager-main"
+		testPod2      = "prometheus-k8s"
+		testNameSpace = "openshift-monitoring"
+
+		podA  = strings.ToLower(alm[14:28])
+		prefA = strings.ToLower(alm[38:85])
+		keyA  = strings.ToLower(alm[190:202])
+		valA  = strings.ToLower(alm[271:275])
+
+		podB  = strings.ToLower(k8s[14:28])
+		prefB = strings.ToLower(k8s[38:85])
+		keyB  = strings.ToLower(k8s[190:200])
+		valB  = strings.ToLower(k8s[269:272])
+
+		almOk = false
+		k8sOk = false
+	)
+
+	for _, p := range pods.Items {
+		if strings.Contains(p.Namespace, testNameSpace) &&
+			strings.Contains(p.Name, testPod1) {
+			outputPodAntiAffinity := strings.ToLower(
+				p.Spec.Affinity.PodAntiAffinity.String())
+			if strings.Contains(outputPodAntiAffinity, podA) &&
+				strings.Contains(outputPodAntiAffinity, prefA) &&
+				strings.Contains(outputPodAntiAffinity, keyA) &&
+				strings.Contains(outputPodAntiAffinity, valA) {
+				almOk = true
+			} else {
+				t.Fatal("Can not find podAntiAffinity config line or wrong order (1).")
+			}
+		}
+
+		if strings.Contains(p.Namespace, testNameSpace) &&
+			strings.Contains(p.Name, testPod2) {
+			outputPodAntiAffinity := strings.ToLower(
+				p.Spec.Affinity.PodAntiAffinity.String())
+			if strings.Contains(outputPodAntiAffinity, podB) &&
+				strings.Contains(outputPodAntiAffinity, prefB) &&
+				strings.Contains(outputPodAntiAffinity, keyB) &&
+				strings.Contains(outputPodAntiAffinity, valB) {
+				k8sOk = true
+			} else {
+				t.Fatal("Can not find podAntiAffinity config line or wrong order (2).")
+			}
+		}
+	}
+
+	if !almOk == true || !k8sOk == true {
+		t.Fatal("Can not find pods: prometheus-k8s or alertmanager-main")
 	}
 }
