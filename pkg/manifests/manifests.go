@@ -310,6 +310,23 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 	}
 
 	a.Spec.Containers[0].Image = f.config.Images.OauthProxy
+	setEnv := func(name, value string) {
+		for i := range a.Spec.Containers[0].Env {
+			if a.Spec.Containers[0].Env[i].Name == name {
+				a.Spec.Containers[0].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
 
 	if trustedCABundleCM != nil {
 		volumeName := "alertmanager-trusted-ca-bundle"
@@ -844,6 +861,24 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespace
 
+	setEnv := func(name, value string) {
+		for i := range p.Spec.Containers[0].Env {
+			if p.Spec.Containers[0].Env[i].Name == name {
+				p.Spec.Containers[0].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
+
 	return p, nil
 }
 
@@ -1317,6 +1352,24 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 	}
 
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.OauthProxy
+
+	setEnv := func(name, value string) {
+		for i := range d.Spec.Template.Spec.Containers[1].Env {
+			if d.Spec.Template.Spec.Containers[1].Env[i].Name == name {
+				d.Spec.Template.Spec.Containers[1].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
 
 	if f.config.GrafanaConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.GrafanaConfig.NodeSelector

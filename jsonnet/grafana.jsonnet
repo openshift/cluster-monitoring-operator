@@ -12,6 +12,11 @@ local container = deployment.mixin.spec.template.spec.containersType;
 local volume = deployment.mixin.spec.template.spec.volumesType;
 local containerPort = container.portsType;
 local containerVolumeMount = container.volumeMountsType;
+local containerEnv = container.envType;
+
+local httpProxy = containerEnv.new('HTTP_PROXY', '');
+local httpsProxy = containerEnv.new('HTTPS_PROXY', '');
+local noProxy = containerEnv.new('NO_PROXY', '');
 
 local authenticationRole = policyRule.new() +
                            policyRule.withApiGroups(['authentication.k8s.io']) +
@@ -212,6 +217,7 @@ local authorizationRole = policyRule.new() +
                   '-skip-auth-regex=^/metrics',
                 ]) +
                 container.withPorts(containerPort.newNamed('https', 3000)) +
+                container.withEnv([httpProxy, httpsProxy, noProxy]) +
                 container.withVolumeMounts([
                   containerVolumeMount.new('secret-grafana-tls', '/etc/tls/private'),
                   containerVolumeMount.new('secret-grafana-proxy', '/etc/proxy/secrets'),
