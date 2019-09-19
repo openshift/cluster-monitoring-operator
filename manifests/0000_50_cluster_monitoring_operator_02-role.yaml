@@ -241,6 +241,13 @@ rules:
   verbs:
   - use
 - apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  verbs:
+  - list
+  - watch
+- apiGroups:
   - build.openshift.io
   resources:
   - buildconfigs

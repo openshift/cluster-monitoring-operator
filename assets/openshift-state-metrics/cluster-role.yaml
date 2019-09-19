@@ -33,6 +33,13 @@ rules:
   - list
   - watch
 - apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  verbs:
+  - list
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
