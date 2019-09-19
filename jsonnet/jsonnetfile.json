@@ -8,7 +8,7 @@
                     "subdir": "jsonnet/kube-prometheus"
                 }
             },
-            "version": "master"
+            "version": "release-0.2"
         },
         {
             "name": "telemeter-client",
@@ -18,7 +18,7 @@
                     "subdir": "jsonnet/telemeter"
                 }
             },
-            "version": "master"
+            "version": "release-4.2"
         },
         {
             "name": "openshift-state-metrics",
@@ -28,7 +28,7 @@
                     "subdir": "jsonnet"
                 }
             },
-            "version": "master"
+            "version": "release-4.2"
         }
     ]
 }
