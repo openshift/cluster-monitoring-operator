@@ -38,6 +38,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.BasicAuth":             schema_pkg_apis_monitoring_v1_BasicAuth(ref),
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.Endpoint":              schema_pkg_apis_monitoring_v1_Endpoint(ref),
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.NamespaceSelector":     schema_pkg_apis_monitoring_v1_NamespaceSelector(ref),
+		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMetricsEndpoint":    schema_pkg_apis_monitoring_v1_PodMetricsEndpoint(ref),
+		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMonitor":            schema_pkg_apis_monitoring_v1_PodMonitor(ref),
+		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMonitorList":        schema_pkg_apis_monitoring_v1_PodMonitorList(ref),
+		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMonitorSpec":        schema_pkg_apis_monitoring_v1_PodMonitorSpec(ref),
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.Prometheus":            schema_pkg_apis_monitoring_v1_Prometheus(ref),
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PrometheusList":        schema_pkg_apis_monitoring_v1_PrometheusList(ref),
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PrometheusRule":        schema_pkg_apis_monitoring_v1_PrometheusRule(ref),
@@ -59,8 +63,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ServiceMonitorSpec":    schema_pkg_apis_monitoring_v1_ServiceMonitorSpec(ref),
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec":           schema_pkg_apis_monitoring_v1_StorageSpec(ref),
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.TLSConfig":             schema_pkg_apis_monitoring_v1_TLSConfig(ref),
-		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosGCSSpec":         schema_pkg_apis_monitoring_v1_ThanosGCSSpec(ref),
-		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosS3Spec":          schema_pkg_apis_monitoring_v1_ThanosS3Spec(ref),
 		"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosSpec":            schema_pkg_apis_monitoring_v1_ThanosSpec(ref),
 		"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource":                                schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref),
 		"k8s.io/api/core/v1.Affinity":                                    schema_k8sio_api_core_v1_Affinity(ref),
@@ -258,6 +260,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/api/core/v1.VolumeSource":                                schema_k8sio_api_core_v1_VolumeSource(ref),
 		"k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource":              schema_k8sio_api_core_v1_VsphereVirtualDiskVolumeSource(ref),
 		"k8s.io/api/core/v1.WeightedPodAffinityTerm":                     schema_k8sio_api_core_v1_WeightedPodAffinityTerm(ref),
+		"k8s.io/api/core/v1.WindowsSecurityContextOptions":               schema_k8sio_api_core_v1_WindowsSecurityContextOptions(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.APIGroup":                  schema_pkg_apis_meta_v1_APIGroup(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.APIGroupList":              schema_pkg_apis_meta_v1_APIGroupList(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.APIResource":               schema_pkg_apis_meta_v1_APIResource(ref),
@@ -287,6 +290,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/apis/meta/v1.MicroTime":                 schema_pkg_apis_meta_v1_MicroTime(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta":                schema_pkg_apis_meta_v1_ObjectMeta(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.OwnerReference":            schema_pkg_apis_meta_v1_OwnerReference(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.PartialObjectMetadata":     schema_pkg_apis_meta_v1_PartialObjectMetadata(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.PartialObjectMetadataList": schema_pkg_apis_meta_v1_PartialObjectMetadataList(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Patch":                     schema_pkg_apis_meta_v1_Patch(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.PatchOptions":              schema_pkg_apis_meta_v1_PatchOptions(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Preconditions":             schema_pkg_apis_meta_v1_Preconditions(ref),
@@ -295,6 +300,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Status":                    schema_pkg_apis_meta_v1_Status(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.StatusCause":               schema_pkg_apis_meta_v1_StatusCause(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.StatusDetails":             schema_pkg_apis_meta_v1_StatusDetails(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Table":                     schema_pkg_apis_meta_v1_Table(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TableColumnDefinition":     schema_pkg_apis_meta_v1_TableColumnDefinition(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TableOptions":              schema_pkg_apis_meta_v1_TableOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TableRow":                  schema_pkg_apis_meta_v1_TableRow(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TableRowCondition":         schema_pkg_apis_meta_v1_TableRowCondition(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Time":                      schema_pkg_apis_meta_v1_Time(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Timestamp":                 schema_pkg_apis_meta_v1_Timestamp(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta":                  schema_pkg_apis_meta_v1_TypeMeta(ref),
@@ -658,6 +668,32 @@ func schema_pkg_apis_monitoring_v1_AlertmanagerSpec(ref common.ReferenceCallback
 							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec"),
 						},
 					},
+					"volumes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Volumes allows configuration of additional volumes on the output StatefulSet definition. Volumes specified will be appended to other volumes that are generated as a result of StorageSpec objects.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition. VolumeMounts specified will be appended to other VolumeMounts in the alertmanager container, that are generated as a result of StorageSpec objects.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
 					"externalUrl": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The external URL the Alertmanager instances will be available under. This is necessary to generate correct URLs. This is necessary if Alertmanager is not served from root of a DNS name.",
@@ -752,6 +788,19 @@ func schema_pkg_apis_monitoring_v1_AlertmanagerSpec(ref common.ReferenceCallback
 							},
 						},
 					},
+					"initContainers": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InitContainers allows adding initContainers to the pod definition. Those can be used to e.g. fetch secrets for injection into the Alertmanager configuration from external sources. Any errors during the execution of an initContainer will lead to a restart of the Pod. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/ Using initContainers for any use case other then secret fetching is entirely outside the scope of what the maintainers will support and by doing so, you accept that this behaviour may break at any time without notice.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Container"),
+									},
+								},
+							},
+						},
+					},
 					"priorityClassName": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Priority class assigned to the Pods",
@@ -773,11 +822,18 @@ func schema_pkg_apis_monitoring_v1_AlertmanagerSpec(ref common.ReferenceCallback
 							},
 						},
 					},
+					"portName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Port name used for the pods and governing service. This defaults to web",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -968,7 +1024,7 @@ func schema_pkg_apis_monitoring_v1_Endpoint(ref common.ReferenceCallback) common
 					},
 					"relabelings": {
 						SchemaProps: spec.SchemaProps{
-							Description: "RelabelConfigs to apply to samples before ingestion. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config",
+							Description: "RelabelConfigs to apply to samples before scraping. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1025,6 +1081,278 @@ func schema_pkg_apis_monitoring_v1_NamespaceSelector(ref common.ReferenceCallbac
 				},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_monitoring_v1_PodMetricsEndpoint(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PodMetricsEndpoint defines a scrapeable endpoint of a Kubernetes Pod serving Prometheus metrics.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"port": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the port this endpoint refers to. Mutually exclusive with targetPort.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"targetPort": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name or number of the target port of the endpoint. Mutually exclusive with port.",
+							Ref:         ref("k8s.io/apimachinery/pkg/util/intstr.IntOrString"),
+						},
+					},
+					"path": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTP path to scrape for metrics.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"scheme": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTP scheme to use for scraping.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"params": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optional HTTP URL parameters",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type: []string{"array"},
+										Items: &spec.SchemaOrArray{
+											Schema: &spec.Schema{
+												SchemaProps: spec.SchemaProps{
+													Type:   []string{"string"},
+													Format: "",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"interval": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Interval at which metrics should be scraped",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"scrapeTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout after which the scrape is ended",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"honorLabels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HonorLabels chooses the metric's labels on collisions with target labels.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"metricRelabelings": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MetricRelabelConfigs to apply to samples before ingestion.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RelabelConfig"),
+									},
+								},
+							},
+						},
+					},
+					"relabelings": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RelabelConfigs to apply to samples before ingestion. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RelabelConfig"),
+									},
+								},
+							},
+						},
+					},
+					"proxyUrl": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProxyURL eg http://proxyserver:2195 Directs scrapes to proxy through this endpoint.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RelabelConfig", "k8s.io/apimachinery/pkg/util/intstr.IntOrString"},
+	}
+}
+
+func schema_pkg_apis_monitoring_v1_PodMonitor(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PodMonitor defines monitoring for a set of pods.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specification of desired Pod selection for target discovery by Prometheus.",
+							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMonitorSpec"),
+						},
+					},
+				},
+				Required: []string{"spec"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMonitorSpec"},
+	}
+}
+
+func schema_pkg_apis_monitoring_v1_PodMonitorList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PodMonitorList is a list of PodMonitors.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Description: "List of PodMonitors",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMonitor"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMonitor", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_monitoring_v1_PodMonitorSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PodMonitorSpec contains specification parameters for a PodMonitor.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"jobLabel": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The label to use to retrieve the job name from.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"podTargetLabels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodTargetLabels transfers labels on the Kubernetes Pod onto the target.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"podMetricsEndpoints": {
+						SchemaProps: spec.SchemaProps{
+							Description: "A list of endpoints allowed as part of this PodMonitor.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMetricsEndpoint"),
+									},
+								},
+							},
+						},
+					},
+					"selector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Selector to select Pod objects.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
+						},
+					},
+					"namespaceSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Selector to select which namespaces the Endpoints objects are discovered from.",
+							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.NamespaceSelector"),
+						},
+					},
+					"sampleLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+				Required: []string{"podMetricsEndpoints", "selector"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.NamespaceSelector", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PodMetricsEndpoint", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
 	}
 }
 
@@ -1242,7 +1570,7 @@ func schema_pkg_apis_monitoring_v1_PrometheusSpec(ref common.ReferenceCallback) 
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "PrometheusSpec is a specification of the desired behavior of the Prometheus cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status",
+				Description: "PrometheusSpec is a specification of the desired behavior of the Prometheus cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"podMetadata": {
@@ -1260,6 +1588,18 @@ func schema_pkg_apis_monitoring_v1_PrometheusSpec(ref common.ReferenceCallback) 
 					"serviceMonitorNamespaceSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Namespaces to be selected for ServiceMonitor discovery. If nil, only check own namespace.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
+						},
+					},
+					"podMonitorSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "*Experimental* PodMonitors to be selected for target discovery.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
+						},
+					},
+					"podMonitorNamespaceSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespaces to be selected for PodMonitor discovery. If nil, only check own namespace.",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
 						},
 					},
@@ -1346,6 +1686,20 @@ func schema_pkg_apis_monitoring_v1_PrometheusSpec(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"retentionSize": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Maximum amount of disk space used by blocks.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"walCompression": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enable compression of the write-ahead log using Snappy. This flag is only available in versions of Prometheus >= 2.11.0.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 					"logLevel": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Log level for Prometheus to be configured with.",
@@ -1426,6 +1780,19 @@ func schema_pkg_apis_monitoring_v1_PrometheusSpec(ref common.ReferenceCallback) 
 						SchemaProps: spec.SchemaProps{
 							Description: "Storage spec to specify how storage shall be used.",
 							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec"),
+						},
+					},
+					"volumes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Volumes allows configuration of additional volumes on the output StatefulSet definition. Volumes specified will be appended to other volumes that are generated as a result of StorageSpec objects.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
 						},
 					},
 					"ruleSelector": {
@@ -1573,6 +1940,19 @@ func schema_pkg_apis_monitoring_v1_PrometheusSpec(ref common.ReferenceCallback) 
 							},
 						},
 					},
+					"initContainers": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InitContainers allows adding initContainers to the pod definition. Those can be used to e.g. fetch secrets for injection into the Prometheus configuration from external sources. Any errors during the execution of an initContainer will lead to a restart of the Pod. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/ Using initContainers for any use case other then secret fetching is entirely outside the scope of what the maintainers will support and by doing so, you accept that this behaviour may break at any time without notice.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Container"),
+									},
+								},
+							},
+						},
+					},
 					"additionalScrapeConfigs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AdditionalScrapeConfigs allows specifying a key of a Secret containing additional Prometheus scrape configurations. Scrape configurations specified are appended to the configurations generated by the Prometheus Operator. Job configurations specified must have the form as specified in the official Prometheus documentation: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config. As scrape configs are appended, the user is responsible to make sure it is valid. Note that using this feature may expose the possibility to break upgrades of Prometheus. It is advised to review Prometheus release notes to ensure that no incompatible scrape configs are going to break Prometheus after the upgrade.",
@@ -1610,11 +1990,18 @@ func schema_pkg_apis_monitoring_v1_PrometheusSpec(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"portName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Port name used for the pods and governing service. This defaults to web",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.APIServerConfig", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.AlertingSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.QuerySpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RemoteReadSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RemoteWriteSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.Rules", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosSpec", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecretKeySelector", "k8s.io/api/core/v1.Toleration", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.APIServerConfig", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.AlertingSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.QuerySpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RemoteReadSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RemoteWriteSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.Rules", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosSpec", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecretKeySelector", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2417,96 +2804,6 @@ func schema_pkg_apis_monitoring_v1_TLSConfig(ref common.ReferenceCallback) commo
 	}
 }
 
-func schema_pkg_apis_monitoring_v1_ThanosGCSSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Deprecated: ThanosGCSSpec should be configured with an ObjectStorageConfig secret starting with Thanos v0.2.0. ThanosGCSSpec will be removed.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"bucket": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Google Cloud Storage bucket name for stored blocks. If empty it won't store any block inside Google Cloud Storage.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"credentials": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Secret to access our Bucket.",
-							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.SecretKeySelector"},
-	}
-}
-
-func schema_pkg_apis_monitoring_v1_ThanosS3Spec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Deprecated: ThanosS3Spec should be configured with an ObjectStorageConfig secret starting with Thanos v0.2.0. ThanosS3Spec will be removed.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"bucket": {
-						SchemaProps: spec.SchemaProps{
-							Description: "S3-Compatible API bucket name for stored blocks.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"endpoint": {
-						SchemaProps: spec.SchemaProps{
-							Description: "S3-Compatible API endpoint for stored blocks.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"accessKey": {
-						SchemaProps: spec.SchemaProps{
-							Description: "AccessKey for an S3-Compatible API.",
-							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
-						},
-					},
-					"secretKey": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SecretKey for an S3-Compatible API.",
-							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
-						},
-					},
-					"insecure": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Whether to use an insecure connection with an S3-Compatible API.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"signatureVersion2": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Whether to use S3 Signature Version 2; otherwise Signature Version 4 will be used.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"encryptsse": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Whether to use Server Side Encryption",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.SecretKeySelector"},
-	}
-}
-
 func schema_pkg_apis_monitoring_v1_ThanosSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2514,13 +2811,6 @@ func schema_pkg_apis_monitoring_v1_ThanosSpec(ref common.ReferenceCallback) comm
 				Description: "ThanosSpec defines parameters for a Prometheus server within a Thanos deployment.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"peers": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Peers is a DNS name for Thanos to discover peers through.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Image if specified has precedence over baseImage, tag and sha combinations. Specifying the version is still necessary to ensure the Prometheus Operator knows what version of Thanos is being configured.",
@@ -2562,43 +2852,17 @@ func schema_pkg_apis_monitoring_v1_ThanosSpec(ref common.ReferenceCallback) comm
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
 					},
-					"gcs": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Deprecated: GCS should be configured with an ObjectStorageConfig secret starting with Thanos v0.2.0. This field will be removed.",
-							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosGCSSpec"),
-						},
-					},
-					"s3": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Deprecated: S3 should be configured with an ObjectStorageConfig secret starting with Thanos v0.2.0. This field will be removed.",
-							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosS3Spec"),
-						},
-					},
 					"objectStorageConfig": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ObjectStorageConfig configures object storage in Thanos.",
 							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
 						},
 					},
-					"grpcAdvertiseAddress": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Explicit (external) host:port address to advertise for gRPC StoreAPI in gossip cluster. If empty, 'grpc-address' will be used.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"clusterAdvertiseAddress": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Explicit (external) ip:port address to advertise for gossip in gossip cluster. Used internally for membership only.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosGCSSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosS3Spec", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecretKeySelector"},
+			"k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecretKeySelector"},
 	}
 }
 
@@ -2973,6 +3237,12 @@ func schema_k8sio_api_core_v1_CSIPersistentVolumeSource(ref common.ReferenceCall
 					"nodePublishSecretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "NodePublishSecretRef is a reference to the secret object containing sensitive information to pass to the CSI driver to complete the CSI NodePublishVolume and NodeUnpublishVolume calls. This field is optional, and may be empty if no secret is required. If the secret object contains more than one secret, all secrets are passed.",
+							Ref:         ref("k8s.io/api/core/v1.SecretReference"),
+						},
+					},
+					"controllerExpandSecretRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ControllerExpandSecretRef is a reference to the secret object containing sensitive information to pass to the CSI driver to complete the CSI ControllerExpandVolume call. This is an alpha field and requires enabling ExpandCSIVolumes feature gate. This field is optional, and may be empty if no secret is required. If the secret object contains more than one secret, all secrets are passed.",
 							Ref:         ref("k8s.io/api/core/v1.SecretReference"),
 						},
 					},
@@ -3578,7 +3848,7 @@ func schema_k8sio_api_core_v1_ConfigMapKeySelector(ref common.ReferenceCallback)
 					},
 					"optional": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specify whether the ConfigMap or it's key must be defined",
+							Description: "Specify whether the ConfigMap or its key must be defined",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -3717,7 +3987,7 @@ func schema_k8sio_api_core_v1_ConfigMapProjection(ref common.ReferenceCallback) 
 					},
 					"optional": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specify whether the ConfigMap or it's keys must be defined",
+							Description: "Specify whether the ConfigMap or its keys must be defined",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -3766,7 +4036,7 @@ func schema_k8sio_api_core_v1_ConfigMapVolumeSource(ref common.ReferenceCallback
 					},
 					"optional": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specify whether the ConfigMap or it's keys must be defined",
+							Description: "Specify whether the ConfigMap or its keys must be defined",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -4998,7 +5268,7 @@ func schema_k8sio_api_core_v1_EventSeries(ref common.ReferenceCallback) common.O
 					},
 					"state": {
 						SchemaProps: spec.SchemaProps{
-							Description: "State of this Series: Ongoing or Finished",
+							Description: "State of this Series: Ongoing or Finished Deprecated. Planned removal for 1.18",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -8791,6 +9061,12 @@ func schema_k8sio_api_core_v1_PodSecurityContext(ref common.ReferenceCallback) c
 							Ref:         ref("k8s.io/api/core/v1.SELinuxOptions"),
 						},
 					},
+					"windowsOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Windows security options.",
+							Ref:         ref("k8s.io/api/core/v1.WindowsSecurityContextOptions"),
+						},
+					},
 					"runAsUser": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
@@ -8850,7 +9126,7 @@ func schema_k8sio_api_core_v1_PodSecurityContext(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.SELinuxOptions", "k8s.io/api/core/v1.Sysctl"},
+			"k8s.io/api/core/v1.SELinuxOptions", "k8s.io/api/core/v1.Sysctl", "k8s.io/api/core/v1.WindowsSecurityContextOptions"},
 	}
 }
 
@@ -9157,7 +9433,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 					},
 					"runtimeClassName": {
 						SchemaProps: spec.SchemaProps{
-							Description: "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://git.k8s.io/enhancements/keps/sig-node/runtime-class.md This is an alpha feature and may change in the future.",
+							Description: "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://git.k8s.io/enhancements/keps/sig-node/runtime-class.md This is a beta feature as of Kubernetes v1.14.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -9166,6 +9442,13 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 						SchemaProps: spec.SchemaProps{
 							Description: "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links. Optional: Defaults to true.",
 							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"preemptionPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PreemptionPolicy is the Policy for preempting pods with lower priority. One of Never, PreemptLowerPriority. Defaults to PreemptLowerPriority if unset. This field is alpha-level and is only honored by servers that enable the NonPreemptingPriority feature.",
+							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
@@ -10859,7 +11142,7 @@ func schema_k8sio_api_core_v1_SecretKeySelector(ref common.ReferenceCallback) co
 					},
 					"optional": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specify whether the Secret or it's key must be defined",
+							Description: "Specify whether the Secret or its key must be defined",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -11025,7 +11308,7 @@ func schema_k8sio_api_core_v1_SecretVolumeSource(ref common.ReferenceCallback) c
 					},
 					"optional": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specify whether the Secret or it's keys must be defined",
+							Description: "Specify whether the Secret or its keys must be defined",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -11062,6 +11345,12 @@ func schema_k8sio_api_core_v1_SecurityContext(ref common.ReferenceCallback) comm
 						SchemaProps: spec.SchemaProps{
 							Description: "The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
 							Ref:         ref("k8s.io/api/core/v1.SELinuxOptions"),
+						},
+					},
+					"windowsOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Windows security options.",
+							Ref:         ref("k8s.io/api/core/v1.WindowsSecurityContextOptions"),
 						},
 					},
 					"runAsUser": {
@@ -11110,7 +11399,7 @@ func schema_k8sio_api_core_v1_SecurityContext(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.Capabilities", "k8s.io/api/core/v1.SELinuxOptions"},
+			"k8s.io/api/core/v1.Capabilities", "k8s.io/api/core/v1.SELinuxOptions", "k8s.io/api/core/v1.WindowsSecurityContextOptions"},
 	}
 }
 
@@ -12280,7 +12569,7 @@ func schema_k8sio_api_core_v1_VolumeMount(ref common.ReferenceCallback) common.O
 					},
 					"subPathExpr": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Expanded path within the volume from which the container's volume should be mounted. Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment. Defaults to \"\" (volume's root). SubPathExpr and SubPath are mutually exclusive. This field is alpha in 1.14.",
+							Description: "Expanded path within the volume from which the container's volume should be mounted. Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment. Defaults to \"\" (volume's root). SubPathExpr and SubPath are mutually exclusive. This field is beta in 1.15.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -12603,6 +12892,33 @@ func schema_k8sio_api_core_v1_WeightedPodAffinityTerm(ref common.ReferenceCallba
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.PodAffinityTerm"},
+	}
+}
+
+func schema_k8sio_api_core_v1_WindowsSecurityContextOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "WindowsSecurityContextOptions contain Windows-specific options and credentials.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"gmsaCredentialSpecName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GMSACredentialSpecName is the name of the GMSA credential spec to use. This field is alpha-level and is only honored by servers that enable the WindowsGMSA feature flag.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"gmsaCredentialSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GMSACredentialSpec is where the GMSA admission webhook (https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the GMSA credential spec named by the GMSACredentialSpecName field. This field is alpha-level and is only honored by servers that enable the WindowsGMSA feature flag.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -13394,7 +13710,7 @@ func schema_pkg_apis_meta_v1_InternalEvent(ref common.ReferenceCallback) common.
 					},
 					"Object": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Object is:\n * If Type is Added or Modified: the new state of the object.\n * If Type is Deleted: the state of the object immediately before deletion.\n * If Type is Error: *api.Status is recommended; other types may make sense\n   depending on context.",
+							Description: "Object is:\n * If Type is Added or Modified: the new state of the object.\n * If Type is Deleted: the state of the object immediately before deletion.\n * If Type is Bookmark: the object (instance of a type being watched) where\n   only ResourceVersion field is set. On successful restart of watch from a\n   bookmark resourceVersion, client is guaranteed to not get repeat event\n   nor miss any events.\n * If Type is Error: *api.Status is recommended; other types may make sense\n   depending on context.",
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.Object"),
 						},
 					},
@@ -13575,6 +13891,13 @@ func schema_pkg_apis_meta_v1_ListMeta(ref common.ReferenceCallback) common.OpenA
 							Format:      "",
 						},
 					},
+					"remainingItemCount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "remainingItemCount is the number of subsequent items in the list which are not included in this list response. If the list request contained label or field selectors, then the number of remaining items is unknown and the field will be left unset and omitted during serialization. If the list is complete (either because it is not chunking or because this is the last chunk), then there are no more remaining items and this field will be left unset and omitted during serialization. Servers older than v1.15 do not set this field. The intended use of the remainingItemCount is *estimating* the size of a collection. Clients should not rely on the remainingItemCount to be set or to be exact.\n\nThis field is alpha and can be changed or removed without notice.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
 				},
 			},
 		},
@@ -13619,6 +13942,13 @@ func schema_pkg_apis_meta_v1_ListOptions(ref common.ReferenceCallback) common.Op
 					"watch": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"allowWatchBookmarks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "allowWatchBookmarks requests watch events with type \"BOOKMARK\". Servers that do not implement bookmarks may ignore this flag and bookmarks are sent at the server's discretion. Clients should not assume bookmarks are returned at any specific interval, nor may they assume the server will send any BOOKMARK event during a session. If this is not a watch, this field is ignored. If the feature gate WatchBookmarks is not enabled in apiserver, this field is ignored.\n\nThis field is alpha and can be changed or removed without notice.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -13950,6 +14280,90 @@ func schema_pkg_apis_meta_v1_OwnerReference(ref common.ReferenceCallback) common
 	}
 }
 
+func schema_pkg_apis_meta_v1_PartialObjectMetadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PartialObjectMetadata is a generic representation of any object with ObjectMeta. It allows clients to get access to a particular ObjectMeta schema without knowing the details of the version.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_meta_v1_PartialObjectMetadataList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PartialObjectMetadataList contains a list of objects containing only their metadata",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard list metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Description: "items contains each of the included items.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.PartialObjectMetadata"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "k8s.io/apimachinery/pkg/apis/meta/v1.PartialObjectMetadata"},
+	}
+}
+
 func schema_pkg_apis_meta_v1_Patch(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -14262,6 +14676,242 @@ func schema_pkg_apis_meta_v1_StatusDetails(ref common.ReferenceCallback) common.
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.StatusCause"},
+	}
+}
+
+func schema_pkg_apis_meta_v1_Table(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Table is a tabular representation of a set of API resources. The server transforms the object into a set of preferred columns for quickly reviewing the objects.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard list metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"columnDefinitions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "columnDefinitions describes each column in the returned items array. The number of cells per row will always match the number of column definitions.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.TableColumnDefinition"),
+									},
+								},
+							},
+						},
+					},
+					"rows": {
+						SchemaProps: spec.SchemaProps{
+							Description: "rows is the list of items in the table.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.TableRow"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"columnDefinitions", "rows"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "k8s.io/apimachinery/pkg/apis/meta/v1.TableColumnDefinition", "k8s.io/apimachinery/pkg/apis/meta/v1.TableRow"},
+	}
+}
+
+func schema_pkg_apis_meta_v1_TableColumnDefinition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TableColumnDefinition contains information about a column returned in the Table.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "name is a human readable name for the column.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "type is an OpenAPI type definition for this column, such as number, integer, string, or array. See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types for more.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"format": {
+						SchemaProps: spec.SchemaProps{
+							Description: "format is an optional OpenAPI type modifier for this column. A format modifies the type and imposes additional rules, like date or time formatting for a string. The 'name' format is applied to the primary identifier column which has type 'string' to assist in clients identifying column is the resource name. See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types for more.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "description is a human readable description of this column.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"priority": {
+						SchemaProps: spec.SchemaProps{
+							Description: "priority is an integer defining the relative importance of this column compared to others. Lower numbers are considered higher priority. Columns that may be omitted in limited space scenarios should be given a higher priority.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+				Required: []string{"name", "type", "format", "description", "priority"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_meta_v1_TableOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TableOptions are used when a Table is requested by the caller.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"includeObject": {
+						SchemaProps: spec.SchemaProps{
+							Description: "includeObject decides whether to include each object along with its columnar information. Specifying \"None\" will return no object, specifying \"Object\" will return the full object contents, and specifying \"Metadata\" (the default) will return the object's metadata in the PartialObjectMetadata kind in version v1beta1 of the meta.k8s.io API group.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_meta_v1_TableRow(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TableRow is an individual row in a table.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"cells": {
+						SchemaProps: spec.SchemaProps{
+							Description: "cells will be as wide as the column definitions array and may contain strings, numbers (float64 or int64), booleans, simple maps, lists, or null. See the type field of the column definition for a more detailed description.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"object"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "conditions describe additional status of a row that are relevant for a human user. These conditions apply to the row, not to the object, and will be specific to table output. The only defined condition type is 'Completed', for a row that indicates a resource that has run to completion and can be given less visual priority.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.TableRowCondition"),
+									},
+								},
+							},
+						},
+					},
+					"object": {
+						SchemaProps: spec.SchemaProps{
+							Description: "This field contains the requested additional information about each object based on the includeObject policy when requesting the Table. If \"None\", this field is empty, if \"Object\" this will be the default serialization of the object for the current API version, and if \"Metadata\" (the default) will contain the object metadata. Check the returned kind and apiVersion of the object before parsing. The media type of the object will always match the enclosing list - if this as a JSON table, these will be JSON encoded objects.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
+				},
+				Required: []string{"cells"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.TableRowCondition", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+	}
+}
+
+func schema_pkg_apis_meta_v1_TableRowCondition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TableRowCondition allows a row to be marked with additional information.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type of row condition. The only defined value is 'Completed' indicating that the object this row represents has reached a completed state and may be given less visual priority than other rows. Clients are not required to honor any conditions but should be consistent where possible about handling the conditions.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status of the condition, one of True, False, Unknown.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"reason": {
+						SchemaProps: spec.SchemaProps{
+							Description: "(brief) machine readable reason for the condition's last transition.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Human readable message indicating details about last transition.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"type", "status"},
+			},
+		},
 	}
 }
 
