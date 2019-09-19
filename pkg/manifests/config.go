@@ -75,6 +75,7 @@ type PrometheusK8sConfig struct {
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	ExternalLabels      map[string]string         `json:"externalLabels"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
+	ScrapeInterval      string                    `json:"scrapeInterval,omitempty"`
 	Hostport            string                    `json:"hostport"`
 	RemoteWrite         []monv1.RemoteWriteSpec   `json:"remoteWrite"`
 }

@@ -815,6 +815,10 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		p.Spec.ExternalLabels = f.config.PrometheusK8sConfig.ExternalLabels
 	}
 
+	if f.config.PrometheusK8sConfig.ScrapeInterval != "" {
+		p.Spec.ScrapeInterval = f.config.PrometheusK8sConfig.ScrapeInterval
+	}
+
 	if f.config.PrometheusK8sConfig.VolumeClaimTemplate != nil {
 		p.Spec.Storage = &monv1.StorageSpec{
 			VolumeClaimTemplate: *f.config.PrometheusK8sConfig.VolumeClaimTemplate,
