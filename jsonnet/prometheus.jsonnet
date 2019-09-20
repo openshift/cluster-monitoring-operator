@@ -168,7 +168,7 @@ local namespacesRole =
               super.endpoints,
             ) +
             [{
-              interval: '30s',
+              interval: '45s',
               port: 'https-metrics',
               relabelings: [
                 {
@@ -217,7 +217,7 @@ local namespacesRole =
           endpoints: [
             {
               port: 'web',
-              interval: '30s',
+              interval: '45s',
               scheme: 'https',
               tlsConfig: {
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
@@ -240,6 +240,7 @@ local namespacesRole =
     prometheus+:
       {
         spec+: {
+          replicas: 1
           alerting+: {
             alertmanagers:
               std.map(

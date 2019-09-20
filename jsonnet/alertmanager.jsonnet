@@ -117,7 +117,7 @@ local authorizationRole = policyRule.new() +
           endpoints: [
             {
               port: 'web',
-              interval: '30s',
+              interval: '45s',
               scheme: 'https',
               tlsConfig: {
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',

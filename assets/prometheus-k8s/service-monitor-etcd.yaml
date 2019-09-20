@@ -7,7 +7,7 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - interval: 30s
+  - interval: 45s
     port: etcd-metrics
     scheme: https
     tlsConfig:

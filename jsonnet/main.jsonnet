@@ -19,7 +19,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                    endpoints: [
                      {
                        port: 'etcd-metrics',
-                       interval: '30s',
+                       interval: '45s',
                        scheme: 'https',
                        tlsConfig: {
                          caFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client-ca.crt',

@@ -9,7 +9,7 @@ spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     honorLabels: true
-    interval: 30s
+    interval: 45s
     port: https-metrics
     scheme: https
     tlsConfig:
@@ -17,7 +17,7 @@ spec:
       insecureSkipVerify: false
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     honorLabels: true
-    interval: 30s
+    interval: 45s
     metricRelabelings:
     - action: drop
       regex: container_(network_tcp_usage_total|network_udp_usage_total|tasks_state|cpu_load_average_10s)
@@ -29,7 +29,7 @@ spec:
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
       insecureSkipVerify: false
-  - interval: 30s
+  - interval: 45s
     port: https-metrics
     relabelings:
     - action: replace

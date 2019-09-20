@@ -119,7 +119,7 @@ local authorizationRole = policyRule.new() +
           endpoints: [
             {
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-              interval: '30s',
+              interval: '45s',
               port: 'https',
               scheme: 'https',
               tlsConfig: {
