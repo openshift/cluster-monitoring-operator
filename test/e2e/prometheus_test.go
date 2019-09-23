@@ -167,3 +167,35 @@ func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
 		t.Fatal("Can not find pods: prometheus-k8s or alertmanager-main")
 	}
 }
+
+func TestPrometheusTerminationMessagePolicy(t *testing.T) {
+	pods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(
+		metav1.ListOptions{FieldSelector: "status.phase=Running"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var (
+		testNs = "openshift-monitoring"
+		clOper = "cluster-monitoring-operator"
+		v      string
+		msgOk  = false
+	)
+
+	for _, p := range pods.Items {
+		if strings.Contains(p.Namespace, testNs) &&
+			strings.Contains(p.Name, clOper) {
+			for _, msg := range p.Spec.Containers {
+				v = string(msg.TerminationMessagePolicy)
+				if strings.Contains(v, "FallbackToLogsOnError") {
+					msgOk = true
+				} else {
+					t.Fatal("Can not find terminationMessagePolicy message.")
+				}
+			}
+		}
+	}
+
+	if msgOk == false {
+		t.Fatal("Error, no spec.containers or bad pod name/namespace")
+	}
+}
