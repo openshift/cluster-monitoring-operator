@@ -146,7 +146,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 		}
 
 		for _, mount := range ss.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if mount.Name == "configmap-" + newCM.Name {
+			if mount.Name == "alertmanager-trusted-ca-bundle" {
 				return true, nil
 			}
 		}

@@ -261,10 +261,19 @@ spec:
     - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m]))
         / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
-    - expr: kube_node_labels and on(node) kube_node_spec_taint{key="node-role.kubernetes.io/master"}
+    - expr: kube_node_labels and on(node) kube_node_role{role="master"}
       labels:
         label_node_role_kubernetes_io: master
+        label_node_role_kubernetes_io_master: "true"
       record: cluster:master_nodes
+    - expr: kube_node_labels and on(node) kube_node_role{role="infra"}
+      labels:
+        label_node_role_kubernetes_io_infra: "true"
+      record: cluster:infra_nodes
+    - expr: cluster:master_nodes and on(node) cluster:infra_nodes
+      labels:
+        label_node_role_kubernetes_io_master_infra: "true"
+      record: cluster:master_infra_nodes
     - expr: sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores)
         or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores))
         BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)
@@ -291,6 +300,13 @@ spec:
       record: cluster:node_instance_type_count:sum
     - expr: sum(etcd_object_counts) BY (instance)
       record: instance:etcd_object_counts:sum
+    - expr: sum((cluster:master_infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores)
+        or on(node) (cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores)
+        or on(node) (cluster:infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores)
+        or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores))
+        BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_role_kubernetes_io_master_infra,
+        label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)
+      record: node_role_os_version_machine:cpu_capacity_cores:sum
     - alert: ClusterMonitoringOperatorErrors
       annotations:
         message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value
@@ -337,11 +353,11 @@ spec:
         summary: Filesystem is predicted to run out of space within the next 24 hours.
       expr: |
         (
-          node_filesystem_avail_bytes{job="node-exporter",} / node_filesystem_size_bytes{job="node-exporter",} < 0.4
+          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} < 0.4
         and
-          predict_linear(node_filesystem_avail_bytes{job="node-exporter",}[6h], 24*60*60) < 0
+          predict_linear(node_filesystem_avail_bytes{job="node-exporter",fstype!=""}[6h], 24*60*60) < 0
         and
-          node_filesystem_readonly{job="node-exporter",} == 0
+          node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
       for: 1h
       labels:
@@ -354,11 +370,11 @@ spec:
         summary: Filesystem is predicted to run out of space within the next 4 hours.
       expr: |
         (
-          node_filesystem_avail_bytes{job="node-exporter",} / node_filesystem_size_bytes{job="node-exporter",} < 0.2
+          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} < 0.2
         and
-          predict_linear(node_filesystem_avail_bytes{job="node-exporter",}[6h], 4*60*60) < 0
+          predict_linear(node_filesystem_avail_bytes{job="node-exporter",fstype!=""}[6h], 4*60*60) < 0
         and
-          node_filesystem_readonly{job="node-exporter",} == 0
+          node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
       for: 1h
       labels:
@@ -370,9 +386,9 @@ spec:
         summary: Filesystem has less than 5% space left.
       expr: |
         (
-          node_filesystem_avail_bytes{job="node-exporter",} / node_filesystem_size_bytes{job="node-exporter",} * 100 < 5
+          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 5
         and
-          node_filesystem_readonly{job="node-exporter",} == 0
+          node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
       for: 1h
       labels:
@@ -384,9 +400,9 @@ spec:
         summary: Filesystem has less than 3% space left.
       expr: |
         (
-          node_filesystem_avail_bytes{job="node-exporter",} / node_filesystem_size_bytes{job="node-exporter",} * 100 < 3
+          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 3
         and
-          node_filesystem_readonly{job="node-exporter",} == 0
+          node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
       for: 1h
       labels:
@@ -399,11 +415,11 @@ spec:
         summary: Filesystem is predicted to run out of inodes within the next 24 hours.
       expr: |
         (
-          node_filesystem_files_free{job="node-exporter",} / node_filesystem_files{job="node-exporter",} < 0.4
+          node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} < 0.4
         and
-          predict_linear(node_filesystem_files_free{job="node-exporter",}[6h], 24*60*60) < 0
+          predict_linear(node_filesystem_files_free{job="node-exporter",fstype!=""}[6h], 24*60*60) < 0
         and
-          node_filesystem_readonly{job="node-exporter",} == 0
+          node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
       for: 1h
       labels:
@@ -416,11 +432,11 @@ spec:
         summary: Filesystem is predicted to run out of inodes within the next 4 hours.
       expr: |
         (
-          node_filesystem_files_free{job="node-exporter",} / node_filesystem_files{job="node-exporter",} < 0.2
+          node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} < 0.2
         and
-          predict_linear(node_filesystem_files_free{job="node-exporter",}[6h], 4*60*60) < 0
+          predict_linear(node_filesystem_files_free{job="node-exporter",fstype!=""}[6h], 4*60*60) < 0
         and
-          node_filesystem_readonly{job="node-exporter",} == 0
+          node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
       for: 1h
       labels:
@@ -432,9 +448,9 @@ spec:
         summary: Filesystem has less than 5% inodes left.
       expr: |
         (
-          node_filesystem_files_free{job="node-exporter",} / node_filesystem_files{job="node-exporter",} * 100 < 5
+          node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} * 100 < 5
         and
-          node_filesystem_readonly{job="node-exporter",} == 0
+          node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
       for: 1h
       labels:
@@ -446,9 +462,9 @@ spec:
         summary: Filesystem has less than 3% inodes left.
       expr: |
         (
-          node_filesystem_files_free{job="node-exporter",} / node_filesystem_files{job="node-exporter",} * 100 < 3
+          node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} * 100 < 3
         and
-          node_filesystem_readonly{job="node-exporter",} == 0
+          node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
       for: 1h
       labels:
@@ -1077,7 +1093,7 @@ spec:
         summary: Prometheus is dropping samples with duplicate timestamps.
       expr: |
         rate(prometheus_target_scrapes_sample_duplicate_timestamp_total{job="prometheus-k8s",namespace="openshift-monitoring"}[5m]) > 0
-      for: 10m
+      for: 1h
       labels:
         severity: warning
     - alert: PrometheusOutOfOrderTimestamps
@@ -1087,7 +1103,7 @@ spec:
         summary: Prometheus drops samples with out-of-order timestamps.
       expr: |
         rate(prometheus_target_scrapes_sample_out_of_order_total{job="prometheus-k8s",namespace="openshift-monitoring"}[5m]) > 0
-      for: 10m
+      for: 1h
       labels:
         severity: warning
     - alert: PrometheusRemoteStorageFailures

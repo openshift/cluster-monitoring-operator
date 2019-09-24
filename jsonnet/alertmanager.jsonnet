@@ -153,6 +153,20 @@ local authorizationRole = policyRule.new() +
                   name: 'web',
                 },
               ],
+              env: [
+                {
+                  name: "HTTP_PROXY",
+                  value: "",
+                },
+                {
+                  name: "HTTPS_PROXY",
+                  value: "",
+                },
+                {
+                  name: "NO_PROXY",
+                  value: "",
+                },
+              ],
               args: [
                 '-provider=openshift',
                 '-https-address=:9095',

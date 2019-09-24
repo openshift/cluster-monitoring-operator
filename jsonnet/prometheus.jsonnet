@@ -114,10 +114,6 @@ local namespacesRole =
     clusterRole+:
       clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole]),
 
-    // OpenShift has the kube-apiserver as well as an aggregated API called
-    // OpenShift apiserver, containing all the extended APIs.
-    serviceMonitorClusterVersionOperator:: {},
-
     // The proxy secret is there to encrypt session created by the oauth proxy.
 
     proxySecret:
@@ -196,8 +192,6 @@ local namespacesRole =
         },
       },
 
-    serviceMonitorApiserver:: {},
-
     serviceMonitorEtcd+:
       {
         metadata+: {
@@ -209,6 +203,12 @@ local namespacesRole =
           },
         },
       },
+
+    // This avoids creating service monitors which are already managed by the respective operators.
+
+    serviceMonitorApiserver:: {},
+    serviceMonitorKubeScheduler:: {},
+    serviceMonitorKubeControllerManager:: {},
 
     // This changes the Prometheuses to be scraped with TLS, authN and
     // authZ, which are not present in kube-prometheus.
@@ -230,10 +230,6 @@ local namespacesRole =
           ],
         },
       },
-
-    serviceMonitorKubeScheduler:: {},
-
-    serviceMonitorKubeControllerManager:: {},
 
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and
@@ -296,6 +292,20 @@ local namespacesRole =
                 {
                   containerPort: 9091,
                   name: 'web',
+                },
+              ],
+              env: [
+                {
+                  name: "HTTP_PROXY",
+                  value: "",
+                },
+                {
+                  name: "HTTPS_PROXY",
+                  value: "",
+                },
+                {
+                  name: "NO_PROXY",
+                  value: "",
                 },
               ],
               args: [

@@ -314,12 +314,30 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 	}
 
 	a.Spec.Containers[0].Image = f.config.Images.OauthProxy
-
-	a.Namespace = f.namespace
+	setEnv := func(name, value string) {
+		for i := range a.Spec.Containers[0].Env {
+			if a.Spec.Containers[0].Env[i].Name == name {
+				a.Spec.Containers[0].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
 
 	if trustedCABundleCM != nil {
-		a.Spec.ConfigMaps = append(a.Spec.ConfigMaps, trustedCABundleCM.Name)
+		volumeName := "alertmanager-trusted-ca-bundle"
+		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/alertmanager-ca-bundle/"))
+		a.Spec.Volumes = append(a.Spec.Volumes, trustedCABundleVolume(trustedCABundleCM.Name, volumeName))
 	}
+	a.Namespace = f.namespace
 
 	return a, nil
 }
@@ -851,6 +869,24 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespace
 
+	setEnv := func(name, value string) {
+		for i := range p.Spec.Containers[0].Env {
+			if p.Spec.Containers[0].Env[i].Name == name {
+				p.Spec.Containers[0].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
+
 	return p, nil
 }
 
@@ -1324,6 +1360,24 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 	}
 
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.OauthProxy
+
+	setEnv := func(name, value string) {
+		for i := range d.Spec.Template.Spec.Containers[1].Env {
+			if d.Spec.Template.Spec.Containers[1].Env[i].Name == name {
+				d.Spec.Template.Spec.Containers[1].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
 
 	if f.config.GrafanaConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.GrafanaConfig.NodeSelector
@@ -1837,6 +1891,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
+
 	if len(f.config.TelemeterClientConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.TelemeterClientConfig.NodeSelector
 	}
@@ -1845,34 +1900,14 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 	}
 	d.Namespace = f.namespace
 	if proxyCABundleCM != nil {
-		yes := true
-		trustedCABundle := "telemeter-trusted-ca-bundle"
-		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts,
-			v1.VolumeMount{
-				Name:      trustedCABundle,
-				ReadOnly:  true,
-				MountPath: "/etc/pki/ca-trust/extracted/pem/",
-			},
-		)
-
-		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes,
-			v1.Volume{
-				Name: trustedCABundle,
-				VolumeSource: v1.VolumeSource{
-					ConfigMap: &v1.ConfigMapVolumeSource{
-						LocalObjectReference: v1.LocalObjectReference{
-							Name: proxyCABundleCM.Name,
-						},
-						Items: []v1.KeyToPath{
-							{
-								Key:  "ca-bundle.crt",
-								Path: "tls-ca-bundle.pem",
-							},
-						},
-						Optional: &yes,
-					},
-				},
-			})
+		volumeName := "telemeter-trusted-ca-bundle"
+		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/ca-trust/extracted/pem/"))
+		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  "ca-bundle.crt",
+			Path: "tls-ca-bundle.pem",
+		})
+		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
 	}
 	return d, nil
 }
@@ -2174,6 +2209,30 @@ func (f *Factory) HashTrustedCA(caBundleCM *v1.ConfigMap, prefix string) *v1.Con
 		},
 		Data: map[string]string{
 			"ca-bundle.crt": caBundle,
+		},
+	}
+}
+
+func trustedCABundleVolumeMount(name, path string) v1.VolumeMount {
+	return v1.VolumeMount{
+		Name:      name,
+		ReadOnly:  true,
+		MountPath: path,
+	}
+}
+
+func trustedCABundleVolume(configMapName, volumeName string) v1.Volume {
+	yes := true
+
+	return v1.Volume{
+		Name: volumeName,
+		VolumeSource: v1.VolumeSource{
+			ConfigMap: &v1.ConfigMapVolumeSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: configMapName,
+				},
+				Optional: &yes,
+			},
 		},
 	}
 }

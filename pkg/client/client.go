@@ -396,9 +396,13 @@ func (c *Client) DeleteDaemonSet(d *v1beta1.DaemonSet) error {
 }
 
 func (c *Client) DeleteServiceMonitor(sm *monv1.ServiceMonitor) error {
-	sclient := c.mclient.MonitoringV1().ServiceMonitors(sm.Namespace)
+	return c.DeleteServiceMonitorByNamespaceAndName(sm.Namespace, sm.GetName())
+}
 
-	err := sclient.Delete(sm.GetName(), nil)
+func (c *Client) DeleteServiceMonitorByNamespaceAndName(namespace, name string) error {
+	sclient := c.mclient.MonitoringV1().ServiceMonitors(namespace)
+
+	err := sclient.Delete(name, nil)
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrap(err, "deleting ServiceMonitor object failed")
