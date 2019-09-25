@@ -79,7 +79,7 @@
             record: 'cluster:cpu_usage_cores:sum',
           },
           {
-            expr: 'sum(node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)',
+            expr: 'sum(node_memory_MemTotal_bytes{job="node-exporter"} - node_memory_MemAvailable_bytes{job="node-exporter"})',
             record: 'cluster:memory_usage_bytes:sum',
           },
           {
