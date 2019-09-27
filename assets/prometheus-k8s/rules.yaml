@@ -353,7 +353,7 @@ spec:
         summary: Filesystem is predicted to run out of space within the next 24 hours.
       expr: |
         (
-          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} < 0.4
+          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 40
         and
           predict_linear(node_filesystem_avail_bytes{job="node-exporter",fstype!=""}[6h], 24*60*60) < 0
         and
@@ -370,7 +370,7 @@ spec:
         summary: Filesystem is predicted to run out of space within the next 4 hours.
       expr: |
         (
-          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} < 0.2
+          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 20
         and
           predict_linear(node_filesystem_avail_bytes{job="node-exporter",fstype!=""}[6h], 4*60*60) < 0
         and
@@ -415,7 +415,7 @@ spec:
         summary: Filesystem is predicted to run out of inodes within the next 24 hours.
       expr: |
         (
-          node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} < 0.4
+          node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} * 100 < 40
         and
           predict_linear(node_filesystem_files_free{job="node-exporter",fstype!=""}[6h], 24*60*60) < 0
         and
@@ -432,7 +432,7 @@ spec:
         summary: Filesystem is predicted to run out of inodes within the next 4 hours.
       expr: |
         (
-          node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} < 0.2
+          node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} * 100 < 20
         and
           predict_linear(node_filesystem_files_free{job="node-exporter",fstype!=""}[6h], 4*60*60) < 0
         and
@@ -604,7 +604,7 @@ spec:
         message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
           state for longer than 15 minutes.
       expr: |
-        sum by (namespace, pod) (kube_pod_status_phase{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", phase=~"Failed|Pending|Unknown"}) > 0
+        sum by (namespace, pod) (kube_pod_status_phase{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", phase=~"Failed|Pending|Unknown"} * on(namespace, pod) group_left(owner_kind) kube_pod_owner{owner_kind!="Job"}) > 0
       for: 15m
       labels:
         severity: critical
@@ -730,6 +730,30 @@ spec:
       for: 15m
       labels:
         severity: warning
+    - alert: KubeHpaReplicasMismatch
+      annotations:
+        message: HPA {{ $labels.namespace }}/{{ $labels.hpa }} has not matched the
+          desired number of replicas for longer than 15 minutes.
+      expr: |
+        (kube_hpa_status_desired_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          !=
+        kube_hpa_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})
+          and
+        changes(kube_hpa_status_current_replicas[15m]) == 0
+      for: 15m
+      labels:
+        severity: warning
+    - alert: KubeHpaMaxedOut
+      annotations:
+        message: HPA {{ $labels.namespace }}/{{ $labels.hpa }} has been running at
+          max replicas for longer than 15 minutes.
+      expr: |
+        kube_hpa_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          ==
+        kube_hpa_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+      for: 15m
+      labels:
+        severity: warning
   - name: kubernetes-resources
     rules:
     - alert: KubeCPUOvercommit
@@ -848,7 +872,7 @@ spec:
     rules:
     - alert: KubeNodeNotReady
       annotations:
-        message: '{{ $labels.node }} has been unready for more than an hour.'
+        message: '{{ $labels.node }} has been unready for more than 15 minutes.'
       expr: |
         kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
       for: 15m
@@ -875,21 +899,12 @@ spec:
       for: 15m
       labels:
         severity: warning
-    - alert: KubeClientErrors
-      annotations:
-        message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
-          }}' is experiencing {{ printf "%0.0f" $value }} errors / second.
-      expr: |
-        sum(rate(ksm_scrape_error_total{job="kube-state-metrics"}[5m])) by (instance, job) > 0.1
-      for: 15m
-      labels:
-        severity: warning
     - alert: KubeletTooManyPods
       annotations:
-        message: Kubelet {{ $labels.instance }} is running {{ $value }} Pods, close
-          to the limit of 250.
+        message: Kubelet '{{ $labels.node }}' is running at {{ printf "%.4g" $value
+          }}% of its Pod capacity.
       expr: |
-        kubelet_running_pod_count{job="kubelet"} > 250 * 0.9
+        100 * max(max(kubelet_running_pod_count{job="kubelet"}) by(instance) * on(instance) group_left(node) kubelet_node_name{job="kubelet"}) by(node) / max(kube_node_status_capacity_pods{job="kube-state-metrics"}) by(node) > 95
       for: 15m
       labels:
         severity: warning
@@ -1065,17 +1080,6 @@ spec:
       for: 4h
       labels:
         severity: warning
-    - alert: PrometheusTSDBWALCorruptions
-      annotations:
-        description: Prometheus {{$labels.namespace}}/{{$labels.pod}} has detected
-          {{$value | humanize}} corruptions of the write-ahead log (WAL) over the
-          last 3h.
-        summary: Prometheus is detecting WAL corruptions.
-      expr: |
-        increase(tsdb_wal_corruptions_total{job="prometheus-k8s",namespace="openshift-monitoring"}[3h]) > 0
-      for: 4h
-      labels:
-        severity: warning
     - alert: PrometheusNotIngestingSamples
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} is not ingesting
@@ -1089,7 +1093,8 @@ spec:
     - alert: PrometheusDuplicateTimestamps
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} is dropping
-          {{$value | humanize}} samples/s with different values but duplicated timestamp.
+          {{ printf "%.4g" $value  }} samples/s with different values but duplicated
+          timestamp.
         summary: Prometheus is dropping samples with duplicate timestamps.
       expr: |
         rate(prometheus_target_scrapes_sample_duplicate_timestamp_total{job="prometheus-k8s",namespace="openshift-monitoring"}[5m]) > 0
@@ -1099,7 +1104,7 @@ spec:
     - alert: PrometheusOutOfOrderTimestamps
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} is dropping
-          {{$value | humanize}} samples/s with timestamps arriving out of order.
+          {{ printf "%.4g" $value  }} samples/s with timestamps arriving out of order.
         summary: Prometheus drops samples with out-of-order timestamps.
       expr: |
         rate(prometheus_target_scrapes_sample_out_of_order_total{job="prometheus-k8s",namespace="openshift-monitoring"}[5m]) > 0
@@ -1143,6 +1148,25 @@ spec:
       for: 15m
       labels:
         severity: critical
+    - alert: PrometheusRemoteWriteDesiredShards
+      annotations:
+        description: Prometheus {{$labels.namespace}}/{{$labels.pod}} remote write
+          desired shards calculation wants to run {{ printf $value }} shards, which
+          is more than the max of {{ printf `prometheus_remote_storage_shards_max{instance="%s",job="prometheus-k8s",namespace="openshift-monitoring"}`
+          $labels.instance | query | first | value }}.
+        summary: Prometheus remote write desired shards calculation wants to run more
+          than configured max shards.
+      expr: |
+        # Without max_over_time, failed scrapes could create false negatives, see
+        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+        (
+          max_over_time(prometheus_remote_storage_shards_desired{job="prometheus-k8s",namespace="openshift-monitoring"}[5m])
+        > on(job, instance) group_right
+          max_over_time(prometheus_remote_storage_shards_max{job="prometheus-k8s",namespace="openshift-monitoring"}[5m])
+        )
+      for: 15m
+      labels:
+        severity: warning
     - alert: PrometheusRuleFailures
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} has failed to
@@ -1197,7 +1221,8 @@ spec:
     rules:
     - alert: TargetDown
       annotations:
-        message: '{{ $value }}% of the {{ $labels.job }} targets are down.'
+        message: '{{ printf "%.4g" $value }}% of the {{ $labels.job }} targets are
+          down.'
       expr: 100 * (count(up == 0) BY (job, namespace, service) / count(up) BY (job,
         namespace, service)) > 10
       for: 10m

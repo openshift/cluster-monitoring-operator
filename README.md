@@ -56,3 +56,10 @@ Run `make pkg/manifests/bindata.go` after you modify the files and make sure to 
 - **Unit tests**: `make test-unit`
 
 - **End-to-end tests**: `make test-e2e`
+
+## Release
+
+Before a new OpenShift release happens make sure to pin the dependencies to the release branches:
+
+1. In [kube-prometheus](https://github.com/coreos/kube-prometheus/) cut a release.
+2. In this repo set the "version" in `jsonnet/jsonnetfile.json` to the release branches for all the dependencies.
