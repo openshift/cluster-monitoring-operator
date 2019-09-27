@@ -91,6 +91,16 @@
             "version": "08c55c119f39093e18b2bb9cba5c5619dc4ea0e1"
         },
         {
+            "name": "kube-thanos",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/thanos-io/kube-thanos",
+                    "subdir": "jsonnet/kube-thanos"
+                }
+            },
+            "version": "46c5a3dbead8e1d6259e1de4ef757451febcbf06"
+        },
+        {
             "name": "node-mixin",
             "source": {
                 "git": {

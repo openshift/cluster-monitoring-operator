@@ -133,4 +133,7 @@ spec:
   serviceAccountName: prometheus-k8s
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
+  thanos:
+    baseImage: quay.io/openshift/origin-thanos
+    version: latest
   version: v2.7.1

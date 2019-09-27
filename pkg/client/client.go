@@ -33,7 +33,7 @@ import (
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1beta2"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	v1betaextensions "k8s.io/api/extensions/v1beta1"
@@ -347,7 +347,7 @@ func (c *Client) DeleteHashedConfigMap(newHash, prefix string) error {
 
 func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 	p := metav1.DeletePropagationForeground
-	err := c.kclient.AppsV1beta2().Deployments(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{PropagationPolicy: &p})
+	err := c.kclient.AppsV1().Deployments(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{PropagationPolicy: &p})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -387,7 +387,7 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 
 func (c *Client) DeleteDaemonSet(d *v1beta1.DaemonSet) error {
 	orphanDependents := false
-	err := c.kclient.AppsV1beta2().DaemonSets(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{OrphanDependents: &orphanDependents})
+	err := c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{OrphanDependents: &orphanDependents})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -511,7 +511,7 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 }
 
 func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
-	d, err := c.kclient.AppsV1beta2().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
+	d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
 
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDeployment(dep)
@@ -531,7 +531,7 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 }
 
 func (c *Client) CreateDeployment(dep *appsv1.Deployment) error {
-	d, err := c.kclient.AppsV1beta2().Deployments(dep.GetNamespace()).Create(dep)
+	d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Create(dep)
 	if err != nil {
 		return err
 	}
@@ -540,7 +540,7 @@ func (c *Client) CreateDeployment(dep *appsv1.Deployment) error {
 }
 
 func (c *Client) UpdateDeployment(dep *appsv1.Deployment) error {
-	updated, err := c.kclient.AppsV1beta2().Deployments(dep.GetNamespace()).Update(dep)
+	updated, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Update(dep)
 	if err != nil {
 		return err
 	}
@@ -551,7 +551,7 @@ func (c *Client) UpdateDeployment(dep *appsv1.Deployment) error {
 func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		d, err := c.kclient.AppsV1beta2().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
+		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -622,7 +622,7 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 }
 
 func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
-	_, err := c.kclient.AppsV1beta2().DaemonSets(ds.GetNamespace()).Get(ds.GetName(), metav1.GetOptions{})
+	_, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(ds.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDaemonSet(ds)
 		return errors.Wrap(err, "creating DaemonSet object failed")
@@ -636,7 +636,7 @@ func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
 }
 
 func (c *Client) CreateDaemonSet(ds *appsv1.DaemonSet) error {
-	d, err := c.kclient.AppsV1beta2().DaemonSets(ds.GetNamespace()).Create(ds)
+	d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Create(ds)
 	if err != nil {
 		return err
 	}
@@ -645,7 +645,7 @@ func (c *Client) CreateDaemonSet(ds *appsv1.DaemonSet) error {
 }
 
 func (c *Client) UpdateDaemonSet(ds *appsv1.DaemonSet) error {
-	updated, err := c.kclient.AppsV1beta2().DaemonSets(ds.GetNamespace()).Update(ds)
+	updated, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Update(ds)
 	if err != nil {
 		return err
 	}
@@ -656,7 +656,7 @@ func (c *Client) UpdateDaemonSet(ds *appsv1.DaemonSet) error {
 func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		d, err := c.kclient.AppsV1beta2().DaemonSets(ds.GetNamespace()).Get(ds.GetName(), metav1.GetOptions{})
+		d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(ds.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}

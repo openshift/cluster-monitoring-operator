@@ -4,6 +4,8 @@ local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-anti-affinity.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
+           (import 'kube-prometheus/kube-prometheus-thanos-sidecar.libsonnet') +
+           (import 'kube-thanos/kube-thanos-querier.libsonnet') +
            (import 'openshift-state-metrics/openshift-state-metrics.libsonnet') +
            {
              prometheus+:: {
@@ -68,6 +70,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  promLabelProxy: 'quay.io/coreos/prom-label-proxy',
                  kubeRbacProxy: 'quay.io/coreos/kube-rbac-proxy',
                  prometheusAdapter: 'quay.io/coreos/k8s-prometheus-adapter-amd64',
+                 openshiftThanos: 'quay.io/openshift/origin-thanos',
                },
                versions+:: {
                  // Because we build OpenShift images separately to upstream,
@@ -79,6 +82,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  promLabelProxy: 'v0.1.0',
                  kubeRbacProxy: 'v0.4.1',
                  prometheusAdapter: 'v0.4.1',
+                 openshiftThanos: 'latest',
                },
                prometheusAdapter+:: {
                  prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
@@ -115,6 +119,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'prometheus.jsonnet') +
            (import 'prometheus-adapter.jsonnet') +
            (import 'cluster-monitoring-operator.jsonnet') +
+           (import 'thanos-querier.jsonnet') +
            (import 'remove-runbook.libsonnet') + {
   _config+:: {
     namespace: 'openshift-monitoring',
@@ -165,5 +170,6 @@ removeLimits(
   { ['prometheus-adapter/' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) } +
   { ['grafana/' + name]: kp.grafana[name] for name in std.objectFields(kp.grafana) } +
   { ['telemeter-client/' + name]: kp.telemeterClient[name] for name in std.objectFields(kp.telemeterClient) } +
-  { ['cluster-monitoring-operator/' + name]: kp.clusterMonitoringOperator[name] for name in std.objectFields(kp.clusterMonitoringOperator) }
+  { ['cluster-monitoring-operator/' + name]: kp.clusterMonitoringOperator[name] for name in std.objectFields(kp.clusterMonitoringOperator) } +
+  { ['thanos-querier/' + name]: kp.thanos.querier[name] for name in std.objectFields(kp.thanos.querier) }
 )

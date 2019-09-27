@@ -33,7 +33,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1beta2"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -143,7 +143,11 @@ var (
 	TelemeterClientServiceAccount         = "assets/telemeter-client/service-account.yaml"
 	TelemeterClientServiceMonitor         = "assets/telemeter-client/service-monitor.yaml"
 	TelemeterClientServingCertsCABundle   = "assets/telemeter-client/serving-certs-c-a-bundle.yaml"
-	TelemeterTrustedCABundle              = "assets/telemeter-client/trusted-ca-bundle.yaml"
+
+	ThanosQuerierDeployment = "assets/thanos-querier/deployment.yaml"
+	ThanosQuerierService    = "assets/thanos-querier/service.yaml"
+
+	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
 )
 
 var (
@@ -852,6 +856,10 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		}
 
 		p.Spec.Secrets = secrets
+	}
+
+	if f.config.Images.Thanos != "" {
+		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
 	p.Spec.Containers[0].Image = f.config.Images.OauthProxy
@@ -1756,6 +1764,29 @@ func (f *Factory) NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRole
 
 func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
 	return NewClusterRole(manifest)
+}
+
+func (f *Factory) ThanosQuerierDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(MustAssetReader(ThanosQuerierDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	d.Namespace = f.namespace
+	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.Thanos
+
+	return d, nil
+}
+
+func (f *Factory) ThanosQuerierService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(ThanosQuerierService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) TelemeterTrustedCABundle() (*v1.ConfigMap, error) {

@@ -29,6 +29,16 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.ThanosQuerierDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosQuerierService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.AlertmanagerService()
 	if err != nil {
 		t.Fatal(err)

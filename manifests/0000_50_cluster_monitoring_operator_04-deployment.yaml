@@ -62,6 +62,7 @@ spec:
         - "-images=telemeter-client=quay.io/openshift/origin-telemeter:latest"
         - "-images=prom-label-proxy=quay.io/openshift/origin-prom-label-proxy:latest"
         - "-images=k8s-prometheus-adapter=quay.io/openshift/origin-k8s-prometheus-adapter:latest"
+        - "-images=thanos=quay.io/openshift/origin-thanos:latest"
         ports:
         - containerPort: 8080
           name: http
