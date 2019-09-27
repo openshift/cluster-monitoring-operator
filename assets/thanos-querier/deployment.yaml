@@ -23,12 +23,22 @@ spec:
         - --http-address=0.0.0.0:9090
         - --store=dnssrv+_grpc._tcp.prometheus-k8s.openshift-monitoring.svc.cluster.local
         image: quay.io/openshift/origin-thanos:latest
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+            scheme: HTTP
         name: thanos-querier
         ports:
         - containerPort: 10901
           name: grpc
         - containerPort: 9090
           name: http
+        readinessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+            scheme: HTTP
         resources:
           requests:
             cpu: 10m
