@@ -175,21 +175,19 @@ func TestPrometheusTerminationMessagePolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	var (
-		testNs = "openshift-monitoring"
 		clOper = "cluster-monitoring-operator"
 		v      string
 		msgOk  = false
 	)
 
 	for _, p := range pods.Items {
-		if strings.Contains(p.Namespace, testNs) &&
-			strings.Contains(p.Name, clOper) {
+		if strings.Contains(p.Name, clOper) {
 			for _, msg := range p.Spec.Containers {
 				v = string(msg.TerminationMessagePolicy)
 				if strings.Contains(v, "FallbackToLogsOnError") {
 					msgOk = true
 				} else {
-					t.Fatal("Can not find terminationMessagePolicy message.")
+					t.Fatal("Could not find 'terminationMessagePolicy' message: FallbackToLogsOnError.")
 				}
 			}
 		}
