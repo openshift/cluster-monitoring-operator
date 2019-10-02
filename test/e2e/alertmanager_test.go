@@ -89,7 +89,7 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
 
 func TestAlertmanagerTrustedCA(t *testing.T) {
 	var (
-		factory = manifests.NewFactory("openshift-monitoring", nil)
+		factory = manifests.NewFactory("openshift-monitoring", "", nil)
 		newCM   *v1.ConfigMap
 		lastErr error
 	)

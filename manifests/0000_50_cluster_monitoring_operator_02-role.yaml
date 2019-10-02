@@ -16,7 +16,11 @@
 # 	assets/prometheus-k8s/cluster-role.yaml
 # 	assets/prometheus-k8s/role-config.yaml
 # 	assets/prometheus-k8s/role-specific-namespaces.yaml
+# 	assets/prometheus-operator-user-workload/cluster-role.yaml
 # 	assets/prometheus-operator/cluster-role.yaml
+# 	assets/prometheus-user-workload/cluster-role.yaml
+# 	assets/prometheus-user-workload/role-config.yaml
+# 	assets/prometheus-user-workload/role-specific-namespaces.yaml
 # 	assets/telemeter-client/cluster-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole

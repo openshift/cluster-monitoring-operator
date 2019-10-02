@@ -8,7 +8,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-thanos/kube-thanos-querier.libsonnet') +
            (import 'openshift-state-metrics/openshift-state-metrics.libsonnet') +
            {
-             prometheus+:: {
+             prometheusK8s+:: $.prometheus + {
                // Openshift 4.0 clusters already have an etcd service and endpoints.
                // Additionally, the etcd client certificates secret should not be embedded in the
                // Cluster Monitoring Operator binary.
@@ -100,6 +100,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                    'openshift-kube-scheduler',
                    'openshift-kube-controller-manager',
                    'openshift-etcd',
+                   'openshift-user-workload-monitoring',
                  ],
                },
              },
@@ -112,17 +113,20 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            } +
            (import 'rules.jsonnet') +
            (import 'prometheus-operator.jsonnet') +
+           (import 'prometheus-operator-user-workload.jsonnet') +
            (import 'node-exporter.jsonnet') +
            (import 'kube-state-metrics.jsonnet') +
            (import 'grafana.jsonnet') +
            (import 'alertmanager.jsonnet') +
            (import 'prometheus.jsonnet') +
+           (import 'prometheus-user-workload.jsonnet') +
            (import 'prometheus-adapter.jsonnet') +
            (import 'cluster-monitoring-operator.jsonnet') +
            (import 'thanos-querier.jsonnet') +
            (import 'remove-runbook.libsonnet') + {
   _config+:: {
     namespace: 'openshift-monitoring',
+    namespaceUserWorkload: 'openshift-user-workload-monitoring',
 
     hostNetworkInterfaceSelector: 'device!~"veth.+"',
 
@@ -161,12 +165,14 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
 };
 
 removeLimits(
-  { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
+  { ['prometheus-operator/' + name]: kp.clusterPrometheusOperator[name] for name in std.objectFields(kp.clusterPrometheusOperator) } +
+  { ['prometheus-operator-user-workload/' + name]: kp.prometheusOperatorUserWorkload[name] for name in std.objectFields(kp.prometheusOperatorUserWorkload) } +
   { ['node-exporter/' + name]: kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
   { ['kube-state-metrics/' + name]: kp.kubeStateMetrics[name] for name in std.objectFields(kp.kubeStateMetrics) } +
   { ['openshift-state-metrics/' + name]: kp.openshiftStateMetrics[name] for name in std.objectFields(kp.openshiftStateMetrics) } +
   { ['alertmanager/' + name]: kp.alertmanager[name] for name in std.objectFields(kp.alertmanager) } +
-  { ['prometheus-k8s/' + name]: kp.prometheus[name] for name in std.objectFields(kp.prometheus) } +
+  { ['prometheus-k8s/' + name]: kp.prometheusK8s[name] for name in std.objectFields(kp.prometheusK8s) } +
+  { ['prometheus-user-workload/' + name]: kp.prometheusUserWorkload[name] for name in std.objectFields(kp.prometheusUserWorkload) } +
   { ['prometheus-adapter/' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) } +
   { ['grafana/' + name]: kp.grafana[name] for name in std.objectFields(kp.grafana) } +
   { ['telemeter-client/' + name]: kp.telemeterClient[name] for name in std.objectFields(kp.telemeterClient) } +

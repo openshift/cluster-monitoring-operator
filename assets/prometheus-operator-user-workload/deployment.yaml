@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/version: v0.33.0
   name: prometheus-operator
-  namespace: openshift-monitoring
+  namespace: openshift-user-workload-monitoring
 spec:
   replicas: 1
   selector:
@@ -26,9 +26,10 @@ spec:
         - --logtostderr=true
         - --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
         - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.33.0
-        - --namespaces=openshift-monitoring
-        - --prometheus-instance-namespaces=openshift-monitoring
-        - --alertmanager-instance-namespaces=openshift-monitoring
+        - --deny-namespaces=openshift-monitoring
+        - --prometheus-instance-namespaces=openshift-user-workload-monitoring
+        - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
+        - --manage-crds=false
         image: quay.io/coreos/prometheus-operator:v0.33.0
         name: prometheus-operator
         ports:

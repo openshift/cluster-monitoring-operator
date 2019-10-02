@@ -8,3 +8,14 @@ metadata:
     openshift.io/cluster-monitoring: "true"
     name: openshift-monitoring
     network.openshift.io/policy-group: monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-user-workload-monitoring
+  annotations:
+    openshift.io/node-selector: ""
+  labels:
+    openshift.io/cluster-monitoring: "true"
+    name: openshift-user-workload-monitoring
+    network.openshift.io/policy-group: monitoring

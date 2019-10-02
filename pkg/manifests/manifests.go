@@ -96,6 +96,18 @@ var (
 	PrometheusK8sServingCertsCABundle     = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle   = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 
+	PrometheusUserWorkloadServingCertsCABundle     = "assets/prometheus-user-workload/serving-certs-ca-bundle.yaml"
+	PrometheusUserWorkloadServiceAccount           = "assets/prometheus-user-workload/service-account.yaml"
+	PrometheusUserWorkloadClusterRole              = "assets/prometheus-user-workload/cluster-role.yaml"
+	PrometheusUserWorkloadClusterRoleBinding       = "assets/prometheus-user-workload/cluster-role-binding.yaml"
+	PrometheusUserWorkloadRoleConfig               = "assets/prometheus-user-workload/role-config.yaml"
+	PrometheusUserWorkloadRoleList                 = "assets/prometheus-user-workload/role-specific-namespaces.yaml"
+	PrometheusUserWorkloadRoleBindingList          = "assets/prometheus-user-workload/role-binding-specific-namespaces.yaml"
+	PrometheusUserWorkloadRoleBindingConfig        = "assets/prometheus-user-workload/role-binding-config.yaml"
+	PrometheusUserWorkloadService                  = "assets/prometheus-user-workload/service.yaml"
+	PrometheusUserWorkload                         = "assets/prometheus-user-workload/prometheus.yaml"
+	PrometheusUserWorkloadPrometheusServiceMonitor = "assets/prometheus-user-workload/service-monitor.yaml"
+
 	PrometheusAdapterAPIService                         = "assets/prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "assets/prometheus-adapter/cluster-role.yaml"
 	PrometheusAdapterClusterRoleBinding                 = "assets/prometheus-adapter/cluster-role-binding.yaml"
@@ -116,6 +128,13 @@ var (
 	PrometheusOperatorDeployment         = "assets/prometheus-operator/deployment.yaml"
 	PrometheusOperatorService            = "assets/prometheus-operator/service.yaml"
 	PrometheusOperatorServiceMonitor     = "assets/prometheus-operator/service-monitor.yaml"
+
+	PrometheusOperatorUserWorkloadServiceAccount     = "assets/prometheus-operator-user-workload/service-account.yaml"
+	PrometheusOperatorUserWorkloadClusterRole        = "assets/prometheus-operator-user-workload/cluster-role.yaml"
+	PrometheusOperatorUserWorkloadClusterRoleBinding = "assets/prometheus-operator-user-workload/cluster-role-binding.yaml"
+	PrometheusOperatorUserWorkloadService            = "assets/prometheus-operator-user-workload/service.yaml"
+	PrometheusOperatorUserWorkloadDeployment         = "assets/prometheus-operator-user-workload/deployment.yaml"
+	PrometheusOperatorUserWorkloadServiceMonitor     = "assets/prometheus-operator-user-workload/service-monitor.yaml"
 
 	GrafanaClusterRoleBinding   = "assets/grafana/cluster-role-binding.yaml"
 	GrafanaClusterRole          = "assets/grafana/cluster-role.yaml"
@@ -151,9 +170,12 @@ var (
 )
 
 var (
-	PrometheusConfigReloaderFlag    = "--prometheus-config-reloader="
-	ConfigReloaderImageFlag         = "--config-reloader-image="
-	PrometheusOperatorNamespaceFlag = "--namespaces="
+	PrometheusConfigReloaderFlag                         = "--prometheus-config-reloader="
+	ConfigReloaderImageFlag                              = "--config-reloader-image="
+	PrometheusOperatorNamespaceFlag                      = "--namespaces="
+	PrometheusOperatorDenyNamespaceFlag                  = "--deny-namespaces="
+	PrometheusOperatorPrometheusInstanceNamespacesFlag   = "--prometheus-instance-namespaces="
+	PrometheusOperatorAlertmanagerInstanceNamespacesFlag = "--alertmanager-instance-namespaces="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -165,14 +187,15 @@ func MustAssetReader(asset string) io.Reader {
 }
 
 type Factory struct {
-	namespace string
-	config    *Config
+	namespace, namespaceUserWorkload string
+	config                           *Config
 }
 
-func NewFactory(namespace string, c *Config) *Factory {
+func NewFactory(namespace, namespaceUserWorkload string, c *Config) *Factory {
 	return &Factory{
-		namespace: namespace,
-		config:    c,
+		namespace:             namespace,
+		namespaceUserWorkload: namespaceUserWorkload,
+		config:                c,
 	}
 }
 
@@ -583,8 +606,23 @@ func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding,
 	return crb, nil
 }
 
+func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusUserWorkloadClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespaceUserWorkload
+
+	return crb, nil
+}
+
 func (f *Factory) PrometheusK8sClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(PrometheusK8sClusterRole))
+}
+
+func (f *Factory) PrometheusUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(PrometheusUserWorkloadClusterRole))
 }
 
 func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1.Role, error) {
@@ -594,6 +632,17 @@ func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1.Role, error) {
 	}
 
 	r.Namespace = f.namespace
+
+	return r, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadRoleConfig() (*rbacv1.Role, error) {
+	r, err := f.NewRole(MustAssetReader(PrometheusUserWorkloadRoleConfig))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespaceUserWorkload
 
 	return r, nil
 }
@@ -611,6 +660,19 @@ func (f *Factory) PrometheusK8sRoleBindingList() (*rbacv1.RoleBindingList, error
 	return rbl, nil
 }
 
+func (f *Factory) PrometheusUserWorkloadRoleBindingList() (*rbacv1.RoleBindingList, error) {
+	rbl, err := f.NewRoleBindingList(MustAssetReader(PrometheusUserWorkloadRoleBindingList))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rb := range rbl.Items {
+		rb.Subjects[0].Namespace = f.namespaceUserWorkload
+	}
+
+	return rbl, nil
+}
+
 func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1.RoleBinding, error) {
 	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusK8sRoleBindingConfig))
 	if err != nil {
@@ -618,6 +680,17 @@ func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1.RoleBinding, error) 
 	}
 
 	rb.Namespace = f.namespace
+
+	return rb, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadRoleBindingConfig() (*rbacv1.RoleBinding, error) {
+	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusUserWorkloadRoleBindingConfig))
+	if err != nil {
+		return nil, err
+	}
+
+	rb.Namespace = f.namespaceUserWorkload
 
 	return rb, nil
 }
@@ -630,6 +703,19 @@ func (f *Factory) PrometheusK8sRoleList() (*rbacv1.RoleList, error) {
 
 	for _, r := range rl.Items {
 		r.Namespace = f.namespace
+	}
+
+	return rl, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadRoleList() (*rbacv1.RoleList, error) {
+	rl, err := f.NewRoleList(MustAssetReader(PrometheusUserWorkloadRoleList))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range rl.Items {
+		r.Namespace = f.namespaceUserWorkload
 	}
 
 	return rl, nil
@@ -663,6 +749,17 @@ func (f *Factory) PrometheusK8sServiceAccount() (*v1.ServiceAccount, error) {
 	}
 
 	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(MustAssetReader(PrometheusUserWorkloadServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
 
 	return s, nil
 }
@@ -717,6 +814,17 @@ func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
 	}
 
 	c.Namespace = f.namespace
+
+	return c, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadServingCertsCABundle() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(PrometheusUserWorkloadServingCertsCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespaceUserWorkload
 
 	return c, nil
 }
@@ -890,6 +998,56 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 	return p, nil
 }
 
+func (f *Factory) PrometheusUserWorkload() (*monv1.Prometheus, error) {
+	p, err := f.NewPrometheus(MustAssetReader(PrometheusUserWorkload))
+	if err != nil {
+		return nil, err
+	}
+
+	if f.config.PrometheusUserWorkloadConfig.Retention != "" {
+		p.Spec.Retention = f.config.PrometheusUserWorkloadConfig.Retention
+	}
+
+	p.Spec.Image = &f.config.Images.Prometheus
+
+	if f.config.PrometheusUserWorkloadConfig.Resources != nil {
+		p.Spec.Resources = *f.config.PrometheusUserWorkloadConfig.Resources
+	}
+
+	if f.config.PrometheusUserWorkloadConfig.NodeSelector != nil {
+		p.Spec.NodeSelector = f.config.PrometheusUserWorkloadConfig.NodeSelector
+	}
+
+	if len(f.config.PrometheusUserWorkloadConfig.Tolerations) > 0 {
+		p.Spec.Tolerations = f.config.PrometheusUserWorkloadConfig.Tolerations
+	}
+
+	if f.config.PrometheusUserWorkloadConfig.ExternalLabels != nil {
+		p.Spec.ExternalLabels = f.config.PrometheusUserWorkloadConfig.ExternalLabels
+	}
+
+	if f.config.PrometheusUserWorkloadConfig.VolumeClaimTemplate != nil {
+		p.Spec.Storage = &monv1.StorageSpec{
+			VolumeClaimTemplate: *f.config.PrometheusUserWorkloadConfig.VolumeClaimTemplate,
+		}
+	}
+
+	if len(f.config.PrometheusUserWorkloadConfig.RemoteWrite) > 0 {
+		p.Spec.RemoteWrite = f.config.PrometheusUserWorkloadConfig.RemoteWrite
+	}
+
+	if f.config.Images.Thanos != "" {
+		p.Spec.Thanos.Image = &f.config.Images.Thanos
+	}
+
+	p.Spec.Containers[0].Image = f.config.Images.KubeRbacProxy
+	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
+	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
+	p.Namespace = f.namespaceUserWorkload
+
+	return p, nil
+}
+
 func (f *Factory) PrometheusK8sKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeletServiceMonitor))
 	if err != nil {
@@ -909,6 +1067,18 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor
 
 	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-k8s.%s.svc", f.namespace)
 	sm.Namespace = f.namespace
+
+	return sm, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusUserWorkloadPrometheusServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-user-workload.%s.svc", f.namespaceUserWorkload)
+	sm.Namespace = f.namespaceUserWorkload
 
 	return sm, nil
 }
@@ -1140,6 +1310,17 @@ func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, err
 	return sm, nil
 }
 
+func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusOperatorUserWorkloadServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespaceUserWorkload
+
+	return sm, nil
+}
+
 func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusOperatorClusterRoleBinding))
 	if err != nil {
@@ -1151,8 +1332,23 @@ func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1.ClusterRoleBin
 	return crb, nil
 }
 
+func (f *Factory) PrometheusOperatorUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusOperatorUserWorkloadClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespaceUserWorkload
+
+	return crb, nil
+}
+
 func (f *Factory) PrometheusOperatorClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(PrometheusOperatorClusterRole))
+}
+
+func (f *Factory) PrometheusOperatorUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(PrometheusOperatorUserWorkloadClusterRole))
 }
 
 func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error) {
@@ -1162,6 +1358,17 @@ func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error)
 	}
 
 	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(MustAssetReader(PrometheusOperatorUserWorkloadServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
 
 	return s, nil
 }
@@ -1195,9 +1402,61 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) {
 			args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
 		}
+
+		if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) {
+			args[i] = PrometheusOperatorAlertmanagerInstanceNamespacesFlag + f.namespace
+		}
+
+		if strings.HasPrefix(args[i], PrometheusOperatorPrometheusInstanceNamespacesFlag) {
+			args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespace
+		}
 	}
 	d.Spec.Template.Spec.Containers[0].Args = args
 	d.Namespace = f.namespace
+
+	return d, nil
+}
+
+func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []string) (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(MustAssetReader(PrometheusOperatorUserWorkloadDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(f.config.PrometheusOperatorUserWorkloadConfig.NodeSelector) > 0 {
+		d.Spec.Template.Spec.NodeSelector = f.config.PrometheusOperatorUserWorkloadConfig.NodeSelector
+	}
+
+	if len(f.config.PrometheusOperatorUserWorkloadConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.PrometheusOperatorUserWorkloadConfig.Tolerations
+	}
+
+	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
+
+	args := d.Spec.Template.Spec.Containers[0].Args
+	for i := range args {
+		if strings.HasPrefix(args[i], PrometheusOperatorDenyNamespaceFlag) {
+			args[i] = PrometheusOperatorDenyNamespaceFlag + strings.Join(denyNamespaces, ",")
+		}
+
+		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) {
+			args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
+		}
+
+		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) {
+			args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
+		}
+
+		if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) {
+			args[i] = PrometheusOperatorAlertmanagerInstanceNamespacesFlag + f.namespaceUserWorkload
+		}
+
+		if strings.HasPrefix(args[i], PrometheusOperatorPrometheusInstanceNamespacesFlag) {
+			args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespaceUserWorkload
+		}
+	}
+	d.Spec.Template.Spec.Containers[0].Args = args
+	d.Namespace = f.namespaceUserWorkload
 
 	return d, nil
 }
@@ -1213,6 +1472,17 @@ func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
 	return s, nil
 }
 
+func (f *Factory) PrometheusOperatorUserWorkloadService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(PrometheusOperatorUserWorkloadService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
 	s, err := f.NewService(MustAssetReader(PrometheusK8sService))
 	if err != nil {
@@ -1220,6 +1490,17 @@ func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
 	}
 
 	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(PrometheusUserWorkloadService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
 
 	return s, nil
 }

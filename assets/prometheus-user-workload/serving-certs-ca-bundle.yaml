@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  service-ca.crt: ""
+kind: ConfigMap
+metadata:
+  annotations:
+    service.alpha.openshift.io/inject-cabundle: "true"
+  name: serving-certs-ca-bundle
+  namespace: openshift-user-workload-monitoring

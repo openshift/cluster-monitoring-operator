@@ -27,17 +27,23 @@ import (
 )
 
 type Config struct {
-	Images                   *Images                      `json:"-"`
-	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
-	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`
-	AlertmanagerMainConfig   *AlertmanagerMainConfig      `json:"alertmanagerMain"`
-	KubeStateMetricsConfig   *KubeStateMetricsConfig      `json:"kubeStateMetrics"`
-	OpenShiftMetricsConfig   *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics"`
-	GrafanaConfig            *GrafanaConfig               `json:"grafana"`
-	EtcdConfig               *EtcdConfig                  `json:"-"`
-	HTTPConfig               *HTTPConfig                  `json:"http"`
-	TelemeterClientConfig    *TelemeterClientConfig       `json:"telemeterClient"`
-	K8sPrometheusAdapter     *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
+	Images *Images `json:"-"`
+
+	PrometheusOperatorConfig             *PrometheusOperatorConfig `json:"prometheusOperator"`
+	PrometheusOperatorUserWorkloadConfig *PrometheusOperatorConfig `json:"prometheusOperatorUserWorkload"`
+
+	PrometheusK8sConfig          *PrometheusK8sConfig `json:"prometheusK8s"`
+	PrometheusUserWorkloadConfig *PrometheusK8sConfig `json:"prometheusUserWorkload"`
+
+	AlertmanagerMainConfig *AlertmanagerMainConfig      `json:"alertmanagerMain"`
+	KubeStateMetricsConfig *KubeStateMetricsConfig      `json:"kubeStateMetrics"`
+	OpenShiftMetricsConfig *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics"`
+	GrafanaConfig          *GrafanaConfig               `json:"grafana"`
+	EtcdConfig             *EtcdConfig                  `json:"-"`
+	HTTPConfig             *HTTPConfig                  `json:"http"`
+	TelemeterClientConfig  *TelemeterClientConfig       `json:"telemeterClient"`
+	K8sPrometheusAdapter   *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
+	UserWorkloadConfig     *UserWorkloadConfig          `json:"userWorkload"`
 }
 
 type Images struct {
@@ -122,6 +128,19 @@ func (e *EtcdConfig) IsEnabled() bool {
 	return *e.Enabled
 }
 
+type UserWorkloadConfig struct {
+	Enabled *bool `json:"enabled"`
+}
+
+// IsEnabled returns the underlying value of the `Enabled` boolean pointer.
+// It defaults to false if the pointer is nil.
+func (c *UserWorkloadConfig) IsEnabled() bool {
+	if c.Enabled == nil {
+		return false
+	}
+	return *c.Enabled
+}
+
 type TelemeterClientConfig struct {
 	ClusterID          string            `json:"clusterID"`
 	Enabled            *bool             `json:"enabled"`
@@ -166,11 +185,20 @@ func (c *Config) applyDefaults() {
 	if c.PrometheusOperatorConfig == nil {
 		c.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
 	}
+	if c.PrometheusOperatorUserWorkloadConfig == nil {
+		c.PrometheusOperatorUserWorkloadConfig = &PrometheusOperatorConfig{}
+	}
 	if c.PrometheusK8sConfig == nil {
 		c.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}
 	if c.PrometheusK8sConfig.Retention == "" {
 		c.PrometheusK8sConfig.Retention = "15d"
+	}
+	if c.PrometheusUserWorkloadConfig == nil {
+		c.PrometheusUserWorkloadConfig = &PrometheusK8sConfig{}
+	}
+	if c.PrometheusUserWorkloadConfig.Retention == "" {
+		c.PrometheusUserWorkloadConfig.Retention = "15d"
 	}
 	if c.AlertmanagerMainConfig == nil {
 		c.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
@@ -195,6 +223,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.EtcdConfig == nil {
 		c.EtcdConfig = &EtcdConfig{}
+	}
+	if c.UserWorkloadConfig == nil {
+		c.UserWorkloadConfig = &UserWorkloadConfig{}
 	}
 }
 

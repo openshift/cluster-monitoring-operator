@@ -1,0 +1,79 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  labels:
+    prometheus: user-workload
+  name: user-workload
+  namespace: openshift-user-workload-monitoring
+spec:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: prometheus
+              operator: In
+              values:
+              - user-workload
+          namespaces:
+          - openshift-user-workload-monitoring
+          topologyKey: kubernetes.io/hostname
+        weight: 100
+  alerting:
+    alertmanagers:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      name: alertmanager-main
+      namespace: openshift-monitoring
+      port: web
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+        serverName: alertmanager-main.openshift-monitoring.svc
+  arbitraryFSAccessThroughSMs:
+    deny: true
+  baseImage: openshift/prometheus
+  configMaps:
+  - serving-certs-ca-bundle
+  containers:
+  - args:
+    - --secure-listen-address=0.0.0.0:9091
+    - --upstream=http://127.0.0.1:9090
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+    image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+    name: kube-rbac-proxy
+    ports:
+    - containerPort: 9091
+      name: metrics
+    resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-prometheus-user-workload-tls
+  listenLocal: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  podMonitorSelector: {}
+  priorityClassName: system-cluster-critical
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 1Gi
+  ruleNamespaceSelector: {}
+  ruleSelector: {}
+  secrets:
+  - prometheus-user-workload-tls
+  securityContext: {}
+  serviceAccountName: prometheus-user-workload
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector: {}
+  thanos:
+    baseImage: quay.io/openshift/origin-thanos
+    version: latest
+  version: v2.7.1
