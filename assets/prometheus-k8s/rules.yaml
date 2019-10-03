@@ -282,12 +282,12 @@ spec:
         or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_memory_bytes))
         BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)
       record: cluster:capacity_memory_bytes:sum
-    - expr: sum(1 - rate(node_cpu_seconds_total{mode="idle"}[1m]) * on(namespace,
+    - expr: sum(1 - rate(node_cpu_seconds_total{mode="idle"}[2m]) * on(namespace,
         pod) group_left(node) node_namespace_pod:kube_pod_info:{})
       record: cluster:cpu_usage_cores:sum
     - expr: sum(node_memory_MemTotal_bytes{job="node-exporter"} - node_memory_MemAvailable_bytes{job="node-exporter"})
       record: cluster:memory_usage_bytes:sum
-    - expr: sum(rate(container_cpu_usage_seconds_total{namespace!~"openshift-.+",pod_name!="",container_name=""}[1m]))
+    - expr: sum(rate(container_cpu_usage_seconds_total{namespace!~"openshift-.+",pod_name!="",container_name=""}[5m]))
       record: workload:cpu_usage_cores:sum
     - expr: cluster:cpu_usage_cores:sum - workload:cpu_usage_cores:sum
       record: openshift:cpu_usage_cores:sum

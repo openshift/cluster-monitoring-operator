@@ -75,7 +75,7 @@
             record: 'cluster:capacity_memory_bytes:sum',
           },
           {
-            expr: 'sum(1 - rate(node_cpu_seconds_total{mode="idle"}[1m]) * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{})',
+            expr: 'sum(1 - rate(node_cpu_seconds_total{mode="idle"}[2m]) * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{})',
             record: 'cluster:cpu_usage_cores:sum',
           },
           {
@@ -83,7 +83,7 @@
             record: 'cluster:memory_usage_bytes:sum',
           },
           {
-            expr: 'sum(rate(container_cpu_usage_seconds_total{namespace!~"openshift-.+",pod_name!="",container_name=""}[1m]))',
+            expr: 'sum(rate(container_cpu_usage_seconds_total{namespace!~"openshift-.+",pod_name!="",container_name=""}[5m]))',
             record: 'workload:cpu_usage_cores:sum',
           },
           {
