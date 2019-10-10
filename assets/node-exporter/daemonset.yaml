@@ -24,6 +24,7 @@ spec:
         - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$
         - --no-collector.wifi
         - --collector.mountstats
+        - --collector.cpu.info
         image: openshift/prometheus-node-exporter:v0.16.0
         name: node-exporter
         resources: {}
