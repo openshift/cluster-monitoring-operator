@@ -95,7 +95,7 @@ local tlsVolumeName = 'node-exporter-tls';
                       }
                     else
                       c {
-                        args+: ['--no-collector.wifi', '--collector.mountstats' ],
+                        args+: ['--no-collector.wifi', '--collector.mountstats', '--collector.cpu.info' ],
                         resources: {},
                       },
                   super.containers,
