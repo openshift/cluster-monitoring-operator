@@ -23,7 +23,7 @@ JSONNET_VENDOR=jsonnet/jsonnetfile.lock.json jsonnet/vendor
 GO_BUILD_RECIPE=GOOS=linux CGO_ENABLED=0 go build --ldflags="-s -X $(GO_PKG)/pkg/operator.Version=$(VERSION)"
 CONTAINER_CMD:=docker run --rm \
 		-u="$(shell id -u):$(shell id -g)" \
-		-v "$(shell go env GOCACHE):/.cache/go-build" \
+		-v "$(shell go env GOCACHE):/.cache/go-build:Z" \
 		-v "$(PWD):/go/src/$(GO_PKG):Z" \
 		-w "/go/src/$(GO_PKG)" \
 		-e GO111MODULE=$(GO111MODULE) \
