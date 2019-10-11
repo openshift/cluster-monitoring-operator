@@ -43,7 +43,7 @@ clean:
 
 .PHONY: build-in-docker
 build-in-docker:
-	$(CONTAINER_CMD) $(MAKE) $(MFLAGS) build
+	$(CONTAINER_CMD) make $(MFLAGS) build
 
 .PHONY: build
 build: operator
@@ -83,7 +83,7 @@ generate: $(EMBEDMD_BIN) merge-cluster-roles pkg/manifests/bindata.go docs
 
 .PHONY: generate-in-docker
 generate-in-docker:
-	$(CONTAINER_CMD) $(MAKE) $(MFLAGS) generate
+	$(CONTAINER_CMD) make $(MFLAGS) generate
 
 jsonnet/vendor: $(JB_BINARY) jsonnet/jsonnetfile.json
 	cd jsonnet && jb install
