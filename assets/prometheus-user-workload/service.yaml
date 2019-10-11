@@ -12,9 +12,6 @@ spec:
   - name: metrics
     port: 9091
     targetPort: metrics
-  - name: grpc
-    port: 10901
-    targetPort: 10901
   selector:
     app: prometheus
     prometheus: user-workload

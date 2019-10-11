@@ -163,8 +163,15 @@ var (
 	TelemeterClientServiceMonitor         = "assets/telemeter-client/service-monitor.yaml"
 	TelemeterClientServingCertsCABundle   = "assets/telemeter-client/serving-certs-c-a-bundle.yaml"
 
-	ThanosQuerierDeployment = "assets/thanos-querier/deployment.yaml"
-	ThanosQuerierService    = "assets/thanos-querier/service.yaml"
+	ThanosQuerierDeployment         = "assets/thanos-querier/deployment.yaml"
+	ThanosQuerierService            = "assets/thanos-querier/service.yaml"
+	ThanosQuerierRoute              = "assets/thanos-querier/route.yaml"
+	ThanosQuerierOauthCookieSecret  = "assets/thanos-querier/oauth-cookie-secret.yaml"
+	ThanosQuerierHtpasswdSecret     = "assets/thanos-querier/oauth-htpasswd-secret.yaml"
+	ThanosQuerierRBACProxySecret    = "assets/thanos-querier/kube-rbac-proxy-secret.yaml"
+	ThanosQuerierServiceAccount     = "assets/thanos-querier/service-account.yaml"
+	ThanosQuerierClusterRole        = "assets/thanos-querier/cluster-role.yaml"
+	ThanosQuerierClusterRoleBinding = "assets/thanos-querier/cluster-role-binding.yaml"
 
 	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
 )
@@ -606,6 +613,17 @@ func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding,
 	return crb, nil
 }
 
+func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(ThanosQuerierClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespace
+
+	return crb, nil
+}
+
 func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusUserWorkloadClusterRoleBinding))
 	if err != nil {
@@ -619,6 +637,10 @@ func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRol
 
 func (f *Factory) PrometheusK8sClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(PrometheusK8sClusterRole))
+}
+
+func (f *Factory) ThanosQuerierClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(ThanosQuerierClusterRole))
 }
 
 func (f *Factory) PrometheusUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
@@ -753,6 +775,17 @@ func (f *Factory) PrometheusK8sServiceAccount() (*v1.ServiceAccount, error) {
 	return s, nil
 }
 
+func (f *Factory) ThanosQuerierServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(MustAssetReader(ThanosQuerierServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
 	s, err := f.NewServiceAccount(MustAssetReader(PrometheusUserWorkloadServiceAccount))
 	if err != nil {
@@ -780,24 +813,64 @@ func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) ThanosQuerierOauthCookieSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosQuerierOauthCookieSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := GeneratePassword(43)
+	if err != nil {
+		return nil, err
+	}
+	s.Data["session_secret"] = []byte(p)
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, error) {
 	s, err := f.NewSecret(MustAssetReader(PrometheusK8sHtpasswd))
 	if err != nil {
 		return nil, err
 	}
 
+	f.generateHtpasswdSecret(s, password)
+	return s, nil
+}
+
+func (f *Factory) ThanosQuerierHtpasswdSecret(password string) (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosQuerierHtpasswdSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	f.generateHtpasswdSecret(s, password)
+	return s, nil
+}
+
+func (f *Factory) generateHtpasswdSecret(s *v1.Secret, password string) {
 	// #nosec
 	// TODO: Replace this with a safer algorithm
 	h := sha1.New()
 	h.Write([]byte(password))
 	s.Data["auth"] = []byte("internal:{SHA}" + base64.StdEncoding.EncodeToString(h.Sum(nil)))
 	s.Namespace = f.namespace
-
-	return s, nil
 }
 
 func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(MustAssetReader(PrometheusRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ThanosQuerierRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosQuerierRBACProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -894,6 +967,21 @@ func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 		return nil, err
 	}
 
+	if f.config.PrometheusK8sConfig.Hostport != "" {
+		r.Spec.Host = f.config.PrometheusK8sConfig.Hostport
+	}
+	r.Namespace = f.namespace
+
+	return r, nil
+}
+
+func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
+	r, err := f.NewRoute(MustAssetReader(ThanosQuerierRoute))
+	if err != nil {
+		return nil, err
+	}
+
+	// apply hostport configuration to thanos
 	if f.config.PrometheusK8sConfig.Hostport != "" {
 		r.Spec.Host = f.config.PrometheusK8sConfig.Hostport
 	}
@@ -2055,6 +2143,9 @@ func (f *Factory) ThanosQuerierDeployment() (*appsv1.Deployment, error) {
 
 	d.Namespace = f.namespace
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.Thanos
+	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.OauthProxy
+	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
+	d.Spec.Template.Spec.Containers[3].Image = f.config.Images.PromLabelProxy
 
 	return d, nil
 }

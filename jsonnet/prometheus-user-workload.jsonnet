@@ -46,6 +46,14 @@ local discoveryRole =
     'watch',
   ]);
 
+local alertmanagerRole =
+  policyRule.new() +
+  policyRule.withApiGroups(['monitoring.coreos.com']) +
+  policyRule.withResources([
+    'alertmanagers',
+  ]) +
+  policyRule.withVerbs(['get']);
+
 {
   prometheusUserWorkload+:: $.prometheus {
     name:: 'user-workload',
@@ -71,8 +79,6 @@ local discoveryRole =
       service.mixin.spec.withPorts([
         // kube-rbac-proxy
         servicePort.newNamed('metrics', 9091, 'metrics'),
-        // thanos
-        servicePort.newNamed('grpc', 10901, 10901),
       ]),
 
     servingCertsCaBundle+:
@@ -87,7 +93,13 @@ local discoveryRole =
     // SubjectAccessReview required by the Alertmanager instances.
 
     clusterRole+:
-      clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole, discoveryRole]),
+      clusterRole.withRulesMixin([
+        authenticationRole,
+        authorizationRole,
+        namespacesRole,
+        discoveryRole,
+        alertmanagerRole,
+      ]),
 
     // This avoids creating service monitors which are already managed by the respective operators.
     rules:: {},
