@@ -32,6 +32,14 @@ local namespacesRole =
   ]) +
   policyRule.withVerbs(['get']);
 
+local alertmanagerRole =
+  policyRule.new() +
+  policyRule.withApiGroups(['monitoring.coreos.com']) +
+  policyRule.withResources([
+    'alertmanagers',
+  ]) +
+  policyRule.withVerbs(['get']);
+
 {
   prometheus+:: {
 
@@ -112,7 +120,7 @@ local namespacesRole =
     // SubjectAccessReview required by the Alertmanager instances.
 
     clusterRole+:
-      clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole]),
+      clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole, alertmanagerRole]),
 
     // The proxy secret is there to encrypt session created by the oauth proxy.
 

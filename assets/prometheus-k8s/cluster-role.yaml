@@ -31,3 +31,9 @@ rules:
   - namespaces
   verbs:
   - get
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  verbs:
+  - get

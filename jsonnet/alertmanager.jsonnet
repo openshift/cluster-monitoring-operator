@@ -5,6 +5,7 @@ local servicePort = k.core.v1.service.mixin.spec.portsType;
 local secret = k.core.v1.secret;
 local configmap = k.core.v1.configMap;
 local clusterRole = k.rbac.v1.clusterRole;
+local role = k.rbac.v1.role;
 local policyRule = clusterRole.rulesType;
 
 local authenticationRole = policyRule.new() +
@@ -20,6 +21,13 @@ local authorizationRole = policyRule.new() +
                             'subjectaccessreviews',
                           ]) +
                           policyRule.withVerbs(['create']);
+
+local alertmanagerRole = policyRule.new() +
+                         policyRule.withApiGroups(['monitoring.coreos.com']) +
+                         policyRule.withResources([
+                         'alertmanagers',
+                         ]) +
+                         policyRule.withVerbs(['get']);
 
 {
   alertmanager+:: {
@@ -108,6 +116,15 @@ local authorizationRole = policyRule.new() +
       clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
       clusterRoleBinding.withSubjects([{ kind: 'ServiceAccount', name: 'alertmanager-main', namespace: $._config.namespace }]),
 
+    // Provide a Role that can be assigned to users to allow them access to
+    // alertmanager.
+
+    role:
+      role.new() +
+      role.mixin.metadata.withName('alertmanager-access') +
+      role.mixin.metadata.withNamespace($._config.namespace) +
+      role.withRules([alertmanagerRole]),
+
     // This changes the alertmanager to be scraped with TLS, authN and authZ,
     // which are not present in kube-prometheus.
 
@@ -173,8 +190,8 @@ local authorizationRole = policyRule.new() +
                 '-http-address=',
                 '-email-domain=*',
                 '-upstream=http://localhost:9093',
-                '-openshift-sar={"resource": "namespaces", "verb": "get"}',
-                '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
+                '-openshift-sar={"group": "monitoring.coreos.com", "resource": "alertmanagers", "namespace": "openshift-monitoring", "verb": "get"}',
+                '-openshift-delegate-urls={"/": {"group": "monitoring.coreos.com", "resource": "alertmanagers", "namespace": "openshift-monitoring", "verb": "get"}}',
                 '-tls-cert=/etc/tls/private/tls.crt',
                 '-tls-key=/etc/tls/private/tls.key',
                 '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
