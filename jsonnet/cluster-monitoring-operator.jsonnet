@@ -54,7 +54,14 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
                              policyRule.withResources(['namespaces']) +
                              policyRule.withVerbs(['get']);
 
-      local rules = [namespacesRule];
+      local alertmanagerRole = policyRule.new() +
+                               policyRule.withApiGroups(['monitoring.coreos.com']) +
+                               policyRule.withResources([
+                                 'alertmanagers',
+                               ]) +
+                               policyRule.withVerbs(['get']);
+
+      local rules = [namespacesRule, alertmanagerRole];
 
       clusterRole.new() +
       clusterRole.mixin.metadata.withName('cluster-monitoring-view') +
