@@ -4,6 +4,7 @@
 # Sources: 
 # 	hack/cluster-monitoring-operator-role.yaml.in
 # 	assets/alertmanager/cluster-role.yaml
+# 	assets/alertmanager/role.yaml
 # 	assets/cluster-monitoring-operator/cluster-role.yaml
 # 	assets/grafana/cluster-role.yaml
 # 	assets/kube-state-metrics/cluster-role.yaml
@@ -128,6 +129,12 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  verbs:
+  - get
 - apiGroups:
   - ''
   resources:
