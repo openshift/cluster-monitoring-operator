@@ -42,6 +42,10 @@ local servicePort = service.spec.portsType;
                           'prometheus-k8s',
                           'openshift-monitoring',
                       ],
+                      '--store=dnssrv+_grpc._tcp.%s.%s.svc.cluster.local' % [
+                          'prometheus-user-workload',
+                          'openshift-user-workload-monitoring',
+                      ],
                     ]) + {
                       resources: {
                         requests: {

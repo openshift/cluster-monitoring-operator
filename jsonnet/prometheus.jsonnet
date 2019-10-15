@@ -41,7 +41,7 @@ local alertmanagerRole =
   policyRule.withVerbs(['get']);
 
 {
-  prometheus+:: {
+  prometheusK8s+:: {
 
     // OpenShift route to access the Prometheus UI.
 
@@ -217,6 +217,7 @@ local alertmanagerRole =
     serviceMonitorApiserver:: {},
     serviceMonitorKubeScheduler:: {},
     serviceMonitorKubeControllerManager:: {},
+    serviceMonitorCoreDNS:: {},
 
     // This changes the Prometheuses to be scraped with TLS, authN and
     // authZ, which are not present in kube-prometheus.
@@ -383,7 +384,7 @@ local alertmanagerRole =
                 },
                 {
                   mountPath: '/etc/kube-rbac-proxy',
-                  name: 'secret-' + $.prometheus.kubeRbacProxySecret.metadata.name,
+                  name: 'secret-' + $.prometheusK8s.kubeRbacProxySecret.metadata.name,
                 },
               ],
             },

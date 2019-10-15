@@ -44,6 +44,7 @@ spec:
           value: "0.0.1-snapshot"
         args:
         - "-namespace=openshift-monitoring"
+        - "-namespace-user-workload=openshift-user-workload-monitoring"
         - "-configmap=cluster-monitoring-config"
         - "-release-version=$(RELEASE_VERSION)"
         - "-logtostderr=true"

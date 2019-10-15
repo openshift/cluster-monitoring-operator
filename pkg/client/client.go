@@ -988,3 +988,21 @@ func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, er
 func (c *Client) StatusReporter() *StatusReporter {
 	return NewStatusReporter(c.oscclient.Config().ClusterOperators(), "monitoring", c.namespace, c.version)
 }
+
+func (c *Client) DeleteRoleBinding(binding *rbacv1.RoleBinding) error {
+	err := c.kclient.RbacV1().RoleBindings(binding.Namespace).Delete(binding.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+func (c *Client) DeleteRole(role *rbacv1.Role) error {
+	err := c.kclient.RbacV1().Roles(role.Namespace).Delete(role.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}

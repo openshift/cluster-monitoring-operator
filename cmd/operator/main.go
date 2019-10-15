@@ -80,6 +80,7 @@ func Main() int {
 	flagset := flag.CommandLine
 	klog.InitFlags(flagset)
 	namespace := flagset.String("namespace", "openshift-monitoring", "Namespace to deploy and manage cluster monitoring stack in.")
+	namespaceUserWorkload := flagset.String("namespace-user-workload", "openshift-user-workload-monitoring", "Namespace to deploy and manage user workload monitoring stack in.")
 	namespaceSelector := flagset.String("namespace-selector", "openshift.io/cluster-monitoring=true", "Selector for namespaces to monitor.")
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
 	kubeconfigPath := flagset.String("kubeconfig", "", "The path to the kubeconfig to connect to the apiserver with.")
@@ -123,7 +124,7 @@ func Main() int {
 		return 1
 	}
 
-	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceSelector, *configMapName, images.asMap())
+	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, images.asMap())
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

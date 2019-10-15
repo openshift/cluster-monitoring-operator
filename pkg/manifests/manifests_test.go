@@ -23,7 +23,7 @@ import (
 )
 
 func TestUnconfiguredManifests(t *testing.T) {
-	f := NewFactory("openshift-monitoring", NewDefaultConfig())
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
 	_, err := f.AlertmanagerConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -239,6 +239,86 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.PrometheusOperatorUserWorkloadServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusOperatorUserWorkloadClusterRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusOperatorUserWorkloadClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusOperatorUserWorkloadServiceAccount()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusOperatorUserWorkloadService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadServingCertsCABundle()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadServiceAccount()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadClusterRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadRoleConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadRoleList()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadRoleBindingList()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadRoleBindingConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkload()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadPrometheusServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tlsSecret := &v1.Secret{
 		Data: map[string][]byte{
 			"tls.crt": []byte("foo"),
@@ -408,7 +488,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 	d, err := f.PrometheusOperatorDeployment([]string{"default", "openshift-monitoring"})
 	if err != nil {
 		t.Fatal(err)
@@ -493,7 +573,7 @@ ingress:
 		"prom-label-proxy": "docker.io/openshift/origin-prom-label-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 	p, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc")
 	if err != nil {
 		t.Fatal(err)
@@ -578,7 +658,7 @@ k8sPrometheusAdapter:
 		"k8s-prometheus-adapter": "docker.io/openshift/origin-k8s-prometheus-adapter:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 	d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
 		"requestheader-allowed-names":        "",
 		"requestheader-extra-headers-prefix": "",
@@ -628,7 +708,7 @@ ingress:
 		"alertmanager": "docker.io/openshift/origin-prometheus-alertmanager:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 	a, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -687,7 +767,7 @@ func TestNodeExporter(t *testing.T) {
 		"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	ds, err := f.NodeExporterDaemonSet()
 	if err != nil {
@@ -711,7 +791,7 @@ func TestKubeStateMetrics(t *testing.T) {
 		"kube-rbac-proxy":    "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	d, err := f.KubeStateMetricsDeployment()
 	if err != nil {
@@ -739,7 +819,7 @@ func TestOpenShiftStateMetrics(t *testing.T) {
 		"kube-rbac-proxy":         "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	d, err := f.OpenShiftStateMetricsDeployment()
 	if err != nil {
@@ -761,7 +841,7 @@ func TestPrometheusEtcdRulesFiltered(t *testing.T) {
 	enabled := false
 	c := NewDefaultConfig()
 	c.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	r, err := f.PrometheusK8sRules()
 	if err != nil {
@@ -779,7 +859,7 @@ func TestPrometheusEtcdRules(t *testing.T) {
 	enabled := true
 	c := NewDefaultConfig()
 	c.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	r, err := f.PrometheusK8sRules()
 	if err != nil {
@@ -801,7 +881,7 @@ func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
 	enabled := false
 	c := NewDefaultConfig()
 	c.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	cms, err := f.GrafanaDashboardDefinitions()
 	if err != nil {
@@ -819,7 +899,7 @@ func TestEtcdGrafanaDashboard(t *testing.T) {
 	enabled := true
 	c := NewDefaultConfig()
 	c.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	cms, err := f.GrafanaDashboardDefinitions()
 	if err != nil {

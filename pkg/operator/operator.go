@@ -48,7 +48,7 @@ const (
 )
 
 type Operator struct {
-	namespace string
+	namespace, namespaceUserWorkload string
 
 	configMapName string
 	images        map[string]string
@@ -67,18 +67,19 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(config *rest.Config, version, namespace, namespaceSelector, configMapName string, images map[string]string) (*Operator, error) {
+func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName string, images map[string]string) (*Operator, error) {
 	c, err := client.New(config, version, namespace, namespaceSelector)
 	if err != nil {
 		return nil, err
 	}
 
 	o := &Operator{
-		images:        images,
-		configMapName: configMapName,
-		namespace:     namespace,
-		client:        c,
-		queue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
+		images:                images,
+		configMapName:         configMapName,
+		namespace:             namespace,
+		namespaceUserWorkload: namespaceUserWorkload,
+		client:                c,
+		queue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
 	}
 
 	o.secretInf = cache.NewSharedIndexInformer(
@@ -291,15 +292,17 @@ func (o *Operator) sync(key string) error {
 	config := o.Config(key)
 	config.SetImages(o.images)
 
-	factory := manifests.NewFactory(o.namespace, config)
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
 		[]*tasks.TaskSpec{
 			tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
+			tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config.UserWorkloadConfig)),
 			tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
+			tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config.UserWorkloadConfig)),
 			tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),

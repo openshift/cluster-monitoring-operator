@@ -22,6 +22,7 @@ spec:
         - --grpc-address=0.0.0.0:10901
         - --http-address=0.0.0.0:9090
         - --store=dnssrv+_grpc._tcp.prometheus-k8s.openshift-monitoring.svc.cluster.local
+        - --store=dnssrv+_grpc._tcp.prometheus-user-workload.openshift-user-workload-monitoring.svc.cluster.local
         image: quay.io/openshift/origin-thanos:latest
         livenessProbe:
           httpGet:
