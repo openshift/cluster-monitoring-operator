@@ -125,6 +125,7 @@ local discoveryRole =
     prometheus+:
       {
         spec+: {
+          overrideHonorLabels: true,
           arbitraryFSAccessThroughSMs+: {
             deny: true,
           },
