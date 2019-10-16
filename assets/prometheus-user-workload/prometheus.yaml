@@ -58,6 +58,7 @@ spec:
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
+  overrideHonorLabels: true
   podMonitorSelector: {}
   priorityClassName: system-cluster-critical
   replicas: 2
