@@ -47,7 +47,7 @@ func NewPrometheusClient(
 	routeClient routev1.RouteV1Interface,
 	kubeClient kubernetes.Interface,
 ) (*PrometheusClient, error) {
-	route, err := routeClient.Routes("openshift-monitoring").Get("prometheus-k8s", metav1.GetOptions{})
+	route, err := routeClient.Routes("openshift-monitoring").Get("thanos-querier", metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

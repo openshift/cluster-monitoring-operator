@@ -96,8 +96,6 @@ local alertmanagerRole =
       service.mixin.spec.withPorts([
         servicePort.newNamed('web', 9091, 'web'),
         servicePort.newNamed('tenancy', 9092, 'tenancy'),
-        // thanos
-        servicePort.newNamed('grpc', 10901, 10901),
       ]),
 
     servingCertsCaBundle+:

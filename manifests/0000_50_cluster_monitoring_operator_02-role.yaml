@@ -23,6 +23,7 @@
 # 	assets/prometheus-user-workload/role-config.yaml
 # 	assets/prometheus-user-workload/role-specific-namespaces.yaml
 # 	assets/telemeter-client/cluster-role.yaml
+# 	assets/thanos-querier/cluster-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
