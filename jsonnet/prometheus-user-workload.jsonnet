@@ -121,7 +121,7 @@ local alertmanagerRole =
         spec+: {
           endpoints: [
             {
-              port: 'web',
+              port: 'metrics',
               interval: '30s',
               scheme: 'https',
               tlsConfig: {
