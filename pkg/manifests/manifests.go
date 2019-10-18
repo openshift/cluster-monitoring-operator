@@ -990,7 +990,7 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 	return r, nil
 }
 
-func (f *Factory) SharingConfig(promHost, amHost, grafanaHost *url.URL) *v1.ConfigMap {
+func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sharing-config",
@@ -1000,6 +1000,7 @@ func (f *Factory) SharingConfig(promHost, amHost, grafanaHost *url.URL) *v1.Conf
 			"grafanaURL":      grafanaHost.String(),
 			"prometheusURL":   promHost.String(),
 			"alertmanagerURL": amHost.String(),
+			"thanosURL":       thanosHost.String(),
 		},
 	}
 }
