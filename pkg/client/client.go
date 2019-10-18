@@ -664,7 +664,7 @@ func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 			return true, nil
 		}
 		lastErr = fmt.Errorf("daemonset %s is not ready. status: (desired: %d, updated: %d, ready: %d, unavailable: %d)",
-			d.Name, d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled, d.Status.NumberReady, d.Status.NumberAvailable)
+			d.Name, d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled, d.Status.NumberReady, d.Status.NumberUnavailable)
 		return false, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
