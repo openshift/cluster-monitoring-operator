@@ -80,7 +80,7 @@ func testMain(m *testing.M) error {
 			body []byte
 			v    int
 		)
-		body, loopErr = f.PrometheusK8sClient.Query("count(up{job=\"prometheus-k8s\"})")
+		body, loopErr = f.ThanosQuerierClient.Query("count(up{job=\"prometheus-k8s\"})")
 		if loopErr != nil {
 			return false, nil
 		}
@@ -122,7 +122,7 @@ func TestTargetsUp(t *testing.T) {
 	}
 
 	for _, target := range targets {
-		f.PrometheusK8sClient.WaitForQueryReturnOne(
+		f.ThanosQuerierClient.WaitForQueryReturnOne(
 			t,
 			time.Minute,
 			"max(up{job=\""+target+"\"})",
@@ -134,7 +134,7 @@ func TestTargetsUp(t *testing.T) {
 // Once we have the need to test multiple recording rules, we can unite them in
 // a single test function.
 func TestMemoryUsageRecordingRule(t *testing.T) {
-	f.PrometheusK8sClient.WaitForQueryReturnGreaterEqualOne(
+	f.ThanosQuerierClient.WaitForQueryReturnGreaterEqualOne(
 		t,
 		time.Minute,
 		"count(namespace:container_memory_usage_bytes:sum)",

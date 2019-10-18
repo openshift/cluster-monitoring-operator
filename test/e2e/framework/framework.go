@@ -38,18 +38,21 @@ import (
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
-var namespaceName = "openshift-monitoring"
+var (
+	namespaceName             = "openshift-monitoring"
+	userWorkloadNamespaceName = "openshift-user-workload-monitoring"
+)
 
 type Framework struct {
-	OperatorClient      *client.Client
-	CRDClient           crdc.CustomResourceDefinitionInterface
-	KubeClient          kubernetes.Interface
-	PrometheusK8sClient *PrometheusClient
-	APIServicesClient   *apiservicesclient.Clientset
-	MetricsClient       *metricsclient.Clientset
+	OperatorClient                           *client.Client
+	CRDClient                                crdc.CustomResourceDefinitionInterface
+	KubeClient                               kubernetes.Interface
+	ThanosQuerierClient, PrometheusK8sClient *PrometheusClient
+	APIServicesClient                        *apiservicesclient.Clientset
+	MetricsClient                            *metricsclient.Clientset
 
-	MonitoringClient *monClient.MonitoringV1Client
-	Ns               string
+	MonitoringClient             *monClient.MonitoringV1Client
+	Ns, UserWorkloadMonitoringNs string
 }
 
 // New returns a new cluster monitoring operator end-to-end test framework and
@@ -98,13 +101,14 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	}
 
 	f := &Framework{
-		OperatorClient:    operatorClient,
-		KubeClient:        kubeClient,
-		CRDClient:         crdClient,
-		APIServicesClient: apiServicesClient,
-		MetricsClient:     metricsClient,
-		MonitoringClient:  mClient,
-		Ns:                namespaceName,
+		OperatorClient:           operatorClient,
+		KubeClient:               kubeClient,
+		CRDClient:                crdClient,
+		APIServicesClient:        apiServicesClient,
+		MetricsClient:            metricsClient,
+		MonitoringClient:         mClient,
+		Ns:                       namespaceName,
+		UserWorkloadMonitoringNs: userWorkloadNamespaceName,
 	}
 
 	cleanUp, err := f.setup()
@@ -113,7 +117,17 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	}
 
 	// Prometheus client depends on setup above.
-	f.PrometheusK8sClient, err = NewPrometheusClient(openshiftRouteClient, kubeClient)
+	f.ThanosQuerierClient, err = NewPrometheusClient(
+		openshiftRouteClient, kubeClient,
+		"openshift-monitoring", "thanos-querier",
+	)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating prometheusK8sClient failed")
+	}
+	f.PrometheusK8sClient, err = NewPrometheusClient(
+		openshiftRouteClient, kubeClient,
+		"openshift-monitoring", "prometheus-k8s",
+	)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating prometheusK8sClient failed")
 	}
