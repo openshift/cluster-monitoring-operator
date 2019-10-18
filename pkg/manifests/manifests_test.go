@@ -29,7 +29,42 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.ThanosQuerierClusterRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosQuerierClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.ThanosQuerierDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosQuerierServiceAccount()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosQuerierOauthCookieSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosQuerierHtpasswdSecret("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosQuerierRBACProxySecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosQuerierRoute()
 	if err != nil {
 		t.Fatal(err)
 	}
