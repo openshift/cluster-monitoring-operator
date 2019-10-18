@@ -63,7 +63,17 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "failed to retrieve Grafana host")
 	}
 
-	cm := t.factory.SharingConfig(promURL, amURL, grafanaURL)
+	thanosRoute, err := t.factory.ThanosQuerierRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Querier Route failed")
+	}
+
+	thanosURL, err := t.client.GetRouteURL(thanosRoute)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
+	}
+
+	cm := t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
 	err = t.client.CreateOrUpdateConfigMap(cm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Sharing Config ConfigMap failed")
