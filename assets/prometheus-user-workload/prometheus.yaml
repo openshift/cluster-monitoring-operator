@@ -59,6 +59,7 @@ spec:
   nodeSelector:
     kubernetes.io/os: linux
   overrideHonorLabels: true
+  overrideHonorTimestamps: true
   podMonitorSelector: {}
   priorityClassName: system-cluster-critical
   replicas: 2
