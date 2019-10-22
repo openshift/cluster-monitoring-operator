@@ -137,6 +137,7 @@ local alertmanagerRole =
     prometheus+:
       {
         spec+: {
+          overrideHonorTimestamps: true,
           overrideHonorLabels: true,
           arbitraryFSAccessThroughSMs+: {
             deny: true,
