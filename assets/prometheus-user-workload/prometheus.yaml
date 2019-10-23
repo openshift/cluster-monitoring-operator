@@ -55,6 +55,7 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-user-workload-tls
+  ignoreNamespaceSelectors: true
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
