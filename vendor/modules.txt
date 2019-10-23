@@ -4,13 +4,17 @@ github.com/Jeffail/gabs
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
+# github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4
+github.com/alecthomas/units
 # github.com/ant31/crd-validation v0.0.0-20180801212718-38f6a293f140
 github.com/ant31/crd-validation/pkg
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
 # github.com/blang/semver v3.5.1+incompatible
 github.com/blang/semver
-# github.com/coreos/prometheus-operator v0.0.0-00010101000000-000000000000 => github.com/coreos/prometheus-operator v0.33.0
+# github.com/cespare/xxhash v1.1.0
+github.com/cespare/xxhash
+# github.com/coreos/prometheus-operator v0.32.1-0.20191022141338-971190798bb6
 github.com/coreos/prometheus-operator/pkg/alertmanager
 github.com/coreos/prometheus-operator/pkg/apis/monitoring
 github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1
@@ -23,7 +27,9 @@ github.com/coreos/prometheus-operator/pkg/listwatch
 github.com/coreos/prometheus-operator/pkg/client/versioned/scheme
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/emicklei/go-restful v2.8.0+incompatible
+# github.com/edsrzf/mmap-go v1.0.0
+github.com/edsrzf/mmap-go
+# github.com/emicklei/go-restful v2.9.5+incompatible
 github.com/emicklei/go-restful
 github.com/emicklei/go-restful/log
 # github.com/ghodss/yaml v1.0.0
@@ -50,6 +56,8 @@ github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
+# github.com/golang/snappy v0.0.1
+github.com/golang/snappy
 # github.com/google/go-cmp v0.3.1
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
@@ -85,11 +93,13 @@ github.com/mitchellh/hashstructure
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
+# github.com/oklog/ulid v1.3.1
+github.com/oklog/ulid
 # github.com/openshift/api v3.9.1-0.20190809235250-af7bae2945fe+incompatible
 github.com/openshift/api/config/v1
 github.com/openshift/api/route/v1
 github.com/openshift/api/security/v1
-# github.com/openshift/client-go v0.0.0-20190412095722-0255926f5393
+# github.com/openshift/client-go v0.0.0-20191022152013-2823239d2298
 github.com/openshift/client-go/config/clientset/versioned
 github.com/openshift/client-go/config/clientset/versioned/typed/config/v1
 github.com/openshift/client-go/route/clientset/versioned
@@ -99,6 +109,11 @@ github.com/openshift/client-go/config/clientset/versioned/scheme
 github.com/openshift/client-go/security/clientset/versioned/typed/security/v1
 github.com/openshift/client-go/route/clientset/versioned/scheme
 github.com/openshift/client-go/security/clientset/versioned/scheme
+# github.com/openshift/prom-label-proxy v0.1.1-0.20191016113035-b8153a7f39f1
+github.com/openshift/prom-label-proxy/injectproxy
+# github.com/opentracing/opentracing-go v1.1.0
+github.com/opentracing/opentracing-go
+github.com/opentracing/opentracing-go/log
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/prometheus/client_golang v1.1.0
@@ -114,6 +129,29 @@ github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 # github.com/prometheus/procfs v0.0.3
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
+# github.com/prometheus/prometheus v2.3.2+incompatible => github.com/prometheus/prometheus v1.8.2-0.20190819201610-48b2c9c8eae2
+github.com/prometheus/prometheus/pkg/labels
+github.com/prometheus/prometheus/promql
+github.com/prometheus/prometheus/pkg/gate
+github.com/prometheus/prometheus/pkg/textparse
+github.com/prometheus/prometheus/pkg/timestamp
+github.com/prometheus/prometheus/pkg/value
+github.com/prometheus/prometheus/storage
+github.com/prometheus/prometheus/util/stats
+github.com/prometheus/prometheus/util/strutil
+github.com/prometheus/prometheus/util/teststorage
+github.com/prometheus/prometheus/util/testutil
+github.com/prometheus/prometheus/storage/tsdb
+github.com/prometheus/prometheus/tsdb
+github.com/prometheus/prometheus/tsdb/labels
+github.com/prometheus/prometheus/tsdb/chunkenc
+github.com/prometheus/prometheus/tsdb/chunks
+github.com/prometheus/prometheus/tsdb/encoding
+github.com/prometheus/prometheus/tsdb/errors
+github.com/prometheus/prometheus/tsdb/fileutil
+github.com/prometheus/prometheus/tsdb/goversion
+github.com/prometheus/prometheus/tsdb/index
+github.com/prometheus/prometheus/tsdb/wal
 # github.com/spf13/pflag v1.0.3
 github.com/spf13/pflag
 # golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
@@ -151,9 +189,9 @@ google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/remote_api
 # gopkg.in/inf.v0 v0.9.1
 gopkg.in/inf.v0
-# gopkg.in/yaml.v2 v2.2.2
+# gopkg.in/yaml.v2 v2.2.4
 gopkg.in/yaml.v2
-# k8s.io/api v0.0.0-20190813020757-36bff7324fb7
+# k8s.io/api v0.0.0-20191016225839-816a9b7df678 => k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
 k8s.io/api/apps/v1
 k8s.io/api/core/v1
 k8s.io/api/extensions/v1beta1
@@ -163,6 +201,7 @@ k8s.io/api/admissionregistration/v1beta1
 k8s.io/api/authentication/v1
 k8s.io/api/autoscaling/v1
 k8s.io/api/policy/v1beta1
+k8s.io/api/admissionregistration/v1
 k8s.io/api/apps/v1beta2
 k8s.io/api/auditregistration/v1alpha1
 k8s.io/api/authentication/v1beta1
@@ -176,6 +215,7 @@ k8s.io/api/batch/v2alpha1
 k8s.io/api/certificates/v1beta1
 k8s.io/api/coordination/v1
 k8s.io/api/coordination/v1beta1
+k8s.io/api/discovery/v1alpha1
 k8s.io/api/events/v1beta1
 k8s.io/api/networking/v1
 k8s.io/api/networking/v1beta1
@@ -190,13 +230,15 @@ k8s.io/api/settings/v1alpha1
 k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
-# k8s.io/apiextensions-apiserver v0.0.0-20190620085554-14e95df34f1f
+# k8s.io/apiextensions-apiserver v0.0.0-20190620085554-14e95df34f1f => k8s.io/apiextensions-apiserver v0.0.0-20190918161926-8f644eb6e783
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
+k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme
-# k8s.io/apimachinery v0.0.0-20190809020650-423f5d784010
+k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+# k8s.io/apimachinery v0.0.0-20191020214737-6c8691705fc5 => k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
 k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/apis/meta/v1
 k8s.io/apimachinery/pkg/fields
@@ -213,7 +255,6 @@ k8s.io/apimachinery/pkg/labels
 k8s.io/apimachinery/pkg/util/intstr
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/pkg/util/strategicpatch
-k8s.io/apimachinery/pkg/runtime/serializer
 k8s.io/apimachinery/pkg/types
 k8s.io/apimachinery/pkg/conversion
 k8s.io/apimachinery/pkg/util/json
@@ -229,17 +270,19 @@ k8s.io/apimachinery/pkg/util/naming
 k8s.io/apimachinery/pkg/conversion/queryparams
 k8s.io/apimachinery/pkg/runtime/serializer/json
 k8s.io/apimachinery/pkg/runtime/serializer/versioning
+k8s.io/apimachinery/pkg/runtime/serializer
 k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
 k8s.io/apimachinery/pkg/util/mergepatch
 k8s.io/apimachinery/third_party/forked/golang/json
-k8s.io/apimachinery/pkg/runtime/serializer/protobuf
-k8s.io/apimachinery/pkg/runtime/serializer/recognizer
 k8s.io/apimachinery/third_party/forked/golang/reflect
 k8s.io/apimachinery/pkg/apis/meta/internalversion
+k8s.io/apimachinery/pkg/runtime/serializer/recognizer
 k8s.io/apimachinery/pkg/util/framer
+k8s.io/apimachinery/pkg/runtime/serializer/protobuf
+k8s.io/apimachinery/pkg/api/equality
 k8s.io/apimachinery/pkg/apis/meta/v1beta1
-# k8s.io/client-go v12.0.0+incompatible => k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
+# k8s.io/client-go v12.0.0+incompatible => k8s.io/client-go v0.0.0-20190918160344-1fbdaa4c8d90
 k8s.io/client-go/tools/clientcmd
 k8s.io/client-go/kubernetes
 k8s.io/client-go/rest
@@ -252,6 +295,7 @@ k8s.io/client-go/util/homedir
 k8s.io/client-go/discovery
 k8s.io/client-go/util/flowcontrol
 k8s.io/client-go/kubernetes/typed/core/v1
+k8s.io/client-go/kubernetes/typed/admissionregistration/v1
 k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1
 k8s.io/client-go/kubernetes/typed/apps/v1
 k8s.io/client-go/kubernetes/typed/apps/v1beta1
@@ -270,6 +314,7 @@ k8s.io/client-go/kubernetes/typed/batch/v2alpha1
 k8s.io/client-go/kubernetes/typed/certificates/v1beta1
 k8s.io/client-go/kubernetes/typed/coordination/v1
 k8s.io/client-go/kubernetes/typed/coordination/v1beta1
+k8s.io/client-go/kubernetes/typed/discovery/v1alpha1
 k8s.io/client-go/kubernetes/typed/events/v1beta1
 k8s.io/client-go/kubernetes/typed/extensions/v1beta1
 k8s.io/client-go/kubernetes/typed/networking/v1
@@ -303,9 +348,9 @@ k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1
 k8s.io/client-go/pkg/apis/clientauthentication/v1beta1
 k8s.io/client-go/util/connrotation
 k8s.io/client-go/util/keyutil
-# k8s.io/klog v0.4.0
+# k8s.io/klog v1.0.0
 k8s.io/klog
-# k8s.io/kube-aggregator v0.0.0-20181004124448-331c5a816775
+# k8s.io/kube-aggregator v0.0.0-20191022070332-e64142a43242
 k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset
 k8s.io/kube-aggregator/pkg/apis/apiregistration
@@ -313,10 +358,10 @@ k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistr
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 k8s.io/kube-aggregator/pkg/apis/apiregistration/v1
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/scheme
-# k8s.io/kube-openapi v0.0.0-20190722073852-5e22f3d471e6
+# k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf => k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
 k8s.io/kube-openapi/pkg/common
 k8s.io/kube-openapi/pkg/util/proto
-# k8s.io/metrics v0.0.0-20181004124939-8b490d15bb19
+# k8s.io/metrics v0.0.0-20191014074242-8b0351268f72
 k8s.io/metrics/pkg/client/clientset/versioned
 k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1alpha1
 k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1
@@ -324,7 +369,7 @@ k8s.io/metrics/pkg/apis/metrics/v1alpha1
 k8s.io/metrics/pkg/client/clientset/versioned/scheme
 k8s.io/metrics/pkg/apis/metrics/v1beta1
 k8s.io/metrics/pkg/apis/metrics
-# k8s.io/utils v0.0.0-20190809000727-6c36bc71fc4a
+# k8s.io/utils v0.0.0-20191010214722-8d271d903fe4
 k8s.io/utils/pointer
 k8s.io/utils/buffer
 k8s.io/utils/trace
