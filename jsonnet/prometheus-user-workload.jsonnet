@@ -139,6 +139,7 @@ local alertmanagerRole =
         spec+: {
           overrideHonorTimestamps: true,
           overrideHonorLabels: true,
+          ignoreNamespaceSelectors: true,
           arbitraryFSAccessThroughSMs+: {
             deny: true,
           },
