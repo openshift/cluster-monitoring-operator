@@ -41,6 +41,7 @@ const (
 	storageDir                      = "/prometheus"
 	confDir                         = "/etc/prometheus/config"
 	confOutDir                      = "/etc/prometheus/config_out"
+	tlsAssetsDir                    = "/etc/prometheus/certs"
 	rulesDir                        = "/etc/prometheus/rules"
 	secretsDir                      = "/etc/prometheus/secrets/"
 	configmapsDir                   = "/etc/prometheus/configmaps/"
@@ -497,6 +498,14 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			},
 		},
 		{
+			Name: "tls-assets",
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: tlsAssetsSecretName(p.Name),
+				},
+			},
+		},
+		{
 			Name: "config-out",
 			VolumeSource: v1.VolumeSource{
 				EmptyDir: &v1.EmptyDirVolumeSource{},
@@ -529,6 +538,11 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			Name:      "config-out",
 			ReadOnly:  true,
 			MountPath: confOutDir,
+		},
+		{
+			Name:      "tls-assets",
+			ReadOnly:  true,
+			MountPath: tlsAssetsDir,
 		},
 		{
 			Name:      volName,
@@ -596,23 +610,52 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		fmt.Sprintf("--config-envsubst-file=%s", path.Join(confOutDir, configEnvsubstFilename)),
 	}
 
+	const localProbe = `if [ -x "$(command -v curl)" ]; then curl %s; elif [ -x "$(command -v wget)" ]; then wget -q %s; else exit 1; fi`
+
 	var livenessProbeHandler v1.Handler
 	var readinessProbeHandler v1.Handler
 	var livenessFailureThreshold int32
 	if (version.Major == 1 && version.Minor >= 8) || version.Major == 2 {
-		livenessProbeHandler = v1.Handler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path: path.Clean(webRoutePrefix + "/-/healthy"),
-				Port: intstr.FromString(p.Spec.PortName),
-			},
+		{
+			healthyPath := path.Clean(webRoutePrefix + "/-/healthy")
+			if p.Spec.ListenLocal {
+				localHealthyPath := fmt.Sprintf("http://localhost:9090%s", healthyPath)
+				livenessProbeHandler.Exec = &v1.ExecAction{
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf(localProbe, localHealthyPath, localHealthyPath),
+					},
+				}
+			} else {
+				livenessProbeHandler.HTTPGet = &v1.HTTPGetAction{
+					Path: healthyPath,
+					Port: intstr.FromString(p.Spec.PortName),
+				}
+			}
 		}
-		readinessProbeHandler = v1.Handler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path: path.Clean(webRoutePrefix + "/-/ready"),
-				Port: intstr.FromString(p.Spec.PortName),
-			},
+		{
+			readyPath := path.Clean(webRoutePrefix + "/-/ready")
+			if p.Spec.ListenLocal {
+				localReadyPath := fmt.Sprintf("http://localhost:9090%s", readyPath)
+				readinessProbeHandler.Exec = &v1.ExecAction{
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf(localProbe, localReadyPath, localReadyPath),
+					},
+				}
+
+			} else {
+				readinessProbeHandler.HTTPGet = &v1.HTTPGetAction{
+					Path: readyPath,
+					Port: intstr.FromString(p.Spec.PortName),
+				}
+			}
 		}
+
 		livenessFailureThreshold = 6
+
 	} else {
 		livenessProbeHandler = v1.Handler{
 			HTTPGet: &v1.HTTPGetAction{
@@ -626,21 +669,17 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		livenessFailureThreshold = 60
 	}
 
-	var livenessProbe *v1.Probe
-	var readinessProbe *v1.Probe
-	if !p.Spec.ListenLocal {
-		livenessProbe = &v1.Probe{
-			Handler:          livenessProbeHandler,
-			PeriodSeconds:    5,
-			TimeoutSeconds:   probeTimeoutSeconds,
-			FailureThreshold: livenessFailureThreshold,
-		}
-		readinessProbe = &v1.Probe{
-			Handler:          readinessProbeHandler,
-			TimeoutSeconds:   probeTimeoutSeconds,
-			PeriodSeconds:    5,
-			FailureThreshold: 120, // Allow up to 10m on startup for data recovery
-		}
+	livenessProbe := &v1.Probe{
+		Handler:          livenessProbeHandler,
+		PeriodSeconds:    5,
+		TimeoutSeconds:   probeTimeoutSeconds,
+		FailureThreshold: livenessFailureThreshold,
+	}
+	readinessProbe := &v1.Probe{
+		Handler:          readinessProbeHandler,
+		TimeoutSeconds:   probeTimeoutSeconds,
+		PeriodSeconds:    5,
+		FailureThreshold: 120, // Allow up to 10m on startup for data recovery
 	}
 
 	podAnnotations := map[string]string{}
@@ -672,8 +711,9 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			Args: []string{
 				fmt.Sprintf("--webhook-url=%s", localReloadURL),
 			},
-			VolumeMounts: []v1.VolumeMount{},
-			Resources:    v1.ResourceRequirements{Limits: v1.ResourceList{}},
+			VolumeMounts:             []v1.VolumeMount{},
+			Resources:                v1.ResourceRequirements{Limits: v1.ResourceList{}},
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 		}
 
 		if c.ConfigReloaderCPU != "0" {
@@ -714,16 +754,21 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		if p.Spec.Thanos.Image != nil && *p.Spec.Thanos.Image != "" {
 			thanosImage = *p.Spec.Thanos.Image
 		}
+		bindAddress := "[$(POD_IP)]"
+		if p.Spec.Thanos.ListenLocal {
+			bindAddress = "127.0.0.1"
+		}
 
 		container := v1.Container{
-			Name:  "thanos-sidecar",
-			Image: thanosImage,
+			Name:                     "thanos-sidecar",
+			Image:                    thanosImage,
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 			Args: []string{
 				"sidecar",
 				fmt.Sprintf("--prometheus.url=http://%s:9090%s", c.LocalHost, path.Clean(webRoutePrefix)),
 				fmt.Sprintf("--tsdb.path=%s", storageDir),
-				"--grpc-address=[$(POD_IP)]:10901",
-				"--http-address=[$(POD_IP)]:10902",
+				fmt.Sprintf("--grpc-address=%s:10901", bindAddress),
+				fmt.Sprintf("--http-address=%s:10902", bindAddress),
 			},
 			Env: []v1.EnvVar{
 				{
@@ -801,17 +846,19 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 
 	operatorContainers := append([]v1.Container{
 		{
-			Name:           "prometheus",
-			Image:          prometheusImage,
-			Ports:          ports,
-			Args:           promArgs,
-			VolumeMounts:   promVolumeMounts,
-			LivenessProbe:  livenessProbe,
-			ReadinessProbe: readinessProbe,
-			Resources:      p.Spec.Resources,
+			Name:                     "prometheus",
+			Image:                    prometheusImage,
+			Ports:                    ports,
+			Args:                     promArgs,
+			VolumeMounts:             promVolumeMounts,
+			LivenessProbe:            livenessProbe,
+			ReadinessProbe:           readinessProbe,
+			Resources:                p.Spec.Resources,
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 		}, {
-			Name:  "prometheus-config-reloader",
-			Image: c.PrometheusConfigReloaderImage,
+			Name:                     "prometheus-config-reloader",
+			Image:                    c.PrometheusConfigReloaderImage,
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 			Env: []v1.EnvVar{
 				{
 					Name: "POD_NAME",
@@ -866,6 +913,10 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 
 func configSecretName(name string) string {
 	return prefixedName(name)
+}
+
+func tlsAssetsSecretName(name string) string {
+	return fmt.Sprintf("%s-tls-assets", prefixedName(name))
 }
 
 func volumeName(name string) string {
