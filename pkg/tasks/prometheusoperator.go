@@ -15,11 +15,14 @@
 package tasks
 
 import (
+	"reflect"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 )
 
 type PrometheusOperatorTask struct {
@@ -90,7 +93,8 @@ func (t *PrometheusOperatorTask) Run() error {
 	// deployment changed.
 	dep, err := t.client.KubernetesInterface().AppsV1beta2().Deployments(d.GetNamespace()).Get(d.GetName(), metav1.GetOptions{})
 	if err == nil {
-		if v, exists := dep.Labels["k8s-app"]; exists && v == "prometheus-operator" {
+		if !reflect.DeepEqual(dep.Spec.Selector.MatchLabels, d.Spec.Selector.MatchLabels) {
+			klog.V(4).Info("Detected a prometheus-operator deployment with an outdated Pod selector. Deleting prometheus-operator deployment with outdated selector, and re-creating with new selector.")
 			propagationPolicy := metav1.DeletePropagationForeground
 			err := t.client.KubernetesInterface().AppsV1beta2().Deployments(dep.GetNamespace()).Delete(dep.GetName(), &metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
 			if err != nil {
