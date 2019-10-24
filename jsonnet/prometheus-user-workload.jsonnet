@@ -140,6 +140,7 @@ local alertmanagerRole =
           overrideHonorTimestamps: true,
           overrideHonorLabels: true,
           ignoreNamespaceSelectors: true,
+          enforcedNamespaceLabel: 'namespace',
           arbitraryFSAccessThroughSMs+: {
             deny: true,
           },
