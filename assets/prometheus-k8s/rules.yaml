@@ -307,15 +307,15 @@ spec:
         BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_role_kubernetes_io_master_infra,
         label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)
       record: node_role_os_version_machine:cpu_capacity_cores:sum
-    - alert: ClusterMonitoringOperatorErrors
+    - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
-        message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value
-          }}% errors.
-      expr: sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100
-        / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10
-      for: 15m
+        message: Cluster Monitoring Operator is experiencing reconciliation error
+          rate of {{ printf "%0.0f" $value }}%.
+      expr: rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 /
+        rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10
+      for: 30m
       labels:
-        severity: critical
+        severity: warning
   - name: openshift-ingress.rules
     rules:
     - expr: sum by (code) (rate(haproxy_server_http_responses_total[5m]) > 0)
