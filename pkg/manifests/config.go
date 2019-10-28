@@ -43,7 +43,7 @@ type Config struct {
 	HTTPConfig             *HTTPConfig                  `json:"http"`
 	TelemeterClientConfig  *TelemeterClientConfig       `json:"telemeterClient"`
 	K8sPrometheusAdapter   *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
-	UserWorkloadConfig     *UserWorkloadConfig          `json:"userWorkload"`
+	UserWorkloadConfig     *UserWorkloadConfig          `json:"techPreviewUserWorkload"`
 }
 
 type Images struct {
