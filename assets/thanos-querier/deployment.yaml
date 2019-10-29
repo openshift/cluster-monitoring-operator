@@ -21,6 +21,11 @@ spec:
         - --query.replica-label=prometheus_replica
         - --grpc-address=127.0.0.1:10901
         - --http-address=127.0.0.1:9090
+        - --grpc-client-tls-secure
+        - --grpc-client-tls-cert=/etc/tls/grpc/client.crt
+        - --grpc-client-tls-key=/etc/tls/grpc/client.key
+        - --grpc-client-tls-ca=/etc/tls/grpc/ca.crt
+        - --grpc-client-server-name=prometheus-grpc
         - --store=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
         - --store=dnssrv+_grpc._tcp.prometheus-operated.openshift-user-workload-monitoring.svc.cluster.local
         image: quay.io/openshift/origin-thanos:latest
@@ -41,6 +46,9 @@ spec:
           requests:
             cpu: 10m
             memory: 12Mi
+        volumeMounts:
+        - mountPath: /etc/tls/grpc
+          name: secret-grpc-tls
       - args:
         - -provider=openshift
         - -https-address=:9091
