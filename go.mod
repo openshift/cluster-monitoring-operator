@@ -11,6 +11,7 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
 	github.com/openshift/api v3.9.1-0.20190809235250-af7bae2945fe+incompatible
 	github.com/openshift/client-go v0.0.0-20191022152013-2823239d2298
+	github.com/openshift/library-go v0.0.0-20191024144423-664354b88b39
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.1.0
 	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7 // indirect
@@ -18,6 +19,7 @@ require (
 	k8s.io/api v0.0.0-20191016225839-816a9b7df678
 	k8s.io/apiextensions-apiserver v0.0.0-20190620085554-14e95df34f1f
 	k8s.io/apimachinery v0.0.0-20191020214737-6c8691705fc5
+	k8s.io/apiserver v0.0.0-20191022070208-7b8c488e22f0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.0.0-20191022070332-e64142a43242
