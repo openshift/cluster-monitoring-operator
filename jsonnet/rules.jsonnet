@@ -67,8 +67,19 @@
             record: 'cluster:master_infra_nodes',
           },
           {
+            expr: 'kube_node_labels and on(node) (sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (node, package, core) == 2)',
+            labels: {
+              label_node_hyperthread_enabled: 'true',
+            },
+            record: 'cluster:hyperthread_enabled_nodes',
+          },
+          {
             expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
             record: 'cluster:capacity_cpu_cores:sum',
+          },
+          {
+            expr: 'sum(((cluster:master_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled!="true"}) or (cluster:master_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled="true"}) * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:hyperthread_enabled_nodes * on(node) group_left kube_node_status_capacity_cpu_cores)  or on(node) ((kube_node_labels unless on(node) cluster:hyperthread_enabled_nodes) * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_beta_kubernetes_io_instance_type, label_node_hyperthread_enabled, label_node_role_kubernetes_io)',
+            record: 'cluster:capacity_cpu_cores_hyperthread_enabled:sum',
           },
           {
             expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_memory_bytes) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_memory_bytes)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
@@ -107,8 +118,16 @@
             record: 'instance:etcd_object_counts:sum',
           },
           {
-            expr: 'sum((cluster:master_infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_role_kubernetes_io_master_infra, label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)',
+            expr: 'sum(((cluster:master_infra_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled!="true"}) or (cluster:master_infra_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled="true"}) * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) ((cluster:master_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled!="true"}) or (cluster:master_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled="true"}) * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) ((cluster:infra_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled!="true"}) or (cluster:infra_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled="true"}) * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:hyperthread_enabled_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) ((kube_node_labels unless on(node) cluster:hyperthread_enabled_nodes) * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_hyperthread_enabled, label_node_role_kubernetes_io_master_infra, label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)',
             record: 'node_role_os_version_machine:cpu_capacity_cores:sum',
+          },
+          {
+            expr: 'sum(((cluster:master_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled!="true"}) or (cluster:master_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled="true"}) * on(node) group_left sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (package, node)) or on(node) (cluster:hyperthread_enabled_nodes * on(node) group_left sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (package, node)) or on(node) ((kube_node_labels unless on(node) cluster:hyperthread_enabled_nodes) * on(node) group_left sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (package, node))) BY (label_beta_kubernetes_io_instance_type, label_node_hyperthread_enabled, label_node_role_kubernetes_io)',
+            record: 'cluster:capacity_cpu_sockets_hyperthread_enabled:sum',
+          },
+          {
+            expr: 'sum(((cluster:master_infra_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled!="true"}) or (cluster:master_infra_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled="true"}) * on(node) group_left sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (package, node)) or on(node) ((cluster:master_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled!="true"}) or (cluster:master_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled="true"}) * on(node) group_left sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (package, node)) or on(node) ((cluster:infra_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled!="true"}) or (cluster:infra_nodes * on(node) group_left(label_node_hyperthread_enabled) cluster:hyperthread_enabled_nodes{label_node_hyperthread_enabled="true"}) * on(node) group_left sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (package, node)) or on(node) (cluster:hyperthread_enabled_nodes * on(node) group_left sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (package, node))  or on(node) ((kube_node_labels unless on(node) cluster:hyperthread_enabled_nodes) * on(node) group_left sum(label_replace(node_cpu_info, "node", "$1", "instance", "(.*)")) by (package, node))) BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_hyperthread_enabled, label_node_role_kubernetes_io_master_infra, label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)',
+            record: 'node_role_os_version_machine:cpu_capacity_sockets:sum',
           },
           {
             expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
