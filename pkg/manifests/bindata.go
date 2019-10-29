@@ -26,6 +26,7 @@
 // assets/grafana/service-account.yaml
 // assets/grafana/service-monitor.yaml
 // assets/grafana/service.yaml
+// assets/grafana/trusted-ca-bundle.yaml
 // assets/kube-state-metrics/cluster-role-binding.yaml
 // assets/kube-state-metrics/cluster-role.yaml
 // assets/kube-state-metrics/deployment.yaml
@@ -704,6 +705,26 @@ func assetsGrafanaServiceYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/grafana/service.yaml", size: 315, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _assetsGrafanaTrustedCaBundleYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\xce\xb1\x0e\xc2\x30\x0c\x84\xe1\x3d\x4f\x61\x65\x4f\x11\x6b\x56\x66\x56\xf6\x6b\xe2\x16\x43\xeb\x44\x89\xcb\xf3\x23\xa0\x20\xb6\x1b\x3e\xfd\x3a\x54\xb9\x70\xeb\x52\x34\xd2\xe3\xe8\x32\x0c\xd1\x11\x25\x84\x71\xd3\xbc\xf0\x90\x9a\x45\xf2\xde\xdd\x45\x73\xa4\x53\xd1\x49\xe6\x33\xaa\x5b\xd9\xf0\xd5\x0b\x46\x5e\xfa\x6b\x11\xa5\xb7\x18\x4a\x65\xed\x57\x99\x6c\x90\x72\x10\xbd\x71\xb2\x60\x6d\xeb\xc6\x39\x24\x7c\xda\x91\xbc\xb5\x8d\xbd\x23\x52\xac\x1c\x69\x6e\x98\xa0\xf8\x83\xfb\x8b\x5d\xf4\x8a\xc4\x91\x7e\xed\xb0\x16\x15\x2b\x4d\x74\x76\xcf\x00\x00\x00\xff\xff\x83\x5b\x55\x7e\xc9\x00\x00\x00")
+
+func assetsGrafanaTrustedCaBundleYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsGrafanaTrustedCaBundleYaml,
+		"assets/grafana/trusted-ca-bundle.yaml",
+	)
+}
+
+func assetsGrafanaTrustedCaBundleYaml() (*asset, error) {
+	bytes, err := assetsGrafanaTrustedCaBundleYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/grafana/trusted-ca-bundle.yaml", size: 201, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2686,6 +2707,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/grafana/service-account.yaml": assetsGrafanaServiceAccountYaml,
 	"assets/grafana/service-monitor.yaml": assetsGrafanaServiceMonitorYaml,
 	"assets/grafana/service.yaml": assetsGrafanaServiceYaml,
+	"assets/grafana/trusted-ca-bundle.yaml": assetsGrafanaTrustedCaBundleYaml,
 	"assets/kube-state-metrics/cluster-role-binding.yaml": assetsKubeStateMetricsClusterRoleBindingYaml,
 	"assets/kube-state-metrics/cluster-role.yaml": assetsKubeStateMetricsClusterRoleYaml,
 	"assets/kube-state-metrics/deployment.yaml": assetsKubeStateMetricsDeploymentYaml,
@@ -2855,6 +2877,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"service-account.yaml": &bintree{assetsGrafanaServiceAccountYaml, map[string]*bintree{}},
 			"service-monitor.yaml": &bintree{assetsGrafanaServiceMonitorYaml, map[string]*bintree{}},
 			"service.yaml": &bintree{assetsGrafanaServiceYaml, map[string]*bintree{}},
+			"trusted-ca-bundle.yaml": &bintree{assetsGrafanaTrustedCaBundleYaml, map[string]*bintree{}},
 		}},
 		"kube-state-metrics": &bintree{nil, map[string]*bintree{
 			"cluster-role-binding.yaml": &bintree{assetsKubeStateMetricsClusterRoleBindingYaml, map[string]*bintree{}},
