@@ -7,6 +7,7 @@ local container = deployment.mixin.spec.template.spec.containersType;
 local volume = deployment.mixin.spec.template.spec.volumesType;
 local clusterRole = k.rbac.v1.clusterRole;
 local policyRule = clusterRole.rulesType;
+local configmap = k.core.v1.configMap;
 
 local authenticationRole =
   policyRule.new() +
@@ -73,6 +74,11 @@ local authorizationRole =
           name: 'thanos-querier',
           namespace: $._config.namespace,
         }]),
+
+      grpcTlsSecret:
+        secret.new('thanos-querier-grpc-tls', {}) +
+        secret.mixin.metadata.withNamespace($._config.namespace) +
+        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-querier' }),
 
       // holds the secret which is used encrypt/decrypt cookies
       // issued by the oauth proxy.
@@ -177,13 +183,13 @@ local authorizationRole =
                     livenessProbe: {
                       httpGet:: {},
                       exec: {
-                        command: ["sh", "-c", "curl http://localhost:9090/-/healthy"],
+                        command: ['sh', '-c', 'curl http://localhost:9090/-/healthy'],
                       },
                     },
                     readinessProbe: {
                       httpGet:: {},
                       exec: {
-                        command: ["sh", "-c", "curl http://localhost:9090/-/healthy"],
+                        command: ['sh', '-c', 'curl http://localhost:9090/-/healthy'],
                       },
                     },
                     args: [
@@ -191,15 +197,19 @@ local authorizationRole =
                       '--query.replica-label=prometheus_replica',
                       '--grpc-address=127.0.0.1:10901',
                       '--http-address=127.0.0.1:9090',
-
+                      '--grpc-client-tls-secure',
+                      '--grpc-client-tls-cert=/etc/tls/grpc/client.crt',
+                      '--grpc-client-tls-key=/etc/tls/grpc/client.key',
+                      '--grpc-client-tls-ca=/etc/tls/grpc/ca.crt',
+                      '--grpc-client-server-name=prometheus-grpc',
                       '--store=dnssrv+_grpc._tcp.%s.%s.svc.cluster.local' % [
                         'prometheus-operated',
                         'openshift-monitoring',
                       ],
 
                       '--store=dnssrv+_grpc._tcp.%s.%s.svc.cluster.local' % [
-                          'prometheus-operated',
-                          'openshift-user-workload-monitoring',
+                        'prometheus-operated',
+                        'openshift-user-workload-monitoring',
                       ],
                     ],
                     resources: {
@@ -209,6 +219,12 @@ local authorizationRole =
                       },
                     },
                     ports+:: {},
+                    volumeMounts: [
+                      {
+                        mountPath: '/etc/tls/grpc',
+                        name: 'secret-grpc-tls',
+                      },
+                    ],
                   },
                   {
                     name: 'oauth-proxy',

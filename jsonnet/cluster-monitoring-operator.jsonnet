@@ -1,4 +1,5 @@
 local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
+local secret = k.core.v1.secret;
 
 {
   _config+:: {
@@ -12,6 +13,19 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
   },
 
   clusterMonitoringOperator:: {
+    grpcTlsSecret:
+      secret.new('grpc-tls', {}).withData(
+        {
+          'ca.crt': '',
+          'ca.key': '',
+          'thanos-querier-client.crt': '',
+          'thanos-querier-client.key': '',
+          'prometheus-server.crt': '',
+          'prometheus-server.key': '',
+        }
+      ) +
+      secret.mixin.metadata.withNamespace($._config.namespace),
+
     service:
       local service = k.core.v1.service;
       local servicePort = k.core.v1.service.mixin.spec.portsType;

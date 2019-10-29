@@ -60,6 +60,11 @@ local alertmanagerRole =
     namespace:: $._config.namespaceUserWorkload,
     roleBindingNamespaces:: [$._config.namespaceUserWorkload],
 
+    grpcTlsSecret:
+      secret.new('prometheus-user-workload-grpc-tls', {}) +
+      secret.mixin.metadata.withNamespace($._config.namespaceUserWorkload) +
+      secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
+
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
     // specified secret.
@@ -212,6 +217,25 @@ local alertmanagerRole =
                 {
                   mountPath: '/etc/tls/private',
                   name: 'secret-prometheus-user-workload-tls',
+                },
+              ],
+            },
+            {
+              name: 'thanos-sidecar',
+              args: [
+                'sidecar',
+                '--prometheus.url=http://localhost:9090/',
+                '--tsdb.path=/prometheus',
+                '--grpc-address=[$(POD_IP)]:10901',
+                '--http-address=127.0.0.1:10902',
+                '--grpc-server-tls-cert=/etc/tls/grpc/server.crt',
+                '--grpc-server-tls-key=/etc/tls/grpc/server.key',
+                '--grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt',
+              ],
+              volumeMounts: [
+                {
+                  mountPath: '/etc/tls/grpc',
+                  name: 'secret-grpc-tls',
                 },
               ],
             },
