@@ -369,8 +369,16 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 	if trustedCABundleCM != nil {
 		volumeName := "alertmanager-trusted-ca-bundle"
-		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/alertmanager-ca-bundle/"))
-		a.Spec.Volumes = append(a.Spec.Volumes, trustedCABundleVolume(trustedCABundleCM.Name, volumeName))
+		volumePath := "/etc/pki/ca-trust/extracted/pem/"
+		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName, volumePath))
+		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  "ca-bundle.crt",
+			Path: "tls-ca-bundle.pem",
+		})
+		a.Spec.Volumes = append(a.Spec.Volumes, volume)
+		// We have only one container in Alertmanager CR spec and this is oauth-proxy
+		a.Spec.Containers[0].VolumeMounts = append(a.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName, volumePath))
 	}
 	a.Namespace = f.namespace
 
