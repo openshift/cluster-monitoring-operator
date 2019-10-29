@@ -129,7 +129,44 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "reconciling Thanos Querier ClusterRoleBinding failed")
 	}
 
-	dep, err := t.factory.ThanosQuerierDeployment()
+	grpcTLS, err := t.factory.GRPCSecret(nil)
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Querier GRPC secret failed")
+	}
+
+	grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Thanos Querier GRPC secret failed")
+	}
+
+	s, err = t.factory.ThanosQuerierGrpcTLSSecret()
+	if err != nil {
+		return errors.Wrap(err, "error initializing Thanos Querier Client GRPC TLS secret")
+	}
+
+	s, err = t.factory.HashSecret(s,
+		"ca.crt", string(grpcTLS.Data["ca.crt"]),
+		"client.crt", string(grpcTLS.Data["thanos-querier-client.crt"]),
+		"client.key", string(grpcTLS.Data["thanos-querier-client.key"]),
+	)
+	if err != nil {
+		return errors.Wrap(err, "error hashing Thanos Querier Client GRPC TLS secret")
+	}
+
+	err = t.client.CreateOrUpdateSecret(s)
+	if err != nil {
+		return errors.Wrap(err, "error creating Thanos Querier Client GRPC TLS secret")
+	}
+
+	err = t.client.DeleteHashedSecret(
+		string(s.Labels["monitoring.openshift.io/hash"]),
+		"thanos-querier-grpc-tls",
+	)
+	if err != nil {
+		return errors.Wrap(err, "error creating Thanos Querier Client GRPC TLS secret")
+	}
+
+	dep, err := t.factory.ThanosQuerierDeployment(s)
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier Deployment failed")
 	}

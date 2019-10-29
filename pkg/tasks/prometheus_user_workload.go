@@ -139,8 +139,45 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Service failed")
 	}
 
+	grpcTLS, err := t.factory.GRPCSecret(nil)
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus GRPC secret failed")
+	}
+
+	grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+	if err != nil {
+		return errors.Wrap(err, "waiting for UserWorkload Prometheus GRPC secret failed")
+	}
+
+	s, err := t.factory.PrometheusUserWorkloadGrpcTLSSecret()
+	if err != nil {
+		return errors.Wrap(err, "error initializing UserWorkload Prometheus Client GRPC TLS secret")
+	}
+
+	s, err = t.factory.HashSecret(s,
+		"ca.crt", string(grpcTLS.Data["ca.crt"]),
+		"server.crt", string(grpcTLS.Data["prometheus-server.crt"]),
+		"server.key", string(grpcTLS.Data["prometheus-server.key"]),
+	)
+	if err != nil {
+		return errors.Wrap(err, "error hashing UserWorkload Prometheus Client GRPC TLS secret")
+	}
+
+	err = t.client.CreateOrUpdateSecret(s)
+	if err != nil {
+		return errors.Wrap(err, "error creating UserWorkload Prometheus Client GRPC TLS secret")
+	}
+
+	err = t.client.DeleteHashedSecret(
+		string(s.Labels["monitoring.openshift.io/hash"]),
+		"prometheus-user-workload-grpc-tls",
+	)
+	if err != nil {
+		return errors.Wrap(err, "error creating UserWorkload Prometheus Client GRPC TLS secret")
+	}
+
 	klog.V(4).Info("initializing UserWorkload Prometheus object")
-	p, err := t.factory.PrometheusUserWorkload()
+	p, err := t.factory.PrometheusUserWorkload(s)
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus object failed")
 	}
@@ -159,25 +196,46 @@ func (t *PrometheusUserWorkloadTask) create() error {
 
 	smp, err := t.factory.PrometheusUserWorkloadPrometheusServiceMonitor()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Prometheus ServiceMonitor failed")
+		return errors.Wrap(err, "initializing UserWorkload Prometheus ServiceMonitor failed")
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(smp)
-	return errors.Wrap(err, "reconciling UserWorkload Prometheus Prometheus ServiceMonitor failed")
+	return errors.Wrap(err, "reconciling UserWorkload Prometheus ServiceMonitor failed")
 }
 
 func (t *PrometheusUserWorkloadTask) destroy() error {
 	smp, err := t.factory.PrometheusUserWorkloadPrometheusServiceMonitor()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Prometheus ServiceMonitor failed")
+		return errors.Wrap(err, "initializing UserWorkload Prometheus ServiceMonitor failed")
 	}
 
 	err = t.client.DeleteServiceMonitor(smp)
 	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Prometheus Prometheus ServiceMonitor failed")
+		return errors.Wrap(err, "deleting UserWorkload Prometheus ServiceMonitor failed")
 	}
 
-	p, err := t.factory.PrometheusUserWorkload()
+	grpcTLS, err := t.factory.GRPCSecret(nil)
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus GRPC secret failed")
+	}
+
+	grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+	if err != nil {
+		return errors.Wrap(err, "waiting for UserWorkload Prometheus GRPC secret failed")
+	}
+
+	s, err := t.factory.PrometheusUserWorkloadGrpcTLSSecret()
+	if err != nil {
+		return errors.Wrap(err, "error initializing Prometheus Client GRPC TLS secret")
+	}
+
+	s, err = t.factory.HashSecret(s,
+		"ca.crt", string(grpcTLS.Data["ca.crt"]),
+		"server.crt", string(grpcTLS.Data["prometheus-server.crt"]),
+		"server.key", string(grpcTLS.Data["prometheus-server.key"]),
+	)
+
+	p, err := t.factory.PrometheusUserWorkload(s)
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus object failed")
 	}
@@ -185,6 +243,11 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 	err = t.client.DeletePrometheus(p)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus object failed")
+	}
+
+	err = t.client.DeleteSecret(s)
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload Prometheus TLS secret failed")
 	}
 
 	svc, err := t.factory.PrometheusUserWorkloadService()

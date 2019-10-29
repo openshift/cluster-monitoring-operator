@@ -233,8 +233,45 @@ func (t *PrometheusTask) Run() error {
 		}
 	}
 
+	grpcTLS, err := t.factory.GRPCSecret(nil)
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus GRPC secret failed")
+	}
+
+	grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Prometheus GRPC secret failed")
+	}
+
+	s, err := t.factory.PrometheusK8sGrpcTLSSecret()
+	if err != nil {
+		return errors.Wrap(err, "error initializing Prometheus Client GRPC TLS secret")
+	}
+
+	s, err = t.factory.HashSecret(s,
+		"ca.crt", string(grpcTLS.Data["ca.crt"]),
+		"server.crt", string(grpcTLS.Data["prometheus-server.crt"]),
+		"server.key", string(grpcTLS.Data["prometheus-server.key"]),
+	)
+	if err != nil {
+		return errors.Wrap(err, "error hashing Prometheus Client GRPC TLS secret")
+	}
+
+	err = t.client.CreateOrUpdateSecret(s)
+	if err != nil {
+		return errors.Wrap(err, "error creating Prometheus Client GRPC TLS secret")
+	}
+
+	err = t.client.DeleteHashedSecret(
+		string(s.Labels["monitoring.openshift.io/hash"]),
+		"prometheus-k8s-grpc-tls",
+	)
+	if err != nil {
+		return errors.Wrap(err, "error creating Prometheus Client GRPC TLS secret")
+	}
+
 	klog.V(4).Info("initializing Prometheus object")
-	p, err := t.factory.PrometheusK8s(host)
+	p, err := t.factory.PrometheusK8s(host, s)
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus object failed")
 	}

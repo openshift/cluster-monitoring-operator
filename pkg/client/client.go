@@ -345,6 +345,25 @@ func (c *Client) DeleteHashedConfigMap(newHash, prefix string) error {
 	return nil
 }
 
+func (c *Client) DeleteHashedSecret(newHash, prefix string) error {
+	ls := "monitoring.openshift.io/name=" + prefix + ",monitoring.openshift.io/hash!=" + newHash
+	configMaps, err := c.KubernetesInterface().CoreV1().Secrets(c.namespace).List(metav1.ListOptions{
+		LabelSelector: ls,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "error listing secrets with label selector %s", ls)
+	}
+
+	for i := range configMaps.Items {
+		err := c.KubernetesInterface().CoreV1().Secrets(c.namespace).Delete(configMaps.Items[i].Name, &metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "error deleting secret: %s", configMaps.Items[i].Name)
+		}
+	}
+
+	return nil
+}
+
 func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 	p := metav1.DeletePropagationForeground
 	err := c.kclient.AppsV1().Deployments(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{PropagationPolicy: &p})
@@ -590,6 +609,40 @@ func (c *Client) WaitForStatefulsetRollout(sts *appsv1.StatefulSet) error {
 		return errors.Wrapf(err, "waiting for StatefulsetRollout of %s", sts.GetName())
 	}
 	return nil
+}
+
+func (c *Client) WaitForSecret(s *v1.Secret) (*v1.Secret, error) {
+	var result *v1.Secret
+	var lastErr error
+	if err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
+		var err error
+		result, err = c.kclient.CoreV1().Secrets(s.Namespace).Get(s.Name, metav1.GetOptions{})
+
+		if apierrors.IsNotFound(err) {
+			lastErr = err
+			return false, nil
+		}
+
+		if err != nil {
+			return false, err
+		}
+
+		for _, v := range result.Data {
+			if len(v) == 0 {
+				lastErr = errors.New("secret contains no data")
+				return false, nil
+			}
+		}
+
+		return true, nil
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return nil, errors.Wrapf(err, "waiting for secret %s", s.GetName())
+	}
+
+	return result, nil
 }
 
 func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
