@@ -129,6 +129,7 @@ var (
 	GrafanaServiceAccount       = "assets/grafana/service-account.yaml"
 	GrafanaService              = "assets/grafana/service.yaml"
 	GrafanaServiceMonitor       = "assets/grafana/service-monitor.yaml"
+	GrafanaTrustedCABundle      = "assets/grafana/trusted-ca-bundle.yaml"
 
 	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
@@ -1326,7 +1327,19 @@ func (f *Factory) GrafanaDashboardSources() (*v1.ConfigMap, error) {
 	return c, nil
 }
 
-func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) GrafanaTrustedCABundle() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(GrafanaTrustedCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
+}
+
+// GrafanaDeployment generates a new Deployment for Grafana.
+// If the passed ConfigMap is not empty it mounts the Trusted CA Bundle as a VolumeMount to
+// /etc/pki/ca-trust/extracted/pem/ location.
+func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(MustAssetReader(GrafanaDeployment))
 	if err != nil {
 		return nil, err
@@ -1378,6 +1391,17 @@ func (f *Factory) GrafanaDeployment() (*appsv1.Deployment, error) {
 
 	if len(f.config.GrafanaConfig.Tolerations) > 0 {
 		d.Spec.Template.Spec.Tolerations = f.config.GrafanaConfig.Tolerations
+	}
+
+	if proxyCABundleCM != nil {
+		volumeName := "grafana-trusted-ca-bundle"
+		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/ca-trust/extracted/pem/"))
+		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  "ca-bundle.crt",
+			Path: "tls-ca-bundle.pem",
+		})
+		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
 	}
 
 	d.Namespace = f.namespace
