@@ -88,6 +88,10 @@ local authorizationRole = policyRule.new() +
   },
 
   grafana+:: {
+    trustedCaBundle:
+      configmap.new('grafana-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
+      configmap.mixin.metadata.withNamespace($._config.namespace) +
+      configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
 
     // OpenShift route to access the Grafana UI.
 

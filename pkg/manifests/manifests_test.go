@@ -448,7 +448,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.GrafanaDeployment()
+	_, err = f.GrafanaTrustedCABundle()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.GrafanaDeployment(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -489,6 +494,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.ClusterMonitoringOperatorServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.TelemeterClientDeployment(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
