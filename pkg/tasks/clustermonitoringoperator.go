@@ -18,6 +18,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type ClusterMonitoringOperatorTask struct {
@@ -59,5 +60,29 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(smcmo)
-	return errors.Wrap(err, "reconciling Cluster Monitoring Operator ServiceMonitor failed")
+	if err != nil {
+		return errors.Wrap(err, "reconciling Cluster Monitoring Operator ServiceMonitor failed")
+	}
+
+	s, err := t.client.GetSecret("openshift-monitoring", "grpc-tls")
+	if apierrors.IsNotFound(err) {
+		err = nil
+		s = nil // this will be a zero value if it was not found
+	}
+
+	if err != nil {
+		return errors.Wrap(err, "error reading Cluster Monitoring Operator GRPC TLS secret")
+	}
+
+	s, err = t.factory.GRPCSecret(s)
+	if err != nil {
+		return errors.Wrap(err, "error initializing Cluster Monitoring Operator GRPC TLS secret")
+	}
+
+	err = t.client.CreateOrUpdateSecret(s)
+	if err != nil {
+		return errors.Wrap(err, "error creating Cluster Monitoring Operator GRPC TLS secret")
+	}
+
+	return nil
 }

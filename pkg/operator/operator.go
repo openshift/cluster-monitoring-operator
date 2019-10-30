@@ -45,6 +45,7 @@ const (
 	etcdClientCAConfigMap         = "openshift-config/etcd-metrics-serving-ca"
 	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
+	grpcTLS                       = "openshift-monitoring/grpc-tls"
 )
 
 type Operator struct {
@@ -171,6 +172,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	}
 
 	go o.cmapInf.Run(stopc)
+	go o.secretInf.Run(stopc)
 	go o.kubeSystemCmapInf.Run(stopc)
 
 	klog.V(4).Info("Waiting for initial cache sync.")
@@ -235,6 +237,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case etcdClientCAConfigMap:
 	case telemeterCABundleConfigMap:
 	case alertmanagerCABundleConfigMap:
+	case grpcTLS:
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return

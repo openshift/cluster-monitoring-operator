@@ -20,11 +20,116 @@ import (
 	"testing"
 
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestHashSecret(t *testing.T) {
+	for _, tt := range []struct {
+		name            string
+		data            []string
+		given, expected *v1.Secret
+		errExpected     bool
+	}{
+		{
+			name:  "no data",
+			given: &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			expected: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foo-cnskssi2248p5",
+					Labels: map[string]string{
+						"monitoring.openshift.io/hash": "cnskssi2248p5",
+						"monitoring.openshift.io/name": "foo",
+					},
+				},
+				Data: make(map[string][]byte),
+			},
+		},
+		{
+			name:  "one entry",
+			given: &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			data:  []string{"key1", "value1"},
+			expected: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foo-3dquk0q6eln15",
+					Labels: map[string]string{
+						"monitoring.openshift.io/hash": "3dquk0q6eln15",
+						"monitoring.openshift.io/name": "foo",
+					},
+				},
+				Data: map[string][]byte{
+					"key1": []byte("value1"),
+				},
+			},
+		},
+		{
+			name:  "one valid one invalid entry",
+			given: &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			data:  []string{"key1", "value1", "key2"},
+			expected: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foo-3dquk0q6eln15",
+					Labels: map[string]string{
+						"monitoring.openshift.io/hash": "3dquk0q6eln15",
+						"monitoring.openshift.io/name": "foo",
+					},
+				},
+				Data: map[string][]byte{
+					"key1": []byte("value1"),
+				},
+			},
+		},
+		{
+			name:  "two entries",
+			given: &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			data:  []string{"key1", "value1", "key2", "value2"},
+			expected: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foo-bfcd7k3kr4396",
+					Labels: map[string]string{
+						"monitoring.openshift.io/hash": "bfcd7k3kr4396",
+						"monitoring.openshift.io/name": "foo",
+					},
+				},
+				Data: map[string][]byte{
+					"key1": []byte("value1"),
+					"key2": []byte("value2"),
+				},
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
+			s, err := f.HashSecret(tt.given, tt.data...)
+			if got := err != nil; got != tt.errExpected {
+				t.Errorf("expected error %t, got %t, err %v", tt.errExpected, got, err)
+				return
+			}
+
+			if !reflect.DeepEqual(s, tt.expected) {
+				t.Errorf("expected secret to be equal, but it isn't. got %v, expected %v", s, tt.expected)
+			}
+		})
+	}
+}
 
 func TestUnconfiguredManifests(t *testing.T) {
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
 	_, err := f.AlertmanagerConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusK8sGrpcTLSSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusUserWorkloadGrpcTLSSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosQuerierGrpcTLSSecret()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +144,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ThanosQuerierDeployment()
+	_, err = f.ThanosQuerierDeployment(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,7 +314,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc")
+	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -344,7 +449,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusUserWorkload()
+	_, err = f.PrometheusUserWorkload(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -619,7 +724,7 @@ ingress:
 	})
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
-	p, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc")
+	p, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -95,6 +95,7 @@ var (
 	PrometheusK8sEtcdServiceMonitor       = "assets/prometheus-k8s/service-monitor-etcd.yaml"
 	PrometheusK8sServingCertsCABundle     = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle   = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
+	PrometheusK8sGrpcTLSSecret            = "assets/prometheus-k8s/grpc-tls-secret.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle     = "assets/prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount           = "assets/prometheus-user-workload/service-account.yaml"
@@ -107,6 +108,7 @@ var (
 	PrometheusUserWorkloadService                  = "assets/prometheus-user-workload/service.yaml"
 	PrometheusUserWorkload                         = "assets/prometheus-user-workload/prometheus.yaml"
 	PrometheusUserWorkloadPrometheusServiceMonitor = "assets/prometheus-user-workload/service-monitor.yaml"
+	PrometheusUserWorkloadGrpcTLSSecret            = "assets/prometheus-user-workload/grpc-tls-secret.yaml"
 
 	PrometheusAdapterAPIService                         = "assets/prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "assets/prometheus-adapter/cluster-role.yaml"
@@ -153,6 +155,7 @@ var (
 	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
+	ClusterMonitoringGrpcTLSSecret          = "assets/cluster-monitoring-operator/grpc-tls-secret.yaml"
 
 	TelemeterClientClusterRole            = "assets/telemeter-client/cluster-role.yaml"
 	TelemeterClientClusterRoleBinding     = "assets/telemeter-client/cluster-role-binding.yaml"
@@ -173,6 +176,7 @@ var (
 	ThanosQuerierServiceAccount     = "assets/thanos-querier/service-account.yaml"
 	ThanosQuerierClusterRole        = "assets/thanos-querier/cluster-role.yaml"
 	ThanosQuerierClusterRoleBinding = "assets/thanos-querier/cluster-role-binding.yaml"
+	ThanosQuerierGrpcTLSSecret      = "assets/thanos-querier/grpc-tls-secret.yaml"
 
 	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
 )
@@ -814,6 +818,39 @@ func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) PrometheusK8sGrpcTLSSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(PrometheusK8sGrpcTLSSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadGrpcTLSSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(PrometheusUserWorkloadGrpcTLSSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) ThanosQuerierGrpcTLSSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosQuerierGrpcTLSSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) ThanosQuerierOauthCookieSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(MustAssetReader(ThanosQuerierOauthCookieSecret))
 	if err != nil {
@@ -1006,7 +1043,7 @@ func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.U
 	}
 }
 
-func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(MustAssetReader(PrometheusK8s))
 	if err != nil {
 		return nil, err
@@ -1085,10 +1122,19 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
 	}
 
+	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
+		Name: "secret-grpc-tls",
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: grpcTLS.GetName(),
+			},
+		},
+	})
+
 	return p, nil
 }
 
-func (f *Factory) PrometheusUserWorkload() (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(MustAssetReader(PrometheusUserWorkload))
 	if err != nil {
 		return nil, err
@@ -1134,6 +1180,15 @@ func (f *Factory) PrometheusUserWorkload() (*monv1.Prometheus, error) {
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespaceUserWorkload
+
+	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
+		Name: "secret-grpc-tls",
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: grpcTLS.GetName(),
+			},
+		},
+	})
 
 	return p, nil
 }
@@ -2160,7 +2215,7 @@ func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error
 	return NewClusterRole(manifest)
 }
 
-func (f *Factory) ThanosQuerierDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(MustAssetReader(ThanosQuerierDeployment))
 	if err != nil {
 		return nil, err
@@ -2171,6 +2226,15 @@ func (f *Factory) ThanosQuerierDeployment() (*appsv1.Deployment, error) {
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.OauthProxy
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
 	d.Spec.Template.Spec.Containers[3].Image = f.config.Images.PromLabelProxy
+
+	d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, v1.Volume{
+		Name: "secret-grpc-tls",
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: grpcTLS.GetName(),
+			},
+		},
+	})
 
 	return d, nil
 }
@@ -2608,6 +2672,45 @@ func (f *Factory) HashTrustedCA(caBundleCM *v1.ConfigMap, prefix string) *v1.Con
 			"ca-bundle.crt": caBundle,
 		},
 	}
+}
+
+// HashSecret synthesizes a secret by setting the given data
+// and naming it by hashing the values of the given data.
+//
+// For simplicity, data is expected to be given in a key-value format,
+// i.e. HashSecret(someSecret, value1, key1, value2, key2, ...).
+//
+// It adds "monitoring.openshift.io/name" and "monitoring.openshift.io/hash" labels.
+// Any other labels from the given secret are discarded.
+//
+// It still returns a secret if the given secret does not contain any data.
+func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, error) {
+	h := fnv.New64()
+	m := make(map[string][]byte)
+
+	var err error
+	for i := 0; i < len(data)/2; i++ {
+		k := data[i*2]
+		v := []byte(data[i*2+1])
+		_, err = h.Write(v)
+		m[k] = v
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "error hashing tls data")
+	}
+	hash := strconv.FormatUint(h.Sum64(), 32)
+
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: secret.GetNamespace(),
+			Name:      fmt.Sprintf("%s-%s", secret.GetName(), hash),
+			Labels: map[string]string{
+				"monitoring.openshift.io/name": secret.GetName(),
+				"monitoring.openshift.io/hash": hash,
+			},
+		},
+		Data: m,
+	}, nil
 }
 
 func trustedCABundleVolumeMount(name, path string) v1.VolumeMount {

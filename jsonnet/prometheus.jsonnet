@@ -42,6 +42,10 @@ local alertmanagerRole =
 
 {
   prometheusK8s+:: {
+    grpcTlsSecret:
+      secret.new('prometheus-k8s-grpc-tls', {}) +
+      secret.mixin.metadata.withNamespace($._config.namespace) +
+      secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
 
     // OpenShift route to access the Prometheus UI.
 
@@ -303,16 +307,16 @@ local alertmanagerRole =
               ],
               env: [
                 {
-                  name: "HTTP_PROXY",
-                  value: "",
+                  name: 'HTTP_PROXY',
+                  value: '',
                 },
                 {
-                  name: "HTTPS_PROXY",
-                  value: "",
+                  name: 'HTTPS_PROXY',
+                  value: '',
                 },
                 {
-                  name: "NO_PROXY",
-                  value: "",
+                  name: 'NO_PROXY',
+                  value: '',
                 },
               ],
               args: [
@@ -401,6 +405,25 @@ local alertmanagerRole =
                 },
               },
               terminationMessagePolicy: 'FallbackToLogsOnError',
+            },
+            {
+              name: 'thanos-sidecar',
+              args: [
+                'sidecar',
+                '--prometheus.url=http://localhost:9090/',
+                '--tsdb.path=/prometheus',
+                '--grpc-address=[$(POD_IP)]:10901',
+                '--http-address=127.0.0.1:10902',
+                '--grpc-server-tls-cert=/etc/tls/grpc/server.crt',
+                '--grpc-server-tls-key=/etc/tls/grpc/server.key',
+                '--grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt',
+              ],
+              volumeMounts: [
+                {
+                  mountPath: '/etc/tls/grpc',
+                  name: 'secret-grpc-tls',
+                },
+              ],
             },
           ],
         },
