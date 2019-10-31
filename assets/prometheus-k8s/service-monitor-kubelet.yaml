@@ -11,6 +11,10 @@ spec:
     honorLabels: true
     interval: 30s
     port: https-metrics
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
@@ -25,6 +29,10 @@ spec:
       - __name__
     path: /metrics/cadvisor
     port: https-metrics
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
