@@ -36,6 +36,7 @@ spec:
         - --match={__name__="cluster_installer"}
         - --match={__name__="cluster_infrastructure_provider"}
         - --match={__name__="cluster_feature_set"}
+        - --match={__name__="cluster_control_plane_architecture"}
         - --match={__name__="node_uname_info"}
         - --match={__name__="instance:etcd_object_counts:sum"}
         - --match={__name__="ALERTS",alertstate="firing"}
