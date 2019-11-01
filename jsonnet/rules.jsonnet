@@ -107,7 +107,7 @@
             record: 'instance:etcd_object_counts:sum',
           },
           {
-            expr: 'sum((cluster:master_infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_node_openshift_io_os_id, label_kubernetes_io_arch, label_node_role_kubernetes_io_master_infra, label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)',
+            expr: 'sum((cluster:master_infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (cluster:infra_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_node_openshift_io_os_id, label_beta_kubernetes_io_arch, label_node_role_kubernetes_io_master_infra, label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)',
             record: 'node_role_os_version_machine:cpu_capacity_cores:sum',
           },
           {
