@@ -29,9 +29,7 @@ local authorizationRole =
   local config = super._config,
 
   thanos+:: {
-    variables+:: {
-      image: config.imageRepos.openshiftThanos + ':' + config.versions.openshiftThanos,
-    },
+    image:: config.imageRepos.openshiftThanos + ':' + config.versions.openshiftThanos,
 
     querier+: {
       route: {

@@ -37,12 +37,8 @@ spec:
         )
       record: instance:node_memory_utilisation:ratio
     - expr: |
-        (
-          rate(node_vmstat_pgpgin{job="node-exporter"}[1m])
-        +
-          rate(node_vmstat_pgpgout{job="node-exporter"}[1m])
-        )
-      record: instance:node_memory_swap_io_pages:rate1m
+        rate(node_vmstat_pgmajfault{job="node-exporter"}[1m])
+      record: instance:node_vmstat_pgmajfault:rate1m
     - expr: |
         rate(node_disk_io_time_seconds_total{job="node-exporter", device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+"}[1m])
       record: instance_device:node_disk_io_time_seconds:rate1m
@@ -69,6 +65,23 @@ spec:
           rate(node_network_transmit_drop_total{job="node-exporter", device!="lo"}[1m])
         )
       record: instance:node_network_transmit_drop_excluding_lo:rate1m
+  - name: kube-apiserver.rules
+    rules:
+    - expr: |
+        histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
+      labels:
+        quantile: "0.99"
+      record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
+    - expr: |
+        histogram_quantile(0.9, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
+      labels:
+        quantile: "0.9"
+      record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
+    - expr: |
+        histogram_quantile(0.5, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
+      labels:
+        quantile: "0.5"
+      record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
   - name: k8s.rules
     rules:
     - expr: |
@@ -77,21 +90,37 @@ spec:
     - expr: |
         sum by (namespace, pod, container) (
           rate(container_cpu_usage_seconds_total{job="kubelet", image!="", container!="POD"}[5m])
-        )
-      record: namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
+        ) * on (namespace, pod) group_left(node) max by(namespace, pod, node) (kube_pod_info)
+      record: node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
+    - expr: |
+        container_memory_working_set_bytes{job="kubelet", image!=""}
+        * on (namespace, pod) group_left(node) max by(namespace, pod, node) (kube_pod_info)
+      record: node_namespace_pod_container:container_memory_working_set_bytes
+    - expr: |
+        container_memory_rss{job="kubelet", image!=""}
+        * on (namespace, pod) group_left(node) max by(namespace, pod, node) (kube_pod_info)
+      record: node_namespace_pod_container:container_memory_rss
+    - expr: |
+        container_memory_cache{job="kubelet", image!=""}
+        * on (namespace, pod) group_left(node) max by(namespace, pod, node) (kube_pod_info)
+      record: node_namespace_pod_container:container_memory_cache
+    - expr: |
+        container_memory_swap{job="kubelet", image!=""}
+        * on (namespace, pod) group_left(node) max by(namespace, pod, node) (kube_pod_info)
+      record: node_namespace_pod_container:container_memory_swap
     - expr: |
         sum(container_memory_usage_bytes{job="kubelet", image!="", container!="POD"}) by (namespace)
       record: namespace:container_memory_usage_bytes:sum
     - expr: |
         sum by (namespace, label_name) (
-            sum(kube_pod_container_resource_requests_memory_bytes{job="kube-state-metrics"} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"^(Pending|Running)$"} == 1)) by (namespace, pod)
+            sum(kube_pod_container_resource_requests_memory_bytes{job="kube-state-metrics"} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"Pending|Running"} == 1)) by (namespace, pod)
           * on (namespace, pod)
             group_left(label_name) kube_pod_labels{job="kube-state-metrics"}
         )
       record: namespace:kube_pod_container_resource_requests_memory_bytes:sum
     - expr: |
         sum by (namespace, label_name) (
-            sum(kube_pod_container_resource_requests_cpu_cores{job="kube-state-metrics"} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"^(Pending|Running)$"} == 1)) by (namespace, pod)
+            sum(kube_pod_container_resource_requests_cpu_cores{job="kube-state-metrics"} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"Pending|Running"} == 1)) by (namespace, pod)
           * on (namespace, pod)
             group_left(label_name) kube_pod_labels{job="kube-state-metrics"}
         )
@@ -176,23 +205,6 @@ spec:
       labels:
         quantile: "0.5"
       record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
-  - name: kube-apiserver.rules
-    rules:
-    - expr: |
-        histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
-      labels:
-        quantile: "0.99"
-      record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
-    - expr: |
-        histogram_quantile(0.9, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
-      labels:
-        quantile: "0.9"
-      record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
-    - expr: |
-        histogram_quantile(0.5, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
-      labels:
-        quantile: "0.5"
-      record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
   - name: node.rules
     rules:
     - expr: sum(min(kube_pod_info) by (node))
@@ -208,8 +220,16 @@ spec:
         ))
       record: node:node_num_cpu:sum
     - expr: |
-        sum(node_memory_MemFree_bytes{job="node-exporter"} + node_memory_Cached_bytes{job="node-exporter"} + node_memory_Buffers_bytes{job="node-exporter"})
-      record: :node_memory_MemFreeCachedBuffers_bytes:sum
+        sum(
+          node_memory_MemAvailable_bytes{job="node-exporter"} or
+          (
+            node_memory_Buffers_bytes{job="node-exporter"} +
+            node_memory_Cached_bytes{job="node-exporter"} +
+            node_memory_MemFree_bytes{job="node-exporter"} +
+            node_memory_Slab_bytes{job="node-exporter"}
+          )
+        )
+      record: :node_memory_MemAvailable_bytes:sum
   - name: kube-prometheus-node-recording.rules
     rules:
     - expr: sum(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait"}[3m])) BY
@@ -551,105 +571,6 @@ spec:
       for: 1h
       labels:
         severity: warning
-  - name: kubernetes-absent
-    rules:
-    - alert: AlertmanagerDown
-      annotations:
-        message: Alertmanager has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="alertmanager-main",namespace="openshift-monitoring"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: ClusterMonitoringOperatorDown
-      annotations:
-        message: ClusterMonitoringOperator has disappeared from Prometheus target
-          discovery.
-      expr: |
-        absent(up{job="cluster-monitoring-operator"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: KubeAPIDown
-      annotations:
-        message: KubeAPI has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="apiserver"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: KubeControllerManagerDown
-      annotations:
-        message: KubeControllerManager has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="kube-controller-manager"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: KubeSchedulerDown
-      annotations:
-        message: KubeScheduler has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="scheduler"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: KubeStateMetricsDown
-      annotations:
-        message: KubeStateMetrics has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="kube-state-metrics"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: KubeletDown
-      annotations:
-        message: Kubelet has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="kubelet"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: NodeExporterDown
-      annotations:
-        message: NodeExporter has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="node-exporter"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: OpenShiftStateMetricsDown
-      annotations:
-        message: OpenShiftStateMetrics has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="openshift-state-metrics"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: PrometheusDown
-      annotations:
-        message: Prometheus has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="prometheus-k8s",namespace="openshift-monitoring"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: PrometheusOperatorDown
-      annotations:
-        message: PrometheusOperator has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="prometheus-operator",namespace="openshift-monitoring"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: TelemeterClientDown
-      annotations:
-        message: TelemeterClient has disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="telemeter-client"} == 1)
-      for: 15m
-      labels:
-        severity: critical
   - name: kubernetes-apps
     rules:
     - alert: KubePodCrashLooping
@@ -737,15 +658,24 @@ spec:
         severity: critical
     - alert: KubeDaemonSetRolloutStuck
       annotations:
-        message: Only {{ $value }}% of the desired Pods of DaemonSet {{ $labels.namespace
-          }}/{{ $labels.daemonset }} are scheduled and ready.
+        message: Only {{ $value | humanizePercentage }} of the desired Pods of DaemonSet
+          {{ $labels.namespace }}/{{ $labels.daemonset }} are scheduled and ready.
       expr: |
         kube_daemonset_status_number_ready{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           /
-        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} * 100 < 100
+        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} < 1.00
       for: 15m
       labels:
         severity: critical
+    - alert: KubeContainerWaiting
+      annotations:
+        message: Pod {{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container}}
+          has been in waiting state for longer than 1 hour.
+      expr: |
+        sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}) > 0
+      for: 1h
+      labels:
+        severity: warning
     - alert: KubeDaemonSetNotScheduled
       annotations:
         message: '{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset
@@ -870,23 +800,26 @@ spec:
         severity: warning
     - alert: KubeQuotaExceeded
       annotations:
-        message: Namespace {{ $labels.namespace }} is using {{ printf "%0.0f" $value
-          }}% of its {{ $labels.resource }} quota.
+        message: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage
+          }} of its {{ $labels.resource }} quota.
       expr: |
-        100 * kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
+        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
         (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard"} > 0)
-          > 90
+          > 0.90
       for: 15m
       labels:
         severity: warning
     - alert: CPUThrottlingHigh
       annotations:
-        message: '{{ printf "%0.0f" $value }}% throttling of CPU in namespace {{ $labels.namespace
-          }} for container {{ $labels.container }} in pod {{ $labels.pod }}.'
-      expr: "100 * sum(increase(container_cpu_cfs_throttled_periods_total{container!=\"\",
-        }[5m])) by (container, pod, namespace)\n  /\nsum(increase(container_cpu_cfs_periods_total{}[5m]))
-        by (container, pod, namespace)\n  > 25 \n"
+        message: '{{ $value | humanizePercentage }} throttling of CPU in namespace
+          {{ $labels.namespace }} for container {{ $labels.container }} in pod {{
+          $labels.pod }}.'
+      expr: |
+        sum(increase(container_cpu_cfs_throttled_periods_total{container!="", }[5m])) by (container, pod, namespace)
+          /
+        sum(increase(container_cpu_cfs_periods_total{}[5m])) by (container, pod, namespace)
+          > ( 25 / 100 )
       for: 15m
       labels:
         severity: warning
@@ -895,13 +828,13 @@ spec:
     - alert: KubePersistentVolumeUsageCritical
       annotations:
         message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim
-          }} in Namespace {{ $labels.namespace }} is only {{ printf "%0.2f" $value
-          }}% free.
+          }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage
+          }} free.
       expr: |
-        100 * kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
+        kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
           /
         kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
-          < 3
+          < 0.03
       for: 1m
       labels:
         severity: critical
@@ -909,16 +842,16 @@ spec:
       annotations:
         message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim
           }} in Namespace {{ $labels.namespace }} is expected to fill up within four
-          days. Currently {{ printf "%0.2f" $value }}% is available.
+          days. Currently {{ $value | humanizePercentage }} is available.
       expr: |
-        100 * (
+        (
           kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
             /
           kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
-        ) < 15
+        ) < 0.15
         and
         predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}[6h], 4 * 24 * 3600) < 0
-      for: 5m
+      for: 1h
       labels:
         severity: critical
     - alert: KubePersistentVolumeErrors
@@ -932,14 +865,6 @@ spec:
         severity: critical
   - name: kubernetes-system
     rules:
-    - alert: KubeNodeNotReady
-      annotations:
-        message: '{{ $labels.node }} has been unready for more than 15 minutes.'
-      expr: |
-        kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
-      for: 15m
-      labels:
-        severity: warning
     - alert: KubeVersionMismatch
       annotations:
         message: There are {{ $value }} different semantic versions of Kubernetes
@@ -952,30 +877,23 @@ spec:
     - alert: KubeClientErrors
       annotations:
         message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
-          }}' is experiencing {{ printf "%0.0f" $value }}% errors.'
+          }}' is experiencing {{ $value | humanizePercentage }} errors.'
       expr: |
         (sum(rate(rest_client_requests_total{code=~"5.."}[5m])) by (instance, job)
           /
         sum(rate(rest_client_requests_total[5m])) by (instance, job))
-        * 100 > 1
+        > 0.01
       for: 15m
       labels:
         severity: warning
-    - alert: KubeletTooManyPods
-      annotations:
-        message: Kubelet '{{ $labels.node }}' is running at {{ printf "%.4g" $value
-          }}% of its Pod capacity.
-      expr: |
-        100 * max(max(kubelet_running_pod_count{job="kubelet"}) by(instance) * on(instance) group_left(node) kubelet_node_name{job="kubelet"}) by(node) / max(kube_node_status_capacity_pods{job="kube-state-metrics"}) by(node) > 95
-      for: 15m
-      labels:
-        severity: warning
+  - name: kubernetes-system-apiserver
+    rules:
     - alert: KubeAPILatencyHigh
       annotations:
         message: The API server has a 99th percentile latency of {{ $value }} seconds
           for {{ $labels.verb }} {{ $labels.resource }}.
       expr: |
-        cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
+        cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"} > 1
       for: 10m
       labels:
         severity: warning
@@ -984,49 +902,53 @@ spec:
         message: The API server has a 99th percentile latency of {{ $value }} seconds
           for {{ $labels.verb }} {{ $labels.resource }}.
       expr: |
-        cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
+        cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"} > 4
       for: 10m
       labels:
         severity: critical
     - alert: KubeAPIErrorsHigh
       annotations:
-        message: API server is returning errors for {{ $value }}% of requests.
+        message: API server is returning errors for {{ $value | humanizePercentage
+          }} of requests.
       expr: |
-        sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m]))
+        sum(rate(apiserver_request_total{job="apiserver",code=~"5.."}[5m]))
           /
-        sum(rate(apiserver_request_total{job="apiserver"}[5m])) * 100 > 3
+        sum(rate(apiserver_request_total{job="apiserver"}[5m])) > 0.03
       for: 10m
       labels:
         severity: critical
     - alert: KubeAPIErrorsHigh
       annotations:
-        message: API server is returning errors for {{ $value }}% of requests.
+        message: API server is returning errors for {{ $value | humanizePercentage
+          }} of requests.
       expr: |
-        sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m]))
+        sum(rate(apiserver_request_total{job="apiserver",code=~"5.."}[5m]))
           /
-        sum(rate(apiserver_request_total{job="apiserver"}[5m])) * 100 > 1
+        sum(rate(apiserver_request_total{job="apiserver"}[5m])) > 0.01
       for: 10m
       labels:
         severity: warning
     - alert: KubeAPIErrorsHigh
       annotations:
-        message: API server is returning errors for {{ $value }}% of requests for
-          {{ $labels.verb }} {{ $labels.resource }} {{ $labels.subresource }}.
+        message: API server is returning errors for {{ $value | humanizePercentage
+          }} of requests for {{ $labels.verb }} {{ $labels.resource }} {{ $labels.subresource
+          }}.
       expr: |
-        sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) by (resource,subresource,verb)
+        sum(rate(apiserver_request_total{job="apiserver",code=~"5.."}[5m])) by (resource,subresource,verb)
           /
-        sum(rate(apiserver_request_total{job="apiserver"}[5m])) by (resource,subresource,verb) * 100 > 10
+        sum(rate(apiserver_request_total{job="apiserver"}[5m])) by (resource,subresource,verb) > 0.10
       for: 10m
       labels:
         severity: critical
     - alert: KubeAPIErrorsHigh
       annotations:
-        message: API server is returning errors for {{ $value }}% of requests for
-          {{ $labels.verb }} {{ $labels.resource }} {{ $labels.subresource }}.
+        message: API server is returning errors for {{ $value | humanizePercentage
+          }} of requests for {{ $labels.verb }} {{ $labels.resource }} {{ $labels.subresource
+          }}.
       expr: |
-        sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) by (resource,subresource,verb)
+        sum(rate(apiserver_request_total{job="apiserver",code=~"5.."}[5m])) by (resource,subresource,verb)
           /
-        sum(rate(apiserver_request_total{job="apiserver"}[5m])) by (resource,subresource,verb) * 100 > 5
+        sum(rate(apiserver_request_total{job="apiserver"}[5m])) by (resource,subresource,verb) > 0.05
       for: 10m
       labels:
         severity: warning
@@ -1044,6 +966,68 @@ spec:
           in less than 1.0 hours.
       expr: |
         apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 3600
+      labels:
+        severity: critical
+    - alert: KubeAPIDown
+      annotations:
+        message: KubeAPI has disappeared from Prometheus target discovery.
+      expr: |
+        absent(up{job="apiserver"} == 1)
+      for: 15m
+      labels:
+        severity: critical
+  - name: kubernetes-system-kubelet
+    rules:
+    - alert: KubeNodeNotReady
+      annotations:
+        message: '{{ $labels.node }} has been unready for more than 15 minutes.'
+      expr: |
+        kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
+      for: 15m
+      labels:
+        severity: warning
+    - alert: KubeNodeUnreachable
+      annotations:
+        message: '{{ $labels.node }} is unreachable and some workloads may be rescheduled.'
+      expr: |
+        kube_node_spec_taint{job="kube-state-metrics",key="node.kubernetes.io/unreachable",effect="NoSchedule"} == 1
+      labels:
+        severity: warning
+    - alert: KubeletTooManyPods
+      annotations:
+        message: Kubelet '{{ $labels.node }}' is running at {{ $value | humanizePercentage
+          }} of its Pod capacity.
+      expr: |
+        max(max(kubelet_running_pod_count{job="kubelet"}) by(instance) * on(instance) group_left(node) kubelet_node_name{job="kubelet"}) by(node) / max(kube_node_status_capacity_pods{job="kube-state-metrics"}) by(node) > 0.95
+      for: 15m
+      labels:
+        severity: warning
+    - alert: KubeletDown
+      annotations:
+        message: Kubelet has disappeared from Prometheus target discovery.
+      expr: |
+        absent(up{job="kubelet"} == 1)
+      for: 15m
+      labels:
+        severity: critical
+  - name: kubernetes-system-scheduler
+    rules:
+    - alert: KubeSchedulerDown
+      annotations:
+        message: KubeScheduler has disappeared from Prometheus target discovery.
+      expr: |
+        absent(up{job="scheduler"} == 1)
+      for: 15m
+      labels:
+        severity: critical
+  - name: kubernetes-system-controller-manager
+    rules:
+    - alert: KubeControllerManagerDown
+      annotations:
+        message: KubeControllerManager has disappeared from Prometheus target discovery.
+      expr: |
+        absent(up{job="kube-controller-manager"} == 1)
+      for: 15m
       labels:
         severity: critical
   - name: prometheus
@@ -1213,8 +1197,8 @@ spec:
     - alert: PrometheusRemoteWriteDesiredShards
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} remote write
-          desired shards calculation wants to run {{ printf $value }} shards, which
-          is more than the max of {{ printf `prometheus_remote_storage_shards_max{instance="%s",job="prometheus-k8s",namespace="openshift-monitoring"}`
+          desired shards calculation wants to run {{ $value }} shards, which is more
+          than the max of {{ printf `prometheus_remote_storage_shards_max{instance="%s",job="prometheus-k8s",namespace="openshift-monitoring"}`
           $labels.instance | query | first | value }}.
         summary: Prometheus remote write desired shards calculation wants to run more
           than configured max shards.
@@ -1223,7 +1207,7 @@ spec:
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
         (
           max_over_time(prometheus_remote_storage_shards_desired{job="prometheus-k8s",namespace="openshift-monitoring"}[5m])
-        > on(job, instance) group_right
+        >
           max_over_time(prometheus_remote_storage_shards_max{job="prometheus-k8s",namespace="openshift-monitoring"}[5m])
         )
       for: 15m
@@ -1283,8 +1267,8 @@ spec:
     rules:
     - alert: TargetDown
       annotations:
-        message: '{{ printf "%.4g" $value }}% of the {{ $labels.job }} targets are
-          down.'
+        message: '{{ printf "%.4g" $value }}% of the {{ $labels.job }} targets in
+          {{ $labels.namespace }} namespace are down.'
       expr: 100 * (count(up == 0) BY (job, namespace, service) / count(up) BY (job,
         namespace, service)) > 10
       for: 10m
