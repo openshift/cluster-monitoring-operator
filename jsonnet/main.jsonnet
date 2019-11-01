@@ -8,7 +8,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-thanos/kube-thanos-querier.libsonnet') +
            (import 'openshift-state-metrics/openshift-state-metrics.libsonnet') +
            {
-             prometheusK8s+:: $.prometheus + {
+             prometheusK8s+:: $.prometheus {
                // Openshift 4.0 clusters already have an etcd service and endpoints.
                // Additionally, the etcd client certificates secret should not be embedded in the
                // Cluster Monitoring Operator binary.
@@ -146,7 +146,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     [k]: d[k]
     for k in std.objectFields(d)
     // This array must be sorted for `std.setMember` to work.
-    if !std.setMember(k, ['apiserver.json', 'controller-manager.json', 'kubelet.json', 'nodes.json', 'persistentvolumesusage.json', 'pods.json', 'proxy.json', 'scheduler.json', 'statefulset.json'])
+    if !std.setMember(k, ['apiserver.json', 'controller-manager.json', 'kubelet.json', 'namespace-by-pod.json', 'namespace-by-workload.json', 'nodes.json', 'persistentvolumesusage.json', 'pod-total.json', 'pods.json', 'proxy.json', 'scheduler.json', 'statefulset.json', 'workload-total.json'])
   },
 } + {
   _config+:: {
