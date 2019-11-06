@@ -67,6 +67,8 @@ spec:
         - --match={__name__="noobaa_accounts_num"}
         - --match={__name__="noobaa_total_usage"}
         - --match={__name__="console_url"}
+        - --match={__name__="cluster:network_attachment_definition_instances:max"}
+        - --match={__name__="cluster:network_attachment_definition_enabled_instance_up:max"}
         env:
         - name: ANONYMIZE_LABELS
           value: ""
