@@ -25,9 +25,11 @@ spec:
         - --no-collector.wifi
         - --collector.mountstats
         - --collector.cpu.info
+        - --collector.textfile.directory=/var/node_exporter/textfile
         image: openshift/prometheus-node-exporter:v0.16.0
         name: node-exporter
         resources: {}
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /host/proc
           name: proc
@@ -39,6 +41,10 @@ spec:
           mountPropagation: HostToContainer
           name: root
           readOnly: true
+        - mountPath: /var/node_exporter/textfile
+          name: node-exporter-textfile
+          readOnly: true
+        workingDir: /var/node_exporter/textfile
       - args:
         - --logtostderr
         - --secure-listen-address=$(IP):9100
@@ -68,6 +74,26 @@ spec:
           readOnly: false
       hostNetwork: true
       hostPID: true
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init
+          -perm /111 -type f -exec {} \;'
+        env:
+        - name: TMPDIR
+          value: /tmp
+        image: openshift/prometheus-node-exporter:v0.16.0
+        name: init-textfile
+        resources: {}
+        securityContext:
+          runAsUser: 0
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/node_exporter/textfile
+          name: node-exporter-textfile
+          readOnly: false
+        workingDir: /var/node_exporter/textfile
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -85,6 +111,8 @@ spec:
       - hostPath:
           path: /
         name: root
+      - emptyDir: {}
+        name: node-exporter-textfile
       - name: node-exporter-tls
         secret:
           secretName: node-exporter-tls
