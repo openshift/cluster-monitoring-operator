@@ -6,6 +6,8 @@ local volume = daemonset.mixin.spec.template.spec.volumesType;
 local configmap = k.core.v1.configMap;
 local containerPort = container.portsType;
 local containerVolumeMount = container.volumeMountsType;
+local textfileDir = '/var/node_exporter/textfile';
+local textfileVolumeName = 'node-exporter-textfile';
 local tlsVolumeName = 'node-exporter-tls';
 
 {
@@ -72,13 +74,31 @@ local tlsVolumeName = 'node-exporter-tls';
       },
 
     // This configures the kube-rbac-proxies to use the serving cert
-    // configured on the `Service` above.
+    // configured on the `Service` above and adds the default init text
+    // collectors to the process.
 
     daemonset+:
       {
         spec+: {
           template+: {
             spec+: {
+              initContainers+: [
+                {
+                  name: 'init-textfile',
+                  command: ['/bin/sh', '-c', '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init -perm /111 -type f -exec {} \\;'],
+                  env: [{name: "TMPDIR", value: "/tmp"}],
+                  image: $._config.imageRepos.nodeExporter + ':' + $._config.versions.nodeExporter,
+                  resources: {},
+                  securityContext: {
+                    runAsUser: 0,
+                  },
+                  terminationMessagePolicy: 'FallbackToLogsOnError',
+                  volumeMounts+: [
+                    containerVolumeMount.new(textfileVolumeName, textfileDir),
+                  ],
+                  workingDir: textfileDir,
+                },
+              ],
               containers:
                 std.map(
                   function(c)
@@ -95,12 +115,20 @@ local tlsVolumeName = 'node-exporter-tls';
                       }
                     else
                       c {
-                        args+: ['--no-collector.wifi'],
+                        args+: ['--no-collector.wifi', '--collector.textfile.directory='+textfileDir ],
                         resources: {},
+                        terminationMessagePolicy: 'FallbackToLogsOnError',
+                        volumeMounts+: [
+                          containerVolumeMount.new(textfileVolumeName, textfileDir, true),
+                        ],
+                        workingDir: textfileDir,
                       },
                   super.containers,
                 ),
-              volumes+: [volume.fromSecret(tlsVolumeName, 'node-exporter-tls')],
+              volumes+: [
+                volume.fromEmptyDir(textfileVolumeName),
+                volume.fromSecret(tlsVolumeName, 'node-exporter-tls'),
+              ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
               tolerations: [
