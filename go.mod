@@ -6,6 +6,7 @@ require (
 	github.com/Jeffail/gabs v1.1.1
 	github.com/ant31/crd-validation v0.0.0-20180801212718-38f6a293f140 // indirect
 	github.com/coreos/prometheus-operator v0.32.1-0.20191022141338-971190798bb6
+	github.com/gogo/protobuf v1.2.2-0.20190730201129-28a6bbf47e48
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
