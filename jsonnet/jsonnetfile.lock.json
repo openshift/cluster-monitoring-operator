@@ -8,7 +8,7 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "fa972cf29666e821c44195c51df15b6e28ed29c4",
+      "version": "d05459ed5b30f231246be5378ef05d45a79894ea",
       "sum": "bkp18AxkOUYnVC15Gh9EoIi+mMAn0IT3hMzb8mlzpSw="
     },
     {
@@ -41,8 +41,8 @@
           "subdir": "grafonnet"
         }
       },
-      "version": "47db72da03fc4a7a0658a87791e13c3315a3a252",
-      "sum": "ssLOSIiYWYBvEYJHwRtwMY4kPQoP+MuIUkT0bp2Mb6A="
+      "version": "b82411476842f583817e67feff5becf1228fd540",
+      "sum": "mEosZ6hZCTCw8AaASEtRFjY8PSmpvqI3xj6IWpwcroU="
     },
     {
       "name": "ksonnet",
@@ -63,8 +63,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "b8f513e4d485db099a1dec4dffd219518b4d8d57",
-      "sum": "4EI88u28Q7Zg449dtKo3StiyauhC8icnw1NC4Tkfhvo="
+      "version": "ce5fe790ee9f1772ad52d935b320d545c8f88722",
+      "sum": "AerKgmCkb6FsMAjPHqExxYSr6C/uYYq5qV9pAZULaxY="
     },
     {
       "name": "kube-thanos",
@@ -118,7 +118,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "74726367cf7a7e8d0332238defd2e7f4169030bd",
+      "version": "8a9509b0a85430532ee9a01a9f8086ca916275bc",
       "sum": "wSDLAXS5Xzla9RFRE2IW5mRToeRFULHb7dSYYBDfEsM="
     },
     {
@@ -129,7 +129,7 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "a925e5d039bf8c2d89ad876197cc59e96deb5d84",
+      "version": "8d44e0990230144177f97cf62ae4f43b1c4e3168",
       "sum": "5U7/8MD3pF9O0YDTtUhg4vctkUBRVFxZxWUyhtNiBM8="
     },
     {
