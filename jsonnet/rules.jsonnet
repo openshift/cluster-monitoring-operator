@@ -67,6 +67,10 @@
             record: 'cluster:master_infra_nodes',
           },
           {
+            expr: 'count(sum(virt_platform) by (instance, type)) by (type)',
+            record: 'cluster:virt_platform_nodes:sum',
+          },
+          {
             expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
             record: 'cluster:capacity_cpu_cores:sum',
           },
