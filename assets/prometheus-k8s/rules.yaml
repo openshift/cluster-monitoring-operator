@@ -805,9 +805,9 @@ spec:
         message: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage
           }} of its {{ $labels.resource }} quota.
       expr: |
-        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
+        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",namespace!="openshift-logging",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
-        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard"} > 0)
+        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",namespace!="openshift-logging",job="kube-state-metrics", type="hard"} > 0)
           > 0.90
       for: 15m
       labels:
