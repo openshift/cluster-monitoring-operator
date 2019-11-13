@@ -67,9 +67,6 @@ spec:
         - mountPath: /grafana-dashboard-definitions/0/node-rsrc-use
           name: grafana-dashboard-node-rsrc-use
           readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/prometheus-remote-write
-          name: grafana-dashboard-prometheus-remote-write
-          readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/prometheus
           name: grafana-dashboard-prometheus
           readOnly: false
@@ -158,9 +155,6 @@ spec:
       - configMap:
           name: grafana-dashboard-node-rsrc-use
         name: grafana-dashboard-node-rsrc-use
-      - configMap:
-          name: grafana-dashboard-prometheus-remote-write
-        name: grafana-dashboard-prometheus-remote-write
       - configMap:
           name: grafana-dashboard-prometheus
         name: grafana-dashboard-prometheus
