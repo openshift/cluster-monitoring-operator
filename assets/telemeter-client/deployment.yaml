@@ -48,6 +48,7 @@ spec:
         - --match={__name__="openshift:memory_usage_bytes:sum"}
         - --match={__name__="workload:cpu_usage_cores:sum"}
         - --match={__name__="workload:memory_usage_bytes:sum"}
+        - --match={__name__="cluster:virt_platform_nodes:sum"}
         - --match={__name__="cluster:node_instance_type_count:sum"}
         - --match={__name__="cnv:vmi_status_running:count"}
         - --match={__name__="node_role_os_version_machine:cpu_capacity_cores:sum"}
