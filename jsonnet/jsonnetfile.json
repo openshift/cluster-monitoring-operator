@@ -1,24 +1,24 @@
 {
-    "dependencies": [
-        {
-            "name": "kube-prometheus",
-            "source": {
-                "git": {
-                    "remote": "https://github.com/coreos/prometheus-operator",
-                    "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
-                }
-            },
-            "version": "master"
-        },
-        {
-            "name": "anti-affinity",
-            "source": {
-                "git": {
-                    "remote": "https://github.com/coreos/prometheus-operator",
-                    "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
-                }
-            },
-            "version": "2fa293b8f98d890f778e191e2fdc30a616408064"
+  "dependencies": [
+    {
+      "name": "anti-affinity",
+      "source": {
+        "git": {
+          "remote": "https://github.com/coreos/prometheus-operator",
+          "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
         }
-    ]
+      },
+      "version": "2fa293b8f98d890f778e191e2fdc30a616408064"
+    },
+    {
+      "name": "kube-prometheus",
+      "source": {
+        "git": {
+          "remote": "https://github.com/coreos/prometheus-operator",
+          "subdir": "contrib/kube-prometheus/jsonnet/kube-prometheus"
+        }
+      },
+      "version": "master"
+    }
+  ]
 }

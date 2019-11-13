@@ -53,6 +53,9 @@ local authorizationRole = policyRule.new() +
             plugins: '/var/lib/grafana/plugins',
             provisioning: '/etc/grafana/provisioning',
           },
+          security: {
+            cookie_secure: true,
+          },
           server: {
             http_addr: '127.0.0.1',
             http_port: '3001',
