@@ -77,6 +77,20 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		err = framework.Poll(time.Second, 5*time.Minute, func() error {
+			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get("prometheus-user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// this will only poll if the statefulset is there in the first place
+		// otherwise it will fail immediately
 		err = f.OperatorClient.WaitForPrometheus(&monitoringv1.Prometheus{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "user-workload",
