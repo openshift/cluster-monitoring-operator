@@ -5,6 +5,8 @@ reviewers:
 - metalmatze
 - paulfantom
 - LiliC
+- pgier
+- simonpasquier
 
 approvers:
 - brancz
@@ -13,3 +15,5 @@ approvers:
 - metalmatze
 - paulfantom
 - LiliC
+- pgier
+- simonpasquier
