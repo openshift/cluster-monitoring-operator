@@ -43,8 +43,14 @@ func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, namespace
 
 func newRelatedObjects(namespace string) []v1.ObjectReference {
 	return []v1.ObjectReference{
-		{Group: "operator.openshift.io", Resource: "monitoring", Name: "cluster"},
 		{Resource: "namespaces", Name: namespace},
+		// Gather pods, services, daemonsets, deployments, replocasets, statefulsets, and routes
+		{Resource: "all", Name: namespace},
+		// Gather all ServiceMonitors, PrometheusRules, Alertmanagers, and Prometheus CRs
+		{Group: "monitoring.coreos.com", Resource: "servicemonitors"},
+		{Group: "monitoring.coreos.com", Resource: "prometheusrules"},
+		{Group: "monitoring.coreos.com", Resource: "alertmanagers"},
+		{Group: "monitoring.coreos.com", Resource: "prometheuses"},
 	}
 }
 
