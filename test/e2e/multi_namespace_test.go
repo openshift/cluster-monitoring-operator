@@ -66,7 +66,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f.PrometheusK8sClient.WaitForQueryReturnOne(
+	f.ThanosQuerierClient.WaitForQueryReturnOne(
 		t,
 		10*time.Minute,
 		`count(ALERTS{alertname="AdditionalTestAlertRule"} == 1)`,
