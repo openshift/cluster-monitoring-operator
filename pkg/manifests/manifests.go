@@ -50,6 +50,7 @@ var (
 	AlertmanagerServiceAccount     = "assets/alertmanager/service-account.yaml"
 	AlertmanagerClusterRoleBinding = "assets/alertmanager/cluster-role-binding.yaml"
 	AlertmanagerClusterRole        = "assets/alertmanager/cluster-role.yaml"
+	AlertmanagerRole               = "assets/alertmanager/role.yaml"
 	AlertmanagerRoute              = "assets/alertmanager/route.yaml"
 	AlertmanagerServiceMonitor     = "assets/alertmanager/service-monitor.yaml"
 	AlertmanagerTrustedCABundle    = "assets/alertmanager/trusted-ca-bundle.yaml"
@@ -293,6 +294,10 @@ func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, 
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
+}
+
+func (f *Factory) AlertmanagerRole() (*rbacv1.Role, error) {
+	return f.NewRole(MustAssetReader(AlertmanagerRole))
 }
 
 func (f *Factory) AlertmanagerClusterRole() (*rbacv1.ClusterRole, error) {

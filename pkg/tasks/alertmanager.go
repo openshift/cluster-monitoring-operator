@@ -58,6 +58,16 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "creating Alertmanager configuration Secret failed")
 	}
 
+	role, err := t.factory.AlertmanagerRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager Role failed")
+	}
+
+	err = t.client.CreateOrUpdateRole(role)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Alertmanager Role failed")
+	}
+
 	cr, err := t.factory.AlertmanagerClusterRole()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager ClusterRole failed")
