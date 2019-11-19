@@ -55,7 +55,9 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	} {
-		t.Run(scenario.name, scenario.f)
+		if ok := t.Run(scenario.name, scenario.f); !ok {
+			t.Fatalf("scenario %q failed", scenario.name)
+		}
 	}
 }
 
@@ -215,6 +217,32 @@ func deployUserApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.MonitoringClient.PrometheusRules("user-workload").Create(&monitoringv1.PrometheusRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "prometheus-example-rule",
+			Labels: map[string]string{
+				"k8s-app": "prometheus-example-rule",
+			},
+		},
+		Spec: monitoringv1.PrometheusRuleSpec{
+			Groups: []monitoringv1.RuleGroup{
+				{
+					Name: "example",
+					Rules: []monitoringv1.Rule{
+						{
+							Alert: "VersionAlert",
+							Expr:  intstr.FromString(`version{namespace="user-workload",job="prometheus-example-app"} == 0`),
+							For:   "1s",
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	err = f.OperatorClient.WaitForDeploymentRollout(app)
 	if err != nil {
 		t.Fatal(err)
@@ -262,7 +290,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 
 	{
 		// assert that the same metric is not scraped by the cluster monitoring stack
-		body, err := f.PrometheusK8sClient.Query(`version{namespace="user-workload"}`)
+		body, err := f.PrometheusK8sClient.PrometheusQuery(`version{namespace="user-workload"}`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -284,12 +312,12 @@ func assertUserWorkloadMetrics(t *testing.T) {
 
 	// assert that the user workload monitoring Prometheus instance is successfully scraped
 	// by the cluster monitoring Prometheus instance.
-	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		var (
 			body []byte
 			v    int
 		)
-		body, loopErr := f.PrometheusK8sClient.Query(`count(up{job="prometheus-user-workload"})`)
+		body, loopErr := f.PrometheusK8sClient.PrometheusQuery(`count(up{job="prometheus-user-workload"})`)
 		if loopErr != nil {
 			return loopErr
 		}
@@ -304,6 +332,35 @@ func assertUserWorkloadMetrics(t *testing.T) {
 		}
 
 		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		body, err := f.AlertmanagerClient.AlertmanagerQuery(
+			"filter", `alertname="VersionAlert"`,
+			"active", "true",
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		res, err := gabs.ParseJSON(body)
+		if err != nil {
+			return err
+		}
+
+		count, err := res.ArrayCount()
+		if err != nil {
+			return err
+		}
+
+		if count == 1 {
+			return nil
+		}
+
+		return fmt.Errorf("expected 1 fired VersionAlert, got %d", count)
 	})
 	if err != nil {
 		t.Fatal(err)
