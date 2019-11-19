@@ -44,12 +44,13 @@ var (
 )
 
 type Framework struct {
-	OperatorClient                           *client.Client
-	CRDClient                                crdc.CustomResourceDefinitionInterface
-	KubeClient                               kubernetes.Interface
-	ThanosQuerierClient, PrometheusK8sClient *PrometheusClient
-	APIServicesClient                        *apiservicesclient.Clientset
-	MetricsClient                            *metricsclient.Clientset
+	OperatorClient      *client.Client
+	CRDClient           crdc.CustomResourceDefinitionInterface
+	KubeClient          kubernetes.Interface
+	ThanosQuerierClient *RouteClient
+	PrometheusK8sClient *RouteClient
+	APIServicesClient   *apiservicesclient.Clientset
+	MetricsClient       *metricsclient.Clientset
 
 	MonitoringClient             *monClient.MonitoringV1Client
 	Ns, UserWorkloadMonitoringNs string
@@ -117,19 +118,20 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	}
 
 	// Prometheus client depends on setup above.
-	f.ThanosQuerierClient, err = NewPrometheusClient(
+	f.ThanosQuerierClient, err = NewRouteClient(
 		openshiftRouteClient, kubeClient,
 		"openshift-monitoring", "thanos-querier",
 	)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating prometheusK8sClient failed")
+		return nil, nil, errors.Wrap(err, "creating ThanosQuerierClient failed")
 	}
-	f.PrometheusK8sClient, err = NewPrometheusClient(
+
+	f.PrometheusK8sClient, err = NewRouteClient(
 		openshiftRouteClient, kubeClient,
 		"openshift-monitoring", "prometheus-k8s",
 	)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating prometheusK8sClient failed")
+		return nil, nil, errors.Wrap(err, "creating PrometheusK8sClient failed")
 	}
 
 	return f, cleanUp, nil

@@ -80,7 +80,7 @@ func testMain(m *testing.M) error {
 			body []byte
 			v    int
 		)
-		body, loopErr = f.ThanosQuerierClient.Query("count(up{job=\"prometheus-k8s\"})")
+		body, loopErr = f.ThanosQuerierClient.PrometheusQuery("count(up{job=\"prometheus-k8s\"})")
 		if loopErr != nil {
 			return false, nil
 		}

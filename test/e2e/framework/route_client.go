@@ -24,8 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
@@ -33,21 +34,21 @@ import (
 	"github.com/Jeffail/gabs"
 )
 
-// PrometheusClient provides access to the prometheus-k8s statefulset via its
+// RouteClient provides access to the prometheus-k8s statefulset via its
 // public facing route.
-type PrometheusClient struct {
-	// Host address of Prometheus public route.
+type RouteClient struct {
+	// Host address of the public route.
 	host string
 	// ServiceAccount bearer token to pass through Openshift oauth proxy.
 	token string
 }
 
-// NewPrometheusClient creates and returns a new PrometheusClient.
-func NewPrometheusClient(
+// NewRouteClient creates and returns a new RouteClient.
+func NewRouteClient(
 	routeClient routev1.RouteV1Interface,
 	kubeClient kubernetes.Interface,
 	namespace, name string,
-) (*PrometheusClient, error) {
+) (*RouteClient, error) {
 	route, err := routeClient.Routes(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -68,15 +69,15 @@ func NewPrometheusClient(
 		}
 	}
 
-	return &PrometheusClient{
+	return &RouteClient{
 		host:  host,
 		token: token,
 	}, nil
 }
 
-// Query runs an http get request against the Prometheus query api and returns
+// PrometheusQuery runs an http get request against the Prometheus query api and returns
 // the response body.
-func (c *PrometheusClient) Query(query string) ([]byte, error) {
+func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
 	// #nosec
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -91,6 +92,44 @@ func (c *PrometheusClient) Query(query string) ([]byte, error) {
 
 	q := req.URL.Query()
 	q.Add("query", query)
+	req.URL.RawQuery = q.Encode()
+
+	req.Header.Add("Authorization", "Bearer "+c.token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
+// AlertmanagerQuery runs an http get request against the Prometheus query api and returns
+// the response body.
+func (c *RouteClient) AlertmanagerQuery(kvs ...string) ([]byte, error) {
+	// #nosec
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{Transport: tr}
+
+	req, err := http.NewRequest("GET", "https://"+c.host+"/api/v2/alerts", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	for i := 0; i < len(kvs)/2; i++ {
+		q.Add(kvs[i*2], kvs[i*2+1])
+	}
 	req.URL.RawQuery = q.Encode()
 
 	req.Header.Add("Authorization", "Bearer "+c.token)
@@ -147,7 +186,7 @@ func GetFirstValueFromPromQuery(body []byte) (int, error) {
 }
 
 // WaitForQueryReturnGreaterEqualOne see WaitForQueryReturn.
-func (c *PrometheusClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeout time.Duration, query string) {
+func (c *RouteClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeout time.Duration, query string) {
 	c.WaitForQueryReturn(t, timeout, query, func(v int) error {
 		if v >= 1 {
 			return nil
@@ -158,7 +197,7 @@ func (c *PrometheusClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeo
 }
 
 // WaitForQueryReturnOne see WaitForQueryReturn.
-func (c *PrometheusClient) WaitForQueryReturnOne(t *testing.T, timeout time.Duration, query string) {
+func (c *RouteClient) WaitForQueryReturnOne(t *testing.T, timeout time.Duration, query string) {
 	c.WaitForQueryReturn(t, timeout, query, func(v int) error {
 		if v == 1 {
 			return nil
@@ -170,27 +209,23 @@ func (c *PrometheusClient) WaitForQueryReturnOne(t *testing.T, timeout time.Dura
 
 // WaitForQueryReturn waits for a given PromQL query for a given time interval
 // and validates the **first and only** result with the given validate function.
-func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duration, query string, validate func(int) error) {
-	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
-		defer t.Log("---------------------------\n")
-		body, err := c.Query(query)
+func (c *RouteClient) WaitForQueryReturn(t *testing.T, timeout time.Duration, query string, validate func(int) error) {
+	err := Poll(5*time.Second, timeout, func() error {
+		body, err := c.PrometheusQuery(query)
 		if err != nil {
-			return false, err
+			t.Fatal(err)
 		}
 
 		v, err := GetFirstValueFromPromQuery(body)
 		if err != nil {
-			t.Logf("failed to extract first value from query response for query %q: %v", query, err)
-			return false, nil
+			return errors.Wrapf(err, "error getting first value from response body %q for query %q", string(body), query)
 		}
 
 		if err := validate(v); err != nil {
-			t.Logf("unexpected value for query %q: %v", query, err)
-			return false, nil
+			return errors.Wrapf(err, "error validating response body %q for query %q", string(body), query)
 		}
 
-		t.Logf("query %q succeeded", query)
-		return true, nil
+		return nil
 	})
 
 	if err != nil {
