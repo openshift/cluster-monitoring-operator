@@ -124,6 +124,7 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
+  - name: prometheus
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
