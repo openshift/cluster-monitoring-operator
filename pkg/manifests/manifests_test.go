@@ -324,7 +324,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+	_, err = f.PrometheusK8sTrustedCABundle()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -734,7 +739,11 @@ ingress:
 	})
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
-	p, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+	p, err := f.PrometheusK8s(
+		"prometheus-k8s.openshift-monitoring.svc",
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -747,15 +756,15 @@ ingress:
 		t.Fatal("Prometheus image is not configured correctly")
 	}
 
-	if p.Spec.Containers[0].Image != "docker.io/openshift/origin-oauth-proxy:latest" {
+	if p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Image != "docker.io/openshift/origin-oauth-proxy:latest" {
 		t.Fatal("oauth-proxy image is not configured correctly")
 	}
 
-	if p.Spec.Containers[1].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+	if p.Spec.Containers[K8S_CONTAINER_KUBE_RBAC_PROXY].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 		t.Fatal("kube-rbac-proxy image is not configured correctly")
 	}
 
-	if p.Spec.Containers[2].Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
+	if p.Spec.Containers[K8S_CONTAINER_PROM_LABEL_PROXY].Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
 		t.Fatal("prom-label-proxy image is not configured correctly")
 	}
 

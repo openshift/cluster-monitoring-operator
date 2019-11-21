@@ -42,6 +42,11 @@ local alertmanagerRole =
 
 {
   prometheusK8s+:: {
+    trustedCaBundle:
+      configmap.new('prometheus-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
+      configmap.mixin.metadata.withNamespace($._config.namespace) +
+      configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+
     grpcTlsSecret:
       secret.new('prometheus-k8s-grpc-tls', {}) +
       secret.mixin.metadata.withNamespace($._config.namespace) +
@@ -424,6 +429,9 @@ local alertmanagerRole =
                   name: 'secret-grpc-tls',
                 },
               ],
+            },
+            {
+              name: 'prometheus',
             },
           ],
         },

@@ -269,23 +269,52 @@ func (t *PrometheusTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "error creating Prometheus Client GRPC TLS secret")
 	}
+	{
+		// Create trusted CA bundle ConfigMap.
+		trustedCA, err := t.factory.PrometheusK8sTrustedCABundle()
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus CA bundle ConfigMap failed")
+		}
 
-	klog.V(4).Info("initializing Prometheus object")
-	p, err := t.factory.PrometheusK8s(host, s)
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus object failed")
-	}
+		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, " creating Promehteus CA bundle ConfigMap failed")
+		}
+		// In the case when there is no data but the ConfigMap is there, we just continue.
+		// We will catch this on the next loop.
+		trustedCA = t.factory.HashTrustedCA(trustedCA, "prometheus")
+		if trustedCA != nil {
+			err = t.client.CreateOrUpdateConfigMap(trustedCA)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Prometheus CA bundle ConfigMap failed")
+			}
 
-	klog.V(4).Info("reconciling Prometheus object")
-	err = t.client.CreateOrUpdatePrometheus(p)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus object failed")
-	}
+			err = t.client.DeleteHashedConfigMap(
+				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
+				"prometheus",
+			)
+			if err != nil {
+				return errors.Wrap(err, "deleting old Prometheus configmaps failed")
+			}
+		}
 
-	klog.V(4).Info("waiting for Prometheus object changes")
-	err = t.client.WaitForPrometheus(p)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus object changes failed")
+		klog.V(4).Info("initializing Prometheus object")
+		p, err := t.factory.PrometheusK8s(host, s, trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus object failed")
+		}
+
+		klog.V(4).Info("reconciling Prometheus object")
+		err = t.client.CreateOrUpdatePrometheus(p)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus object failed")
+		}
+
+		klog.V(4).Info("waiting for Prometheus object changes")
+		err = t.client.WaitForPrometheus(p)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Prometheus object changes failed")
+		}
 	}
 
 	smk, err := t.factory.PrometheusK8sKubeletServiceMonitor()

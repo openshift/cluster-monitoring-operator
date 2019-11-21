@@ -97,6 +97,7 @@ var (
 	PrometheusK8sServingCertsCABundle     = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle   = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 	PrometheusK8sGrpcTLSSecret            = "assets/prometheus-k8s/grpc-tls-secret.yaml"
+	PrometheusK8sTrustedCABundle          = "assets/prometheus-k8s/trusted-ca-bundle.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle     = "assets/prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount           = "assets/prometheus-user-workload/service-account.yaml"
@@ -1057,7 +1058,26 @@ func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.U
 	}
 }
 
-func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(PrometheusK8sTrustedCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
+}
+
+const (
+	// These constants refer to indices of prometheus-k8s containers.
+	// They need to be in sync with jsonnet/prometheus.jsonnet
+	K8S_CONTAINER_OAUTH_PROXY      = 0
+	K8S_CONTAINER_KUBE_RBAC_PROXY  = 1
+	K8S_CONTAINER_PROM_LABEL_PROXY = 2
+	K8S_CONTAINER_THANOS_SIDECAR   = 3
+	K8S_CONTAINER_PROMETHEUS       = 4
+)
+
+func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(MustAssetReader(PrometheusK8s))
 	if err != nil {
 		return nil, err
@@ -1111,17 +1131,18 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret) (*monv1.Prometh
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	p.Spec.Containers[0].Image = f.config.Images.OauthProxy
-	p.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
-	p.Spec.Containers[2].Image = f.config.Images.PromLabelProxy
+	p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Image = f.config.Images.OauthProxy
+	p.Spec.Containers[K8S_CONTAINER_KUBE_RBAC_PROXY].Image = f.config.Images.KubeRbacProxy
+	p.Spec.Containers[K8S_CONTAINER_PROM_LABEL_PROXY].Image = f.config.Images.PromLabelProxy
+
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespace
 
 	setEnv := func(name, value string) {
-		for i := range p.Spec.Containers[0].Env {
-			if p.Spec.Containers[0].Env[i].Name == name {
-				p.Spec.Containers[0].Env[i].Value = value
+		for i := range p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Env {
+			if p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Env[i].Name == name {
+				p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Env[i].Value = value
 				break
 			}
 		}
@@ -1144,6 +1165,31 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret) (*monv1.Prometh
 			},
 		},
 	})
+
+	if trustedCABundleCM != nil {
+		volumeName := "prometheus-trusted-ca-bundle"
+		volumePath := "/etc/pki/ca-trust/extracted/pem/"
+		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  "ca-bundle.crt",
+			Path: "tls-ca-bundle.pem",
+		})
+		p.Spec.Volumes = append(p.Spec.Volumes, volume)
+
+		// we only need the trusted CA bundle in:
+		// 1. Prometheus, because users might want to configure external remote write.
+		// 2. In OAuth proxy, as that communicates externally when executing the OAuth handshake.
+
+		p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].VolumeMounts = append(
+			p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].VolumeMounts,
+			trustedCABundleVolumeMount(volumeName, volumePath),
+		)
+
+		p.Spec.Containers[K8S_CONTAINER_PROMETHEUS].VolumeMounts = append(
+			p.Spec.Containers[K8S_CONTAINER_PROMETHEUS].VolumeMounts,
+			trustedCABundleVolumeMount(volumeName, volumePath),
+		)
+	}
 
 	return p, nil
 }
