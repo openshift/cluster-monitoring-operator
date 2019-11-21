@@ -54,6 +54,8 @@ spec:
         - --match={__name__="node_role_os_version_machine:cpu_capacity_cores:sum"}
         - --match={__name__="node_role_os_version_machine:cpu_capacity_sockets:sum"}
         - --match={__name__="subscription_sync_total"}
+        - --match={__name__="csv_succeeded"}
+        - --match={__name__="csv_abnormal"}
         - --match={__name__="ceph_cluster_total_bytes"}
         - --match={__name__="ceph_cluster_total_used_raw_bytes"}
         - --match={__name__="ceph_health_status"}
