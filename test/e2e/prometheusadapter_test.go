@@ -221,7 +221,7 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 	}
 }
 
-func TestPrometheusAdapterCARotation(t *testing.T) {
+func DisabledTestPrometheusAdapterCARotation(t *testing.T) {
 	var lastErr error
 	// Wait for Prometheus adapter
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
