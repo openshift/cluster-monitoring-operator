@@ -5,19 +5,19 @@
         name: 'kubernetes.rules',
         rules: [
           {
-            expr: 'sum(container_memory_usage_bytes{container!="POD",container!="",pod!=""}) BY (pod, namespace)',
+            expr: 'sum(container_memory_usage_bytes{container="",pod!=""}) BY (pod, namespace)',
             record: 'pod:container_memory_usage_bytes:sum',
           },
           {
-            expr: 'sum(container_spec_cpu_shares{container!="POD",container!="",pod!=""}) BY (pod, namespace)',
+            expr: 'sum(container_spec_cpu_shares{container="",pod!=""}) BY (pod, namespace)',
             record: 'pod:container_spec_cpu_shares:sum',
           },
           {
-            expr: 'sum(rate(container_cpu_usage_seconds_total{container!="POD",container!="",pod!=""}[5m])) BY (pod, namespace)',
+            expr: 'sum(rate(container_cpu_usage_seconds_total{container="",pod!=""}[5m])) BY (pod, namespace)',
             record: 'pod:container_cpu_usage:sum',
           },
           {
-            expr: 'sum(container_fs_usage_bytes{container!="POD",container!="",pod!=""}) BY (pod, namespace)',
+            expr: 'sum(container_fs_usage_bytes{pod!=""}) BY (pod, namespace)',
             record: 'pod:container_fs_usage_bytes:sum',
           },
           {
@@ -33,15 +33,15 @@
             record: 'namespace:container_cpu_usage:sum',
           },
           {
-            expr: 'sum(container_memory_usage_bytes{container!="POD",container!="",pod!=""}) BY (cluster) / sum(machine_memory_bytes) BY (cluster)',
+            expr: 'sum(container_memory_usage_bytes{container="",pod!=""}) BY (cluster) / sum(machine_memory_bytes) BY (cluster)',
             record: 'cluster:memory_usage:ratio',
           },
           {
-            expr: 'sum(container_spec_cpu_shares{container!="POD",container!="",pod!=""}) / 1000 / sum(machine_cpu_cores)',
+            expr: 'sum(container_spec_cpu_shares{container="",pod!=""}) / 1000 / sum(machine_cpu_cores)',
             record: 'cluster:container_spec_cpu_shares:ratio',
           },
           {
-            expr: 'sum(rate(container_cpu_usage_seconds_total{container!="POD",container!="",pod!=""}[5m])) / sum(machine_cpu_cores)',
+            expr: 'sum(rate(container_cpu_usage_seconds_total{container="",pod!=""}[5m])) / sum(machine_cpu_cores)',
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
