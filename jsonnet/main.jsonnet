@@ -96,9 +96,6 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                },
                prometheus+:: {
                  namespaces+: [
-                   'openshift-apiserver',
-                   'openshift-kube-scheduler',
-                   'openshift-kube-controller-manager',
                    'openshift-etcd',
                    'openshift-user-workload-monitoring',
                  ],
