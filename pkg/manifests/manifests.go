@@ -1887,7 +1887,7 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 
 	if proxyCABundleCM != nil {
 		volumeName := "grafana-trusted-ca-bundle"
-		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/ca-trust/extracted/pem/"))
+		d.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.Spec.Template.Spec.Containers[1].VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/ca-trust/extracted/pem/"))
 		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
 			Key:  "ca-bundle.crt",
