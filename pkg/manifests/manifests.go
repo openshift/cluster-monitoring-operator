@@ -2275,17 +2275,33 @@ func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error
 	return NewClusterRole(manifest)
 }
 
-func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret) (*appsv1.Deployment, error) {
+const (
+	// These constants refer to indices of prometheus-k8s containers.
+	// They need to be in sync with jsonnet/prometheus.jsonnet
+	THANOS_QUERIER_CONTAINER_THANOS           = 0
+	THANOS_QUERIER_CONTAINER_OAUTH_PROXY      = 1
+	THANOS_QUERIER_CONTAINER_KUBE_RBAC_PROXY  = 2
+	THANOS_QUERIER_CONTAINER_PROM_LABEL_PROXY = 3
+)
+
+func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(MustAssetReader(ThanosQuerierDeployment))
 	if err != nil {
 		return nil, err
 	}
 
 	d.Namespace = f.namespace
-	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.Thanos
-	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.OauthProxy
-	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
-	d.Spec.Template.Spec.Containers[3].Image = f.config.Images.PromLabelProxy
+	d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_THANOS].Image = f.config.Images.Thanos
+	d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].Image = f.config.Images.OauthProxy
+	d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_KUBE_RBAC_PROXY].Image = f.config.Images.KubeRbacProxy
+	d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_PROM_LABEL_PROXY].Image = f.config.Images.PromLabelProxy
+
+	if enableUserWorkloadMonitoring {
+		d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_THANOS].Args = append(
+			d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_THANOS].Args,
+			"--store=dnssrv+_grpc._tcp.prometheus-operated.openshift-user-workload-monitoring.svc.cluster.local",
+		)
+	}
 
 	d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",

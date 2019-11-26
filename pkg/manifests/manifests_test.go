@@ -144,7 +144,10 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ThanosQuerierDeployment(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+	_, err = f.ThanosQuerierDeployment(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		true,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
