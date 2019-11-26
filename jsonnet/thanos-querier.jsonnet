@@ -204,11 +204,6 @@ local authorizationRole =
                         'prometheus-operated',
                         'openshift-monitoring',
                       ],
-
-                      '--store=dnssrv+_grpc._tcp.%s.%s.svc.cluster.local' % [
-                        'prometheus-operated',
-                        'openshift-user-workload-monitoring',
-                      ],
                     ],
                     resources: {
                       requests: {
