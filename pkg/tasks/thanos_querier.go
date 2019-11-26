@@ -24,14 +24,16 @@ import (
 )
 
 type ThanosQuerierTask struct {
-	client  *client.Client
-	factory *manifests.Factory
+	client             *client.Client
+	factory            *manifests.Factory
+	userWorkloadConfig *manifests.UserWorkloadConfig
 }
 
-func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory) *ThanosQuerierTask {
+func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory, cfg *manifests.UserWorkloadConfig) *ThanosQuerierTask {
 	return &ThanosQuerierTask{
-		client:  client,
-		factory: factory,
+		client:             client,
+		factory:            factory,
+		userWorkloadConfig: cfg,
 	}
 }
 
@@ -166,7 +168,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "error creating Thanos Querier Client GRPC TLS secret")
 	}
 
-	dep, err := t.factory.ThanosQuerierDeployment(s)
+	dep, err := t.factory.ThanosQuerierDeployment(s, t.userWorkloadConfig.IsEnabled())
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier Deployment failed")
 	}
