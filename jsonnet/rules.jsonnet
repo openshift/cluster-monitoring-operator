@@ -45,14 +45,14 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
-            expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
-            alert: 'ClusterMonitoringOperatorErrors',
-            'for': '15m',
+            expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
+            alert: 'ClusterMonitoringOperatorReconciliationErrors',
+            'for': '30m',
             annotations: {
-              message: 'Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value }}% errors.',
+              message: 'Cluster Monitoring Operator is experiencing reconciliation error rate of {{ printf "%0.0f" $value }}%.',
             },
             labels: {
-              severity: 'critical',
+              severity: 'warning',
             },
           },
         ],

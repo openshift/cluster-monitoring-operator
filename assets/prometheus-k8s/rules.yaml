@@ -507,15 +507,15 @@ spec:
     - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m]))
         / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
-    - alert: ClusterMonitoringOperatorErrors
+    - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
-        message: Cluster Monitoring Operator is experiencing {{ printf "%0.0f" $value
-          }}% errors.
-      expr: sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100
-        / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10
-      for: 15m
+        message: Cluster Monitoring Operator is experiencing reconciliation error
+          rate of {{ printf "%0.0f" $value }}%.
+      expr: rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 /
+        rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10
+      for: 30m
       labels:
-        severity: critical
+        severity: warning
   - name: openshift-build.rules
     rules:
     - expr: sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))
