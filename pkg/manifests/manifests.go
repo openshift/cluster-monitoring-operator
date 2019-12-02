@@ -514,6 +514,7 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
+	ds.Spec.Template.Spec.InitContainers[0].Image = f.config.Images.NodeExporter
 	ds.Spec.Template.Spec.Containers[0].Image = f.config.Images.NodeExporter
 	ds.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
 
