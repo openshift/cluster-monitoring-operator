@@ -160,6 +160,10 @@
             record: 'node_role_os_version_machine:cpu_capacity_sockets:sum',
           },
           {
+            expr: 'clamp_max(sum(alertmanager_notifications_total),1)',
+            record: 'alertmanager_routing_enabled',
+          },
+          {
             expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
             alert: 'ClusterMonitoringOperatorReconciliationErrors',
             'for': '30m',
