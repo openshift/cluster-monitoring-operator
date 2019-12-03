@@ -8,7 +8,7 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "ec5221774c337b28230c4034c561c0441509f463",
+      "version": "18e9e45bda5818bae84be08585b13a7faf2263d3",
       "sum": "bkp18AxkOUYnVC15Gh9EoIi+mMAn0IT3hMzb8mlzpSw="
     },
     {
@@ -63,7 +63,7 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "ce5fe790ee9f1772ad52d935b320d545c8f88722",
+      "version": "f48fe057dc8c8874a180e1799f6959e0f2493457",
       "sum": "AerKgmCkb6FsMAjPHqExxYSr6C/uYYq5qV9pAZULaxY="
     },
     {
@@ -74,8 +74,8 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "05d490681404e9dae6e42284b6a2776493a9355c",
-      "sum": "rTPcq23U6UNXoN2Fpxt5JzIYTnylMuG794lr9Pt4xEc="
+      "version": "4c3ab85bc3cebe5c227e6037948f9ffa4c50715d",
+      "sum": "TC4tRXCijYCnqVfBtHBzspKNNnVJjfckebV5gL+WalY="
     },
     {
       "name": "kubernetes-mixin",
@@ -85,8 +85,8 @@
           "subdir": ""
         }
       },
-      "version": "13efb4da7a53add764bbbba9d17efb895ba5bcac",
-      "sum": "EAkvcR7R03quO61YevxJE4yPBbSYd3IJA8NYRAyNx8U="
+      "version": "6b321b7d03d5cb440a41a4350a284f45f5b8cbdd",
+      "sum": "2/N1Crq7dv06YaSSO9xaYWqoWntOJZpHDeTxfGyc4Cw="
     },
     {
       "name": "node-mixin",
@@ -96,7 +96,7 @@
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "c4c5f1f062b141d0111b4068a52eb5917048b3ea",
+      "version": "2cae917bb7e0b6379221e8a24da012b16e63d661",
       "sum": "7vEamDTP9AApeiF4Zu9ZyXzDIs3rYHzwf9k7g8X+wsg="
     },
     {
@@ -118,7 +118,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "ac3932ea35a20cf81d385df802176991d4bae867",
+      "version": "0ea3a2218d3a71d7a721c078efa2919175beb7a4",
       "sum": "/cohvDTaIiLElG66tKeQsi4v1M9mlGDKjOBSWivL9TU="
     },
     {
@@ -129,8 +129,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "8d44e0990230144177f97cf62ae4f43b1c4e3168",
-      "sum": "5U7/8MD3pF9O0YDTtUhg4vctkUBRVFxZxWUyhtNiBM8="
+      "version": "53cee6376f5f7c45a2ff8a15a60dd342eb662ddc",
+      "sum": "d7JRDm8tDx3Qz/4Tp7XKbjJiM1H6k6IZ2Qxls146CJ0="
     },
     {
       "name": "promgrafonnet",
@@ -140,7 +140,7 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "13efb4da7a53add764bbbba9d17efb895ba5bcac",
+      "version": "6b321b7d03d5cb440a41a4350a284f45f5b8cbdd",
       "sum": "VhgBM39yv0f4bKv8VfGg4FXkg573evGDRalip9ypKbc="
     },
     {
