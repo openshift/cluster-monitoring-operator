@@ -160,6 +160,10 @@
             record: 'node_role_os_version_machine:cpu_capacity_sockets:sum',
           },
           {
+            expr: 'max(rate(etcd_object_counts{resource="builds.build.openshift.io"}[1h]) * 3600)',
+            record: 'cluster:usage:openshift:builds:rate1h',
+          },
+          {
             expr: 'clamp_max(sum(alertmanager_notifications_total),1)',
             record: 'alertmanager_routing_enabled',
           },
