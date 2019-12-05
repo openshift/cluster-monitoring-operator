@@ -4,18 +4,6 @@ The Prometheus Alertmanager is a component that groups alerts, reliably deduplic
 
 Cluster Monitoring ships a central, highly available Alertmanager cluster. This cluster is meant to be used by all Prometheus instances, meaning all Prometheus instances will fire alerts against it, whenever an alerting rule is triggering.
 
-## Accessing Alertmanager
-
-To access Alertmanager, you need to have access to read the "Alertmanager" object in the `openshift-monitoring` namespace.
-
-Providing access to Alertmanager also gives the ability to create/expire silences for alerts.
-
-You can provide this access by running the following:
-```
-For a single user: oc adm policy add-role-to-user --role-namespace='openshift-monitoring' alertmanager-access <username>
-For a group: oc adm policy add-role-to-group --role-namespace='openshift-monitoring' alertmanager-access <group>
-```
-
 ## Editing the configuration
 
 Use `kubectl get secret` to view the currently active Alertmanager configuration.
