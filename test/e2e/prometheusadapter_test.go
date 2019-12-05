@@ -221,25 +221,15 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 	}
 }
 
-func DisabledTestPrometheusAdapterCARotation(t *testing.T) {
-	var lastErr error
-	// Wait for Prometheus adapter
-	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+func TestPrometheusAdapterCARotation(t *testing.T) {
+	// Wait for prometheus-adapter deployment
+	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get("prometheus-adapter", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting prometheus-adapter deployment failed")
 		if err != nil {
-			return false, nil
+			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
 		}
-		return true, nil
+		return nil
 	})
-	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
-	}
-
-	apiAuth, err := f.KubeClient.CoreV1().ConfigMaps("kube-system").Get("extension-apiserver-authentication", metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,52 +239,111 @@ func DisabledTestPrometheusAdapterCARotation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Simulate rotation by simply adding a newline to existing certs.
-	// This change will be propagated to the cluster monitoring operator,
-	// causing a new secret to be created.
-	apiAuth.Data["requestheader-client-ca-file"] = apiAuth.Data["requestheader-client-ca-file"] + "\n"
-	apiAuth, err = f.KubeClient.CoreV1().ConfigMaps("kube-system").Update(apiAuth)
+	apiAuth, err := f.KubeClient.CoreV1().ConfigMaps("kube-system").Get("extension-apiserver-authentication", metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	factory := manifests.NewFactory("openshift-monitoring", "", nil)
-	newSecret, err := factory.PrometheusAdapterSecret(tls, apiAuth)
+	adapterSecret, err := factory.PrometheusAdapterSecret(tls, apiAuth)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Wait for the new secret to be created
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(newSecret.Name, metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting new api auth secret failed")
-		if err != nil {
-			return false, nil
-		}
-		return true, nil
+	// the secret might not have been created yet, so wait for it
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		_, err = f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get(adapterSecret.GetName(), metav1.GetOptions{})
+		return err
 	})
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
+		t.Fatal(err)
+	}
+
+	// Delete the signer secrets. This causes kube-system/extension-apiserver-authentication
+	// to be reissued.
+	err = f.KubeClient.CoreV1().Secrets("openshift-kube-controller-manager-operator").Delete("csr-signer-signer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = f.KubeClient.CoreV1().Secrets("openshift-kube-controller-manager-operator").Delete("csr-signer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait for the new secret to be deployed
+	var newSecret corev1.Secret
+	err = framework.Poll(5*time.Second, 15*time.Minute, func() error {
+		secrets, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").List(metav1.ListOptions{
+			LabelSelector: "monitoring.openshift.io/name=prometheus-adapter,monitoring.openshift.io/hash!=" + adapterSecret.Labels["monitoring.openshift.io/hash"],
+		})
+
+		if err != nil {
+			return errors.Wrap(err, "error listing prometheus adapter secrets")
 		}
+
+		if len(secrets.Items) == 0 {
+			return errors.New("expected prometheus adapter secret to have rotated, but it didn't")
+		}
+
+		if got := len(secrets.Items); got > 1 {
+			return fmt.Errorf("expected exactly 1 prometheus adapter secret to be present, got %d", got)
+		}
+
+		newSecret = secrets.Items[0]
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait for prometheus-adapter deployment to reference new secret
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get("prometheus-adapter", metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
+		}
+
+		for _, v := range d.Spec.Template.Spec.Volumes {
+			if v.Name != "tls" {
+				continue
+			}
+
+			if v.VolumeSource.Secret.SecretName != newSecret.GetName() {
+				continue
+			}
+
+			return nil
+		}
+
+		return fmt.Errorf("expected secret %v to be referenced in prometheus-adapter but it didn't", newSecret.GetName())
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Wait for new Prometheus adapter to roll out
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get("prometheus-adapter", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting new prometheus adapter deployment failed")
 		if err != nil {
-			return false, nil
+			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
 		}
 
-		lastErr = fmt.Errorf("waiting for updated replica count=%d to be spec replica count=%d", d.Status.UpdatedReplicas, *d.Spec.Replicas)
-		return d.Status.UpdatedReplicas == *d.Spec.Replicas, nil
+		if d.Status.UpdatedReplicas < *d.Spec.Replicas {
+			return fmt.Errorf("waiting for deployment %q rollout to finish: %d out of %d new replicas have been updated...", d.Name, d.Status.UpdatedReplicas, *d.Spec.Replicas)
+		}
+
+		if d.Status.Replicas > d.Status.UpdatedReplicas {
+			return fmt.Errorf("waiting for deployment %q rollout to finish: %d old replicas are pending termination...", d.Name, d.Status.Replicas-d.Status.UpdatedReplicas)
+		}
+
+		if d.Status.AvailableReplicas < d.Status.UpdatedReplicas {
+			return fmt.Errorf("waiting for deployment %q rollout to finish: %d of %d updated replicas are available...", d.Name, d.Status.AvailableReplicas, d.Status.UpdatedReplicas)
+		}
+
+		return nil
 	})
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
 		t.Fatal(err)
 	}
 }

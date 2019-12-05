@@ -82,11 +82,13 @@ func testMain(m *testing.M) error {
 		)
 		body, loopErr = f.ThanosQuerierClient.PrometheusQuery("count(up{job=\"prometheus-k8s\"})")
 		if loopErr != nil {
+			loopErr = errors.Wrap(loopErr, "error executing prometheus query")
 			return false, nil
 		}
 
 		v, loopErr = framework.GetFirstValueFromPromQuery(body)
 		if loopErr != nil {
+			loopErr = errors.Wrapf(loopErr, "error getting first value from prometheus response %q", string(body))
 			return false, nil
 		}
 

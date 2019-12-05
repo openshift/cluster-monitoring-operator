@@ -64,7 +64,12 @@ func NewRouteClient(
 	var token string
 
 	for _, secret := range secrets.Items {
-		if strings.Contains(secret.Name, "cluster-monitoring-operator-e2e-token-") {
+		_, dockerToken := secret.Annotations["openshift.io/create-dockercfg-secrets"]
+		e2eToken := strings.Contains(secret.Name, "cluster-monitoring-operator-e2e-token-")
+
+		// we have to skip the token secret that contains the openshift.io/create-dockercfg-secrets annotation
+		// as this is the token to talk to the internal registry.
+		if !dockerToken && e2eToken {
 			token = string(secret.Data["token"])
 		}
 	}
@@ -99,6 +104,10 @@ func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
@@ -137,6 +146,10 @@ func (c *RouteClient) AlertmanagerQuery(kvs ...string) ([]byte, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
