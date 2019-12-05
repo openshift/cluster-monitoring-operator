@@ -182,16 +182,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.AlertmanagerClusterRole()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.AlertmanagerRole()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.AlertmanagerService()
 	if err != nil {
 		t.Fatal(err)
