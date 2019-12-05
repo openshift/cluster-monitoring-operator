@@ -345,6 +345,14 @@ spec:
       record: cluster:node_instance_type_count:sum
     - expr: sum(etcd_object_counts) BY (instance)
       record: instance:etcd_object_counts:sum
+    - expr: max(etcd_object_counts{resource=~"builds\\.build\\.openshift\\.io|deploymentconfigs\\.apps\\.openshift\\.io|images\\.image\\.openshift\\.io|statefulsets\\.apps|deployments\\.apps|cronjobs\\.batch|jobs\\.batch|pods|persistentvolumeclaims|persistentvolumes|services|namespaces|routes\\.route\\.openshift\\.io|ingresses\\.networking\\.k8s\\.io|horizontalpodautoscalers\\.autoscaling|users\\.user\\.openshift\\.io|machinesets\\.machine\\.openshift\\.io|resourcequotas"})
+        by (resource)
+      record: cluster:usage:resources:sum
+    - expr: count(count (kube_pod_restart_policy{type!="Always",namespace!~"openshift-.+"})
+        by (namespace,pod))
+      record: cluster:usage:pods:terminal:workload:sum
+    - expr: sum(max(kubelet_containers_per_pod_count_sum) by (instance))
+      record: cluster:usage:containers:sum
     - expr: count(cluster:cpu_core_node_labels) by (label_kubernetes_io_arch, label_node_hyperthread_enabled,
         label_node_openshift_io_os_id,label_node_role_kubernetes_io_master,label_node_role_kubernetes_io_infra)
       record: node_role_os_version_machine:cpu_capacity_cores:sum
