@@ -166,13 +166,6 @@ func (f *Framework) setup() (cleanUpFunc, error) {
 
 	cleanUpFuncs = append(cleanUpFuncs, cf)
 
-	cf, err = f.CreateAlertmanagerRoleBinding()
-	if err != nil {
-		return nil, err
-	}
-
-	cleanUpFuncs = append(cleanUpFuncs, cf)
-
 	return func() error {
 		var errs []error
 		for _, f := range cleanUpFuncs {
@@ -238,35 +231,6 @@ func (f *Framework) CreateClusterRoleBinding() (cleanUpFunc, error) {
 
 	return func() error {
 		return f.KubeClient.RbacV1().ClusterRoleBindings().Delete(clusterRoleBinding.Name, &metav1.DeleteOptions{})
-	}, nil
-}
-
-func (f *Framework) CreateAlertmanagerRoleBinding() (cleanUpFunc, error) {
-	roleBinding := &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster-monitoring-operator-e2e",
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      "cluster-monitoring-operator-e2e",
-				Namespace: "openshift-monitoring",
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "Role",
-			Name:     "alertmanager-access",
-			APIGroup: "rbac.authorization.k8s.io",
-		},
-	}
-
-	roleBinding, err := f.KubeClient.RbacV1().RoleBindings(namespaceName).Create(roleBinding)
-	if err != nil {
-		return nil, err
-	}
-
-	return func() error {
-		return f.KubeClient.RbacV1().RoleBindings(namespaceName).Delete(roleBinding.Name, &metav1.DeleteOptions{})
 	}, nil
 }
 
