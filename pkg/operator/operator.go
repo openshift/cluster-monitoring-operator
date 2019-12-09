@@ -51,9 +51,8 @@ const (
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName    string
-	images           map[string]string
-	telemetryMatches []string
+	configMapName string
+	images        map[string]string
 
 	client *client.Client
 
@@ -69,7 +68,7 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName string, images map[string]string, telemetryMatches []string) (*Operator, error) {
+func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName string, images map[string]string) (*Operator, error) {
 	c, err := client.New(config, version, namespace, namespaceSelector)
 	if err != nil {
 		return nil, err
@@ -77,7 +76,6 @@ func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespa
 
 	o := &Operator{
 		images:                images,
-		telemetryMatches:      telemetryMatches,
 		configMapName:         configMapName,
 		namespace:             namespace,
 		namespaceUserWorkload: namespaceUserWorkload,
@@ -296,7 +294,6 @@ func (o *Operator) enqueue(obj interface{}) {
 func (o *Operator) sync(key string) error {
 	config := o.Config(key)
 	config.SetImages(o.images)
-	config.SetTelemetryMatches(o.telemetryMatches)
 
 	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config)
 
