@@ -156,6 +156,10 @@
             record: 'node_role_os_version_machine:cpu_capacity_sockets:sum',
           },
           {
+            expr: 'clamp_max(sum(alertmanager_notifications_total),1)',
+            record: 'cluster:alertmanager_routing_enabled:max',
+          },
+          {
             expr: 'sum(rate(cluster_monitoring_operator_reconcile_errors_total[15m])) * 100 / sum(rate(cluster_monitoring_operator_reconcile_attempts_total[15m])) > 10',
             alert: 'ClusterMonitoringOperatorErrors',
             'for': '15m',
@@ -164,6 +168,16 @@
             },
             labels: {
               severity: 'critical',
+            },
+          },
+          {
+            expr: 'cluster:alertmanager_routing_enabled:max == 0',
+            alert: 'AlertmanagerReceiversNotConfigured',
+            annotations: {
+              message: 'Alerts are not configured to be sent to a notification system, meaning that you may not be notified in a timely fashion when important failures occur. Check the OpenShift documentation to learn how to configure notifications with Alertmanager.',
+            },
+            labels: {
+              severity: 'warning',
             },
           },
         ],
