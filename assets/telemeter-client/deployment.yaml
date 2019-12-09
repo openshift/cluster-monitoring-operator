@@ -27,6 +27,7 @@ spec:
         - --listen=localhost:8080
         - --anonymize-salt-file=/etc/telemeter/salt
         - --anonymize-labels=$(ANONYMIZE_LABELS)
+        - --match={__name__=~"cluster:usage:.*"}
         - --match={__name__="up"}
         - --match={__name__="cluster_version"}
         - --match={__name__="cluster_version_available_updates"}

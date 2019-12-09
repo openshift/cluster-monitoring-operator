@@ -8,7 +8,7 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "ec5221774c337b28230c4034c561c0441509f463",
+      "version": "1f8764be3b43448ccfd60706c42dab09b0bc6ed3",
       "sum": "bkp18AxkOUYnVC15Gh9EoIi+mMAn0IT3hMzb8mlzpSw="
     },
     {
@@ -30,7 +30,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "8f9d72b2e35b5f3cc1b7c2a8af9bbae7658804e2",
+      "version": "8813f9108550cd510b17ce5a8bac9261dd140e13",
       "sum": "ELsYwK+kGdzX1mee2Yy+/b2mdO4Y503BOCDkFzwmGbE="
     },
     {
@@ -96,7 +96,7 @@
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "c4c5f1f062b141d0111b4068a52eb5917048b3ea",
+      "version": "2cae917bb7e0b6379221e8a24da012b16e63d661",
       "sum": "7vEamDTP9AApeiF4Zu9ZyXzDIs3rYHzwf9k7g8X+wsg="
     },
     {
@@ -118,7 +118,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "ac3932ea35a20cf81d385df802176991d4bae867",
+      "version": "0ae048ff7871c3a3d4ac73579963bfd2604a7ef6",
       "sum": "/cohvDTaIiLElG66tKeQsi4v1M9mlGDKjOBSWivL9TU="
     },
     {
@@ -140,7 +140,7 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "13efb4da7a53add764bbbba9d17efb895ba5bcac",
+      "version": "252be5f3d16950aed725601ce1020dd5917aac67",
       "sum": "VhgBM39yv0f4bKv8VfGg4FXkg573evGDRalip9ypKbc="
     },
     {
@@ -151,8 +151,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "bbff8ff24473f85d0f9713976bbf839657b7a4c2",
-      "sum": "rHhf3x6JdjT1pCsfIW9qvnkWUPW99GFfqSYNIUNocxs="
+      "version": "aa7942931890dd361c117a6cbb7d84451415f7bf",
+      "sum": "FEwHULC9zPag73UrLsF+5DPxnWvaIkkO/1lxU7b41eQ="
     }
   ]
 }
