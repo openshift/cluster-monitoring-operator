@@ -151,7 +151,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     jobs: {
       [k]: j[k]
       for k in std.objectFields(j)
-      if !std.setMember(k, ['CoreDNS'])
+      if !std.setMember(k, ['CoreDNS', 'TelemeterClient'])
     },
   },
 } + {
@@ -172,6 +172,9 @@ removeLimits(
   { ['prometheus-user-workload/' + name]: kp.prometheusUserWorkload[name] for name in std.objectFields(kp.prometheusUserWorkload) } +
   { ['prometheus-adapter/' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) } +
   { ['grafana/' + name]: kp.grafana[name] for name in std.objectFields(kp.grafana) } +
+  // needs to be removed once 4.4 ships, as this is needed for removal of the
+  // manifests, as part of the migration to using remote-write for sending
+  // telemetry.
   { ['telemeter-client/' + name]: kp.telemeterClient[name] for name in std.objectFields(kp.telemeterClient) } +
   { ['cluster-monitoring-operator/' + name]: kp.clusterMonitoringOperator[name] for name in std.objectFields(kp.clusterMonitoringOperator) } +
   { ['thanos-querier/' + name]: kp.thanos.querier[name] for name in std.objectFields(kp.thanos.querier) }

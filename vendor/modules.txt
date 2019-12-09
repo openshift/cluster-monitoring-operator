@@ -131,7 +131,7 @@ github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 # github.com/prometheus/procfs v0.0.3
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
-# github.com/prometheus/prometheus v2.3.2+incompatible => github.com/prometheus/prometheus v1.8.2-0.20190819201610-48b2c9c8eae2
+# github.com/prometheus/prometheus v2.9.2+incompatible => github.com/prometheus/prometheus v1.8.2-0.20190819201610-48b2c9c8eae2
 github.com/prometheus/prometheus/pkg/labels
 github.com/prometheus/prometheus/promql
 github.com/prometheus/prometheus/pkg/gate
@@ -241,12 +241,12 @@ k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextension
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
 # k8s.io/apimachinery v0.0.0-20191020214737-6c8691705fc5 => k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
+k8s.io/apimachinery/pkg/util/yaml
 k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/apis/meta/v1
 k8s.io/apimachinery/pkg/fields
 k8s.io/apimachinery/pkg/util/wait
 k8s.io/apimachinery/pkg/util/sets
-k8s.io/apimachinery/pkg/util/yaml
 k8s.io/apimachinery/pkg/util/runtime
 k8s.io/apimachinery/pkg/runtime
 k8s.io/apimachinery/pkg/runtime/schema

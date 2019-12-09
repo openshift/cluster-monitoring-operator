@@ -84,6 +84,7 @@ type PrometheusK8sConfig struct {
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	Hostport            string                    `json:"hostport"`
 	RemoteWrite         []monv1.RemoteWriteSpec   `json:"remoteWrite"`
+	TelemetryMatches    []string                  `json:"-"`
 }
 
 type AlertmanagerMainConfig struct {
@@ -216,7 +217,9 @@ func (c *Config) applyDefaults() {
 		c.HTTPConfig = &HTTPConfig{}
 	}
 	if c.TelemeterClientConfig == nil {
-		c.TelemeterClientConfig = &TelemeterClientConfig{}
+		c.TelemeterClientConfig = &TelemeterClientConfig{
+			TelemeterServerURL: "https://infogw.api.openshift.com/metrics/v1/receive",
+		}
 	}
 	if c.K8sPrometheusAdapter == nil {
 		c.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
@@ -245,6 +248,10 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
 	c.Images.OpenShiftStateMetrics = images["openshift-state-metrics"]
 	c.Images.Thanos = images["thanos"]
+}
+
+func (c *Config) SetTelemetryMatches(matches []string) {
+	c.PrometheusK8sConfig.TelemetryMatches = matches
 }
 
 func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) error {
