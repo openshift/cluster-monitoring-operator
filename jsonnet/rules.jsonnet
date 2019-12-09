@@ -173,7 +173,7 @@
           },
           {
             expr: 'clamp_max(sum(alertmanager_notifications_total),1)',
-            record: 'alertmanager_routing_enabled',
+            record: 'cluster:alertmanager_routing_enabled:max',
           },
           {
             expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
@@ -181,6 +181,16 @@
             'for': '30m',
             annotations: {
               message: 'Cluster Monitoring Operator is experiencing reconciliation error rate of {{ printf "%0.0f" $value }}%.',
+            },
+            labels: {
+              severity: 'warning',
+            },
+          },
+          {
+            expr: 'cluster:alertmanager_routing_enabled:max > 0',
+            alert: 'AlertmanagerReceiversNotConfigured',
+            annotations: {
+              message: 'Alerts are not configured to be sent to a notification system, meaning that you may not be notified in a timely fashion when important failures occur. Check the OpenShift documentation to learn how to configure notifications with Alertmanager.',
             },
             labels: {
               severity: 'warning',
