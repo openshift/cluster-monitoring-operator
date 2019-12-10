@@ -1262,6 +1262,15 @@ spec:
       expr: vector(1)
       labels:
         severity: none
+    - alert: sreElevatedMoreThan2Hours
+      annotations:
+        message: SRE "{{ $labels.user }}"
+        elevated to cluster-admin({{ $labels.group }}) more than 2 hours.
+      expr: |
+        openshift_group_user_account{group="osd-sre-cluster-admins"} == 1
+      for: 130m
+      labels:
+        severity: warning
   - name: node-time
     rules:
     - alert: ClockSkewDetected
