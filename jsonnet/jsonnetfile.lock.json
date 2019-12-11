@@ -85,8 +85,8 @@
           "subdir": ""
         }
       },
-      "version": "6b321b7d03d5cb440a41a4350a284f45f5b8cbdd",
-      "sum": "2/N1Crq7dv06YaSSO9xaYWqoWntOJZpHDeTxfGyc4Cw="
+      "version": "252be5f3d16950aed725601ce1020dd5917aac67",
+      "sum": "PmOBMPbWn9/P8zVY4er20VKZCcuDW1NQXkjrX100lnE="
     },
     {
       "name": "node-mixin",
@@ -140,7 +140,7 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "6b321b7d03d5cb440a41a4350a284f45f5b8cbdd",
+      "version": "252be5f3d16950aed725601ce1020dd5917aac67",
       "sum": "VhgBM39yv0f4bKv8VfGg4FXkg573evGDRalip9ypKbc="
     },
     {

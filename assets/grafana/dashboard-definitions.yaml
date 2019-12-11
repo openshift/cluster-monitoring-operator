@@ -63,7 +63,7 @@ items:
                       "label": "Others",
                       "threshold": 0
                   },
-                  "datasource": "prometheus",
+                  "datasource": "$datasource",
                   "fontSize": "80%",
                   "format": "Bps",
                   "gridPos": {
@@ -108,7 +108,7 @@ items:
                       "label": "Others",
                       "threshold": 0
                   },
-                  "datasource": "prometheus",
+                  "datasource": "$datasource",
                   "fontSize": "80%",
                   "format": "Bps",
                   "gridPos": {
@@ -186,7 +186,7 @@ items:
                           "value": ""
                       }
                   ],
-                  "datasource": "prometheus",
+                  "datasource": "$datasource",
                   "fill": 1,
                   "fontSize": "90%",
                   "gridPos": {
@@ -489,7 +489,7 @@ items:
                               "label": "Others",
                               "threshold": 0
                           },
-                          "datasource": "prometheus",
+                          "datasource": "$datasource",
                           "fontSize": "80%",
                           "format": "Bps",
                           "gridPos": {
@@ -534,7 +534,7 @@ items:
                               "label": "Others",
                               "threshold": 0
                           },
-                          "datasource": "prometheus",
+                          "datasource": "$datasource",
                           "fontSize": "80%",
                           "format": "Bps",
                           "gridPos": {
@@ -606,7 +606,7 @@ items:
                   "bars": false,
                   "dashLength": 10,
                   "dashes": false,
-                  "datasource": "prometheus",
+                  "datasource": "$datasource",
                   "fill": 2,
                   "gridPos": {
                       "h": 9,
@@ -705,7 +705,7 @@ items:
                   "bars": false,
                   "dashLength": 10,
                   "dashes": false,
-                  "datasource": "prometheus",
+                  "datasource": "$datasource",
                   "fill": 2,
                   "gridPos": {
                       "h": 9,
@@ -815,7 +815,7 @@ items:
                           "bars": false,
                           "dashLength": 10,
                           "dashes": false,
-                          "datasource": "prometheus",
+                          "datasource": "$datasource",
                           "fill": 2,
                           "gridPos": {
                               "h": 9,
@@ -914,7 +914,7 @@ items:
                           "bars": false,
                           "dashLength": 10,
                           "dashes": false,
-                          "datasource": "prometheus",
+                          "datasource": "$datasource",
                           "fill": 2,
                           "gridPos": {
                               "h": 9,
@@ -1033,7 +1033,7 @@ items:
                           "bars": false,
                           "dashLength": 10,
                           "dashes": false,
-                          "datasource": "prometheus",
+                          "datasource": "$datasource",
                           "fill": 2,
                           "gridPos": {
                               "h": 9,
@@ -1132,7 +1132,7 @@ items:
                           "bars": false,
                           "dashLength": 10,
                           "dashes": false,
-                          "datasource": "prometheus",
+                          "datasource": "$datasource",
                           "fill": 2,
                           "gridPos": {
                               "h": 9,
@@ -1254,7 +1254,7 @@ items:
                           "text": "5m",
                           "value": "5m"
                       },
-                      "datasource": "prometheus",
+                      "datasource": "$datasource",
                       "hide": 0,
                       "includeAll": false,
                       "label": null,
@@ -1299,7 +1299,7 @@ items:
                           "text": "5m",
                           "value": "5m"
                       },
-                      "datasource": "prometheus",
+                      "datasource": "$datasource",
                       "hide": 2,
                       "includeAll": false,
                       "label": null,
@@ -1324,6 +1324,22 @@ items:
                       "tagsQuery": "",
                       "type": "interval",
                       "useTags": false
+                  },
+                  {
+                      "current": {
+                          "text": "Prometheus",
+                          "value": "Prometheus"
+                      },
+                      "hide": 0,
+                      "label": null,
+                      "name": "datasource",
+                      "options": [
+
+                      ],
+                      "query": "prometheus",
+                      "refresh": 1,
+                      "regex": "",
+                      "type": "datasource"
                   }
               ]
           },
@@ -5105,7 +5121,7 @@ items:
                           "text": "5m",
                           "value": "5m"
                       },
-                      "datasource": "prometheus",
+                      "datasource": "$datasource",
                       "hide": 2,
                       "includeAll": false,
                       "label": null,
@@ -6969,7 +6985,7 @@ items:
                           "text": "5m",
                           "value": "5m"
                       },
-                      "datasource": "prometheus",
+                      "datasource": "$datasource",
                       "hide": 2,
                       "includeAll": false,
                       "label": null,
@@ -9529,7 +9545,7 @@ items:
                           "text": "5m",
                           "value": "5m"
                       },
-                      "datasource": "prometheus",
+                      "datasource": "$datasource",
                       "hide": 2,
                       "includeAll": false,
                       "label": null,
@@ -11562,7 +11578,7 @@ items:
                           "text": "5m",
                           "value": "5m"
                       },
-                      "datasource": "prometheus",
+                      "datasource": "$datasource",
                       "hide": 2,
                       "includeAll": false,
                       "label": null,
@@ -13649,7 +13665,7 @@ items:
                           "text": "5m",
                           "value": "5m"
                       },
-                      "datasource": "prometheus",
+                      "datasource": "$datasource",
                       "hide": 2,
                       "includeAll": false,
                       "label": null,
