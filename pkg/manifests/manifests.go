@@ -1129,7 +1129,15 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 			URL:         f.config.TelemeterClientConfig.TelemeterServerURL,
 			BearerToken: base64.StdEncoding.EncodeToString(compositeToken),
 			QueueConfig: &monv1.QueueConfig{
-				MaxShards: 5000,
+				Capacity: 10000,
+				// Default: 100
+				MaxSamplesPerSend: 1000,
+				// Default: 1000
+				MaxShards: 100,
+				// Default: 30ms
+				MinBackoff: "500ms",
+				// Default: 100ms
+				MaxBackoff: "2s",
 			},
 			WriteRelabelConfigs: []monv1.RelabelConfig{
 				*selectorRelabelConfig,
