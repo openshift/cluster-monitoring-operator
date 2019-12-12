@@ -115,7 +115,7 @@ local tlsVolumeName = 'node-exporter-tls';
                       }
                     else
                       c {
-                        args+: ['--no-collector.wifi', '--collector.textfile.directory='+textfileDir ],
+                        args+: ['--no-collector.wifi', '--collector.cpu.info', '--collector.textfile.directory='+textfileDir ],
                         resources: {},
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [

@@ -1,34 +1,34 @@
 {
-    "dependencies": [
-        {
-            "name": "kube-prometheus",
-            "source": {
-                "git": {
-                    "remote": "https://github.com/coreos/kube-prometheus",
-                    "subdir": "jsonnet/kube-prometheus"
-                }
-            },
-            "version": "release-0.2"
-        },
-        {
-            "name": "telemeter-client",
-            "source": {
-                "git": {
-                    "remote": "https://github.com/openshift/telemeter",
-                    "subdir": "jsonnet/telemeter"
-                }
-            },
-            "version": "release-4.2"
-        },
-        {
-            "name": "openshift-state-metrics",
-            "source": {
-                "git": {
-                    "remote": "https://github.com/openshift/openshift-state-metrics",
-                    "subdir": "jsonnet"
-                }
-            },
-            "version": "release-4.2"
+  "dependencies": [
+    {
+      "name": "kube-prometheus",
+      "source": {
+        "git": {
+          "remote": "https://github.com/coreos/kube-prometheus",
+          "subdir": "jsonnet/kube-prometheus"
         }
-    ]
+      },
+      "version": "release-0.2"
+    },
+    {
+      "name": "openshift-state-metrics",
+      "source": {
+        "git": {
+          "remote": "https://github.com/openshift/openshift-state-metrics",
+          "subdir": "jsonnet"
+        }
+      },
+      "version": "release-4.2"
+    },
+    {
+      "name": "telemeter-client",
+      "source": {
+        "git": {
+          "remote": "https://github.com/openshift/telemeter",
+          "subdir": "jsonnet/telemeter"
+        }
+      },
+      "version": "release-4.2"
+    }
+  ]
 }
