@@ -8,8 +8,8 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "18e9e45bda5818bae84be08585b13a7faf2263d3",
-      "sum": "bkp18AxkOUYnVC15Gh9EoIi+mMAn0IT3hMzb8mlzpSw="
+      "version": "fb7703ab430ca2f23cd2f70bad8d1d38f9b165fb",
+      "sum": "Ko3qhNfC2vN/houLh6C0Ryacjv70gl0DVPGU/PQ4OD0="
     },
     {
       "name": "grafana",
@@ -30,7 +30,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "8f9d72b2e35b5f3cc1b7c2a8af9bbae7658804e2",
+      "version": "8813f9108550cd510b17ce5a8bac9261dd140e13",
       "sum": "ELsYwK+kGdzX1mee2Yy+/b2mdO4Y503BOCDkFzwmGbE="
     },
     {
@@ -41,8 +41,8 @@
           "subdir": "grafonnet"
         }
       },
-      "version": "cb9e43f59558ff6338a76ae1806a0fb4b70b1b16",
-      "sum": "YIo2bziNlqzZtlnpLtoi9qa1aztcAX7j1UuKRjjEzVY="
+      "version": "22420e64b58913754871a1c7d6c7b3cfd3651460",
+      "sum": "z/+CW6854tMTaI4+iRbx0nwP/m/vzf5LezBfZVXZKqU="
     },
     {
       "name": "ksonnet",
@@ -63,8 +63,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "f48fe057dc8c8874a180e1799f6959e0f2493457",
-      "sum": "AerKgmCkb6FsMAjPHqExxYSr6C/uYYq5qV9pAZULaxY="
+      "version": "543ccec9704fa447a293e362f678b38c444af0ea",
+      "sum": "hKEvpLPDSlFY30qXhdspyIIDAZhBy7vOfeTY1LCmUOU="
     },
     {
       "name": "kube-thanos",
@@ -74,8 +74,8 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "4c3ab85bc3cebe5c227e6037948f9ffa4c50715d",
-      "sum": "TC4tRXCijYCnqVfBtHBzspKNNnVJjfckebV5gL+WalY="
+      "version": "9bd3133ee1b2e6e5da446d94704ed33562a31b33",
+      "sum": "1cyDaR05OAJ76DRFyDeQdFOUJlNGgmGvhBc7+YeF4AQ="
     },
     {
       "name": "kubernetes-mixin",
@@ -85,8 +85,8 @@
           "subdir": ""
         }
       },
-      "version": "252be5f3d16950aed725601ce1020dd5917aac67",
-      "sum": "PmOBMPbWn9/P8zVY4er20VKZCcuDW1NQXkjrX100lnE="
+      "version": "a7ee9d1abe1b1a3670a02ede1135cadb660b9d0c",
+      "sum": "bFGN7aEnh4Hs+tkuRkmlWboht0RWt38qy+Y4gGS+pa0="
     },
     {
       "name": "node-mixin",
@@ -118,7 +118,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "0ea3a2218d3a71d7a721c078efa2919175beb7a4",
+      "version": "fce2e131dba3d4150e1b44b7b2d1a5e62f655dc7",
       "sum": "/cohvDTaIiLElG66tKeQsi4v1M9mlGDKjOBSWivL9TU="
     },
     {
@@ -129,8 +129,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "53cee6376f5f7c45a2ff8a15a60dd342eb662ddc",
-      "sum": "d7JRDm8tDx3Qz/4Tp7XKbjJiM1H6k6IZ2Qxls146CJ0="
+      "version": "d6d17e6b9653374d7c8e8829b065da9ea3b69aa6",
+      "sum": "N9LzLlpaBNxMLSFVt3AHI/nCDWI6bSM63GS+0Ur+Qh0="
     },
     {
       "name": "promgrafonnet",
@@ -140,8 +140,19 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "252be5f3d16950aed725601ce1020dd5917aac67",
+      "version": "a7ee9d1abe1b1a3670a02ede1135cadb660b9d0c",
       "sum": "VhgBM39yv0f4bKv8VfGg4FXkg573evGDRalip9ypKbc="
+    },
+    {
+      "name": "slo-libsonnet",
+      "source": {
+        "git": {
+          "remote": "https://github.com/metalmatze/slo-libsonnet",
+          "subdir": "slo-libsonnet"
+        }
+      },
+      "version": "437c402c5f3ad86c3c16db8471f1649284fef0ee",
+      "sum": "2Zcyku1f558VrUpMaJnI78fahDksPLcS1idmxxwcQ7Q="
     },
     {
       "name": "telemeter-client",
@@ -151,8 +162,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "8dae8893776e237688d7ff39821265a4f467f213",
-      "sum": "tLjALazakKQ6Z0VtG74rX/TLJo4Jh7lvN6fkXHWJxNc="
+      "version": "94a9ee6a847d21d8a197480159ebc905071d28e6",
+      "sum": "8j1KQklcMnp3ElsHvS7OjVeZNMUJLE2XU0CVyHeOycc="
     }
   ]
 }
