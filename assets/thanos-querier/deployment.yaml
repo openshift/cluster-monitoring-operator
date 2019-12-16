@@ -126,6 +126,7 @@ spec:
       priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: thanos-querier
+      terminationGracePeriodSeconds: 120
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master

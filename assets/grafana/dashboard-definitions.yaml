@@ -465,6 +465,8 @@ items:
                           "step": 10
                       }
                   ],
+                  "timeFrom": null,
+                  "timeShift": null,
                   "title": "Current Status",
                   "type": "table"
               },
