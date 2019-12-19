@@ -63,8 +63,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "4f2b9c1ec820b48be4044804eee22cf51e97f063",
-      "sum": "PO0PmyB2L8qr5Akjzhqrhiq+8toBzAlokPQVW0Mq0Qc="
+      "version": "9211c42df0c33b1daa85c7fc709dd2a9a398a240",
+      "sum": "XNEiGhywewqef1IF0JrlMlO4CuZerNeylXiLkHsaKEk="
     },
     {
       "name": "kube-thanos",
@@ -74,7 +74,7 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "ef67c8c717c5ffb0d0b5871adbd35645bb230eed",
+      "version": "252fcaa56b267ed756ea59ecaf5fcc44f2cd287b",
       "sum": "mkbF2iBDt0qyQ6eJC3+Q7Ss6H1gr9QAOmnTtK3MIvbw="
     },
     {
@@ -118,7 +118,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "2d7c8069d041b221cafc475dda28059f4f0cd4a4",
+      "version": "34e0376ef89e31adc58282ba1e8421a0fdb39a9e",
       "sum": "/cohvDTaIiLElG66tKeQsi4v1M9mlGDKjOBSWivL9TU="
     },
     {
@@ -162,8 +162,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "24d6d0009a54f6e7dfcd53faf47c3a67103dc962",
-      "sum": "8j1KQklcMnp3ElsHvS7OjVeZNMUJLE2XU0CVyHeOycc="
+      "version": "04e896229a25482642a38937d9ff452302710ac6",
+      "sum": "s62onQakVZ2xrTyahP9G3gVMu+ovTG9STA8PukCJy3U="
     }
   ]
 }
