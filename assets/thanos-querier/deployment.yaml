@@ -33,14 +33,18 @@ spec:
             command:
             - sh
             - -c
-            - curl http://localhost:9090/-/healthy
+            - if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/healthy;
+              elif [ -x "$(command -v wget)" ]; then wget --quiet --tries=1 --spider
+              http://localhost:9090/-/healthy; else exit 1; fi
         name: thanos-querier
         readinessProbe:
           exec:
             command:
             - sh
             - -c
-            - curl http://localhost:9090/-/healthy
+            - if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/healthy;
+              elif [ -x "$(command -v wget)" ]; then wget --quiet --tries=1 --spider
+              http://localhost:9090/-/healthy; else exit 1; fi
         resources:
           requests:
             cpu: 10m

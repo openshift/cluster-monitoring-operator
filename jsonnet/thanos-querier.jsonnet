@@ -181,13 +181,13 @@ local authorizationRole =
                     livenessProbe: {
                       httpGet:: {},
                       exec: {
-                        command: ['sh', '-c', 'curl http://localhost:9090/-/healthy'],
+                        command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/healthy; elif [ -x "$(command -v wget)" ]; then wget --quiet --tries=1 --spider http://localhost:9090/-/healthy; else exit 1; fi'],
                       },
                     },
                     readinessProbe: {
                       httpGet:: {},
                       exec: {
-                        command: ['sh', '-c', 'curl http://localhost:9090/-/healthy'],
+                        command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/healthy; elif [ -x "$(command -v wget)" ]; then wget --quiet --tries=1 --spider http://localhost:9090/-/healthy; else exit 1; fi'],
                       },
                     },
                     args: [
