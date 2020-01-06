@@ -115,7 +115,29 @@ local tlsVolumeName = 'node-exporter-tls';
                       }
                     else
                       c {
-                        args+: ['--no-collector.wifi', '--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory='+textfileDir ],
+                        args+: [
+                          '--web.disable-exporter-metrics',
+                          '--no-collector.wifi',
+                          '--no-collector.hwmon',
+                          '--no-collector.netstat',
+                          '--no-collector.sockstat',
+                          '--no-collector.entropy',
+                          '--no-collector.filefd',
+                          '--no-collector.time',
+                          '--no-collector.textfile',
+                          '--no-collector.conntrack',
+                          '--no-collector.bcache',
+                          '--no-collector.stat',
+                          '--no-collector.schedstat',
+                          '--no-collector.pressure',
+                          '--no-collector.powersupplyclass',
+                          '--no-collector.uname',
+                          '--no-collector.arp',
+                          '--no-collector.thermal_zone',
+                          '--collector.mountstats',
+                          '--collector.cpu.info',
+                          '--collector.textfile.directory='+textfileDir
+                          ],
                         resources: {},
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [

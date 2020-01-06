@@ -22,7 +22,24 @@ spec:
         - --path.rootfs=/host/root
         - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+)($|/)
         - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$
+        - --web.disable-exporter-metrics
         - --no-collector.wifi
+        - --no-collector.hwmon
+        - --no-collector.netstat
+        - --no-collector.sockstat
+        - --no-collector.entropy
+        - --no-collector.filefd
+        - --no-collector.time
+        - --no-collector.textfile
+        - --no-collector.conntrack
+        - --no-collector.bcache
+        - --no-collector.stat
+        - --no-collector.schedstat
+        - --no-collector.pressure
+        - --no-collector.powersupplyclass
+        - --no-collector.uname
+        - --no-collector.arp
+        - --no-collector.thermal_zone
         - --collector.mountstats
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
