@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  ca-bundle.crt: ""
+kind: ConfigMap
+metadata:
+  labels:
+    config.openshift.io/inject-trusted-cabundle: "true"
+  name: thanos-querier-trusted-ca-bundle
+  namespace: openshift-monitoring
