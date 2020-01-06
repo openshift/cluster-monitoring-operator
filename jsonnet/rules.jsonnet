@@ -96,7 +96,7 @@
                 ), 1
               )
             |||,
-            record: 'cluster:cpu_core_hyperthreading'
+            record: 'cluster:cpu_core_hyperthreading',
           },
           {
             expr: |||
@@ -105,7 +105,7 @@
                              label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)
               label_replace( cluster:cpu_core_hyperthreading, "node", "$1", "instance", "(.*)" )
             |||,
-            record: 'cluster:cpu_core_node_labels'
+            record: 'cluster:cpu_core_node_labels',
           },
           {
             expr: 'count(cluster:cpu_core_node_labels) by (label_beta_kubernetes_io_instance_type, label_node_hyperthread_enabled)',
@@ -206,7 +206,7 @@
           {
             expr: 'sum by (frontend) (haproxy_frontend_current_sessions)',
             record: 'frontend:cluster:ingress_frontend_connections:sum',
-          }
+          },
         ],
       },
       {
@@ -222,11 +222,11 @@
         name: 'openshift-sre.rules',
         rules: [
           {
-            expr: 'sum(rate(apiserver_request_count{job="apiserver"}[10m])) BY (code)',
-            record: 'code:apiserver_request_count:rate:sum',
+            expr: 'sum(rate(apiserver_request_total{job="apiserver"}[10m])) BY (code)',
+            record: 'code:apiserver_request_total:rate:sum',
           },
           {
-            expr: 'sum(rate(apiserver_request_count{job="apiserver",resource=~"image.*",verb!="WATCH"}[10m])) BY (code)',
+            expr: 'sum(rate(apiserver_request_total{job="apiserver",resource=~"image.*",verb!="WATCH"}[10m])) BY (code)',
             record: 'code:registry_api_request_count:rate:sum',
           },
           {
