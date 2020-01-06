@@ -368,12 +368,12 @@ func assertUserWorkloadMetrics(t *testing.T) {
 }
 
 func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
-	_, err := f.KubeClient.AppsV1beta2().StatefulSets("user-workload").Get("prometheus-not-to-be-reconciled", metav1.GetOptions{})
+	_, err := f.KubeClient.AppsV1().StatefulSets("user-workload").Get("prometheus-not-to-be-reconciled", metav1.GetOptions{})
 	if err == nil {
 		t.Fatal("expected no Prometheus statefulset to be deployed, but found one")
 	}
 
-	_, err = f.KubeClient.AppsV1beta2().StatefulSets("user-workload").Get("alertmanager-not-to-be-reconciled", metav1.GetOptions{})
+	_, err = f.KubeClient.AppsV1().StatefulSets("user-workload").Get("alertmanager-not-to-be-reconciled", metav1.GetOptions{})
 	if err == nil {
 		t.Fatal("expected no Alertmanager statefulset to be deployed, but found one")
 	}
@@ -406,7 +406,7 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		}
 
 		err = framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1beta2().StatefulSets(f.UserWorkloadMonitoringNs).Get("prometheus-user-workload", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get("prometheus-user-workload", metav1.GetOptions{})
 			if err == nil {
 				return errors.New("prometheus statefulset not deleted")
 			}
