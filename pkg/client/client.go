@@ -592,7 +592,7 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 func (c *Client) WaitForStatefulsetRollout(sts *appsv1.StatefulSet) error {
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		d, err := c.kclient.AppsV1beta2().StatefulSets(sts.GetNamespace()).Get(sts.GetName(), metav1.GetOptions{})
+		d, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(sts.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
