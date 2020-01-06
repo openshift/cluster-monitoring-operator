@@ -178,6 +178,7 @@ var (
 	ThanosQuerierClusterRole        = "assets/thanos-querier/cluster-role.yaml"
 	ThanosQuerierClusterRoleBinding = "assets/thanos-querier/cluster-role-binding.yaml"
 	ThanosQuerierGrpcTLSSecret      = "assets/thanos-querier/grpc-tls-secret.yaml"
+	ThanosQuerierTrustedCABundle    = "assets/thanos-querier/trusted-ca-bundle.yaml"
 
 	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
 )
@@ -370,8 +371,7 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 	if trustedCABundleCM != nil {
 		volumeName := "alertmanager-trusted-ca-bundle"
-		volumePath := "/etc/pki/ca-trust/extracted/pem/"
-		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName, volumePath))
+		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
 		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
 			Key:  "ca-bundle.crt",
@@ -379,7 +379,7 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		})
 		a.Spec.Volumes = append(a.Spec.Volumes, volume)
 		// We have only one container in Alertmanager CR spec and this is oauth-proxy
-		a.Spec.Containers[0].VolumeMounts = append(a.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName, volumePath))
+		a.Spec.Containers[0].VolumeMounts = append(a.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName))
 	}
 	a.Namespace = f.namespace
 
@@ -1163,7 +1163,6 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 
 	if trustedCABundleCM != nil {
 		volumeName := "prometheus-trusted-ca-bundle"
-		volumePath := "/etc/pki/ca-trust/extracted/pem/"
 		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
 			Key:  "ca-bundle.crt",
@@ -1177,12 +1176,12 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 
 		p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].VolumeMounts = append(
 			p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].VolumeMounts,
-			trustedCABundleVolumeMount(volumeName, volumePath),
+			trustedCABundleVolumeMount(volumeName),
 		)
 
 		p.Spec.Containers[K8S_CONTAINER_PROMETHEUS].VolumeMounts = append(
 			p.Spec.Containers[K8S_CONTAINER_PROMETHEUS].VolumeMounts,
-			trustedCABundleVolumeMount(volumeName, volumePath),
+			trustedCABundleVolumeMount(volumeName),
 		)
 	}
 
@@ -1882,7 +1881,7 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 
 	if proxyCABundleCM != nil {
 		volumeName := "grafana-trusted-ca-bundle"
-		d.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.Spec.Template.Spec.Containers[1].VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/ca-trust/extracted/pem/"))
+		d.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.Spec.Template.Spec.Containers[1].VolumeMounts, trustedCABundleVolumeMount(volumeName))
 		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
 			Key:  "ca-bundle.crt",
@@ -2279,10 +2278,29 @@ const (
 	THANOS_QUERIER_CONTAINER_PROM_LABEL_PROXY = 3
 )
 
-func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool) (*appsv1.Deployment, error) {
+func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool, trustedCA *v1.ConfigMap) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(MustAssetReader(ThanosQuerierDeployment))
 	if err != nil {
 		return nil, err
+	}
+
+	setEnv := func(name, value string) {
+		for i := range d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].Env {
+			if d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].Env[i].Name == name {
+				d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].Env[i].Value = value
+				break
+			}
+		}
+	}
+
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
 	}
 
 	d.Namespace = f.namespace
@@ -2307,7 +2325,31 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		},
 	})
 
+	if trustedCA != nil {
+		volumeName := "thanos-querier-trusted-ca-bundle"
+		d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].VolumeMounts = append(
+			d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].VolumeMounts,
+			trustedCABundleVolumeMount(volumeName),
+		)
+
+		volume := trustedCABundleVolume(trustedCA.Name, volumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  "ca-bundle.crt",
+			Path: "tls-ca-bundle.pem",
+		})
+		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
+	}
+
 	return d, nil
+}
+
+func (f *Factory) ThanosQuerierTrustedCABundle() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(ThanosQuerierTrustedCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
 }
 
 func (f *Factory) ThanosQuerierService() (*v1.Service, error) {
@@ -2433,7 +2475,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 	d.Namespace = f.namespace
 	if proxyCABundleCM != nil {
 		volumeName := "telemeter-trusted-ca-bundle"
-		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/ca-trust/extracted/pem/"))
+		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName))
 		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
 			Key:  "ca-bundle.crt",
@@ -2784,11 +2826,11 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 	}, nil
 }
 
-func trustedCABundleVolumeMount(name, path string) v1.VolumeMount {
+func trustedCABundleVolumeMount(name string) v1.VolumeMount {
 	return v1.VolumeMount{
 		Name:      name,
 		ReadOnly:  true,
-		MountPath: path,
+		MountPath: "/etc/pki/ca-trust/extracted/pem/",
 	}
 }
 
