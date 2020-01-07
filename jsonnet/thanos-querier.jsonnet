@@ -32,6 +32,11 @@ local authorizationRole =
     image:: config.imageRepos.openshiftThanos + ':' + config.versions.openshiftThanos,
 
     querier+: {
+      trustedCaBundle:
+        configmap.new('thanos-querier-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
+        configmap.mixin.metadata.withNamespace($._config.namespace) +
+        configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+
       route: {
         apiVersion: 'v1',
         kind: 'Route',

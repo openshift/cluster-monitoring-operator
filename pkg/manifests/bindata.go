@@ -126,6 +126,7 @@
 // assets/thanos-querier/route.yaml
 // assets/thanos-querier/service-account.yaml
 // assets/thanos-querier/service.yaml
+// assets/thanos-querier/trusted-ca-bundle.yaml
 // DO NOT EDIT!
 
 package manifests
@@ -2713,6 +2714,26 @@ func assetsThanosQuerierServiceYaml() (*asset, error) {
 	return a, nil
 }
 
+var _assetsThanosQuerierTrustedCaBundleYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\xce\xb1\x0e\xc2\x30\x0c\x04\xd0\x3d\x5f\x61\x65\x4f\x11\x6b\x56\x66\x56\x76\x37\x71\x5b\x43\xeb\x04\xc7\xe1\xfb\x11\x50\x10\xdb\x0d\x4f\x77\x87\x95\x2f\xa4\x8d\x8b\x44\x78\x1c\x5d\x46\xc3\xe8\x00\x12\x86\xb1\x4b\x5e\x69\x48\x6a\x11\xbc\x77\x37\x96\x1c\xe1\x54\x64\xe2\xf9\x8c\xd5\x6d\x64\xf8\xd5\x2b\x8e\xb4\xb6\x57\x02\x48\x6f\x31\x94\x4a\xd2\x16\x9e\x6c\xe0\x72\x60\xb9\x52\xb2\x60\xda\x9b\x51\x0e\x09\x3f\xdd\x11\xbc\x69\x27\xef\x00\x04\x37\x8a\x60\x0b\x4a\x69\xe1\xde\x49\x99\xf4\xcf\xef\x67\x76\xd8\x2a\x26\x8a\xf0\x9b\x08\x5b\x11\xb6\xa2\x2c\xb3\x7b\x06\x00\x00\xff\xff\x8e\xdd\x32\xdc\xd0\x00\x00\x00")
+
+func assetsThanosQuerierTrustedCaBundleYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsThanosQuerierTrustedCaBundleYaml,
+		"assets/thanos-querier/trusted-ca-bundle.yaml",
+	)
+}
+
+func assetsThanosQuerierTrustedCaBundleYaml() (*asset, error) {
+	bytes, err := assetsThanosQuerierTrustedCaBundleYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/thanos-querier/trusted-ca-bundle.yaml", size: 208, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2891,6 +2912,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/thanos-querier/route.yaml": assetsThanosQuerierRouteYaml,
 	"assets/thanos-querier/service-account.yaml": assetsThanosQuerierServiceAccountYaml,
 	"assets/thanos-querier/service.yaml": assetsThanosQuerierServiceYaml,
+	"assets/thanos-querier/trusted-ca-bundle.yaml": assetsThanosQuerierTrustedCaBundleYaml,
 }
 
 // AssetDir returns the file names below a certain
@@ -3085,6 +3107,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"route.yaml": &bintree{assetsThanosQuerierRouteYaml, map[string]*bintree{}},
 			"service-account.yaml": &bintree{assetsThanosQuerierServiceAccountYaml, map[string]*bintree{}},
 			"service.yaml": &bintree{assetsThanosQuerierServiceYaml, map[string]*bintree{}},
+			"trusted-ca-bundle.yaml": &bintree{assetsThanosQuerierTrustedCaBundleYaml, map[string]*bintree{}},
 		}},
 	}},
 }}
