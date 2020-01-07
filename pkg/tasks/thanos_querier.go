@@ -168,14 +168,45 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "error creating Thanos Querier Client GRPC TLS secret")
 	}
 
-	dep, err := t.factory.ThanosQuerierDeployment(s, t.userWorkloadConfig.IsEnabled())
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Querier Deployment failed")
-	}
+	{
+		// Create trusted CA bundle ConfigMap.
+		trustedCA, err := t.factory.ThanosQuerierTrustedCABundle()
+		if err != nil {
+			return errors.Wrap(err, "initializing Thanos Querier trusted CA bundle ConfigMap failed")
+		}
 
-	err = t.client.CreateOrUpdateDeployment(dep)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Thanos Querier Deployment failed")
+		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "creating Thanos Querier trusted CA bundle ConfigMap failed")
+		}
+
+		// In the case when there is no data but the ConfigMap is there, we just continue.
+		// We will catch this on the next loop.
+		trustedCA = t.factory.HashTrustedCA(trustedCA, "thanos-querier")
+		if trustedCA != nil {
+			err = t.client.CreateOrUpdateConfigMap(trustedCA)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Thanos Querier hashed trusted CA bundle ConfigMap failed")
+			}
+
+			err = t.client.DeleteHashedConfigMap(
+				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
+				"thanos-querier",
+			)
+			if err != nil {
+				return errors.Wrap(err, "deleting old Thanos Querier client configmaps failed")
+			}
+		}
+
+		dep, err := t.factory.ThanosQuerierDeployment(s, t.userWorkloadConfig.IsEnabled(), trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "initializing Thanos Querier Deployment failed")
+		}
+
+		err = t.client.CreateOrUpdateDeployment(dep)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Thanos Querier Deployment failed")
+		}
 	}
 
 	return nil
