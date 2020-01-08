@@ -64,6 +64,7 @@ items:
                       "threshold": 0
                   },
                   "datasource": "prometheus",
+                  "description": "",
                   "fontSize": "80%",
                   "format": "Bps",
                   "gridPos": {
@@ -109,6 +110,7 @@ items:
                       "threshold": 0
                   },
                   "datasource": "prometheus",
+                  "description": "",
                   "fontSize": "80%",
                   "format": "Bps",
                   "gridPos": {
@@ -465,6 +467,8 @@ items:
                           "step": 10
                       }
                   ],
+                  "timeFrom": null,
+                  "timeShift": null,
                   "title": "Current Status",
                   "type": "table"
               },
@@ -490,6 +494,7 @@ items:
                               "threshold": 0
                           },
                           "datasource": "prometheus",
+                          "description": "",
                           "fontSize": "80%",
                           "format": "Bps",
                           "gridPos": {
@@ -535,6 +540,7 @@ items:
                               "threshold": 0
                           },
                           "datasource": "prometheus",
+                          "description": "",
                           "fontSize": "80%",
                           "format": "Bps",
                           "gridPos": {
