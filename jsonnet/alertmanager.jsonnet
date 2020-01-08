@@ -146,7 +146,6 @@ local authorizationRole = policyRule.new() +
             {
               name: 'alertmanager-proxy',
               image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
-              resources: {},
               ports: [
                 {
                   containerPort: 9095,
@@ -185,6 +184,12 @@ local authorizationRole = policyRule.new() +
                 '-skip-auth-regex=^/metrics',
               ],
               terminationMessagePolicy: 'FallbackToLogsOnError',
+              resources: {
+                requests: {
+                  cpu: '10m',
+                  memory: '20Mi',
+                },
+              },
               volumeMounts: [
                 {
                   mountPath: '/etc/tls/private',
