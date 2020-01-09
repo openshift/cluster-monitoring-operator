@@ -170,6 +170,88 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
         super.groups,
       ),
   },
+} + {
+  // Apply anomaly detection to KubeAPILatencyHigh
+  // https://bugzilla.redhat.com/show_bug.cgi?id=1670380
+  prometheusRules+::
+    {
+      groups:
+        std.map(
+          function(ruleGroup)
+            if ruleGroup.name == 'kube-apiserver.rules' then
+              ruleGroup {
+                rules: [
+                  {
+                    record: "cluster:apiserver_request_latencies_sum:mean5m",
+                    expr: |||
+                      sum(rate(apiserver_request_latencies_sum{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s)
+                      /
+                      sum(rate(apiserver_request_latencies_count{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s)
+                  ||| % ($._config),
+                  },
+                ] + [
+                  {
+                    record: 'cluster_quantile:apiserver_request_latencies:histogram_quantile',
+                    expr: |||
+                      histogram_quantile(%(quantile)s, sum(rate(apiserver_request_latencies_bucket{%(kubeApiserverSelector)s,subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s))
+                    ||| % ({ quantile: quantile } + $._config),
+                    labels: {
+                      quantile: quantile,
+                    },
+                  }
+                  for quantile in ['0.99', '0.9', '0.5']
+                ],
+              }
+            else
+              ruleGroup,
+          super.groups,
+        ),
+    },
+  prometheusAlerts+::
+    // TODO(paulfantom): Add recording rule for cluster:apiserver_request_latency_seconds:mean5m
+    local replaceKubeAPILatencyHighExpression(rule) = (
+      if ('alert' in rule) && (rule.alert == 'KubeAPILatencyHigh') && (rule.labels.severity == 'warning') then
+        rule {
+          expr: |||
+            (
+              cluster:apiserver_request_latencies_sum:mean5m >
+              on (verb) group_left()
+              (
+                avg by (verb)(cluster:apiserver_request_latencies_sum:mean5m >= 0)
+                +
+                2* stddev by (verb) (cluster:apiserver_request_latencies_sum:mean5m >= 0)
+              )
+            ) > on (verb) group_left()
+            1.2 * avg by (verb)(cluster:apiserver_request_latencies_sum:mean5m)
+            and on (verb,resource) cluster_quantile:apiserver_request_latencies:histogram_quantile{quantile="0.99"} > 1
+          ||| % $._config,
+          annotations: {
+            message: 'The API server has an abnormal latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.',
+          },
+        }
+      else if ('alert' in rule) && (rule.alert == 'KubeAPILatencyHigh') && (rule.labels.severity == 'critical') then
+        rule {
+          expr: |||
+            (
+              cluster:apiserver_request_latencies_sum:mean5m >
+              on (verb) group_left()
+              (
+                avg by (verb)(cluster:apiserver_request_latencies_sum:mean5m >= 0)
+                +
+                2* stddev by (verb) (cluster:apiserver_request_latencies_sum:mean5m >= 0)
+              )
+            ) > on (verb) group_left()
+            1.2 * avg by (verb)(cluster:apiserver_request_latencies_sum:mean5m)
+            and on (verb,resource) cluster_quantile:apiserver_request_latencies:histogram_quantile{quantile="0.99"} > 4
+          ||| % $._config,
+          annotations: {
+            message: 'The API server has an abnormal latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.',
+          },
+        }
+      else
+        rule
+    );
+    utils.mapRuleGroups(replaceKubeAPILatencyHighExpression),
 };
 
 { ['prometheus-operator/' + name]: kp.prometheusOperator[name] for name in std.objectFields(kp.prometheusOperator) } +
