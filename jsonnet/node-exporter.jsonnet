@@ -116,7 +116,6 @@ local tlsVolumeName = 'node-exporter-tls';
                     else
                       c {
                         args+: [
-                          '--web.disable-exporter-metrics',
                           '--no-collector.wifi',
                           '--no-collector.hwmon',
                           '--no-collector.netstat',
@@ -129,10 +128,8 @@ local tlsVolumeName = 'node-exporter-tls';
                           '--no-collector.bcache',
                           '--no-collector.stat',
                           '--no-collector.pressure',
-                          '--no-collector.powersupplyclass',
                           '--no-collector.uname',
                           '--no-collector.arp',
-                          '--no-collector.thermal_zone',
                           '--collector.mountstats',
                           '--collector.cpu.info',
                           '--collector.textfile.directory='+textfileDir
