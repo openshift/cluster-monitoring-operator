@@ -16,7 +16,7 @@ A Prometheus instance dedicated to monitoring the Cluster cluster itself is also
 
 Use the Prometheus [Alertmanager][alertmanager] to send notifications to operators. Cluster Monitoring includes a highly available cluster of the Alertmanager, meant to be used not only by the Prometheus instance monitoring the cluster, but rather by all Prometheus instances.
 
-In addition to Prometheus and Alertmanager, Cluster Monitoring also includes [node-exporter][node-exporter] and [kube-state-metrics][kube-state]. Node-exporter is an agent deployed on every node to collect metrics about it. The kube-state-metrics exporter agent converts Kubernetes objects to metrics consumable by Prometheus.
+In addition to Prometheus and Alertmanager, Cluster Monitoring also includes [node-exporter][node-exporter], [kube-state-metrics][kube-state] and [openshift-state-metrics][openshift-state]. Node-exporter is an agent deployed on every node to collect metrics about it. The kube-state-metrics exporter agent converts Kubernetes objects to metrics consumable by Prometheus.
 
 The targets monitored as part of the cluster monitoring are:
 
@@ -28,6 +28,7 @@ The targets monitored as part of the cluster monitoring are:
 - kube-scheduler
 - kube-controller-manager
 - kube-state-metrics
+- openshift-state-metrics
 - node-exporter
 
 All these components are automatically updated.
@@ -57,6 +58,7 @@ Authentication is performed against the OpenShift identity system, and uses the 
 [configure-monitoring]: user-guides/configuring-cluster-monitoring.md
 [node-exporter]: https://github.com/prometheus/node_exporter
 [kube-state]: https://github.com/kubernetes/kube-state-metrics
+[openshift-state]: https://github.com/kubernetes/openshift-state-metrics
 [prom-operator]: https://coreos.com/operators/prometheus/docs/latest/
 [prometheus]: https://prometheus.io/
 [update-and-compatibility-guarantees]: user-guides/update-and-compatibility-guarantees.md

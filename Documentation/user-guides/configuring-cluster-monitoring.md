@@ -27,6 +27,8 @@ nodeExporter:
 kubeStateMetrics:
   baseImage: custom-registry.com/kube-state-metrics
   addonResizerBaseImage: custom-registry.com/addon-resizer
+openshiftStateMetrics:
+  baseImage: custom-registry.com/openshift-state-metrics
 ```
 
 > Note: The container images coming from repositories of a custom registry are expected to mirror the canonical repositories on [quay.io][quay].
@@ -47,6 +49,7 @@ The Config object represents the top level keys of the YAML configuration. Refer
 [ auth: <AuthConfig> ]
 [ nodeExporter: <NodeExporterConfig> ]
 [ kubeStateMetrics: <KubeStateMetricsConfig> ]
+[ openshiftStateMetrics: <KubeStateMetricsConfig> ]
 ```
 
 ### PrometheusOperatorConfig
