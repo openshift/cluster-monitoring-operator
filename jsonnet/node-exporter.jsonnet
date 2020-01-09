@@ -134,7 +134,6 @@ local tlsVolumeName = 'node-exporter-tls';
                           '--collector.cpu.info',
                           '--collector.textfile.directory='+textfileDir
                           ],
-                        resources: {},
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [
                           containerVolumeMount.new(textfileVolumeName, textfileDir, true),
