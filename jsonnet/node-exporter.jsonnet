@@ -127,6 +127,7 @@ local tlsVolumeName = 'node-exporter-tls';
                           '--no-collector.conntrack',
                           '--no-collector.bcache',
                           '--no-collector.stat',
+                          '--no-collector.xfs',
                           '--no-collector.pressure',
                           '--no-collector.uname',
                           '--no-collector.arp',
