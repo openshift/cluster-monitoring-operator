@@ -8,7 +8,7 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "5770a6d286fe48682e29b54ce0df37e7d24b3280",
+      "version": "0c787e26bcd102c3bb14050ac893b07ba9ea029f",
       "sum": "Ko3qhNfC2vN/houLh6C0Ryacjv70gl0DVPGU/PQ4OD0="
     },
     {
@@ -30,7 +30,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "676ff4b4fe9135f85a5d6e30523d64d2d3713087",
+      "version": "25ab1639169282bc9d95a0561bd787633ee1a546",
       "sum": "ELsYwK+kGdzX1mee2Yy+/b2mdO4Y503BOCDkFzwmGbE="
     },
     {
@@ -63,8 +63,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "9211c42df0c33b1daa85c7fc709dd2a9a398a240",
-      "sum": "XNEiGhywewqef1IF0JrlMlO4CuZerNeylXiLkHsaKEk="
+      "version": "67ed0f63c2be8e2321b6207e56007c60f3a9be8e",
+      "sum": "CAXO6of01JN+A7lTARtM9z4Zb4KDXysF1egRueZx1b0="
     },
     {
       "name": "kube-thanos",
@@ -96,7 +96,7 @@
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "2cae917bb7e0b6379221e8a24da012b16e63d661",
+      "version": "3ddc82c2d8d11eec53ed5faa8db969a1bb81f8bb",
       "sum": "7vEamDTP9AApeiF4Zu9ZyXzDIs3rYHzwf9k7g8X+wsg="
     },
     {
@@ -162,8 +162,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "04e896229a25482642a38937d9ff452302710ac6",
-      "sum": "s62onQakVZ2xrTyahP9G3gVMu+ovTG9STA8PukCJy3U="
+      "version": "c54ca978aed9394790056ab8948020dcca855675",
+      "sum": "k2xynRtw8CT8jnPqnALxmReIqCXFWT/NknGnYJVZ0ms="
     }
   ]
 }
