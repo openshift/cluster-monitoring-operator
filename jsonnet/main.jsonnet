@@ -40,6 +40,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                    function(ruleGroup)
                      if ruleGroup.name == 'etcd' then
                        ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'etcdHighNumberOfFailedGRPCRequests'), ruleGroup.rules) }
+                     else if ruleGroup.name == 'kubernetes-system' then
+                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'KubeVersionMismatch'), ruleGroup.rules) }
                      else if ruleGroup.name == 'prometheus' then
                        ruleGroup {
                          rules:
