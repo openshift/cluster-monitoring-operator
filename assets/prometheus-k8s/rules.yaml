@@ -378,7 +378,7 @@ spec:
         ) by (label_kubernetes_io_arch, label_node_hyperthread_enabled, label_node_openshift_io_os_id,label_node_role_kubernetes_io_master,label_node_role_kubernetes_io_infra)
       record: node_role_os_version_machine:cpu_capacity_sockets:sum
     - expr: clamp_max(sum(alertmanager_notifications_total),1)
-      record: alertmanager_routing_enabled
+      record: cluster:alertmanager_routing_enabled:max
     - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
         message: Cluster Monitoring Operator is experiencing reconciliation error
@@ -386,6 +386,15 @@ spec:
       expr: rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 /
         rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10
       for: 30m
+      labels:
+        severity: warning
+    - alert: AlertmanagerReceiversNotConfigured
+      annotations:
+        message: Alerts are not configured to be sent to a notification system, meaning
+          that you may not be notified in a timely fashion when important failures
+          occur. Check the OpenShift documentation to learn how to configure notifications
+          with Alertmanager.
+      expr: cluster:alertmanager_routing_enabled:max > 0
       labels:
         severity: warning
   - name: openshift-ingress.rules
