@@ -20,6 +20,9 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/openshift/cluster-version-operator/lib/resourcemerge"
+	"k8s.io/utils/pointer"
+
 	"github.com/coreos/prometheus-operator/pkg/alertmanager"
 	mon "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
@@ -540,12 +543,18 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 		return errors.Wrap(err, "retrieving deployment object failed")
 	}
 	if reflect.DeepEqual(dep.Spec, d.Spec) {
-		// Nothing to do, as the currently existing Telemeter client
-		// deployment is equivalent to the one that would be applied.
+		// Nothing to do, as the currently existing deployment
+		// is equivalent to the one that would be applied.
 		return nil
 	}
 
-	err = c.UpdateDeployment(dep)
+	modified := pointer.BoolPtr(false)
+	resourcemerge.EnsureDeployment(modified, d, *dep)
+	if !*modified {
+		return nil
+	}
+
+	err = c.UpdateDeployment(d)
 	return errors.Wrap(err, "updating deployment object failed")
 }
 
