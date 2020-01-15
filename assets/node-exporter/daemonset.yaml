@@ -26,7 +26,7 @@ spec:
         - --collector.mountstats
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
-        image: openshift/prometheus-node-exporter:v0.16.0
+        image: openshift/prometheus-node-exporter:v0.18.1
         name: node-exporter
         resources:
           requests:
@@ -86,7 +86,7 @@ spec:
         env:
         - name: TMPDIR
           value: /tmp
-        image: openshift/prometheus-node-exporter:v0.16.0
+        image: openshift/prometheus-node-exporter:v0.18.1
         name: init-textfile
         resources: {}
         securityContext:
