@@ -1,5 +1,6 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
+local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
 local secret = k.core.v1.secret;
+local metrics = import 'telemeter-client/metrics.jsonnet';
 
 {
   _config+:: {
@@ -58,6 +59,11 @@ local secret = k.core.v1.secret;
         ],
       },
     },
+
+    config:
+      local configmap = k.core.v1.configMap;
+      configmap.new('telemetry-config', { 'metrics.yaml': std.manifestYamlDoc({ matches: metrics }) }) +
+      configmap.mixin.metadata.withNamespace($._config.namespace),
 
     clusterRole:
       local clusterRole = k.rbac.v1.clusterRole;

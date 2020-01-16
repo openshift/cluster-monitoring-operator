@@ -27,6 +27,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
@@ -76,6 +77,10 @@ func (i *images) Type() string {
 	return "map[string]string"
 }
 
+type telemetryConfig struct {
+	Matches []string `json:"matches"`
+}
+
 func Main() int {
 	flagset := flag.CommandLine
 	klog.InitFlags(flagset)
@@ -86,9 +91,33 @@ func Main() int {
 	kubeconfigPath := flagset.String("kubeconfig", "", "The path to the kubeconfig to connect to the apiserver with.")
 	apiserver := flagset.String("apiserver", "", "The address of the apiserver to talk to.")
 	releaseVersion := flagset.String("release-version", "", "Currently targeted release version to be reconciled against.")
+	telemetryConfigFile := flagset.String("telemetry-config", "/etc/cluster-monitoring-operator/telemetry/metrics.yaml", "Path to telemetry-config.")
 	images := images{}
 	flag.Var(&images, "images", "Images to use for containers managed by the cluster-monitoring-operator.")
 	flag.Parse()
+
+	f, err := os.Open(*telemetryConfigFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not open telemetry config file: %v", err)
+		return 1
+	}
+
+	telemetryConfig := telemetryConfig{}
+	err = yaml.NewYAMLOrJSONDecoder(f, 100).Decode(&telemetryConfig)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not parse telemetry config file: %v", err)
+		return 1
+	}
+	err = f.Close()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could close telemetry config file: %v", err)
+		return 1
+	}
+
+	klog.V(4).Info("Configured matches for telemetry:")
+	for _, m := range telemetryConfig.Matches {
+		klog.V(4).Info(m)
+	}
 
 	ok := true
 	if *namespace == "" {
@@ -124,7 +153,7 @@ func Main() int {
 		return 1
 	}
 
-	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, images.asMap())
+	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, images.asMap(), telemetryConfig.Matches)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
