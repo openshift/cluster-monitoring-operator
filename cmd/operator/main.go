@@ -92,6 +92,7 @@ func Main() int {
 	apiserver := flagset.String("apiserver", "", "The address of the apiserver to talk to.")
 	releaseVersion := flagset.String("release-version", "", "Currently targeted release version to be reconciled against.")
 	telemetryConfigFile := flagset.String("telemetry-config", "/etc/cluster-monitoring-operator/telemetry/metrics.yaml", "Path to telemetry-config.")
+	remoteWrite := flagset.Bool("enabled-remote-write", false, "Wether to use legacy telemetry write protocol or Prometheus remote write.")
 	images := images{}
 	flag.Var(&images, "images", "Images to use for containers managed by the cluster-monitoring-operator.")
 	flag.Parse()
@@ -153,7 +154,7 @@ func Main() int {
 		return 1
 	}
 
-	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, images.asMap(), telemetryConfig.Matches)
+	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, *remoteWrite, images.asMap(), telemetryConfig.Matches)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

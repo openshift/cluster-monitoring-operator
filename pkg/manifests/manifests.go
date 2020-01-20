@@ -1113,7 +1113,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	}
 
 	telemetryEnabled := f.config.TelemeterClientConfig.IsEnabled()
-	if telemetryEnabled {
+	if telemetryEnabled && f.config.RemoteWrite {
 
 		selectorRelabelConfig, err := relabelgen.LabelSelectorsToRelabelConfig(f.config.PrometheusK8sConfig.TelemetryMatches)
 		if err != nil {
@@ -2530,6 +2530,16 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
+
+	cmd := []string{}
+	for _, a := range d.Spec.Template.Spec.Containers[0].Command {
+		if !strings.HasPrefix(a, "--match=") {
+			cmd = append(cmd, a)
+		}
+	}
+	for _, m := range f.config.PrometheusK8sConfig.TelemetryMatches {
+		cmd = append(cmd, fmt.Sprintf("--match=%s", m))
+	}
 
 	if len(f.config.TelemeterClientConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.TelemeterClientConfig.NodeSelector

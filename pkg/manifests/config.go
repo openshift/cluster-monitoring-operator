@@ -27,7 +27,8 @@ import (
 )
 
 type Config struct {
-	Images *Images `json:"-"`
+	Images      *Images `json:"-"`
+	RemoteWrite bool    `json:"-"`
 
 	PrometheusOperatorConfig             *PrometheusOperatorConfig `json:"prometheusOperator"`
 	PrometheusOperatorUserWorkloadConfig *PrometheusOperatorConfig `json:"prometheusOperatorUserWorkload"`
@@ -252,6 +253,10 @@ func (c *Config) SetImages(images map[string]string) {
 
 func (c *Config) SetTelemetryMatches(matches []string) {
 	c.PrometheusK8sConfig.TelemetryMatches = matches
+}
+
+func (c *Config) SetRemoteWrite(rw bool) {
+	c.RemoteWrite = rw
 }
 
 func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) error {

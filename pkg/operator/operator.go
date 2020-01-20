@@ -54,6 +54,7 @@ type Operator struct {
 	configMapName    string
 	images           map[string]string
 	telemetryMatches []string
+	remoteWrite      bool
 
 	client *client.Client
 
@@ -69,7 +70,7 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName string, images map[string]string, telemetryMatches []string) (*Operator, error) {
+func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName string, remoteWrite bool, images map[string]string, telemetryMatches []string) (*Operator, error) {
 	c, err := client.New(config, version, namespace, namespaceSelector)
 	if err != nil {
 		return nil, err
@@ -79,6 +80,7 @@ func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespa
 		images:                images,
 		telemetryMatches:      telemetryMatches,
 		configMapName:         configMapName,
+		remoteWrite:           remoteWrite,
 		namespace:             namespace,
 		namespaceUserWorkload: namespaceUserWorkload,
 		client:                c,
@@ -297,6 +299,7 @@ func (o *Operator) sync(key string) error {
 	config := o.Config(key)
 	config.SetImages(o.images)
 	config.SetTelemetryMatches(o.telemetryMatches)
+	config.SetRemoteWrite(o.remoteWrite)
 
 	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config)
 
@@ -314,7 +317,7 @@ func (o *Operator) sync(key string) error {
 			tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTaks(o.namespace, o.client, factory)),
-			tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config.TelemeterClientConfig)),
+			tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
 			tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config.UserWorkloadConfig)),
 		},
