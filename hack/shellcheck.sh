@@ -2,7 +2,7 @@
 
 set -eux
 
-if [ "$IS_CONTAINER" != "" ]; then
+if [ "${IS_CONTAINER:-}" != "" ]; then
   TOP_DIR="${1:-.}"
   find "${TOP_DIR}" \
     -path "${TOP_DIR}/vendor" -prune \
