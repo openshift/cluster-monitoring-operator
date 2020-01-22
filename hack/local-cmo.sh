@@ -21,5 +21,8 @@ kubectl patch clusterversion/version --type=json -p="[{\"op\": \"add\", \"path\"
 
 kubectl -n openshift-monitoring scale --replicas=0 deployment/cluster-monitoring-operator
 
+# shellcheck disable=SC2002
+cat manifests/0000_50_cluster_monitoring_operator_04-config.yaml | gojsontoyaml -yamltojson | jq -r '.data["metrics.yaml"]' > /tmp/telemetry-config.yaml
+
 # shellcheck disable=SC2086
-./operator ${IMAGES} -kubeconfig "${KUBECONFIG}" -namespace=openshift-monitoring -configmap=cluster-monitoring-config -logtostderr=true -v=4 2>&1 | tee operator.log
+./operator ${IMAGES} -telemetry-config /tmp/telemetry-config.yaml -kubeconfig "${KUBECONFIG}" -namespace=openshift-monitoring -configmap=cluster-monitoring-config -logtostderr=true -v=4 2>&1 | tee operator.log
