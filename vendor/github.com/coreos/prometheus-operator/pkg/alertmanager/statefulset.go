@@ -81,6 +81,9 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 	if _, ok := am.Spec.Resources.Requests[v1.ResourceMemory]; !ok {
 		am.Spec.Resources.Requests[v1.ResourceMemory] = resource.MustParse("200Mi")
 	}
+	if am.Spec.ConfigSecret == "" {
+		am.Spec.ConfigSecret = configSecretName(am.Name)
+	}
 
 	spec, err := makeStatefulSetSpec(am, config)
 	if err != nil {
@@ -129,10 +132,15 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 		})
 	} else {
 		pvcTemplate := storageSpec.VolumeClaimTemplate
+		pvcTemplate.CreationTimestamp = metav1.Time{}
 		if pvcTemplate.Name == "" {
 			pvcTemplate.Name = volumeName(am.Name)
 		}
-		pvcTemplate.Spec.AccessModes = []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce}
+		if storageSpec.VolumeClaimTemplate.Spec.AccessModes == nil {
+			pvcTemplate.Spec.AccessModes = []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce}
+		} else {
+			pvcTemplate.Spec.AccessModes = storageSpec.VolumeClaimTemplate.Spec.AccessModes
+		}
 		pvcTemplate.Spec.Resources = storageSpec.VolumeClaimTemplate.Spec.Resources
 		pvcTemplate.Spec.Selector = storageSpec.VolumeClaimTemplate.Spec.Selector
 		statefulset.Spec.VolumeClaimTemplates = append(statefulset.Spec.VolumeClaimTemplates, pvcTemplate)
@@ -180,13 +188,13 @@ func makeStatefulSetService(p *monitoringv1.Alertmanager, config Config) *v1.Ser
 					Protocol:   v1.ProtocolTCP,
 				},
 				{
-					Name:       "mesh-tcp",
+					Name:       "tcp-mesh",
 					Port:       9094,
 					TargetPort: intstr.FromInt(9094),
 					Protocol:   v1.ProtocolTCP,
 				},
 				{
-					Name:       "mesh-udp",
+					Name:       "udp-mesh",
 					Port:       9094,
 					TargetPort: intstr.FromInt(9094),
 					Protocol:   v1.ProtocolUDP,
@@ -388,7 +396,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 			Name: "config-volume",
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
-					SecretName: configSecretName(a.Name),
+					SecretName: a.Spec.ConfigSecret,
 				},
 			},
 		},
