@@ -300,6 +300,7 @@ rules:
 - apiGroups:
   - metrics.k8s.io
   resources:
+  - nodes
   - pods
   verbs:
   - get
