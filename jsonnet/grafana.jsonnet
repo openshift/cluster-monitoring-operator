@@ -203,7 +203,9 @@ local authorizationRole = policyRule.new() +
                   readinessProbe:: null,
                 },
                 container.new('grafana-proxy', $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy) +
-                container.mixin.readinessProbe.tcpSocket.withPort('https') +
+                container.mixin.readinessProbe.httpGet.withPort('https') +
+                container.mixin.readinessProbe.httpGet.withScheme('HTTPS') +
+                container.mixin.readinessProbe.httpGet.withPath('/oauth/healthz') +
                 container.mixin.resources.withRequests({ cpu: '10m', memory: '20Mi' }) +
                 container.withArgs([
                   '-provider=openshift',

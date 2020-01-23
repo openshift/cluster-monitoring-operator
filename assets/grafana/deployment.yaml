@@ -102,8 +102,10 @@ spec:
         - containerPort: 3000
           name: https
         readinessProbe:
-          tcpSocket:
+          httpGet:
+            path: /oauth/healthz
             port: https
+            scheme: HTTPS
         resources:
           requests:
             cpu: 10m
