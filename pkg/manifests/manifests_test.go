@@ -793,6 +793,29 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 				"https://infogw.api.openshift.com/metrics/v1/receive",
 			},
 		},
+		{
+			name: "remote write telemetry with custom url and custom remote write",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.RemoteWrite = true
+				c.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
+				c.TelemeterClientConfig.ClusterID = "123"
+				c.TelemeterClientConfig.Token = "secret"
+				c.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom-remote-write"}}
+
+				return c
+			},
+
+			expectedRemoteWriteURLs: []string{
+				"http://custom-remote-write",
+				"http://custom-telemeter",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			c := tc.config()
