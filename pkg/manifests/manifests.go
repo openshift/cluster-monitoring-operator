@@ -1165,8 +1165,9 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	}
 
 	if len(f.config.PrometheusK8sConfig.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = f.config.PrometheusK8sConfig.RemoteWrite
+		p.Spec.RemoteWrite = append(p.Spec.RemoteWrite, f.config.PrometheusK8sConfig.RemoteWrite...)
 	}
+
 	for _, rw := range p.Spec.RemoteWrite {
 		if f.config.HTTPConfig.HTTPProxy != "" {
 			rw.ProxyURL = f.config.HTTPConfig.HTTPProxy
