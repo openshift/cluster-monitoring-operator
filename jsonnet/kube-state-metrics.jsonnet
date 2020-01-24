@@ -93,7 +93,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                       container.withVolumeMounts([containerVolumeMount.new(tmpVolumeName, '/tmp')]) +
                       {
                         args+: [
-                          '--metric-blacklist="kube_secret_labels"',
+                          '--metric-blacklist=kube_secret_labels',
                         ],
                         resources: {
                           requests: {
