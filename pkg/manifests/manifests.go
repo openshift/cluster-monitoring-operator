@@ -1129,15 +1129,24 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 			URL:         f.config.TelemeterClientConfig.TelemeterServerURL,
 			BearerToken: base64.StdEncoding.EncodeToString(compositeToken),
 			QueueConfig: &monv1.QueueConfig{
-				Capacity: 10000,
-				// Default: 100
-				MaxSamplesPerSend: 1000,
-				// Default: 1000
-				MaxShards: 100,
-				// Default: 30ms
-				MinBackoff: "500ms",
-				// Default: 100ms
-				MaxBackoff: "2s",
+				// Amount of samples to load from the WAL into the in-memory
+				// buffer before waiting for samples to be sent successfully
+				// and then continuing to read from the WAL.
+				Capacity: 30000,
+				// Should we accumulate 10000 samples before the batch send
+				// deadline is reached, we will send this amount of samples
+				// anyways.
+				MaxSamplesPerSend: 10000,
+				// Batch samples for 1m until we send them if we not reach the
+				// 10000 MaxSamplesPerSend first.
+				BatchSendDeadline: "1m",
+				// Backoff is doubled on every backoff. We start with 1s
+				// backoff and double until the MaxBackOff.
+				MinBackoff: "1s",
+				// 128s is the 8th backoff in a row, once we end up here, we
+				// don't increase backoff time anymore. As we would at most
+				// produce (concurrency/256) number of requests per second.
+				MaxBackoff: "256s",
 			},
 			WriteRelabelConfigs: []monv1.RelabelConfig{
 				*selectorRelabelConfig,
