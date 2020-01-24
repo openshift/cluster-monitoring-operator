@@ -219,7 +219,7 @@ func (c *Config) applyDefaults() {
 	}
 	if c.TelemeterClientConfig == nil {
 		c.TelemeterClientConfig = &TelemeterClientConfig{
-			TelemeterServerURL: "https://infogw.api.openshift.com/metrics/v1/receive",
+			TelemeterServerURL: "https://infogw.api.openshift.com/",
 		}
 	}
 	if c.K8sPrometheusAdapter == nil {
@@ -257,6 +257,9 @@ func (c *Config) SetTelemetryMatches(matches []string) {
 
 func (c *Config) SetRemoteWrite(rw bool) {
 	c.RemoteWrite = rw
+	if c.RemoteWrite && c.TelemeterClientConfig.TelemeterServerURL == "https://infogw.api.openshift.com/" {
+		c.TelemeterClientConfig.TelemeterServerURL = "https://infogw.api.openshift.com/metrics/v1/receive"
+	}
 }
 
 func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) error {
