@@ -148,44 +148,44 @@ items:
               {
                   "columns": [
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Time",
+                          "value": "Time"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Value #A",
+                          "value": "Value #A"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Value #B",
+                          "value": "Value #B"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Value #C",
+                          "value": "Value #C"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Value #D",
+                          "value": "Value #D"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Value #E",
+                          "value": "Value #E"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Value #F",
+                          "value": "Value #F"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Value #G",
+                          "value": "Value #G"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "Value #H",
+                          "value": "Value #H"
                       },
                       {
-                          "text": "",
-                          "value": ""
+                          "text": "namespace",
+                          "value": "namespace"
                       }
                   ],
                   "datasource": "$datasource",
@@ -223,7 +223,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Time",
                           "thresholds": [
 
                           ],
@@ -241,7 +241,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Value #A",
                           "thresholds": [
 
                           ],
@@ -259,7 +259,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Value #B",
                           "thresholds": [
 
                           ],
@@ -277,7 +277,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Value #C",
                           "thresholds": [
 
                           ],
@@ -295,7 +295,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Value #D",
                           "thresholds": [
 
                           ],
@@ -313,7 +313,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Value #E",
                           "thresholds": [
 
                           ],
@@ -331,7 +331,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Value #F",
                           "thresholds": [
 
                           ],
@@ -349,7 +349,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Value #G",
                           "thresholds": [
 
                           ],
@@ -367,7 +367,7 @@ items:
                           "link": false,
                           "linkTooltip": "Drill down",
                           "linkUrl": "",
-                          "pattern": "",
+                          "pattern": "Value #H",
                           "thresholds": [
 
                           ],
@@ -385,7 +385,7 @@ items:
                           "link": true,
                           "linkTooltip": "Drill down",
                           "linkUrl": "d/8b7a8b326d7a6f1f04244066368c67af/kubernetes-networking-namespace-pods?orgId=1&refresh=30s&var-namespace=$__cell",
-                          "pattern": "",
+                          "pattern": "namespace",
                           "thresholds": [
 
                           ],
@@ -1229,6 +1229,212 @@ items:
                                   "show": true
                               }
                           ]
+                      },
+                      {
+                          "aliasColors": {
+
+                          },
+                          "bars": false,
+                          "dashLength": 10,
+                          "dashes": false,
+                          "datasource": "$datasource",
+                          "fill": 2,
+                          "gridPos": {
+                              "h": 9,
+                              "w": 24,
+                              "x": 0,
+                              "y": 59
+                          },
+                          "id": 18,
+                          "legend": {
+                              "alignAsTable": true,
+                              "avg": true,
+                              "current": true,
+                              "hideEmpty": true,
+                              "hideZero": true,
+                              "max": true,
+                              "min": true,
+                              "rightSide": true,
+                              "show": true,
+                              "total": false,
+                              "values": true
+                          },
+                          "lines": true,
+                          "linewidth": 2,
+                          "links": [
+                              {
+                                  "targetBlank": true,
+                                  "title": "What is TCP Retransmit?",
+                                  "url": "https://accedian.com/enterprises/blog/network-packet-loss-retransmissions-and-duplicate-acknowledgements/"
+                              }
+                          ],
+                          "minSpan": 24,
+                          "nullPointMode": "connected",
+                          "paceLength": 10,
+                          "percentage": false,
+                          "pointradius": 5,
+                          "points": false,
+                          "renderer": "flot",
+                          "repeat": null,
+                          "seriesOverrides": [
+
+                          ],
+                          "spaceLength": 10,
+                          "span": 24,
+                          "stack": true,
+                          "steppedLine": false,
+                          "targets": [
+                              {
+                                  "expr": "sort_desc(sum(rate(node_netstat_Tcp_RetransSegs[$interval:$resolution]) / rate(node_netstat_Tcp_OutSegs[$interval:$resolution])) by (instance))",
+                                  "format": "time_series",
+                                  "intervalFactor": 1,
+                                  "legendFormat": "{{instance}}",
+                                  "refId": "A",
+                                  "step": 10
+                              }
+                          ],
+                          "thresholds": [
+
+                          ],
+                          "timeFrom": null,
+                          "timeShift": null,
+                          "title": "Rate of TCP Retransimts out of all sent segments",
+                          "tooltip": {
+                              "shared": true,
+                              "sort": 2,
+                              "value_type": "individual"
+                          },
+                          "type": "graph",
+                          "xaxis": {
+                              "buckets": null,
+                              "mode": "time",
+                              "name": null,
+                              "show": true,
+                              "values": [
+
+                              ]
+                          },
+                          "yaxes": [
+                              {
+                                  "format": "percentunit",
+                                  "label": null,
+                                  "logBase": 1,
+                                  "max": null,
+                                  "min": 0,
+                                  "show": true
+                              },
+                              {
+                                  "format": "percentunit",
+                                  "label": null,
+                                  "logBase": 1,
+                                  "max": null,
+                                  "min": 0,
+                                  "show": true
+                              }
+                          ]
+                      },
+                      {
+                          "aliasColors": {
+
+                          },
+                          "bars": false,
+                          "dashLength": 10,
+                          "dashes": false,
+                          "datasource": "$datasource",
+                          "fill": 2,
+                          "gridPos": {
+                              "h": 9,
+                              "w": 24,
+                              "x": 0,
+                              "y": 59
+                          },
+                          "id": 19,
+                          "legend": {
+                              "alignAsTable": true,
+                              "avg": true,
+                              "current": true,
+                              "hideEmpty": true,
+                              "hideZero": true,
+                              "max": true,
+                              "min": true,
+                              "rightSide": true,
+                              "show": true,
+                              "total": false,
+                              "values": true
+                          },
+                          "lines": true,
+                          "linewidth": 2,
+                          "links": [
+                              {
+                                  "targetBlank": true,
+                                  "title": "Why monitor SYN retransmits?",
+                                  "url": "https://github.com/prometheus/node_exporter/issues/1023#issuecomment-408128365"
+                              }
+                          ],
+                          "minSpan": 24,
+                          "nullPointMode": "connected",
+                          "paceLength": 10,
+                          "percentage": false,
+                          "pointradius": 5,
+                          "points": false,
+                          "renderer": "flot",
+                          "repeat": null,
+                          "seriesOverrides": [
+
+                          ],
+                          "spaceLength": 10,
+                          "span": 24,
+                          "stack": true,
+                          "steppedLine": false,
+                          "targets": [
+                              {
+                                  "expr": "sort_desc(sum(rate(node_netstat_TcpExt_TCPSynRetrans[$interval:$resolution]) / rate(node_netstat_Tcp_RetransSegs[$interval:$resolution])) by (instance))",
+                                  "format": "time_series",
+                                  "intervalFactor": 1,
+                                  "legendFormat": "{{instance}}",
+                                  "refId": "A",
+                                  "step": 10
+                              }
+                          ],
+                          "thresholds": [
+
+                          ],
+                          "timeFrom": null,
+                          "timeShift": null,
+                          "title": "Rate of TCP SYN Retransimts out of all retransmits",
+                          "tooltip": {
+                              "shared": true,
+                              "sort": 2,
+                              "value_type": "individual"
+                          },
+                          "type": "graph",
+                          "xaxis": {
+                              "buckets": null,
+                              "mode": "time",
+                              "name": null,
+                              "show": true,
+                              "values": [
+
+                              ]
+                          },
+                          "yaxes": [
+                              {
+                                  "format": "percentunit",
+                                  "label": null,
+                                  "logBase": 1,
+                                  "max": null,
+                                  "min": 0,
+                                  "show": true
+                              },
+                              {
+                                  "format": "percentunit",
+                                  "label": null,
+                                  "logBase": 1,
+                                  "max": null,
+                                  "min": 0,
+                                  "show": true
+                              }
+                          ]
                       }
                   ],
                   "repeat": null,
@@ -1333,8 +1539,8 @@ items:
                   },
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -5077,8 +5283,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -6914,8 +7120,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -7896,8 +8102,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -9447,8 +9653,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -11453,8 +11659,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -13594,8 +13800,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -14663,8 +14869,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -15611,8 +15817,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,
@@ -16788,8 +16994,8 @@ items:
               "list": [
                   {
                       "current": {
-                          "text": "Prometheus",
-                          "value": "Prometheus"
+                          "text": "default",
+                          "value": "default"
                       },
                       "hide": 0,
                       "label": null,

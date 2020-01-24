@@ -74,6 +74,7 @@ spec:
         - --match={__name__="cluster:network_attachment_definition_instances:max"}
         - --match={__name__="cluster:network_attachment_definition_enabled_instance_up:max"}
         - --match={__name__="insightsclient_request_send_total"}
+        - --match={__name__="cam_app_workload_migrations"}
         env:
         - name: ANONYMIZE_LABELS
           value: ""
