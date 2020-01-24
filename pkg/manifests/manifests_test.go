@@ -760,7 +760,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				c.RemoteWrite = true
+				c.SetRemoteWrite(true)
 				c.TelemeterClientConfig.ClusterID = "123"
 				c.TelemeterClientConfig.Token = "secret"
 
@@ -780,7 +780,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				c.RemoteWrite = true
+				c.SetRemoteWrite(true)
 				c.TelemeterClientConfig.ClusterID = "123"
 				c.TelemeterClientConfig.Token = "secret"
 				c.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
@@ -802,7 +802,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				c.RemoteWrite = true
+				c.SetRemoteWrite(true)
 				c.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
 				c.TelemeterClientConfig.ClusterID = "123"
 				c.TelemeterClientConfig.Token = "secret"
