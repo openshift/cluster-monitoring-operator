@@ -57,6 +57,7 @@ data:
     - "{__name__=\"cluster:network_attachment_definition_instances:max\"}"
     - "{__name__=\"cluster:network_attachment_definition_enabled_instance_up:max\"}"
     - "{__name__=\"insightsclient_request_send_total\"}"
+    - "{__name__=\"cam_app_workload_migrations\"}"
 kind: ConfigMap
 metadata:
   name: telemetry-config
