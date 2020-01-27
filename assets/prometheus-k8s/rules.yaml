@@ -99,17 +99,22 @@ spec:
   - name: kube-apiserver.rules
     rules:
     - expr: |
-        histogram_quantile(0.99, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
+        sum(rate(apiserver_request_latencies_sum{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod)
+        /
+        sum(rate(apiserver_request_latencies_count{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod)
+      record: cluster:apiserver_request_latencies_sum:mean5m
+    - expr: |
+        histogram_quantile(0.99, sum(rate(apiserver_request_latencies_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod))
       labels:
         quantile: "0.99"
       record: cluster_quantile:apiserver_request_latencies:histogram_quantile
     - expr: |
-        histogram_quantile(0.9, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
+        histogram_quantile(0.9, sum(rate(apiserver_request_latencies_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod))
       labels:
         quantile: "0.9"
       record: cluster_quantile:apiserver_request_latencies:histogram_quantile
     - expr: |
-        histogram_quantile(0.5, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
+        histogram_quantile(0.5, sum(rate(apiserver_request_latencies_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod))
       labels:
         quantile: "0.5"
       record: cluster_quantile:apiserver_request_latencies:histogram_quantile
@@ -863,19 +868,39 @@ spec:
         severity: warning
     - alert: KubeAPILatencyHigh
       annotations:
-        message: The API server has a 99th percentile latency of {{ $value }} seconds
-          for {{$labels.verb}} {{$labels.resource}}.
+        message: The API server has an abnormal latency of {{ $value }} seconds for
+          {{ $labels.verb }} {{ $labels.resource }}.
       expr: |
-        cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
+        (
+          cluster:apiserver_request_latencies_sum:mean5m >
+          on (verb) group_left()
+          (
+            avg by (verb)(cluster:apiserver_request_latencies_sum:mean5m >= 0)
+            +
+            2* stddev by (verb) (cluster:apiserver_request_latencies_sum:mean5m >= 0)
+          )
+        ) > on (verb) group_left()
+        1.2 * avg by (verb)(cluster:apiserver_request_latencies_sum:mean5m)
+        and on (verb,resource) cluster_quantile:apiserver_request_latencies:histogram_quantile{quantile="0.99"} > 1
       for: 10m
       labels:
         severity: warning
     - alert: KubeAPILatencyHigh
       annotations:
-        message: The API server has a 99th percentile latency of {{ $value }} seconds
-          for {{$labels.verb}} {{$labels.resource}}.
+        message: The API server has an abnormal latency of {{ $value }} seconds for
+          {{ $labels.verb }} {{ $labels.resource }}.
       expr: |
-        cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
+        (
+          cluster:apiserver_request_latencies_sum:mean5m >
+          on (verb) group_left()
+          (
+            avg by (verb)(cluster:apiserver_request_latencies_sum:mean5m >= 0)
+            +
+            2* stddev by (verb) (cluster:apiserver_request_latencies_sum:mean5m >= 0)
+          )
+        ) > on (verb) group_left()
+        1.2 * avg by (verb)(cluster:apiserver_request_latencies_sum:mean5m)
+        and on (verb,resource) cluster_quantile:apiserver_request_latencies:histogram_quantile{quantile="0.99"} > 4
       for: 10m
       labels:
         severity: critical
