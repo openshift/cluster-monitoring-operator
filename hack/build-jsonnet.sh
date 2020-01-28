@@ -37,4 +37,7 @@ do
 done
 
 mv "assets/cluster-monitoring-operator/config.yaml" "manifests/0000_50_cluster_monitoring_operator_04-config.yaml"
-mv "assets/grafana/console-dashboard-definitions.yaml" "manifests/0000_90_cluster_monitoring_operator_01-dashboards.yaml"
+
+# Produce dashboard definitions in format understandable by CVO (it doesn't accept ConfigMapList)
+grep -E -v '^apiVersion: v1|^items:|^kind: ConfigMapList' "assets/grafana/console-dashboard-definitions.yaml" | sed 's/^\ \ //g;s/- apiVersion: v1/---\napiVersion: v1/g' > "manifests/0000_90_cluster_monitoring_operator_01-dashboards.yaml"
+rm -f "assets/grafana/console-dashboard-definitions.yaml"
