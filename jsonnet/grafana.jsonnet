@@ -4,6 +4,7 @@ local service = k.core.v1.service;
 local servicePort = k.core.v1.service.mixin.spec.portsType;
 local secret = k.core.v1.secret;
 local configmap = k.core.v1.configMap;
+local configMapList = k.core.v1.configMapList;
 local clusterRole = k.rbac.v1.clusterRole;
 local policyRule = clusterRole.rulesType;
 
@@ -89,6 +90,15 @@ local authorizationRole = policyRule.new() +
   },
 
   grafana+:: {
+    local dashboards = super.dashboardDefinitions.items,
+    dashboardDefinitions: configMapList.new(dashboards),
+    consoleDashboardDefinitions: configMapList.new(std.map(
+      function(c)
+        c +
+        configmap.mixin.metadata.withNamespace('openshift-config-managed') +
+        configmap.mixin.metadata.withLabels({'console.openshift.io/dashboard': 'true'}),
+      dashboards
+    )),
     trustedCaBundle:
       configmap.new('grafana-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
       configmap.mixin.metadata.withNamespace($._config.namespace) +

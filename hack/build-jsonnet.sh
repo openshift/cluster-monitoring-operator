@@ -37,3 +37,4 @@ do
 done
 
 mv "assets/cluster-monitoring-operator/config.yaml" "manifests/0000_50_cluster_monitoring_operator_04-config.yaml"
+mv "assets/grafana/console-dashboard-definitions.yaml" "manifests/0000_90_cluster_monitoring_operator_01-dashboards.yaml"
