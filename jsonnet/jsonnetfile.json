@@ -1,6 +1,7 @@
 {
   "dependencies": [
     {
+      "name": "kube-prometheus",
       "source": {
         "git": {
           "remote": "https://github.com/coreos/kube-prometheus",
@@ -10,15 +11,17 @@
       "version": "release-0.4"
     },
     {
+      "name": "kube-thanos",
       "source": {
         "git": {
-          "remote": "https://github.com/coreos/prometheus-operator",
-          "subdir": "jsonnet/prometheus-operator"
+          "remote": "https://github.com/thanos-io/kube-thanos",
+          "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "release-0.35"
+      "version": "release-0.2"
     },
     {
+      "name": "kubernetes-mixin",
       "source": {
         "git": {
           "remote": "https://github.com/kubernetes-monitoring/kubernetes-mixin",
@@ -28,34 +31,34 @@
       "version": "release-0.3"
     },
     {
+      "name": "openshift-state-metrics",
       "source": {
         "git": {
           "remote": "https://github.com/openshift/openshift-state-metrics",
           "subdir": "jsonnet"
         }
       },
-      "version": "release-4.4",
-      "name": "openshift-state-metrics"
+      "version": "release-4.4"
     },
     {
+      "name": "prometheus-operator",
+      "source": {
+        "git": {
+          "remote": "https://github.com/coreos/prometheus-operator",
+          "subdir": "jsonnet/prometheus-operator"
+        }
+      },
+      "version": "release-0.35"
+    },
+    {
+      "name": "telemeter-client",
       "source": {
         "git": {
           "remote": "https://github.com/openshift/telemeter",
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "release-4.4",
-      "name": "telemeter-client"
-    },
-    {
-      "source": {
-        "git": {
-          "remote": "https://github.com/thanos-io/kube-thanos",
-          "subdir": "jsonnet/kube-thanos"
-        }
-      },
-      "version": "release-0.2"
+      "version": "release-4.4"
     }
-  ],
-  "legacyImports": true
+  ]
 }
