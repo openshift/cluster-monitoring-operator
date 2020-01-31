@@ -21,6 +21,15 @@ local tlsVolumeName = 'kube-state-metrics-tls';
     local servingCertsCABundleFileName = 'service-ca.crt',
     local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory,
 
+    clusterRoleAggregatedMetricsReader+:
+      {
+        metadata+: {
+          labels+: {
+            'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
+          },
+        },
+      },
+
     apiService+:
       {
         metadata+: {

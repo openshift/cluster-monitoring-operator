@@ -394,7 +394,7 @@ spec:
           that you may not be notified in a timely fashion when important failures
           occur. Check the OpenShift documentation to learn how to configure notifications
           with Alertmanager.
-      expr: cluster:alertmanager_routing_enabled:max > 0
+      expr: cluster:alertmanager_routing_enabled:max == 0
       labels:
         severity: warning
   - name: openshift-ingress.rules

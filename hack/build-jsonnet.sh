@@ -35,3 +35,5 @@ do
 }')
     jq -r ".[\"${file}\"]" tmp/main.json | gojsontoyaml > "${prefix}/${fullfile}.yaml"
 done
+
+mv "assets/cluster-monitoring-operator/config.yaml" "manifests/0000_50_cluster_monitoring_operator_04-config.yaml"

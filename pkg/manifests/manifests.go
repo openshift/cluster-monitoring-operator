@@ -32,6 +32,7 @@ import (
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
+	"github.com/openshift/cluster-monitoring-operator/pkg/relabelgen"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -194,6 +195,9 @@ var (
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
 	AuthProxyRedirectURLFlag  = "-redirect-url="
+
+	PrometheusTrustedCABundleDir  = "/etc/pki/prometheus-ca-bundle/"
+	PrometheusTrustedCABundlePath = PrometheusTrustedCABundleDir + "ca-bundle.crt"
 )
 
 func MustAssetReader(asset string) io.Reader {
@@ -381,6 +385,7 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		// We have only one container in Alertmanager CR spec and this is oauth-proxy
 		a.Spec.Containers[0].VolumeMounts = append(a.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName))
 	}
+
 	a.Namespace = f.namespace
 
 	return a, nil
@@ -1107,8 +1112,69 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		}
 	}
 
+	telemetryEnabled := f.config.TelemeterClientConfig.IsEnabled()
+	if telemetryEnabled && f.config.RemoteWrite {
+
+		selectorRelabelConfig, err := relabelgen.LabelSelectorsToRelabelConfig(f.config.PrometheusK8sConfig.TelemetryMatches)
+		if err != nil {
+			return nil, errors.Wrap(err, "generate label selector relabel config")
+		}
+
+		compositeToken, err := json.Marshal(map[string]string{
+			"cluster_id":          f.config.TelemeterClientConfig.ClusterID,
+			"authorization_token": f.config.TelemeterClientConfig.Token,
+		})
+
+		spec := monv1.RemoteWriteSpec{
+			URL:         f.config.TelemeterClientConfig.TelemeterServerURL,
+			BearerToken: base64.StdEncoding.EncodeToString(compositeToken),
+			QueueConfig: &monv1.QueueConfig{
+				Capacity: 10000,
+				// Default: 100
+				MaxSamplesPerSend: 1000,
+				// Default: 1000
+				MaxShards: 100,
+				// Default: 30ms
+				MinBackoff: "500ms",
+				// Default: 100ms
+				MaxBackoff: "2s",
+			},
+			WriteRelabelConfigs: []monv1.RelabelConfig{
+				*selectorRelabelConfig,
+				monv1.RelabelConfig{
+					TargetLabel: "_id",
+					Replacement: f.config.TelemeterClientConfig.ClusterID,
+				},
+				// relabeling the `ALERTS` series to `alerts` allows us to make
+				// a distinction between the series produced in-cluster and out
+				// of cluster.
+				monv1.RelabelConfig{
+					SourceLabels: []string{"__name__"},
+					TargetLabel:  "__name__",
+					Regex:        "ALERTS",
+					Replacement:  "alerts",
+				},
+			},
+		}
+
+		p.Spec.RemoteWrite = []monv1.RemoteWriteSpec{spec}
+
+	}
+	if !telemetryEnabled {
+		p.Spec.RemoteWrite = nil
+	}
+
 	if len(f.config.PrometheusK8sConfig.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = f.config.PrometheusK8sConfig.RemoteWrite
+		p.Spec.RemoteWrite = append(p.Spec.RemoteWrite, f.config.PrometheusK8sConfig.RemoteWrite...)
+	}
+
+	for _, rw := range p.Spec.RemoteWrite {
+		if f.config.HTTPConfig.HTTPProxy != "" {
+			rw.ProxyURL = f.config.HTTPConfig.HTTPProxy
+		}
+		if f.config.HTTPConfig.HTTPSProxy != "" {
+			rw.ProxyURL = f.config.HTTPConfig.HTTPSProxy
+		}
 	}
 
 	if !f.config.EtcdConfig.IsEnabled() {
@@ -2465,6 +2531,16 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
+
+	cmd := []string{}
+	for _, a := range d.Spec.Template.Spec.Containers[0].Command {
+		if !strings.HasPrefix(a, "--match=") {
+			cmd = append(cmd, a)
+		}
+	}
+	for _, m := range f.config.PrometheusK8sConfig.TelemetryMatches {
+		cmd = append(cmd, fmt.Sprintf("--match=%s", m))
+	}
 
 	if len(f.config.TelemeterClientConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.TelemeterClientConfig.NodeSelector

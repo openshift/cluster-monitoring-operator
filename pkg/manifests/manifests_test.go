@@ -16,8 +16,11 @@ package manifests
 
 import (
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
+
+	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -688,6 +691,156 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 
 	if !namespacesFound {
 		t.Fatal("Configuring the namespaces to watch failed")
+	}
+}
+
+func TestPrometheusK8sRemoteWrite(t *testing.T) {
+	for _, tc := range []struct {
+		name                    string
+		config                  func() *Config
+		expectedRemoteWriteURLs []string
+	}{
+		{
+			name: "default config",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				return c
+			},
+
+			expectedRemoteWriteURLs: nil,
+		},
+		{
+			name: "legacy telemetry",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.TelemeterClientConfig.ClusterID = "123"
+				c.TelemeterClientConfig.Token = "secret"
+
+				return c
+			},
+
+			expectedRemoteWriteURLs: nil,
+		},
+		{
+			name: "legacy telemetry and custom remote write",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.TelemeterClientConfig.ClusterID = "123"
+				c.TelemeterClientConfig.Token = "secret"
+				c.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
+
+				return c
+			},
+
+			expectedRemoteWriteURLs: []string{
+				"http://custom",
+			},
+		},
+		{
+			name: "remote write telemetry",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.SetRemoteWrite(true)
+				c.TelemeterClientConfig.ClusterID = "123"
+				c.TelemeterClientConfig.Token = "secret"
+
+				return c
+			},
+
+			expectedRemoteWriteURLs: []string{
+				"https://infogw.api.openshift.com/metrics/v1/receive",
+			},
+		},
+		{
+			name: "remote write telemetry and custom remote write",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.SetRemoteWrite(true)
+				c.TelemeterClientConfig.ClusterID = "123"
+				c.TelemeterClientConfig.Token = "secret"
+				c.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
+
+				return c
+			},
+
+			expectedRemoteWriteURLs: []string{
+				"http://custom",
+				"https://infogw.api.openshift.com/metrics/v1/receive",
+			},
+		},
+		{
+			name: "remote write telemetry with custom url and custom remote write",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.SetRemoteWrite(true)
+				c.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
+				c.TelemeterClientConfig.ClusterID = "123"
+				c.TelemeterClientConfig.Token = "secret"
+				c.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom-remote-write"}}
+
+				return c
+			},
+
+			expectedRemoteWriteURLs: []string{
+				"http://custom-remote-write",
+				"http://custom-telemeter",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := tc.config()
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+			p, err := f.PrometheusK8s(
+				"prometheus-k8s.openshift-monitoring.svc",
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []string
+			for _, rw := range p.Spec.RemoteWrite {
+				got = append(got, rw.URL)
+			}
+			sort.Strings(got)
+			sort.Strings(tc.expectedRemoteWriteURLs)
+
+			if !reflect.DeepEqual(got, tc.expectedRemoteWriteURLs) {
+				t.Errorf("want remote write URLs %v, got %v", tc.expectedRemoteWriteURLs, got)
+			}
+		})
 	}
 }
 

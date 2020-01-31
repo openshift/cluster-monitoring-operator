@@ -23,10 +23,10 @@ import (
 type TelemeterClientTask struct {
 	client  *client.Client
 	factory *manifests.Factory
-	config  *manifests.TelemeterClientConfig
+	config  *manifests.Config
 }
 
-func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory, config *manifests.TelemeterClientConfig) *TelemeterClientTask {
+func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *TelemeterClientTask {
 	return &TelemeterClientTask{
 		client:  client,
 		factory: factory,
@@ -35,11 +35,15 @@ func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory, c
 }
 
 func (t *TelemeterClientTask) Run() error {
-	if t.config.IsEnabled() {
+	if t.config.TelemeterClientConfig.IsEnabled() && !t.config.RemoteWrite {
 		return t.create()
 	}
 
-	return t.destroy()
+	if !t.config.TelemeterClientConfig.IsEnabled() || t.config.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite {
+		return t.destroy()
+	}
+
+	return nil
 }
 
 func (t *TelemeterClientTask) create() error {
