@@ -32,6 +32,7 @@ import (
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
+	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -536,12 +537,16 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 		5*time.Minute,
 		informers.WithNamespace("openshift-monitoring"),
 	)*/
+	recorder := events.NewRecorder(c.kclient.CoreV1().Events("openshift-monitoring"), "cluster-monitoring-operator", &v1.ObjectReference{
+		Name:      "cluster-monitoring-operator",
+		Namespace: "openshift-monitoring",
+	})
 
 	resourceapply.ApplyDeployment(c.kclient.AppsV1(),
-		nil,
+		recorder,
 		dep,
-		0,
-		true)
+		1,
+		false)
 
 	/*d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
 
