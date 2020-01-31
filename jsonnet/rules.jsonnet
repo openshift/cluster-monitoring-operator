@@ -17,6 +17,10 @@
             record: 'pod:container_cpu_usage:sum',
           },
           {
+            expr: 'sum(max(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",job="kube-state-metrics"})) by(namespace, pod, container)',
+            record: 'kube_pod_container_status_last_terminated_reason:oom_total:sum',
+          },
+          {
             expr: 'sum(container_fs_usage_bytes{pod!=""}) BY (pod, namespace)',
             record: 'pod:container_fs_usage_bytes:sum',
           },

@@ -93,6 +93,9 @@ spec:
         sum(rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}[5m])) by (namespace)
       record: namespace:container_cpu_usage_seconds_total:sum_rate
     - expr: |
+        sum(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",job="kube-state-metrics"})
+      record: kube_pod_container_status_last_terminated_reason:oom_total:sum
+    - expr: |
         sum by (cluster, namespace, pod, container) (
           rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}[5m])
         ) * on (cluster, namespace, pod) group_left(node) max by(cluster, namespace, pod, node) (kube_pod_info)
