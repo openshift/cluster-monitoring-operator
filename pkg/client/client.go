@@ -20,9 +20,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/openshift/cluster-version-operator/lib/resourcemerge"
-	"k8s.io/utils/pointer"
-
 	"github.com/coreos/prometheus-operator/pkg/alertmanager"
 	mon "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
@@ -35,6 +32,7 @@ import (
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
+	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -533,7 +531,19 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 }
 
 func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
-	d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
+	/*kubeInformersNamespaced := informers.NewSharedInformerFactoryWithOptions(
+		c.kclient,
+		5*time.Minute,
+		informers.WithNamespace("openshift-monitoring"),
+	)*/
+
+	resourceapply.ApplyDeployment(c.kclient.AppsV1(),
+		nil,
+		dep,
+		0,
+		true)
+
+	/*d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
 
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDeployment(dep)
@@ -555,7 +565,9 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 	}
 
 	err = c.UpdateDeployment(d)
-	return errors.Wrap(err, "updating deployment object failed")
+
+	*/
+	return errors.Wrap(nil, "updating deployment object failed")
 }
 
 func (c *Client) CreateDeployment(dep *appsv1.Deployment) error {

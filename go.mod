@@ -12,7 +12,6 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
 	github.com/openshift/api v3.9.1-0.20190809235250-af7bae2945fe+incompatible
 	github.com/openshift/client-go v0.0.0-20191022152013-2823239d2298
-	github.com/openshift/cluster-version-operator v3.11.0+incompatible
 	github.com/openshift/library-go v0.0.0-20191024144423-664354b88b39
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.1.0
@@ -27,7 +26,6 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.0.0-20191022070332-e64142a43242
 	k8s.io/metrics v0.0.0-20191014074242-8b0351268f72
-	k8s.io/utils v0.0.0-20191010214722-8d271d903fe4
 )
 
 replace (
