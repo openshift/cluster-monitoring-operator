@@ -60,11 +60,6 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
       },
     },
 
-    config:
-      local configmap = k.core.v1.configMap;
-      configmap.new('telemetry-config', { 'metrics.yaml': std.manifestYamlDoc({ matches: metrics }) }) +
-      configmap.mixin.metadata.withNamespace($._config.namespace),
-
     clusterRole:
       local clusterRole = k.rbac.v1.clusterRole;
       local policyRule = clusterRole.rulesType;

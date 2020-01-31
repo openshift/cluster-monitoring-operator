@@ -117,6 +117,14 @@ func (AuthenticationList) SwaggerDoc() map[string]string {
 	return map_AuthenticationList
 }
 
+var map_AuthenticationStatus = map[string]string{
+	"managingOAuthAPIServer": "ManagingOAuthAPIServer indicates whether this operator is managing OAuth related APIs. Setting this field to true will cause OAS-O to step down. Note that this field will be removed in the future releases, once https://github.com/openshift/enhancements/blob/master/enhancements/authentication/separate-oauth-resources.md is fully implemented",
+}
+
+func (AuthenticationStatus) SwaggerDoc() map[string]string {
+	return map_AuthenticationStatus
+}
+
 var map_Console = map[string]string{
 	"": "Console provides a means to configure an operator to manage the console.",
 }
@@ -173,6 +181,40 @@ func (StatuspageProvider) SwaggerDoc() map[string]string {
 	return map_StatuspageProvider
 }
 
+var map_CSISnapshotController = map[string]string{
+	"":       "CSISnapshotController provides a means to configure an operator to manage the CSI snapshots. `cluster` is the canonical name.",
+	"spec":   "spec holds user settable values for configuration",
+	"status": "status holds observed values from the cluster. They may not be overridden.",
+}
+
+func (CSISnapshotController) SwaggerDoc() map[string]string {
+	return map_CSISnapshotController
+}
+
+var map_CSISnapshotControllerList = map[string]string{
+	"": "CSISnapshotControllerList contains a list of CSISnapshotControllers.",
+}
+
+func (CSISnapshotControllerList) SwaggerDoc() map[string]string {
+	return map_CSISnapshotControllerList
+}
+
+var map_CSISnapshotControllerSpec = map[string]string{
+	"": "CSISnapshotControllerSpec is the specification of the desired behavior of the CSISnapshotController operator.",
+}
+
+func (CSISnapshotControllerSpec) SwaggerDoc() map[string]string {
+	return map_CSISnapshotControllerSpec
+}
+
+var map_CSISnapshotControllerStatus = map[string]string{
+	"": "CSISnapshotControllerStatus defines the observed status of the CSISnapshotController operator.",
+}
+
+func (CSISnapshotControllerStatus) SwaggerDoc() map[string]string {
+	return map_CSISnapshotControllerStatus
+}
+
 var map_DNS = map[string]string{
 	"":       "DNS manages the CoreDNS component to provide a name resolution service for pods and services in the cluster.\n\nThis supports the DNS-based service discovery specification: https://github.com/kubernetes/dns/blob/master/docs/specification.md\n\nMore details: https://kubernetes.io/docs/tasks/administer-cluster/coredns",
 	"spec":   "spec is the specification of the desired behavior of the DNS.",
@@ -192,7 +234,8 @@ func (DNSList) SwaggerDoc() map[string]string {
 }
 
 var map_DNSSpec = map[string]string{
-	"": "DNSSpec is the specification of the desired behavior of the DNS.",
+	"":        "DNSSpec is the specification of the desired behavior of the DNS.",
+	"servers": "servers is a list of DNS resolvers that provide name query delegation for one or more subdomains outside the scope of the cluster domain. If servers consists of more than one Server, longest suffix match will be used to determine the Server.\n\nFor example, if there are two Servers, one for \"foo.com\" and another for \"a.foo.com\", and the name query is for \"www.a.foo.com\", it will be routed to the Server with Zone \"a.foo.com\".\n\nIf this field is nil, no servers are created.",
 }
 
 func (DNSSpec) SwaggerDoc() map[string]string {
@@ -210,6 +253,26 @@ func (DNSStatus) SwaggerDoc() map[string]string {
 	return map_DNSStatus
 }
 
+var map_ForwardPlugin = map[string]string{
+	"":          "ForwardPlugin defines a schema for configuring the CoreDNS forward plugin.",
+	"upstreams": "upstreams is a list of resolvers to forward name queries for subdomains of Zones. Upstreams are randomized when more than 1 upstream is specified. Each instance of CoreDNS performs health checking of Upstreams. When a healthy upstream returns an error during the exchange, another resolver is tried from Upstreams. Each upstream is represented by an IP address or IP:port if the upstream listens on a port other than 53.\n\nA maximum of 15 upstreams is allowed per ForwardPlugin.",
+}
+
+func (ForwardPlugin) SwaggerDoc() map[string]string {
+	return map_ForwardPlugin
+}
+
+var map_Server = map[string]string{
+	"":              "Server defines the schema for a server that runs per instance of CoreDNS.",
+	"name":          "name is required and specifies a unique name for the server. Name must comply with the Service Name Syntax of rfc6335.",
+	"zones":         "zones is required and specifies the subdomains that Server is authoritative for. Zones must conform to the rfc1123 definition of a subdomain. Specifying the cluster domain (i.e., \"cluster.local\") is invalid.",
+	"forwardPlugin": "forwardPlugin defines a schema for configuring CoreDNS to proxy DNS messages to upstream resolvers.",
+}
+
+func (Server) SwaggerDoc() map[string]string {
+	return map_Server
+}
+
 var map_Etcd = map[string]string{
 	"": "Etcd provides information to configure an operator to manage kube-apiserver.",
 }
@@ -219,9 +282,8 @@ func (Etcd) SwaggerDoc() map[string]string {
 }
 
 var map_EtcdList = map[string]string{
-	"":         "KubeAPISOperatorConfigList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "KubeAPISOperatorConfigList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (EtcdList) SwaggerDoc() map[string]string {
@@ -230,10 +292,11 @@ func (EtcdList) SwaggerDoc() map[string]string {
 
 var map_EndpointPublishingStrategy = map[string]string{
 	"":             "EndpointPublishingStrategy is a way to publish the endpoints of an IngressController, and represents the type and any additional configuration for a specific type.",
-	"type":         "type is the publishing strategy to use. Valid values are:\n\n* LoadBalancerService\n\nPublishes the ingress controller using a Kubernetes LoadBalancer Service.\n\nIn this configuration, the ingress controller deployment uses container networking. A LoadBalancer Service is created to publish the deployment.\n\nSee: https://kubernetes.io/docs/concepts/services-networking/#loadbalancer\n\nIf domain is set, a wildcard DNS record will be managed to point at the LoadBalancer Service's external name. DNS records are managed only in DNS zones defined by dns.config.openshift.io/cluster .spec.publicZone and .spec.privateZone.\n\nWildcard DNS management is currently supported only on the AWS platform.\n\n* HostNetwork\n\nPublishes the ingress controller on node ports where the ingress controller is deployed.\n\nIn this configuration, the ingress controller deployment uses host networking, bound to node ports 80 and 443. The user is responsible for configuring an external load balancer to publish the ingress controller via the node ports.\n\n* Private\n\nDoes not publish the ingress controller.\n\nIn this configuration, the ingress controller deployment uses container networking, and is not explicitly published. The user must manually publish the ingress controller.",
+	"type":         "type is the publishing strategy to use. Valid values are:\n\n* LoadBalancerService\n\nPublishes the ingress controller using a Kubernetes LoadBalancer Service.\n\nIn this configuration, the ingress controller deployment uses container networking. A LoadBalancer Service is created to publish the deployment.\n\nSee: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer\n\nIf domain is set, a wildcard DNS record will be managed to point at the LoadBalancer Service's external name. DNS records are managed only in DNS zones defined by dns.config.openshift.io/cluster .spec.publicZone and .spec.privateZone.\n\nWildcard DNS management is currently supported only on the AWS, Azure, and GCP platforms.\n\n* HostNetwork\n\nPublishes the ingress controller on node ports where the ingress controller is deployed.\n\nIn this configuration, the ingress controller deployment uses host networking, bound to node ports 80 and 443. The user is responsible for configuring an external load balancer to publish the ingress controller via the node ports.\n\n* Private\n\nDoes not publish the ingress controller.\n\nIn this configuration, the ingress controller deployment uses container networking, and is not explicitly published. The user must manually publish the ingress controller.\n\n* NodePortService\n\nPublishes the ingress controller using a Kubernetes NodePort Service.\n\nIn this configuration, the ingress controller deployment uses container networking. A NodePort Service is created to publish the deployment. The specific node ports are dynamically allocated by OpenShift; however, to support static port allocations, user changes to the node port field of the managed NodePort Service will preserved.",
 	"loadBalancer": "loadBalancer holds parameters for the load balancer. Present only if type is LoadBalancerService.",
 	"hostNetwork":  "hostNetwork holds parameters for the HostNetwork endpoint publishing strategy. Present only if type is HostNetwork.",
 	"private":      "private holds parameters for the Private endpoint publishing strategy. Present only if type is Private.",
+	"nodePort":     "nodePort holds parameters for the NodePortService endpoint publishing strategy. Present only if type is NodePortService.",
 }
 
 func (EndpointPublishingStrategy) SwaggerDoc() map[string]string {
@@ -270,11 +333,13 @@ var map_IngressControllerSpec = map[string]string{
 	"":                           "IngressControllerSpec is the specification of the desired behavior of the IngressController.",
 	"domain":                     "domain is a DNS name serviced by the ingress controller and is used to configure multiple features:\n\n* For the LoadBalancerService endpoint publishing strategy, domain is\n  used to configure DNS records. See endpointPublishingStrategy.\n\n* When using a generated default certificate, the certificate will be valid\n  for domain and its subdomains. See defaultCertificate.\n\n* The value is published to individual Route statuses so that end-users\n  know where to target external DNS records.\n\ndomain must be unique among all IngressControllers, and cannot be updated.\n\nIf empty, defaults to ingress.config.openshift.io/cluster .spec.domain.",
 	"replicas":                   "replicas is the desired number of ingress controller replicas. If unset, defaults to 2.",
-	"endpointPublishingStrategy": "endpointPublishingStrategy is used to publish the ingress controller endpoints to other networks, enable load balancer integrations, etc.\n\nIf unset, the default is based on infrastructure.config.openshift.io/cluster .status.platform:\n\n  AWS:      LoadBalancerService\n  Azure:    LoadBalancerService\n  GCP:      LoadBalancerService\n  Libvirt:  HostNetwork\n\nAny other platform types (including None) default to HostNetwork.\n\nendpointPublishingStrategy cannot be updated.",
+	"endpointPublishingStrategy": "endpointPublishingStrategy is used to publish the ingress controller endpoints to other networks, enable load balancer integrations, etc.\n\nIf unset, the default is based on infrastructure.config.openshift.io/cluster .status.platform:\n\n  AWS:      LoadBalancerService (with External scope)\n  Azure:    LoadBalancerService (with External scope)\n  GCP:      LoadBalancerService (with External scope)\n  Libvirt:  HostNetwork\n\nAny other platform types (including None) default to HostNetwork.\n\nendpointPublishingStrategy cannot be updated.",
 	"defaultCertificate":         "defaultCertificate is a reference to a secret containing the default certificate served by the ingress controller. When Routes don't specify their own certificate, defaultCertificate is used.\n\nThe secret must contain the following keys and data:\n\n  tls.crt: certificate file contents\n  tls.key: key file contents\n\nIf unset, a wildcard certificate is automatically generated and used. The certificate is valid for the ingress controller domain (and subdomains) and the generated certificate's CA will be automatically integrated with the cluster's trust store.\n\nThe in-use certificate (whether generated or user-specified) will be automatically integrated with OpenShift's built-in OAuth server.",
 	"namespaceSelector":          "namespaceSelector is used to filter the set of namespaces serviced by the ingress controller. This is useful for implementing shards.\n\nIf unset, the default is no filtering.",
 	"routeSelector":              "routeSelector is used to filter the set of Routes serviced by the ingress controller. This is useful for implementing shards.\n\nIf unset, the default is no filtering.",
 	"nodePlacement":              "nodePlacement enables explicit control over the scheduling of the ingress controller.\n\nIf unset, defaults are used. See NodePlacement for more details.",
+	"tlsSecurityProfile":         "tlsSecurityProfile specifies settings for TLS connections for ingresscontrollers.\n\nIf unset, the default is based on the apiservers.config.openshift.io/cluster resource.\n\nNote that when using the Old, Intermediate, and Modern profile types, the effective profile configuration is subject to change between releases. For example, given a specification to use the Intermediate profile deployed on release X.Y.Z, an upgrade to release X.Y.Z+1 may cause a new profile configuration to be applied to the ingress controller, resulting in a rollout.\n\nNote that the minimum TLS version for ingress controllers is 1.1, and the maximum TLS version is 1.2.  An implication of this restriction is that the Modern TLS profile type cannot be used because it requires TLS 1.3.",
+	"routeAdmission":             "routeAdmission defines a policy for handling new route claims (for example, to allow or deny claims across namespaces).\n\nIf empty, defaults will be applied. See specific routeAdmission fields for details about their defaults.",
 }
 
 func (IngressControllerSpec) SwaggerDoc() map[string]string {
@@ -288,6 +353,8 @@ var map_IngressControllerStatus = map[string]string{
 	"domain":                     "domain is the actual domain in use.",
 	"endpointPublishingStrategy": "endpointPublishingStrategy is the actual strategy in use.",
 	"conditions":                 "conditions is a list of conditions and their status.\n\nAvailable means the ingress controller deployment is available and servicing route and ingress resources (i.e, .status.availableReplicas equals .spec.replicas)\n\nThere are additional conditions which indicate the status of other ingress controller features and capabilities.\n\n  * LoadBalancerManaged\n  - True if the following conditions are met:\n    * The endpoint publishing strategy requires a service load balancer.\n  - False if any of those conditions are unsatisfied.\n\n  * LoadBalancerReady\n  - True if the following conditions are met:\n    * A load balancer is managed.\n    * The load balancer is ready.\n  - False if any of those conditions are unsatisfied.\n\n  * DNSManaged\n  - True if the following conditions are met:\n    * The endpoint publishing strategy and platform support DNS.\n    * The ingress controller domain is set.\n    * dns.config.openshift.io/cluster configures DNS zones.\n  - False if any of those conditions are unsatisfied.\n\n  * DNSReady\n  - True if the following conditions are met:\n    * DNS is managed.\n    * DNS records have been successfully created.\n  - False if any of those conditions are unsatisfied.",
+	"tlsProfile":                 "tlsProfile is the TLS connection configuration that is in effect.",
+	"observedGeneration":         "observedGeneration is the most recent generation observed.",
 }
 
 func (IngressControllerStatus) SwaggerDoc() map[string]string {
@@ -296,7 +363,7 @@ func (IngressControllerStatus) SwaggerDoc() map[string]string {
 
 var map_LoadBalancerStrategy = map[string]string{
 	"":      "LoadBalancerStrategy holds parameters for a load balancer.",
-	"scope": "scope indicates the scope at which the load balancer is exposed. Possible values are \"External\" and \"Internal\".  The default is \"External\".",
+	"scope": "scope indicates the scope at which the load balancer is exposed. Possible values are \"External\" and \"Internal\".",
 }
 
 func (LoadBalancerStrategy) SwaggerDoc() map[string]string {
@@ -313,6 +380,14 @@ func (NodePlacement) SwaggerDoc() map[string]string {
 	return map_NodePlacement
 }
 
+var map_NodePortStrategy = map[string]string{
+	"": "NodePortStrategy holds parameters for the NodePortService endpoint publishing strategy.",
+}
+
+func (NodePortStrategy) SwaggerDoc() map[string]string {
+	return map_NodePortStrategy
+}
+
 var map_PrivateStrategy = map[string]string{
 	"": "PrivateStrategy holds parameters for the Private endpoint publishing strategy.",
 }
@@ -321,8 +396,19 @@ func (PrivateStrategy) SwaggerDoc() map[string]string {
 	return map_PrivateStrategy
 }
 
+var map_RouteAdmissionPolicy = map[string]string{
+	"":                   "RouteAdmissionPolicy is an admission policy for allowing new route claims.",
+	"namespaceOwnership": "namespaceOwnership describes how host name claims across namespaces should be handled.\n\nValue must be one of:\n\n- Strict: Do not allow routes in different namespaces to claim the same host.\n\n- InterNamespaceAllowed: Allow routes to claim different paths of the same\n  host name across namespaces.\n\nIf empty, the default is Strict.",
+}
+
+func (RouteAdmissionPolicy) SwaggerDoc() map[string]string {
+	return map_RouteAdmissionPolicy
+}
+
 var map_KubeAPIServer = map[string]string{
-	"": "KubeAPIServer provides information to configure an operator to manage kube-apiserver.",
+	"":       "KubeAPIServer provides information to configure an operator to manage kube-apiserver.",
+	"spec":   "spec is the specification of the desired behavior of the Kubernetes API Server",
+	"status": "status is the most recently observed status of the Kubernetes API Server",
 }
 
 func (KubeAPIServer) SwaggerDoc() map[string]string {
@@ -330,9 +416,8 @@ func (KubeAPIServer) SwaggerDoc() map[string]string {
 }
 
 var map_KubeAPIServerList = map[string]string{
-	"":         "KubeAPIServerList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "KubeAPIServerList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (KubeAPIServerList) SwaggerDoc() map[string]string {
@@ -340,7 +425,9 @@ func (KubeAPIServerList) SwaggerDoc() map[string]string {
 }
 
 var map_KubeControllerManager = map[string]string{
-	"": "KubeControllerManager provides information to configure an operator to manage kube-controller-manager.",
+	"":       "KubeControllerManager provides information to configure an operator to manage kube-controller-manager.",
+	"spec":   "spec is the specification of the desired behavior of the Kubernetes Controller Manager",
+	"status": "status is the most recently observed status of the Kubernetes Controller Manager",
 }
 
 func (KubeControllerManager) SwaggerDoc() map[string]string {
@@ -348,13 +435,29 @@ func (KubeControllerManager) SwaggerDoc() map[string]string {
 }
 
 var map_KubeControllerManagerList = map[string]string{
-	"":         "KubeControllerManagerList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "KubeControllerManagerList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (KubeControllerManagerList) SwaggerDoc() map[string]string {
 	return map_KubeControllerManagerList
+}
+
+var map_KubeStorageVersionMigrator = map[string]string{
+	"": "KubeStorageVersionMigrator provides information to configure an operator to manage kube-storage-version-migrator.",
+}
+
+func (KubeStorageVersionMigrator) SwaggerDoc() map[string]string {
+	return map_KubeStorageVersionMigrator
+}
+
+var map_KubeStorageVersionMigratorList = map[string]string{
+	"":      "KubeStorageVersionMigratorList is a collection of items",
+	"items": "Items contains the items",
+}
+
+func (KubeStorageVersionMigratorList) SwaggerDoc() map[string]string {
+	return map_KubeStorageVersionMigratorList
 }
 
 var map_AdditionalNetworkDefinition = map[string]string{
@@ -390,6 +493,14 @@ func (DefaultNetworkDefinition) SwaggerDoc() map[string]string {
 	return map_DefaultNetworkDefinition
 }
 
+var map_HybridOverlayConfig = map[string]string{
+	"hybridClusterNetwork": "HybridClusterNetwork defines a network space given to nodes on an additional overlay network.",
+}
+
+func (HybridOverlayConfig) SwaggerDoc() map[string]string {
+	return map_HybridOverlayConfig
+}
+
 var map_IPAMConfig = map[string]string{
 	"":                 "IPAMConfig contains configurations for IPAM (IP Address Management)",
 	"type":             "Type is the type of IPAM module will be used for IP Address Management(IPAM). The supported values are IPAMTypeDHCP, IPAMTypeStatic",
@@ -401,9 +512,14 @@ func (IPAMConfig) SwaggerDoc() map[string]string {
 }
 
 var map_KuryrConfig = map[string]string{
-	"":                     "KuryrConfig configures the Kuryr-Kubernetes SDN",
-	"daemonProbesPort":     "The port kuryr-daemon will listen for readiness and liveness requests.",
-	"controllerProbesPort": "The port kuryr-controller will listen for readiness and liveness requests.",
+	"":                             "KuryrConfig configures the Kuryr-Kubernetes SDN",
+	"daemonProbesPort":             "The port kuryr-daemon will listen for readiness and liveness requests.",
+	"controllerProbesPort":         "The port kuryr-controller will listen for readiness and liveness requests.",
+	"openStackServiceNetwork":      "openStackServiceNetwork contains the CIDR of network from which to allocate IPs for OpenStack Octavia's Amphora VMs. Please note that with Amphora driver Octavia uses two IPs from that network for each loadbalancer - one given by OpenShift and second for VRRP connections. As the first one is managed by OpenShift's and second by Neutron's IPAMs, those need to come from different pools. Therefore `openStackServiceNetwork` needs to be at least twice the size of `serviceNetwork`, and whole `serviceNetwork` must be overlapping with `openStackServiceNetwork`. cluster-network-operator will then make sure VRRP IPs are taken from the ranges inside `openStackServiceNetwork` that are not overlapping with `serviceNetwork`, effectivly preventing conflicts. If not set cluster-network-operator will use `serviceNetwork` expanded by decrementing the prefix size by 1.",
+	"enablePortPoolsPrepopulation": "enablePortPoolsPrepopulation when true will make Kuryr prepopulate each newly created port pool with a minimum number of ports. Kuryr uses Neutron port pooling to fight the fact that it takes a significant amount of time to create one. Instead of creating it when pod is being deployed, Kuryr keeps a number of ports ready to be attached to pods. By default port prepopulation is disabled.",
+	"poolMaxPorts":                 "poolMaxPorts sets a maximum number of free ports that are being kept in a port pool. If the number of ports exceeds this setting, free ports will get deleted. Setting 0 will disable this upper bound, effectively preventing pools from shrinking and this is the default value. For more information about port pools see enablePortPoolsPrepopulation setting.",
+	"poolMinPorts":                 "poolMinPorts sets a minimum number of free ports that should be kept in a port pool. If the number of ports is lower than this setting, new ports will get created and added to pool. The default is 1. For more information about port pools see enablePortPoolsPrepopulation setting.",
+	"poolBatchPorts":               "poolBatchPorts sets a number of ports that should be created in a single batch request to extend the port pool. The default is 3. For more information about port pools see enablePortPoolsPrepopulation setting.",
 }
 
 func (KuryrConfig) SwaggerDoc() map[string]string {
@@ -435,6 +551,7 @@ var map_NetworkSpec = map[string]string{
 	"disableMultiNetwork": "disableMultiNetwork specifies whether or not multiple pod network support should be disabled. If unset, this property defaults to 'false' and multiple network support is enabled.",
 	"deployKubeProxy":     "deployKubeProxy specifies whether or not a standalone kube-proxy should be deployed by the operator. Some network providers include kube-proxy or similar functionality. If unset, the plugin will attempt to select the correct value, which is false when OpenShift SDN and ovn-kubernetes are used and true otherwise.",
 	"kubeProxyConfig":     "kubeProxyConfig lets us configure desired proxy configuration. If not specified, sensible defaults will be chosen by OpenShift directly. Not consumed by all network providers - currently only openshift-sdn.",
+	"logLevel":            "logLevel allows configuring the logging level of the components deployed by the operator. Currently only Kuryr SDN is affected by this setting. Please note that turning on extensive logging may affect performance. The default value is \"Normal\".",
 }
 
 func (NetworkSpec) SwaggerDoc() map[string]string {
@@ -450,8 +567,10 @@ func (NetworkStatus) SwaggerDoc() map[string]string {
 }
 
 var map_OVNKubernetesConfig = map[string]string{
-	"":    "ovnKubernetesConfig is the proposed configuration parameters for networks using the ovn-kubernetes network project",
-	"mtu": "mtu is the MTU to use for the tunnel interface. This must be 100 bytes smaller than the uplink mtu. Default is 1400",
+	"":                    "ovnKubernetesConfig contains the configuration parameters for networks using the ovn-kubernetes network project",
+	"mtu":                 "mtu is the MTU to use for the tunnel interface. This must be 100 bytes smaller than the uplink mtu. Default is 1400",
+	"genevePort":          "geneve port is the UDP port to be used by geneve encapulation. Default is 6081",
+	"hybridOverlayConfig": "HybridOverlayConfig configures an additional overlay network for peers that are not using OVN.",
 }
 
 func (OVNKubernetesConfig) SwaggerDoc() map[string]string {
@@ -537,7 +656,9 @@ func (StaticIPAMRoutes) SwaggerDoc() map[string]string {
 }
 
 var map_OpenShiftAPIServer = map[string]string{
-	"": "OpenShiftAPIServer provides information to configure an operator to manage openshift-apiserver.",
+	"":       "OpenShiftAPIServer provides information to configure an operator to manage openshift-apiserver.",
+	"spec":   "spec is the specification of the desired behavior of the OpenShift API Server.",
+	"status": "status defines the observed status of the OpenShift API Server.",
 }
 
 func (OpenShiftAPIServer) SwaggerDoc() map[string]string {
@@ -545,13 +666,20 @@ func (OpenShiftAPIServer) SwaggerDoc() map[string]string {
 }
 
 var map_OpenShiftAPIServerList = map[string]string{
-	"":         "OpenShiftAPIServerList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "OpenShiftAPIServerList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (OpenShiftAPIServerList) SwaggerDoc() map[string]string {
 	return map_OpenShiftAPIServerList
+}
+
+var map_OpenShiftAPIServerStatus = map[string]string{
+	"latestAvailableRevision": "latestAvailableRevision is the latest revision used as suffix of revisioned secrets like encryption-config. A new revision causes a new deployment of pods.",
+}
+
+func (OpenShiftAPIServerStatus) SwaggerDoc() map[string]string {
+	return map_OpenShiftAPIServerStatus
 }
 
 var map_OpenShiftControllerManager = map[string]string{
@@ -563,9 +691,8 @@ func (OpenShiftControllerManager) SwaggerDoc() map[string]string {
 }
 
 var map_OpenShiftControllerManagerList = map[string]string{
-	"":         "OpenShiftControllerManagerList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "OpenShiftControllerManagerList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (OpenShiftControllerManagerList) SwaggerDoc() map[string]string {
@@ -573,7 +700,9 @@ func (OpenShiftControllerManagerList) SwaggerDoc() map[string]string {
 }
 
 var map_KubeScheduler = map[string]string{
-	"": "KubeScheduler provides information to configure an operator to manage scheduler.",
+	"":       "KubeScheduler provides information to configure an operator to manage scheduler.",
+	"spec":   "spec is the specification of the desired behavior of the Kubernetes Scheduler",
+	"status": "status is the most recently observed status of the Kubernetes Scheduler",
 }
 
 func (KubeScheduler) SwaggerDoc() map[string]string {
@@ -581,9 +710,8 @@ func (KubeScheduler) SwaggerDoc() map[string]string {
 }
 
 var map_KubeSchedulerList = map[string]string{
-	"":         "KubeSchedulerList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "KubeSchedulerList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (KubeSchedulerList) SwaggerDoc() map[string]string {
@@ -601,9 +729,8 @@ func (ServiceCA) SwaggerDoc() map[string]string {
 }
 
 var map_ServiceCAList = map[string]string{
-	"":         "ServiceCAList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "ServiceCAList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (ServiceCAList) SwaggerDoc() map[string]string {
@@ -619,9 +746,8 @@ func (ServiceCatalogAPIServer) SwaggerDoc() map[string]string {
 }
 
 var map_ServiceCatalogAPIServerList = map[string]string{
-	"":         "ServiceCatalogAPIServerList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "ServiceCatalogAPIServerList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (ServiceCatalogAPIServerList) SwaggerDoc() map[string]string {
@@ -637,9 +763,8 @@ func (ServiceCatalogControllerManager) SwaggerDoc() map[string]string {
 }
 
 var map_ServiceCatalogControllerManagerList = map[string]string{
-	"":         "ServiceCatalogControllerManagerList is a collection of items",
-	"metadata": "Standard object's metadata.",
-	"items":    "Items contains the items",
+	"":      "ServiceCatalogControllerManagerList is a collection of items",
+	"items": "Items contains the items",
 }
 
 func (ServiceCatalogControllerManagerList) SwaggerDoc() map[string]string {

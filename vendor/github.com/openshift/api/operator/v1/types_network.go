@@ -69,13 +69,21 @@ type NetworkSpec struct {
 	// If not specified, sensible defaults will be chosen by OpenShift directly.
 	// Not consumed by all network providers - currently only openshift-sdn.
 	KubeProxyConfig *ProxyConfig `json:"kubeProxyConfig,omitempty"`
+
+	// logLevel allows configuring the logging level of the components deployed
+	// by the operator. Currently only Kuryr SDN is affected by this setting.
+	// Please note that turning on extensive logging may affect performance.
+	// The default value is "Normal".
+	// +optional
+	LogLevel LogLevel `json:"logLevel"`
 }
 
 // ClusterNetworkEntry is a subnet from which to allocate PodIPs. A network of size
 // HostPrefix (in CIDR notation) will be allocated when nodes join the cluster.
 // Not all network providers support multiple ClusterNetworks
 type ClusterNetworkEntry struct {
-	CIDR       string `json:"cidr"`
+	CIDR string `json:"cidr"`
+	// +kubebuilder:validation:Minimum=0
 	HostPrefix uint32 `json:"hostPrefix"`
 }
 
@@ -117,6 +125,7 @@ type SimpleMacvlanConfig struct {
 
 	// mtu is the mtu to use for the macvlan interface. if unset, host's
 	// kernel will select the value.
+	// +kubebuilder:validation:Minimum=0
 	// +optional
 	MTU uint32 `json:"mtu,omitempty"`
 }
@@ -209,11 +218,13 @@ type OpenShiftSDNConfig struct {
 	Mode SDNMode `json:"mode"`
 
 	// vxlanPort is the port to use for all vxlan packets. The default is 4789.
+	// +kubebuilder:validation:Minimum=0
 	// +optional
 	VXLANPort *uint32 `json:"vxlanPort,omitempty"`
 
 	// mtu is the mtu to use for the tunnel interface. Defaults to 1450 if unset.
 	// This must be 50 bytes smaller than the machine's uplink.
+	// +kubebuilder:validation:Minimum=0
 	// +optional
 	MTU *uint32 `json:"mtu,omitempty"`
 
@@ -230,21 +241,85 @@ type OpenShiftSDNConfig struct {
 // KuryrConfig configures the Kuryr-Kubernetes SDN
 type KuryrConfig struct {
 	// The port kuryr-daemon will listen for readiness and liveness requests.
+	// +kubebuilder:validation:Minimum=0
 	// +optional
 	DaemonProbesPort *uint32 `json:"daemonProbesPort,omitempty"`
 
 	// The port kuryr-controller will listen for readiness and liveness requests.
+	// +kubebuilder:validation:Minimum=0
 	// +optional
 	ControllerProbesPort *uint32 `json:"controllerProbesPort,omitempty"`
+
+	// openStackServiceNetwork contains the CIDR of network from which to allocate IPs for
+	// OpenStack Octavia's Amphora VMs. Please note that with Amphora driver Octavia uses
+	// two IPs from that network for each loadbalancer - one given by OpenShift and second
+	// for VRRP connections. As the first one is managed by OpenShift's and second by Neutron's
+	// IPAMs, those need to come from different pools. Therefore `openStackServiceNetwork`
+	// needs to be at least twice the size of `serviceNetwork`, and whole `serviceNetwork`
+	// must be overlapping with `openStackServiceNetwork`. cluster-network-operator will then
+	// make sure VRRP IPs are taken from the ranges inside `openStackServiceNetwork` that
+	// are not overlapping with `serviceNetwork`, effectivly preventing conflicts. If not set
+	// cluster-network-operator will use `serviceNetwork` expanded by decrementing the prefix
+	// size by 1.
+	// +optional
+	OpenStackServiceNetwork string `json:"openStackServiceNetwork,omitempty"`
+
+	// enablePortPoolsPrepopulation when true will make Kuryr prepopulate each newly created port
+	// pool with a minimum number of ports. Kuryr uses Neutron port pooling to fight the fact
+	// that it takes a significant amount of time to create one. Instead of creating it when
+	// pod is being deployed, Kuryr keeps a number of ports ready to be attached to pods. By
+	// default port prepopulation is disabled.
+	// +optional
+	EnablePortPoolsPrepopulation bool `json:"enablePortPoolsPrepopulation,omitempty"`
+
+	// poolMaxPorts sets a maximum number of free ports that are being kept in a port pool.
+	// If the number of ports exceeds this setting, free ports will get deleted. Setting 0
+	// will disable this upper bound, effectively preventing pools from shrinking and this
+	// is the default value. For more information about port pools see
+	// enablePortPoolsPrepopulation setting.
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	PoolMaxPorts uint `json:"poolMaxPorts,omitempty"`
+
+	// poolMinPorts sets a minimum number of free ports that should be kept in a port pool.
+	// If the number of ports is lower than this setting, new ports will get created and
+	// added to pool. The default is 1. For more information about port pools see
+	// enablePortPoolsPrepopulation setting.
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	PoolMinPorts uint `json:"poolMinPorts,omitempty"`
+
+	// poolBatchPorts sets a number of ports that should be created in a single batch request
+	// to extend the port pool. The default is 3. For more information about port pools see
+	// enablePortPoolsPrepopulation setting.
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	PoolBatchPorts *uint `json:"poolBatchPorts,omitempty"`
 }
 
-// ovnKubernetesConfig is the proposed configuration parameters for networks
+// ovnKubernetesConfig contains the configuration parameters for networks
 // using the ovn-kubernetes network project
 type OVNKubernetesConfig struct {
 	// mtu is the MTU to use for the tunnel interface. This must be 100
 	// bytes smaller than the uplink mtu.
 	// Default is 1400
+	// +kubebuilder:validation:Minimum=0
+	// +optional
 	MTU *uint32 `json:"mtu,omitempty"`
+	// geneve port is the UDP port to be used by geneve encapulation.
+	// Default is 6081
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	GenevePort *uint32 `json:"genevePort,omitempty"`
+	// HybridOverlayConfig configures an additional overlay network for peers that are
+	// not using OVN.
+	// +optional
+	HybridOverlayConfig *HybridOverlayConfig `json:"hybridOverlayConfig,omitempty"`
+}
+
+type HybridOverlayConfig struct {
+	// HybridClusterNetwork defines a network space given to nodes on an additional overlay network.
+	HybridClusterNetwork []ClusterNetworkEntry `json:"hybridClusterNetwork"`
 }
 
 // NetworkType describes the network plugin type to configure

@@ -165,6 +165,8 @@ local authorizationRole =
             replicas: 2,
             template+: {
               spec+: {
+                // TODO (the library adds some affinity rules here, we have to dynamically dependency inject the namespace here)
+                affinity+:: {},
                 volumes: [
                   volume.fromSecret('secret-thanos-querier-tls', 'thanos-querier-tls'),
                   volume.fromSecret('secret-thanos-querier-oauth-cookie', 'thanos-querier-oauth-cookie'),
