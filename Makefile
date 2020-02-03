@@ -100,8 +100,11 @@ manifests/0000_50_cluster_monitoring_operator_02-role.yaml: $(ASSETS) hack/merge
 	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > $@
 
 .PHONY: docs
-docs:
+docs: Documentation/telemeter_query
 	embedmd -w `find Documentation -name "*.md"`
+
+Documentation/telemeter_query: manifests/0000_50_cluster_monitoring_operator_04-config.yaml
+	cat manifests/0000_50_cluster_monitoring_operator_04-config.yaml | gojsontoyaml -yamltojson | jq -r '.data["metrics.yaml"]' | gojsontoyaml -yamltojson | jq -r '.matches | join(" or ")' > Documentation/telemeter_query
 
 ##############
 # Formatting #
