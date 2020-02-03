@@ -115,6 +115,8 @@ data:
     # node_role_os_version_machine:cpu_capacity_sockets:sum is the total number of CPU sockets
     # in the cluster labeled by master and/or infra node role, os, architecture, and hyperthreading state.
     - '{__name__="node_role_os_version_machine:cpu_capacity_sockets:sum"}'
+    # kube_pod_container_status_last_terminated_reason:oom_total:sum is the number of OOMs
+    - '{__name__="kube_pod_container_status_last_terminated_reason:oom_total:sum"}'
     # subscription_sync_total is the number of times an OLM operator
     # Subscription has been synced, labelled by name and installed csv
     - '{__name__="subscription_sync_total"}'
