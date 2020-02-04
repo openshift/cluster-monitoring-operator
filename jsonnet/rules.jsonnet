@@ -176,6 +176,16 @@
             record: 'cluster:alertmanager_routing_enabled:max',
           },
           {
+            expr: 'sum(max(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})) by (namespace, pod, container) > 0',
+            alert: 'KubePodOOMWarning',
+            annotations: {
+              message: 'Pod {{ $labels.namespace  }}/{{ $labels.pod  }} ({{ $labels.container  }}) is experiencing out of memory termination.',
+            },
+            labels: {
+              severity: 'warning',
+            },
+          },
+          {
             expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
             alert: 'ClusterMonitoringOperatorReconciliationErrors',
             'for': '30m',
