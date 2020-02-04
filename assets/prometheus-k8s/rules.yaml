@@ -380,6 +380,14 @@ spec:
       record: node_role_os_version_machine:cpu_capacity_sockets:sum
     - expr: clamp_max(sum(alertmanager_notifications_total),1)
       record: cluster:alertmanager_routing_enabled:max
+    - alert: KubePodOOMWarning
+      annotations:
+        message: Pod {{ $labels.namespace  }}/{{ $labels.pod  }} ({{ $labels.container  }})
+          is experiencing out of memory termination.
+      expr: sum(max(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}))
+        by (namespace, pod, container) > 0
+      labels:
+        severity: warning
     - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
         message: Cluster Monitoring Operator is experiencing reconciliation error
