@@ -4,7 +4,7 @@ GO_PKG=github.com/openshift/cluster-monitoring-operator
 REPO?=quay.io/openshift/cluster-monitoring-operator
 TAG?=$(shell git rev-parse --short HEAD)
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
-GO111MODULE?=off
+GO111MODULE=off
 export GO111MODULE
 
 PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
