@@ -157,6 +157,11 @@ data:
     # cam_app_workload_migrations tracks number of app workload migrations
     # by current state. Tracked migration states are idle, running, completed, and failed.
     - '{__name__="cam_app_workload_migrations"}'
+    # cluster:apiserver_current_inflight_requests:sum:max_over_time:2m gives maximum number of requests in flight
+    # over a 2-minute window. This metric is a constant 4 time series that monitors concurrency of kube-apiserver and
+    # openshift-apiserver with request type which can be either 'mutating' or 'readonly'.
+    # We want to have an idea of how loaded our api server(s) are globally.
+    - '{__name__="cluster:apiserver_current_inflight_requests:sum:max_over_time:2m"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
