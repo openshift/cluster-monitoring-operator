@@ -2,6 +2,7 @@ allowHostDirVolumePlugin: true
 allowHostNetwork: true
 allowHostPID: true
 allowHostPorts: true
+allowPrivilegedContainer: true
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
