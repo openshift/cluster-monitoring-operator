@@ -90,6 +90,7 @@ local tlsVolumeName = 'node-exporter-tls';
                   image: $._config.imageRepos.nodeExporter + ':' + $._config.versions.nodeExporter,
                   resources: {},
                   securityContext: {
+                    privileged: true,
                     runAsUser: 0,
                   },
                   terminationMessagePolicy: 'FallbackToLogsOnError',

@@ -86,6 +86,7 @@ spec:
         name: init-textfile
         resources: {}
         securityContext:
+          privileged: true
           runAsUser: 0
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
