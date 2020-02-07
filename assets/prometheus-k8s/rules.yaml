@@ -171,6 +171,16 @@ spec:
       labels:
         workload_type: statefulset
       record: mixin_pod_workload
+    - expr: |
+        sum(
+          label_replace(
+            kube_pod_owner{job="kube-state-metrics", owner_kind="DeploymentConfig"},
+            "workload", "$1", "owner_name", "(.*)"
+          )
+        ) by (cluster, namespace, workload, pod)
+      labels:
+        workload_type: deploymentconfig
+      record: mixin_pod_workload
   - name: kube-scheduler.rules
     rules:
     - expr: |
