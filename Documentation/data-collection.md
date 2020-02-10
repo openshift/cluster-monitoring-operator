@@ -20,11 +20,18 @@ data:
     # All metrics under this prefix must have low (1-5) cardinality and must
     # be well-scoped and follow proper naming and scoping conventions.
     - '{__name__=~"cluster:usage:.*"}'
-    # up contains information relevant to the health of the registered
+    # count:up0 contains the count of cluster monitoring sources being marked as down.
+    # This information is relevant to the health of the registered
     # cluster monitoring sources on a cluster. This metric allows telemetry
     # to identify when an update causes a service to begin to crash-loop or
     # flake.
-    - '{__name__="up"}'
+    - '{__name__="count:up0"}'
+    # count:up1 contains the count of cluster monitoring sources being marked as up.
+    # This information is relevant to the health of the registered
+    # cluster monitoring sources on a cluster. This metric allows telemetry
+    # to identify when an update causes a service to begin to crash-loop or
+    # flake.
+    - '{__name__="count:up1"}'
     # cluster_version reports what payload and version the cluster is being
     # configured to and is used to identify what versions are on a cluster
     # that is experiencing problems.
@@ -55,8 +62,6 @@ data:
     # cluster_feature_set reports the configured cluster feature set and
     # whether the feature set is considered supported or unsupported.
     - '{__name__="cluster_feature_set"}'
-    # node_uname_info reports information about OS gathered from the uname syscall
-    - '{__name__="node_uname_info"}'
     # instance:etcd_object_counts:sum identifies two key metrics:
     # - the rough size of the data stored in etcd and
     # - the consistency between the etcd instances.
