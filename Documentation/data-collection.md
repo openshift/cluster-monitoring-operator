@@ -62,8 +62,6 @@ data:
     # cluster_feature_set reports the configured cluster feature set and
     # whether the feature set is considered supported or unsupported.
     - '{__name__="cluster_feature_set"}'
-    # node_uname_info reports information about OS gathered from the uname syscall
-    - '{__name__="node_uname_info"}'
     # instance:etcd_object_counts:sum identifies two key metrics:
     # - the rough size of the data stored in etcd and
     # - the consistency between the etcd instances.
