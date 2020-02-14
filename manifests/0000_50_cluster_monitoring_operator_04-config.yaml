@@ -167,6 +167,9 @@ data:
     # openshift-apiserver with request type which can be either 'mutating' or 'readonly'.
     # We want to have an idea of how loaded our api server(s) are globally.
     - '{__name__="cluster:apiserver_current_inflight_requests:sum:max_over_time:2m"}'
+    # (monitoring-team) cluster:telemetry_selected_series:count tracks the total number of series
+    # sent via telemetry from each cluster.
+    - '{__name__="cluster:telemetry_selected_series:count"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
