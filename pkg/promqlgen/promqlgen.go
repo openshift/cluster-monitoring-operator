@@ -12,24 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package relabelgen
+package promqlgen
 
 import (
+	"sort"
 	"strings"
 
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/pkg/errors"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/promql"
 )
 
 func LabelSelectorsToRelabelConfig(matches []string) (*monv1.RelabelConfig, error) {
-	labelSets := make([][]*labels.Matcher, len(matches))
-	var err error
-	for i, m := range matches {
-		labelSets[i], err = promql.ParseMetricSelector(m)
-		if err != nil {
-			return nil, err
-		}
+	labelSets, err := parseMetricSelectorFromArray(matches)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse metric selectors from matches array")
 	}
 
 	labelPositions := map[string]int{}
@@ -63,4 +61,59 @@ func LabelSelectorsToRelabelConfig(matches []string) (*monv1.RelabelConfig, erro
 		SourceLabels: sourceLabels,
 		Regex:        regex,
 	}, nil
+}
+
+func GroupLabelSelectors(matches []string) (string, error) {
+	labelSets, err := parseMetricSelectorFromArray(matches)
+	if err != nil {
+		return "", errors.Wrap(err, "could not parse metric selectors from matches array")
+	}
+	newLabelSet := map[string][]string{}
+	for _, ls := range labelSets {
+		for _, lm := range ls {
+			_, exists := newLabelSet[lm.Name]
+			if exists {
+				newLabelSet[lm.Name] = append(newLabelSet[lm.Name], lm.Value)
+			} else {
+				newLabelSet[lm.Name] = []string{lm.Value}
+			}
+		}
+
+	}
+
+	keys := make([]string, 0, len(newLabelSet))
+	for k := range newLabelSet {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	res := "{"
+	i := 0
+	for _, k := range keys {
+		res += k + `=~"`
+		res += strings.Join(newLabelSet[k], "|")
+		i++
+		if k != "__name__" {
+			res += `|`
+		}
+		if i == len(newLabelSet) {
+			res += `"`
+			continue
+		}
+		res += `",`
+	}
+
+	return res + "}", nil
+}
+
+func parseMetricSelectorFromArray(matches []string) ([][]*labels.Matcher, error) {
+	labelSets := make([][]*labels.Matcher, len(matches))
+	var err error
+	for i, m := range matches {
+		labelSets[i], err = promql.ParseMetricSelector(m)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return labelSets, nil
 }

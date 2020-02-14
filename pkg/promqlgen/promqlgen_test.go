@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package relabelgen
+package promqlgen
 
 import (
 	"reflect"
@@ -24,7 +24,7 @@ import (
 func TestLabelSelectorsToRelabelConfig(t *testing.T) {
 	matches := []string{
 		`{__name__="metric1"}`,
-		`{__name__="ALERTS",alertstate="firing"}`,
+		`{alertstate="firing",__name__="ALERTS"}`,
 		`{__name__="metric2"}`,
 	}
 	r, err := LabelSelectorsToRelabelConfig(matches)
@@ -39,5 +39,31 @@ func TestLabelSelectorsToRelabelConfig(t *testing.T) {
 	}
 	if !reflect.DeepEqual(expected, r) {
 		t.Fatal("unexpected result")
+	}
+}
+
+func TestGenerateTelemeterWhitelistRec(t *testing.T) {
+	cases := [][]string{
+		[]string{
+			`{alertstate="firing",__name__="ALERTS"}`,
+			`{__name__="node_uname_info"}`,
+			`{__name__="csv_abnormal"}`,
+		},
+		[]string{
+			`{__name__="ALERTS",alertstate="firing"}`,
+			`{__name__="node_uname_info"}`,
+			`{__name__="csv_abnormal"}`,
+		},
+	}
+	expected := `{__name__=~"ALERTS|node_uname_info|csv_abnormal",alertstate=~"firing|"}`
+	for _, i := range cases {
+
+		expr, err := GroupLabelSelectors(i)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if expr != expected {
+			t.Errorf("failed to generate: expected: %s got: %s", expected, expr)
+		}
 	}
 }

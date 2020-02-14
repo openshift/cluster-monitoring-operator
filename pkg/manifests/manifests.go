@@ -32,13 +32,14 @@ import (
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/relabelgen"
+	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
@@ -1115,7 +1116,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	telemetryEnabled := f.config.TelemeterClientConfig.IsEnabled()
 	if telemetryEnabled && f.config.RemoteWrite {
 
-		selectorRelabelConfig, err := relabelgen.LabelSelectorsToRelabelConfig(f.config.PrometheusK8sConfig.TelemetryMatches)
+		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.PrometheusK8sConfig.TelemetryMatches)
 		if err != nil {
 			return nil, errors.Wrap(err, "generate label selector relabel config")
 		}
@@ -2258,6 +2259,33 @@ func (f *Factory) NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, 
 	p, err := NewPrometheusRule(manifest)
 	if err != nil {
 		return nil, err
+	}
+
+	if p.GetNamespace() == "" {
+		p.SetNamespace(f.namespace)
+	}
+
+	return p, nil
+}
+
+func (f *Factory) NewTelemeterPrometheusRecRuleFromString(expr string) (*monv1.PrometheusRule, error) {
+	p := &monv1.PrometheusRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "telemetry",
+		},
+		Spec: monv1.PrometheusRuleSpec{
+			Groups: []monv1.RuleGroup{
+				{
+					Name: "telemeter.rules",
+					Rules: []monv1.Rule{
+						{
+							Record: "cluster:telemetry_selected_series:count",
+							Expr:   intstr.FromString(expr),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	if p.GetNamespace() == "" {
