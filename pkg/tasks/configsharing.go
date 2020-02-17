@@ -73,10 +73,17 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
 	}
 
-	cm := t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
+	// TODO(spasquie): to be removed once the console uses the configmap from the "openshift-config-managed" namespace.
+	cm := t.factory.SharingConfigDeprecated(promURL, amURL, grafanaURL, thanosURL)
 	err = t.client.CreateOrUpdateConfigMap(cm)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Sharing Config ConfigMap failed")
+		return errors.Wrapf(err, "reconciling %s/%s ConfigMap failed", cm.Namespace, cm.Name)
+	}
+
+	cm = t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
+	err = t.client.CreateOrUpdateConfigMap(cm)
+	if err != nil {
+		return errors.Wrapf(err, "reconciling %s/%s Config ConfigMap failed", cm.Namespace, cm.Name)
 	}
 
 	return nil
