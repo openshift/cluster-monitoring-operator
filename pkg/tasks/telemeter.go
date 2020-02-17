@@ -15,8 +15,12 @@
 package tasks
 
 import (
+	"fmt"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
+
 	"github.com/pkg/errors"
 )
 
@@ -158,6 +162,21 @@ func (t *TelemeterClientTask) create() error {
 		}
 	}
 
+	rec, err := generateTelemeterWhitelistRec(t.config.PrometheusK8sConfig.TelemetryMatches)
+	if err != nil {
+		return errors.Wrap(err, "generating Telemeter client Prometheus Rule failed")
+	}
+
+	rule, err := t.factory.NewTelemeterPrometheusRecRuleFromString(rec)
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client Prometheus Rule failed")
+	}
+
+	err = t.client.CreateOrUpdatePrometheusRule(rule)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Telemeter client Prometheus Rule failed")
+	}
+
 	sm, err := t.factory.TelemeterClientServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client ServiceMonitor failed")
@@ -245,4 +264,12 @@ func (t *TelemeterClientTask) destroy() error {
 
 	err = t.client.DeleteConfigMap(cacm)
 	return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
+}
+
+func generateTelemeterWhitelistRec(telemetryMatches []string) (string, error) {
+	expr, err := promqlgen.GroupLabelSelectors(telemetryMatches)
+	if err != nil {
+		return "", nil
+	}
+	return fmt.Sprintf(`count(%s)`, expr), nil
 }
