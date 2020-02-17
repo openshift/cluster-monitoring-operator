@@ -15,6 +15,7 @@
 package manifests
 
 import (
+	"net/url"
 	"reflect"
 	"sort"
 	"strings"
@@ -624,6 +625,24 @@ func TestUnconfiguredManifests(t *testing.T) {
 	_, err = f.AlertmanagerTrustedCABundle()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSharingConfig(t *testing.T) {
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
+	u, err := url.Parse("http://example.com/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cm := f.SharingConfigDeprecated(u, u, u, u)
+	if cm.Namespace != "openshift-monitoring" {
+		t.Fatalf("expecting %q namespace, got %q", "openshift-monitoring", cm.Namespace)
+	}
+
+	cm = f.SharingConfig(u, u, u, u)
+	if cm.Namespace == "openshift-monitoring" {
+		t.Fatalf("expecting namespace other than %q", "openshift-monitoring")
 	}
 }
 
