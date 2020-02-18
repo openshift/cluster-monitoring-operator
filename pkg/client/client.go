@@ -262,6 +262,10 @@ func (c *Client) NamespacesToMonitor() ([]string, error) {
 }
 
 func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
+	if p.Spec.Storage != nil {
+		p.Spec.Storage.VolumeClaimTemplate.CreationTimestamp = metav1.Unix(0, 0)
+	}
+
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
 	oldProm, err := pclient.Get(p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
@@ -273,9 +277,6 @@ func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 	}
 
 	p.ResourceVersion = oldProm.ResourceVersion
-	if p.Spec.Storage != nil {
-		p.Spec.Storage.VolumeClaimTemplate.CreationTimestamp = metav1.Unix(0, 0)
-	}
 	_, err = pclient.Update(p)
 	return errors.Wrap(err, "updating Prometheus object failed")
 }
