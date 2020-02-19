@@ -103,8 +103,8 @@ manifests/0000_50_cluster_monitoring_operator_02-role.yaml: $(ASSETS) hack/merge
 docs: Documentation/telemeter_query
 	embedmd -w `find Documentation -name "*.md"`
 
-Documentation/telemeter_query: manifests/0000_50_cluster_monitoring_operator_04-config.yaml
-	cat manifests/0000_50_cluster_monitoring_operator_04-config.yaml | gojsontoyaml -yamltojson | jq -r '.data["metrics.yaml"]' | gojsontoyaml -yamltojson | jq -r '"{__name__=~\"" + ([ .matches[] | match("^{__name__=~?\"([^\"]+)") | .captures[0].string ] | sort | join("|")) + "\"}"' > Documentation/telemeter_query
+Documentation/telemeter_query: manifests/0000_50_cluster_monitoring_operator_04-config.yaml hack/telemeter_query.go
+	go generate ./hack/telemeter_query.go > Documentation/telemeter_query
 
 ##############
 # Formatting #
