@@ -79,7 +79,7 @@
             record: 'cluster:hyperthread_enabled_nodes',
           },
           {
-            expr: 'count(sum(virt_platform) by (instance, type)) by (type)',
+            expr: 'count(sum(virt_platform) by (instance, type, system_manufacturer, system_product_name, baseboard_manufacturer, baseboard_product_name)) by (type, system_manufacturer, system_product_name, baseboard_manufacturer, baseboard_product_name)',
             record: 'cluster:virt_platform_nodes:sum',
           },
           {
