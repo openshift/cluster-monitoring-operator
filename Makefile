@@ -61,7 +61,7 @@ operator-no-deps:
 .PHONY: image
 image: .hack-operator-image
 
-.hack-operator-image: Dockerfile
+.hack-operator-image: Dockerfile operator
 # Create empty target file, for the sole purpose of recording when this target
 # was last executed via the last-modification timestamp on the file. See
 # https://www.gnu.org/software/make/manual/make.html#Empty-Targets
