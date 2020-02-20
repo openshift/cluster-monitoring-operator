@@ -63,8 +63,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "989c6813aac21790bb38dd55057fd505d972d274",
-      "sum": "X+2wvJuCe3hj0ij8DHuyXMHuvzrIphKZJRCfmns0tLs="
+      "version": "ed71719c8e3573db358c3c6e76c3c65ca1fad719",
+      "sum": "qaE0WINXp2AT83A7Qi+3sy6mhHy3QEK6Ae02a0ejsEU="
     },
     {
       "name": "kube-thanos",
