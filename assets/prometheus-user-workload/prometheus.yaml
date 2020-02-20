@@ -22,7 +22,8 @@ spec:
         weight: 100
   alerting:
     alertmanagers:
-    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    - apiVersion: v2
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       name: alertmanager-main
       namespace: openshift-monitoring
       port: web

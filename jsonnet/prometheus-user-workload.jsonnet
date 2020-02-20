@@ -174,6 +174,7 @@ local alertmanagerRole =
                     serverName: 'alertmanager-main.openshift-monitoring.svc',
                   },
                   bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+                  apiVersion: 'v2',
                 },
                 super.alertmanagers,
               ),
