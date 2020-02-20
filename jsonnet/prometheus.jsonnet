@@ -269,6 +269,7 @@ local namespacesRole =
                     serverName: 'alertmanager-main',
                   },
                   bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+                  apiVersion: 'v2',
                 },
                 super.alertmanagers,
               ),
