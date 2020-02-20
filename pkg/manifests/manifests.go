@@ -2591,6 +2591,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 	for _, m := range f.config.PrometheusK8sConfig.TelemetryMatches {
 		cmd = append(cmd, fmt.Sprintf("--match=%s", m))
 	}
+	cmd = append(cmd, "--limit-bytes=5242880")
 	d.Spec.Template.Spec.Containers[0].Command = cmd
 
 	if len(f.config.TelemeterClientConfig.NodeSelector) > 0 {
