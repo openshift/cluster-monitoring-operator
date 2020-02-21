@@ -141,13 +141,18 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 			return false, nil
 		}
 
-		if len(ss.Spec.Template.Spec.Containers[0].VolumeMounts) == 0 {
-			return false, errors.New("Could not find any VolumeMounts, expected at least 1")
-		}
-
-		for _, mount := range ss.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if mount.Name == "alertmanager-trusted-ca-bundle" {
-				return true, nil
+		for _, container := range ss.Spec.Template.Spec.Containers {
+			// we only want to know that the alertmanager and alertmanager-proxy have
+			// mounted trusted-ca-bundle
+			if container.Name == "alertmanager" || container.Name == "alertmanager-proxy" {
+				if len(container.VolumeMounts) == 0 {
+					return false, errors.Errorf("Could not find VolumeMounts in container with name: %s", container.Name)
+				}
+				for _, mount := range container.VolumeMounts {
+					if mount.Name == "alertmanager-trusted-ca-bundle" {
+						return true, nil
+					}
+				}
 			}
 		}
 
