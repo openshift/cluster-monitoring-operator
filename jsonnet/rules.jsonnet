@@ -1,3 +1,5 @@
+local droppedKsmLabels = 'endpoint, instance, job, pod, service';
+
 {
   prometheusRules+:: {
     groups+: [
@@ -45,7 +47,7 @@
             record: 'cluster:container_cpu_usage:ratio',
           },
           {
-            expr: 'kube_node_labels and on(node) kube_node_role{role="master"}',
+            expr: 'max without(%s) (kube_node_labels and on(node) kube_node_role{role="master"})' % droppedKsmLabels,
             labels: {
               label_node_role_kubernetes_io: 'master',
               label_node_role_kubernetes_io_master: 'true',
@@ -53,14 +55,14 @@
             record: 'cluster:master_nodes',
           },
           {
-            expr: 'kube_node_labels and on(node) kube_node_role{role="infra"}',
+            expr: 'max without(%s) (kube_node_labels and on(node) kube_node_role{role="infra"})' % droppedKsmLabels,
             labels: {
               label_node_role_kubernetes_io_infra: 'true',
             },
             record: 'cluster:infra_nodes',
           },
           {
-            expr: 'cluster:master_nodes and on(node) cluster:infra_nodes',
+            expr: 'max without(%s) (cluster:master_nodes and on(node) cluster:infra_nodes)' % droppedKsmLabels,
             labels: {
               label_node_role_kubernetes_io_master: 'true',
               label_node_role_kubernetes_io_infra: 'true',
@@ -68,7 +70,7 @@
             record: 'cluster:master_infra_nodes',
           },
           {
-            expr: 'cluster:master_infra_nodes or on (node) cluster:master_nodes or on (node) cluster:infra_nodes or on (node) kube_node_labels',
+            expr: 'cluster:master_infra_nodes or on (node) cluster:master_nodes or on (node) cluster:infra_nodes or on (node) max without(%s) (kube_node_labels)' % droppedKsmLabels,
             record: 'cluster:nodes_roles',
           },
           {
@@ -116,7 +118,7 @@
             record: 'cluster:capacity_memory_bytes:sum',
           },
           {
-            expr: 'sum(1 - rate(node_cpu_seconds_total{mode="idle"}[2m]) * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{})',
+            expr: 'sum(1 - rate(node_cpu_seconds_total{mode="idle"}[2m]) * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{pod=~"node-exporter.+"})',
             record: 'cluster:cpu_usage_cores:sum',
           },
           {
