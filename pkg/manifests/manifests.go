@@ -331,6 +331,11 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 	if trustedCABundleCM != nil {
 		volumeName := "alertmanager-trusted-ca-bundle"
+		for in, container := range a.Spec.Containers {
+			if container.Name == "alertmanager-proxy" {
+				a.Spec.Containers[in].VolumeMounts = append(container.VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/alertmanager-ca-bundle/"))
+			}
+		}
 		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/alertmanager-ca-bundle/"))
 		a.Spec.Volumes = append(a.Spec.Volumes, trustedCABundleVolume(trustedCABundleCM.Name, volumeName))
 	}
