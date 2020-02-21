@@ -297,22 +297,26 @@ spec:
     - expr: sum(rate(container_cpu_usage_seconds_total{container="",pod!=""}[5m]))
         / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
-    - expr: kube_node_labels and on(node) kube_node_role{role="master"}
+    - expr: max without(endpoint, instance, job, pod, service) (kube_node_labels and
+        on(node) kube_node_role{role="master"})
       labels:
         label_node_role_kubernetes_io: master
         label_node_role_kubernetes_io_master: "true"
       record: cluster:master_nodes
-    - expr: kube_node_labels and on(node) kube_node_role{role="infra"}
+    - expr: max without(endpoint, instance, job, pod, service) (kube_node_labels and
+        on(node) kube_node_role{role="infra"})
       labels:
         label_node_role_kubernetes_io_infra: "true"
       record: cluster:infra_nodes
-    - expr: cluster:master_nodes and on(node) cluster:infra_nodes
+    - expr: max without(endpoint, instance, job, pod, service) (cluster:master_nodes
+        and on(node) cluster:infra_nodes)
       labels:
         label_node_role_kubernetes_io_infra: "true"
         label_node_role_kubernetes_io_master: "true"
       record: cluster:master_infra_nodes
     - expr: cluster:master_infra_nodes or on (node) cluster:master_nodes or on (node)
-        cluster:infra_nodes or on (node) kube_node_labels
+        cluster:infra_nodes or on (node) max without(endpoint, instance, job, pod,
+        service) (kube_node_labels)
       record: cluster:nodes_roles
     - expr: kube_node_labels and on(node) (sum(label_replace(node_cpu_info, "node",
         "$1", "instance", "(.*)")) by (node, package, core) == 2)
@@ -350,7 +354,7 @@ spec:
         BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)
       record: cluster:capacity_memory_bytes:sum
     - expr: sum(1 - rate(node_cpu_seconds_total{mode="idle"}[2m]) * on(namespace,
-        pod) group_left(node) node_namespace_pod:kube_pod_info:{})
+        pod) group_left(node) node_namespace_pod:kube_pod_info:{pod=~"node-exporter.+"})
       record: cluster:cpu_usage_cores:sum
     - expr: sum(node_memory_MemTotal_bytes{job="node-exporter"} - node_memory_MemAvailable_bytes{job="node-exporter"})
       record: cluster:memory_usage_bytes:sum
