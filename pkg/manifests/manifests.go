@@ -1679,23 +1679,23 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
-		if strings.HasPrefix(args[i], PrometheusOperatorNamespaceFlag) {
+		if strings.HasPrefix(args[i], PrometheusOperatorNamespaceFlag) && len(namespaces) > 0 {
 			args[i] = PrometheusOperatorNamespaceFlag + strings.Join(namespaces, ",")
 		}
 
-		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) {
+		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.Images.PrometheusConfigReloader != "" {
 			args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
 		}
 
-		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) {
+		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) && f.config.Images.ConfigmapReloader != "" {
 			args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
 		}
 
-		if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) {
+		if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) && f.namespace != "" {
 			args[i] = PrometheusOperatorAlertmanagerInstanceNamespacesFlag + f.namespace
 		}
 
-		if strings.HasPrefix(args[i], PrometheusOperatorPrometheusInstanceNamespacesFlag) {
+		if strings.HasPrefix(args[i], PrometheusOperatorPrometheusInstanceNamespacesFlag) && f.namespace != "" {
 			args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespace
 		}
 	}
