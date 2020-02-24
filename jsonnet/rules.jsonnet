@@ -198,6 +198,17 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
               severity: 'warning',
             },
           },
+          {
+            expr: 'sum(max by(namespace, container, pod) (increase(kube_pod_container_status_restarts_total[12m])) and max by(namespace, container, pod) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}) == 1) > 10',
+            alert: 'MultipleContainersOOMKilled',
+            'for': '15m',
+            annotations: {
+              message: 'Multiple containers were out of memory killed within the past 15 minutes.',
+            },
+            labels: {
+              severity: 'info',
+            },
+          },
         ],
       },
       {
