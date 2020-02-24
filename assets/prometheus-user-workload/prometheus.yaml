@@ -33,7 +33,6 @@ spec:
         serverName: alertmanager-main.openshift-monitoring.svc
   arbitraryFSAccessThroughSMs:
     deny: true
-  baseImage: openshift/prometheus
   configMaps:
   - serving-certs-ca-bundle
   containers:
@@ -71,6 +70,7 @@ spec:
       name: secret-grpc-tls
   enforcedNamespaceLabel: namespace
   ignoreNamespaceSelectors: true
+  image: openshift/prometheus:v2.15.2
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -94,6 +94,7 @@ spec:
   serviceMonitorSelector: {}
   thanos:
     baseImage: quay.io/openshift/origin-thanos
+    image: quay.io/thanos/thanos:v0.10.0
     resources:
       requests:
         cpu: 50m

@@ -20,7 +20,6 @@ spec:
           - openshift-monitoring
           topologyKey: kubernetes.io/hostname
         weight: 100
-  baseImage: openshift/prometheus-alertmanager
   containers:
   - args:
     - -provider=openshift
@@ -60,6 +59,7 @@ spec:
       name: secret-alertmanager-main-tls
     - mountPath: /etc/proxy/secrets
       name: secret-alertmanager-main-proxy
+  image: openshift/prometheus-alertmanager:v0.20.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux

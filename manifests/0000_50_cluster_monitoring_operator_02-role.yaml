@@ -7,7 +7,6 @@
 # 	assets/cluster-monitoring-operator/cluster-role.yaml
 # 	assets/grafana/cluster-role.yaml
 # 	assets/kube-state-metrics/cluster-role.yaml
-# 	assets/kube-state-metrics/role.yaml
 # 	assets/node-exporter/cluster-role.yaml
 # 	assets/openshift-state-metrics/cluster-role.yaml
 # 	assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml
@@ -223,36 +222,19 @@ rules:
   - list
   - watch
 - apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - list
+  - watch
+- apiGroups:
   - certificates.k8s.io
   resources:
   - certificatesigningrequests
   verbs:
   - list
   - watch
-- apiGroups:
-  - ''
-  resources:
-  - pods
-  verbs:
-  - get
-- apiGroups:
-  - apps
-  resourceNames:
-  - kube-state-metrics
-  resources:
-  - deployments
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - extensions
-  resourceNames:
-  - kube-state-metrics
-  resources:
-  - deployments
-  verbs:
-  - get
-  - update
 - apiGroups:
   - security.openshift.io
   resourceNames:
