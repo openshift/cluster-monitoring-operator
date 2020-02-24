@@ -8,7 +8,7 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "53f15caf73b9285d6043009fa64c925d5a8f573c",
+      "version": "085b19b5ea47a324c5f04b1077e9a496aaf0720c",
       "sum": "Ko3qhNfC2vN/houLh6C0Ryacjv70gl0DVPGU/PQ4OD0="
     },
     {
@@ -19,8 +19,8 @@
           "subdir": "grafana"
         }
       },
-      "version": "539a90dbf63c812ad0194d8078dd776868a11c81",
-      "sum": "b8faWX1qqLGyN67sA36oRqYZ5HX+tHBRMPtrWRqIysE="
+      "version": "1b07a802b663f77e36fe1e518cef552ef9fbdb82",
+      "sum": "GliiVmOLUPmBNjvsx332UOvZj0o9VVxLFLp9u4QmmNk="
     },
     {
       "name": "grafana-builder",
@@ -30,7 +30,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "e92000a708ded5bde1dd332a8e7457d0b39b7928",
+      "version": "7ac7da1a0fe165b68cdb718b2521b560d51bd1f4",
       "sum": "slxrtftVDiTlQK22ertdfrg4Epnq97gdrLI63ftUfaE="
     },
     {
@@ -41,8 +41,8 @@
           "subdir": "grafonnet"
         }
       },
-      "version": "c459106d2d2b583dd3a83f6c75eb52abee3af764",
-      "sum": "CeM3LRgUCUJTolTdMnerfMPGYmhClx7gX5ajrQVEY2Y="
+      "version": "db36a706bd1c87056759eacb686102133eb4740c",
+      "sum": "g1aMw5iYEP/Dkw1wo1pcfe7q4LIpXc4wqDZsjaCpsRc="
     },
     {
       "name": "ksonnet",
@@ -63,8 +63,30 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "ae589e91ce783e319ac4c9372ac95db136f4929f",
-      "sum": "BZqKu3GcqEkUrKHMso3mUbx0LbmIMi7iBxWRUfFXOzM="
+      "version": "953c5464f72594b7fde2e534b207b211f7454ec7",
+      "sum": "+9Clkrsv9C637n1P7pPoKXTMJTbJGgt2bhv1/1ySTuc="
+    },
+    {
+      "name": "kube-state-metrics",
+      "source": {
+        "git": {
+          "remote": "https://github.com/kubernetes/kube-state-metrics",
+          "subdir": "jsonnet/kube-state-metrics"
+        }
+      },
+      "version": "00326acbe5814efe00489f4a7943644a4d4a7900",
+      "sum": "cJjGZaLBjcIGrLHZLjRPU9c3KL+ep9rZTb9dbALSKqA="
+    },
+    {
+      "name": "kube-state-metrics-mixin",
+      "source": {
+        "git": {
+          "remote": "https://github.com/kubernetes/kube-state-metrics",
+          "subdir": "jsonnet/kube-state-metrics-mixin"
+        }
+      },
+      "version": "00326acbe5814efe00489f4a7943644a4d4a7900",
+      "sum": "E1GGavnf9PCWBm4WVrxWnc0FIj72UcbcweqGioWrOdU="
     },
     {
       "name": "kube-thanos",
@@ -85,8 +107,8 @@
           "subdir": ""
         }
       },
-      "version": "b2fc95330d105b599b3e326896c8264786ba71bd",
-      "sum": "CjvZXTKpw6t1laxNrKK9H0jtvuuB/RUilTniht6q7V0="
+      "version": "3cf851b2c8ff8bf98c12eac7f37d97f086cd0fc9",
+      "sum": "CydKHxWA9LG9w1+sjlqREHXPQTdbiTwy40rnyXfHfGE="
     },
     {
       "name": "node-mixin",
@@ -96,7 +118,7 @@
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "9bb37873a8757508853b14e6048a9c3418f3d667",
+      "version": "ef7c05816adcb0e8923defe34e97f6afcce0a939",
       "sum": "7vEamDTP9AApeiF4Zu9ZyXzDIs3rYHzwf9k7g8X+wsg="
     },
     {
@@ -118,8 +140,8 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "fafb7940b1cdb24cada28a713fbcc01ed1e2d585",
-      "sum": "u1YS9CVuBTcw2vks0PZbLb1gtlI/7bVGDVBZsjWFLTw="
+      "version": "46129fdebbbc1f8c73b450b3629b92bfad6b2d95",
+      "sum": "5EUgr6Spr1zNR8Y2/NevjvEkGV9WMvKo6nEScNER1Lc="
     },
     {
       "name": "prometheus-operator",
@@ -129,8 +151,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "89f35ef22db0dc24c523bf8be473bcbcf9ac81f6",
-      "sum": "KCO153lAOWmWfoj3rQGhLB+8UmyvQ2Bghu/ewDqVum4="
+      "version": "9a947df8c1839cbff595c58de978e40bfe79f69d",
+      "sum": "pSZTlbjJIOILQmee8e32YQvHDIq74RE1jvjXvGow2gk="
     },
     {
       "name": "promgrafonnet",
@@ -140,7 +162,7 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "003c3e8db3aee2699b9e31fe8fd0cb906354a48f",
+      "version": "3cf851b2c8ff8bf98c12eac7f37d97f086cd0fc9",
       "sum": "VhgBM39yv0f4bKv8VfGg4FXkg573evGDRalip9ypKbc="
     },
     {
@@ -162,8 +184,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "71e6c6068b0f75e014edb691a829e5ffa9ad844a",
-      "sum": "Rux+eJyhxygzgTCcUWfomfSezL39Vj/Xfy7xopIDy+o="
+      "version": "7853182efa4a42f44e929f54860a3c84e99e2079",
+      "sum": "1/pVyXnhpBPaeyqlRVWI7I8nngGNiSgcv7xMWjHizC4="
     }
   ]
 }
