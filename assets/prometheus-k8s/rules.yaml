@@ -630,6 +630,34 @@ spec:
     - expr: sum(kube_pod_status_ready{condition="true",namespace="openshift-image-registry",pod=~"image-registry.*"})
         by(condition)
       record: kube_pod_status_ready:image_registry:sum
+  - name: kube-state-metrics
+    rules:
+    - alert: KubeStateMetricsListErrors
+      annotations:
+        message: kube-state-metrics is experiencing errors at an elevated rate in
+          list operations. This is likely causing it to not be able to expose metrics
+          about Kubernetes objects correctly or at all.
+      expr: |
+        (sum(rate(kube_state_metrics_list_total{job="kube-state-metrics",result="error"}[5m]))
+          /
+        sum(rate(kube_state_metrics_list_total{job="kube-state-metrics"}[5m])))
+        > 0.01
+      for: 15m
+      labels:
+        severity: critical
+    - alert: KubeStateMetricsWatchErrors
+      annotations:
+        message: kube-state-metrics is experiencing errors at an elevated rate in
+          watch operations. This is likely causing it to not be able to expose metrics
+          about Kubernetes objects correctly or at all.
+      expr: |
+        (sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics",result="error"}[5m]))
+          /
+        sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics"}[5m])))
+        > 0.01
+      for: 15m
+      labels:
+        severity: critical
   - name: node-exporter
     rules:
     - alert: NodeFilesystemSpaceFillingUp
@@ -657,7 +685,7 @@ spec:
         summary: Filesystem is predicted to run out of space within the next 4 hours.
       expr: |
         (
-          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 20
+          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 15
         and
           predict_linear(node_filesystem_avail_bytes{job="node-exporter",fstype!=""}[6h], 4*60*60) < 0
         and
@@ -1097,7 +1125,9 @@ spec:
   - name: kube-apiserver-error-alerts
     rules:
     - alert: ErrorBudgetBurn
-      annotations: {}
+      annotations:
+        message: 'High requests error budget burn for job=apiserver (current value:
+          {{ $value }})'
       expr: |
         (
           status_class_5xx:apiserver_request_total:ratio_rate1h{job="apiserver"} > (14.4*0.010000)
@@ -1114,7 +1144,9 @@ spec:
         job: apiserver
         severity: critical
     - alert: ErrorBudgetBurn
-      annotations: {}
+      annotations:
+        message: 'High requests error budget burn for job=apiserver (current value:
+          {{ $value }})'
       expr: |
         (
           status_class_5xx:apiserver_request_total:ratio_rate1d{job="apiserver"} > (3*0.010000)
@@ -1443,7 +1475,8 @@ spec:
     - alert: PrometheusRemoteStorageFailures
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} failed to send
-          {{ printf "%.1f" $value }}% of the samples to queue {{$labels.queue}}.
+          {{ printf "%.1f" $value }}% of the samples to {{ if $labels.queue }}{{ $labels.queue
+          }}{{ else }}{{ $labels.url }}{{ end }}.
         summary: Prometheus fails to send samples to remote storage.
       expr: |
         (
@@ -1463,7 +1496,8 @@ spec:
     - alert: PrometheusRemoteWriteBehind
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} remote write
-          is {{ printf "%.1f" $value }}s behind for queue {{$labels.queue}}.
+          is {{ printf "%.1f" $value }}s behind for {{ if $labels.queue }}{{ $labels.queue
+          }}{{ else }}{{ $labels.url }}{{ end }}.
         summary: Prometheus remote write is behind.
       expr: |
         # Without max_over_time, failed scrapes could create false negatives, see
@@ -1550,8 +1584,8 @@ spec:
     rules:
     - alert: TargetDown
       annotations:
-        message: '{{ printf "%.4g" $value }}% of the {{ $labels.job }} targets in
-          {{ $labels.namespace }} namespace are down.'
+        message: '{{ printf "%.4g" $value }}% of the {{ $labels.job }}/{{ $labels.service
+          }} targets in {{ $labels.namespace }} namespace are down.'
       expr: 100 * (count(up == 0) BY (job, namespace, service) / count(up) BY (job,
         namespace, service)) > 10
       for: 10m

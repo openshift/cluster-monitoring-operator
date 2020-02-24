@@ -31,7 +31,6 @@ spec:
       tlsConfig:
         caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
         serverName: alertmanager-main
-  baseImage: openshift/prometheus
   configMaps:
   - serving-certs-ca-bundle
   - kubelet-serving-ca-bundle
@@ -126,6 +125,7 @@ spec:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
   - name: prometheus
+  image: openshift/prometheus:v2.15.2
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -151,6 +151,7 @@ spec:
   serviceMonitorSelector: {}
   thanos:
     baseImage: quay.io/openshift/origin-thanos
+    image: quay.io/thanos/thanos:v0.10.0
     resources:
       requests:
         cpu: 50m

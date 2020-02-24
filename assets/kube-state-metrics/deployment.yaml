@@ -2,20 +2,39 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: kube-state-metrics
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 1.9.5
   name: kube-state-metrics
-  namespace: openshift-monitoring
+  namespace: monitoring
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kube-state-metrics
+      app.kubernetes.io/name: kube-state-metrics
   template:
     metadata:
       labels:
-        app: kube-state-metrics
+        app.kubernetes.io/name: kube-state-metrics
+        app.kubernetes.io/version: 1.9.5
     spec:
       containers:
+      - args:
+        - --host=127.0.0.1
+        - --port=8081
+        - --telemetry-host=127.0.0.1
+        - --telemetry-port=8082
+        - --metric-blacklist=kube_secret_labels
+        image: quay.io/coreos/kube-state-metrics:v1.9.5
+        name: kube-state-metrics
+        resources:
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /tmp
+          name: volume-directive-shadow
+          readOnly: false
       - args:
         - --logtostderr
         - --secure-listen-address=:8443
@@ -59,23 +78,6 @@ spec:
         volumeMounts:
         - mountPath: /etc/tls/private
           name: kube-state-metrics-tls
-          readOnly: false
-      - args:
-        - --host=127.0.0.1
-        - --port=8081
-        - --telemetry-host=127.0.0.1
-        - --telemetry-port=8082
-        - --metric-blacklist=kube_secret_labels
-        image: quay.io/coreos/kube-state-metrics:v1.9.2
-        name: kube-state-metrics
-        resources:
-          requests:
-            cpu: 10m
-            memory: 40Mi
-        securityContext: {}
-        volumeMounts:
-        - mountPath: /tmp
-          name: volume-directive-shadow
           readOnly: false
       nodeSelector:
         kubernetes.io/os: linux

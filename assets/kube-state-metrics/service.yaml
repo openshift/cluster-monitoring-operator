@@ -4,9 +4,10 @@ metadata:
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: kube-state-metrics-tls
   labels:
-    k8s-app: kube-state-metrics
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 1.9.5
   name: kube-state-metrics
-  namespace: openshift-monitoring
+  namespace: monitoring
 spec:
   clusterIP: None
   ports:
@@ -17,4 +18,4 @@ spec:
     port: 9443
     targetPort: https-self
   selector:
-    app: kube-state-metrics
+    app.kubernetes.io/name: kube-state-metrics
