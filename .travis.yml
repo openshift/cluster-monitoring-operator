@@ -6,9 +6,4 @@ services:
 - docker
 jobs:
   include:
-  - script: ./hack/yamllint.sh .
-  - script: make test-unit
-  - stage: Build
-    script: make dependencies build
-  - script: make generate && git diff --exit-code
-  - script: make container
+  - script: echo "CI is covered by prow. Nothing to do here"
