@@ -84,7 +84,8 @@ $(GOJSONTOYAML_BIN):
 	go get -u github.com/brancz/gojsontoyaml
 
 $(JB_BIN):
-	go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
+	wget -O $(GOPATH)/bin/jb "https://github.com/jsonnet-bundler/jsonnet-bundler/releases/download/v0.1.0/jb-linux-amd64"
+	chmod +x $(GOPATH)/bin/jb
 
 $(JSONNET_BIN):
 	go get -u github.com/google/go-jsonnet/cmd/jsonnet
