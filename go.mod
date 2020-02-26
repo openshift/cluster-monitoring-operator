@@ -9,7 +9,7 @@ require (
 	github.com/coreos/prometheus-operator v0.35.1
 	github.com/gogo/protobuf v1.2.2-0.20190730201129-28a6bbf47e48
 	github.com/imdario/mergo v0.3.6 // indirect
-	github.com/jsonnet-bundler/jsonnet-bundler v0.1.0
+	github.com/jsonnet-bundler/jsonnet-bundler v0.2.0
 	github.com/jteeuwen/go-bindata v3.0.8-0.20151023091102-a0ff2567cfb7+incompatible
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
