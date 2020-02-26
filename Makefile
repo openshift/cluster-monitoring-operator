@@ -147,13 +147,13 @@ test-sec:
 ############
 
 $(EMBEDMD_BIN):
-	GO111MODULE=off go get -u github.com/campoy/embedmd
+	@go install -mod=vendor github.com/campoy/embedmd
 
 $(GOBINDATA_BIN):
-	GO111MODULE=off go get -u github.com/jteeuwen/go-bindata/...
+	@go install -mod=vendor github.com/jteeuwen/go-bindata/...
 
 $(JB_BINARY):
-	GO111MODULE=off go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
+	@go install -mod=vendor github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
 
 $(GOJSONTOYAML_BINARY):
-	GO111MODULE=off go get -u github.com/brancz/gojsontoyaml
+	@go install -mod=vendor github.com/brancz/gojsontoyaml
