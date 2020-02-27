@@ -1050,24 +1050,33 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 }
 
 func (f *Factory) SharingConfigDeprecated(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
-	return sharingConfig("sharing-config", f.namespace, promHost, amHost, grafanaHost, thanosHost)
-}
-
-func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
-	return sharingConfig(sharedConfigMap, configManagedNamespace, promHost, amHost, grafanaHost, thanosHost)
-}
-
-func sharingConfig(name string, namespace string, promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:      "sharing-config",
+			Namespace: f.namespace,
 		},
 		Data: map[string]string{
 			"grafanaURL":      grafanaHost.String(),
 			"prometheusURL":   promHost.String(),
 			"alertmanagerURL": amHost.String(),
 			"thanosURL":       thanosHost.String(),
+		},
+	}
+}
+
+func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      sharedConfigMap,
+			Namespace: configManagedNamespace,
+		},
+		Data: map[string]string{
+			// Configmap keys need to include "public" to indicate that they are public values.
+			// See https://bugzilla.redhat.com/show_bug.cgi?id=1807100.
+			"grafanaPublicURL":      grafanaHost.String(),
+			"prometheusPublicURL":   promHost.String(),
+			"alertmanagerPublicURL": amHost.String(),
+			"thanosPublicURL":       thanosHost.String(),
 		},
 	}
 }
