@@ -644,6 +644,11 @@ func TestSharingConfig(t *testing.T) {
 	if cm.Namespace == "openshift-monitoring" {
 		t.Fatalf("expecting namespace other than %q", "openshift-monitoring")
 	}
+	for k := range cm.Data {
+		if !strings.Contains(k, "Public") {
+			t.Fatalf("expecting key %q to contain 'Public'", k)
+		}
+	}
 }
 
 func TestPrometheusOperatorConfiguration(t *testing.T) {
