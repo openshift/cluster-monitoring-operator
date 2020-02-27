@@ -85,7 +85,26 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:virt_platform_nodes:sum',
           },
           {
-            expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_cpu_cores) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_cpu_cores)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
+            expr: |||
+              sum by(label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io) (
+                (
+                  cluster:master_nodes
+                  * on(node) group_left() max by(node)
+                  (
+                    kube_node_status_capacity_cpu_cores
+                  )
+                )
+                or on(node) (
+                  max without(endpoint, instance, job, pod, service)
+                  (
+                    kube_node_labels
+                  ) * on(node) group_left() max by(node)
+                  (
+                    kube_node_status_capacity_cpu_cores
+                  )
+                )
+              )
+            |||,
             record: 'cluster:capacity_cpu_cores:sum',
           },
           {
@@ -114,7 +133,29 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:capacity_cpu_cores_hyperthread_enabled:sum',
           },
           {
-            expr: 'sum((cluster:master_nodes * on(node) group_left kube_node_status_capacity_memory_bytes) or on(node) (kube_node_labels * on(node) group_left kube_node_status_capacity_memory_bytes)) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
+            expr: |||
+              sum by(label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)
+              (
+                (
+                  cluster:master_nodes
+                  * on(node) group_left() max by(node)
+                  (
+                    kube_node_status_capacity_memory_bytes
+                  )
+                )
+                or on(node)
+                (
+                  max without(endpoint, instance, job, pod, service)
+                  (
+                    kube_node_labels
+                  )
+                  * on(node) group_left() max by(node)
+                  (
+                    kube_node_status_capacity_memory_bytes
+                  )
+                )
+              )
+            |||,
             record: 'cluster:capacity_memory_bytes:sum',
           },
           {
