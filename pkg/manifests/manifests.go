@@ -95,6 +95,7 @@ var (
 	PrometheusK8sEtcdServiceMonitor       = "assets/prometheus-k8s/service-monitor-etcd.yaml"
 	PrometheusK8sServingCertsCABundle     = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle   = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
+	PrometheusK8sTrustedCABundle          = "assets/prometheus-k8s/trusted-ca-bundle.yaml"
 
 	PrometheusAdapterAPIService                         = "assets/prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "assets/prometheus-adapter/cluster-role.yaml"
@@ -331,12 +332,13 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 	if trustedCABundleCM != nil {
 		volumeName := "alertmanager-trusted-ca-bundle"
+		volumePath := "/etc/pki/alertmanager-ca-bundle/"
 		for in, container := range a.Spec.Containers {
 			if container.Name == "alertmanager-proxy" {
-				a.Spec.Containers[in].VolumeMounts = append(container.VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/alertmanager-ca-bundle/"))
+				a.Spec.Containers[in].VolumeMounts = append(container.VolumeMounts, trustedCABundleVolumeMount(volumeName, volumePath))
 			}
 		}
-		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName, "/etc/pki/alertmanager-ca-bundle/"))
+		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName, volumePath))
 		a.Spec.Volumes = append(a.Spec.Volumes, trustedCABundleVolume(trustedCABundleCM.Name, volumeName))
 	}
 	a.Namespace = f.namespace
@@ -811,7 +813,16 @@ func (f *Factory) SharingConfig(promHost, amHost, grafanaHost *url.URL) *v1.Conf
 	}
 }
 
-func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(PrometheusK8sTrustedCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
+}
+
+func (f *Factory) PrometheusK8s(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(MustAssetReader(PrometheusK8s))
 	if err != nil {
 		return nil, err
@@ -884,6 +895,18 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 	}
 	if f.config.HTTPConfig.NoProxy != "" {
 		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
+
+	if trustedCABundleCM != nil {
+		volumeName := "prometheus-trusted-ca-bundle"
+		volumePath := "/etc/pki/prometheus-ca-bundle/"
+		p.Spec.Volumes = append(p.Spec.Volumes, trustedCABundleVolume(trustedCABundleCM.Name, volumeName))
+
+		for in, container := range p.Spec.Containers {
+			if container.Name == "prometheus-proxy" || container.Name == "prometheus-k8s" {
+				p.Spec.Containers[in].VolumeMounts = append(container.VolumeMounts, trustedCABundleVolumeMount(volumeName, volumePath))
+			}
+		}
 	}
 
 	return p, nil

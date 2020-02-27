@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestUnconfiguredManifests(t *testing.T) {
@@ -164,7 +165,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc")
+	_, err = f.PrometheusK8sTrustedCABundle()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,7 +500,7 @@ ingress:
 	})
 
 	f := NewFactory("openshift-monitoring", c)
-	p, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc")
+	p, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 	if err != nil {
 		t.Fatal(err)
 	}
