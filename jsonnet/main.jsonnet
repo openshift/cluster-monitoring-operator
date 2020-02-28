@@ -114,7 +114,11 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'prometheus-operator.jsonnet') +
            (import 'prometheus-operator-user-workload.jsonnet') +
            (import 'node-exporter.jsonnet') +
-           (import 'kube-state-metrics.jsonnet') +
+           (import 'kube-state-metrics.jsonnet') + {
+             kubeStateMetrics+:: {
+               namespace:: $._config.namespace,
+             },
+           } +
            (import 'grafana.jsonnet') +
            (import 'alertmanager.jsonnet') +
            (import 'prometheus.jsonnet') +

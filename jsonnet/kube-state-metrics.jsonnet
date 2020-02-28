@@ -1,5 +1,6 @@
 local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
 local service = k.core.v1.service;
+local servicePort = service.mixin.spec.portsType;
 local deployment = k.apps.v1beta2.deployment;
 local container = deployment.mixin.spec.template.spec.containersType;
 local volume = deployment.mixin.spec.template.spec.volumesType;
@@ -19,7 +20,15 @@ local tlsVolumeName = 'kube-state-metrics-tls';
     service+:
       service.mixin.metadata.withAnnotations({
         'service.alpha.openshift.io/serving-cert-secret-name': 'kube-state-metrics-tls',
-      }),
+      }) + {
+        // Replace upstream port the by kube-rbac-proxy ports.
+        local ksmServicePortMain = servicePort.newNamed('https-main', 8443, 'https-main'),
+        local ksmServicePortSelf = servicePort.newNamed('https-self', 9443, 'https-self'),
+
+        spec+: {
+          ports: [ksmServicePortMain, ksmServicePortSelf],
+        },
+      },
 
     // This changes kube-state-metrics to be scraped with validating TLS.
 
@@ -63,6 +72,29 @@ local tlsVolumeName = 'kube-state-metrics-tls';
     // released, which is why it is shadowed here for the time being.
 
     deployment+:
+      // Inject kube-rbac-proxy containers.
+      local proxyClusterMetrics =
+        container.new('kube-rbac-proxy-main', $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy) +
+        container.withArgs([
+          '--logtostderr',
+          '--secure-listen-address=:8443',
+          '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+          '--upstream=http://127.0.0.1:8081/',
+        ]) +
+        container.withPorts(containerPort.newNamed('https-main', 8443,));
+
+      local proxySelfMetrics =
+        container.new('kube-rbac-proxy-self', $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy) +
+        container.withArgs([
+          '--logtostderr',
+          '--secure-listen-address=:9443',
+          '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+          '--upstream=http://127.0.0.1:8082/',
+        ]) +
+        container.withPorts(containerPort.newNamed('https-self', 9443,)) +
+        container.mixin.resources.withRequests($._config.resources['kube-rbac-proxy'].requests) +
+        container.mixin.resources.withLimits($._config.resources['kube-rbac-proxy'].limits);
+
       {
         spec+: {
           template+: {
@@ -93,8 +125,17 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                       container.withVolumeMounts([containerVolumeMount.new(tmpVolumeName, '/tmp')]) +
                       {
                         args+: [
+                          '--host=127.0.0.1',
+                          '--port=8081',
+                          '--telemetry-host=127.0.0.1',
+                          '--telemetry-port=8082',
                           '--metric-blacklist=kube_secret_labels',
                         ],
+                        // Override probes and ports because of kube-rbac-proxies.
+                        livenessProbe:: {},
+                        ports:: {},
+                        readinessProbe:: {},
+                        securityContext:: {},
                         resources: {
                           requests: {
                             memory: '40Mi',
@@ -102,7 +143,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                           },
                         },
                       },
-                  super.containers,
+                  [proxyClusterMetrics, proxySelfMetrics] + super.containers,
                 ),
               volumes+: [
                 volume.fromEmptyDir(tmpVolumeName),
