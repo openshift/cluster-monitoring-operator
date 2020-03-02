@@ -157,7 +157,7 @@ spec:
       record: 'node:node_cpu_saturation_load1:'
     - expr: |
         1 -
-        sum(node_memory_MemFree{job="node-exporter"} + node_memory_Cached{job="node-exporter"} + node_memory_Buffers{job="node-exporter"})
+        sum(node_memory_MemAvailable{job="node-exporter"})
         /
         sum(node_memory_MemTotal{job="node-exporter"})
       record: ':node_memory_utilisation:'
@@ -169,7 +169,7 @@ spec:
       record: :node_memory_MemTotal:sum
     - expr: |
         sum by (node) (
-          (node_memory_MemFree{job="node-exporter"} + node_memory_Cached{job="node-exporter"} + node_memory_Buffers{job="node-exporter"})
+          (node_memory_MemAvailable{job="node-exporter"})
           * on (namespace, pod) group_left(node)
             node_namespace_pod:kube_pod_info:
         )

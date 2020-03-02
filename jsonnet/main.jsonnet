@@ -121,6 +121,34 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     );
     utils.mapRuleGroups(replaceCPURule),
 } + {
+  // This patches the way we calculate Memory utilizationCPU and uses MemAvailable as a base for calculations:
+  // https://bugzilla.redhat.com/show_bug.cgi?id=1804455
+  prometheusRules+::
+    local replaceMemoryRules(rule) = (
+      if ('record' in rule) && (rule.record == ':node_memory_utilisation:') then
+        rule {
+          expr: |||
+            1 -
+            sum(node_memory_MemAvailable{job="node-exporter"})
+            /
+            sum(node_memory_MemTotal{job="node-exporter"})
+          ||| % $._config,
+        }
+      else if ('record' in rule) && (rule.record == 'node:node_memory_bytes_available:sum') then
+        rule {
+          expr: |||
+            sum by (node) (
+              (node_memory_MemAvailable{job="node-exporter"})
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+            )
+          ||| % $._config,
+        }
+      else
+        rule
+    );
+    utils.mapRuleGroups(replaceMemoryRules),
+} + {
   // This patches the KubeletTooManyPods alert message
   // https://bugzilla.redhat.com/show_bug.cgi?id=1690951#c6
   prometheusAlerts+::
