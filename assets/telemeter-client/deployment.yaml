@@ -28,7 +28,8 @@ spec:
         - --anonymize-salt-file=/etc/telemeter/salt
         - --anonymize-labels=$(ANONYMIZE_LABELS)
         - --match={__name__=~"cluster:usage:.*"}
-        - --match={__name__="up"}
+        - --match={__name__="count:up0"}
+        - --match={__name__="count:up1"}
         - --match={__name__="cluster_version"}
         - --match={__name__="cluster_version_available_updates"}
         - --match={__name__="cluster_operator_up"}
@@ -37,7 +38,6 @@ spec:
         - --match={__name__="cluster_installer"}
         - --match={__name__="cluster_infrastructure_provider"}
         - --match={__name__="cluster_feature_set"}
-        - --match={__name__="node_uname_info"}
         - --match={__name__="instance:etcd_object_counts:sum"}
         - --match={__name__="ALERTS",alertstate="firing"}
         - --match={__name__="code:apiserver_request_count:rate:sum"}
