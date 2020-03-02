@@ -787,6 +787,21 @@ func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
 		r.Spec.Groups = groups
 	}
 
+	if f.config.ExcludeKubernetesControlPlaneRules {
+		groups := []monv1.RuleGroup{}
+		for _, g := range r.Spec.Groups {
+			switch g.Name {
+			case "kubernetes-system-apiserver",
+				"kubernetes-system-controller-manager",
+				"kubernetes-system-scheduler":
+				// skip
+			default:
+				groups = append(groups, g)
+			}
+		}
+		r.Spec.Groups = groups
+	}
+
 	return r, nil
 }
 

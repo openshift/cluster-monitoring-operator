@@ -30,6 +30,8 @@ type Config struct {
 	Images      *Images `json:"-"`
 	RemoteWrite bool    `json:"-"`
 
+	ExcludeKubernetesControlPlaneRules bool `json:"excludeKubernetesControlPlaneRules"`
+
 	PrometheusOperatorConfig             *PrometheusOperatorConfig `json:"prometheusOperator"`
 	PrometheusOperatorUserWorkloadConfig *PrometheusOperatorConfig `json:"prometheusOperatorUserWorkload"`
 
