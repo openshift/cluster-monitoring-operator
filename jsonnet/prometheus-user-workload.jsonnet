@@ -239,6 +239,12 @@ local alertmanagerRole =
                 '--grpc-server-tls-key=/etc/tls/grpc/server.key',
                 '--grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt',
               ],
+              resources: {
+                requests: {
+                  memory: '20Mi',
+                  cpu: '10m',
+                },
+              },
               volumeMounts: [
                 {
                   mountPath: '/etc/tls/grpc',
