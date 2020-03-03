@@ -66,6 +66,10 @@ spec:
     - --grpc-server-tls-key=/etc/tls/grpc/server.key
     - --grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt
     name: thanos-sidecar
+    resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls

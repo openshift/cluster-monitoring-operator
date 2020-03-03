@@ -70,7 +70,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 20Mi
+            memory: 30Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private

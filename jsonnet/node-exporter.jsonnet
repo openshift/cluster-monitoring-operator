@@ -114,6 +114,12 @@ local tlsVolumeName = 'node-exporter-tls';
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
                         ],
+                        resources: {
+                          requests: {
+                            memory: '30Mi',
+                            cpu: '10m',
+                          },
+                        },
                       }
                     else
                       c {
