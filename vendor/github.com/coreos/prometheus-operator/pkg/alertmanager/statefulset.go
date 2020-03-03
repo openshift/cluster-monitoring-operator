@@ -36,7 +36,7 @@ const (
 	governingServiceName = "alertmanager-operated"
 	// DefaultVersion specifies which version of Alertmanager the Prometheus
 	// Operator uses by default.
-	DefaultVersion         = "v0.17.0"
+	DefaultVersion         = "v0.20.0"
 	defaultRetention       = "120h"
 	secretsDir             = "/etc/alertmanager/secrets/"
 	configmapsDir          = "/etc/alertmanager/configmaps/"
@@ -91,11 +91,19 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 	}
 
 	boolTrue := true
+	// do not transfer kubectl annotations to the statefulset so it is not
+	// pruned by kubectl
+	annotations := make(map[string]string)
+	for key, value := range am.ObjectMeta.Annotations {
+		if !strings.HasPrefix(key, "kubectl.kubernetes.io/") {
+			annotations[key] = value
+		}
+	}
 	statefulset := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        prefixedName(am.Name),
 			Labels:      config.Labels.Merge(am.ObjectMeta.Labels),
-			Annotations: am.ObjectMeta.Annotations,
+			Annotations: annotations,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion:         am.APIVersion,
@@ -353,11 +361,6 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 		}, ports...)
 	}
 
-	var securityContext *v1.PodSecurityContext = nil
-	if a.Spec.SecurityContext != nil {
-		securityContext = a.Spec.SecurityContext
-	}
-
 	// Adjust Alertmanager command line args to specified AM version
 	//
 	// Alertmanager versions < v0.15.0 are only supported on a best effort basis
@@ -468,7 +471,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 	terminationGracePeriod := int64(120)
 	finalLabels := config.Labels.Merge(podLabels)
 
-	// PodManagementPolicy is set to Parallel to mitigate issues in kuberentes: https://github.com/kubernetes/kubernetes/issues/60164
+	// PodManagementPolicy is set to Parallel to mitigate issues in kubernetes: https://github.com/kubernetes/kubernetes/issues/60164
 	// This is also mentioned as one of limitations of StatefulSets: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#limitations
 	return &appsv1.StatefulSetSpec{
 		ServiceName:         governingServiceName,
@@ -532,7 +535,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 				}, a.Spec.Containers...),
 				Volumes:            volumes,
 				ServiceAccountName: a.Spec.ServiceAccountName,
-				SecurityContext:    securityContext,
+				SecurityContext:    a.Spec.SecurityContext,
 				Tolerations:        a.Spec.Tolerations,
 				Affinity:           a.Spec.Affinity,
 			},

@@ -153,13 +153,14 @@ type Config struct {
 	ManageCRDs                    bool
 	PromSelector                  string
 	AlertManagerSelector          string
+	ThanosRulerSelector           string
 }
 
 type Namespaces struct {
 	// allow list/deny list for common custom resources
 	AllowList, DenyList []string
 	// allow list for prometheus/alertmanager custom resources
-	PrometheusAllowList, AlertmanagerAllowList []string
+	PrometheusAllowList, AlertmanagerAllowList, ThanosRulerAllowList []string
 }
 
 // BasicAuthCredentials represents a username password pair to be used with
@@ -509,6 +510,7 @@ func (c *Operator) handlePrometheusAdd(obj interface{}) {
 
 	level.Debug(c.logger).Log("msg", "Prometheus added", "key", key)
 	c.metrics.TriggerByCounter(monitoringv1.PrometheusesKind, "add").Inc()
+	checkPrometheusSpecDeprecation(key, obj.(*monitoringv1.Prometheus), c.logger)
 	c.enqueue(key)
 }
 
@@ -535,6 +537,7 @@ func (c *Operator) handlePrometheusUpdate(old, cur interface{}) {
 
 	level.Debug(c.logger).Log("msg", "Prometheus updated", "key", key)
 	c.metrics.TriggerByCounter(monitoringv1.PrometheusesKind, "update").Inc()
+	checkPrometheusSpecDeprecation(key, cur.(*monitoringv1.Prometheus), c.logger)
 	c.enqueue(key)
 }
 
@@ -661,6 +664,14 @@ func (c *Operator) syncNodeEndpoints() error {
 				{
 					Name: "https-metrics",
 					Port: 10250,
+				},
+				{
+					Name: "http-metrics",
+					Port: 10255,
+				},
+				{
+					Name: "cadvisor",
+					Port: 4194,
 				},
 			},
 		},
@@ -905,7 +916,6 @@ func (c *Operator) enqueueForNamespace(nsName string) {
 	if !exists {
 		level.Error(c.logger).Log(
 			"msg", fmt.Sprintf("get namespace to enqueue Prometheus instances failed: namespace %q does not exist", nsName),
-			"err", err,
 		)
 		return
 	}
@@ -1082,7 +1092,6 @@ func (c *Operator) sync(key string) error {
 	}
 
 	level.Info(c.logger).Log("msg", "sync prometheus", "key", key)
-	checkPrometheusSpecDeprecation(key, p, c.logger)
 	ruleConfigMapNames, err := c.createOrUpdateRuleConfigMaps(p)
 	if err != nil {
 		return err
@@ -1144,7 +1153,7 @@ func (c *Operator) sync(key string) error {
 	if err != nil {
 		return errors.Wrap(err, "making statefulset failed")
 	}
-	sanitizeSTS(sset)
+	operator.SanitizeSTS(sset)
 
 	if !exists {
 		level.Debug(c.logger).Log("msg", "no current Prometheus statefulset found")
@@ -1181,15 +1190,6 @@ func (c *Operator) sync(key string) error {
 	}
 
 	return nil
-}
-
-// sanitizeSTS removes values for APIVersion and Kind from the VolumeClaimTemplates.
-// This prevents update failures due to these fields changing when applied.
-func sanitizeSTS(sts *appsv1.StatefulSet) {
-	for i := range sts.Spec.VolumeClaimTemplates {
-		sts.Spec.VolumeClaimTemplates[i].APIVersion = ""
-		sts.Spec.VolumeClaimTemplates[i].Kind = ""
-	}
 }
 
 //checkPrometheusSpecDeprecation checks for deprecated fields in the prometheus spec and logs a warning if applicable
