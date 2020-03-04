@@ -34,8 +34,7 @@ import (
 
 const (
 	governingServiceName            = "prometheus-operated"
-	DefaultPrometheusVersion        = "v2.7.1"
-	DefaultThanosVersion            = "v0.8.1"
+	DefaultThanosVersion            = "v0.10.1"
 	defaultRetention                = "24h"
 	defaultReplicaExternalLabelName = "prometheus_replica"
 	storageDir                      = "/prometheus"
@@ -94,7 +93,11 @@ var (
 		"v2.9.2",
 		"v2.10.0",
 		"v2.11.0",
+		"v2.14.0",
+		"v2.15.2",
+		"v2.16.0",
 	}
+	DefaultPrometheusVersion = CompatibilityMatrix[len(CompatibilityMatrix)-1]
 )
 
 func makeStatefulSet(
@@ -441,11 +444,6 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		}
 	}
 
-	var securityContext *v1.PodSecurityContext = nil
-	if p.Spec.SecurityContext != nil {
-		securityContext = p.Spec.SecurityContext
-	}
-
 	if p.Spec.EnableAdminAPI {
 		promArgs = append(promArgs, "-web.enable-admin-api")
 	}
@@ -725,16 +723,19 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			Args: []string{
 				fmt.Sprintf("--webhook-url=%s", localReloadURL),
 			},
-			VolumeMounts:             []v1.VolumeMount{},
-			Resources:                v1.ResourceRequirements{Limits: v1.ResourceList{}},
+			VolumeMounts: []v1.VolumeMount{},
+			Resources: v1.ResourceRequirements{
+				Limits: v1.ResourceList{}, Requests: v1.ResourceList{}},
 			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 		}
 
 		if c.ConfigReloaderCPU != "0" {
 			container.Resources.Limits[v1.ResourceCPU] = resource.MustParse(c.ConfigReloaderCPU)
+			container.Resources.Requests[v1.ResourceCPU] = resource.MustParse(c.ConfigReloaderCPU)
 		}
 		if c.ConfigReloaderMemory != "0" {
 			container.Resources.Limits[v1.ResourceMemory] = resource.MustParse(c.ConfigReloaderMemory)
+			container.Resources.Requests[v1.ResourceMemory] = resource.MustParse(c.ConfigReloaderMemory)
 		}
 
 		for _, name := range ruleConfigMapNames {
@@ -828,6 +829,16 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			disableCompaction = true
 		}
 
+		if p.Spec.Thanos.TracingConfig != nil {
+			container.Args = append(container.Args, "--tracing.config=$(TRACING_CONFIG)")
+			container.Env = append(container.Env, v1.EnvVar{
+				Name: "TRACING_CONFIG",
+				ValueFrom: &v1.EnvVarSource{
+					SecretKeyRef: p.Spec.Thanos.TracingConfig,
+				},
+			})
+		}
+
 		if p.Spec.LogLevel != "" {
 			container.Args = append(container.Args, fmt.Sprintf("--log.level=%s", p.Spec.LogLevel))
 		}
@@ -855,12 +866,15 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		prometheusImage = *p.Spec.Image
 	}
 
-	prometheusConfigReloaderResources := v1.ResourceRequirements{Limits: v1.ResourceList{}}
+	prometheusConfigReloaderResources := v1.ResourceRequirements{
+		Limits: v1.ResourceList{}, Requests: v1.ResourceList{}}
 	if c.ConfigReloaderCPU != "0" {
 		prometheusConfigReloaderResources.Limits[v1.ResourceCPU] = resource.MustParse(c.ConfigReloaderCPU)
+		prometheusConfigReloaderResources.Requests[v1.ResourceCPU] = resource.MustParse(c.ConfigReloaderCPU)
 	}
 	if c.ConfigReloaderMemory != "0" {
 		prometheusConfigReloaderResources.Limits[v1.ResourceMemory] = resource.MustParse(c.ConfigReloaderMemory)
+		prometheusConfigReloaderResources.Requests[v1.ResourceMemory] = resource.MustParse(c.ConfigReloaderMemory)
 	}
 
 	operatorContainers := append([]v1.Container{
@@ -897,7 +911,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to merge containers spec")
 	}
-	// PodManagementPolicy is set to Parallel to mitigate issues in kuberentes: https://github.com/kubernetes/kubernetes/issues/60164
+	// PodManagementPolicy is set to Parallel to mitigate issues in kubernetes: https://github.com/kubernetes/kubernetes/issues/60164
 	// This is also mentioned as one of limitations of StatefulSets: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#limitations
 	return &appsv1.StatefulSetSpec{
 		ServiceName:         governingServiceName,
@@ -917,7 +931,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			Spec: v1.PodSpec{
 				Containers:                    containers,
 				InitContainers:                p.Spec.InitContainers,
-				SecurityContext:               securityContext,
+				SecurityContext:               p.Spec.SecurityContext,
 				ServiceAccountName:            p.Spec.ServiceAccountName,
 				NodeSelector:                  p.Spec.NodeSelector,
 				PriorityClassName:             p.Spec.PriorityClassName,

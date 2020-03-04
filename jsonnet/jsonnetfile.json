@@ -48,7 +48,7 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "release-0.36"
+      "version": "release-0.37"
     },
     {
       "name": "telemeter-client",

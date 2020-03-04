@@ -210,6 +210,7 @@ func (c *Operator) selectRules(p *monitoringv1.Prometheus, namespaces []string) 
 func generateContent(promRule monitoringv1.PrometheusRuleSpec, enforcedNsLabel, ns string) (string, error) {
 	if enforcedNsLabel != "" {
 		for gi, group := range promRule.Groups {
+			group.PartialResponseStrategy = ""
 			for ri, r := range group.Rules {
 				if len(promRule.Groups[gi].Rules[ri].Labels) == 0 {
 					promRule.Groups[gi].Rules[ri].Labels = map[string]string{}
