@@ -451,7 +451,7 @@ spec:
           minutes.
       expr: sum(max by(namespace, container, pod) (increase(kube_pod_container_status_restarts_total[12m]))
         and max by(namespace, container, pod) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"})
-        == 1) > 10
+        == 1) > 5
       for: 15m
       labels:
         severity: info
