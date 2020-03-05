@@ -187,6 +187,19 @@ var (
 	ThanosQuerierGrpcTLSSecret      = "assets/thanos-querier/grpc-tls-secret.yaml"
 	ThanosQuerierTrustedCABundle    = "assets/thanos-querier/trusted-ca-bundle.yaml"
 
+	ThanosRulerCustomResource     = "assets/thanos-ruler/thanos-ruler.yaml"
+	ThanosRulerService            = "assets/thanos-ruler/service.yaml"
+	ThanosRulerRoute              = "assets/thanos-ruler/route.yaml"
+	ThanosRulerOauthCookieSecret  = "assets/thanos-ruler/oauth-cookie-secret.yaml"
+	ThanosRulerHtpasswdSecret     = "assets/thanos-ruler/oauth-htpasswd-secret.yaml"
+	ThanosRulerRBACProxySecret    = "assets/thanos-ruler/kube-rbac-proxy-secret.yaml"
+	ThanosRulerServiceAccount     = "assets/thanos-ruler/service-account.yaml"
+	ThanosRulerClusterRole        = "assets/thanos-ruler/cluster-role.yaml"
+	ThanosRulerClusterRoleBinding = "assets/thanos-ruler/cluster-role-binding.yaml"
+	ThanosRulerGrpcTLSSecret      = "assets/thanos-ruler/grpc-tls-secret.yaml"
+	ThanosRulerTrustedCABundle    = "assets/thanos-ruler/trusted-ca-bundle.yaml"
+	ThanosRulerServiceMonitor     = "assets/thanos-ruler/service-monitor.yaml"
+
 	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
 )
 
@@ -905,6 +918,17 @@ func (f *Factory) ThanosQuerierHtpasswdSecret(password string) (*v1.Secret, erro
 	}
 
 	f.generateHtpasswdSecret(s, password)
+	return s, nil
+}
+
+func (f *Factory) ThanosRulerHtpasswdSecret(password string) (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosRulerHtpasswdSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	f.generateHtpasswdSecret(s, password)
+	s.Namespace = f.namespaceUserWorkload
 	return s, nil
 }
 
@@ -2339,6 +2363,19 @@ func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, erro
 	return a, nil
 }
 
+func (f *Factory) NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error) {
+	t, err := NewThanosRuler(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	if t.GetNamespace() == "" {
+		t.SetNamespace(f.namespaceUserWorkload)
+	}
+
+	return t, nil
+}
+
 func (f *Factory) NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, error) {
 	sm, err := NewServiceMonitor(manifest)
 	if err != nil {
@@ -2669,6 +2706,178 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) ThanosRulerService() (*v1.Service, error) {
+	s, err := f.NewService(MustAssetReader(ThanosRulerService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) ThanosRulerServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(MustAssetReader(ThanosRulerServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) ThanosRulerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(ThanosRulerClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespaceUserWorkload
+
+	return crb, nil
+}
+
+func (f *Factory) ThanosRulerClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(MustAssetReader(ThanosRulerClusterRole))
+}
+
+func (f *Factory) ThanosRulerServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(ThanosRulerServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("thanos-ruler.%s.svc", f.namespaceUserWorkload)
+	sm.Namespace = f.namespaceUserWorkload
+
+	return sm, nil
+}
+
+func (f *Factory) ThanosRulerRoute() (*routev1.Route, error) {
+	r, err := f.NewRoute(MustAssetReader(ThanosRulerRoute))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespaceUserWorkload
+
+	return r, nil
+}
+
+func (f *Factory) ThanosRulerTrustedCABundle() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(MustAssetReader(ThanosRulerTrustedCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
+}
+
+func (f *Factory) ThanosRulerGrpcTLSSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosRulerGrpcTLSSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosRulerOauthCookieSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := GeneratePassword(43)
+	if err != nil {
+		return nil, err
+	}
+	s.Data["session_secret"] = []byte(p)
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) ThanosRulerRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosRulerRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap) (*monv1.ThanosRuler, error) {
+	t, err := f.NewThanosRuler(MustAssetReader(ThanosRulerCustomResource))
+	if err != nil {
+		return nil, err
+	}
+
+	t.Spec.Image = f.config.Images.Thanos
+
+	if f.config.ThanosRulerConfig.Resources != nil {
+		t.Spec.Resources = *f.config.ThanosRulerConfig.Resources
+	}
+
+	if f.config.ThanosRulerConfig.VolumeClaimTemplate != nil {
+		t.Spec.Storage = &monv1.StorageSpec{
+			VolumeClaimTemplate: *f.config.ThanosRulerConfig.VolumeClaimTemplate,
+		}
+	}
+
+	if f.config.ThanosRulerConfig.NodeSelector != nil {
+		t.Spec.NodeSelector = f.config.ThanosRulerConfig.NodeSelector
+	}
+
+	if len(f.config.ThanosRulerConfig.Tolerations) > 0 {
+		t.Spec.Tolerations = f.config.ThanosRulerConfig.Tolerations
+	}
+
+	t.Spec.Containers[0].Image = f.config.Images.OauthProxy
+	setEnv := func(name, value string) {
+		for i := range t.Spec.Containers[0].Env {
+			if t.Spec.Containers[0].Env[i].Name == name {
+				t.Spec.Containers[0].Env[i].Value = value
+				break
+			}
+		}
+	}
+	if f.config.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	}
+	if f.config.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	}
+	if f.config.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	}
+
+	if trustedCA != nil {
+		volumeName := "thanos-ruler-trusted-ca-bundle"
+		t.Spec.Containers[0].VolumeMounts = append(
+			t.Spec.Containers[0].VolumeMounts,
+			trustedCABundleVolumeMount(volumeName),
+		)
+
+		volume := trustedCABundleVolume(trustedCA.Name, volumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  "ca-bundle.crt",
+			Path: "tls-ca-bundle.pem",
+		})
+		t.Spec.Volumes = append(t.Spec.Volumes, volume)
+	}
+
+	t.Namespace = f.namespaceUserWorkload
+
+	return t, nil
+}
+
 func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
 	ds := appsv1.DaemonSet{}
 	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&ds)
@@ -2836,6 +3045,16 @@ func NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
 	}
 
 	return &a, nil
+}
+
+func NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error) {
+	t := monv1.ThanosRuler{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&t)
+	if err != nil {
+		return nil, err
+	}
+
+	return &t, nil
 }
 
 func NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, error) {

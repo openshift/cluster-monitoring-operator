@@ -49,6 +49,7 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		f    func(*testing.T)
 	}{
 		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
+		{"assert thanos ruler deployment", assertThanosRulerDeployment},
 		{"create and assert an user application is deployed", deployUserApplication},
 		{"create prometheus and alertmanager in user namespace", createPrometheusAlertmanagerInUserNamespace},
 		{"assert user workload metrics", assertUserWorkloadMetrics},
@@ -113,6 +114,41 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+func assertThanosRulerDeployment(t *testing.T) {
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get("thanos-ruler-user-workload", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = f.OperatorClient.WaitForThanosRuler(&monitoringv1.ThanosRuler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "user-workload",
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "thanos-ruler-user-workload",
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 }
 
 func deployUserApplication(t *testing.T) {

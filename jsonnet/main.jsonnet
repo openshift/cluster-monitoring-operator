@@ -6,6 +6,18 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-thanos-sidecar.libsonnet') +
            (import 'kube-thanos/kube-thanos-querier.libsonnet') +
+           (import 'kube-thanos/kube-thanos-ruler.libsonnet') +
+           (import 'kube-thanos/kube-thanos-store.libsonnet') +
+           {
+             thanos+:: {
+               ruler+: {
+                 objectStorageConfig: {
+                   name: 'storename',
+                   key: 'storekey',
+                 },
+               },
+             },
+           } +
            (import 'openshift-state-metrics/openshift-state-metrics.libsonnet') +
            {
              prometheusK8s+:: $.prometheus {
@@ -122,6 +134,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'prometheus-adapter.jsonnet') +
            (import 'cluster-monitoring-operator.jsonnet') +
            (import 'thanos-querier.jsonnet') +
+           (import 'thanos-ruler.jsonnet') +
            (import 'remove-runbook.libsonnet') + {
   _config+:: {
     namespace: 'openshift-monitoring',
@@ -179,5 +192,6 @@ removeLimits(
   // telemetry.
   { ['telemeter-client/' + name]: kp.telemeterClient[name] for name in std.objectFields(kp.telemeterClient) } +
   { ['cluster-monitoring-operator/' + name]: kp.clusterMonitoringOperator[name] for name in std.objectFields(kp.clusterMonitoringOperator) } +
-  { ['thanos-querier/' + name]: kp.thanos.querier[name] for name in std.objectFields(kp.thanos.querier) }
+  { ['thanos-querier/' + name]: kp.thanos.querier[name] for name in std.objectFields(kp.thanos.querier) } +
+  { ['thanos-ruler/' + name]: kp.thanos.ruler[name] for name in std.objectFields(kp.thanos.ruler) }
 )

@@ -1,0 +1,71 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ThanosRuler
+metadata:
+  labels:
+    thanosRulerName: user-workload
+  name: user-workload
+  namespace: openshift-user-workload-monitoring
+spec:
+  alertManagersURL: dnssrv+_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local
+  containers:
+  - args:
+    - -provider=openshift
+    - -https-address=:9091
+    - -http-address=
+    - -email-domain=*
+    - -upstream=http://localhost:10902
+    - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+    - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+    - -tls-cert=/etc/tls/private/tls.crt
+    - -tls-key=/etc/tls/private/tls.key
+    - -client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token
+    - -cookie-secret-file=/etc/proxy/secrets/session_secret
+    - -openshift-service-account=thanos-ruler
+    - -openshift-ca=/etc/pki/tls/cert.pem
+    - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    - -skip-auth-regex=^/metrics
+    env:
+    - name: HTTP_PROXY
+      value: ""
+    - name: HTTPS_PROXY
+      value: ""
+    - name: NO_PROXY
+      value: ""
+    image: quay.io/openshift/oauth-proxy:latest
+    name: thanos-ruler-proxy
+    ports:
+    - containerPort: 9091
+      name: web
+    resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-thanos-ruler-tls
+    - mountPath: /etc/proxy/secrets
+      name: secret-thanos-ruler-oauth-cookie
+    - mountPath: /etc/proxy/htpasswd
+      name: secret-thanos-ruler-oauth-htpasswd
+  image: quay.io/openshift/origin-thanos:latest
+  queryEndpoints:
+  - dnssrv+_web._tcp.thanos-querier.openshift-monitoring.svc.cluster.local
+  replicas: 2
+  ruleSelector:
+    matchLabels:
+      role: thanos-rules
+  serviceAccountName: thanos-ruler
+  volumes:
+  - name: secret-thanos-ruler-tls
+    secret:
+      secretName: thanos-ruler-tls
+  - name: secret-thanos-ruler-oauth-cookie
+    secret:
+      secretName: thanos-ruler-oauth-cookie
+  - name: secret-thanos-ruler-oauth-htpasswd
+    secret:
+      secretName: thanos-ruler-oauth-htpasswd
+  - name: secret-thanos-ruler-kube-rbac-proxy
+    secret:
+      secretName: thanos-ruler-kube-rbac-proxy
