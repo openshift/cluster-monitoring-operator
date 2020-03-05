@@ -77,6 +77,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                           '--tls-cert-file=/etc/tls/private/tls.crt',
                           '--tls-private-key-file=/etc/tls/private/tls.key',
                         ],
+                        securityContext: {},
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
@@ -95,6 +96,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                         args+: [
                           '--metric-blacklist=kube_secret_labels',
                         ],
+                        securityContext: {},
                         resources: {
                           requests: {
                             memory: '40Mi',
