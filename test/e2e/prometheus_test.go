@@ -15,10 +15,12 @@
 package e2e
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	"k8s.io/api/apps/v1beta2"
 	v1 "k8s.io/api/core/v1"
@@ -165,5 +167,85 @@ func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
 
 	if !almOk == true || !k8sOk == true {
 		t.Fatal("Can not find pods: prometheus-k8s or alertmanager-main")
+	}
+}
+
+func TestPrometheusTrustedCA(t *testing.T) {
+	var (
+		factory = manifests.NewFactory("openshift-monitoring", nil)
+		newCM   *v1.ConfigMap
+		lastErr error
+	)
+
+	// Wait for the new ConfigMap to be created
+	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get("prometheus-trusted-ca-bundle", metav1.GetOptions{})
+		lastErr = errors.Wrap(err, "getting new trusted CA ConfigMap failed")
+		if err != nil {
+			return false, nil
+		}
+
+		newCM = factory.HashTrustedCA(cm, "prometheus")
+		if newCM == nil {
+			lastErr = errors.New("no trusted CA bundle data available")
+			return false, nil
+		}
+
+		return true, nil
+	})
+	if err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		t.Fatal(err)
+	}
+
+	// Wait for the new hashed trusted CA bundle ConfigMap to be created
+	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(newCM.Name, metav1.GetOptions{})
+		lastErr = errors.Wrap(err, "getting new CA ConfigMap failed")
+		if err != nil {
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		t.Fatal(err)
+	}
+
+	// Get Prometheus StatefulSet and make sure it has a volume mounted.
+	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		ss, err := f.KubeClient.AppsV1().StatefulSets(f.Ns).Get("prometheus-k8s", metav1.GetOptions{})
+		lastErr = errors.Wrap(err, "getting Prometheus StatefulSet failed")
+		if err != nil {
+			return false, nil
+		}
+
+		for _, container := range ss.Spec.Template.Spec.Containers {
+			// we only want to know that the prometheus and prometheus-proxy have
+			// mounted trusted-ca-bundle
+			if container.Name == "prometheus" || container.Name == "prometheus-proxy" {
+				if len(container.VolumeMounts) == 0 {
+					return false, errors.Errorf("Could not find VolumeMounts in container with name: %s", container.Name)
+				}
+				for _, mount := range container.VolumeMounts {
+					if mount.Name == "prometheus-trusted-ca-bundle" {
+						return true, nil
+					}
+				}
+			}
+		}
+
+		lastErr = fmt.Errorf("no volume %s mounted", newCM.Name)
+		return false, nil
+	})
+	if err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		t.Fatal(err)
 	}
 }

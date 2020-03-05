@@ -34,6 +34,10 @@ local namespacesRole =
 
 {
   prometheus+:: {
+    trustedCaBundle:
+      configmap.new('prometheus-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
+      configmap.mixin.metadata.withNamespace($._config.namespace) +
+      configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
 
     // OpenShift route to access the Prometheus UI.
 
