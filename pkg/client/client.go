@@ -545,9 +545,23 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 		// deployment is equivalent to the one that would be applied.
 		return nil
 	}
-
 	err = c.UpdateDeployment(dep)
-	return errors.Wrap(err, "updating deployment object failed")
+	if err != nil {
+		uErr, ok := err.(*apierrors.StatusError)
+		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
+			// try to delete deployment
+			err = c.DeleteDeployment(dep)
+			if err != nil {
+				return errors.Wrap(err, "deleting deployment object failed")
+			}
+			err = c.CreateDeployment(dep)
+			if err != nil {
+				return errors.Wrap(err, "creating deployment object failed after update failed")
+			}
+		}
+		return errors.Wrap(err, "updating deployment object failed")
+	}
+	return nil
 }
 
 func (c *Client) CreateDeployment(dep *appsv1.Deployment) error {
