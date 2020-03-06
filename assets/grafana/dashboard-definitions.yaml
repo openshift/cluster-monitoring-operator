@@ -1518,7 +1518,7 @@ items:
                           ],
                           "timeFrom": null,
                           "timeShift": null,
-                          "title": "Rate of TCP Retransimts out of all sent segments",
+                          "title": "Rate of TCP Retransmits out of all sent segments",
                           "tooltip": {
                               "shared": true,
                               "sort": 2,
@@ -1621,7 +1621,7 @@ items:
                           ],
                           "timeFrom": null,
                           "timeShift": null,
-                          "title": "Rate of TCP SYN Retransimts out of all retransmits",
+                          "title": "Rate of TCP SYN Retransmits out of all retransmits",
                           "tooltip": {
                               "shared": true,
                               "sort": 2,
