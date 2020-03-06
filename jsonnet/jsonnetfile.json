@@ -28,7 +28,7 @@
           "subdir": ""
         }
       },
-      "version": "release-0.3"
+      "version": "master"
     },
     {
       "name": "openshift-state-metrics",
