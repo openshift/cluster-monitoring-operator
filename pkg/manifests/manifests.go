@@ -444,10 +444,14 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.KubeRbacProxy
-	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
-	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeStateMetrics
+	for i, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "kube-state-metrics" {
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeStateMetrics
+		}
+		if container.Name == "kube-rbac-proxy-self" || container.Name == "kube-rbac-proxy-main" {
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		}
+	}
 
 	if f.config.KubeStateMetricsConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.KubeStateMetricsConfig.NodeSelector
