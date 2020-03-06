@@ -30,7 +30,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "e92000a708ded5bde1dd332a8e7457d0b39b7928",
+      "version": "7ac7da1a0fe165b68cdb718b2521b560d51bd1f4",
       "sum": "slxrtftVDiTlQK22ertdfrg4Epnq97gdrLI63ftUfaE="
     },
     {
@@ -85,8 +85,8 @@
           "subdir": ""
         }
       },
-      "version": "b2fc95330d105b599b3e326896c8264786ba71bd",
-      "sum": "CjvZXTKpw6t1laxNrKK9H0jtvuuB/RUilTniht6q7V0="
+      "version": "e797bf550c41d18db453592523a88c772249bd26",
+      "sum": "FlsxVGiAjbWyKzS75sDfMTwB3/fKg4eZBYiP9RZnW7E="
     },
     {
       "name": "node-mixin",
@@ -162,8 +162,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "71e6c6068b0f75e014edb691a829e5ffa9ad844a",
-      "sum": "Rux+eJyhxygzgTCcUWfomfSezL39Vj/Xfy7xopIDy+o="
+      "version": "7853182efa4a42f44e929f54860a3c84e99e2079",
+      "sum": "1/pVyXnhpBPaeyqlRVWI7I8nngGNiSgcv7xMWjHizC4="
     }
   ]
 }
