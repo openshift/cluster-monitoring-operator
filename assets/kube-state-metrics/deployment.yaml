@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/version: 1.9.5
   name: kube-state-metrics
-  namespace: monitoring
+  namespace: openshift-monitoring
 spec:
   replicas: 1
   selector:
