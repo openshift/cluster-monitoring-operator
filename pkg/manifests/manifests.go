@@ -2466,6 +2466,11 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
 
+	d.Spec.Template.Spec.Containers[0].Command = append(
+		d.Spec.Template.Spec.Containers[0].Command,
+		"--limit-bytes=5242880",
+	)
+
 	if len(f.config.TelemeterClientConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.TelemeterClientConfig.NodeSelector
 	}
