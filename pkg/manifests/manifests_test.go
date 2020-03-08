@@ -1134,14 +1134,17 @@ func TestKubeStateMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
-		t.Fatal("kube-rbac-proxy image incorrectly configured")
-	}
-	if d.Spec.Template.Spec.Containers[1].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
-		t.Fatal("kube-rbac-proxy image incorrectly configured")
-	}
-	if d.Spec.Template.Spec.Containers[2].Image != "docker.io/openshift/origin-kube-state-metrics:latest" {
-		t.Fatal("kube-state-metrics image incorrectly configured")
+	for i, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "kube-state-metrics" {
+			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-kube-state-metrics:latest" {
+				t.Fatal("kube-state-metrics image incorrectly configured")
+			}
+		}
+		if container.Name == "kube-rbac-proxy-self" || container.Name == "kube-rbac-proxy-main" {
+			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+				t.Fatalf("%s image incorrectly configured", container.Name)
+			}
+		}
 	}
 }
 

@@ -11,7 +11,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
 
 {
   kubeStateMetrics+:: {
-
+    namespace:: 'openshift-monitoring',
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
     // specified secret.
@@ -77,11 +77,11 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                           '--tls-cert-file=/etc/tls/private/tls.crt',
                           '--tls-private-key-file=/etc/tls/private/tls.key',
                         ],
-                        securityContext: {},
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
                         ],
+                        securityContext: {},
                         resources: {
                           requests: {
                             memory: '40Mi',
