@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: thanos-ruler
+  namespace: openshift-user-workload-monitoring
+spec:
+  port:
+    targetPort: web
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: Reencrypt
+  to:
+    kind: Service
+    name: thanos-ruler

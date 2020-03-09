@@ -26,6 +26,8 @@ import (
 	monitoring "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 	prometheusoperator "github.com/coreos/prometheus-operator/pkg/prometheus"
+	"github.com/coreos/prometheus-operator/pkg/thanos"
+	thanosoperator "github.com/coreos/prometheus-operator/pkg/thanos"
 	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
@@ -318,6 +320,26 @@ func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	return errors.Wrap(err, "updating Alertmanager object failed")
 }
 
+func (c *Client) CreateOrUpdateThanosRuler(t *monv1.ThanosRuler) error {
+	trclient := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace())
+	oldTr, err := trclient.Get(t.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := trclient.Create(t)
+		return errors.Wrap(err, "creating Thanos Ruler object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving Thanos Ruler object failed")
+	}
+
+	t.ResourceVersion = oldTr.ResourceVersion
+	if t.Spec.Storage != nil {
+		t.Spec.Storage.VolumeClaimTemplate.CreationTimestamp = metav1.Unix(0, 0)
+	}
+
+	_, err = trclient.Update(t)
+	return errors.Wrap(err, "updating Thanos Ruler object failed")
+}
+
 func (c *Client) DeleteConfigMap(cm *v1.ConfigMap) error {
 	err := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace()).Delete(cm.GetName(), &metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
@@ -400,6 +422,36 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 			err = lastErr
 		}
 		return errors.Wrap(err, "waiting for Prometheus Pods to be gone failed")
+	}
+
+	return nil
+}
+
+func (c *Client) DeleteThanosRuler(tr *monv1.ThanosRuler) error {
+	trclient := c.mclient.MonitoringV1().ThanosRulers(tr.GetNamespace())
+
+	err := trclient.Delete(tr.GetName(), nil)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return errors.Wrap(err, "deleting Thanos Ruler object failed")
+	}
+
+	var lastErr error
+	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
+		pods, err := c.KubernetesInterface().CoreV1().Pods(tr.GetNamespace()).List(thanosoperator.ListOptions(tr.GetName()))
+		if err != nil {
+			return false, errors.Wrap(err, "retrieving pods during polling failed")
+		}
+
+		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
+		klog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
+
+		lastErr = fmt.Errorf("waiting for %d Pods to be deleted", len(pods.Items))
+		return len(pods.Items) == 0, nil
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrap(err, "waiting for Thanos Ruler Pods to be gone failed")
 	}
 
 	return nil
@@ -526,6 +578,33 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 			err = lastErr
 		}
 		return errors.Wrap(err, "waiting for Alertmanager")
+	}
+	return nil
+}
+
+func (c *Client) WaitForThanosRuler(t *monv1.ThanosRuler) error {
+	var lastErr error
+	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+		tr, err := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace()).Get(t.GetName(), metav1.GetOptions{})
+		if err != nil {
+			return false, errors.Wrap(err, "retrieving Thanos Ruler object failed")
+		}
+		status, _, err := thanos.ThanosRulerStatus(c.kclient.(*kubernetes.Clientset), tr)
+		if err != nil {
+			return false, errors.Wrap(err, "retrieving Thanos Ruler status failed")
+		}
+
+		expectedReplicas := *tr.Spec.Replicas
+		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
+			return true, nil
+		}
+		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
+		return false, nil
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrap(err, "waiting for Thanos Ruler")
 	}
 	return nil
 }

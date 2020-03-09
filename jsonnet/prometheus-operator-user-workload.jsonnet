@@ -47,6 +47,7 @@
                         '--deny-namespaces=' + $._config.namespace,
                         '--prometheus-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--alertmanager-instance-namespaces=' + $._config.namespaceUserWorkload,
+                        '--thanos-ruler-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--manage-crds=false',
                     ],
                     securityContext: {},

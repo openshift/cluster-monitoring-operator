@@ -45,6 +45,7 @@ type Config struct {
 	TelemeterClientConfig  *TelemeterClientConfig       `json:"telemeterClient"`
 	K8sPrometheusAdapter   *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
 	UserWorkloadConfig     *UserWorkloadConfig          `json:"techPreviewUserWorkload"`
+	ThanosRulerConfig      *ThanosRulerConfig           `json:"thanosRuler"`
 }
 
 type Images struct {
@@ -89,6 +90,14 @@ type PrometheusK8sConfig struct {
 }
 
 type AlertmanagerMainConfig struct {
+	NodeSelector        map[string]string         `json:"nodeSelector"`
+	Tolerations         []v1.Toleration           `json:"tolerations"`
+	Resources           *v1.ResourceRequirements  `json:"resources"`
+	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
+	Hostport            string                    `json:"hostport"`
+}
+
+type ThanosRulerConfig struct {
 	NodeSelector        map[string]string         `json:"nodeSelector"`
 	Tolerations         []v1.Toleration           `json:"tolerations"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
@@ -204,6 +213,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.AlertmanagerMainConfig == nil {
 		c.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
+	}
+	if c.ThanosRulerConfig == nil {
+		c.ThanosRulerConfig = &ThanosRulerConfig{}
 	}
 	if c.GrafanaConfig == nil {
 		c.GrafanaConfig = &GrafanaConfig{}
