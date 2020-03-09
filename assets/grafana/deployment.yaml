@@ -104,6 +104,10 @@ spec:
         readinessProbe:
           tcpSocket:
             port: https
+        resources:
+          requests:
+            cpu: 10m
+            memory: 20Mi
         volumeMounts:
         - mountPath: /etc/tls/private
           name: secret-grafana-tls
