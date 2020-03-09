@@ -251,6 +251,12 @@ local namespacesRole =
             version: $._config.versions.openshiftThanos,
             // disable thanos object storage
             objectStorageConfig:: null,
+            resources: {
+              requests: {
+                cpu: '50m',
+                memory: '100Mi',
+              },
+            },
           },
           alerting+: {
             alertmanagers:

@@ -50,7 +50,10 @@ spec:
     ports:
     - containerPort: 9095
       name: web
-    resources: {}
+    resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private

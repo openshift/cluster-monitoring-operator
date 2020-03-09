@@ -118,7 +118,6 @@ local tlsVolumeName = 'node-exporter-tls';
                     else
                       c {
                         args+: ['--no-collector.wifi', '--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory='+textfileDir ],
-                        resources: {},
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [
                           containerVolumeMount.new(textfileVolumeName, textfileDir, true),

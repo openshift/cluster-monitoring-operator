@@ -28,7 +28,10 @@ spec:
         - --collector.textfile.directory=/var/node_exporter/textfile
         image: openshift/prometheus-node-exporter:v0.16.0
         name: node-exporter
-        resources: {}
+        resources:
+          requests:
+            cpu: 102m
+            memory: 180Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /host/proc
