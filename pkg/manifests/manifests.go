@@ -2111,6 +2111,7 @@ func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonit
 		return nil, err
 	}
 
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("cluster-monitoring-operator.%s.svc", f.namespace)
 	sm.Namespace = f.namespace
 
 	return sm, nil
