@@ -31,12 +31,15 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
       local service = k.core.v1.service;
       local servicePort = k.core.v1.service.mixin.spec.portsType;
 
-      local cmoServicePort = servicePort.newNamed('http', 8080, 'http');
+      local cmoServicePort = servicePort.newNamed('https', 8443, 'https');
 
       service.new($._config.clusterMonitoringOperator.name, { app: $._config.clusterMonitoringOperator.name }, [cmoServicePort]) +
       service.mixin.metadata.withLabels({ app: $._config.clusterMonitoringOperator.name }) +
       service.mixin.metadata.withNamespace($._config.namespace) +
-      service.mixin.spec.withClusterIp('None'),
+      service.mixin.spec.withClusterIp('None') +
+      service.mixin.metadata.withAnnotations({
+        'service.alpha.openshift.io/serving-cert-secret-name': 'cluster-monitoring-operator-tls',
+      }),
 
     serviceMonitor: {
       apiVersion: 'monitoring.coreos.com/v1',
@@ -54,7 +57,13 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
         },
         endpoints: [
           {
-            port: 'http',
+            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+            port: 'https',
+            scheme: 'https',
+            tlsConfig: {
+              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+              serverName: 'server-name-replaced-at-runtime',
+            },
           },
         ],
       },

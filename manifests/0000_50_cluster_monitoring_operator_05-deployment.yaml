@@ -39,17 +39,33 @@ spec:
       - name: telemetry-config
         configMap:
           name: telemetry-config
+      - name: cluster-monitoring-operator-tls
+        secret:
+          secretName: cluster-monitoring-operator-tls
+          optional: true
       containers:
-      - image: quay.io/openshift/origin-cluster-monitoring-operator:latest
-        name: cluster-monitoring-operator
+      - args:
+        - --logtostderr
+        - --secure-listen-address=:8443
+        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+        - --upstream=http://127.0.0.1:8080/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/openshift/origin-kube-rbac-proxy:latest
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+        resources:
+          requests:
+            cpu: 10m
+            memory: 20Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
-        - mountPath: /etc/cluster-monitoring-operator/telemetry
-          name: telemetry-config
-        env:
-        - name: RELEASE_VERSION
-          value: "0.0.1-snapshot"
-        args:
+        - mountPath: /etc/tls/private
+          name: cluster-monitoring-operator-tls
+          readOnly: false
+      - args:
         - "-namespace=openshift-monitoring"
         - "-namespace-user-workload=openshift-user-workload-monitoring"
         - "-configmap=cluster-monitoring-config"
@@ -71,10 +87,16 @@ spec:
         - "-images=prom-label-proxy=quay.io/openshift/origin-prom-label-proxy:latest"
         - "-images=k8s-prometheus-adapter=quay.io/openshift/origin-k8s-prometheus-adapter:latest"
         - "-images=thanos=quay.io/openshift/origin-thanos:latest"
-        ports:
-        - containerPort: 8080
-          name: http
+        env:
+        - name: RELEASE_VERSION
+          value: "0.0.1-snapshot"
+        image: quay.io/openshift/origin-cluster-monitoring-operator:latest
+        name: cluster-monitoring-operator
         resources:
           requests:
             cpu: 10m
             memory: 50Mi
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/cluster-monitoring-operator/telemetry
+          name: telemetry-config
