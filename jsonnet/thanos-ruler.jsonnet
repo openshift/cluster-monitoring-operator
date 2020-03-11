@@ -28,22 +28,21 @@ local authorizationRole =
 {
   local thanosRulerName = 'user-workload',
   local thanosRulerConfig = super._config +
-  {
-    name: thanosRulerName,
-    namespace: 'openshift-user-workload-monitoring',
-    labels: {
-      'app.kubernetes.io/name': thanosRulerName,
-    },
-    selectorLabels: {
-      'app': 'thanos-ruler',
-      'thanos-ruler': thanosRulerName,
-    },
-    ports: {
-      grpc: 10901,
-      http: 10902,
-    },
-
-  },
+                            {
+                              name: thanosRulerName,
+                              namespace: 'openshift-user-workload-monitoring',
+                              labels: {
+                                'app.kubernetes.io/name': thanosRulerName,
+                              },
+                              selectorLabels: {
+                                app: 'thanos-ruler',
+                                'thanos-ruler': thanosRulerName,
+                              },
+                              ports: {
+                                web: 9091,
+                                tenancy: 9092,
+                              },
+                            },
 
   thanos+:: {
     image:: thanosRulerConfig.imageRepos.openshiftThanos + ':' + thanosRulerConfig.versions.openshiftThanos,
@@ -121,11 +120,11 @@ local authorizationRole =
       // to extract a "namespace" query parameter
       // and perform a SubjectAccessReview
       // asserting if the request bearer token in flight has permissions
-      // to access the pod.metrics.k8s.io API.
+      // to access the prometheusrules.monitoring.coreos.com API.
       // The asserted verb (PUT, GET, POST, etc.) is implied from the http request verb in flight.
       kubeRbacProxySecret:
         local config = {
-          'config.yaml': std.base64(std.manifestYamlDoc({
+          'config.yaml': std.manifestYamlDoc({
             authorization: {
               rewrites: {
                 byQueryParameter: {
@@ -133,17 +132,17 @@ local authorizationRole =
                 },
               },
               resourceAttributes: {
-                apiVersion: 'metrics.k8s.io/v1beta1',
-                resource: 'pods',
+                apiVersion: 'monitoring.coreos.com/v1',
+                resource: 'prometheusrules',
                 namespace: '{{ .Value }}',
               },
             },
-          })),
+          }),
         };
 
-        secret.new('thanos-ruler-kube-rbac-proxy', config) +
+        secret.new('thanos-ruler-kube-rbac-proxy', {}).withStringData(config) +
         secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos' }),
+        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }),
 
       serviceAccount:
         local serviceAccount = k.core.v1.serviceAccount;
@@ -161,11 +160,11 @@ local authorizationRole =
 
       service:
         service.new(
-          'thanos-ruler-' + thanosRulerConfig.name,
+          'thanos-ruler',
           thanosRulerConfig.selectorLabels,
           [
-            ports.newNamed('grpc', thanosRulerConfig.ports.grpc, 'grpc'),
-            ports.newNamed('http', thanosRulerConfig.ports.http, 'http'),
+            ports.newNamed('web', thanosRulerConfig.ports.web, 'web'),
+            ports.newNamed('tenancy', thanosRulerConfig.ports.tenancy, 'tenancy'),
           ],
         ) +
         // The following annotation will instruct the serving certs controller
@@ -180,10 +179,7 @@ local authorizationRole =
         // cluster-monitoring-operator, that when reconciling this service the
         // cluster IP needs to be retained.
         service.mixin.spec.withType('ClusterIP') +
-        service.mixin.spec.withSessionAffinity('ClientIP') +
-        service.mixin.spec.withPorts([
-          ports.newNamed('web', 9091, 'web'),
-        ]),
+        service.mixin.spec.withSessionAffinity('ClientIP'),
 
       serviceMonitor: {
         apiVersion: 'monitoring.coreos.com/v1',
@@ -192,19 +188,18 @@ local authorizationRole =
           name: 'thanos-ruler',
           namespace: thanosRulerConfig.namespace,
           labels: {
-            'k8s-app': 'alertmanager',
+            'k8s-app': 'thanos',
           },
         },
         spec: {
           selector: {
-            matchLabels: {
-              thanosRuler: thanosRulerConfig.name,
-            },
+            matchLabels: thanosRulerConfig.labels,
           },
           endpoints: [
             {
               port: 'web',
               interval: '30s',
+              scheme: 'https',
               tlsConfig: {
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'server-name-replaced-at-runtime',
@@ -234,7 +229,7 @@ local authorizationRole =
             },
           },
           queryEndpoints: [
-            'dnssrv+_web._tcp.thanos-querier.openshift-monitoring.svc.cluster.local'
+            'dnssrv+_web._tcp.thanos-querier.openshift-monitoring.svc.cluster.local',
           ],
           alertManagersURL: 'dnssrv+_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local',
           volumes: [
@@ -250,22 +245,22 @@ local authorizationRole =
               image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
               ports: [
                 {
-                  containerPort: 9091,
+                  containerPort: thanosRulerConfig.ports.web,
                   name: 'web',
                 },
               ],
               env: [
                 {
-                  name: "HTTP_PROXY",
-                  value: "",
+                  name: 'HTTP_PROXY',
+                  value: '',
                 },
                 {
-                  name: "HTTPS_PROXY",
-                  value: "",
+                  name: 'HTTPS_PROXY',
+                  value: '',
                 },
                 {
-                  name: "NO_PROXY",
-                  value: "",
+                  name: 'NO_PROXY',
+                  value: '',
                 },
               ],
               args: [
@@ -306,6 +301,59 @@ local authorizationRole =
                   name: 'secret-thanos-ruler-oauth-htpasswd',
                 },
               ],
+            },
+            {
+              name: 'kube-rbac-proxy',
+              image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
+              resources: {
+                requests: {
+                  memory: '20Mi',
+                  cpu: '10m',
+                },
+              },
+              ports: [
+                {
+                  containerPort: thanosRulerConfig.ports.tenancy,
+                  name: 'tenancy',
+                },
+              ],
+              args: [
+                '--secure-listen-address=0.0.0.0:9092',
+                '--upstream=http://127.0.0.1:9095',
+                '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                '--tls-cert-file=/etc/tls/private/tls.crt',
+                '--tls-private-key-file=/etc/tls/private/tls.key',
+                '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                '--logtostderr=true',
+                '--v=10',
+              ],
+              terminationMessagePolicy: 'FallbackToLogsOnError',
+              volumeMounts: [
+                {
+                  mountPath: '/etc/tls/private',
+                  name: 'secret-thanos-ruler-tls',
+                },
+                {
+                  mountPath: '/etc/kube-rbac-proxy',
+                  name: 'secret-' + $.thanos.ruler.kubeRbacProxySecret.metadata.name,
+                },
+              ],
+            },
+            {
+              name: 'prom-label-proxy',
+              image: $._config.imageRepos.promLabelProxy + ':' + $._config.versions.promLabelProxy,
+              args: [
+                '--insecure-listen-address=127.0.0.1:9095',
+                '--upstream=http://127.0.0.1:10902',
+                '--label=namespace',
+              ],
+              resources: {
+                requests: {
+                  memory: '20Mi',
+                  cpu: '10m',
+                },
+              },
+              terminationMessagePolicy: 'FallbackToLogsOnError',
             },
           ],
         },
