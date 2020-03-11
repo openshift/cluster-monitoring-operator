@@ -129,16 +129,6 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "creating Thanos Ruler htpasswd Secret failed")
 	}
 
-	rs, err := t.factory.ThanosRulerRBACProxySecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Ruler RBAC proxy Secret failed")
-	}
-
-	err = t.client.CreateIfNotExistSecret(rs)
-	if err != nil {
-		return errors.Wrap(err, "creating Thanos Ruler RBAC proxy Secret failed")
-	}
-
 	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.ThanosRulerTrustedCABundle()

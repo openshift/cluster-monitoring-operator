@@ -2808,17 +2808,6 @@ func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) ThanosRulerRBACProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosRulerRBACProxySecret))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespaceUserWorkload
-
-	return s, nil
-}
-
 func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap, grpcTLS *v1.Secret) (*monv1.ThanosRuler, error) {
 	t, err := f.NewThanosRuler(MustAssetReader(ThanosRulerCustomResource))
 	if err != nil {
@@ -3149,9 +3138,14 @@ func (f *Factory) HashTrustedCA(caBundleCM *v1.ConfigMap, prefix string) *v1.Con
 	h.Write([]byte(caBundle))
 	hash := strconv.FormatUint(h.Sum64(), 32)
 
+	ns := f.namespace
+	if caBundleCM.ObjectMeta.Namespace != "" {
+		ns = caBundleCM.ObjectMeta.Namespace
+	}
+
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "openshift-monitoring",
+			Namespace: ns,
 			Name:      fmt.Sprintf("%s-trusted-ca-bundle-%s", prefix, hash),
 			Labels: map[string]string{
 				"monitoring.openshift.io/name": prefix,
