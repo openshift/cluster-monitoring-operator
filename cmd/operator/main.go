@@ -163,7 +163,7 @@ func Main() int {
 	o.RegisterMetrics(r)
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))
-	go http.ListenAndServe(":8080", mux)
+	go http.ListenAndServe("127.0.0.1:8080", mux)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	wg, ctx := errgroup.WithContext(ctx)
