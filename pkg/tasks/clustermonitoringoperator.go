@@ -54,6 +54,26 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "reconciling cluster-monitoring ClusterRole failed")
 	}
 
+	cr, err = t.factory.ClusterMonitoringRulesEditClusterRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing monitoring-rules-edit ClusterRole failed")
+	}
+
+	err = t.client.CreateOrUpdateClusterRole(cr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling monitoring-rules-edit ClusterRole failed")
+	}
+
+	cr, err = t.factory.ClusterMonitoringRulesViewClusterRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing monitoring-rules-view ClusterRole failed")
+	}
+
+	err = t.client.CreateOrUpdateClusterRole(cr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling monitoring-rules-view ClusterRole failed")
+	}
+
 	smcmo, err := t.factory.ClusterMonitoringOperatorServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Cluster Monitoring Operator ServiceMonitor failed")

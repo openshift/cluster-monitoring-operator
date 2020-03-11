@@ -58,6 +58,7 @@ var (
 	AlertmanagerServiceAccount     = "assets/alertmanager/service-account.yaml"
 	AlertmanagerClusterRoleBinding = "assets/alertmanager/cluster-role-binding.yaml"
 	AlertmanagerClusterRole        = "assets/alertmanager/cluster-role.yaml"
+	AlertmanagerRBACProxySecret    = "assets/alertmanager/kube-rbac-proxy-secret.yaml"
 	AlertmanagerRoute              = "assets/alertmanager/route.yaml"
 	AlertmanagerServiceMonitor     = "assets/alertmanager/service-monitor.yaml"
 	AlertmanagerTrustedCABundle    = "assets/alertmanager/trusted-ca-bundle.yaml"
@@ -164,6 +165,8 @@ var (
 	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
+	ClusterMonitoringRulesEditClusterRole   = "assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
+	ClusterMonitoringRulesViewClusterRole   = "assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
 	ClusterMonitoringGrpcTLSSecret          = "assets/cluster-monitoring-operator/grpc-tls-secret.yaml"
 
 	TelemeterClientClusterRole            = "assets/telemeter-client/cluster-role.yaml"
@@ -353,6 +356,14 @@ func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
+const (
+	// These constants refer to indices of alertmanager-main containers.
+	// They need to be in sync with jsonnet/alertmanager.jsonnet
+	ALERTMANAGER_CONTAINER_OAUTH_PROXY      = 0
+	ALERTMANAGER_CONTAINER_KUBE_RBAC_PROXY  = 1
+	ALERTMANAGER_CONTAINER_PROM_LABEL_PROXY = 2
+)
+
 func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(MustAssetReader(AlertmanagerMain))
 	if err != nil {
@@ -381,11 +392,14 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		a.Spec.Tolerations = f.config.AlertmanagerMainConfig.Tolerations
 	}
 
-	a.Spec.Containers[0].Image = f.config.Images.OauthProxy
+	a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].Image = f.config.Images.OauthProxy
+	a.Spec.Containers[ALERTMANAGER_CONTAINER_KUBE_RBAC_PROXY].Image = f.config.Images.KubeRbacProxy
+	a.Spec.Containers[ALERTMANAGER_CONTAINER_PROM_LABEL_PROXY].Image = f.config.Images.PromLabelProxy
+
 	setEnv := func(name, value string) {
-		for i := range a.Spec.Containers[0].Env {
-			if a.Spec.Containers[0].Env[i].Name == name {
-				a.Spec.Containers[0].Env[i].Value = value
+		for i := range a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].Env {
+			if a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].Env[i].Name == name {
+				a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].Env[i].Value = value
 				break
 			}
 		}
@@ -409,13 +423,26 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 			Path: "tls-ca-bundle.pem",
 		})
 		a.Spec.Volumes = append(a.Spec.Volumes, volume)
-		// We have only one container in Alertmanager CR spec and this is oauth-proxy
-		a.Spec.Containers[0].VolumeMounts = append(a.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName))
+		a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].VolumeMounts = append(
+			a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].VolumeMounts,
+			trustedCABundleVolumeMount(volumeName),
+		)
 	}
 
 	a.Namespace = f.namespace
 
 	return a, nil
+}
+
+func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(AlertmanagerRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
@@ -2130,6 +2157,24 @@ func (f *Factory) GrafanaServiceMonitor() (*monv1.ServiceMonitor, error) {
 
 func (f *Factory) ClusterMonitoringClusterRole() (*rbacv1.ClusterRole, error) {
 	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringRulesEditClusterRole() (*rbacv1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringRulesEditClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringRulesViewClusterRole() (*rbacv1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringRulesViewClusterRole))
 	if err != nil {
 		return nil, err
 	}

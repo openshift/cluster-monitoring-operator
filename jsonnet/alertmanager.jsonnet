@@ -79,7 +79,10 @@ local authorizationRole = policyRule.new() +
         'service.alpha.openshift.io/serving-cert-secret-name': 'alertmanager-main-tls',
       }) +
       service.mixin.spec.withType('ClusterIP') +
-      service.mixin.spec.withPorts(servicePort.newNamed('web', 9094, 'web')),
+      service.mixin.spec.withPorts([
+        servicePort.newNamed('web', 9094, 'web'),
+        servicePort.newNamed('tenancy', 9092, 'tenancy'),
+      ]),
 
     // The proxy secret is there to encrypt session created by the oauth proxy.
 
@@ -107,6 +110,28 @@ local authorizationRole = policyRule.new() +
       clusterRoleBinding.mixin.roleRef.withName('alertmanager-main') +
       clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
       clusterRoleBinding.withSubjects([{ kind: 'ServiceAccount', name: 'alertmanager-main', namespace: $._config.namespace }]),
+
+    kubeRbacProxySecret:
+      local config = {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            rewrites: {
+              byQueryParameter: {
+                name: 'namespace',
+              },
+            },
+            resourceAttributes: {
+              apiGroup: 'monitoring.coreos.com',
+              resource: 'prometheusrules',
+              namespace: '{{ .Value }}',
+            },
+          },
+        }),
+      };
+
+      secret.fromString('alertmanager-kube-rbac-proxy', config) +
+      secret.mixin.metadata.withNamespace($._config.namespace) +
+      secret.mixin.metadata.withLabels({ 'k8s-app': 'alertmanager-main' }),
 
     // This changes the alertmanager to be scraped with TLS, authN and authZ,
     // which are not present in kube-prometheus.
@@ -140,6 +165,7 @@ local authorizationRole = policyRule.new() +
           secrets: [
             'alertmanager-main-tls',
             'alertmanager-main-proxy',
+            $.alertmanager.kubeRbacProxySecret.metadata.name,
           ],
           listenLocal: true,
           resources: {
@@ -205,6 +231,59 @@ local authorizationRole = policyRule.new() +
                   name: 'secret-alertmanager-main-proxy',
                 },
               ],
+            },
+            {
+              name: 'kube-rbac-proxy',
+              image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
+              resources: {
+                requests: {
+                  cpu: '1m',
+                  memory: '20Mi',
+                },
+              },
+              ports: [
+                {
+                  containerPort: 9092,
+                  name: 'tenancy',
+                },
+              ],
+              args: [
+                '--secure-listen-address=0.0.0.0:9092',
+                '--upstream=http://127.0.0.1:9096',
+                '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                '--tls-cert-file=/etc/tls/private/tls.crt',
+                '--tls-private-key-file=/etc/tls/private/tls.key',
+                '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                '--logtostderr=true',
+                '--v=10',
+              ],
+              terminationMessagePolicy: 'FallbackToLogsOnError',
+              volumeMounts: [
+                {
+                  mountPath: '/etc/kube-rbac-proxy',
+                  name: 'secret-' + $.alertmanager.kubeRbacProxySecret.metadata.name,
+                },
+                {
+                  mountPath: '/etc/tls/private',
+                  name: 'secret-alertmanager-main-tls',
+                },
+              ],
+            },
+            {
+              name: 'prom-label-proxy',
+              image: $._config.imageRepos.promLabelProxy + ':' + $._config.versions.promLabelProxy,
+              args: [
+                '--insecure-listen-address=127.0.0.1:9096',
+                '--upstream=http://127.0.0.1:9093',
+                '--label=namespace',
+              ],
+              resources: {
+                requests: {
+                  cpu: '1m',
+                  memory: '20Mi',
+                },
+              },
+              terminationMessagePolicy: 'FallbackToLogsOnError',
             },
           ],
         },
