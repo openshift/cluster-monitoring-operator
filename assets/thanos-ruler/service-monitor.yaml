@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    k8s-app: alertmanager
+    k8s-app: thanos
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring
 spec:
@@ -10,9 +10,10 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     interval: 30s
     port: web
+    scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       serverName: server-name-replaced-at-runtime
   selector:
     matchLabels:
-      thanosRuler: user-workload
+      app.kubernetes.io/name: user-workload
