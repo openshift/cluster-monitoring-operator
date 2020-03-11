@@ -236,7 +236,9 @@ local authorizationRole =
           queryEndpoints: [
             'dnssrv+_web._tcp.thanos-querier.openshift-monitoring.svc.cluster.local'
           ],
-          alertManagersURL: 'dnssrv+_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local',
+          alertmanagersUrl: [
+            'dnssrv+_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local',
+          ],
           volumes: [
             volume.fromSecret('secret-thanos-ruler-tls', 'thanos-ruler-tls'),
             volume.fromSecret('secret-thanos-ruler-oauth-cookie', 'thanos-ruler-oauth-cookie'),

@@ -6,7 +6,8 @@ metadata:
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
-  alertManagersURL: dnssrv+_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local
+  alertmanagersUrl:
+  - dnssrv+_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local
   containers:
   - args:
     - -provider=openshift
