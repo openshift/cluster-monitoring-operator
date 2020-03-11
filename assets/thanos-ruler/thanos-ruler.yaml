@@ -81,6 +81,3 @@ spec:
   - name: secret-thanos-ruler-oauth-htpasswd
     secret:
       secretName: thanos-ruler-oauth-htpasswd
-  - name: secret-thanos-ruler-kube-rbac-proxy
-    secret:
-      secretName: thanos-ruler-kube-rbac-proxy
