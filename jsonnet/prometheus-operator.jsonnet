@@ -38,7 +38,7 @@
                     resources: {
                       requests: {
                         memory: '60Mi',
-                        cpu: '10m',
+                        cpu: '5m',
                       },
                     },
                     terminationMessagePolicy: 'FallbackToLogsOnError',

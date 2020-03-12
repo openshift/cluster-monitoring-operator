@@ -254,7 +254,7 @@ local namespacesRole =
             objectStorageConfig:: null,
             resources: {
               requests: {
-                cpu: '50m',
+                cpu: '1m',
                 memory: '100Mi',
               },
             },
@@ -276,7 +276,7 @@ local namespacesRole =
           resources: {
             requests: {
               memory: '1Gi',
-              cpu: '200m',
+              cpu: '70m',
             },
           },
           securityContext: {},
@@ -300,7 +300,7 @@ local namespacesRole =
               resources: {
                 requests: {
                   memory: '20Mi',
-                  cpu: '10m',
+                  cpu: '1m',
                 },
               },
               ports: [
@@ -363,7 +363,7 @@ local namespacesRole =
               resources: {
                 requests: {
                   memory: '20Mi',
-                  cpu: '10m',
+                  cpu: '1m',
                 },
               },
               ports: [
@@ -405,7 +405,7 @@ local namespacesRole =
               resources: {
                 requests: {
                   memory: '20Mi',
-                  cpu: '10m',
+                  cpu: '1m',
                 },
               },
               terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -428,6 +428,11 @@ local namespacesRole =
                   name: 'secret-grpc-tls',
                 },
               ],
+              resources: {
+                requests: {
+                  cpu: '1m',
+                },
+              },
             },
             {
               name: 'prometheus',
