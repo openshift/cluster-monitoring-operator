@@ -123,7 +123,7 @@ local tlsVolumeName = 'node-exporter-tls';
                       }
                     else
                       c {
-                        args+: ['--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory=' + textfileDir],
+                        args+: ['--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory=' + textfileDir, '--collector.systemd.enable-restarts-metrics' ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [
                           containerVolumeMount.new(textfileVolumeName, textfileDir, true),
