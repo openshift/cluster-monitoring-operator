@@ -186,8 +186,8 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 
 		s, err = t.factory.HashSecret(s,
 			"ca.crt", string(grpcTLS.Data["ca.crt"]),
-			"server.crt", string(grpcTLS.Data["prometheus-server.crt"]),
-			"server.key", string(grpcTLS.Data["prometheus-server.key"]),
+			"server.crt", string(grpcTLS.Data["thanos-ruler-server.crt"]),
+			"server.key", string(grpcTLS.Data["thanos-ruler-server.key"]),
 		)
 		if err != nil {
 			return errors.Wrap(err, "error hashing UserWorkload Thanos Ruler GRPC TLS secret")
