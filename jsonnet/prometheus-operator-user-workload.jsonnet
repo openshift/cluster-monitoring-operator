@@ -49,6 +49,7 @@
                         '--alertmanager-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--thanos-ruler-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--manage-crds=false',
+                        '--config-reloader-cpu=0',
                     ],
                     securityContext: {},
                     resources: {
