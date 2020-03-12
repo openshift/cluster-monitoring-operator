@@ -125,21 +125,5 @@ func (f *Factory) GRPCSecret(s *v1.Secret) (*v1.Secret, error) {
 		s.Data["prometheus-server.key"] = key
 	}
 
-	{
-		cfg, err := ca.MakeServerCert(
-			sets.NewString("thanos-ruler-grpc"),
-			crypto.DefaultCertificateLifetimeInDays,
-		)
-		if err != nil {
-			return nil, errors.Wrap(err, "error making thanos ruler server certificate")
-		}
-		crt, key, err := cfg.GetPEMBytes()
-		if err != nil {
-			return nil, errors.Wrap(err, "error getting PEM bytes for thanos ruler server certificate")
-		}
-		s.Data["thanos-ruler-server.crt"] = crt
-		s.Data["thanos-ruler-server.key"] = key
-	}
-
 	return s, nil
 }
