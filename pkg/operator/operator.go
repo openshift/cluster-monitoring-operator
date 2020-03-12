@@ -409,6 +409,13 @@ func (o *Operator) Config(key string) *manifests.Config {
 		klog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
 	}
 
+	err = c.LoadPlatform(func() (*configv1.Infrastructure, error) {
+		return o.client.GetInfrastructure("cluster")
+	})
+	if err != nil {
+		klog.Warningf("Could not load platform from infrastructure resource: %v. This may result in alerts that are not appropriate for the platform.", err)
+	}
+
 	cm, err := o.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
 	if err != nil {
 		klog.Warningf("Error loading etcd CA certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
