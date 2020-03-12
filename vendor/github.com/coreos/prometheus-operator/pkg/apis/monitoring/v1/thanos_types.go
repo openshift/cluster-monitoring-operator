@@ -100,10 +100,16 @@ type ThanosRulerSpec struct {
 	// QueryEndpoints defines Thanos querier endpoints from which to query metrics.
 	// Maps to the --query flag of thanos ruler.
 	QueryEndpoints []string `json:"queryEndpoints"`
-	// Define URL to send alerts to alertmanager.  For Thanos v0.10.0 and higher,
-	// AlertManagersConfig should be used instead.
+	// Define configuration for connecting to thanos query instances.
+	// If this is defined, the QueryEndpoints field will be ignored.
+	// Maps to the `query.config` CLI argument.
+	// Only available with thanos v0.11.0 and higher.
+	QueryConfig *v1.SecretKeySelector `json:"queryConfig,omitempty"`
+	// Define URLs to send alerts to Alertmanager.  For Thanos v0.10.0 and higher,
+	// AlertManagersConfig should be used instead.  Note: this field will be ignored
+	// if AlertManagersConfig is specified.
 	// Maps to the `alertmanagers.url` arg.
-	AlertManagersURL string `json:"alertmanagersUrl,omitempty"`
+	AlertManagersURL []string `json:"alertmanagersUrl,omitempty"`
 	// Define configuration for connecting to alertmanager.  Only available with thanos v0.10.0
 	// and higher.  Maps to the `alertmanagers.config` arg.
 	AlertManagersConfig *v1.SecretKeySelector `json:"alertmanagersConfig,omitempty"`
@@ -159,6 +165,11 @@ type ThanosRulerSpec struct {
 	ExternalPrefix string `json:"externalPrefix,omitempty"`
 	// The route prefix ThanosRuler registers HTTP handlers for. This allows thanos UI to be served on a sub-path.
 	RoutePrefix string `json:"routePrefix,omitempty"`
+	// GRPCServerTLSConfig configures the gRPC server from which Thanos Querier reads
+	// recorded rule data.
+	// Note: Currently only the CAFile, CertFile, and KeyFile fields are supported.
+	// Maps to the '--grpc-server-tls-*' CLI args.
+	GRPCServerTLSConfig *TLSConfig `json:"grpcServerTlsConfig,omitempty"`
 }
 
 // ThanosRulerStatus is the most recent observed status of the ThanosRuler. Read-only. Not

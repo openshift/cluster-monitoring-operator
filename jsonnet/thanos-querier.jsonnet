@@ -218,7 +218,12 @@ local authorizationRole =
                         cpu: '10m',
                       },
                     },
-                    ports+:: {},
+                    ports: [
+                      {
+                        containerPort: 9090,
+                        name: 'http',
+                      },
+                    ],
                     volumeMounts: [
                       {
                         mountPath: '/etc/tls/grpc',

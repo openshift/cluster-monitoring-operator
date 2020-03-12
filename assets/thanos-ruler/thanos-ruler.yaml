@@ -6,8 +6,19 @@ metadata:
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
-  alertManagersURL: dnssrv+_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local
+  alertmanagersUrl:
+  - dnssrv+http://_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local
   containers:
+  - name: thanos-ruler
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-thanos-ruler-tls
+    - mountPath: /etc/proxy/secrets
+      name: secret-thanos-ruler-oauth-cookie
+    - mountPath: /etc/proxy/htpasswd
+      name: secret-thanos-ruler-oauth-htpasswd
+    - mountPath: /etc/tls/grpc
+      name: secret-grpc-tls
   - args:
     - -provider=openshift
     - -https-address=:9091
@@ -48,9 +59,13 @@ spec:
       name: secret-thanos-ruler-oauth-cookie
     - mountPath: /etc/proxy/htpasswd
       name: secret-thanos-ruler-oauth-htpasswd
+  grpcServerTlsConfig:
+    caFile: /etc/tls/grpc/ca.crt
+    certFile: /etc/tls/grpc/server.crt
+    keyFile: /etc/tls/grpc/server.key
   image: quay.io/openshift/origin-thanos:latest
   queryEndpoints:
-  - dnssrv+_web._tcp.thanos-querier.openshift-monitoring.svc.cluster.local
+  - dnssrv+_http._tcp.thanos-querier.openshift-monitoring.svc.cluster.local
   replicas: 2
   ruleSelector:
     matchLabels:
