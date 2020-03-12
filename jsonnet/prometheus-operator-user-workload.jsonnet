@@ -48,6 +48,7 @@
                         '--prometheus-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--alertmanager-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--manage-crds=false',
+                        '--config-reloader-cpu=0',
                     ],
                     securityContext: {},
                     resources: {
