@@ -295,11 +295,6 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler htpasswd Secret failed")
 	}
 
-	err = t.client.DeleteSecret(hs)
-	if err != nil {
-		return errors.Wrap(err, "deleting Thanos Ruler htpasswd Secret failed")
-	}
-
 	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.ThanosRulerTrustedCABundle()
@@ -312,7 +307,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 			return errors.Wrap(err, "deleting Thanos Ruler trusted CA bundle ConfigMap failed")
 		}
 
-		tr, err := t.factory.ThanosRulerCustomResource(trustedCA, nil)
+		tr, err := t.factory.ThanosRulerCustomResource(trustedCA, hs)
 		if err != nil {
 			return errors.Wrap(err, "initializing ThanosRuler object failed")
 		}
@@ -321,6 +316,11 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		if err != nil {
 			return errors.Wrap(err, "deleting ThanosRuler object failed")
 		}
+	}
+
+	err = t.client.DeleteSecret(hs)
+	if err != nil {
+		return errors.Wrap(err, "deleting Thanos Ruler htpasswd Secret failed")
 	}
 
 	trsm, err := t.factory.ThanosRulerServiceMonitor()
