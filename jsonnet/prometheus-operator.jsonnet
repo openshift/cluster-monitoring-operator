@@ -33,6 +33,8 @@
                       '--namespaces=' + $._config.namespace,
                       '--prometheus-instance-namespaces=' + $._config.namespace,
                       '--alertmanager-instance-namespaces=' + $._config.namespace,
+                      '--config-reloader-cpu=0',
+                      '--config-reloader-memory=0',
                     ],
                     securityContext: {},
                     resources: {
