@@ -27,15 +27,14 @@ local authorizationRole =
 
 {
   local thanosRulerName = 'user-workload',
-  local thanosRulerConfig = super._config +
-  {
+  local thanosRulerConfig = super._config + {
     name: thanosRulerName,
     namespace: 'openshift-user-workload-monitoring',
     labels: {
       'app.kubernetes.io/name': thanosRulerName,
     },
     selectorLabels: {
-      'app': 'thanos-ruler',
+      app: 'thanos-ruler',
       'thanos-ruler': thanosRulerName,
     },
     ports: {
@@ -233,10 +232,17 @@ local authorizationRole =
               role: 'thanos-rules',
             },
           },
+          grpcServerTlsConfig: {
+            certFile: '/etc/tls/grpc/server.crt',
+            keyFile: '/etc/tls/grpc/server.key',
+            caFile: '/etc/tls/grpc/ca.crt',
+          },
           queryEndpoints: [
-            'dnssrv+_web._tcp.thanos-querier.openshift-monitoring.svc.cluster.local'
+            'dnssrv+_http._tcp.thanos-querier.openshift-monitoring.svc.cluster.local',
           ],
-          alertManagersURL: 'dnssrv+_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local',
+          alertmanagersUrl: [
+            'dnssrv+http://_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local',
+          ],
           volumes: [
             volume.fromSecret('secret-thanos-ruler-tls', 'thanos-ruler-tls'),
             volume.fromSecret('secret-thanos-ruler-oauth-cookie', 'thanos-ruler-oauth-cookie'),
@@ -245,6 +251,28 @@ local authorizationRole =
           ],
           serviceAccountName: 'thanos-ruler',
           containers: [
+            {
+              name: 'thanos-ruler',
+
+              volumeMounts: [
+                {
+                  mountPath: '/etc/tls/private',
+                  name: 'secret-thanos-ruler-tls',
+                },
+                {
+                  mountPath: '/etc/proxy/secrets',
+                  name: 'secret-thanos-ruler-oauth-cookie',
+                },
+                {
+                  mountPath: '/etc/proxy/htpasswd',
+                  name: 'secret-thanos-ruler-oauth-htpasswd',
+                },
+                {
+                  mountPath: '/etc/tls/grpc',
+                  name: 'secret-grpc-tls',
+                },
+              ],
+            },
             {
               name: 'thanos-ruler-proxy',
               image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
@@ -256,16 +284,16 @@ local authorizationRole =
               ],
               env: [
                 {
-                  name: "HTTP_PROXY",
-                  value: "",
+                  name: 'HTTP_PROXY',
+                  value: '',
                 },
                 {
-                  name: "HTTPS_PROXY",
-                  value: "",
+                  name: 'HTTPS_PROXY',
+                  value: '',
                 },
                 {
-                  name: "NO_PROXY",
-                  value: "",
+                  name: 'NO_PROXY',
+                  value: '',
                 },
               ],
               args: [
@@ -304,6 +332,10 @@ local authorizationRole =
                 {
                   mountPath: '/etc/proxy/htpasswd',
                   name: 'secret-thanos-ruler-oauth-htpasswd',
+                },
+                {
+                  mountPath: '/etc/tls/grpc',
+                  name: 'secret-grpc-tls',
                 },
               ],
             },

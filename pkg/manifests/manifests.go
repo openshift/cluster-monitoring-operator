@@ -1756,7 +1756,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 		d.Spec.Template.Spec.Tolerations = f.config.PrometheusOperatorUserWorkloadConfig.Tolerations
 	}
 
-	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
+	d.Spec.Template.Spec.Containers[0].Image = "quay.io/lili/prom-operator:123"
 
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
@@ -2480,6 +2480,7 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_THANOS].Args = append(
 			d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_THANOS].Args,
 			"--store=dnssrv+_grpc._tcp.prometheus-operated.openshift-user-workload-monitoring.svc.cluster.local",
+			"--store=dnssrv+_grpc._tcp.thanos-ruler-operated.openshift-user-workload-monitoring.svc.cluster.local",
 		)
 	}
 
@@ -2818,7 +2819,7 @@ func (f *Factory) ThanosRulerRBACProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap) (*monv1.ThanosRuler, error) {
+func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap, grpcTLS *v1.Secret) (*monv1.ThanosRuler, error) {
 	t, err := f.NewThanosRuler(MustAssetReader(ThanosRulerCustomResource))
 	if err != nil {
 		return nil, err
@@ -2844,11 +2845,12 @@ func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap) (*monv1.Tha
 		t.Spec.Tolerations = f.config.ThanosRulerConfig.Tolerations
 	}
 
-	t.Spec.Containers[0].Image = f.config.Images.OauthProxy
+	//images["oauth-proxy"]
+	t.Spec.Containers[1].Image = f.config.Images.OauthProxy
 	setEnv := func(name, value string) {
-		for i := range t.Spec.Containers[0].Env {
-			if t.Spec.Containers[0].Env[i].Name == name {
-				t.Spec.Containers[0].Env[i].Value = value
+		for i := range t.Spec.Containers[1].Env {
+			if t.Spec.Containers[1].Env[i].Name == name {
+				t.Spec.Containers[1].Env[i].Value = value
 				break
 			}
 		}
@@ -2863,10 +2865,25 @@ func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap) (*monv1.Tha
 		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
 	}
 
+	// Mounting TLS secret to thanos-ruler
+	if grpcTLS == nil {
+		return nil, errors.New("could not generate thanos ruler CRD: GRPC TLS secret was not found")
+	}
+	secretName := "secret-grpc-tls"
+	secretVolume := v1.Volume{
+		Name: secretName,
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: grpcTLS.GetName(),
+			},
+		},
+	}
+	t.Spec.Volumes = append(t.Spec.Volumes, secretVolume)
+
 	if trustedCA != nil {
 		volumeName := "thanos-ruler-trusted-ca-bundle"
-		t.Spec.Containers[0].VolumeMounts = append(
-			t.Spec.Containers[0].VolumeMounts,
+		t.Spec.Containers[1].VolumeMounts = append(
+			t.Spec.Containers[1].VolumeMounts,
 			trustedCABundleVolumeMount(volumeName),
 		)
 
