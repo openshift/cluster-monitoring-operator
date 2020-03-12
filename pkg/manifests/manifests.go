@@ -1756,7 +1756,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 		d.Spec.Template.Spec.Tolerations = f.config.PrometheusOperatorUserWorkloadConfig.Tolerations
 	}
 
-	d.Spec.Template.Spec.Containers[0].Image = "quay.io/lili/prom-operator:123"
+	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
 
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
