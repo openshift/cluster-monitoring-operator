@@ -96,7 +96,7 @@ local authorizationRole = policyRule.new() +
       function(c)
         c +
         configmap.mixin.metadata.withNamespace('openshift-config-managed') +
-        configmap.mixin.metadata.withLabels({'console.openshift.io/dashboard': 'true'}),
+        configmap.mixin.metadata.withLabels({ 'console.openshift.io/dashboard': 'true' }),
       dashboards
     )),
     trustedCaBundle:
@@ -216,7 +216,7 @@ local authorizationRole = policyRule.new() +
                 container.mixin.readinessProbe.httpGet.withPort('https') +
                 container.mixin.readinessProbe.httpGet.withScheme('HTTPS') +
                 container.mixin.readinessProbe.httpGet.withPath('/oauth/healthz') +
-                container.mixin.resources.withRequests({ cpu: '10m', memory: '20Mi' }) +
+                container.mixin.resources.withRequests({ cpu: '1m', memory: '20Mi' }) +
                 container.withArgs([
                   '-provider=openshift',
                   '-https-address=:3000',
@@ -259,6 +259,11 @@ local authorizationRole = policyRule.new() +
                   function(c)
                     if c.name == 'grafana' then
                       c {
+                        resources+: {
+                          requests+: {
+                            cpu: '4m',
+                          },
+                        },
                         args+: [
                           '-config=/etc/grafana/grafana.ini',
                         ],

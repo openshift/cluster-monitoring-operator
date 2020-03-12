@@ -58,7 +58,7 @@ spec:
           name: https
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
