@@ -27,8 +27,9 @@ import (
 )
 
 type Config struct {
-	Images      *Images `json:"-"`
-	RemoteWrite bool    `json:"-"`
+	Images      *Images               `json:"-"`
+	RemoteWrite bool                  `json:"-"`
+	Platform    configv1.PlatformType `json:"-"`
 
 	PrometheusOperatorConfig             *PrometheusOperatorConfig `json:"prometheusOperator"`
 	PrometheusOperatorUserWorkloadConfig *PrometheusOperatorConfig `json:"prometheusOperatorUserWorkload"`
@@ -342,6 +343,15 @@ func (c *Config) LoadProxy(load func() (*configv1.Proxy, error)) error {
 	c.HTTPConfig.HTTPSProxy = p.Status.HTTPSProxy
 	c.HTTPConfig.NoProxy = p.Status.NoProxy
 
+	return nil
+}
+
+func (c *Config) LoadPlatform(load func() (*configv1.Infrastructure, error)) error {
+	i, err := load()
+	if err != nil {
+		return fmt.Errorf("error loading platform: %v", err)
+	}
+	c.Platform = i.Status.Platform
 	return nil
 }
 
