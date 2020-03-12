@@ -2845,7 +2845,6 @@ func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap, grpcTLS *v1
 		t.Spec.Tolerations = f.config.ThanosRulerConfig.Tolerations
 	}
 
-	//images["oauth-proxy"]
 	t.Spec.Containers[1].Image = f.config.Images.OauthProxy
 	setEnv := func(name, value string) {
 		for i := range t.Spec.Containers[1].Env {
