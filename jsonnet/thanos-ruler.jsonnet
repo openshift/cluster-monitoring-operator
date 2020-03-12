@@ -333,10 +333,6 @@ local authorizationRole =
                   mountPath: '/etc/proxy/htpasswd',
                   name: 'secret-thanos-ruler-oauth-htpasswd',
                 },
-                {
-                  mountPath: '/etc/tls/grpc',
-                  name: 'secret-grpc-tls',
-                },
               ],
             },
           ],
