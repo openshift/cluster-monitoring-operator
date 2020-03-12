@@ -1,7 +1,7 @@
 {
+  "version": 1,
   "dependencies": [
     {
-      "name": "kube-prometheus",
       "source": {
         "git": {
           "remote": "https://github.com/coreos/kube-prometheus",
@@ -11,37 +11,6 @@
       "version": "master"
     },
     {
-      "name": "kube-thanos",
-      "source": {
-        "git": {
-          "remote": "https://github.com/thanos-io/kube-thanos",
-          "subdir": "jsonnet/kube-thanos"
-        }
-      },
-      "version": "release-0.2"
-    },
-    {
-      "name": "kubernetes-mixin",
-      "source": {
-        "git": {
-          "remote": "https://github.com/kubernetes-monitoring/kubernetes-mixin",
-          "subdir": ""
-        }
-      },
-      "version": "master"
-    },
-    {
-      "name": "openshift-state-metrics",
-      "source": {
-        "git": {
-          "remote": "https://github.com/openshift/openshift-state-metrics",
-          "subdir": "jsonnet"
-        }
-      },
-      "version": "master"
-    },
-    {
-      "name": "prometheus-operator",
       "source": {
         "git": {
           "remote": "https://github.com/coreos/prometheus-operator",
@@ -51,14 +20,43 @@
       "version": "master"
     },
     {
-      "name": "telemeter-client",
+      "source": {
+        "git": {
+          "remote": "https://github.com/kubernetes-monitoring/kubernetes-mixin",
+          "subdir": ""
+        }
+      },
+      "version": "master"
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/openshift/openshift-state-metrics",
+          "subdir": "jsonnet"
+        }
+      },
+      "version": "master",
+      "name": "openshift-state-metrics"
+    },
+    {
       "source": {
         "git": {
           "remote": "https://github.com/openshift/telemeter",
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "master"
+      "version": "master",
+      "name": "telemeter-client"
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/thanos-io/kube-thanos",
+          "subdir": "jsonnet/kube-thanos"
+        }
+      },
+      "version": "release-0.2"
     }
-  ]
+  ],
+  "legacyImports": true
 }
