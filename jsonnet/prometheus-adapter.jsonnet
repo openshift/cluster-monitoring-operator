@@ -78,7 +78,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                         resources: {
                           requests: {
                             memory: '20Mi',
-                            cpu: '10m',
+                            cpu: '1m',
                           },
                         },
                       }
