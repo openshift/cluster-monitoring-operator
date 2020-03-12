@@ -1448,6 +1448,16 @@ func (in *ThanosRulerSpec) DeepCopyInto(out *ThanosRulerSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.QueryConfig != nil {
+		in, out := &in.QueryConfig, &out.QueryConfig
+		*out = new(corev1.SecretKeySelector)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.AlertManagersURL != nil {
+		in, out := &in.AlertManagersURL, &out.AlertManagersURL
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.AlertManagersConfig != nil {
 		in, out := &in.AlertManagersConfig, &out.AlertManagersConfig
 		*out = new(corev1.SecretKeySelector)
@@ -1493,6 +1503,11 @@ func (in *ThanosRulerSpec) DeepCopyInto(out *ThanosRulerSpec) {
 		in, out := &in.AlertDropLabels, &out.AlertDropLabels
 		*out = make([]string, len(*in))
 		copy(*out, *in)
+	}
+	if in.GRPCServerTLSConfig != nil {
+		in, out := &in.GRPCServerTLSConfig, &out.GRPCServerTLSConfig
+		*out = new(TLSConfig)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
@@ -1558,6 +1573,11 @@ func (in *ThanosSpec) DeepCopyInto(out *ThanosSpec) {
 	if in.TracingConfig != nil {
 		in, out := &in.TracingConfig, &out.TracingConfig
 		*out = new(corev1.SecretKeySelector)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.GRPCServerTLSConfig != nil {
+		in, out := &in.GRPCServerTLSConfig, &out.GRPCServerTLSConfig
+		*out = new(TLSConfig)
 		(*in).DeepCopyInto(*out)
 	}
 }
