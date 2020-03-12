@@ -140,7 +140,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "84b00564f4df8477d59ac275e7c62972664c2926",
+      "version": "bc703b64568ebfaecf27b9b70be737ad318e217a",
       "sum": "5EUgr6Spr1zNR8Y2/NevjvEkGV9WMvKo6nEScNER1Lc="
     },
     {
@@ -151,8 +151,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "2368b501c4fb34ba25d8479d2f9521b46c7aa9fe",
-      "sum": "HpwuyzogX+pxnYLxg9W7oWVtRehYi3YGDbS+Nfrxx9E="
+      "version": "d27008fb7a2a91cc1657fdd1380eff988ecb4360",
+      "sum": "lASagHkTDT+VJsjdALAnAKepr+jHm+gQER/TyLN7O0Q="
     },
     {
       "name": "promgrafonnet",
