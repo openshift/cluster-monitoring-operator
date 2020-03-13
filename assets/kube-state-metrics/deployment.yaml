@@ -28,7 +28,7 @@ spec:
         name: kube-state-metrics
         resources:
           requests:
-            cpu: 10m
+            cpu: 2m
             memory: 40Mi
         securityContext: {}
         volumeMounts:
@@ -49,7 +49,7 @@ spec:
           name: https-main
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 40Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
@@ -71,7 +71,7 @@ spec:
           name: https-self
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 40Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
