@@ -31,7 +31,7 @@ spec:
         name: node-exporter
         resources:
           requests:
-            cpu: 102m
+            cpu: 8m
             memory: 180Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -69,8 +69,8 @@ spec:
           name: https
         resources:
           requests:
-            cpu: 10m
-            memory: 20Mi
+            cpu: 1m
+            memory: 30Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
