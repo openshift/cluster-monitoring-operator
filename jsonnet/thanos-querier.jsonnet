@@ -215,7 +215,7 @@ local authorizationRole =
                     resources: {
                       requests: {
                         memory: '12Mi',
-                        cpu: '10m',
+                        cpu: '5m',
                       },
                     },
                     ports: [
@@ -237,7 +237,7 @@ local authorizationRole =
                     resources: {
                       requests: {
                         memory: '20Mi',
-                        cpu: '10m',
+                        cpu: '1m',
                       },
                     },
                     ports: [
@@ -300,7 +300,7 @@ local authorizationRole =
                     resources: {
                       requests: {
                         memory: '20Mi',
-                        cpu: '10m',
+                        cpu: '1m',
                       },
                     },
                     ports: [
@@ -341,7 +341,7 @@ local authorizationRole =
                     resources: {
                       requests: {
                         memory: '20Mi',
-                        cpu: '10m',
+                        cpu: '1m',
                       },
                     },
                     terminationMessagePolicy: 'FallbackToLogsOnError',

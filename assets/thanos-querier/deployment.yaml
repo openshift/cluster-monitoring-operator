@@ -50,7 +50,7 @@ spec:
               http://localhost:9090/-/healthy; else exit 1; fi
         resources:
           requests:
-            cpu: 10m
+            cpu: 5m
             memory: 12Mi
         volumeMounts:
         - mountPath: /etc/tls/grpc
@@ -86,7 +86,7 @@ spec:
           name: web
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -111,7 +111,7 @@ spec:
           name: tenancy
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -127,7 +127,7 @@ spec:
         name: prom-label-proxy
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         terminationMessagePolicy: FallbackToLogsOnError
       priorityClassName: system-cluster-critical

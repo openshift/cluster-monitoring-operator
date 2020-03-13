@@ -66,7 +66,7 @@ spec:
       name: web
     resources:
       requests:
-        cpu: 10m
+        cpu: 1m
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
@@ -92,7 +92,7 @@ spec:
       name: tenancy
     resources:
       requests:
-        cpu: 10m
+        cpu: 1m
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
@@ -108,7 +108,7 @@ spec:
     name: prom-label-proxy
     resources:
       requests:
-        cpu: 10m
+        cpu: 1m
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
   - args:
@@ -121,6 +121,9 @@ spec:
     - --grpc-server-tls-key=/etc/tls/grpc/server.key
     - --grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt
     name: thanos-sidecar
+    resources:
+      requests:
+        cpu: 1m
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
@@ -135,7 +138,7 @@ spec:
   replicas: 2
   resources:
     requests:
-      cpu: 200m
+      cpu: 70m
       memory: 1Gi
   ruleNamespaceSelector: {}
   ruleSelector: {}
@@ -154,7 +157,7 @@ spec:
     image: quay.io/thanos/thanos:v0.10.0
     resources:
       requests:
-        cpu: 50m
+        cpu: 1m
         memory: 100Mi
     version: latest
   version: v2.15.2
