@@ -8,6 +8,7 @@
     '0servicemonitorCustomResourceDefinition':: {},
     '0podmonitorCustomResourceDefinition':: {},
     '0prometheusruleCustomResourceDefinition':: {},
+    '0thanosrulerCustomResourceDefinition':: {},
 
     deployment+:
       {
