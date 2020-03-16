@@ -15,7 +15,12 @@
 package framework
 
 import (
+	"bufio"
+	"context"
 	"fmt"
+	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,6 +57,7 @@ type Framework struct {
 	AlertmanagerClient  *RouteClient
 	APIServicesClient   *apiservicesclient.Clientset
 	MetricsClient       *metricsclient.Clientset
+	kubeConfigPath      string
 
 	MonitoringClient             *monClient.MonitoringV1Client
 	Ns, UserWorkloadMonitoringNs string
@@ -111,6 +117,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		MonitoringClient:         mClient,
 		Ns:                       namespaceName,
 		UserWorkloadMonitoringNs: userWorkloadNamespaceName,
+		kubeConfigPath:           kubeConfigPath,
 	}
 
 	cleanUp, err := f.setup()
@@ -152,14 +159,14 @@ type cleanUpFunc func() error
 func (f *Framework) setup() (cleanUpFunc, error) {
 	cleanUpFuncs := []cleanUpFunc{}
 
-	cf, err := f.CreateServiceAccount()
+	cf, err := f.CreateServiceAccount(f.Ns, "cluster-monitoring-operator-e2e")
 	if err != nil {
 		return nil, err
 	}
 
 	cleanUpFuncs = append(cleanUpFuncs, cf)
 
-	cf, err = f.CreateClusterRoleBinding()
+	cf, err = f.CreateClusterRoleBinding(f.Ns, "cluster-monitoring-operator-e2e", "cluster-monitoring-view")
 	if err != nil {
 		return nil, err
 	}
@@ -187,39 +194,39 @@ func (f *Framework) setup() (cleanUpFunc, error) {
 	}, nil
 }
 
-func (f *Framework) CreateServiceAccount() (cleanUpFunc, error) {
-	serviceAccount := &v1.ServiceAccount{
+func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (cleanUpFunc, error) {
+	sa := &v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-operator-e2e",
-			Namespace: "openshift-monitoring",
+			Name:      serviceAccount,
+			Namespace: namespace,
 		},
 	}
 
-	serviceAccount, err := f.KubeClient.CoreV1().ServiceAccounts("openshift-monitoring").Create(serviceAccount)
+	sa, err := f.KubeClient.CoreV1().ServiceAccounts(namespace).Create(sa)
 	if err != nil {
 		return nil, err
 	}
 
 	return func() error {
-		return f.KubeClient.CoreV1().ServiceAccounts("openshift-monitoring").Delete(serviceAccount.Name, &metav1.DeleteOptions{})
+		return f.KubeClient.CoreV1().ServiceAccounts(namespace).Delete(sa.Name, &metav1.DeleteOptions{})
 	}, nil
 }
 
-func (f *Framework) CreateClusterRoleBinding() (cleanUpFunc, error) {
+func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterRole string) (cleanUpFunc, error) {
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster-monitoring-operator-e2e",
+			Name: fmt.Sprintf("%s-%s", serviceAccount, clusterRole),
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "cluster-monitoring-operator-e2e",
-				Namespace: "openshift-monitoring",
+				Name:      serviceAccount,
+				Namespace: namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
-			Name:     "cluster-monitoring-view",
+			Name:     clusterRole,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
@@ -232,6 +239,81 @@ func (f *Framework) CreateClusterRoleBinding() (cleanUpFunc, error) {
 	return func() error {
 		return f.KubeClient.RbacV1().ClusterRoleBindings().Delete(clusterRoleBinding.Name, &metav1.DeleteOptions{})
 	}, nil
+}
+
+func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, clusterRole string) (cleanUpFunc, error) {
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", serviceAccount, clusterRole),
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      serviceAccount,
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     clusterRole,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+
+	roleBinding, err := f.KubeClient.RbacV1().RoleBindings(namespace).Create(roleBinding)
+	if err != nil {
+		return nil, err
+	}
+
+	return func() error {
+		return f.KubeClient.RbacV1().RoleBindings(namespace).Delete(roleBinding.Name, &metav1.DeleteOptions{})
+	}, nil
+}
+
+func (f *Framework) ForwardPort(svc string, port int) (string, func(), error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cmd := exec.CommandContext(ctx, "oc", "port-forward", fmt.Sprintf("service/%s", svc), fmt.Sprintf(":%d", port), "-n", f.Ns, "--config", f.kubeConfigPath)
+
+	cleanUp := func() {
+		cancel()
+		_ = cmd.Wait() // wait to clean up resources but ignore returned error since cancel kills the process
+	}
+
+	stdOut, err := cmd.StdoutPipe()
+	if err != nil {
+		cleanUp()
+		return "", nil, errors.Wrap(err, "fail to open stdout")
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		cleanUp()
+		return "", nil, errors.Wrap(err, "fail to run command")
+	}
+
+	scanner := bufio.NewScanner(stdOut)
+	if !scanner.Scan() {
+		err := scanner.Err()
+		if err == nil {
+			err = errors.New("got EOF")
+		}
+		cleanUp()
+		return "", nil, errors.Wrap(err, "fail to read stdout")
+	}
+	output := scanner.Text()
+
+	re := regexp.MustCompile(`^Forwarding from [^:]+:(\d+)`)
+	matches := re.FindStringSubmatch(output)
+	if len(matches) != 2 {
+		return "", nil, errors.Wrapf(err, "fail to parse port's value: %q", output)
+	}
+	_, err = strconv.Atoi(matches[1])
+	if err != nil {
+		cleanUp()
+		return "", nil, errors.Wrapf(err, "fail to convert port's value: %q", output)
+	}
+
+	return fmt.Sprintf("127.0.0.1:%s", matches[1]), cleanUp, nil
 }
 
 // Poll calls the given function f every given interval

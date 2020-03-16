@@ -110,8 +110,6 @@ func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
 		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 
-	defer resp.Body.Close()
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

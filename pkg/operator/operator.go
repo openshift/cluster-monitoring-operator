@@ -15,7 +15,6 @@
 package operator
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -273,7 +272,7 @@ func (o *Operator) processNextWorkItem() bool {
 
 	o.reconcileErrors.Inc()
 	klog.Errorf("Syncing %q failed", key)
-	utilruntime.HandleError(errors.Wrap(err, fmt.Sprintf("sync %q failed", key)))
+	utilruntime.HandleError(errors.Wrapf(err, "sync %q failed", key))
 	o.queue.AddRateLimited(key)
 
 	return true
