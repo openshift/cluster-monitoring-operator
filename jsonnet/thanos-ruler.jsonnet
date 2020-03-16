@@ -38,10 +38,9 @@ local authorizationRole =
       'thanos-ruler': thanosRulerName,
     },
     ports: {
+      web: 9091,
       grpc: 10901,
-      http: 10902,
     },
-
   },
 
   thanos+:: {
@@ -115,35 +114,6 @@ local authorizationRole =
         secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
         secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }),
 
-      // holds the kube-rbac-proxy configuration as a secret.
-      // It configures to template the request in flight
-      // to extract a "namespace" query parameter
-      // and perform a SubjectAccessReview
-      // asserting if the request bearer token in flight has permissions
-      // to access the pod.metrics.k8s.io API.
-      // The asserted verb (PUT, GET, POST, etc.) is implied from the http request verb in flight.
-      kubeRbacProxySecret:
-        local config = {
-          'config.yaml': std.base64(std.manifestYamlDoc({
-            authorization: {
-              rewrites: {
-                byQueryParameter: {
-                  name: 'namespace',
-                },
-              },
-              resourceAttributes: {
-                apiVersion: 'metrics.k8s.io/v1beta1',
-                resource: 'pods',
-                namespace: '{{ .Value }}',
-              },
-            },
-          })),
-        };
-
-        secret.new('thanos-ruler-kube-rbac-proxy', config) +
-        secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos' }),
-
       serviceAccount:
         local serviceAccount = k.core.v1.serviceAccount;
 
@@ -160,11 +130,11 @@ local authorizationRole =
 
       service:
         service.new(
-          'thanos-ruler-' + thanosRulerConfig.name,
+          'thanos-ruler',
           thanosRulerConfig.selectorLabels,
           [
+            ports.newNamed('web', thanosRulerConfig.ports.web, 'web'),
             ports.newNamed('grpc', thanosRulerConfig.ports.grpc, 'grpc'),
-            ports.newNamed('http', thanosRulerConfig.ports.http, 'http'),
           ],
         ) +
         // The following annotation will instruct the serving certs controller
@@ -179,10 +149,7 @@ local authorizationRole =
         // cluster-monitoring-operator, that when reconciling this service the
         // cluster IP needs to be retained.
         service.mixin.spec.withType('ClusterIP') +
-        service.mixin.spec.withSessionAffinity('ClientIP') +
-        service.mixin.spec.withPorts([
-          ports.newNamed('web', 9091, 'web'),
-        ]),
+        service.mixin.spec.withSessionAffinity('ClientIP'),
 
       serviceMonitor: {
         apiVersion: 'monitoring.coreos.com/v1',
@@ -191,19 +158,18 @@ local authorizationRole =
           name: 'thanos-ruler',
           namespace: thanosRulerConfig.namespace,
           labels: {
-            'k8s-app': 'alertmanager',
+            'k8s-app': 'thanos-ruler',
           },
         },
         spec: {
           selector: {
-            matchLabels: {
-              thanosRuler: thanosRulerConfig.name,
-            },
+            matchLabels: thanosRulerConfig.labels,
           },
           endpoints: [
             {
               port: 'web',
               interval: '30s',
+              scheme: 'https',
               tlsConfig: {
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'server-name-replaced-at-runtime',
@@ -247,7 +213,6 @@ local authorizationRole =
             volume.fromSecret('secret-thanos-ruler-tls', 'thanos-ruler-tls'),
             volume.fromSecret('secret-thanos-ruler-oauth-cookie', 'thanos-ruler-oauth-cookie'),
             volume.fromSecret('secret-thanos-ruler-oauth-htpasswd', 'thanos-ruler-oauth-htpasswd'),
-            volume.fromSecret('secret-thanos-ruler-kube-rbac-proxy', 'thanos-ruler-kube-rbac-proxy'),
           ],
           serviceAccountName: 'thanos-ruler',
           containers: [
@@ -278,7 +243,7 @@ local authorizationRole =
               image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
               ports: [
                 {
-                  containerPort: 9091,
+                  containerPort: thanosRulerConfig.ports.web,
                   name: 'web',
                 },
               ],
