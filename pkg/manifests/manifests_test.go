@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -1253,5 +1253,96 @@ func TestEtcdGrafanaDashboard(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("etcd dashboard not found, even if etcd is enabled")
+	}
+}
+
+func TestThanosQuerierConfiguration(t *testing.T) {
+	c, err := NewConfigFromString(`thanosQuerier:
+  nodeSelector:
+    type: foo
+  tolerations:
+  - effect: PreferNoSchedule
+    operator: Exists
+  resources:
+    limits:
+      cpu: 1m
+      memory: 2Mi
+    requests:
+      cpu: 3m
+      memory: 4Mi
+`)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tls := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	d, err := f.ThanosQuerierDeployment(tls, false, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name      string
+		want, got interface{}
+	}{
+		{
+			name: "node selector",
+			want: map[string]string{"type": "foo"},
+			got:  d.Spec.Template.Spec.NodeSelector,
+		},
+		{
+			name: "tolerations",
+			want: []v1.Toleration{
+				{
+					Effect:   "PreferNoSchedule",
+					Operator: "Exists",
+				},
+			},
+			got: d.Spec.Template.Spec.Tolerations,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if !reflect.DeepEqual(tc.got, tc.want) {
+				t.Errorf("want %+v, got %+v", tc.want, tc.got)
+			}
+		})
+	}
+
+	for _, c := range d.Spec.Template.Spec.Containers {
+		if c.Name == "thanos-querier" {
+			for _, tc := range []struct {
+				name, want string
+				resource   func() *resource.Quantity
+			}{
+				{
+					name:     "limits/cpu",
+					want:     "1m",
+					resource: c.Resources.Limits.Cpu,
+				},
+				{
+					name:     "limits/memory",
+					want:     "2Mi",
+					resource: c.Resources.Limits.Memory,
+				},
+				{
+					name:     "requests/cpu",
+					want:     "3m",
+					resource: c.Resources.Requests.Cpu,
+				},
+				{
+					name:     "requests/memory",
+					want:     "4Mi",
+					resource: c.Resources.Requests.Memory,
+				},
+			} {
+				t.Run(tc.name, func(t *testing.T) {
+					if got := tc.resource(); got.Cmp(resource.MustParse(tc.want)) != 0 {
+						t.Errorf("want %v, got %v", tc.want, got)
+					}
+				})
+			}
+		}
 	}
 }
