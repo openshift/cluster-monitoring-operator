@@ -2508,6 +2508,22 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
 	}
 
+	if f.config.ThanosQuerierConfig.Resources != nil {
+		for i, c := range d.Spec.Template.Spec.Containers {
+			if c.Name == "thanos-querier" {
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ThanosQuerierConfig.Resources
+			}
+		}
+	}
+
+	if f.config.ThanosQuerierConfig.NodeSelector != nil {
+		d.Spec.Template.Spec.NodeSelector = f.config.ThanosQuerierConfig.NodeSelector
+	}
+
+	if len(f.config.ThanosQuerierConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ThanosQuerierConfig.Tolerations
+	}
+
 	return d, nil
 }
 

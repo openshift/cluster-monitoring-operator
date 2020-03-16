@@ -46,6 +46,7 @@ type Config struct {
 	K8sPrometheusAdapter   *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
 	UserWorkloadConfig     *UserWorkloadConfig          `json:"techPreviewUserWorkload"`
 	ThanosRulerConfig      *ThanosRulerConfig           `json:"thanosRuler"`
+	ThanosQuerierConfig    *ThanosQuerierConfig         `json:"thanosQuerier"`
 }
 
 type Images struct {
@@ -103,6 +104,12 @@ type ThanosRulerConfig struct {
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	Hostport            string                    `json:"hostport"`
+}
+
+type ThanosQuerierConfig struct {
+	NodeSelector map[string]string        `json:"nodeSelector"`
+	Tolerations  []v1.Toleration          `json:"tolerations"`
+	Resources    *v1.ResourceRequirements `json:"resources"`
 }
 
 type GrafanaConfig struct {
@@ -216,6 +223,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.ThanosRulerConfig == nil {
 		c.ThanosRulerConfig = &ThanosRulerConfig{}
+	}
+	if c.ThanosQuerierConfig == nil {
+		c.ThanosQuerierConfig = &ThanosQuerierConfig{}
 	}
 	if c.GrafanaConfig == nil {
 		c.GrafanaConfig = &GrafanaConfig{}

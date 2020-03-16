@@ -176,13 +176,6 @@ local authorizationRole =
                 serviceAccountName: 'thanos-querier',
                 securityContext: {},
                 priorityClassName: 'system-cluster-critical',
-                tolerations: [
-                  {
-                    key: 'node-role.kubernetes.io/master',
-                    operator: 'Exists',
-                    effect: 'NoSchedule',
-                  },
-                ],
                 containers: [
                   super.containers[0] {
                     livenessProbe: {
