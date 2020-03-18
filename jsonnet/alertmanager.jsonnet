@@ -149,6 +149,14 @@ local authorizationRole = policyRule.new() +
           },
           containers: [
             {
+              name: 'config-reloader',
+              resources: {
+                requests: {
+                  cpu: '1m',
+                },
+              },
+            },
+            {
               name: 'alertmanager-proxy',
               image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
               ports: [
