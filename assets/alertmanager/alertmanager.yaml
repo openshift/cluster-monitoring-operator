@@ -21,10 +21,6 @@ spec:
           topologyKey: kubernetes.io/hostname
         weight: 100
   containers:
-  - name: config-reloader
-    resources:
-      requests:
-        cpu: 1m
   - args:
     - -provider=openshift
     - -https-address=:9095
