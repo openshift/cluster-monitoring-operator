@@ -109,6 +109,12 @@ rules:
 - apiGroups:
   - config.openshift.io
   resources:
+  - infrastructures
+  verbs:
+  - get
+- apiGroups:
+  - config.openshift.io
+  resources:
   - proxies
   verbs:
   - get
