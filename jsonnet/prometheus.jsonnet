@@ -438,6 +438,22 @@ local namespacesRole =
             {
               name: 'prometheus',
             },
+            {
+              name: 'rules-configmap-reloader',
+              resources: {
+                requests: {
+                  cpu: '1m',
+                },
+              },
+            },
+            {
+              name: 'prometheus-config-reloader',
+              resources: {
+                requests: {
+                  cpu: '1m',
+                },
+              },
+            },
           ],
         },
       },

@@ -47,6 +47,9 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        resources:
+          requests:
+            cpu: 1m
         volumeMounts:
         - mountPath: /etc/serving-certs-ca-bundle
           name: serving-certs-ca-bundle
@@ -59,6 +62,9 @@ spec:
         - --volume-dir=/etc/serving-certs-ca-bundle
         image: quay.io/openshift/origin-configmap-reload:v3.11
         name: reload
+        resources:
+          requests:
+            cpu: 1m
         volumeMounts:
         - mountPath: /etc/serving-certs-ca-bundle
           name: serving-certs-ca-bundle
@@ -76,7 +82,7 @@ spec:
           name: https
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         volumeMounts:
         - mountPath: /etc/tls/private
