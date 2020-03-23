@@ -237,6 +237,10 @@ func (c *Client) GetProxy(name string) (*configv1.Proxy, error) {
 	return c.oscclient.ConfigV1().Proxies().Get(name, metav1.GetOptions{})
 }
 
+func (c *Client) GetInfrastructure(name string) (*configv1.Infrastructure, error) {
+	return c.oscclient.ConfigV1().Infrastructures().Get(name, metav1.GetOptions{})
+}
+
 func (c *Client) GetConfigmap(namespace, name string) (*v1.ConfigMap, error) {
 	return c.kclient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
 }
