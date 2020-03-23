@@ -25,12 +25,12 @@ def main():
     base = ClusterRole()
     sources = [os.path.relpath(sys.argv[1])]
     with open(sys.argv[1], 'r') as f:
-        base = ClusterRole(yaml.load(f))
+        base = ClusterRole(yaml.load(f, Loader=yaml.SafeLoader))
 
     manifests = sys.argv[2:]
     for manifest in manifests:
         with open(manifest, 'r') as f:
-            y = yaml.load(f)
+            y = yaml.load(f, Loader=yaml.SafeLoader)
             if y['kind'].endswith('RoleList'):
                 for item in y['items']:
                     base.merge(ClusterRole(item))
