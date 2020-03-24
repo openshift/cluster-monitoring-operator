@@ -48,67 +48,77 @@ func (t *ThanosRulerUserWorkloadTask) Run() error {
 func (t *ThanosRulerUserWorkloadTask) create() error {
 	svc, err := t.factory.ThanosRulerService()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler Service failed")
+		return errors.Wrap(err, "initializing Thanos Ruler Service failed")
 	}
 
 	err = t.client.CreateOrUpdateService(svc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling ThanosRuler Service failed")
+		return errors.Wrap(err, "reconciling Thanos Ruler Service failed")
 	}
 
 	r, err := t.factory.ThanosRulerRoute()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler Route failed")
+		return errors.Wrap(err, "initializing Thanos Ruler Route failed")
 	}
 
 	err = t.client.CreateRouteIfNotExists(r)
 	if err != nil {
-		return errors.Wrap(err, "creating ThanosRuler Route failed")
+		return errors.Wrap(err, "creating Thanos Ruler Route failed")
 	}
 
 	_, err = t.client.WaitForRouteReady(r)
 	if err != nil {
-		return errors.Wrap(err, "waiting for ThanosRuler Route to become ready failed")
+		return errors.Wrap(err, "waiting for Thanos Ruler Route to become ready failed")
 	}
 
 	cr, err := t.factory.ThanosRulerClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler ClusterRole failed")
+		return errors.Wrap(err, "initializing Thanos Ruler ClusterRole failed")
 	}
 
 	err = t.client.CreateOrUpdateClusterRole(cr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling ThanosRuler ClusterRole failed")
+		return errors.Wrap(err, "reconciling Thanos Ruler ClusterRole failed")
 	}
 
 	crb, err := t.factory.ThanosRulerClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler ClusterRoleBinding failed")
+		return errors.Wrap(err, "initializing Thanos Ruler ClusterRoleBinding failed")
 	}
 
 	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
 	if err != nil {
-		return errors.Wrap(err, "reconciling ThanosRuler ClusterRoleBinding failed")
+		return errors.Wrap(err, "reconciling Thanos Ruler ClusterRoleBinding failed")
+	}
+
+	moncrb, err := t.factory.ThanosRulerMonitoringClusterRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler monitoring ClusterRoleBinding failed")
+	}
+
+	err = t.client.CreateOrUpdateClusterRoleBinding(moncrb)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos Ruler monitoring ClusterRoleBinding failed")
 	}
 
 	sa, err := t.factory.ThanosRulerServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler ServiceAccount failed")
+		return errors.Wrap(err, "initializing Thanos Ruler ServiceAccount failed")
 	}
 
 	err = t.client.CreateOrUpdateServiceAccount(sa)
 	if err != nil {
-		return errors.Wrap(err, "reconciling ThanosRuler ServiceAccount failed")
+		return errors.Wrap(err, "reconciling Thanos Ruler ServiceAccount failed")
 	}
 
 	s, err := t.factory.ThanosRulerOauthCookieSecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler OAuth Cookie Secret failed")
+		return errors.Wrap(err, "initializing Thanos Ruler OAuth Cookie Secret failed")
 	}
 
 	err = t.client.CreateIfNotExistSecret(s)
 	if err != nil {
-		return errors.Wrap(err, "creating ThanosRuler OAuth Cookie Secret failed")
+		return errors.Wrap(err, "creating Thanos Ruler OAuth Cookie Secret failed")
 	}
 
 	c := t.client.KubernetesInterface()
@@ -127,6 +137,32 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 	err = t.client.CreateIfNotExistSecret(hs)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Ruler htpasswd Secret failed")
+	}
+
+	// Thanos components use https://godoc.org/github.com/prometheus/common/config#NewClientFromConfig
+	// under the hood and the returned http.Client detects whenever the certificates are rotated,
+	// so there is no need for us to rotate the CA.
+	qcs, err := t.factory.ThanosRulerQueryConfigSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler query config Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(qcs)
+	if err != nil {
+		return errors.Wrap(err, "creating Thanos Ruler query config Secret failed")
+	}
+
+	// Thanos components use https://godoc.org/github.com/prometheus/common/config#NewClientFromConfig
+	// under the hood and the returned http.Client detects whenever the certificates are rotated,
+	// so there is no need for us to rotate the CA.
+	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager config Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(acs)
+	if err != nil {
+		return errors.Wrap(err, "creating Thanos Ruler alertmanager config Secret failed")
 	}
 
 	{
@@ -224,52 +260,52 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 func (t *ThanosRulerUserWorkloadTask) destroy() error {
 	svc, err := t.factory.ThanosRulerService()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler Service failed")
+		return errors.Wrap(err, "initializing Thanos Ruler Service failed")
 	}
 
 	err = t.client.DeleteService(svc)
 	if err != nil {
-		return errors.Wrap(err, "deleting ThanosRuler Service failed")
+		return errors.Wrap(err, "deleting Thanos Ruler Service failed")
 	}
 
 	cr, err := t.factory.ThanosRulerClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler ClusterRole failed")
+		return errors.Wrap(err, "initializing Thanos Ruler ClusterRole failed")
 	}
 
 	err = t.client.DeleteClusterRole(cr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling ThanosRuler ClusterRole failed")
+		return errors.Wrap(err, "reconciling Thanos Ruler ClusterRole failed")
 	}
 
 	crb, err := t.factory.ThanosRulerClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "deleting ThanosRuler ClusterRoleBinding failed")
+		return errors.Wrap(err, "deleting Thanos Ruler ClusterRoleBinding failed")
 	}
 
 	err = t.client.DeleteClusterRoleBinding(crb)
 	if err != nil {
-		return errors.Wrap(err, "deleting ThanosRuler ClusterRoleBinding failed")
+		return errors.Wrap(err, "deleting Thanos Ruler ClusterRoleBinding failed")
 	}
 
 	sa, err := t.factory.ThanosRulerServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler ServiceAccount failed")
+		return errors.Wrap(err, "initializing Thanos Ruler ServiceAccount failed")
 	}
 
 	err = t.client.DeleteServiceAccount(sa)
 	if err != nil {
-		return errors.Wrap(err, "deleting ThanosRuler ServiceAccount failed")
+		return errors.Wrap(err, "deleting Thanos Ruler ServiceAccount failed")
 	}
 
 	s, err := t.factory.ThanosRulerOauthCookieSecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing ThanosRuler OAuth Cookie Secret failed")
+		return errors.Wrap(err, "initializing Thanos Ruler OAuth Cookie Secret failed")
 	}
 
 	err = t.client.DeleteSecret(s)
 	if err != nil {
-		return errors.Wrap(err, "deleting ThanosRuler OAuth Cookie Secret failed")
+		return errors.Wrap(err, "deleting Thanos Ruler OAuth Cookie Secret failed")
 	}
 
 	c := t.client.KubernetesInterface()
