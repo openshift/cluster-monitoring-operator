@@ -188,7 +188,7 @@ func deployUserApplication(t *testing.T) {
 					Containers: []v1.Container{
 						{
 							Name:  "prometheus-example-app",
-							Image: "quay.io/brancz/prometheus-example-app:v0.1.0",
+							Image: "quay.io/brancz/prometheus-example-app:v0.2.0",
 						},
 					},
 				},
@@ -266,8 +266,12 @@ func deployUserApplication(t *testing.T) {
 					Name: "example",
 					Rules: []monitoringv1.Rule{
 						{
+							Record: "version:blah:count",
+							Expr:   intstr.FromString(`count(version)`),
+						},
+						{
 							Alert: "VersionAlert",
-							Expr:  intstr.FromString(`version{namespace="user-workload",job="prometheus-example-app"} == 0`),
+							Expr:  intstr.FromString(`version{namespace="user-workload",job="prometheus-example-app"} == 1`),
 							For:   "1s",
 						},
 					},
@@ -316,11 +320,11 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	f.ThanosQuerierClient.WaitForQueryReturn(
 		t, 10*time.Minute, `version{namespace="user-workload"}`,
 		func(i int) error {
-			if i == 0 {
+			if i == 1 {
 				return nil
 			}
 
-			return fmt.Errorf("expected version metric from user application to be equal 0 but got %v", i)
+			return fmt.Errorf("expected version metric from user application to be equal 1 but got %v", i)
 		},
 	)
 
@@ -401,6 +405,18 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Assert that recording rule is in thanos querier and we get it
+	// via thanos ruler replica.
+	f.ThanosQuerierClient.WaitForQueryReturn(
+		t, 10*time.Minute, `version:blah:count{thanos_ruler_replica="thanos-ruler-user-workload-0"}`,
+		func(i int) error {
+			if i == 1 {
+				return nil
+			}
+			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", i)
+		},
+	)
 }
 
 func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
