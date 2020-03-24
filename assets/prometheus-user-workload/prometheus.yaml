@@ -89,7 +89,9 @@ spec:
       cpu: 100m
       memory: 1Gi
   ruleNamespaceSelector: {}
-  ruleSelector: {}
+  ruleSelector:
+    matchLabels:
+      openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
   secrets:
   - prometheus-user-workload-tls
   securityContext: {}

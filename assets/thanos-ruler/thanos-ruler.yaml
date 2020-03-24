@@ -6,6 +6,9 @@ metadata:
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
+  alertmanagersConfig:
+    key: alertmanagers.yaml
+    name: thanos-ruler-alertmanagers-config
   alertmanagersUrl:
   - dnssrv+http://_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local
   containers:
@@ -19,6 +22,8 @@ spec:
       name: secret-thanos-ruler-oauth-htpasswd
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
+    - mountPath: /etc/prometheus/configmaps/serving-certs-ca-bundle
+      name: serving-certs-ca-bundle
   - args:
     - -provider=openshift
     - -https-address=:9091
@@ -64,14 +69,19 @@ spec:
     certFile: /etc/tls/grpc/server.crt
     keyFile: /etc/tls/grpc/server.key
   image: quay.io/openshift/origin-thanos:latest
+  queryConfig:
+    key: query.yaml
+    name: thanos-ruler-query-config
   queryEndpoints:
-  - dnssrv+_http._tcp.thanos-querier.openshift-monitoring.svc.cluster.local
+  - ""
   replicas: 2
-  ruleSelector:
-    matchLabels:
-      role: thanos-rules
+  ruleNamespaceSelector: {}
+  ruleSelector: {}
   serviceAccountName: thanos-ruler
   volumes:
+  - configmap:
+      name: serving-certs-ca-bundle
+    name: serving-certs-ca-bundle
   - name: secret-thanos-ruler-tls
     secret:
       secretName: thanos-ruler-tls
