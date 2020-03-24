@@ -28,8 +28,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "66c625d0bfbc080f40ee453ea093c66faa8e1cc0",
-      "sum": "lBFnEmkRi9RiJrHnWWxVPB0pOGuYans1FdDSiRD/z68="
+      "version": "75c532df174e3f15f89548c95f5657797fb2cd0e",
+      "sum": "8O80zfQe49Aqj1fYzXeaJMDyFipZfCdV3rpi5MG0fWg="
     },
     {
       "source": {
@@ -38,8 +38,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "d27008fb7a2a91cc1657fdd1380eff988ecb4360",
-      "sum": "lASagHkTDT+VJsjdALAnAKepr+jHm+gQER/TyLN7O0Q="
+      "version": "378d36df448366414de53a66a64020cd053002b7",
+      "sum": "vegTm8VSDazwYflBQGLkjs3ystWahwUv0fUyuMbpNRg="
     },
     {
       "source": {
