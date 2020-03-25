@@ -28,8 +28,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "ed71719c8e3573db358c3c6e76c3c65ca1fad719",
-      "sum": "qaE0WINXp2AT83A7Qi+3sy6mhHy3QEK6Ae02a0ejsEU="
+      "version": "059149d37c842411b1987d20ea31778f75f5b458",
+      "sum": "3jmU4cMdNsGrL2258osPCfDWzQ1V6kc6/epusfSyC8U="
     },
     {
       "source": {
