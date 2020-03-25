@@ -19,6 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	configv1 "github.com/openshift/api/config/v1"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -993,6 +995,63 @@ func TestOpenShiftStateMetrics(t *testing.T) {
 	}
 	if d.Spec.Template.Spec.Containers[2].Image != "docker.io/openshift/origin-openshift-state-metrics:latest" {
 		t.Fatal("openshift-state-metrics image incorrectly configured")
+	}
+}
+
+func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
+	tests := []struct {
+		name   string
+		config *Config
+		verify func(bool, bool, bool)
+	}{
+		{
+			name: "default config",
+			config: func() *Config {
+				c := NewDefaultConfig()
+				c.Platform = configv1.AWSPlatformType
+				return c
+			}(),
+			verify: func(api, cm, sched bool) {
+				if !api || !cm || !sched {
+					t.Fatal("did not get all expected kubernetes control plane rules")
+				}
+			},
+		},
+		{
+			name: "hosted control plane",
+			config: func() *Config {
+				c := NewDefaultConfig()
+				c.Platform = IBMCloudPlatformType
+				return c
+			}(),
+			verify: func(api, cm, sched bool) {
+				if api || cm || sched {
+					t.Fatalf("kubernetes control plane rules found, none expected")
+				}
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", tc.config)
+		r, err := f.PrometheusK8sRules()
+		if err != nil {
+			t.Fatal(err)
+		}
+		apiServerRulesFound := false
+		controllerManagerRulesFound := false
+		schedulerRulesFound := false
+		for _, g := range r.Spec.Groups {
+			switch g.Name {
+			case "kubernetes-system-apiserver":
+				apiServerRulesFound = true
+			case "kubernetes-system-controller-manager":
+				controllerManagerRulesFound = true
+			case "kubernetes-system-scheduler":
+				schedulerRulesFound = true
+			}
+		}
+		tc.verify(apiServerRulesFound, controllerManagerRulesFound, schedulerRulesFound)
 	}
 }
 

@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/pkg/errors"
@@ -194,6 +195,10 @@ var (
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
 	AuthProxyRedirectURLFlag  = "-redirect-url="
+)
+
+const (
+	IBMCloudPlatformType configv1.PlatformType = "IBMCloud"
 )
 
 func MustAssetReader(asset string) io.Reader {
@@ -770,6 +775,21 @@ func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
 		groups := []monv1.RuleGroup{}
 		for _, g := range r.Spec.Groups {
 			if g.Name != "etcd" {
+				groups = append(groups, g)
+			}
+		}
+		r.Spec.Groups = groups
+	}
+
+	if f.config.Platform == IBMCloudPlatformType {
+		groups := []monv1.RuleGroup{}
+		for _, g := range r.Spec.Groups {
+			switch g.Name {
+			case "kubernetes-system-apiserver",
+				"kubernetes-system-controller-manager",
+				"kubernetes-system-scheduler":
+				// skip
+			default:
 				groups = append(groups, g)
 			}
 		}
