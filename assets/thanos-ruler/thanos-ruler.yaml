@@ -72,8 +72,6 @@ spec:
   queryConfig:
     key: query.yaml
     name: thanos-ruler-query-config
-  queryEndpoints:
-  - ""
   replicas: 2
   ruleNamespaceSelector: {}
   ruleSelector: {}
