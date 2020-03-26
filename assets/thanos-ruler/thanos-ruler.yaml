@@ -11,6 +11,7 @@ spec:
     name: thanos-ruler-alertmanagers-config
   containers:
   - name: thanos-ruler
+    terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-thanos-ruler-tls
