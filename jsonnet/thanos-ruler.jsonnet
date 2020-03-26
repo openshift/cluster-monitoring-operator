@@ -284,7 +284,7 @@ local authorizationRole =
           containers: [
             {
               name: 'thanos-ruler',
-
+              terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [
                 {
                   mountPath: '/etc/tls/private',
