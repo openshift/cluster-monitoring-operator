@@ -9,8 +9,6 @@ spec:
   alertmanagersConfig:
     key: alertmanagers.yaml
     name: thanos-ruler-alertmanagers-config
-  alertmanagersUrl:
-  - dnssrv+http://_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local
   containers:
   - name: thanos-ruler
     volumeMounts:
@@ -64,6 +62,7 @@ spec:
       name: secret-thanos-ruler-oauth-cookie
     - mountPath: /etc/proxy/htpasswd
       name: secret-thanos-ruler-oauth-htpasswd
+  enforcedNamespaceLabel: namespace
   grpcServerTlsConfig:
     caFile: /etc/tls/grpc/ca.crt
     certFile: /etc/tls/grpc/server.crt
