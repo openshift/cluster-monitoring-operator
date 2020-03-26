@@ -118,8 +118,8 @@ func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
 	return body, nil
 }
 
-// AlertmanagerQuery runs an http get request against the Prometheus query api and returns
-// the response body.
+// AlertmanagerQuery runs an http get request against the Alertmanager
+// /api/v2/alerts endpoint and returns the response body.
 func (c *RouteClient) AlertmanagerQuery(kvs ...string) ([]byte, error) {
 	// #nosec
 	tr := &http.Transport{
