@@ -356,14 +356,6 @@ func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
-const (
-	// These constants refer to indices of alertmanager-main containers.
-	// They need to be in sync with jsonnet/alertmanager.jsonnet
-	ALERTMANAGER_CONTAINER_OAUTH_PROXY      = 0
-	ALERTMANAGER_CONTAINER_KUBE_RBAC_PROXY  = 1
-	ALERTMANAGER_CONTAINER_PROM_LABEL_PROXY = 2
-)
-
 func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(MustAssetReader(AlertmanagerMain))
 	if err != nil {
@@ -392,41 +384,48 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		a.Spec.Tolerations = f.config.AlertmanagerMainConfig.Tolerations
 	}
 
-	a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].Image = f.config.Images.OauthProxy
-	a.Spec.Containers[ALERTMANAGER_CONTAINER_KUBE_RBAC_PROXY].Image = f.config.Images.KubeRbacProxy
-	a.Spec.Containers[ALERTMANAGER_CONTAINER_PROM_LABEL_PROXY].Image = f.config.Images.PromLabelProxy
-
-	setEnv := func(name, value string) {
-		for i := range a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].Env {
-			if a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].Env[i].Name == name {
-				a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].Env[i].Value = value
+	setEnv := func(container *v1.Container, name, value string) {
+		for i := range container.Env {
+			if container.Env[i].Name == name {
+				container.Env[i].Value = value
 				break
 			}
 		}
 	}
-	if f.config.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
-	}
-	if f.config.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
-	}
-	if f.config.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
-	}
+	for i, c := range a.Spec.Containers {
+		switch c.Name {
+		case "alertmanager-proxy":
+			a.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
-	if trustedCABundleCM != nil {
-		volumeName := "alertmanager-trusted-ca-bundle"
-		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
-		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  "ca-bundle.crt",
-			Path: "tls-ca-bundle.pem",
-		})
-		a.Spec.Volumes = append(a.Spec.Volumes, volume)
-		a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].VolumeMounts = append(
-			a.Spec.Containers[ALERTMANAGER_CONTAINER_OAUTH_PROXY].VolumeMounts,
-			trustedCABundleVolumeMount(volumeName),
-		)
+			if f.config.HTTPConfig.HTTPProxy != "" {
+				setEnv(&a.Spec.Containers[i], "HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+			}
+			if f.config.HTTPConfig.HTTPSProxy != "" {
+				setEnv(&a.Spec.Containers[i], "HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+			}
+			if f.config.HTTPConfig.NoProxy != "" {
+				setEnv(&a.Spec.Containers[i], "NO_PROXY", f.config.HTTPConfig.NoProxy)
+			}
+
+			if trustedCABundleCM != nil {
+				volumeName := "alertmanager-trusted-ca-bundle"
+				a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
+				volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
+				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+					Key:  "ca-bundle.crt",
+					Path: "tls-ca-bundle.pem",
+				})
+				a.Spec.Volumes = append(a.Spec.Volumes, volume)
+				a.Spec.Containers[i].VolumeMounts = append(
+					a.Spec.Containers[i].VolumeMounts,
+					trustedCABundleVolumeMount(volumeName),
+				)
+			}
+		case "kube-rbac-proxy":
+			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "prom-label-proxy":
+			a.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
+		}
 	}
 
 	a.Namespace = f.namespace
