@@ -1674,6 +1674,7 @@ func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, err
 	}
 
 	sm.Namespace = f.namespace
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-operator.%s.svc", f.namespace)
 
 	return sm, nil
 }
@@ -1685,6 +1686,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.Service
 	}
 
 	sm.Namespace = f.namespaceUserWorkload
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-operator-user-workload.%s.svc", f.namespace)
 
 	return sm, nil
 }
@@ -1756,6 +1758,7 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 	}
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
+	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
 
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
@@ -1800,6 +1803,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 	}
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
+	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
 
 	args := d.Spec.Template.Spec.Containers[0].Args
 	for i := range args {
