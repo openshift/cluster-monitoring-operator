@@ -37,7 +37,6 @@ import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	v1betaextensions "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -461,7 +460,7 @@ func (c *Client) DeleteThanosRuler(tr *monv1.ThanosRuler) error {
 	return nil
 }
 
-func (c *Client) DeleteDaemonSet(d *v1beta1.DaemonSet) error {
+func (c *Client) DeleteDaemonSet(d *appsv1.DaemonSet) error {
 	orphanDependents := false
 	err := c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{OrphanDependents: &orphanDependents})
 	if apierrors.IsNotFound(err) {
@@ -783,7 +782,22 @@ func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
 	}
 
 	err = c.UpdateDaemonSet(ds)
-	return errors.Wrap(err, "updating DaemonSet object failed")
+	if err != nil {
+		uErr, ok := err.(*apierrors.StatusError)
+		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
+			// try to delete DaemonSet
+			err = c.DeleteDaemonSet(ds)
+			if err != nil {
+				return errors.Wrap(err, "deleting DaemonSet object failed")
+			}
+			err = c.CreateDaemonSet(ds)
+			if err != nil {
+				return errors.Wrap(err, "creating DaemonSet object failed after update failed")
+			}
+		}
+		return errors.Wrap(err, "updating DaemonSet object failed")
+	}
+	return nil
 }
 
 func (c *Client) CreateDaemonSet(ds *appsv1.DaemonSet) error {
