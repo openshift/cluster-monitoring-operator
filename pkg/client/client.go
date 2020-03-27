@@ -617,10 +617,10 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDeployment(dep)
-		return errors.Wrap(err, "creating deployment object failed")
+		return errors.Wrap(err, "creating Deployment object failed")
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving deployment object failed")
+		return errors.Wrap(err, "retrieving Deployment object failed")
 	}
 	if reflect.DeepEqual(dep.Spec, d.Spec) {
 		// Nothing to do, as the currently existing Telemeter client
@@ -631,17 +631,17 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 	if err != nil {
 		uErr, ok := err.(*apierrors.StatusError)
 		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
-			// try to delete deployment
+			// try to delete Deployment
 			err = c.DeleteDeployment(dep)
 			if err != nil {
-				return errors.Wrap(err, "deleting deployment object failed")
+				return errors.Wrap(err, "deleting Deployment object failed")
 			}
 			err = c.CreateDeployment(dep)
 			if err != nil {
-				return errors.Wrap(err, "creating deployment object failed after update failed")
+				return errors.Wrap(err, "creating Deployment object failed after update failed")
 			}
 		}
-		return errors.Wrap(err, "updating deployment object failed")
+		return errors.Wrap(err, "updating Deployment object failed")
 	}
 	return nil
 }
