@@ -29,14 +29,12 @@ import (
 	"github.com/blang/semver"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
+	"github.com/coreos/prometheus-operator/pkg/operator"
 	"github.com/pkg/errors"
 )
 
 const (
-	governingServiceName = "alertmanager-operated"
-	// DefaultVersion specifies which version of Alertmanager the Prometheus
-	// Operator uses by default.
-	DefaultVersion         = "v0.20.0"
+	governingServiceName   = "alertmanager-operated"
 	defaultRetention       = "120h"
 	secretsDir             = "/etc/alertmanager/secrets/"
 	configmapsDir          = "/etc/alertmanager/configmaps/"
@@ -63,7 +61,7 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 		am.Spec.PortName = defaultPortName
 	}
 	if am.Spec.Version == "" {
-		am.Spec.Version = DefaultVersion
+		am.Spec.Version = operator.DefaultAlertmanagerVersion
 	}
 	if am.Spec.Replicas == nil {
 		am.Spec.Replicas = &minReplicas
@@ -471,6 +469,52 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 	terminationGracePeriod := int64(120)
 	finalLabels := config.Labels.Merge(podLabels)
 
+	defaultContainers := []v1.Container{
+		{
+			Args:           amArgs,
+			Name:           "alertmanager",
+			Image:          image,
+			Ports:          ports,
+			VolumeMounts:   amVolumeMounts,
+			LivenessProbe:  livenessProbe,
+			ReadinessProbe: readinessProbe,
+			Resources:      a.Spec.Resources,
+			Env: []v1.EnvVar{
+				{
+					// Necessary for '--cluster.listen-address' flag
+					Name: "POD_IP",
+					ValueFrom: &v1.EnvVarSource{
+						FieldRef: &v1.ObjectFieldSelector{
+							FieldPath: "status.podIP",
+						},
+					},
+				},
+			},
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
+		}, {
+			Name:  "config-reloader",
+			Image: config.ConfigReloaderImage,
+			Args: []string{
+				fmt.Sprintf("-webhook-url=%s", localReloadURL),
+				fmt.Sprintf("-volume-dir=%s", alertmanagerConfDir),
+			},
+			VolumeMounts: []v1.VolumeMount{
+				{
+					Name:      "config-volume",
+					ReadOnly:  true,
+					MountPath: alertmanagerConfDir,
+				},
+			},
+			Resources:                resources,
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
+		},
+	}
+
+	containers, err := k8sutil.MergePatchContainers(defaultContainers, a.Spec.Containers)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to merge containers spec")
+	}
+
 	// PodManagementPolicy is set to Parallel to mitigate issues in kubernetes: https://github.com/kubernetes/kubernetes/issues/60164
 	// This is also mentioned as one of limitations of StatefulSets: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#limitations
 	return &appsv1.StatefulSetSpec{
@@ -493,51 +537,12 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 				PriorityClassName:             a.Spec.PriorityClassName,
 				TerminationGracePeriodSeconds: &terminationGracePeriod,
 				InitContainers:                a.Spec.InitContainers,
-				Containers: append([]v1.Container{
-					{
-						Args:           amArgs,
-						Name:           "alertmanager",
-						Image:          image,
-						Ports:          ports,
-						VolumeMounts:   amVolumeMounts,
-						LivenessProbe:  livenessProbe,
-						ReadinessProbe: readinessProbe,
-						Resources:      a.Spec.Resources,
-						Env: []v1.EnvVar{
-							{
-								// Necessary for '--cluster.listen-address' flag
-								Name: "POD_IP",
-								ValueFrom: &v1.EnvVarSource{
-									FieldRef: &v1.ObjectFieldSelector{
-										FieldPath: "status.podIP",
-									},
-								},
-							},
-						},
-						TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
-					}, {
-						Name:  "config-reloader",
-						Image: config.ConfigReloaderImage,
-						Args: []string{
-							fmt.Sprintf("-webhook-url=%s", localReloadURL),
-							fmt.Sprintf("-volume-dir=%s", alertmanagerConfDir),
-						},
-						VolumeMounts: []v1.VolumeMount{
-							{
-								Name:      "config-volume",
-								ReadOnly:  true,
-								MountPath: alertmanagerConfDir,
-							},
-						},
-						Resources:                resources,
-						TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
-					},
-				}, a.Spec.Containers...),
-				Volumes:            volumes,
-				ServiceAccountName: a.Spec.ServiceAccountName,
-				SecurityContext:    a.Spec.SecurityContext,
-				Tolerations:        a.Spec.Tolerations,
-				Affinity:           a.Spec.Affinity,
+				Containers:                    containers,
+				Volumes:                       volumes,
+				ServiceAccountName:            a.Spec.ServiceAccountName,
+				SecurityContext:               a.Spec.SecurityContext,
+				Tolerations:                   a.Spec.Tolerations,
+				Affinity:                      a.Spec.Affinity,
 			},
 		},
 	}, nil

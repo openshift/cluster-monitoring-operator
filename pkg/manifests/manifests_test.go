@@ -135,6 +135,21 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.ThanosRulerAlertmanagerConfigSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosRulerQueryConfigSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ThanosRulerMonitoringClusterRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.ThanosQuerierGrpcTLSSecret()
 	if err != nil {
 		t.Fatal(err)

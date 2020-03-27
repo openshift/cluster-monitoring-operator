@@ -94,6 +94,20 @@ local authorizationRole =
           namespace: thanosRulerConfig.namespace,
         }]),
 
+      clusterRoleBindingMonitoring:
+        local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
+
+        clusterRoleBinding.new() +
+        clusterRoleBinding.mixin.metadata.withName('thanos-ruler-monitoring') +
+        clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
+        clusterRoleBinding.mixin.roleRef.withName('cluster-monitoring-view') +
+        clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
+        clusterRoleBinding.withSubjects([{
+          kind: 'ServiceAccount',
+          name: 'thanos-ruler',
+          namespace: thanosRulerConfig.namespace,
+        }]),
+
       grpcTlsSecret:
         secret.new('thanos-ruler-grpc-tls', {}) +
         secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
@@ -113,6 +127,52 @@ local authorizationRole =
         secret.new('thanos-ruler-oauth-htpasswd', {}) +
         secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
         secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }),
+
+      // alertmanager config holds the http configuration
+      // for communication between thanos ruler and alertmanager.
+      alertmanagersConfigSecret:
+        local alertmanagerConfig = {
+          'alertmanagers.yaml': std.manifestYamlDoc({
+            alertmanagers: [{
+              http_config: {
+                bearer_token_file: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+                tls_config: {
+                  ca_file: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                  server_name: 'alertmanager-main.openshift-monitoring.svc',
+                },
+              },
+              static_configs: ['alertmanager-main.openshift-monitoring.svc:9094'],
+              scheme: 'https',
+            }],
+          }),
+        };
+
+        secret.new('thanos-ruler-alertmanagers-config', {}) +
+        secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
+        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }) +
+        secret.withStringData(alertmanagerConfig),
+
+      // query config which holds http configuration
+      // for communication between thanos ruler and thanos querier.
+      queryConfigSecret:
+        local queryConfig = {
+          'query.yaml': std.manifestYamlDoc([{
+            http_config: {
+              bearer_token_file: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+              tls_config: {
+                ca_file: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                server_name: 'thanos-querier.openshift-monitoring.svc',
+              },
+            },
+            static_configs: ['thanos-querier.openshift-monitoring.svc:9091'],
+            scheme: 'https',
+          }]),
+        };
+
+        secret.new('thanos-ruler-query-config', {}) +
+        secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
+        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }) +
+        secret.withStringData(queryConfig),
 
       serviceAccount:
         local serviceAccount = k.core.v1.serviceAccount;
@@ -193,23 +253,29 @@ local authorizationRole =
         spec: {
           replicas: 2,
           image: $._config.imageRepos.openshiftThanos + ':' + $._config.versions.openshiftThanos,
-          ruleSelector: {
-            matchLabels: {
-              role: 'thanos-rules',
-            },
-          },
           grpcServerTlsConfig: {
             certFile: '/etc/tls/grpc/server.crt',
             keyFile: '/etc/tls/grpc/server.key',
             caFile: '/etc/tls/grpc/ca.crt',
           },
-          queryEndpoints: [
-            'dnssrv+_http._tcp.thanos-querier.openshift-monitoring.svc.cluster.local',
-          ],
-          alertmanagersUrl: [
-            'dnssrv+http://_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local',
-          ],
+          alertmanagersConfig: {
+            key: 'alertmanagers.yaml',
+            name: 'thanos-ruler-alertmanagers-config',
+          },
+          queryConfig: {
+            key: 'query.yaml',
+            name: 'thanos-ruler-query-config',
+          },
+          enforcedNamespaceLabel: 'namespace',
+          ruleSelector: {},
+          ruleNamespaceSelector: {},
           volumes: [
+            {
+              configmap: {
+                name: 'serving-certs-ca-bundle',
+              },
+              name: 'serving-certs-ca-bundle',
+            },
             volume.fromSecret('secret-thanos-ruler-tls', 'thanos-ruler-tls'),
             volume.fromSecret('secret-thanos-ruler-oauth-cookie', 'thanos-ruler-oauth-cookie'),
             volume.fromSecret('secret-thanos-ruler-oauth-htpasswd', 'thanos-ruler-oauth-htpasswd'),
@@ -218,7 +284,7 @@ local authorizationRole =
           containers: [
             {
               name: 'thanos-ruler',
-
+              terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [
                 {
                   mountPath: '/etc/tls/private',
@@ -235,6 +301,10 @@ local authorizationRole =
                 {
                   mountPath: '/etc/tls/grpc',
                   name: 'secret-grpc-tls',
+                },
+                {
+                  mountPath: '/etc/prometheus/configmaps/serving-certs-ca-bundle',
+                  name: 'serving-certs-ca-bundle',
                 },
               ],
             },

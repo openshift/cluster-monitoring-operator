@@ -188,18 +188,21 @@ var (
 	ThanosQuerierGrpcTLSSecret      = "assets/thanos-querier/grpc-tls-secret.yaml"
 	ThanosQuerierTrustedCABundle    = "assets/thanos-querier/trusted-ca-bundle.yaml"
 
-	ThanosRulerCustomResource     = "assets/thanos-ruler/thanos-ruler.yaml"
-	ThanosRulerService            = "assets/thanos-ruler/service.yaml"
-	ThanosRulerRoute              = "assets/thanos-ruler/route.yaml"
-	ThanosRulerOauthCookieSecret  = "assets/thanos-ruler/oauth-cookie-secret.yaml"
-	ThanosRulerHtpasswdSecret     = "assets/thanos-ruler/oauth-htpasswd-secret.yaml"
-	ThanosRulerRBACProxySecret    = "assets/thanos-ruler/kube-rbac-proxy-secret.yaml"
-	ThanosRulerServiceAccount     = "assets/thanos-ruler/service-account.yaml"
-	ThanosRulerClusterRole        = "assets/thanos-ruler/cluster-role.yaml"
-	ThanosRulerClusterRoleBinding = "assets/thanos-ruler/cluster-role-binding.yaml"
-	ThanosRulerGrpcTLSSecret      = "assets/thanos-ruler/grpc-tls-secret.yaml"
-	ThanosRulerTrustedCABundle    = "assets/thanos-ruler/trusted-ca-bundle.yaml"
-	ThanosRulerServiceMonitor     = "assets/thanos-ruler/service-monitor.yaml"
+	ThanosRulerCustomResource               = "assets/thanos-ruler/thanos-ruler.yaml"
+	ThanosRulerService                      = "assets/thanos-ruler/service.yaml"
+	ThanosRulerRoute                        = "assets/thanos-ruler/route.yaml"
+	ThanosRulerOauthCookieSecret            = "assets/thanos-ruler/oauth-cookie-secret.yaml"
+	ThanosRulerHtpasswdSecret               = "assets/thanos-ruler/oauth-htpasswd-secret.yaml"
+	ThanosRulerQueryConfigSecret            = "assets/thanos-ruler/query-config-secret.yaml"
+	ThanosRulerAlertmanagerConfigSecret     = "assets/thanos-ruler/alertmanagers-config-secret.yaml"
+	ThanosRulerRBACProxySecret              = "assets/thanos-ruler/kube-rbac-proxy-secret.yaml"
+	ThanosRulerServiceAccount               = "assets/thanos-ruler/service-account.yaml"
+	ThanosRulerClusterRole                  = "assets/thanos-ruler/cluster-role.yaml"
+	ThanosRulerClusterRoleBinding           = "assets/thanos-ruler/cluster-role-binding.yaml"
+	ThanosRulerMonitoringClusterRoleBinding = "assets/thanos-ruler/cluster-role-binding-monitoring.yaml"
+	ThanosRulerGrpcTLSSecret                = "assets/thanos-ruler/grpc-tls-secret.yaml"
+	ThanosRulerTrustedCABundle              = "assets/thanos-ruler/trusted-ca-bundle.yaml"
+	ThanosRulerServiceMonitor               = "assets/thanos-ruler/service-monitor.yaml"
 
 	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
 )
@@ -963,6 +966,26 @@ func (f *Factory) generateHtpasswdSecret(s *v1.Secret, password string) {
 	h.Write([]byte(password))
 	s.Data["auth"] = []byte("internal:{SHA}" + base64.StdEncoding.EncodeToString(h.Sum(nil)))
 	s.Namespace = f.namespace
+}
+
+func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosRulerQueryConfigSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+	return s, nil
+}
+
+func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosRulerAlertmanagerConfigSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+	return s, nil
 }
 
 func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
@@ -2772,6 +2795,17 @@ func (f *Factory) ThanosRulerServiceAccount() (*v1.ServiceAccount, error) {
 
 func (f *Factory) ThanosRulerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	crb, err := f.NewClusterRoleBinding(MustAssetReader(ThanosRulerClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+
+	crb.Subjects[0].Namespace = f.namespaceUserWorkload
+
+	return crb, nil
+}
+
+func (f *Factory) ThanosRulerMonitoringClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(MustAssetReader(ThanosRulerMonitoringClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}

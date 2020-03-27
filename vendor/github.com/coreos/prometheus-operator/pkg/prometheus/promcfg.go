@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/coreos/prometheus-operator/pkg/operator"
 )
 
 const (
@@ -161,7 +162,7 @@ func (cg *configGenerator) generateConfig(
 ) ([]byte, error) {
 	versionStr := p.Spec.Version
 	if versionStr == "" {
-		versionStr = DefaultPrometheusVersion
+		versionStr = operator.DefaultPrometheusVersion
 	}
 
 	version, err := semver.Parse(strings.TrimLeft(versionStr, "v"))
@@ -476,6 +477,8 @@ func (cg *configGenerator) generatePodMonitorConfig(
 			{Key: "regex", Value: ep.Port},
 		})
 	} else if ep.TargetPort != nil {
+		level.Warn(cg.logger).Log("msg", "PodMonitor 'targetPort' is deprecated, use 'port' instead.",
+			"podMonitor", m.Name)
 		if ep.TargetPort.StrVal != "" {
 			relabelings = append(relabelings, yaml.MapSlice{
 				{Key: "action", Value: "keep"},

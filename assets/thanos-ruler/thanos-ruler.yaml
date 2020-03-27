@@ -6,10 +6,12 @@ metadata:
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
-  alertmanagersUrl:
-  - dnssrv+http://_web._tcp.alertmanager-main.openshift-monitoring.svc.cluster.local
+  alertmanagersConfig:
+    key: alertmanagers.yaml
+    name: thanos-ruler-alertmanagers-config
   containers:
   - name: thanos-ruler
+    terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-thanos-ruler-tls
@@ -19,6 +21,8 @@ spec:
       name: secret-thanos-ruler-oauth-htpasswd
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
+    - mountPath: /etc/prometheus/configmaps/serving-certs-ca-bundle
+      name: serving-certs-ca-bundle
   - args:
     - -provider=openshift
     - -https-address=:9091
@@ -59,19 +63,23 @@ spec:
       name: secret-thanos-ruler-oauth-cookie
     - mountPath: /etc/proxy/htpasswd
       name: secret-thanos-ruler-oauth-htpasswd
+  enforcedNamespaceLabel: namespace
   grpcServerTlsConfig:
     caFile: /etc/tls/grpc/ca.crt
     certFile: /etc/tls/grpc/server.crt
     keyFile: /etc/tls/grpc/server.key
   image: quay.io/openshift/origin-thanos:latest
-  queryEndpoints:
-  - dnssrv+_http._tcp.thanos-querier.openshift-monitoring.svc.cluster.local
+  queryConfig:
+    key: query.yaml
+    name: thanos-ruler-query-config
   replicas: 2
-  ruleSelector:
-    matchLabels:
-      role: thanos-rules
+  ruleNamespaceSelector: {}
+  ruleSelector: {}
   serviceAccountName: thanos-ruler
   volumes:
+  - configmap:
+      name: serving-certs-ca-bundle
+    name: serving-certs-ca-bundle
   - name: secret-thanos-ruler-tls
     secret:
       secretName: thanos-ruler-tls

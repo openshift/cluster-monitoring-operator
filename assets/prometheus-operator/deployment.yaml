@@ -29,6 +29,7 @@ spec:
         - --namespaces=openshift-monitoring
         - --prometheus-instance-namespaces=openshift-monitoring
         - --alertmanager-instance-namespaces=openshift-monitoring
+        - --thanos-ruler-instance-namespaces=openshift-monitoring
         - --config-reloader-cpu=0
         - --config-reloader-memory=0
         image: quay.io/coreos/prometheus-operator:v0.38.0

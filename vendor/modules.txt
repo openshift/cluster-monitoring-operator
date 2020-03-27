@@ -18,7 +18,7 @@ github.com/campoy/embedmd/embedmd
 github.com/cespare/xxhash
 # github.com/cespare/xxhash/v2 v2.1.1
 github.com/cespare/xxhash/v2
-# github.com/coreos/prometheus-operator v0.37.1-0.20200311111645-d27008fb7a2a
+# github.com/coreos/prometheus-operator v0.38.0
 github.com/coreos/prometheus-operator/pkg/alertmanager
 github.com/coreos/prometheus-operator/pkg/apis/monitoring
 github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1
@@ -30,6 +30,7 @@ github.com/coreos/prometheus-operator/pkg/listwatch
 github.com/coreos/prometheus-operator/pkg/operator
 github.com/coreos/prometheus-operator/pkg/prometheus
 github.com/coreos/prometheus-operator/pkg/thanos
+github.com/coreos/prometheus-operator/pkg/version
 github.com/coreos/prometheus-operator/test/framework
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew

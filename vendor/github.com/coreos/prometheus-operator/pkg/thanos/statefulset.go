@@ -22,6 +22,7 @@ import (
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
+	"github.com/coreos/prometheus-operator/pkg/operator"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -31,7 +32,6 @@ import (
 )
 
 const (
-	DefaultThanosVersion      = "v0.11.0"
 	rulesDir                  = "/etc/thanos/rules"
 	storageDir                = "/thanos/data"
 	governingServiceName      = "thanos-ruler-operated"
@@ -51,13 +51,13 @@ var (
 	}
 )
 
-func makeStatefulSet(tr *monitoringv1.ThanosRuler, old *appsv1.StatefulSet, config Config, ruleConfigMapNames []string, inputHash string) (*appsv1.StatefulSet, error) {
+func makeStatefulSet(tr *monitoringv1.ThanosRuler, config Config, ruleConfigMapNames []string, inputHash string) (*appsv1.StatefulSet, error) {
 
 	if tr.Spec.Image == "" {
 		tr.Spec.Image = config.ThanosDefaultBaseImage
 	}
 	if !strings.Contains(tr.Spec.Image, ":") {
-		tr.Spec.Image = tr.Spec.Image + ":" + DefaultThanosVersion
+		tr.Spec.Image = tr.Spec.Image + ":" + operator.DefaultThanosVersion
 	}
 	if tr.Spec.Resources.Requests == nil {
 		tr.Spec.Resources.Requests = v1.ResourceList{}
@@ -101,10 +101,6 @@ func makeStatefulSet(tr *monitoringv1.ThanosRuler, old *appsv1.StatefulSet, conf
 
 	if tr.Spec.ImagePullSecrets != nil && len(tr.Spec.ImagePullSecrets) > 0 {
 		statefulset.Spec.Template.Spec.ImagePullSecrets = tr.Spec.ImagePullSecrets
-	}
-
-	if old != nil {
-		statefulset.Annotations = old.Annotations
 	}
 
 	if statefulset.ObjectMeta.Annotations == nil {

@@ -146,6 +146,11 @@ local alertmanagerRole =
           overrideHonorLabels: true,
           ignoreNamespaceSelectors: true,
           enforcedNamespaceLabel: 'namespace',
+          ruleSelector: {
+            matchLabels: {
+              'openshift.io/prometheus-rule-evaluation-scope': 'leaf-prometheus',
+            },
+          },
           arbitraryFSAccessThroughSMs+: {
             deny: true,
           },
@@ -192,7 +197,6 @@ local alertmanagerRole =
           configMaps: ['serving-certs-ca-bundle'],
           serviceMonitorSelector: {},
           serviceMonitorNamespaceSelector: {},
-          ruleSelector: {},
           ruleNamespaceSelector: {},
           listenLocal: true,
           priorityClassName: 'system-cluster-critical',
