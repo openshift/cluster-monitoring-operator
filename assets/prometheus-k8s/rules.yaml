@@ -182,22 +182,22 @@ spec:
   - name: kube-apiserver.rules
     rules:
     - expr: |
-        sum(rate(apiserver_request_duration_seconds_sum{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod)
+        sum(rate(apiserver_request_duration_seconds_sum{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, pod)
         /
-        sum(rate(apiserver_request_duration_seconds_count{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod)
+        sum(rate(apiserver_request_duration_seconds_count{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, pod)
       record: cluster:apiserver_request_duration_seconds:mean5m
     - expr: |
-        histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod))
+        histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, pod))
       labels:
         quantile: "0.99"
       record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.9, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod))
+        histogram_quantile(0.9, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, pod))
       labels:
         quantile: "0.9"
       record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.5, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, pod))
+        histogram_quantile(0.5, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, pod))
       labels:
         quantile: "0.5"
       record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
@@ -804,6 +804,44 @@ spec:
       for: 1h
       labels:
         severity: warning
+    - alert: NodeHighNumberConntrackEntriesUsed
+      annotations:
+        description: '{{ $value | humanizePercentage }} of conntrack entries are used'
+        summary: Number of conntrack are getting close to the limit
+      expr: |
+        (node_nf_conntrack_entries / node_nf_conntrack_entries_limit) > 0.75
+      labels:
+        severity: warning
+    - alert: NodeClockSkewDetected
+      annotations:
+        message: Clock on {{ $labels.instance }} is out of sync by more than 300s.
+          Ensure NTP is configured correctly on this host.
+        summary: Clock skew detected.
+      expr: |
+        (
+          node_timex_offset_seconds > 0.05
+        and
+          deriv(node_timex_offset_seconds[5m]) >= 0
+        )
+        or
+        (
+          node_timex_offset_seconds < -0.05
+        and
+          deriv(node_timex_offset_seconds[5m]) <= 0
+        )
+      for: 10m
+      labels:
+        severity: warning
+    - alert: NodeClockNotSynchronising
+      annotations:
+        message: Clock on {{ $labels.instance }} is not synchronising. Ensure NTP
+          is configured on this host.
+        summary: Clock not synchronising.
+      expr: |
+        min_over_time(node_timex_sync_status[5m]) == 0
+      for: 10m
+      labels:
+        severity: warning
   - name: kubernetes-apps
     rules:
     - alert: KubePodCrashLooping
@@ -1286,7 +1324,7 @@ spec:
         message: Kubelet '{{ $labels.node }}' is running at {{ $value | humanizePercentage
           }} of its Pod capacity.
       expr: |
-        max(max(kubelet_running_pod_count{job="kubelet", metrics_path="/metrics"}) by(instance) * on(instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"}) by(node) / max(kube_node_status_capacity_pods{job="kube-state-metrics"}) by(node) > 0.95
+        max(max(kubelet_running_pod_count{job="kubelet", metrics_path="/metrics"}) by(instance) * on(instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"}) by(node) / max(kube_node_status_capacity_pods{job="kube-state-metrics"} != 1) by(node) > 0.95
       for: 15m
       labels:
         severity: warning
@@ -1602,17 +1640,6 @@ spec:
       expr: vector(1)
       labels:
         severity: none
-  - name: node-time
-    rules:
-    - alert: ClockSkewDetected
-      annotations:
-        message: Clock skew detected on node-exporter {{ $labels.namespace }}/{{ $labels.pod
-          }}. Ensure NTP is configured correctly on this host.
-      expr: |
-        abs(node_timex_offset_seconds{job="node-exporter"}) > 0.05
-      for: 2m
-      labels:
-        severity: warning
   - name: node-network
     rules:
     - alert: NodeNetworkInterfaceFlapping
