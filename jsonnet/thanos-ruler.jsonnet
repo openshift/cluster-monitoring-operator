@@ -25,6 +25,13 @@ local authorizationRole =
   ]) +
   policyRule.withVerbs(['create']);
 
+local thanosRulerRules =
+  (import 'github.com/thanos-io/thanos/mixin/thanos/alerts/rule.libsonnet') {
+    rule+:: {
+      selector: 'job="thanos-ruler"',
+    },
+  };
+
 {
   local thanosRulerName = 'user-workload',
   local thanosRulerConfig = super._config + {
@@ -47,6 +54,16 @@ local authorizationRole =
     image:: thanosRulerConfig.imageRepos.openshiftThanos + ':' + thanosRulerConfig.versions.openshiftThanos,
 
     ruler+: {
+
+      thanosRulerPrometheusRule: {
+        apiVersion: 'monitoring.coreos.com/v1',
+        kind: 'PrometheusRule',
+        metadata: {
+          name: 'thanos-ruler',
+          namespace: 'openshift-user-workload-monitoring',
+        },
+        spec: thanosRulerRules.prometheusAlerts,
+      },
 
       trustedCaBundle:
         configmap.new('thanos-ruler-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +

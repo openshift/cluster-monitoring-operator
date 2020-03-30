@@ -56,6 +56,15 @@
         }
       },
       "version": "release-0.2"
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/thanos-io/thanos",
+          "subdir": "mixin/thanos"
+        }
+      },
+      "version": "master"
     }
   ],
   "legacyImports": true
