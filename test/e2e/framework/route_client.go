@@ -105,12 +105,11 @@ func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
 	}
-
-	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -120,8 +119,8 @@ func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
 	return body, nil
 }
 
-// AlertmanagerQuery runs an http get request against the Prometheus query api and returns
-// the response body.
+// AlertmanagerQuery runs an http get request against the Alertmanager
+// /api/v2/alerts endpoint and returns the response body.
 func (c *RouteClient) AlertmanagerQuery(kvs ...string) ([]byte, error) {
 	// #nosec
 	tr := &http.Transport{
@@ -147,12 +146,11 @@ func (c *RouteClient) AlertmanagerQuery(kvs ...string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
 	}
-
-	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

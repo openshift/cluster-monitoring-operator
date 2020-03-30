@@ -12,6 +12,9 @@ spec:
   - name: web
     port: 9094
     targetPort: web
+  - name: tenancy
+    port: 9092
+    targetPort: tenancy
   selector:
     alertmanager: main
     app: alertmanager

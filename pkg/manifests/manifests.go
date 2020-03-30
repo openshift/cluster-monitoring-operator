@@ -58,6 +58,7 @@ var (
 	AlertmanagerServiceAccount     = "assets/alertmanager/service-account.yaml"
 	AlertmanagerClusterRoleBinding = "assets/alertmanager/cluster-role-binding.yaml"
 	AlertmanagerClusterRole        = "assets/alertmanager/cluster-role.yaml"
+	AlertmanagerRBACProxySecret    = "assets/alertmanager/kube-rbac-proxy-secret.yaml"
 	AlertmanagerRoute              = "assets/alertmanager/route.yaml"
 	AlertmanagerServiceMonitor     = "assets/alertmanager/service-monitor.yaml"
 	AlertmanagerTrustedCABundle    = "assets/alertmanager/trusted-ca-bundle.yaml"
@@ -164,6 +165,8 @@ var (
 	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
+	ClusterMonitoringRulesEditClusterRole   = "assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
+	ClusterMonitoringRulesViewClusterRole   = "assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
 	ClusterMonitoringGrpcTLSSecret          = "assets/cluster-monitoring-operator/grpc-tls-secret.yaml"
 
 	TelemeterClientClusterRole            = "assets/telemeter-client/cluster-role.yaml"
@@ -381,41 +384,64 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		a.Spec.Tolerations = f.config.AlertmanagerMainConfig.Tolerations
 	}
 
-	a.Spec.Containers[0].Image = f.config.Images.OauthProxy
-	setEnv := func(name, value string) {
-		for i := range a.Spec.Containers[0].Env {
-			if a.Spec.Containers[0].Env[i].Name == name {
-				a.Spec.Containers[0].Env[i].Value = value
+	setEnv := func(container *v1.Container, name, value string) {
+		for i := range container.Env {
+			if container.Env[i].Name == name {
+				container.Env[i].Value = value
 				break
 			}
 		}
 	}
-	if f.config.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
-	}
-	if f.config.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
-	}
-	if f.config.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
-	}
+	for i, c := range a.Spec.Containers {
+		switch c.Name {
+		case "alertmanager-proxy":
+			a.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
-	if trustedCABundleCM != nil {
-		volumeName := "alertmanager-trusted-ca-bundle"
-		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
-		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  "ca-bundle.crt",
-			Path: "tls-ca-bundle.pem",
-		})
-		a.Spec.Volumes = append(a.Spec.Volumes, volume)
-		// We have only one container in Alertmanager CR spec and this is oauth-proxy
-		a.Spec.Containers[0].VolumeMounts = append(a.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName))
+			if f.config.HTTPConfig.HTTPProxy != "" {
+				setEnv(&a.Spec.Containers[i], "HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+			}
+			if f.config.HTTPConfig.HTTPSProxy != "" {
+				setEnv(&a.Spec.Containers[i], "HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+			}
+			if f.config.HTTPConfig.NoProxy != "" {
+				setEnv(&a.Spec.Containers[i], "NO_PROXY", f.config.HTTPConfig.NoProxy)
+			}
+
+			if trustedCABundleCM != nil {
+				volumeName := "alertmanager-trusted-ca-bundle"
+				a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
+				volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
+				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+					Key:  "ca-bundle.crt",
+					Path: "tls-ca-bundle.pem",
+				})
+				a.Spec.Volumes = append(a.Spec.Volumes, volume)
+				a.Spec.Containers[i].VolumeMounts = append(
+					a.Spec.Containers[i].VolumeMounts,
+					trustedCABundleVolumeMount(volumeName),
+				)
+			}
+		case "kube-rbac-proxy":
+			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "prom-label-proxy":
+			a.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
+		}
 	}
 
 	a.Namespace = f.namespace
 
 	return a, nil
+}
+
+func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(AlertmanagerRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
@@ -2134,6 +2160,24 @@ func (f *Factory) GrafanaServiceMonitor() (*monv1.ServiceMonitor, error) {
 
 func (f *Factory) ClusterMonitoringClusterRole() (*rbacv1.ClusterRole, error) {
 	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringRulesEditClusterRole() (*rbacv1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringRulesEditClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringRulesViewClusterRole() (*rbacv1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringRulesViewClusterRole))
 	if err != nil {
 		return nil, err
 	}

@@ -58,6 +58,16 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "creating Alertmanager configuration Secret failed")
 	}
 
+	rs, err := t.factory.AlertmanagerRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager RBAC proxy Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(rs)
+	if err != nil {
+		return errors.Wrap(err, "creating Alertmanager RBAC proxy Secret failed")
+	}
+
 	cr, err := t.factory.AlertmanagerClusterRole()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager ClusterRole failed")
