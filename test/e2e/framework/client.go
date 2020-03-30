@@ -20,69 +20,68 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-
-	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
-
 	"github.com/Jeffail/gabs"
+	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
+	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// RouteClient provides access to the prometheus-k8s statefulset via its
-// public facing route.
-type RouteClient struct {
-	// Host address of the public route.
+// PrometheusClient provides access to the Prometheus, Thanos & Alertmanager API.
+type PrometheusClient struct {
+	// Host address of the endpoint.
 	host string
-	// ServiceAccount bearer token to pass through Openshift oauth proxy.
+	// Bearer token to use for authentication.
 	token string
+	// Additional query parameters to pass to the API (typically when querying through kube-rbac-proxy).
+	queryParameters map[string][]string
 }
 
-// NewRouteClient creates and returns a new RouteClient.
-func NewRouteClient(
+// NewPrometheusClientFromRoute creates and returns a new PrometheusClient from the given OpenShift route.
+func NewPrometheusClientFromRoute(
 	routeClient routev1.RouteV1Interface,
-	kubeClient kubernetes.Interface,
 	namespace, name string,
-) (*RouteClient, error) {
+	token string,
+) (*PrometheusClient, error) {
 	route, err := routeClient.Routes(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	host := route.Spec.Host
-
-	secrets, err := kubeClient.CoreV1().Secrets("openshift-monitoring").List(metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	var token string
-
-	for _, secret := range secrets.Items {
-		_, dockerToken := secret.Annotations["openshift.io/create-dockercfg-secrets"]
-		e2eToken := strings.Contains(secret.Name, "cluster-monitoring-operator-e2e-token-")
-
-		// we have to skip the token secret that contains the openshift.io/create-dockercfg-secrets annotation
-		// as this is the token to talk to the internal registry.
-		if !dockerToken && e2eToken {
-			token = string(secret.Data["token"])
-		}
-	}
-
-	return &RouteClient{
-		host:  host,
+	return &PrometheusClient{
+		host:  route.Spec.Host,
 		token: token,
 	}, nil
 }
 
-// PrometheusQuery runs an http get request against the Prometheus query api and returns
+// NewPrometheusClient creates and returns a new PrometheusClient.
+func NewPrometheusClient(host, token string, queryParameters map[string][]string) *PrometheusClient {
+	return &PrometheusClient{
+		host:            host,
+		token:           token,
+		queryParameters: queryParameters,
+	}
+}
+
+func (c *PrometheusClient) injectQueryParameters(req *http.Request, kvs ...string) {
+	q := req.URL.Query()
+	for k, arr := range c.queryParameters {
+		for _, v := range arr {
+			q.Add(k, v)
+		}
+	}
+	for i := 0; i < len(kvs)/2; i++ {
+		q.Add(kvs[i*2], kvs[i*2+1])
+	}
+	req.URL.RawQuery = q.Encode()
+	return
+}
+
+// PrometheusQuery runs an HTTP GET request against the Prometheus query API and returns
 // the response body.
-func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
+func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
 	// #nosec
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -95,9 +94,7 @@ func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
 		return nil, err
 	}
 
-	q := req.URL.Query()
-	q.Add("query", query)
-	req.URL.RawQuery = q.Encode()
+	c.injectQueryParameters(req, "query", query)
 
 	req.Header.Add("Authorization", "Bearer "+c.token)
 
@@ -119,9 +116,9 @@ func (c *RouteClient) PrometheusQuery(query string) ([]byte, error) {
 	return body, nil
 }
 
-// AlertmanagerQuery runs an http get request against the Alertmanager
+// AlertmanagerQuery runs an HTTP GET request against the Alertmanager
 // /api/v2/alerts endpoint and returns the response body.
-func (c *RouteClient) AlertmanagerQuery(kvs ...string) ([]byte, error) {
+func (c *PrometheusClient) AlertmanagerQueryAlerts(kvs ...string) ([]byte, error) {
 	// #nosec
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -134,11 +131,7 @@ func (c *RouteClient) AlertmanagerQuery(kvs ...string) ([]byte, error) {
 		return nil, err
 	}
 
-	q := req.URL.Query()
-	for i := 0; i < len(kvs)/2; i++ {
-		q.Add(kvs[i*2], kvs[i*2+1])
-	}
-	req.URL.RawQuery = q.Encode()
+	c.injectQueryParameters(req, kvs...)
 
 	req.Header.Add("Authorization", "Bearer "+c.token)
 
@@ -197,7 +190,9 @@ func GetFirstValueFromPromQuery(body []byte) (int, error) {
 }
 
 // WaitForQueryReturnGreaterEqualOne see WaitForQueryReturn.
-func (c *RouteClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeout time.Duration, query string) {
+func (c *PrometheusClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeout time.Duration, query string) {
+	t.Helper()
+
 	c.WaitForQueryReturn(t, timeout, query, func(v int) error {
 		if v >= 1 {
 			return nil
@@ -208,7 +203,9 @@ func (c *RouteClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeout ti
 }
 
 // WaitForQueryReturnOne see WaitForQueryReturn.
-func (c *RouteClient) WaitForQueryReturnOne(t *testing.T, timeout time.Duration, query string) {
+func (c *PrometheusClient) WaitForQueryReturnOne(t *testing.T, timeout time.Duration, query string) {
+	t.Helper()
+
 	c.WaitForQueryReturn(t, timeout, query, func(v int) error {
 		if v == 1 {
 			return nil
@@ -220,7 +217,9 @@ func (c *RouteClient) WaitForQueryReturnOne(t *testing.T, timeout time.Duration,
 
 // WaitForQueryReturn waits for a given PromQL query for a given time interval
 // and validates the **first and only** result with the given validate function.
-func (c *RouteClient) WaitForQueryReturn(t *testing.T, timeout time.Duration, query string, validate func(int) error) {
+func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duration, query string, validate func(int) error) {
+	t.Helper()
+
 	err := Poll(5*time.Second, timeout, func() error {
 		body, err := c.PrometheusQuery(query)
 		if err != nil {

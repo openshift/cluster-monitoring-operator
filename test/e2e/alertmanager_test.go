@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 
@@ -270,27 +269,17 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		}
 
 		err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-			secrets, err := f.KubeClient.CoreV1().Secrets(testNs).List(metav1.ListOptions{})
+			token, err := f.GetServiceAccountToken(testNs, sa)
 			if err != nil {
 				return err
 			}
-			for _, secret := range secrets.Items {
-				_, dockerToken := secret.Annotations["openshift.io/create-dockercfg-secrets"]
-				token := strings.Contains(secret.Name, fmt.Sprintf("%s-token-", sa))
-
-				// we have to skip the token secret that contains the openshift.io/create-dockercfg-secrets annotation
-				// as this is the token to talk to the internal registry.
-				if !dockerToken && token {
-					clients[sa] = silenceClient{
-						t:         t,
-						host:      host,
-						token:     string(secret.Data["token"]),
-						namespace: testNs,
-					}
-					return nil
-				}
+			clients[sa] = silenceClient{
+				t:         t,
+				host:      host,
+				token:     token,
+				namespace: testNs,
 			}
-			return errors.Errorf("couldn't find token secret for service account %q", sa)
+			return nil
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -386,7 +375,7 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 // The Alertmanager API should be protected by the OAuth proxy.
 func TestAlertmanagerOAuthProxy(t *testing.T) {
 	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		body, err := f.AlertmanagerClient.AlertmanagerQuery(
+		body, err := f.AlertmanagerClient.AlertmanagerQueryAlerts(
 			"filter", `alertname="Watchdog"`,
 			"active", "true",
 		)
