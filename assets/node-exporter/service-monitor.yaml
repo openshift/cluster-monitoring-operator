@@ -2,7 +2,8 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    k8s-app: node-exporter
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/version: v0.18.1
   name: node-exporter
   namespace: openshift-monitoring
 spec:
@@ -22,7 +23,8 @@ spec:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       insecureSkipVerify: false
       serverName: server-name-replaced-at-runtime
-  jobLabel: k8s-app
+  jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
-      k8s-app: node-exporter
+      app.kubernetes.io/name: node-exporter
+      app.kubernetes.io/version: v0.18.1

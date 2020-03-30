@@ -9,8 +9,13 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - honorLabels: true
-    port: http
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    port: https
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      serverName: server-name-replaced-at-runtime
   selector:
     matchLabels:
       app.kubernetes.io/component: controller

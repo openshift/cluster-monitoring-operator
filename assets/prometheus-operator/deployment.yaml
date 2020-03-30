@@ -28,8 +28,8 @@ spec:
         - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.38.0
         - --namespaces=openshift-monitoring
         - --prometheus-instance-namespaces=openshift-monitoring
-        - --alertmanager-instance-namespaces=openshift-monitoring
         - --thanos-ruler-instance-namespaces=openshift-monitoring
+        - --alertmanager-instance-namespaces=openshift-monitoring
         - --config-reloader-cpu=0
         - --config-reloader-memory=0
         image: quay.io/coreos/prometheus-operator:v0.38.0
@@ -43,6 +43,28 @@ spec:
             memory: 60Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
+      - args:
+        - --logtostderr
+        - --secure-listen-address=:8443
+        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+        - --upstream=http://127.0.0.1:8080/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+        resources:
+          requests:
+            cpu: 1m
+            memory: 40Mi
+        securityContext: {}
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: prometheus-operator-tls
+          readOnly: false
       nodeSelector:
         beta.kubernetes.io/os: linux
         node-role.kubernetes.io/master: ""
@@ -53,3 +75,7 @@ spec:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
         operator: Exists
+      volumes:
+      - name: prometheus-operator-tls
+        secret:
+          secretName: prometheus-operator-tls
