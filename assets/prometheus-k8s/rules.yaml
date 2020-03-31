@@ -591,6 +591,7 @@ spec:
           occur. Check the OpenShift documentation to learn how to configure notifications
           with Alertmanager.
       expr: cluster:alertmanager_routing_enabled:max == 0
+      for: 10m
       labels:
         severity: warning
     - alert: MultipleContainersOOMKilled

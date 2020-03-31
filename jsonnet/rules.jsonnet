@@ -232,6 +232,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
           {
             expr: 'cluster:alertmanager_routing_enabled:max == 0',
             alert: 'AlertmanagerReceiversNotConfigured',
+            'for': '10m',
             annotations: {
               message: 'Alerts are not configured to be sent to a notification system, meaning that you may not be notified in a timely fashion when important failures occur. Check the OpenShift documentation to learn how to configure notifications with Alertmanager.',
             },
