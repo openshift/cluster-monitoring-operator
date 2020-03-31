@@ -1,0 +1,33 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: true
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: prometheus-operator
+    app.kubernetes.io/version: v0.38.1
+  name: prometheusrules.openshift.io
+webhooks:
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: prometheus-operator
+      namespace: openshift-monitoring
+      path: /admission-prometheusrules/validate
+      port: 8080
+  name: prometheusrules.openshift.io
+  rules:
+  - apiGroups:
+    - monitoring.coreos.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - prometheusrules
+    scope: Namespaced
+  sideEffects: None
+  timeoutSeconds: 5
