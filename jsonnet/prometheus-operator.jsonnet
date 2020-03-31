@@ -5,6 +5,7 @@ local container = deployment.mixin.spec.template.spec.containersType;
 local volume = deployment.mixin.spec.template.spec.volumesType;
 local containerVolumeMount = container.volumeMountsType;
 local tlsVolumeName = 'prometheus-operator-tls';
+local certsCAVolumeName = 'operator-certs-ca-bundle';
 
 {
   clusterPrometheusOperator+:: $.prometheusOperator {
@@ -46,6 +47,7 @@ local tlsVolumeName = 'prometheus-operator-tls';
                           '--alertmanager-instance-namespaces=' + $._config.namespace,
                           '--config-reloader-cpu=0',
                           '--config-reloader-memory=0',
+                          '--web.enable-tls=true',
                         ],
                         securityContext: {},
                         resources: {
@@ -55,16 +57,25 @@ local tlsVolumeName = 'prometheus-operator-tls';
                           },
                         },
                         terminationMessagePolicy: 'FallbackToLogsOnError',
+                        volumeMounts+: [
+                          containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
+                        ],
                       }
                     else if c.name == 'kube-rbac-proxy' then
                       c {
-                        args+: [
+                        args: [
+                          '--logtostderr',
+                          '--secure-listen-address=:8443',
+                          '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256',
+                          '--upstream=https://prometheus-operator.openshift-monitoring.svc:8080/',
                           '--tls-cert-file=/etc/tls/private/tls.crt',
                           '--tls-private-key-file=/etc/tls/private/tls.key',
+                          '--upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt',
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
+                          containerVolumeMount.new(certsCAVolumeName, '/etc/configmaps/operator-cert-ca-bundle'),
                         ],
                         securityContext: {},
                         resources: {
@@ -80,15 +91,24 @@ local tlsVolumeName = 'prometheus-operator-tls';
                 ),
               volumes+: [
                 volume.fromSecret(tlsVolumeName, 'prometheus-operator-tls'),
+                {
+                  name: certsCAVolumeName,
+                  configMap: {
+                    name: certsCAVolumeName,
+                  },
+                },
               ],
             },
           },
         },
       },
+
     service+:
       service.mixin.metadata.withAnnotations({
         'service.beta.openshift.io/serving-cert-secret-name': "prometheus-operator-tls",
-      }),
+      }) +
+      service.mixin.spec.withPortsMixin([{name: 'web', port: 8080, targetPort: 8080,}]),
+
     serviceMonitor+: {
       spec+: {
         endpoints: [
@@ -104,6 +124,62 @@ local tlsVolumeName = 'prometheus-operator-tls';
           },
         ],
       },
+    },
+
+    operatorCertsCaBundle: {
+      apiVersion: "v1",
+      kind: "ConfigMap",
+      metadata: {
+        annotations: {
+          "service.alpha.openshift.io/inject-cabundle": "true",
+        },
+        name: certsCAVolumeName,
+        namespace: $._config.namespace,
+      },
+      data: {
+        "service-ca.crt": ""
+      },
+    },
+
+    prometheusRuleValidatingWebhook: {
+      apiVersion: 'admissionregistration.k8s.io/v1',
+      kind: 'ValidatingWebhookConfiguration',
+      metadata: {
+        name: 'prometheusrules.openshift.io',
+        labels: {
+          'app.kubernetes.io/component': 'controller',
+          'app.kubernetes.io/name': 'prometheus-operator',
+          'app.kubernetes.io/version': $._config.versions.prometheusOperator,
+        },
+        annotations: {
+          "service.beta.openshift.io/inject-cabundle": true
+        },
+      },
+      webhooks: [
+        {
+          name: 'prometheusrules.openshift.io',
+          rules: [
+            {
+              apiGroups: ['monitoring.coreos.com'],
+              apiVersions: ['v1'],
+              operations:  ['CREATE', 'UPDATE'],
+              resources:   ['prometheusrules'],
+              scope:       'Namespaced',
+            },
+          ],
+          clientConfig: {
+            service: {
+              namespace: 'openshift-monitoring',
+              name: 'prometheus-operator',
+              port: 8080,
+              path: '/admission-prometheusrules/validate'
+            },
+          },
+          admissionReviewVersions: ['v1beta1'],
+          sideEffects: 'None',
+          timeoutSeconds: 5,
+        },
+      ],
     },
   },
 }
