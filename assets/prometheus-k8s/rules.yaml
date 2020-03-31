@@ -1044,7 +1044,7 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeMemOvercommit
+    - alert: KubeMemoryOvercommit
       annotations:
         message: Cluster has overcommitted memory resource requests for Pods and cannot
           tolerate node failure.
@@ -1059,7 +1059,7 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeCPUOvercommit
+    - alert: KubeCPUQuotaOvercommit
       annotations:
         message: Cluster has overcommitted CPU resource requests for Namespaces.
       expr: |
@@ -1070,7 +1070,7 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeMemOvercommit
+    - alert: KubeMemoryQuotaOvercommit
       annotations:
         message: Cluster has overcommitted memory resource requests for Namespaces.
       expr: |

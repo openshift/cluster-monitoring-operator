@@ -79,8 +79,8 @@
           "subdir": ""
         }
       },
-      "version": "bf3064885199f90080bec6790f2d27c5ad08184d",
-      "sum": "MFXrg/dNmfAHIm+H8bEGdZ957E1Y6B6aS42iFQCE1O0="
+      "version": "544148ee3ea4da1ffa1e97ebb66599a9548fde8d",
+      "sum": "6uEUlF5xrvjk8FBLpGaIyfH+3PNAPnzedbTsbqEaB3U="
     },
     {
       "source": {
@@ -140,8 +140,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "7246a9504c9871c18fa622ac57763b562438e7be",
-      "sum": "fuHm4rY1VFxcPshHk99q8OL6mgdiJ4ghQBZbqkOwmLU=",
+      "version": "b512aa4a0512f54b3fd1f2bee850e2ceed51299a",
+      "sum": "LG7mr5TOA/pXTeWO/Pdn9MQgazWJi//iLJdfglyCDnc=",
       "name": "telemeter-client"
     },
     {
