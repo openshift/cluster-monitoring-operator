@@ -35,6 +35,7 @@ import (
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/pkg/errors"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -134,12 +135,14 @@ var (
 	PrometheusAdapterService                            = "assets/prometheus-adapter/service.yaml"
 	PrometheusAdapterServiceAccount                     = "assets/prometheus-adapter/service-account.yaml"
 
-	PrometheusOperatorClusterRoleBinding = "assets/prometheus-operator/cluster-role-binding.yaml"
-	PrometheusOperatorClusterRole        = "assets/prometheus-operator/cluster-role.yaml"
-	PrometheusOperatorServiceAccount     = "assets/prometheus-operator/service-account.yaml"
-	PrometheusOperatorDeployment         = "assets/prometheus-operator/deployment.yaml"
-	PrometheusOperatorService            = "assets/prometheus-operator/service.yaml"
-	PrometheusOperatorServiceMonitor     = "assets/prometheus-operator/service-monitor.yaml"
+	PrometheusOperatorClusterRoleBinding    = "assets/prometheus-operator/cluster-role-binding.yaml"
+	PrometheusOperatorClusterRole           = "assets/prometheus-operator/cluster-role.yaml"
+	PrometheusOperatorServiceAccount        = "assets/prometheus-operator/service-account.yaml"
+	PrometheusOperatorDeployment            = "assets/prometheus-operator/deployment.yaml"
+	PrometheusOperatorService               = "assets/prometheus-operator/service.yaml"
+	PrometheusOperatorServiceMonitor        = "assets/prometheus-operator/service-monitor.yaml"
+	PrometheusOperatorCertsCABundle         = "assets/prometheus-operator/operator-certs-ca-bundle.yaml"
+	PrometheusOperatorRuleValidatingWebhook = "assets/prometheus-operator/prometheus-rule-validating-webhook.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount     = "assets/prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole        = "assets/prometheus-operator-user-workload/cluster-role.yaml"
@@ -1071,6 +1074,17 @@ func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*
 	return c, nil
 }
 
+func (f *Factory) PrometheusOperatorCertsCABundle() (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(MustAssetReader(PrometheusOperatorCertsCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespace
+
+	return c, nil
+}
+
 func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sEtcdServiceMonitor))
 	if err != nil {
@@ -1860,6 +1874,14 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 	return d, nil
 }
 
+func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
+	wc, err := f.NewValidatingWebhook(MustAssetReader(PrometheusOperatorRuleValidatingWebhook))
+	if err != nil {
+		return nil, err
+	}
+	return wc, nil
+}
+
 func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
 	s, err := f.NewService(MustAssetReader(PrometheusOperatorService))
 	if err != nil {
@@ -2535,6 +2557,10 @@ func (f *Factory) NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRole
 
 func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
 	return NewClusterRole(manifest)
+}
+
+func (f *Factory) NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookConfiguration, error) {
+	return NewValidatingWebhook(manifest)
 }
 
 const (
@@ -3251,6 +3277,16 @@ func NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityCont
 	}
 
 	return &s, nil
+}
+
+func NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookConfiguration, error) {
+	v := admissionv1.ValidatingWebhookConfiguration{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v, nil
 }
 
 // HashTrustedCA synthesizes a configmap just by copying "ca-bundle.crt" from the given configmap

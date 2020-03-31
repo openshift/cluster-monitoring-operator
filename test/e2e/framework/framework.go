@@ -37,6 +37,7 @@ import (
 
 	monClient "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"github.com/pkg/errors"
+	admissionclient "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
 	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -54,6 +55,7 @@ type Framework struct {
 	PrometheusK8sClient *PrometheusClient
 	AlertmanagerClient  *PrometheusClient
 	APIServicesClient   *apiservicesclient.Clientset
+	AdmissionClient     *admissionclient.AdmissionregistrationV1Client
 	MetricsClient       *metricsclient.Clientset
 	kubeConfigPath      string
 
@@ -95,6 +97,11 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating API services client failed")
 	}
 
+	admissionClient, err := admissionclient.NewForConfig(config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating admission registration client failed")
+	}
+
 	metricsClient, err := metricsclient.NewForConfig(config)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating metrics client failed")
@@ -104,6 +111,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		OperatorClient:           operatorClient,
 		KubeClient:               kubeClient,
 		APIServicesClient:        apiServicesClient,
+		AdmissionClient:          admissionClient,
 		MetricsClient:            metricsClient,
 		MonitoringClient:         mClient,
 		Ns:                       namespaceName,
