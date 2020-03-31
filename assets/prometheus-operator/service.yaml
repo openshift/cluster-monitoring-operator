@@ -15,6 +15,9 @@ spec:
   - name: https
     port: 8443
     targetPort: https
+  - name: web
+    port: 8080
+    targetPort: 8080
   selector:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
