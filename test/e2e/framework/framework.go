@@ -36,8 +36,6 @@ import (
 
 	monClient "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"github.com/pkg/errors"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	crdc "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -50,7 +48,6 @@ var (
 
 type Framework struct {
 	OperatorClient      *client.Client
-	CRDClient           crdc.CustomResourceDefinitionInterface
 	KubeClient          kubernetes.Interface
 	ThanosQuerierClient *RouteClient
 	PrometheusK8sClient *RouteClient
@@ -87,12 +84,6 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating monitoring client failed")
 	}
 
-	eclient, err := apiextensionsclient.NewForConfig(config)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating extensions client failed")
-	}
-	crdClient := eclient.ApiextensionsV1beta1().CustomResourceDefinitions()
-
 	operatorClient, err := client.New(config, "", namespaceName, "")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating operator client failed")
@@ -111,7 +102,6 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	f := &Framework{
 		OperatorClient:           operatorClient,
 		KubeClient:               kubeClient,
-		CRDClient:                crdClient,
 		APIServicesClient:        apiServicesClient,
 		MetricsClient:            metricsClient,
 		MonitoringClient:         mClient,
