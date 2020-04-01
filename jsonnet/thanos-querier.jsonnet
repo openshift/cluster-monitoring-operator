@@ -193,6 +193,7 @@ local authorizationRole =
                     args: [
                       'query',
                       '--query.replica-label=prometheus_replica',
+                      '--query.replica-label=thanos_ruler_replica',
                       '--grpc-address=127.0.0.1:10901',
                       '--http-address=127.0.0.1:9090',
                       '--grpc-client-tls-secure',
