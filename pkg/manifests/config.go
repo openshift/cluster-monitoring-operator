@@ -104,7 +104,6 @@ type ThanosRulerConfig struct {
 	Tolerations         []v1.Toleration           `json:"tolerations"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
-	Hostport            string                    `json:"hostport"`
 }
 
 type ThanosQuerierConfig struct {
