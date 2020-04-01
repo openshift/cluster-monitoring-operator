@@ -150,6 +150,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.ThanosRulerPrometheusRule()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.ThanosQuerierGrpcTLSSecret()
 	if err != nil {
 		t.Fatal(err)

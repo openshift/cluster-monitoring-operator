@@ -206,6 +206,7 @@ var (
 	ThanosRulerGrpcTLSSecret                = "assets/thanos-ruler/grpc-tls-secret.yaml"
 	ThanosRulerTrustedCABundle              = "assets/thanos-ruler/trusted-ca-bundle.yaml"
 	ThanosRulerServiceMonitor               = "assets/thanos-ruler/service-monitor.yaml"
+	ThanosRulerPrometheusRule               = "assets/thanos-ruler/thanos-ruler-prometheus-rule.yaml"
 
 	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
 )
@@ -2865,6 +2866,10 @@ func (f *Factory) ThanosRulerMonitoringClusterRoleBinding() (*rbacv1.ClusterRole
 
 func (f *Factory) ThanosRulerClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(MustAssetReader(ThanosRulerClusterRole))
+}
+
+func (f *Factory) ThanosRulerPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(MustAssetReader(ThanosRulerPrometheusRule))
 }
 
 func (f *Factory) ThanosRulerServiceMonitor() (*monv1.ServiceMonitor, error) {
