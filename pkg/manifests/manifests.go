@@ -1712,7 +1712,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.Service
 	}
 
 	sm.Namespace = f.namespaceUserWorkload
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-operator-user-workload.%s.svc", f.namespace)
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-operator.%s.svc", f.namespaceUserWorkload)
 
 	return sm, nil
 }
