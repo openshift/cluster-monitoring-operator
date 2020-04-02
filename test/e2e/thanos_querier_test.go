@@ -80,11 +80,18 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 			return false, nil
 		}
 
-		if len(ss.Spec.Template.Spec.Containers[manifests.THANOS_QUERIER_CONTAINER_OAUTH_PROXY].VolumeMounts) == 0 {
+		var volMounts []v1.VolumeMount
+		for _, c := range ss.Spec.Template.Spec.Containers {
+			if c.Name == "oauth-proxy" {
+				volMounts = c.VolumeMounts
+			}
+		}
+
+		if len(volMounts) == 0 {
 			return false, errors.New("Could not find any VolumeMounts, expected at least 1")
 		}
 
-		for _, mount := range ss.Spec.Template.Spec.Containers[manifests.THANOS_QUERIER_CONTAINER_OAUTH_PROXY].VolumeMounts {
+		for _, mount := range volMounts {
 			if mount.Name == "thanos-querier-trusted-ca-bundle" {
 				return true, nil
 			}

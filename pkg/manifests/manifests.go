@@ -184,19 +184,20 @@ var (
 	TelemeterClientServiceMonitor         = "assets/telemeter-client/service-monitor.yaml"
 	TelemeterClientServingCertsCABundle   = "assets/telemeter-client/serving-certs-c-a-bundle.yaml"
 
-	ThanosQuerierDeployment         = "assets/thanos-querier/deployment.yaml"
-	ThanosQuerierService            = "assets/thanos-querier/service.yaml"
-	ThanosQuerierServiceMonitor     = "assets/thanos-querier/service-monitor.yaml"
-	ThanosQuerierPrometheusRule     = "assets/thanos-querier/prometheus-rule.yaml"
-	ThanosQuerierRoute              = "assets/thanos-querier/route.yaml"
-	ThanosQuerierOauthCookieSecret  = "assets/thanos-querier/oauth-cookie-secret.yaml"
-	ThanosQuerierHtpasswdSecret     = "assets/thanos-querier/oauth-htpasswd-secret.yaml"
-	ThanosQuerierRBACProxySecret    = "assets/thanos-querier/kube-rbac-proxy-secret.yaml"
-	ThanosQuerierServiceAccount     = "assets/thanos-querier/service-account.yaml"
-	ThanosQuerierClusterRole        = "assets/thanos-querier/cluster-role.yaml"
-	ThanosQuerierClusterRoleBinding = "assets/thanos-querier/cluster-role-binding.yaml"
-	ThanosQuerierGrpcTLSSecret      = "assets/thanos-querier/grpc-tls-secret.yaml"
-	ThanosQuerierTrustedCABundle    = "assets/thanos-querier/trusted-ca-bundle.yaml"
+	ThanosQuerierDeployment           = "assets/thanos-querier/deployment.yaml"
+	ThanosQuerierService              = "assets/thanos-querier/service.yaml"
+	ThanosQuerierServiceMonitor       = "assets/thanos-querier/service-monitor.yaml"
+	ThanosQuerierPrometheusRule       = "assets/thanos-querier/prometheus-rule.yaml"
+	ThanosQuerierRoute                = "assets/thanos-querier/route.yaml"
+	ThanosQuerierOauthCookieSecret    = "assets/thanos-querier/oauth-cookie-secret.yaml"
+	ThanosQuerierHtpasswdSecret       = "assets/thanos-querier/oauth-htpasswd-secret.yaml"
+	ThanosQuerierRBACProxySecret      = "assets/thanos-querier/kube-rbac-proxy-secret.yaml"
+	ThanosQuerierRBACProxyRulesSecret = "assets/thanos-querier/kube-rbac-proxy-rules-secret.yaml"
+	ThanosQuerierServiceAccount       = "assets/thanos-querier/service-account.yaml"
+	ThanosQuerierClusterRole          = "assets/thanos-querier/cluster-role.yaml"
+	ThanosQuerierClusterRoleBinding   = "assets/thanos-querier/cluster-role-binding.yaml"
+	ThanosQuerierGrpcTLSSecret        = "assets/thanos-querier/grpc-tls-secret.yaml"
+	ThanosQuerierTrustedCABundle      = "assets/thanos-querier/trusted-ca-bundle.yaml"
 
 	ThanosRulerCustomResource               = "assets/thanos-ruler/thanos-ruler.yaml"
 	ThanosRulerService                      = "assets/thanos-ruler/service.yaml"
@@ -1033,6 +1034,16 @@ func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 
 func (f *Factory) ThanosQuerierRBACProxySecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(MustAssetReader(ThanosQuerierRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+func (f *Factory) ThanosQuerierRBACProxyRulesSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ThanosQuerierRBACProxyRulesSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -2626,54 +2637,78 @@ func (f *Factory) NewValidatingWebhook(manifest io.Reader) (*admissionv1.Validat
 	return NewValidatingWebhook(manifest)
 }
 
-const (
-	// These constants refer to indices of prometheus-k8s containers.
-	// They need to be in sync with jsonnet/prometheus.jsonnet
-	THANOS_QUERIER_CONTAINER_THANOS           = 0
-	THANOS_QUERIER_CONTAINER_OAUTH_PROXY      = 1
-	THANOS_QUERIER_CONTAINER_KUBE_RBAC_PROXY  = 2
-	THANOS_QUERIER_CONTAINER_PROM_LABEL_PROXY = 3
-)
-
 func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool, trustedCA *v1.ConfigMap) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(MustAssetReader(ThanosQuerierDeployment))
 	if err != nil {
 		return nil, err
 	}
 
-	setEnv := func(name, value string) {
-		for i := range d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].Env {
-			if d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].Env[i].Name == name {
-				d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].Env[i].Value = value
+	d.Namespace = f.namespace
+
+	setEnv := func(container *v1.Container, name, value string) {
+		for i := range container.Env {
+			if container.Env[i].Name == name {
+				container.Env[i].Value = value
 				break
 			}
 		}
 	}
+	for i, c := range d.Spec.Template.Spec.Containers {
+		switch c.Name {
+		case "oauth-proxy":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-	}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+				setEnv(&d.Spec.Template.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+				setEnv(&d.Spec.Template.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+				setEnv(&d.Spec.Template.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
+			}
 
-	d.Namespace = f.namespace
-	d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_THANOS].Image = f.config.Images.Thanos
-	d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].Image = f.config.Images.OauthProxy
-	d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_KUBE_RBAC_PROXY].Image = f.config.Images.KubeRbacProxy
-	d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_PROM_LABEL_PROXY].Image = f.config.Images.PromLabelProxy
+			if trustedCA != nil {
+				volumeName := "thanos-querier-trusted-ca-bundle"
+				d.Spec.Template.Spec.Containers[i].VolumeMounts = append(
+					d.Spec.Template.Spec.Containers[i].VolumeMounts,
+					trustedCABundleVolumeMount(volumeName),
+				)
 
-	if enableUserWorkloadMonitoring {
-		d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_THANOS].Args = append(
-			d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_THANOS].Args,
-			"--store=dnssrv+_grpc._tcp.prometheus-operated.openshift-user-workload-monitoring.svc.cluster.local",
-			"--store=dnssrv+_grpc._tcp.thanos-ruler-operated.openshift-user-workload-monitoring.svc.cluster.local",
-			"--rule=dnssrv+_grpc._tcp.prometheus-operated.openshift-user-workload-monitoring.svc.cluster.local",
-			"--rule=dnssrv+_grpc._tcp.thanos-ruler-operated.openshift-user-workload-monitoring.svc.cluster.local",
-		)
+				volume := trustedCABundleVolume(trustedCA.Name, volumeName)
+				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+					Key:  TrustedCABundleKey,
+					Path: "tls-ca-bundle.pem",
+				})
+				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
+			}
+
+		case "thanos-query":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.Thanos
+
+			if enableUserWorkloadMonitoring {
+				d.Spec.Template.Spec.Containers[i].Args = append(
+					d.Spec.Template.Spec.Containers[i].Args,
+					"--store=dnssrv+_grpc._tcp.prometheus-operated.openshift-user-workload-monitoring.svc.cluster.local",
+					"--store=dnssrv+_grpc._tcp.thanos-ruler-operated.openshift-user-workload-monitoring.svc.cluster.local",
+					"--rule=dnssrv+_grpc._tcp.prometheus-operated.openshift-user-workload-monitoring.svc.cluster.local",
+					"--rule=dnssrv+_grpc._tcp.thanos-ruler-operated.openshift-user-workload-monitoring.svc.cluster.local",
+				)
+			}
+
+			if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources != nil {
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources
+			}
+
+		case "prom-label-proxy":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
+
+		case "kube-rbac-proxy":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+
+		case "kube-rbac-proxy-rules":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		}
 	}
 
 	d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, v1.Volume{
@@ -2684,29 +2719,6 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 			},
 		},
 	})
-
-	if trustedCA != nil {
-		volumeName := "thanos-querier-trusted-ca-bundle"
-		d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].VolumeMounts = append(
-			d.Spec.Template.Spec.Containers[THANOS_QUERIER_CONTAINER_OAUTH_PROXY].VolumeMounts,
-			trustedCABundleVolumeMount(volumeName),
-		)
-
-		volume := trustedCABundleVolume(trustedCA.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  TrustedCABundleKey,
-			Path: "tls-ca-bundle.pem",
-		})
-		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
-	}
-
-	if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources != nil {
-		for i, c := range d.Spec.Template.Spec.Containers {
-			if c.Name == "thanos-query" {
-				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources
-			}
-		}
-	}
 
 	if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.NodeSelector
