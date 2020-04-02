@@ -123,6 +123,10 @@ func (r *StatusReporter) SetInProgress() error {
 	return err
 }
 
+func (r *StatusReporter) Get() (*v1.ClusterOperator, error) {
+	return r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
+}
+
 func (r *StatusReporter) SetFailed(statusErr error, reason string) error {
 	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
