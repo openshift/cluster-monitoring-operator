@@ -254,7 +254,20 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(trsm)
-	return errors.Wrap(err, "reconciling Thanos Ruler ServiceMonitor failed")
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos Ruler ServiceMonitor failed")
+	}
+
+	pm, err := t.factory.ThanosRulerPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler PrometheusRule failed")
+	}
+
+	err = t.client.CreateOrUpdatePrometheusRule(pm)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos Ruler PrometheusRule failed")
+	}
+	return nil
 }
 
 func (t *ThanosRulerUserWorkloadTask) destroy() error {
