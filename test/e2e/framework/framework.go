@@ -49,9 +49,9 @@ var (
 type Framework struct {
 	OperatorClient      *client.Client
 	KubeClient          kubernetes.Interface
-	ThanosQuerierClient *RouteClient
-	PrometheusK8sClient *RouteClient
-	AlertmanagerClient  *RouteClient
+	ThanosQuerierClient *PrometheusClient
+	PrometheusK8sClient *PrometheusClient
+	AlertmanagerClient  *PrometheusClient
 	APIServicesClient   *apiservicesclient.Clientset
 	MetricsClient       *metricsclient.Clientset
 	kubeConfigPath      string
@@ -115,26 +115,34 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "failed to setup test framework")
 	}
 
+	token, err := f.GetServiceAccountToken("openshift-monitoring", "cluster-monitoring-operator-e2e")
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Prometheus client depends on setup above.
-	f.ThanosQuerierClient, err = NewRouteClient(
-		openshiftRouteClient, kubeClient,
+	f.ThanosQuerierClient, err = NewPrometheusClientFromRoute(
+		openshiftRouteClient,
 		"openshift-monitoring", "thanos-querier",
+		token,
 	)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating ThanosQuerierClient failed")
 	}
 
-	f.PrometheusK8sClient, err = NewRouteClient(
-		openshiftRouteClient, kubeClient,
+	f.PrometheusK8sClient, err = NewPrometheusClientFromRoute(
+		openshiftRouteClient,
 		"openshift-monitoring", "prometheus-k8s",
+		token,
 	)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating PrometheusK8sClient failed")
 	}
 
-	f.AlertmanagerClient, err = NewRouteClient(
-		openshiftRouteClient, kubeClient,
+	f.AlertmanagerClient, err = NewPrometheusClientFromRoute(
+		openshiftRouteClient,
 		"openshift-monitoring", "alertmanager-main",
+		token,
 	)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating AlertmanagerClient failed")
@@ -200,6 +208,24 @@ func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (clea
 	return func() error {
 		return f.KubeClient.CoreV1().ServiceAccounts(namespace).Delete(sa.Name, &metav1.DeleteOptions{})
 	}, nil
+}
+
+func (f *Framework) GetServiceAccountToken(namespace, name string) (string, error) {
+	secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, secret := range secrets.Items {
+		_, dockerToken := secret.Annotations["openshift.io/create-dockercfg-secrets"]
+		token := strings.Contains(secret.Name, fmt.Sprintf("%s-token-", name))
+
+		// we have to skip the token secret that contains the openshift.io/create-dockercfg-secrets annotation
+		// as this is the token to talk to the internal registry.
+		if !dockerToken && token {
+			return string(secret.Data["token"]), nil
+		}
+	}
+	return "", errors.Errorf("cannot find token for %s/%s service account", namespace, name)
 }
 
 func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterRole string) (cleanUpFunc, error) {
