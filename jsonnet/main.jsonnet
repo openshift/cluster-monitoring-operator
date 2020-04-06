@@ -5,19 +5,6 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-anti-affinity.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-thanos-sidecar.libsonnet') +
-           (import 'kube-thanos/kube-thanos-querier.libsonnet') +
-           (import 'kube-thanos/kube-thanos-ruler.libsonnet') +
-           (import 'kube-thanos/kube-thanos-store.libsonnet') +
-           {
-             thanos+:: {
-               ruler+: {
-                 objectStorageConfig: {
-                   name: 'storename',
-                   key: 'storekey',
-                 },
-               },
-             },
-           } +
            (import 'openshift-state-metrics/openshift-state-metrics.libsonnet') +
            {
              prometheusK8s+:: $.prometheus {
