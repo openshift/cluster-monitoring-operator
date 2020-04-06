@@ -15,10 +15,12 @@
 package framework
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"testing"
 	"time"
@@ -35,8 +37,8 @@ type PrometheusClient struct {
 	host string
 	// Bearer token to use for authentication.
 	token string
-	// Additional query parameters to pass to the API (typically when querying through kube-rbac-proxy).
-	queryParameters map[string][]string
+	// RoundTripper to use for HTTP transactions.
+	rt http.RoundTripper
 }
 
 // NewPrometheusClientFromRoute creates and returns a new PrometheusClient from the given OpenShift route.
@@ -50,64 +52,104 @@ func NewPrometheusClientFromRoute(
 		return nil, err
 	}
 
-	return &PrometheusClient{
-		host:  route.Spec.Host,
-		token: token,
-	}, nil
+	return NewPrometheusClient(route.Spec.Host, token), nil
+}
+
+// WrapTransporter wraps an http.RoundTripper with another.
+type WrapTransporter interface {
+	WrapTransport(rt http.RoundTripper) http.RoundTripper
 }
 
 // NewPrometheusClient creates and returns a new PrometheusClient.
-func NewPrometheusClient(host, token string, queryParameters map[string][]string) *PrometheusClient {
+func NewPrometheusClient(host, token string, wts ...WrapTransporter) *PrometheusClient {
+	// #nosec
+	var rt http.RoundTripper = &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	rt = (&HeaderInjector{Name: "Authorization", Value: "Bearer " + token}).WrapTransport(rt)
+	for i := range wts {
+		rt = wts[i].WrapTransport(rt)
+	}
 	return &PrometheusClient{
-		host:            host,
-		token:           token,
-		queryParameters: queryParameters,
+		host: host,
+		rt:   rt,
 	}
 }
 
-func (c *PrometheusClient) injectQueryParameters(req *http.Request, kvs ...string) {
-	q := req.URL.Query()
-	for k, arr := range c.queryParameters {
-		for _, v := range arr {
-			q.Add(k, v)
-		}
-	}
-	for i := 0; i < len(kvs)/2; i++ {
-		q.Add(kvs[i*2], kvs[i*2+1])
-	}
-	req.URL.RawQuery = q.Encode()
-	return
-}
+// MaxLength is the maximum string length returned by ClampMax().
+const MaxLength = 1000
 
-func clampMax(b []byte) string {
-	const maxLength = 1000
+// ClampMax converts a slice of bytes to a string truncated to MaxLength.
+func ClampMax(b []byte) string {
 	s := string(b)
-	if len(s) <= maxLength {
+	if len(s) <= MaxLength {
 		return s
 	}
-	return s[0:maxLength-3] + "..."
+	return s[0:MaxLength-3] + "..."
+}
+
+// Do sends an HTTP request to the remote endpoint and returns the response.
+func (c *PrometheusClient) Do(method string, path string, body []byte) (*http.Response, error) {
+	u, err := url.Parse(path)
+	if err != nil {
+		return nil, err
+	}
+	u.Host = c.host
+	u.Scheme = "https"
+
+	req, err := http.NewRequest(method, u.String(), bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	return (&http.Client{Transport: c.rt}).Do(req)
+}
+
+type roundTripperFunc func(req *http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+// HeaderInjector injects a fixed HTTP header into the inbound request.
+type HeaderInjector struct {
+	Name  string
+	Value string
+}
+
+// WrapTransport implements the WrapTransporter interface.
+func (h *HeaderInjector) WrapTransport(rt http.RoundTripper) http.RoundTripper {
+	return roundTripperFunc(
+		func(req *http.Request) (*http.Response, error) {
+			req.Header.Add(h.Name, h.Value)
+			return rt.RoundTrip(req)
+		},
+	)
+}
+
+// QueryParameterInjector injects a fixed query parameter into the inbound request.
+// It is typically used when querying kube-rbac-proxy.
+type QueryParameterInjector struct {
+	Name  string
+	Value string
+}
+
+// WrapTransport implements the WrapTransporter interface.
+func (qp *QueryParameterInjector) WrapTransport(rt http.RoundTripper) http.RoundTripper {
+	return roundTripperFunc(
+		func(req *http.Request) (*http.Response, error) {
+			q := req.URL.Query()
+			q.Add(qp.Name, qp.Value)
+			req.URL.RawQuery = q.Encode()
+			return rt.RoundTrip(req)
+		},
+	)
 }
 
 // PrometheusQuery runs an HTTP GET request against the Prometheus query API and returns
 // the response body.
 func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
-	// #nosec
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	client := &http.Client{Transport: tr}
-
-	req, err := http.NewRequest("GET", "https://"+c.host+"/api/v1/query", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	c.injectQueryParameters(req, "query", query)
-
-	req.Header.Add("Authorization", "Bearer "+c.token)
-
-	resp, err := client.Do(req)
+	resp, err := c.Do("GET", fmt.Sprintf("/api/v1/query?query=%s", url.QueryEscape(query)), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +161,7 @@ func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, clampMax(body))
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, ClampMax(body))
 	}
 
 	return body, nil
@@ -128,21 +170,7 @@ func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
 // PrometheusRules runs an HTTP GET request against the Prometheus rules API and returns
 // the response body.
 func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
-	// #nosec
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	client := &http.Client{Transport: tr}
-
-	req, err := http.NewRequest("GET", "https://"+c.host+"/api/v1/rules", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer "+c.token)
-
-	resp, err := client.Do(req)
+	resp, err := c.Do("GET", "/api/v1/rules", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -154,44 +182,37 @@ func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, clampMax(body))
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, ClampMax(body))
 	}
 
 	return body, nil
 }
 
-// AlertmanagerQuery runs an HTTP GET request against the Alertmanager
+// AlertmanagerQueryAlerts runs an HTTP GET request against the Alertmanager
 // /api/v2/alerts endpoint and returns the response body.
 func (c *PrometheusClient) AlertmanagerQueryAlerts(kvs ...string) ([]byte, error) {
-	// #nosec
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	q := make(url.Values)
+	for i := 0; i < len(kvs)/2; i++ {
+		q.Add(kvs[i*2], kvs[i*2+1])
+	}
+	u := url.URL{
+		Path:     "/api/v2/alerts",
+		RawQuery: q.Encode(),
 	}
 
-	client := &http.Client{Transport: tr}
-
-	req, err := http.NewRequest("GET", "https://"+c.host+"/api/v2/alerts", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	c.injectQueryParameters(req, kvs...)
-
-	req.Header.Add("Authorization", "Bearer "+c.token)
-
-	resp, err := client.Do(req)
+	resp, err := c.Do("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, ClampMax(body))
 	}
 
 	return body, nil
