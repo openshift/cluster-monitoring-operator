@@ -55,7 +55,7 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "release-0.2"
+      "version": "master"
     },
     {
       "source": {
