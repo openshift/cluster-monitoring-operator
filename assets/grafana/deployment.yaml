@@ -25,7 +25,7 @@ spec:
           name: http
         resources:
           requests:
-            cpu: 100m
+            cpu: 4m
             memory: 100Mi
         volumeMounts:
         - mountPath: /var/lib/grafana
@@ -108,7 +108,7 @@ spec:
             scheme: HTTPS
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         volumeMounts:
         - mountPath: /etc/tls/private
