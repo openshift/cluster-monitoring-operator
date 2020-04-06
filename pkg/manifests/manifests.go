@@ -198,7 +198,6 @@ var (
 	ThanosRulerHtpasswdSecret               = "assets/thanos-ruler/oauth-htpasswd-secret.yaml"
 	ThanosRulerQueryConfigSecret            = "assets/thanos-ruler/query-config-secret.yaml"
 	ThanosRulerAlertmanagerConfigSecret     = "assets/thanos-ruler/alertmanagers-config-secret.yaml"
-	ThanosRulerRBACProxySecret              = "assets/thanos-ruler/kube-rbac-proxy-secret.yaml"
 	ThanosRulerServiceAccount               = "assets/thanos-ruler/service-account.yaml"
 	ThanosRulerClusterRole                  = "assets/thanos-ruler/cluster-role.yaml"
 	ThanosRulerClusterRoleBinding           = "assets/thanos-ruler/cluster-role-binding.yaml"
