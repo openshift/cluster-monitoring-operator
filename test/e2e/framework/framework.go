@@ -22,6 +22,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"testing"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -286,7 +287,9 @@ func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, 
 	}, nil
 }
 
-func (f *Framework) ForwardPort(svc string, port int) (string, func(), error) {
+func (f *Framework) ForwardPort(t *testing.T, svc string, port int) (string, func(), error) {
+	t.Helper()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, "oc", "port-forward", fmt.Sprintf("service/%s", svc), fmt.Sprintf(":%d", port), "-n", f.Ns, "--config", f.kubeConfigPath)
 
@@ -300,6 +303,21 @@ func (f *Framework) ForwardPort(svc string, port int) (string, func(), error) {
 		cleanUp()
 		return "", nil, errors.Wrap(err, "fail to open stdout")
 	}
+
+	stdErr, err := cmd.StderrPipe()
+	if err != nil {
+		cleanUp()
+		return "", nil, errors.Wrap(err, "fail to open stderr")
+	}
+	go func() {
+		scanner := bufio.NewScanner(stdErr)
+		for scanner.Scan() {
+			t.Log(scanner.Text())
+		}
+		if err != nil {
+			t.Logf("stderr: %v", scanner.Err())
+		}
+	}()
 
 	err = cmd.Start()
 	if err != nil {
@@ -321,6 +339,7 @@ func (f *Framework) ForwardPort(svc string, port int) (string, func(), error) {
 	re := regexp.MustCompile(`^Forwarding from [^:]+:(\d+)`)
 	matches := re.FindStringSubmatch(output)
 	if len(matches) != 2 {
+		cleanUp()
 		return "", nil, errors.Wrapf(err, "fail to parse port's value: %q", output)
 	}
 	_, err = strconv.Atoi(matches[1])
