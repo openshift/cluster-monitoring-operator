@@ -181,7 +181,7 @@ local thanosRulerRules =
                 server_name: 'thanos-querier.openshift-monitoring.svc',
               },
             },
-            static_configs: ['thanos-querier.openshift-monitoring.svc:9091'],
+            static_configs: ['dnssrv+_web._tcp.thanos-querier.openshift-monitoring.svc.cluster.local'],
             scheme: 'https',
           }]),
         };
