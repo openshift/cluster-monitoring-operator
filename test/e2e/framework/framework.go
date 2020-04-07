@@ -73,7 +73,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	// So far only necessary for prometheusK8sClient.
 	openshiftRouteClient, err := routev1.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating openshiftClient failed")
+		return nil, nil, errors.Wrap(err, "creating openshiftRouteClient failed")
 	}
 
 	mClient, err := monClient.NewForConfig(config)

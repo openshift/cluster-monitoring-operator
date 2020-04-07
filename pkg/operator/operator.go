@@ -210,8 +210,6 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 func (o *Operator) keyFunc(obj interface{}) (string, bool) {
@@ -296,7 +294,15 @@ func (o *Operator) enqueue(obj interface{}) {
 }
 
 func (o *Operator) sync(key string) error {
-	config := o.Config(key)
+	config, err := o.Config(key)
+	if err != nil {
+		klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
+		reportErr := o.client.StatusReporter().SetFailed(err, "InvalidConfiguration")
+		if reportErr != nil {
+			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
+		}
+		return err
+	}
 	config.SetImages(o.images)
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
@@ -324,7 +330,7 @@ func (o *Operator) sync(key string) error {
 	)
 
 	klog.Info("Updating ClusterOperator status to in progress.")
-	err := o.client.StatusReporter().SetInProgress()
+	err = o.client.StatusReporter().SetInProgress()
 	if err != nil {
 		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
@@ -349,41 +355,39 @@ func (o *Operator) sync(key string) error {
 	return nil
 }
 
-func (o *Operator) loadConfig(key string) *manifests.Config {
-	c := manifests.NewDefaultConfig()
-
+func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
-		klog.Warningf("An error occurred retrieving the Cluster Monitoring ConfigMap. Using defaults: %v", err)
-		return c
+		return nil, errors.Wrap(err, "an error occurred when retrieving the Cluster Monitoring ConfigMap")
 	}
 
 	if !found {
 		klog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
-		return c
+		return manifests.NewDefaultConfig(), nil
 	}
 
 	cmap := obj.(*v1.ConfigMap)
 	configContent, found := cmap.Data["config.yaml"]
 
 	if !found {
-		klog.Warning("Cluster Monitoring ConfigMap does not contain a config. Using defaults.")
-		return c
+		return nil, errors.New("the Cluster Monitoring ConfigMap doesn't contain a 'config.yaml' key")
 	}
 
 	cParsed, err := manifests.NewConfigFromString(configContent)
 	if err != nil {
-		klog.Warningf("Cluster Monitoring config could not be parsed. Using defaults: %v", err)
-		return c
+		return nil, errors.Wrap(err, "the Cluster Monitoring ConfigMap could not be parsed")
 	}
 
-	return cParsed
+	return cParsed, nil
 }
 
-func (o *Operator) Config(key string) *manifests.Config {
-	c := o.loadConfig(key)
+func (o *Operator) Config(key string) (*manifests.Config, error) {
+	c, err := o.loadConfig(key)
+	if err != nil {
+		return nil, err
+	}
 
-	// Only fetch the the token and cluster ID if they have not been specified in the config.
+	// Only fetch the token and cluster ID if they have not been specified in the config.
 	if c.TelemeterClientConfig.ClusterID == "" || c.TelemeterClientConfig.Token == "" {
 		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
 			return o.client.GetClusterVersion("version")
@@ -402,7 +406,7 @@ func (o *Operator) Config(key string) *manifests.Config {
 		}
 	}
 
-	err := c.LoadProxy(func() (*configv1.Proxy, error) {
+	err = c.LoadProxy(func() (*configv1.Proxy, error) {
 		return o.client.GetProxy("cluster")
 	})
 	if err != nil {
@@ -419,26 +423,26 @@ func (o *Operator) Config(key string) *manifests.Config {
 	cm, err := o.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
 	if err != nil {
 		klog.Warningf("Error loading etcd CA certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+		return c, nil
 	}
 
 	s, err := o.client.GetSecret("openshift-config", "etcd-metric-client")
 	if err != nil {
 		klog.Warningf("Error loading etcd client secrets for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+		return c, nil
 	}
 
-	if err == nil {
-		caContent, caFound := cm.Data["ca-bundle.crt"]
-		certContent, certFound := s.Data["tls.crt"]
-		keyContent, keyFound := s.Data["tls.key"]
+	caContent, caFound := cm.Data["ca-bundle.crt"]
+	certContent, certFound := s.Data["tls.crt"]
+	keyContent, keyFound := s.Data["tls.key"]
 
-		if caFound && len(caContent) > 0 &&
-			certFound && len(certContent) > 0 &&
-			keyFound && len(keyContent) > 0 {
+	if caFound && len(caContent) > 0 &&
+		certFound && len(certContent) > 0 &&
+		keyFound && len(keyContent) > 0 {
 
-			trueBool := true
-			c.EtcdConfig.Enabled = &trueBool
-		}
+		trueBool := true
+		c.EtcdConfig.Enabled = &trueBool
 	}
 
-	return c
+	return c, nil
 }
