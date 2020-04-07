@@ -4,7 +4,10 @@ metadata:
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: thanos-querier-tls
   labels:
-    app.kubernetes.io/name: thanos-querier
+    app.kubernetes.io/component: query-layer
+    app.kubernetes.io/instance: thanos-querier
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/version: 0.11.0
   name: thanos-querier
   namespace: openshift-monitoring
 spec:
@@ -16,5 +19,7 @@ spec:
     port: 9092
     targetPort: tenancy
   selector:
-    app.kubernetes.io/name: thanos-querier
+    app.kubernetes.io/component: query-layer
+    app.kubernetes.io/instance: thanos-querier
+    app.kubernetes.io/name: thanos-query
   type: ClusterIP

@@ -2601,7 +2601,7 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 
 	if f.config.ThanosQuerierConfig.Resources != nil {
 		for i, c := range d.Spec.Template.Spec.Containers {
-			if c.Name == "thanos-querier" {
+			if c.Name == "thanos-query" {
 				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ThanosQuerierConfig.Resources
 			}
 		}

@@ -1390,7 +1390,7 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 	}
 
 	for _, c := range d.Spec.Template.Spec.Containers {
-		if c.Name == "thanos-querier" {
+		if c.Name == "thanos-query" {
 			for _, tc := range []struct {
 				name, want string
 				resource   func() *resource.Quantity

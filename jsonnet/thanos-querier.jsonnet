@@ -29,12 +29,23 @@ local authorizationRole =
   local config = super._config,
 
   thanos+:: {
-    image:: config.imageRepos.openshiftThanos + ':' + config.versions.openshiftThanos,
 
-    querier+: {
+    querier+: (import 'kube-thanos/kube-thanos-query.libsonnet') {
+      local tq = self,
+
+      config+:: {
+        name: 'thanos-querier',
+        namespace: config.namespace,
+        image: config.imageRepos.openshiftThanos + ':' + config.versions.openshiftThanos,
+        version: '0.11.0',
+        replicas: 2,
+        replicaLabels: ['prometheus_replica', 'thanos_ruler_replica'],
+        stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
+      },
+
       trustedCaBundle:
         configmap.new('thanos-querier-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
-        configmap.mixin.metadata.withNamespace($._config.namespace) +
+        configmap.mixin.metadata.withNamespace(tq.config.namespace) +
         configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
 
       route: {
@@ -42,7 +53,8 @@ local authorizationRole =
         kind: 'Route',
         metadata: {
           name: 'thanos-querier',
-          namespace: $._config.namespace,
+          namespace: tq.config.namespace,
+          labels: tq.config.commonLabels,
         },
         spec: {
           to: {
@@ -62,6 +74,7 @@ local authorizationRole =
       clusterRole:
         clusterRole.new() +
         clusterRole.mixin.metadata.withName('thanos-querier') +
+        clusterRole.mixin.metadata.withLabels(tq.config.commonLabels) +
         clusterRole.withRules([authenticationRole, authorizationRole]),
 
       clusterRoleBinding:
@@ -69,34 +82,35 @@ local authorizationRole =
 
         clusterRoleBinding.new() +
         clusterRoleBinding.mixin.metadata.withName('thanos-querier') +
+        clusterRoleBinding.mixin.metadata.withLabels(tq.config.commonLabels) +
         clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
         clusterRoleBinding.mixin.roleRef.withName('thanos-querier') +
         clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
         clusterRoleBinding.withSubjects([{
           kind: 'ServiceAccount',
           name: 'thanos-querier',
-          namespace: $._config.namespace,
+          namespace: tq.config.namespace,
         }]),
 
       grpcTlsSecret:
         secret.new('thanos-querier-grpc-tls', {}) +
-        secret.mixin.metadata.withNamespace($._config.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-querier' }),
+        secret.mixin.metadata.withNamespace(tq.config.namespace) +
+        secret.mixin.metadata.withLabels(tq.config.commonLabels),
 
       // holds the secret which is used encrypt/decrypt cookies
       // issued by the oauth proxy.
       oauthCookieSecret:
         secret.new('thanos-querier-oauth-cookie', {}) +
-        secret.mixin.metadata.withNamespace($._config.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-querier' }),
+        secret.mixin.metadata.withNamespace(tq.config.namespace) +
+        secret.mixin.metadata.withLabels(tq.config.commonLabels),
 
       // holds the htpasswd configuration
       // which includes a static secret used to authenticate/authorize
       // requests originating from grafana.
       oauthHtpasswdSecret:
         secret.new('thanos-querier-oauth-htpasswd', {}) +
-        secret.mixin.metadata.withNamespace($._config.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-querier' }),
+        secret.mixin.metadata.withNamespace(tq.config.namespace) +
+        secret.mixin.metadata.withLabels(tq.config.commonLabels),
 
       // holds the kube-rbac-proxy configuration as a secret.
       // It configures to template the request in flight
@@ -124,14 +138,15 @@ local authorizationRole =
         };
 
         secret.new('thanos-querier-kube-rbac-proxy', config) +
-        secret.mixin.metadata.withNamespace($._config.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos' }),
+        secret.mixin.metadata.withNamespace(tq.config.namespace) +
+        secret.mixin.metadata.withLabels(tq.config.commonLabels),
 
       serviceAccount:
         local serviceAccount = k.core.v1.serviceAccount;
 
         serviceAccount.new('thanos-querier') +
-        serviceAccount.mixin.metadata.withNamespace($._config.namespace) +
+        serviceAccount.mixin.metadata.withNamespace(tq.config.namespace) +
+        serviceAccount.mixin.metadata.withLabels(tq.config.commonLabels) +
 
         // The ServiceAccount needs this annotation, to signify the identity
         // provider, that when a users it doing the oauth flow through the
@@ -148,7 +163,7 @@ local authorizationRole =
         service.mixin.metadata.withAnnotations({
           'service.alpha.openshift.io/serving-cert-secret-name': 'thanos-querier-tls',
         }) +
-        service.mixin.metadata.withNamespace(config.namespace) +
+        service.mixin.metadata.withLabels(tq.config.commonLabels) +
         // The ClusterIP is explicitly set, as it signifies the
         // cluster-monitoring-operator, that when reconciling this service the
         // cluster IP needs to be retained.
@@ -159,22 +174,17 @@ local authorizationRole =
         ]),
 
       deployment+:
-        deployment.mixin.metadata.withNamespace(config.namespace) +
         {
           spec+: {
-            replicas: 2,
             template+: {
               spec+: {
-                // TODO (the library adds some affinity rules here, we have to dynamically dependency inject the namespace here)
-                affinity+:: {},
-                volumes: [
+                volumes+: [
                   volume.fromSecret('secret-thanos-querier-tls', 'thanos-querier-tls'),
                   volume.fromSecret('secret-thanos-querier-oauth-cookie', 'thanos-querier-oauth-cookie'),
                   volume.fromSecret('secret-thanos-querier-oauth-htpasswd', 'thanos-querier-oauth-htpasswd'),
                   volume.fromSecret('secret-thanos-querier-kube-rbac-proxy', 'thanos-querier-kube-rbac-proxy'),
                 ],
                 serviceAccountName: 'thanos-querier',
-                securityContext: {},
                 priorityClassName: 'system-cluster-critical',
                 containers: [
                   super.containers[0] {
@@ -190,21 +200,18 @@ local authorizationRole =
                         command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/healthy; elif [ -x "$(command -v wget)" ]; then wget --quiet --tries=1 --spider http://localhost:9090/-/healthy; else exit 1; fi'],
                       },
                     },
-                    args: [
-                      'query',
-                      '--query.replica-label=prometheus_replica',
-                      '--query.replica-label=thanos_ruler_replica',
-                      '--grpc-address=127.0.0.1:10901',
-                      '--http-address=127.0.0.1:9090',
+                    args: std.map(
+                      function(a)
+                        if std.startsWith(a, '--grpc-address=') then '--grpc-address=127.0.0.1:10901'
+                        else if std.startsWith(a, '--http-address=') then '--http-address=127.0.0.1:9090'
+                        else a,
+                      super.args
+                    ) + [
                       '--grpc-client-tls-secure',
                       '--grpc-client-tls-cert=/etc/tls/grpc/client.crt',
                       '--grpc-client-tls-key=/etc/tls/grpc/client.key',
                       '--grpc-client-tls-ca=/etc/tls/grpc/ca.crt',
                       '--grpc-client-server-name=prometheus-grpc',
-                      '--store=dnssrv+_grpc._tcp.%s.%s.svc.cluster.local' % [
-                        'prometheus-operated',
-                        'openshift-monitoring',
-                      ],
                     ],
                     resources: {
                       requests: {
@@ -218,7 +225,7 @@ local authorizationRole =
                         name: 'http',
                       },
                     ],
-                    volumeMounts: [
+                    volumeMounts+: [
                       {
                         mountPath: '/etc/tls/grpc',
                         name: 'secret-grpc-tls',
