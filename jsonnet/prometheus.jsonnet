@@ -92,7 +92,7 @@ local namespacesRole =
 
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
+        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
       }) +
       service.mixin.spec.withType('ClusterIP') +
       service.mixin.spec.withPorts([

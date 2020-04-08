@@ -19,7 +19,7 @@ local tlsVolumeName = 'node-exporter-tls';
 
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': 'node-exporter-tls',
+        'service.beta.openshift.io/serving-cert-secret-name': 'node-exporter-tls',
       }),
 
     // This changes node-exporter to be scraped with validating TLS.

@@ -161,7 +161,7 @@ local authorizationRole =
         // to synthesize the "thanos-querier-tls" secret.
         // Hence, we don't need to declare that secret explicitly.
         service.mixin.metadata.withAnnotations({
-          'service.alpha.openshift.io/serving-cert-secret-name': 'thanos-querier-tls',
+          'service.beta.openshift.io/serving-cert-secret-name': 'thanos-querier-tls',
         }) +
         service.mixin.metadata.withLabels(tq.config.commonLabels) +
         // The ClusterIP is explicitly set, as it signifies the

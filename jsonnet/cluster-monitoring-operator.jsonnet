@@ -38,7 +38,7 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
       service.mixin.metadata.withNamespace($._config.namespace) +
       service.mixin.spec.withClusterIp('None') +
       service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': 'cluster-monitoring-operator-tls',
+        'service.beta.openshift.io/serving-cert-secret-name': 'cluster-monitoring-operator-tls',
       }),
 
     serviceMonitor: {

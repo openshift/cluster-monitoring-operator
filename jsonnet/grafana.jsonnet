@@ -166,7 +166,7 @@ local authorizationRole = policyRule.new() +
 
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': 'grafana-tls',
+        'service.beta.openshift.io/serving-cert-secret-name': 'grafana-tls',
       }) +
       service.mixin.spec.withType('ClusterIP') +
       service.mixin.spec.withPorts(servicePort.newNamed('https', 3000, 'https')),
