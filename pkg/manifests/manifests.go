@@ -2940,7 +2940,7 @@ func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap, grpcTLS *v1.Secret) (*monv1.ThanosRuler, error) {
+func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.ConfigMap, grpcTLS *v1.Secret) (*monv1.ThanosRuler, error) {
 	t, err := f.NewThanosRuler(MustAssetReader(ThanosRulerCustomResource))
 	if err != nil {
 		return nil, err
@@ -3013,6 +3013,10 @@ func (f *Factory) ThanosRulerCustomResource(trustedCA *v1.ConfigMap, grpcTLS *v1
 			Path: "tls-ca-bundle.pem",
 		})
 		t.Spec.Volumes = append(t.Spec.Volumes, volume)
+	}
+
+	if queryURL != "" {
+		t.Spec.AlertQueryURL = queryURL
 	}
 
 	t.Namespace = f.namespaceUserWorkload

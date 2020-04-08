@@ -4,9 +4,9 @@ go 1.13
 
 require (
 	github.com/Jeffail/gabs v1.1.1
-	github.com/brancz/gojsontoyaml v0.0.0-20190425155809-e8bd32d46b3d
+	github.com/brancz/gojsontoyaml v0.0.0-20191212081931-bf2969bbd742
 	github.com/campoy/embedmd v1.0.0
-	github.com/coreos/prometheus-operator v0.38.0
+	github.com/coreos/prometheus-operator v0.38.1
 	github.com/gogo/protobuf v1.3.1
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/jsonnet-bundler/jsonnet-bundler v0.3.1

@@ -232,7 +232,13 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 			return errors.Wrap(err, "error deleting expired UserWorkload Thanos Ruler GRPC TLS secret")
 		}
 
-		tr, err := t.factory.ThanosRulerCustomResource(trustedCA, s)
+		querierRoute, err := t.factory.ThanosQuerierRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Thanos Querier Route failed")
+		}
+		queryURL, err := t.client.GetRouteURL(querierRoute)
+
+		tr, err := t.factory.ThanosRulerCustomResource(queryURL.String(), trustedCA, s)
 		if err != nil {
 			return errors.Wrap(err, "initializing ThanosRuler object failed")
 		}
@@ -346,7 +352,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 			return errors.Wrap(err, "deleting Thanos Ruler trusted CA bundle ConfigMap failed")
 		}
 
-		tr, err := t.factory.ThanosRulerCustomResource(trustedCA, hs)
+		tr, err := t.factory.ThanosRulerCustomResource("", trustedCA, hs)
 		if err != nil {
 			return errors.Wrap(err, "initializing ThanosRuler object failed")
 		}
