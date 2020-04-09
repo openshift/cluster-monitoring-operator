@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
-    service.alpha.openshift.io/serving-cert-secret-name: prometheus-k8s-tls
+    service.beta.openshift.io/serving-cert-secret-name: prometheus-k8s-tls
   labels:
     prometheus: k8s
   name: prometheus-k8s

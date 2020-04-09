@@ -78,7 +78,7 @@ local alertmanagerRole =
 
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': 'prometheus-user-workload-tls',
+        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-user-workload-tls',
       }) +
       service.mixin.spec.withType('ClusterIP') +
       service.mixin.spec.withPorts([

@@ -218,7 +218,7 @@ local thanosRulerRules =
         // to synthesize the "thanos-ruler-tls" secret.
         // Hence, we don't need to declare that secret explicitly.
         service.mixin.metadata.withAnnotations({
-          'service.alpha.openshift.io/serving-cert-secret-name': 'thanos-ruler-tls',
+          'service.beta.openshift.io/serving-cert-secret-name': 'thanos-ruler-tls',
         }) +
         service.mixin.metadata.withLabels(thanosRulerConfig.labels) +
         service.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +

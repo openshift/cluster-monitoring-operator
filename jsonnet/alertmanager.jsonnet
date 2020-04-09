@@ -76,7 +76,7 @@ local authorizationRole = policyRule.new() +
 
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': 'alertmanager-main-tls',
+        'service.beta.openshift.io/serving-cert-secret-name': 'alertmanager-main-tls',
       }) +
       service.mixin.spec.withType('ClusterIP') +
       service.mixin.spec.withPorts([

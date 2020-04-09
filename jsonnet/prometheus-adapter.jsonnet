@@ -46,7 +46,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
       {
         metadata+: {
           annotations+: {
-            'service.alpha.openshift.io/serving-cert-secret-name': tlsVolumeName,
+            'service.beta.openshift.io/serving-cert-secret-name': tlsVolumeName,
           },
         },
         spec+: {

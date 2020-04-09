@@ -87,7 +87,7 @@ local tlsVolumeName = 'prometheus-operator-tls';
       },
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': "prometheus-operator-tls",
+        'service.beta.openshift.io/serving-cert-secret-name': "prometheus-operator-tls",
       }),
     serviceMonitor+: {
       spec+: {

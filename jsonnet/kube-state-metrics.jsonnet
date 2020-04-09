@@ -18,7 +18,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
 
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.alpha.openshift.io/serving-cert-secret-name': 'kube-state-metrics-tls',
+        'service.beta.openshift.io/serving-cert-secret-name': 'kube-state-metrics-tls',
       }),
 
     // This changes kube-state-metrics to be scraped with validating TLS.
