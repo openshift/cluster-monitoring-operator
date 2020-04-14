@@ -167,6 +167,7 @@ var (
 	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
 	ClusterMonitoringRulesEditClusterRole   = "assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
 	ClusterMonitoringRulesViewClusterRole   = "assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
+	ClusterMonitoringEditClusterRole        = "assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
 	ClusterMonitoringGrpcTLSSecret          = "assets/cluster-monitoring-operator/grpc-tls-secret.yaml"
 
 	TelemeterClientClusterRole            = "assets/telemeter-client/cluster-role.yaml"
@@ -2178,6 +2179,15 @@ func (f *Factory) ClusterMonitoringRulesEditClusterRole() (*rbacv1.ClusterRole, 
 
 func (f *Factory) ClusterMonitoringRulesViewClusterRole() (*rbacv1.ClusterRole, error) {
 	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringRulesViewClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringEditClusterRole() (*rbacv1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringEditClusterRole))
 	if err != nil {
 		return nil, err
 	}

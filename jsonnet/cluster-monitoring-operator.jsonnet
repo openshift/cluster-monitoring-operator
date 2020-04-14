@@ -84,6 +84,21 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
       clusterRole.mixin.metadata.withName('cluster-monitoring-view') +
       clusterRole.withRules(rules),
 
+    monitoringEditClusterRole:
+      local clusterRole = k.rbac.v1.clusterRole;
+      local policyRule = clusterRole.rulesType;
+
+      local editRule = policyRule.new() +
+                       policyRule.withApiGroups(['monitoring.coreos.com']) +
+                       policyRule.withResources(['servicemonitors', 'podmonitors', 'prometheusrules']) +
+                       policyRule.withVerbs(['create', 'delete', 'get', 'list', 'update', 'watch']);
+
+      local rules = [editRule];
+
+      clusterRole.new() +
+      clusterRole.mixin.metadata.withName('monitoring-edit') +
+      clusterRole.withRules(rules),
+
     monitoringRulesViewClusterRole:
       local clusterRole = k.rbac.v1.clusterRole;
       local policyRule = clusterRole.rulesType;
