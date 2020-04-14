@@ -448,24 +448,25 @@ func assertTenancyForMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The tenancy port (9092) is only exposed in-cluster so we need to use
-	// port forwarding to access kube-rbac-proxy.
-	host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9092)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanUp()
-
-	client := framework.NewPrometheusClient(
-		host,
-		token,
-		map[string][]string{"namespace": []string{userWorkloadTestNs}},
-	)
-
 	for _, q := range []string{"up", `up{namespace="should-be-overwritten"}`, fmt.Sprintf(`up{namespace="%s"}`, userWorkloadTestNs)} {
 		t.Logf("Running query %q", q)
+
 		err = framework.Poll(5*time.Second, time.Minute, func() error {
-			b, err := client.PrometheusQuery("up")
+			// The tenancy port (9092) is only exposed in-cluster so we need to use
+			// port forwarding to access kube-rbac-proxy.
+			host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9092)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer cleanUp()
+
+			client := framework.NewPrometheusClient(
+				host,
+				token,
+				map[string][]string{"namespace": []string{userWorkloadTestNs}},
+			)
+
+			b, err := client.PrometheusQuery(q)
 			if err != nil {
 				return err
 			}
