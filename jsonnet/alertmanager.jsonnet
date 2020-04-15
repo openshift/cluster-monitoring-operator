@@ -285,6 +285,14 @@ local authorizationRole = policyRule.new() +
               },
               terminationMessagePolicy: 'FallbackToLogsOnError',
             },
+            {
+              name: 'config-reloader',
+              resources: {
+                requests: {
+                  cpu: '1m',
+                },
+              },
+            },
           ],
         },
       },
