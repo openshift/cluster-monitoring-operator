@@ -94,6 +94,10 @@ spec:
         cpu: 1m
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
+  - name: config-reloader
+    resources:
+      requests:
+        cpu: 1m
   image: openshift/prometheus-alertmanager:v0.20.0
   listenLocal: true
   nodeSelector:
