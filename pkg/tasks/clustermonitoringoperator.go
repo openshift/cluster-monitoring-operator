@@ -18,6 +18,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -44,34 +45,21 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "reconciling Cluster Monitoring Operator Service failed")
 	}
 
-	cr, err := t.factory.ClusterMonitoringClusterRole()
-	if err != nil {
-		return errors.Wrap(err, "initializing cluster-monitoring ClusterRole failed")
-	}
+	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
+		"cluster-monitoring-view": t.factory.ClusterMonitoringClusterRole,
+		"monitoring-rules-edit":   t.factory.ClusterMonitoringRulesEditClusterRole,
+		"monitoring-rules-view":   t.factory.ClusterMonitoringRulesViewClusterRole,
+		"monitoring-edit":         t.factory.ClusterMonitoringEditClusterRole,
+	} {
+		cr, err := crf()
+		if err != nil {
+			return errors.Wrapf(err, "initializing %s ClusterRole failed", name)
+		}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling cluster-monitoring ClusterRole failed")
-	}
-
-	cr, err = t.factory.ClusterMonitoringRulesEditClusterRole()
-	if err != nil {
-		return errors.Wrap(err, "initializing monitoring-rules-edit ClusterRole failed")
-	}
-
-	err = t.client.CreateOrUpdateClusterRole(cr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling monitoring-rules-edit ClusterRole failed")
-	}
-
-	cr, err = t.factory.ClusterMonitoringRulesViewClusterRole()
-	if err != nil {
-		return errors.Wrap(err, "initializing monitoring-rules-view ClusterRole failed")
-	}
-
-	err = t.client.CreateOrUpdateClusterRole(cr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling monitoring-rules-view ClusterRole failed")
+		err = t.client.CreateOrUpdateClusterRole(cr)
+		if err != nil {
+			return errors.Wrapf(err, "reconciling %s ClusterRole failed", name)
+		}
 	}
 
 	smcmo, err := t.factory.ClusterMonitoringOperatorServiceMonitor()

@@ -5,6 +5,7 @@
 # 	hack/cluster-monitoring-operator-role.yaml.in
 # 	assets/alertmanager/cluster-role.yaml
 # 	assets/cluster-monitoring-operator/cluster-role.yaml
+# 	assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml
 # 	assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml
 # 	assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml
 # 	assets/grafana/cluster-role.yaml
@@ -147,6 +148,19 @@ rules:
   - namespaces
   verbs:
   - get
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - prometheusrules
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:

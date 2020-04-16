@@ -13,6 +13,7 @@
 // assets/alertmanager/trusted-ca-bundle.yaml
 // assets/cluster-monitoring-operator/cluster-role.yaml
 // assets/cluster-monitoring-operator/grpc-tls-secret.yaml
+// assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml
 // assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml
 // assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml
 // assets/cluster-monitoring-operator/service-monitor.yaml
@@ -467,6 +468,26 @@ func assetsClusterMonitoringOperatorGrpcTlsSecretYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/cluster-monitoring-operator/grpc-tls-secret.yaml", size: 254, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _assetsClusterMonitoringOperatorMonitoringEditClusterRoleYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xcd\xb1\x4e\xed\x30\x0c\xc6\xf1\x3d\x4f\xe1\x17\x68\xaf\xee\x86\xba\x32\xb0\x33\xb0\xfb\x24\x9f\x4e\xad\x93\xc4\x91\xed\x14\x89\xa7\x47\x94\x22\xc1\x94\x7f\xac\x9f\x6c\x1e\xf2\x06\x73\xd1\xbe\x91\xdd\x38\xaf\x3c\x63\x57\x93\x0f\x0e\xd1\xbe\x3e\x9e\x7c\x15\xfd\x77\xfc\x4f\x0f\xe9\x65\xa3\xe7\x3a\x3d\x60\xaf\x5a\x91\x1a\x82\x0b\x07\x6f\x89\xa8\x73\xc3\x46\x4d\xbb\x84\x9a\xf4\xfb\x82\x22\x91\x6c\x56\xf8\x96\x16\xe2\x21\x2f\xa6\x73\xf8\x97\x5d\x7e\xb9\x35\xab\x41\x7d\xcd\xda\x12\x91\xc1\x75\x5a\xc6\xc5\x1c\x76\x48\xc6\xa5\xfd\x9c\x0d\x2d\x7f\xff\xa6\x0d\xb1\x63\xfa\x79\x2c\x11\x1d\xb0\xdb\xb5\x20\x1b\x38\x70\x66\x41\xc5\x95\x77\xc4\xf9\x56\xf1\xef\x98\xa3\xfc\xb0\x77\x8e\xbc\xa7\xcf\x00\x00\x00\xff\xff\x38\xb6\xa1\x85\x15\x01\x00\x00")
+
+func assetsClusterMonitoringOperatorMonitoringEditClusterRoleYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsClusterMonitoringOperatorMonitoringEditClusterRoleYaml,
+		"assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml",
+	)
+}
+
+func assetsClusterMonitoringOperatorMonitoringEditClusterRoleYaml() (*asset, error) {
+	bytes, err := assetsClusterMonitoringOperatorMonitoringEditClusterRoleYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml", size: 277, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3156,6 +3177,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/alertmanager/trusted-ca-bundle.yaml": assetsAlertmanagerTrustedCaBundleYaml,
 	"assets/cluster-monitoring-operator/cluster-role.yaml": assetsClusterMonitoringOperatorClusterRoleYaml,
 	"assets/cluster-monitoring-operator/grpc-tls-secret.yaml": assetsClusterMonitoringOperatorGrpcTlsSecretYaml,
+	"assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml": assetsClusterMonitoringOperatorMonitoringEditClusterRoleYaml,
 	"assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml": assetsClusterMonitoringOperatorMonitoringRulesEditClusterRoleYaml,
 	"assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml": assetsClusterMonitoringOperatorMonitoringRulesViewClusterRoleYaml,
 	"assets/cluster-monitoring-operator/service-monitor.yaml": assetsClusterMonitoringOperatorServiceMonitorYaml,
@@ -3346,6 +3368,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"cluster-monitoring-operator": &bintree{nil, map[string]*bintree{
 			"cluster-role.yaml": &bintree{assetsClusterMonitoringOperatorClusterRoleYaml, map[string]*bintree{}},
 			"grpc-tls-secret.yaml": &bintree{assetsClusterMonitoringOperatorGrpcTlsSecretYaml, map[string]*bintree{}},
+			"monitoring-edit-cluster-role.yaml": &bintree{assetsClusterMonitoringOperatorMonitoringEditClusterRoleYaml, map[string]*bintree{}},
 			"monitoring-rules-edit-cluster-role.yaml": &bintree{assetsClusterMonitoringOperatorMonitoringRulesEditClusterRoleYaml, map[string]*bintree{}},
 			"monitoring-rules-view-cluster-role.yaml": &bintree{assetsClusterMonitoringOperatorMonitoringRulesViewClusterRoleYaml, map[string]*bintree{}},
 			"service-monitor.yaml": &bintree{assetsClusterMonitoringOperatorServiceMonitorYaml, map[string]*bintree{}},
