@@ -133,6 +133,8 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
 
     namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
 
+    prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+
     kubeletPodLimit: 250,
 
     // Certificates are issued for 4h.
