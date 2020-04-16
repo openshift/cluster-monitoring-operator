@@ -7,7 +7,6 @@ about: Create release checklist
 
 ## Golang projects and backports
 
-- [ ] cut new upstream [prometheus-operator](https://github.com/coreos/prometheus-operator) release
 - [ ] update downstream backport of [openshift/node_exporter](https://github.com/openshift/node_exporter)
 - [ ] update downstream backport of [openshift/prometheus](https://github.com/openshift/prometheus)
 - [ ] update downstream backport of [openshift/alertmanager](https://github.com/openshift/alertmanager)
