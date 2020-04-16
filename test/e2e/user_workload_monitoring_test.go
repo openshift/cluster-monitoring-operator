@@ -58,6 +58,7 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"assert user workload metrics", assertUserWorkloadMetrics},
 		{"assert tenancy model is enforced", assertTenancyForMetrics},
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
+		{"assert replica count for user workload prometheus", assertReplicaCount},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	} {
 		if ok := t.Run(scenario.name, scenario.f); !ok {
@@ -559,5 +560,38 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func assertReplicaCount(t *testing.T) {
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-monitoring-config",
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": `techPreviewUserWorkload:
+    enabled: true
+prometheusUserWorkload:
+    replicas: 1
+`,
+		},
+	}
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+		t.Fatal(err)
+	}
+
+	// this assumes, the prometheus statefulset is already there.
+	err := f.OperatorClient.WaitForPrometheus(&monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "user-workload",
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Spec: monitoringv1.PrometheusSpec{
+			Replicas: proto.Int32(1),
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

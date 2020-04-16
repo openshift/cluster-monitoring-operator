@@ -1422,6 +1422,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.RemoteWrite = f.config.PrometheusUserWorkloadConfig.RemoteWrite
 	}
 
+	if f.config.PrometheusUserWorkloadConfig.Replicas > 0 {
+		p.Spec.Replicas = &f.config.PrometheusUserWorkloadConfig.Replicas
+	}
+
 	if f.config.Images.Thanos != "" {
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}

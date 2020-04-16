@@ -34,8 +34,8 @@ type Config struct {
 	PrometheusOperatorConfig             *PrometheusOperatorConfig `json:"prometheusOperator"`
 	PrometheusOperatorUserWorkloadConfig *PrometheusOperatorConfig `json:"prometheusOperatorUserWorkload"`
 
-	PrometheusK8sConfig          *PrometheusK8sConfig `json:"prometheusK8s"`
-	PrometheusUserWorkloadConfig *PrometheusK8sConfig `json:"prometheusUserWorkload"`
+	PrometheusK8sConfig          *PrometheusK8sConfig          `json:"prometheusK8s"`
+	PrometheusUserWorkloadConfig *PrometheusUserWorkloadConfig `json:"prometheusUserWorkload"`
 
 	AlertmanagerMainConfig *AlertmanagerMainConfig      `json:"alertmanagerMain"`
 	KubeStateMetricsConfig *KubeStateMetricsConfig      `json:"kubeStateMetrics"`
@@ -89,6 +89,17 @@ type PrometheusK8sConfig struct {
 	Hostport            string                    `json:"hostport"`
 	RemoteWrite         []monv1.RemoteWriteSpec   `json:"remoteWrite"`
 	TelemetryMatches    []string                  `json:"-"`
+}
+
+type PrometheusUserWorkloadConfig struct {
+	Retention           string                    `json:"retention"`
+	NodeSelector        map[string]string         `json:"nodeSelector"`
+	Tolerations         []v1.Toleration           `json:"tolerations"`
+	Resources           *v1.ResourceRequirements  `json:"resources"`
+	ExternalLabels      map[string]string         `json:"externalLabels"`
+	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
+	RemoteWrite         []monv1.RemoteWriteSpec   `json:"remoteWrite"`
+	Replicas            int32                     `json:"replicas"`
 }
 
 type AlertmanagerMainConfig struct {
@@ -213,7 +224,7 @@ func (c *Config) applyDefaults() {
 		c.PrometheusK8sConfig.Retention = "15d"
 	}
 	if c.PrometheusUserWorkloadConfig == nil {
-		c.PrometheusUserWorkloadConfig = &PrometheusK8sConfig{}
+		c.PrometheusUserWorkloadConfig = &PrometheusUserWorkloadConfig{}
 	}
 	if c.PrometheusUserWorkloadConfig.Retention == "" {
 		c.PrometheusUserWorkloadConfig.Retention = "15d"
