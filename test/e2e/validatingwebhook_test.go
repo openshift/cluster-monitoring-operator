@@ -34,8 +34,10 @@ metadata:
   name: valid-rule
 spec:
   groups:
-  - record: always_record_one
-    expr: vector(1)
+  - name: recording-rules
+    rules:
+    - record: my_always_record_one
+      expr: 1
 `
 
 	invalidPromRuleYaml = `---
@@ -45,8 +47,10 @@ metadata:
   name: invalid-rule
 spec:
   groups:
-  - record: invalid_rule
-    expr: this+/(fails
+  - name: invalid-rule-group
+    rules:
+    - record: invalid_rule
+      expr: this+/(fails
 `
 )
 
