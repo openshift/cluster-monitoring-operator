@@ -185,7 +185,7 @@ func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(w *admissionv1.ValidatingWebhookConfiguration) error {
 	admclient := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations()
-	_, err := admclient.Get(w.GetName(), metav1.GetOptions{})
+	existing, err := admclient.Get(w.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := admclient.Create(w)
 		return errors.Wrap(err, "creating ValidatingWebhookConfiguration object failed")
@@ -194,7 +194,9 @@ func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(w *admissionv1.Val
 		return errors.Wrap(err, "retrieving ValidatingWebhookConfiguration object failed")
 	}
 
-	_, err = admclient.Update(w)
+	required := w.DeepCopy()
+	required.ResourceVersion = existing.ResourceVersion
+	_, err = admclient.Update(required)
 	return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
 }
 
