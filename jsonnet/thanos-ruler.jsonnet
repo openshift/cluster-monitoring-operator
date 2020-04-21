@@ -158,7 +158,7 @@ local thanosRulerRules =
                   server_name: 'alertmanager-main.openshift-monitoring.svc',
                 },
               },
-              static_configs: ['alertmanager-main.openshift-monitoring.svc:9094'],
+              static_configs: ['dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc'],
               scheme: 'https',
             }],
           }),
