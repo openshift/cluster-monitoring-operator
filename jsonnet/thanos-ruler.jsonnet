@@ -160,6 +160,7 @@ local thanosRulerRules =
               },
               static_configs: ['dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc'],
               scheme: 'https',
+              api_version: 'v2',
             }],
           }),
         };
