@@ -522,6 +522,14 @@ func (c *Client) DeleteService(svc *v1.Service) error {
 	return err
 }
 
+func (c *Client) DeletePrometheusRule(rule *monv1.PrometheusRule) error {
+	err := c.mclient.MonitoringV1().PrometheusRules(rule.GetNamespace()).Delete(rule.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
 func (c *Client) DeleteSecret(s *v1.Secret) error {
 	err := c.kclient.CoreV1().Secrets(s.Namespace).Delete(s.GetName(), &metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
