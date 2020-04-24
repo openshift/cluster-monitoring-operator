@@ -388,16 +388,6 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "deleting Thanos Ruler query config Secret failed")
 	}
 
-	grpcTLS, err := t.factory.GRPCSecret(nil)
-	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Thanos Ruler GRPC secret failed")
-	}
-
-	err = t.client.DeleteSecret(grpcTLS)
-	if err != nil {
-		return errors.Wrap(err, "deleting Thanos Ruler GRPC secret failed")
-	}
-
 	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager config Secret failed")
