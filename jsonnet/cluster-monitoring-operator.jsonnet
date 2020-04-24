@@ -91,7 +91,7 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
       local editRule = policyRule.new() +
                        policyRule.withApiGroups(['monitoring.coreos.com']) +
                        policyRule.withResources(['servicemonitors', 'podmonitors', 'prometheusrules']) +
-                       policyRule.withVerbs(['create', 'delete', 'get', 'list', 'update', 'watch']);
+                       policyRule.withVerbs(['*']);
 
       local rules = [editRule];
 
@@ -121,7 +121,7 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
       local rulesEditRule = policyRule.new() +
                             policyRule.withApiGroups(['monitoring.coreos.com']) +
                             policyRule.withResources(['prometheusrules']) +
-                            policyRule.withVerbs(['create', 'delete', 'get', 'list', 'update', 'watch']);
+                            policyRule.withVerbs(['*']);
 
       local rules = [rulesEditRule];
 
