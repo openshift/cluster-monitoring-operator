@@ -155,23 +155,13 @@ rules:
   - prometheusrules
   - servicemonitors
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
+  - '*'
 - apiGroups:
   - monitoring.coreos.com
   resources:
   - prometheusrules
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
+  - '*'
 - apiGroups:
   - monitoring.coreos.com
   resources:
