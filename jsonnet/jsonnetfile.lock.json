@@ -109,8 +109,8 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "803b239ebdd991639bb684d21bffab59a21af9d8",
-      "sum": "CHoXXlCYfTLaqKSaydhDr8+wn5KEceZD0aJuvh2BgQQ=",
+      "version": "f13d31a172aa3001b9ddb15b675048fe333d10ff",
+      "sum": "757LZQoGpqql0kk+oi/K+sWxDlxMRzUm74+Ph9NR9y0=",
       "name": "openshift-state-metrics"
     },
     {
