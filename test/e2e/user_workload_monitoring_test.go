@@ -421,6 +421,8 @@ func assertUserWorkloadMetrics(t *testing.T) {
 			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", i)
 		},
 	)
+
+	t.Fatalf("STOP HERE")
 }
 
 // assertTenancyForMetrics ensures that a tenant can access metrics from her namespace (and only from this one).
