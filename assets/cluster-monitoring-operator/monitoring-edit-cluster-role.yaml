@@ -10,9 +10,4 @@ rules:
   - podmonitors
   - prometheusrules
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
+  - '*'
