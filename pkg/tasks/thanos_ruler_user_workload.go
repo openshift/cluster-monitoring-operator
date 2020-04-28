@@ -151,27 +151,14 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 			return errors.Wrap(err, "initializing Thanos Ruler trusted CA bundle ConfigMap failed")
 		}
 
-		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
-		if err != nil {
-			return errors.Wrap(err, "creating Thanos Ruler trusted CA bundle ConfigMap failed")
+		cbs := &caBundleSyncer{
+			client:  t.client,
+			factory: t.factory,
+			prefix:  "thanos-ruler",
 		}
-
-		// In the case when there is no data but the ConfigMap is there, we just continue.
-		// We will catch this on the next loop.
-		trustedCA = t.factory.HashTrustedCA(trustedCA, "thanos-ruler")
-		if trustedCA != nil {
-			err = t.client.CreateOrUpdateConfigMap(trustedCA)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Thanos Ruler hashed trusted CA bundle ConfigMap failed")
-			}
-
-			err = t.client.DeleteHashedConfigMap(
-				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
-				"thanos-ruler",
-			)
-			if err != nil {
-				return errors.Wrap(err, "deleting old Thanos Ruler client configmaps failed")
-			}
+		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "syncing Thanos Ruler trusted CA bundle ConfigMap failed")
 		}
 
 		grpcTLS, err := t.factory.GRPCSecret(nil)

@@ -144,27 +144,14 @@ func (t *GrafanaTask) Run() error {
 			return errors.Wrap(err, "initializing Grafana CA bundle ConfigMap failed")
 		}
 
-		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
-		if err != nil {
-			return errors.Wrap(err, " creating Grafana CA bundle ConfigMap failed")
+		cbs := &caBundleSyncer{
+			client:  t.client,
+			factory: t.factory,
+			prefix:  "grafana",
 		}
-
-		// In the case when there is no data but the ConfigMap is there, we just continue.
-		// We will catch this on the next loop.
-		trustedCA = t.factory.HashTrustedCA(trustedCA, "grafana")
-		if trustedCA != nil {
-			err = t.client.CreateOrUpdateConfigMap(trustedCA)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Grafana CA bundle ConfigMap failed")
-			}
-
-			err = t.client.DeleteHashedConfigMap(
-				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
-				"grafana",
-			)
-			if err != nil {
-				return errors.Wrap(err, "deleting old Grafana configmaps failed")
-			}
+		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "syncing Grafana CA bundle ConfigMap failed")
 		}
 
 		d, err := t.factory.GrafanaDeployment(trustedCA)

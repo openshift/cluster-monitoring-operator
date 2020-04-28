@@ -41,9 +41,9 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 			return false, nil
 		}
 
-		newCM = factory.HashTrustedCA(cm, "thanos-querier")
-		if newCM == nil {
-			lastErr = errors.New("no trusted CA bundle data available")
+		newCM, err = factory.HashTrustedCA(cm, "thanos-querier")
+		lastErr = errors.Wrap(err, "no trusted CA bundle data available")
+		if err != nil {
 			return false, nil
 		}
 

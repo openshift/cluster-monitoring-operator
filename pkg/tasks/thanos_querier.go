@@ -182,27 +182,14 @@ func (t *ThanosQuerierTask) Run() error {
 			return errors.Wrap(err, "initializing Thanos Querier trusted CA bundle ConfigMap failed")
 		}
 
-		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
-		if err != nil {
-			return errors.Wrap(err, "creating Thanos Querier trusted CA bundle ConfigMap failed")
+		cbs := &caBundleSyncer{
+			client:  t.client,
+			factory: t.factory,
+			prefix:  "thanos-querier",
 		}
-
-		// In the case when there is no data but the ConfigMap is there, we just continue.
-		// We will catch this on the next loop.
-		trustedCA = t.factory.HashTrustedCA(trustedCA, "thanos-querier")
-		if trustedCA != nil {
-			err = t.client.CreateOrUpdateConfigMap(trustedCA)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Thanos Querier hashed trusted CA bundle ConfigMap failed")
-			}
-
-			err = t.client.DeleteHashedConfigMap(
-				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
-				"thanos-querier",
-			)
-			if err != nil {
-				return errors.Wrap(err, "deleting old Thanos Querier client configmaps failed")
-			}
+		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
 		}
 
 		dep, err := t.factory.ThanosQuerierDeployment(s, t.userWorkloadConfig.IsEnabled(), trustedCA)

@@ -110,9 +110,9 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 			return false, nil
 		}
 
-		newCM = factory.HashTrustedCA(cm, "alertmanager")
-		if newCM == nil {
-			lastErr = errors.New("no trusted CA bundle data available")
+		newCM, err = factory.HashTrustedCA(cm, "alertmanager")
+		lastErr = errors.Wrap(err, "no trusted CA bundle data available")
+		if err != nil {
 			return false, nil
 		}
 
