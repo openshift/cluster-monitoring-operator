@@ -150,6 +150,11 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     if !std.setMember(k, ['apiserver.json', 'controller-manager.json', 'kubelet.json', 'namespace-by-pod.json', 'namespace-by-workload.json', 'nodes.json', 'persistentvolumesusage.json', 'pod-total.json', 'pods.json', 'prometheus-remote-write.json', 'proxy.json', 'scheduler.json', 'statefulset.json', 'workload-total.json'])
   },
 } + {
+  grafanaDashboards+:: {
+    // API performance dashboard, OpenShift specific.
+    'api-performance-dashboard.json': (import 'dashboards/api-performance-dashboard.json'),
+  },
+} + {
   _config+:: {
     local j = super.jobs,
     jobs: {
