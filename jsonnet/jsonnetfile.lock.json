@@ -85,8 +85,8 @@
           "subdir": ""
         }
       },
-      "version": "b2fc95330d105b599b3e326896c8264786ba71bd",
-      "sum": "CjvZXTKpw6t1laxNrKK9H0jtvuuB/RUilTniht6q7V0="
+      "version": "7abe1b0cf2cd00abf29936e9d40f8bf9881f820d",
+      "sum": "2PPYvYuo6AgJlIA0kj9cikY5wKfgTdj78RuWtPpjsYA="
     },
     {
       "name": "node-mixin",
@@ -142,17 +142,6 @@
       },
       "version": "003c3e8db3aee2699b9e31fe8fd0cb906354a48f",
       "sum": "VhgBM39yv0f4bKv8VfGg4FXkg573evGDRalip9ypKbc="
-    },
-    {
-      "name": "slo-libsonnet",
-      "source": {
-        "git": {
-          "remote": "https://github.com/metalmatze/slo-libsonnet",
-          "subdir": "slo-libsonnet"
-        }
-      },
-      "version": "437c402c5f3ad86c3c16db8471f1649284fef0ee",
-      "sum": "2Zcyku1f558VrUpMaJnI78fahDksPLcS1idmxxwcQ7Q="
     },
     {
       "name": "telemeter-client",
