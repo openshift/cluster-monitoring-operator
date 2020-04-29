@@ -395,6 +395,16 @@ spec:
       expr: cluster:alertmanager_routing_enabled:max == 0
       labels:
         severity: warning
+    - alert: MultipleContainersOOMKilled
+      annotations:
+        message: Multiple containers were out of memory killed within the past 15
+          minutes.
+      expr: sum(max by(namespace, container, pod) (increase(kube_pod_container_status_restarts_total[12m]))
+        and max by(namespace, container, pod) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"})
+        == 1) > 5
+      for: 15m
+      labels:
+        severity: info
   - name: openshift-ingress.rules
     rules:
     - expr: sum by (code) (rate(haproxy_server_http_responses_total[5m]) > 0)
