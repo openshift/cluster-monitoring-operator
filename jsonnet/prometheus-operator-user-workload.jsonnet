@@ -7,7 +7,7 @@ local containerVolumeMount = container.volumeMountsType;
 local tlsVolumeName = 'prometheus-operator-user-workload-tls';
 
 {
-  prometheusOperatorUserWorkload:: $.prometheusOperator + {
+  prometheusOperatorUserWorkload:: $.prometheusOperator {
     namespace:: $._config.namespaceUserWorkload,
 
     '0alertmanagerCustomResourceDefinition':: {},
@@ -15,92 +15,93 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
     '0servicemonitorCustomResourceDefinition':: {},
     '0podmonitorCustomResourceDefinition':: {},
     '0prometheusruleCustomResourceDefinition':: {},
+    '0thanosrulerCustomResourceDefinition':: {},
 
     clusterRole+: {
       metadata+: {
-        name: "prometheus-user-workload-operator",
+        name: 'prometheus-user-workload-operator',
       },
     },
 
     clusterRoleBinding+: {
       metadata+: {
-        name: "prometheus-user-workload-operator",
+        name: 'prometheus-user-workload-operator',
       },
       roleRef+: {
-        name: "prometheus-user-workload-operator",
+        name: 'prometheus-user-workload-operator',
       },
     },
 
     deployment+: {
-        spec+: {
-          template+: {
-            spec+: {
-              nodeSelector+: {
-                'node-role.kubernetes.io/master': '',
-              },
-              tolerations: [
-                {
-                  key: 'node-role.kubernetes.io/master',
-                  operator: 'Exists',
-                  effect: 'NoSchedule',
-                },
-              ],
-              securityContext: {},
-              priorityClassName: 'system-cluster-critical',
-              containers:
-                std.map(
-                  function(c)
-                    if c.name == 'prometheus-operator' then
-                      c {
-                        args+: [
-                            '--deny-namespaces=' + $._config.namespace,
-                            '--prometheus-instance-namespaces=' + $._config.namespaceUserWorkload,
-                            '--alertmanager-instance-namespaces=' + $._config.namespaceUserWorkload,
-                            '--thanos-ruler-instance-namespaces=' + $._config.namespaceUserWorkload,
-                            '--manage-crds=false',
-                            '--config-reloader-cpu=0',
-                        ],
-                        securityContext: {},
-                        resources: {
-                          requests: {
-                            memory: '60Mi',
-                            cpu: '10m',
-                          },
-                        },
-                        terminationMessagePolicy: 'FallbackToLogsOnError',
-                      }
-                    else if c.name == 'kube-rbac-proxy' then
-                      c {
-                        args+: [
-                          '--tls-cert-file=/etc/tls/private/tls.crt',
-                          '--tls-private-key-file=/etc/tls/private/tls.key',
-                        ],
-                        terminationMessagePolicy: 'FallbackToLogsOnError',
-                        volumeMounts: [
-                          containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
-                        ],
-                        securityContext: {},
-                        resources: {
-                          requests: {
-                            memory: '40Mi',
-                            cpu: '1m',
-                          },
-                        },
-                      }
-                    else
-                      c,
-                  super.containers,
-                ),
-              volumes+: [
-                volume.fromSecret(tlsVolumeName, 'prometheus-operator-user-workload-tls'),
-              ],
+      spec+: {
+        template+: {
+          spec+: {
+            nodeSelector+: {
+              'node-role.kubernetes.io/master': '',
             },
+            tolerations: [
+              {
+                key: 'node-role.kubernetes.io/master',
+                operator: 'Exists',
+                effect: 'NoSchedule',
+              },
+            ],
+            securityContext: {},
+            priorityClassName: 'system-cluster-critical',
+            containers:
+              std.map(
+                function(c)
+                  if c.name == 'prometheus-operator' then
+                    c {
+                      args+: [
+                        '--deny-namespaces=' + $._config.namespace,
+                        '--prometheus-instance-namespaces=' + $._config.namespaceUserWorkload,
+                        '--alertmanager-instance-namespaces=' + $._config.namespaceUserWorkload,
+                        '--thanos-ruler-instance-namespaces=' + $._config.namespaceUserWorkload,
+                        '--manage-crds=false',
+                        '--config-reloader-cpu=0',
+                      ],
+                      securityContext: {},
+                      resources: {
+                        requests: {
+                          memory: '60Mi',
+                          cpu: '10m',
+                        },
+                      },
+                      terminationMessagePolicy: 'FallbackToLogsOnError',
+                    }
+                  else if c.name == 'kube-rbac-proxy' then
+                    c {
+                      args+: [
+                        '--tls-cert-file=/etc/tls/private/tls.crt',
+                        '--tls-private-key-file=/etc/tls/private/tls.key',
+                      ],
+                      terminationMessagePolicy: 'FallbackToLogsOnError',
+                      volumeMounts: [
+                        containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
+                      ],
+                      securityContext: {},
+                      resources: {
+                        requests: {
+                          memory: '40Mi',
+                          cpu: '1m',
+                        },
+                      },
+                    }
+                  else
+                    c,
+                super.containers,
+              ),
+            volumes+: [
+              volume.fromSecret(tlsVolumeName, 'prometheus-operator-user-workload-tls'),
+            ],
           },
         },
       },
+    },
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': "prometheus-operator-user-workload-tls",
+        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-user-workload-tls',
       }),
     serviceMonitor+: {
       spec+: {
