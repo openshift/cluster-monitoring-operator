@@ -38,6 +38,9 @@ spec:
         - mountPath: /etc/grafana/provisioning/dashboards
           name: grafana-dashboards
           readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/api-performance-dashboard
+          name: grafana-dashboard-api-performance-dashboard
+          readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/cluster-total
           name: grafana-dashboard-cluster-total
           readOnly: false
@@ -132,6 +135,9 @@ spec:
       - configMap:
           name: grafana-dashboards
         name: grafana-dashboards
+      - configMap:
+          name: grafana-dashboard-api-performance-dashboard
+        name: grafana-dashboard-api-performance-dashboard
       - configMap:
           name: grafana-dashboard-cluster-total
         name: grafana-dashboard-cluster-total
