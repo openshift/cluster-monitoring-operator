@@ -20,7 +20,6 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )
 
@@ -89,13 +88,18 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "creating Prometheus proxy Secret failed")
 	}
 
-	c := t.client.KubernetesInterface()
-	cm, err := c.CoreV1().Secrets(t.client.Namespace()).Get("grafana-datasources", metav1.GetOptions{})
+	gs, err := t.factory.GrafanaDatasources()
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve Grafana datasources config")
+		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
 	}
+
+	gs, err = t.client.WaitForSecret(gs)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
+	}
+
 	d := &manifests.GrafanaDatasources{}
-	err = json.Unmarshal(cm.Data["prometheus.yaml"], d)
+	err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
 
 	hs, err := t.factory.PrometheusK8sHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
 	if err != nil {
