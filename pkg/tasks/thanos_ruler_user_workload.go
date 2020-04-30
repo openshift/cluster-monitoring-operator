@@ -132,6 +132,9 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 
 	d := &manifests.GrafanaDatasources{}
 	err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling grafana datasource failed")
+	}
 
 	hs, err := t.factory.ThanosRulerHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
 	if err != nil {
@@ -353,6 +356,9 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 
 	d := &manifests.GrafanaDatasources{}
 	err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling grafana datasource failed")
+	}
 
 	hs, err := t.factory.ThanosRulerHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
 	if err != nil {
