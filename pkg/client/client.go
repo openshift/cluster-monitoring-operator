@@ -1039,7 +1039,7 @@ func (c *Client) CreateOrUpdateClusterRole(cr *rbacv1.ClusterRole) error {
 
 func (c *Client) CreateOrUpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding) error {
 	crbClient := c.kclient.RbacV1().ClusterRoleBindings()
-	_, err := crbClient.Get(crb.GetName(), metav1.GetOptions{})
+	existing, err := crbClient.Get(crb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := crbClient.Create(crb)
 		return errors.Wrap(err, "creating ClusterRoleBinding object failed")
@@ -1048,7 +1048,21 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding
 		return errors.Wrap(err, "retrieving ClusterRoleBinding object failed")
 	}
 
-	_, err = crbClient.Update(crb)
+	changed := reflect.DeepEqual(crb.RoleRef, existing.RoleRef)
+	changed = changed || reflect.DeepEqual(crb.Subjects, existing.Subjects)
+	changed = changed || reflect.DeepEqual(crb.Labels, existing.Labels)
+	changed = changed || reflect.DeepEqual(crb.Annotations, existing.Annotations)
+
+	if !changed {
+		return nil
+	}
+
+	err = crbClient.Delete(crb.Name, nil)
+	if err != nil {
+		return errors.Wrap(err, "deleting ClusterRoleBinding object failed")
+	}
+
+	_, err = crbClient.Create(crb)
 	return errors.Wrap(err, "updating ClusterRoleBinding object failed")
 }
 
