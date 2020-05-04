@@ -308,14 +308,6 @@ local thanosRulerRules =
                   name: 'secret-thanos-ruler-tls',
                 },
                 {
-                  mountPath: '/etc/proxy/secrets',
-                  name: 'secret-thanos-ruler-oauth-cookie',
-                },
-                {
-                  mountPath: '/etc/proxy/htpasswd',
-                  name: 'secret-thanos-ruler-oauth-htpasswd',
-                },
-                {
                   mountPath: '/etc/tls/grpc',
                   name: 'secret-grpc-tls',
                 },
@@ -380,10 +372,6 @@ local thanosRulerRules =
                 {
                   mountPath: '/etc/proxy/secrets',
                   name: 'secret-thanos-ruler-oauth-cookie',
-                },
-                {
-                  mountPath: '/etc/proxy/htpasswd',
-                  name: 'secret-thanos-ruler-oauth-htpasswd',
                 },
               ],
             },
