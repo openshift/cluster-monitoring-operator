@@ -15,10 +15,6 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-thanos-ruler-tls
-    - mountPath: /etc/proxy/secrets
-      name: secret-thanos-ruler-oauth-cookie
-    - mountPath: /etc/proxy/htpasswd
-      name: secret-thanos-ruler-oauth-htpasswd
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
     - mountPath: /etc/prometheus/configmaps/serving-certs-ca-bundle
@@ -61,8 +57,6 @@ spec:
       name: secret-thanos-ruler-tls
     - mountPath: /etc/proxy/secrets
       name: secret-thanos-ruler-oauth-cookie
-    - mountPath: /etc/proxy/htpasswd
-      name: secret-thanos-ruler-oauth-htpasswd
   enforcedNamespaceLabel: namespace
   grpcServerTlsConfig:
     caFile: /etc/tls/grpc/ca.crt
