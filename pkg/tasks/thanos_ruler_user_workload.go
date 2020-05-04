@@ -15,8 +15,6 @@
 package tasks
 
 import (
-	"encoding/json"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -120,32 +118,6 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "creating Thanos Ruler OAuth Cookie Secret failed")
 	}
 
-	gs, err := t.factory.GrafanaDatasources()
-	if err != nil {
-		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
-	}
-
-	gs, err = t.client.WaitForSecret(gs)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
-	}
-
-	d := &manifests.GrafanaDatasources{}
-	err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling grafana datasource failed")
-	}
-
-	hs, err := t.factory.ThanosRulerHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Ruler htpasswd Secret failed")
-	}
-
-	err = t.client.CreateIfNotExistSecret(hs)
-	if err != nil {
-		return errors.Wrap(err, "creating Thanos Ruler htpasswd Secret failed")
-	}
-
 	// Thanos components use https://godoc.org/github.com/prometheus/common/config#NewClientFromConfig
 	// under the hood and the returned http.Client detects whenever the certificates are rotated,
 	// so there is no need for us to rotate the CA.
@@ -212,12 +184,12 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 			return errors.Wrap(err, "waiting for UserWorkload Thanos Ruler GRPC secret failed")
 		}
 
-		s, err := t.factory.ThanosRulerGrpcTLSSecret()
+		grpcSecret, err := t.factory.ThanosRulerGrpcTLSSecret()
 		if err != nil {
 			return errors.Wrap(err, "error initializing UserWorkload Thanos Ruler GRPC TLS secret")
 		}
 
-		s, err = t.factory.HashSecret(s,
+		grpcSecret, err = t.factory.HashSecret(grpcSecret,
 			"ca.crt", string(grpcTLS.Data["ca.crt"]),
 			"server.crt", string(grpcTLS.Data["prometheus-server.crt"]),
 			"server.key", string(grpcTLS.Data["prometheus-server.key"]),
@@ -226,13 +198,13 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 			return errors.Wrap(err, "error hashing UserWorkload Thanos Ruler GRPC TLS secret")
 		}
 
-		err = t.client.CreateOrUpdateSecret(s)
+		err = t.client.CreateOrUpdateSecret(grpcSecret)
 		if err != nil {
 			return errors.Wrap(err, "error creating UserWorkload Thanos Ruler GRPC TLS secret")
 		}
 
 		err = t.client.DeleteHashedSecret(
-			string(s.Labels["monitoring.openshift.io/hash"]),
+			string(grpcSecret.Labels["monitoring.openshift.io/hash"]),
 			"thanos-ruler-user-workload-grpc-tls",
 		)
 		if err != nil {
@@ -245,7 +217,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		}
 		queryURL, err := t.client.GetRouteURL(querierRoute)
 
-		tr, err := t.factory.ThanosRulerCustomResource(queryURL.String(), trustedCA, s)
+		tr, err := t.factory.ThanosRulerCustomResource(queryURL.String(), trustedCA, grpcSecret)
 		if err != nil {
 			return errors.Wrap(err, "initializing ThanosRuler object failed")
 		}
@@ -344,63 +316,14 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "deleting Thanos Ruler OAuth Cookie Secret failed")
 	}
 
-	gs, err := t.factory.GrafanaDatasources()
+	trustedCA, err := t.factory.ThanosRulerTrustedCABundle()
 	if err != nil {
-		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
+		return errors.Wrap(err, "initializing Thanos Ruler trusted CA bundle ConfigMap failed")
 	}
 
-	gs, err = t.client.WaitForSecret(gs)
+	err = t.client.DeleteConfigMap(trustedCA)
 	if err != nil {
-		return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
-	}
-
-	d := &manifests.GrafanaDatasources{}
-	err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling grafana datasource failed")
-	}
-
-	hs, err := t.factory.ThanosRulerHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Ruler htpasswd Secret failed")
-	}
-
-	{
-		// Create trusted CA bundle ConfigMap.
-		trustedCA, err := t.factory.ThanosRulerTrustedCABundle()
-		if err != nil {
-			return errors.Wrap(err, "initializing Thanos Ruler trusted CA bundle ConfigMap failed")
-		}
-
-		err = t.client.DeleteConfigMap(trustedCA)
-		if err != nil {
-			return errors.Wrap(err, "deleting Thanos Ruler trusted CA bundle ConfigMap failed")
-		}
-
-		tr, err := t.factory.ThanosRulerCustomResource("", trustedCA, hs)
-		if err != nil {
-			return errors.Wrap(err, "initializing ThanosRuler object failed")
-		}
-
-		err = t.client.DeleteThanosRuler(tr)
-		if err != nil {
-			return errors.Wrap(err, "deleting ThanosRuler object failed")
-		}
-	}
-
-	err = t.client.DeleteSecret(hs)
-	if err != nil {
-		return errors.Wrap(err, "deleting Thanos Ruler htpasswd Secret failed")
-	}
-
-	qcs, err := t.factory.ThanosRulerQueryConfigSecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Ruler query config Secret failed")
-	}
-
-	err = t.client.DeleteSecret(qcs)
-	if err != nil {
-		return errors.Wrap(err, "deleting Thanos Ruler query config Secret failed")
+		return errors.Wrap(err, "deleting Thanos Ruler trusted CA bundle ConfigMap failed")
 	}
 
 	grpcTLS, err := t.factory.GRPCSecret(nil)
@@ -413,12 +336,12 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "waiting for UserWorkload Thanos Ruler GRPC secret failed")
 	}
 
-	s, err = t.factory.ThanosRulerGrpcTLSSecret()
+	grpcSecret, err := t.factory.ThanosRulerGrpcTLSSecret()
 	if err != nil {
 		return errors.Wrap(err, "error initializing UserWorkload Thanos Ruler GRPC TLS secret")
 	}
 
-	s, err = t.factory.HashSecret(s,
+	grpcSecret, err = t.factory.HashSecret(s,
 		"ca.crt", string(grpcTLS.Data["ca.crt"]),
 		"server.crt", string(grpcTLS.Data["prometheus-server.crt"]),
 		"server.key", string(grpcTLS.Data["prometheus-server.key"]),
@@ -427,9 +350,29 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "error hashing UserWorkload Thanos Ruler GRPC TLS secret")
 	}
 
-	err = t.client.DeleteSecret(s)
+	tr, err := t.factory.ThanosRulerCustomResource("", trustedCA, grpcSecret)
+	if err != nil {
+		return errors.Wrap(err, "initializing ThanosRuler object failed")
+	}
+
+	err = t.client.DeleteThanosRuler(tr)
+	if err != nil {
+		return errors.Wrap(err, "deleting ThanosRuler object failed")
+	}
+
+	err = t.client.DeleteSecret(grpcSecret)
 	if err != nil {
 		return errors.Wrap(err, "error deleting UserWorkload Thanos Ruler GRPC TLS secret")
+	}
+
+	qcs, err := t.factory.ThanosRulerQueryConfigSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler query config Secret failed")
+	}
+
+	err = t.client.DeleteSecret(qcs)
+	if err != nil {
+		return errors.Wrap(err, "deleting Thanos Ruler query config Secret failed")
 	}
 
 	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
