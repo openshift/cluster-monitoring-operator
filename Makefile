@@ -16,6 +16,7 @@ EMBEDMD_BIN=$(FIRST_GOPATH)/bin/embedmd
 GOBINDATA_BIN=$(FIRST_GOPATH)/bin/go-bindata
 JB_BINARY=$(FIRST_GOPATH)/bin/jb
 GOJSONTOYAML_BINARY=$(FIRST_GOPATH)/bin/gojsontoyaml
+PROMTOOL_BINARY=$(FIRST_GOPATH)/bin/promtool
 ASSETS=$(shell grep -oh 'assets/.*\.yaml' pkg/manifests/manifests.go)
 JSONNET_SRC=$(shell find ./jsonnet -type f)
 JSONNET_VENDOR=jsonnet/jsonnetfile.lock.json jsonnet/vendor
@@ -134,8 +135,8 @@ test-unit:
 
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
-test-e2e:
-	go test -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+test-e2e: $(PROMTOOL_BINARY)
+	go test -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG) --promtool $(PROMTOOL_BINARY)
 
 .PHONY: test-sec
 test-sec:
@@ -157,3 +158,6 @@ $(JB_BINARY):
 
 $(GOJSONTOYAML_BINARY):
 	@go install -mod=vendor github.com/brancz/gojsontoyaml
+
+$(PROMTOOL_BINARY):
+	@GO111MODULE=off go get github.com/prometheus/prometheus/cmd/promtool

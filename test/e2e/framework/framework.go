@@ -58,6 +58,7 @@ type Framework struct {
 	AdmissionClient     *admissionclient.AdmissionregistrationV1Client
 	MetricsClient       *metricsclient.Clientset
 	kubeConfigPath      string
+	PromtoolBin         string
 
 	MonitoringClient             *monClient.MonitoringV1Client
 	Ns, UserWorkloadMonitoringNs string
@@ -65,7 +66,7 @@ type Framework struct {
 
 // New returns a new cluster monitoring operator end-to-end test framework and
 // triggers all the setup logic.
-func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
+func New(kubeConfigPath, promtoolBin string) (*Framework, cleanUpFunc, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
 		return nil, nil, err
@@ -117,6 +118,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		Ns:                       namespaceName,
 		UserWorkloadMonitoringNs: userWorkloadNamespaceName,
 		kubeConfigPath:           kubeConfigPath,
+		PromtoolBin:              promtoolBin,
 	}
 
 	cleanUp, err := f.setup()

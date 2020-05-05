@@ -45,6 +45,11 @@ func testMain(m *testing.M) error {
 		clientcmd.RecommendedHomeFile,
 		"kube config path, default: $HOME/.kube/config",
 	)
+	promtoolBin := flag.String(
+		"promtool",
+		"promtool",
+		"promtool binary path",
+	)
 
 	flag.Parse()
 
@@ -52,7 +57,7 @@ func testMain(m *testing.M) error {
 		err     error
 		cleanUp func() error
 	)
-	f, cleanUp, err = framework.New(*kubeConfigPath)
+	f, cleanUp, err = framework.New(*kubeConfigPath, *promtoolBin)
 	// Check cleanUp first, in case of an err, we still want to clean up.
 	if cleanUp != nil {
 		defer cleanUp()

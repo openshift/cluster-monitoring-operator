@@ -15,10 +15,14 @@
 package e2e
 
 import (
+	"bytes"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -165,5 +169,49 @@ func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
 
 	if !almOk == true || !k8sOk == true {
 		t.Fatal("Can not find pods: prometheus-k8s or alertmanager-main")
+	}
+}
+
+func TestPrometheusMetricsBestPractice(t *testing.T) {
+	metrics, err := f.PrometheusK8sClient.PrometheusGetMetrics()
+	if err != nil {
+		t.Fatalf("Could not get Prometheus metrics: %v", err)
+	}
+
+	cmd := exec.Command(f.PromtoolBin,
+		"check",
+		"metrics",
+	)
+	cmd.Stdin = bytes.NewReader(metrics)
+
+	out, err := cmd.CombinedOutput()
+	t.Logf("%s:\n%s", cmd, out)
+	if err != nil {
+		t.Fatalf("Executing %s: %v", cmd, err)
+	}
+}
+
+func TestPrometheusRulesBestPractice(t *testing.T) {
+	rawRules, err := f.PrometheusK8sClient.PrometheusGetRules()
+	if err != nil {
+		t.Fatalf("Could not get Prometheus rules: %v", err)
+	}
+
+	rulesManifest := ".prometheus-rules.yaml"
+	err = framework.CreatePrometheusRulesManifest(rulesManifest, rawRules)
+	if err != nil {
+		t.Fatalf("Could not create manifest from Prometheus rules raw data: %v", err)
+	}
+	defer os.Remove(rulesManifest)
+
+	cmd := exec.Command(f.PromtoolBin,
+		"check",
+		"rules",
+		rulesManifest,
+	)
+	out, err := cmd.CombinedOutput()
+	t.Logf("%s:\n%s", cmd, out)
+	if err != nil {
+		t.Fatalf("Executing %s: %v", cmd, err)
 	}
 }
