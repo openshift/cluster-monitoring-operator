@@ -79,8 +79,9 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(trustedCA *v1.ConfigMap) (*v1.Con
 	}
 
 	err = cbs.client.DeleteHashedConfigMap(
-		string(hashedCM.Labels["monitoring.openshift.io/hash"]),
+		trustedCA.GetNamespace(),
 		cbs.prefix,
+		string(hashedCM.Labels["monitoring.openshift.io/hash"]),
 	)
 	return hashedCM, errors.Wrap(err, "deleting old trusted CA bundle configmaps failed")
 }

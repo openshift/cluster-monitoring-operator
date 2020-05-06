@@ -191,8 +191,9 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		}
 
 		err = t.client.DeleteHashedSecret(
-			string(grpcSecret.Labels["monitoring.openshift.io/hash"]),
+			grpcSecret.GetNamespace(),
 			"thanos-ruler-user-workload-grpc-tls",
+			string(grpcSecret.Labels["monitoring.openshift.io/hash"]),
 		)
 		if err != nil {
 			return errors.Wrap(err, "error deleting expired UserWorkload Thanos Ruler GRPC TLS secret")
@@ -293,12 +294,12 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "deleting Thanos Ruler ServiceAccount failed")
 	}
 
-	s, err := t.factory.ThanosRulerOauthCookieSecret()
+	oauthSecret, err := t.factory.ThanosRulerOauthCookieSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler OAuth Cookie Secret failed")
 	}
 
-	err = t.client.DeleteSecret(s)
+	err = t.client.DeleteSecret(oauthSecret)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler OAuth Cookie Secret failed")
 	}
@@ -311,6 +312,11 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 	err = t.client.DeleteConfigMap(trustedCA)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler trusted CA bundle ConfigMap failed")
+	}
+
+	err = t.client.DeleteHashedConfigMap(trustedCA.GetNamespace(), "thanos-ruler", "")
+	if err != nil {
+		return errors.Wrap(err, "deleting all hashed Thanos Ruler trusted CA bundle ConfigMap failed")
 	}
 
 	grpcTLS, err := t.factory.GRPCSecret(nil)
@@ -328,7 +334,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "error initializing UserWorkload Thanos Ruler GRPC TLS secret")
 	}
 
-	grpcSecret, err = t.factory.HashSecret(s,
+	grpcSecret, err = t.factory.HashSecret(grpcSecret,
 		"ca.crt", string(grpcTLS.Data["ca.crt"]),
 		"server.crt", string(grpcTLS.Data["prometheus-server.crt"]),
 		"server.key", string(grpcTLS.Data["prometheus-server.key"]),

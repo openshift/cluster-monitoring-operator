@@ -168,8 +168,9 @@ func (t *ThanosQuerierTask) Run() error {
 	}
 
 	err = t.client.DeleteHashedSecret(
-		string(s.Labels["monitoring.openshift.io/hash"]),
+		s.GetNamespace(),
 		"thanos-querier-grpc-tls",
+		string(s.Labels["monitoring.openshift.io/hash"]),
 	)
 	if err != nil {
 		return errors.Wrap(err, "error creating Thanos Querier Client GRPC TLS secret")
