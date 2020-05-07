@@ -360,13 +360,13 @@ func (c *Client) DeleteHashedConfigMap(namespace, prefix, newHash string) error 
 		LabelSelector: ls,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "error listing configmaps with label selector %s", ls)
+		return errors.Wrapf(err, "error listing configmaps in namespace %s with label selector %s", namespace, ls)
 	}
 
 	for _, cm := range configMaps.Items {
 		err := c.KubernetesInterface().CoreV1().ConfigMaps(namespace).Delete(cm.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "error deleting configmap: %s", cm.Name)
+			return errors.Wrapf(err, "error deleting configmap: %s/%s", namespace, cm.Name)
 		}
 	}
 
@@ -381,13 +381,13 @@ func (c *Client) DeleteHashedSecret(namespace, prefix, newHash string) error {
 		LabelSelector: ls,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "error listing secrets with label selector %s", ls)
+		return errors.Wrapf(err, "error listing secrets in namespace %s with label selector %s", namespace, ls)
 	}
 
 	for _, s := range secrets.Items {
 		err := c.KubernetesInterface().CoreV1().Secrets(namespace).Delete(s.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "error deleting secret: %s", s.Name)
+			return errors.Wrapf(err, "error deleting secret: %s/%s", namespace, s.Name)
 		}
 	}
 
