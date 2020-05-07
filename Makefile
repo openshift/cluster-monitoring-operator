@@ -27,7 +27,7 @@ CONTAINER_CMD:=docker run --rm \
 		-v "$(PWD):/go/src/$(GO_PKG):Z" \
 		-w "/go/src/$(GO_PKG)" \
 		-e GO111MODULE=$(GO111MODULE) \
-		quay.io/coreos/jsonnet-ci
+		quay.io/coreos/jsonnet-ci:release-0.38
 
 .PHONY: all
 all: format generate build test
