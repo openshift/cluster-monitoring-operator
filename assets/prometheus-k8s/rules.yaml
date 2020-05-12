@@ -524,31 +524,31 @@ spec:
         sum by (cluster, namespace, pod, container) (
           rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}[5m])
         ) * on (cluster, namespace, pod) group_left(node) topk by (cluster, namespace, pod) (
-          1, max by(cluster, namespace, pod, node) (kube_pod_info)
+          1, max by(cluster, namespace, pod, node) (kube_pod_info{node!=""})
         )
       record: node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
     - expr: |
         container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}
         * on (namespace, pod) group_left(node) topk by(namespace, pod) (1,
-          max by(namespace, pod, node) (kube_pod_info)
+          max by(namespace, pod, node) (kube_pod_info{node!=""})
         )
       record: node_namespace_pod_container:container_memory_working_set_bytes
     - expr: |
         container_memory_rss{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}
         * on (namespace, pod) group_left(node) topk by(namespace, pod) (1,
-          max by(namespace, pod, node) (kube_pod_info)
+          max by(namespace, pod, node) (kube_pod_info{node!=""})
         )
       record: node_namespace_pod_container:container_memory_rss
     - expr: |
         container_memory_cache{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}
         * on (namespace, pod) group_left(node) topk by(namespace, pod) (1,
-          max by(namespace, pod, node) (kube_pod_info)
+          max by(namespace, pod, node) (kube_pod_info{node!=""})
         )
       record: node_namespace_pod_container:container_memory_cache
     - expr: |
         container_memory_swap{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}
         * on (namespace, pod) group_left(node) topk by(namespace, pod) (1,
-          max by(namespace, pod, node) (kube_pod_info)
+          max by(namespace, pod, node) (kube_pod_info{node!=""})
         )
       record: node_namespace_pod_container:container_memory_swap
     - expr: |
@@ -663,12 +663,12 @@ spec:
   - name: node.rules
     rules:
     - expr: |
-        sum(min(kube_pod_info) by (cluster, node))
+        sum(min(kube_pod_info{node!=""}) by (cluster, node))
       record: ':kube_pod_info_node_count:'
     - expr: |
         topk by(namespace, pod) (1,
           max by (node, namespace, pod) (
-            label_replace(kube_pod_info{job="kube-state-metrics"}, "pod", "$1", "pod", "(.*)")
+            label_replace(kube_pod_info{job="kube-state-metrics",node!=""}, "pod", "$1", "pod", "(.*)")
         ))
       record: 'node_namespace_pod:kube_pod_info:'
     - expr: |
@@ -1173,7 +1173,13 @@ spec:
         message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
           state for longer than 15 minutes.
       expr: |
-        sum by (namespace, pod) (max by(namespace, pod) (kube_pod_status_phase{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", phase=~"Pending|Unknown"}) * on(namespace, pod) group_left(owner_kind) max by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"})) > 0
+        sum by (namespace, pod) (
+          max by(namespace, pod) (
+            kube_pod_status_phase{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", phase=~"Pending|Unknown"}
+          ) * on(namespace, pod) group_left(owner_kind) topk by(namespace, pod) (
+            1, max by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"})
+          )
+        ) > 0
       for: 15m
       labels:
         severity: critical
