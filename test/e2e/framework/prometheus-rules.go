@@ -2,17 +2,16 @@ package framework
 
 import (
 	"encoding/json"
-	"io/ioutil"
-
-	"gopkg.in/yaml.v2"
+	"path"
 )
 
-type ruleGroups struct {
+type RuleGroups struct {
 	Groups []ruleGroup `json:"groups" yaml:"groups"`
 }
 
 type ruleGroup struct {
 	Name     string      `json:"name" yaml:"name"`
+	File     string      `json:"file" yaml:"file,omitempty"`
 	Interval json.Number `json:"interval,omitempty" yaml:"interval,omitempty"`
 	Rules    []rule      `json:"rules" yaml:"rules"`
 }
@@ -28,7 +27,7 @@ type rule struct {
 	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
 
-func apiRuleGroupsToManifestFormat(groups ruleGroups) ruleGroups {
+func apiRuleGroupsToManifestFormat(groups RuleGroups) RuleGroups {
 	for gIdx, group := range groups.Groups {
 		for rIdx, rule := range group.Rules {
 			// Set alert and record properly.
@@ -55,32 +54,44 @@ func apiRuleGroupsToManifestFormat(groups ruleGroups) ruleGroups {
 	return groups
 }
 
-// CreatePrometheusRulesManifest creates a yaml manifest containing alerting
-// and recording rules from the data exposed by the Prometheus /api/v1/rules
-// endpoint.
-func CreatePrometheusRulesManifest(manifest string, raw []byte) error {
+func ruleGroupsPerFile(groups RuleGroups) map[string]RuleGroups {
+	fileGroups := make(map[string]RuleGroups)
+
+	for _, group := range groups.Groups {
+		file := path.Base(group.File)
+
+		// Empty File so that it is not marshal.
+		group.File = ""
+
+		fileGroup, exist := fileGroups[file]
+		if !exist {
+			fileGroups[file] = RuleGroups{[]ruleGroup{group}}
+		} else {
+			fileGroup.Groups = append(fileGroup.Groups, group)
+			fileGroups[file] = fileGroup
+		}
+	}
+
+	return fileGroups
+}
+
+// PrometheusRulesManifests returns a map of the rules manifests and their
+// content from data exposed by the Prometheus /api/v1/rules endpoint.
+func PrometheusRulesManifests(raw []byte) (map[string]RuleGroups, error) {
 	var j map[string]json.RawMessage
 	err := json.Unmarshal(raw, &j)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	var groups ruleGroups
+	var groups RuleGroups
 	err = json.Unmarshal(j["data"], &groups)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	groups = apiRuleGroupsToManifestFormat(groups)
+	fileGroups := ruleGroupsPerFile(groups)
 
-	yamlGroups, err := yaml.Marshal(groups)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(manifest, yamlGroups, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return fileGroups, nil
 }

@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -197,21 +199,38 @@ func TestPrometheusRulesBestPractice(t *testing.T) {
 		t.Fatalf("Could not get Prometheus rules: %v", err)
 	}
 
-	rulesManifest := ".prometheus-rules.yaml"
-	err = framework.CreatePrometheusRulesManifest(rulesManifest, rawRules)
+	rulesManifests, err := framework.PrometheusRulesManifests(rawRules)
 	if err != nil {
-		t.Fatalf("Could not create manifest from Prometheus rules raw data: %v", err)
+		t.Fatalf("Could not recreate manifests from Prometheus rules raw data: %v", err)
 	}
-	defer os.Remove(rulesManifest)
 
-	cmd := exec.Command(f.PromtoolBin,
-		"check",
-		"rules",
-		rulesManifest,
-	)
+	promtoolOpts := []string{"check", "rules"}
+
+	for manifest, groups := range rulesManifests {
+		yamlGroups, err := yaml.Marshal(groups)
+		if err != nil {
+			t.Fatalf("Could not get marshal %s rules manifest: %v", manifest, err)
+		}
+		err = ioutil.WriteFile(manifest, yamlGroups, 0644)
+		if err != nil {
+			t.Logf("Could not create temporary rule manifest %s: %v\n", manifest, err)
+		}
+
+		promtoolOpts = append(promtoolOpts, manifest)
+	}
+
+	cmd := exec.Command(f.PromtoolBin, promtoolOpts...)
+
 	out, err := cmd.CombinedOutput()
 	t.Logf("%s:\n%s", cmd, out)
 	if err != nil {
 		t.Fatalf("Executing %s: %v", cmd, err)
+	}
+
+	for manifest := range rulesManifests {
+		err = os.Remove(manifest)
+		if err != nil {
+			t.Logf("Could not remove temporary rule manifest %s: %v\n", manifest, err)
+		}
 	}
 }
