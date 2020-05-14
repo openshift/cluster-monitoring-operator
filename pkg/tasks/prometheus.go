@@ -283,26 +283,14 @@ func (t *PrometheusTask) Run() error {
 			return errors.Wrap(err, "initializing Prometheus CA bundle ConfigMap failed")
 		}
 
-		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
-		if err != nil {
-			return errors.Wrap(err, " creating Promehteus CA bundle ConfigMap failed")
+		cbs := &caBundleSyncer{
+			client:  t.client,
+			factory: t.factory,
+			prefix:  "prometheus",
 		}
-		// In the case when there is no data but the ConfigMap is there, we just continue.
-		// We will catch this on the next loop.
-		trustedCA = t.factory.HashTrustedCA(trustedCA, "prometheus")
-		if trustedCA != nil {
-			err = t.client.CreateOrUpdateConfigMap(trustedCA)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Prometheus CA bundle ConfigMap failed")
-			}
-
-			err = t.client.DeleteHashedConfigMap(
-				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
-				"prometheus",
-			)
-			if err != nil {
-				return errors.Wrap(err, "deleting old Prometheus configmaps failed")
-			}
+		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "syncing Prometheus trusted CA bundle ConfigMap failed")
 		}
 
 		klog.V(4).Info("initializing Prometheus object")

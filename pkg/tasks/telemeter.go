@@ -128,27 +128,14 @@ func (t *TelemeterClientTask) create() error {
 			return errors.Wrap(err, "initializing Telemeter client trusted CA bundle ConfigMap failed")
 		}
 
-		trustedCA, err = t.client.CreateIfNotExistConfigMap(trustedCA)
-		if err != nil {
-			return errors.Wrap(err, "creating Telemeter client trusted CA bundle ConfigMap failed")
+		cbs := &caBundleSyncer{
+			client:  t.client,
+			factory: t.factory,
+			prefix:  "telemeter",
 		}
-
-		// In the case when there is no data but the ConfigMap is there, we just continue.
-		// We will catch this on the next loop.
-		trustedCA = t.factory.HashTrustedCA(trustedCA, "telemeter")
-		if trustedCA != nil {
-			err = t.client.CreateOrUpdateConfigMap(trustedCA)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Telemeter client hashed trusted CA bundle ConfigMap failed")
-			}
-
-			err = t.client.DeleteHashedConfigMap(
-				string(trustedCA.Labels["monitoring.openshift.io/hash"]),
-				"telemeter",
-			)
-			if err != nil {
-				return errors.Wrap(err, "deleting old Telemeter client configmaps failed")
-			}
+		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "syncing Telemeter client CA bundle ConfigMap failed")
 		}
 
 		dep, err := t.factory.TelemeterClientDeployment(trustedCA)

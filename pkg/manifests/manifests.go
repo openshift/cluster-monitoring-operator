@@ -223,8 +223,7 @@ var (
 	AuthProxyCookieDomainFlag = "-cookie-domain="
 	AuthProxyRedirectURLFlag  = "-redirect-url="
 
-	PrometheusTrustedCABundleDir  = "/etc/pki/prometheus-ca-bundle/"
-	PrometheusTrustedCABundlePath = PrometheusTrustedCABundleDir + "ca-bundle.crt"
+	TrustedCABundleKey = "ca-bundle.crt"
 )
 
 const (
@@ -413,7 +412,7 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 				a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
 				volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
 				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-					Key:  "ca-bundle.crt",
+					Key:  TrustedCABundleKey,
 					Path: "tls-ca-bundle.pem",
 				})
 				a.Spec.Volumes = append(a.Spec.Volumes, volume)
@@ -1096,7 +1095,7 @@ func (f *Factory) PrometheusK8sEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap
 	r := newErrMapReader(data)
 
 	var (
-		clientCA   = r.value("ca-bundle.crt")
+		clientCA   = r.value(TrustedCABundleKey)
 		clientCert = r.value("tls.crt")
 		clientKey  = r.value("tls.key")
 	)
@@ -1361,7 +1360,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		volumeName := "prometheus-trusted-ca-bundle"
 		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  "ca-bundle.crt",
+			Key:  TrustedCABundleKey,
 			Path: "tls-ca-bundle.pem",
 		})
 		p.Spec.Volumes = append(p.Spec.Volumes, volume)
@@ -2084,7 +2083,7 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 		d.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.Spec.Template.Spec.Containers[1].VolumeMounts, trustedCABundleVolumeMount(volumeName))
 		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  "ca-bundle.crt",
+			Key:  TrustedCABundleKey,
 			Path: "tls-ca-bundle.pem",
 		})
 		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
@@ -2603,7 +2602,7 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 
 		volume := trustedCABundleVolume(trustedCA.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  "ca-bundle.crt",
+			Key:  TrustedCABundleKey,
 			Path: "tls-ca-bundle.pem",
 		})
 		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
@@ -2775,7 +2774,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName))
 		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  "ca-bundle.crt",
+			Key:  TrustedCABundleKey,
 			Path: "tls-ca-bundle.pem",
 		})
 		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
@@ -3009,7 +3008,7 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 
 		volume := trustedCABundleVolume(trustedCA.Name, volumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  "ca-bundle.crt",
+			Key:  TrustedCABundleKey,
 			Path: "tls-ca-bundle.pem",
 		})
 		t.Spec.Volumes = append(t.Spec.Volumes, volume)
@@ -3258,16 +3257,15 @@ func NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityCont
 // It adds "monitoring.openshift.io/name" and "monitoring.openshift.io/hash" labels.
 // Any other labels from the given configmap are discarded.
 //
-// It returns nil, if the given configmap does not contain the "ca-bundle.crt" the data key
+// It returns an error if the given configmap does not contain the "ca-bundle.crt" data key
 // or data is empty string.
-func (f *Factory) HashTrustedCA(caBundleCM *v1.ConfigMap, prefix string) *v1.ConfigMap {
-	caBundle, ok := caBundleCM.Data["ca-bundle.crt"]
-	if !ok || caBundle == "" {
-		// We return here instead of erroring out as we need
-		// "ca-bundle.crt" to be there. This can mean that
-		// the CA was not propagated yet. In that case we
-		// will catch this on next sync loop.
-		return nil
+func (f *Factory) HashTrustedCA(caBundleCM *v1.ConfigMap, prefix string) (*v1.ConfigMap, error) {
+	caBundle, ok := caBundleCM.Data[TrustedCABundleKey]
+	if !ok {
+		return nil, errors.Errorf("CA bundle key %q missing", TrustedCABundleKey)
+	}
+	if caBundle == "" {
+		return nil, errors.Errorf("CA bundle key %q empty", TrustedCABundleKey)
 	}
 
 	h := fnv.New64()
@@ -3289,9 +3287,9 @@ func (f *Factory) HashTrustedCA(caBundleCM *v1.ConfigMap, prefix string) *v1.Con
 			},
 		},
 		Data: map[string]string{
-			"ca-bundle.crt": caBundle,
+			TrustedCABundleKey: caBundle,
 		},
-	}
+	}, nil
 }
 
 // HashSecret synthesizes a secret by setting the given data
