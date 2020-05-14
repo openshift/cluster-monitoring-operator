@@ -75,6 +75,7 @@ spec:
     kubernetes.io/os: linux
   overrideHonorLabels: true
   overrideHonorTimestamps: true
+  podMonitorNamespaceSelector: {}
   podMonitorSelector: {}
   priorityClassName: system-cluster-critical
   replicas: 2
