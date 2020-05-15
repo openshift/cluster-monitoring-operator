@@ -932,6 +932,18 @@ spec:
     rules:
     - expr: sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))
       record: build_error_rate
+  - name: openshift-monitoring.rules
+    rules:
+    - expr: sum by (job,namespace) (prometheus_tsdb_head_series{namespace=~"openshift-monitoring|openshift-user-workload-monitoring"})
+      record: openshift:prometheus_tsdb_head_series:sum
+    - expr: sum by(job,namespace) (rate(prometheus_tsdb_head_samples_appended_total{namespace=~"openshift-monitoring|openshift-user-workload-monitoring"}[2m]))
+      record: openshift:prometheus_tsdb_head_samples_appended_total:sum
+    - expr: sum by (namespace) (container_memory_working_set_bytes{namespace=~"openshift-monitoring|openshift-user-workload-monitoring",
+        container=""})
+      record: monitoring:container_memory_working_set_bytes:sum
+    - expr: sum by(exported_service) (rate(haproxy_server_http_responses_total{exported_namespace="openshift-monitoring",
+        exported_service=~"alertmanager-main|grafana|prometheus-k8s"}[5m]))
+      record: monitoring:haproxy_server_http_responses_total:sum
   - name: openshift-sre.rules
     rules:
     - expr: sum(rate(apiserver_request_total{job="apiserver"}[10m])) BY (code)
