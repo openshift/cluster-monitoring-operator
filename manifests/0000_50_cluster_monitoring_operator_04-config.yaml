@@ -186,6 +186,17 @@ data:
     # (monitoring-team) cluster:telemetry_selected_series:count tracks the total number of series
     # sent via telemetry from each cluster.
     - '{__name__="cluster:telemetry_selected_series:count"}'
+    # (monitoring-team) openshift:prometheus_tsdb_head_series:sum tracks the total number of active series
+    - '{__name__="openshift:prometheus_tsdb_head_series:sum"}'
+    # (monitoring-team) openshift:prometheus_tsdb_head_samples_appended_total:sum tracks the rate of samples ingested 
+    # by prometheusi.
+    - '{__name__="openshift:prometheus_tsdb_head_samples_appended_total:sum"}'
+    # (monitoring-team) monitoring:container_memory_working_set_bytes:sum tracks the memory usage of the monitoring 
+    # stack. 
+    - '{__name__="monitoring:container_memory_working_set_bytes:sum"}'
+    # (monitoring-team) monitoring:haproxy_server_http_responses_total:sum tracks the number of times users access 
+    # monitoring routes. 
+    - '{__name__="monitoring:haproxy_server_http_responses_total:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
