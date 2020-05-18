@@ -48,6 +48,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
                           '--config-reloader-cpu=0',
                           '--config-reloader-memory=0',
                           '--web.enable-tls=true',
+                          '--web.tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
                         ],
                         securityContext: {},
                         resources: {
@@ -66,7 +67,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
                         args: [
                           '--logtostderr',
                           '--secure-listen-address=:8443',
-                          '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256',
+                          '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
                           '--upstream=https://prometheus-operator.openshift-monitoring.svc:8080/',
                           '--tls-cert-file=/etc/tls/private/tls.crt',
                           '--tls-private-key-file=/etc/tls/private/tls.key',
