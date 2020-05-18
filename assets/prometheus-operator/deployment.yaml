@@ -33,6 +33,7 @@ spec:
         - --config-reloader-cpu=0
         - --config-reloader-memory=0
         - --web.enable-tls=true
+        - --web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
         image: quay.io/coreos/prometheus-operator:v0.38.1
         name: prometheus-operator
         ports:
