@@ -352,38 +352,42 @@ func (c *Client) DeleteConfigMap(cm *v1.ConfigMap) error {
 	return err
 }
 
-func (c *Client) DeleteHashedConfigMap(newHash, prefix string) error {
+// DeleteHashedConfigMap deletes all configmaps in the given namespace which have
+// the specified prefix, and DO NOT have the given hash.
+func (c *Client) DeleteHashedConfigMap(namespace, prefix, newHash string) error {
 	ls := "monitoring.openshift.io/name=" + prefix + ",monitoring.openshift.io/hash!=" + newHash
-	configMaps, err := c.KubernetesInterface().CoreV1().ConfigMaps(c.namespace).List(metav1.ListOptions{
+	configMaps, err := c.KubernetesInterface().CoreV1().ConfigMaps(namespace).List(metav1.ListOptions{
 		LabelSelector: ls,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "error listing configmaps with label selector %s", ls)
+		return errors.Wrapf(err, "error listing configmaps in namespace %s with label selector %s", namespace, ls)
 	}
 
-	for i := range configMaps.Items {
-		err := c.KubernetesInterface().CoreV1().ConfigMaps(c.namespace).Delete(configMaps.Items[i].Name, &metav1.DeleteOptions{})
+	for _, cm := range configMaps.Items {
+		err := c.KubernetesInterface().CoreV1().ConfigMaps(namespace).Delete(cm.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "error deleting configmap: %s", configMaps.Items[i].Name)
+			return errors.Wrapf(err, "error deleting configmap: %s/%s", namespace, cm.Name)
 		}
 	}
 
 	return nil
 }
 
-func (c *Client) DeleteHashedSecret(newHash, prefix string) error {
+// DeleteHashedSecret deletes all secrets in the given namespace which have
+// the specified prefix, and DO NOT have the given hash.
+func (c *Client) DeleteHashedSecret(namespace, prefix, newHash string) error {
 	ls := "monitoring.openshift.io/name=" + prefix + ",monitoring.openshift.io/hash!=" + newHash
-	configMaps, err := c.KubernetesInterface().CoreV1().Secrets(c.namespace).List(metav1.ListOptions{
+	secrets, err := c.KubernetesInterface().CoreV1().Secrets(namespace).List(metav1.ListOptions{
 		LabelSelector: ls,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "error listing secrets with label selector %s", ls)
+		return errors.Wrapf(err, "error listing secrets in namespace %s with label selector %s", namespace, ls)
 	}
 
-	for i := range configMaps.Items {
-		err := c.KubernetesInterface().CoreV1().Secrets(c.namespace).Delete(configMaps.Items[i].Name, &metav1.DeleteOptions{})
+	for _, s := range secrets.Items {
+		err := c.KubernetesInterface().CoreV1().Secrets(namespace).Delete(s.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "error deleting secret: %s", configMaps.Items[i].Name)
+			return errors.Wrapf(err, "error deleting secret: %s/%s", namespace, s.Name)
 		}
 	}
 

@@ -270,8 +270,9 @@ func (t *PrometheusTask) Run() error {
 	}
 
 	err = t.client.DeleteHashedSecret(
-		string(s.Labels["monitoring.openshift.io/hash"]),
+		s.GetNamespace(),
 		"prometheus-k8s-grpc-tls",
+		string(s.Labels["monitoring.openshift.io/hash"]),
 	)
 	if err != nil {
 		return errors.Wrap(err, "error creating Prometheus Client GRPC TLS secret")
