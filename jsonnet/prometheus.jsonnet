@@ -32,8 +32,42 @@ local namespacesRole =
   ]) +
   policyRule.withVerbs(['get']);
 
+local patchedKubePVFullRule = {
+    alert: 'KubePersistentVolumeFullInFourDays',
+    annotations: {
+      message: 'Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ printf \"%0.2f\" $value }}% is available.'
+    },
+    expr: "100 * (\n  kubelet_volume_stats_available_bytes{namespace=~\"(openshift-.*|kube-.*|default|logging)\",job=\"kubelet\"}\n    /\n  kubelet_volume_stats_capacity_bytes{namespace=~\"(openshift-.*|kube-.*|default|logging)\",job=\"kubelet\"}\n) < 15\nand\npredict_linear(kubelet_volume_stats_available_bytes{namespace=~\"(openshift-.*|kube-.*|default|logging)\",job=\"kubelet\"}[6h], 4 * 24 * 3600) < 0\n",
+    'for': "1h",
+    labels: {
+      severity: 'critical'
+    }
+};
+
+local patchRules(groups) = [
+  if group.name == 'kubernetes-storage'
+  then {
+    name: group.name,
+    rules: [
+      if rule.alert == 'KubePersistentVolumeFullInFourDays'
+      then patchedKubePVFullRule
+      else rule
+      for rule in group.rules
+    ],
+  }
+  else group
+  for group in groups
+];
+
 {
   prometheus+:: {
+
+    rules+: {
+      spec+: {
+        groups: patchRules(super.groups)
+      },
+    },
+
     trustedCaBundle:
       configmap.new('prometheus-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
       configmap.mixin.metadata.withNamespace($._config.namespace) +
