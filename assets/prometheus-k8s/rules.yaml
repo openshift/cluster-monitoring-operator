@@ -873,7 +873,7 @@ spec:
         ) < 15
         and
         predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}[6h], 4 * 24 * 3600) < 0
-      for: 5m
+      for: 1h
       labels:
         severity: critical
     - alert: KubePersistentVolumeErrors
