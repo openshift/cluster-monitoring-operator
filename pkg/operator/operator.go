@@ -63,13 +63,24 @@ type Operator struct {
 	openshiftConfigCmapInf        cache.SharedIndexInformer
 	secretInf                     cache.SharedIndexInformer
 
+	tlsRotationController TLSRotationController
+
 	queue workqueue.RateLimitingInterface
 
 	reconcileAttempts prometheus.Counter
 	reconcileErrors   prometheus.Counter
 }
 
-func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName string, remoteWrite bool, images map[string]string, telemetryMatches []string) (*Operator, error) {
+func New(config *rest.Config,
+	version,
+	namespace,
+	namespaceUserWorkload,
+	namespaceSelector,
+	configMapName string,
+	remoteWrite bool,
+	images map[string]string,
+	telemetryMatches []string,
+	tlsRotationController TLSRotationController) (*Operator, error) {
 	c, err := client.New(config, version, namespace, namespaceSelector)
 	if err != nil {
 		return nil, err
@@ -127,7 +138,6 @@ func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespa
 	o.openshiftConfigCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
-
 	return o, nil
 }
 
@@ -197,6 +207,9 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 		o.enqueue(key)
 	}
 
+	o.tlsRotationController.informer.Start(stopc)
+	o.tlsRotationController.informer.WaitForCacheSync(stopc)
+
 	for {
 		select {
 		case <-stopc:
@@ -206,6 +219,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 			if !exists {
 				klog.Info("ConfigMap to configure stack does not exist. Reconciling with default config every 5 minutes.")
 				o.enqueue(key)
+				o.tlsRotationController.Sync()
 			}
 		}
 	}

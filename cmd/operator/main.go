@@ -31,6 +31,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/operator"
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
 
@@ -154,7 +155,14 @@ func Main() int {
 		return 1
 	}
 
-	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, *remoteWrite, images.asMap(), telemetryConfig.Matches)
+	crc, err := operator.NewTLSRotationController(config, *namespace, "grpc", []string{"prometheus-grpc", "thanos-querier"})
+	if err != nil {
+		klog.V(4).Info("TLS Rotation controller couldn't be initialized")
+		fmt.Fprint(os.Stderr, err)
+		return 1
+	}
+
+	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, *remoteWrite, images.asMap(), telemetryConfig.Matches, *crc)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
