@@ -13,9 +13,9 @@ require (
 	github.com/jteeuwen/go-bindata v3.0.8-0.20151023091102-a0ff2567cfb7+incompatible
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
-	github.com/openshift/api v0.0.0-20200116145750-0e2ff1e215dd
+	github.com/openshift/api v0.0.0-20200210091934-a0e53e94816b
 	github.com/openshift/client-go v0.0.0-20200116152001-92a2713fa240
-	github.com/openshift/library-go v0.0.0-20200120084036-bb27e57e2f2b
+	github.com/openshift/library-go v0.0.0-20200311115117-38b127eb06c2
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.2.1
 	github.com/prometheus/prometheus v2.9.2+incompatible
