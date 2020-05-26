@@ -194,6 +194,10 @@ data:
     # (monitoring-team) cluster:telemetry_selected_series:count tracks the total number of series
     # sent via telemetry from each cluster.
     - '{__name__="cluster:telemetry_selected_series:count"}'
+    # (rhmi, @openshift/openshift-team-cluster-manager) rhmi_status reports the status of an RHMI installation.
+    # Possible values are bootstrap|cloud-resources|monitoring|authentication|products|solution-explorer|deletion|complete.
+    # This metric is used by OCM to detect when an RHMI installation is complete & ready to use i.e. rhmi_status{stage='complete'}
+    - '{__name__="rhmi_status"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
