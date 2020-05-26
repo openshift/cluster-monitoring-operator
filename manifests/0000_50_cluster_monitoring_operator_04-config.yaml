@@ -197,6 +197,10 @@ data:
     # (monitoring-team) monitoring:haproxy_server_http_responses_total:sum tracks the number of times users access
     # monitoring routes.
     - '{__name__="monitoring:haproxy_server_http_responses_total:sum"}'
+    # (rhmi, @openshift/openshift-team-cluster-manager) rhmi_status reports the status of an RHMI installation.
+    # Possible values are bootstrap|cloud-resources|monitoring|authentication|products|solution-explorer|deletion|complete.
+    # This metric is used by OCM to detect when an RHMI installation is complete & ready to use i.e. rhmi_status{stage='complete'}
+    - '{__name__="rhmi_status"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
