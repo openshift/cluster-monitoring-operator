@@ -24,10 +24,10 @@ import (
 type PrometheusOperatorUserWorkloadTask struct {
 	client  *client.Client
 	factory *manifests.Factory
-	config  *manifests.UserWorkloadConfig
+	config  *manifests.Config
 }
 
-func NewPrometheusOperatorUserWorkloadTask(client *client.Client, factory *manifests.Factory, config *manifests.UserWorkloadConfig) *PrometheusOperatorUserWorkloadTask {
+func NewPrometheusOperatorUserWorkloadTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *PrometheusOperatorUserWorkloadTask {
 	return &PrometheusOperatorUserWorkloadTask{
 		client:  client,
 		factory: factory,
@@ -36,7 +36,7 @@ func NewPrometheusOperatorUserWorkloadTask(client *client.Client, factory *manif
 }
 
 func (t *PrometheusOperatorUserWorkloadTask) Run() error {
-	if t.config.IsEnabled() {
+	if t.config.IsUserWorkloadEnabled() {
 		return t.create()
 	}
 

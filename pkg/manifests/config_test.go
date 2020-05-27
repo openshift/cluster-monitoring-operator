@@ -17,6 +17,7 @@ package manifests
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -28,15 +29,47 @@ func TestConfigParsing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	_, err = NewConfig(f)
+	c, err := NewConfig(f)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate == nil {
+		t.Fatal("config parsing failed: AlertmanagerMainConfig VolumeClaimTemplate was not parsed correctly")
+	}
+}
+
+func TestNewUserConfigFromStringParsing(t *testing.T) {
+	c, err := ioutil.ReadFile("../../examples/user-workload/cluster-monitoring-configmap.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	uwmc, err := NewUserConfigFromString(string(c))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if uwmc.PrometheusOperator == nil {
+		t.Fatal("config parsing failed: Prometheus Operator was not parsed correctly")
+	}
+	if uwmc.Prometheus == nil {
+		t.Fatal("config parsing failed: Prometheus was not parsed correctly")
+	}
+	if uwmc.ThanosRuler == nil {
+		t.Fatal("config parsing failed: Thanos was not parsed correctly")
 	}
 }
 
 func TestEmptyConfigIsValid(t *testing.T) {
 	_, err := NewConfigFromString("")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestEmptyUserConfigIsValid(t *testing.T) {
+	_, err := NewUserConfigFromString("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,14 +179,14 @@ func TestEtcdDefaultsToDisabled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.EtcdConfig.IsEnabled() {
+	if c.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		t.Error("an empty configuration should have etcd disabled")
 	}
 	c, err = NewConfigFromString(`{"etcd":{}}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.EtcdConfig.IsEnabled() {
+	if c.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		t.Error("an empty etcd configuration should have etcd disabled")
 	}
 }
@@ -183,7 +216,7 @@ func hasError(expected bool) configCheckFunc {
 func TestLoadProxy(t *testing.T) {
 	hasHTTPProxy := func(expected string) configCheckFunc {
 		return configCheckFunc(func(c *Config, _ error) error {
-			if got := c.HTTPConfig.HTTPProxy; got != expected {
+			if got := c.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy; got != expected {
 				return fmt.Errorf("want http proxy %v, got %v", expected, got)
 			}
 			return nil
@@ -192,7 +225,7 @@ func TestLoadProxy(t *testing.T) {
 
 	hasHTTPSProxy := func(expected string) configCheckFunc {
 		return configCheckFunc(func(c *Config, _ error) error {
-			if got := c.HTTPConfig.HTTPSProxy; got != expected {
+			if got := c.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy; got != expected {
 				return fmt.Errorf("want https proxy %v, got %v", expected, got)
 			}
 			return nil
@@ -201,7 +234,7 @@ func TestLoadProxy(t *testing.T) {
 
 	hasNoProxy := func(expected string) configCheckFunc {
 		return configCheckFunc(func(c *Config, _ error) error {
-			if got := c.HTTPConfig.NoProxy; got != expected {
+			if got := c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy; got != expected {
 				return fmt.Errorf("want noproxy %v, got %v", expected, got)
 			}
 			return nil

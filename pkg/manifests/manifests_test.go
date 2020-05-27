@@ -784,8 +784,8 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				c.TelemeterClientConfig.ClusterID = "123"
-				c.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
 
 				return c
 			},
@@ -801,9 +801,9 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				c.TelemeterClientConfig.ClusterID = "123"
-				c.TelemeterClientConfig.Token = "secret"
-				c.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
 
 				return c
 			},
@@ -822,8 +822,8 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 				}
 
 				c.SetRemoteWrite(true)
-				c.TelemeterClientConfig.ClusterID = "123"
-				c.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
 
 				return c
 			},
@@ -842,9 +842,9 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 				}
 
 				c.SetRemoteWrite(true)
-				c.TelemeterClientConfig.ClusterID = "123"
-				c.TelemeterClientConfig.Token = "secret"
-				c.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
 
 				return c
 			},
@@ -864,10 +864,10 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 				}
 
 				c.SetRemoteWrite(true)
-				c.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
-				c.TelemeterClientConfig.ClusterID = "123"
-				c.TelemeterClientConfig.Token = "secret"
-				c.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom-remote-write"}}
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom-remote-write"}}
 
 				return c
 			},
@@ -1273,7 +1273,7 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 func TestPrometheusEtcdRulesFiltered(t *testing.T) {
 	enabled := false
 	c := NewDefaultConfig()
-	c.EtcdConfig.Enabled = &enabled
+	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	r, err := f.PrometheusK8sRules()
@@ -1291,7 +1291,7 @@ func TestPrometheusEtcdRulesFiltered(t *testing.T) {
 func TestPrometheusEtcdRules(t *testing.T) {
 	enabled := true
 	c := NewDefaultConfig()
-	c.EtcdConfig.Enabled = &enabled
+	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	r, err := f.PrometheusK8sRules()
@@ -1313,7 +1313,7 @@ func TestPrometheusEtcdRules(t *testing.T) {
 func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
 	enabled := false
 	c := NewDefaultConfig()
-	c.EtcdConfig.Enabled = &enabled
+	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	cms, err := f.GrafanaDashboardDefinitions()
@@ -1331,7 +1331,7 @@ func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
 func TestEtcdGrafanaDashboard(t *testing.T) {
 	enabled := true
 	c := NewDefaultConfig()
-	c.EtcdConfig.Enabled = &enabled
+	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
 
 	cms, err := f.GrafanaDashboardDefinitions()

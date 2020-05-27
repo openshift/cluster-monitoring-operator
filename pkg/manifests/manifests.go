@@ -253,8 +253,8 @@ func NewFactory(namespace, namespaceUserWorkload string, c *Config) *Factory {
 }
 
 func (f *Factory) PrometheusExternalURL(host string) *url.URL {
-	if f.config.PrometheusK8sConfig.Hostport != "" {
-		host = f.config.PrometheusK8sConfig.Hostport
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport != "" {
+		host = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport
 	}
 
 	return &url.URL{
@@ -265,8 +265,8 @@ func (f *Factory) PrometheusExternalURL(host string) *url.URL {
 }
 
 func (f *Factory) AlertmanagerExternalURL(host string) *url.URL {
-	if f.config.AlertmanagerMainConfig.Hostport != "" {
-		host = f.config.AlertmanagerMainConfig.Hostport
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Hostport != "" {
+		host = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Hostport
 	}
 
 	return &url.URL{
@@ -371,22 +371,22 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 	a.Spec.ExternalURL = f.AlertmanagerExternalURL(host).String()
 
-	if f.config.AlertmanagerMainConfig.Resources != nil {
-		a.Spec.Resources = *f.config.AlertmanagerMainConfig.Resources
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources != nil {
+		a.Spec.Resources = *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources
 	}
 
-	if f.config.AlertmanagerMainConfig.VolumeClaimTemplate != nil {
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate != nil {
 		a.Spec.Storage = &monv1.StorageSpec{
-			VolumeClaimTemplate: *f.config.AlertmanagerMainConfig.VolumeClaimTemplate,
+			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate,
 		}
 	}
 
-	if f.config.AlertmanagerMainConfig.NodeSelector != nil {
-		a.Spec.NodeSelector = f.config.AlertmanagerMainConfig.NodeSelector
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.NodeSelector != nil {
+		a.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.NodeSelector
 	}
 
-	if len(f.config.AlertmanagerMainConfig.Tolerations) > 0 {
-		a.Spec.Tolerations = f.config.AlertmanagerMainConfig.Tolerations
+	if len(f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Tolerations) > 0 {
+		a.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Tolerations
 	}
 
 	setEnv := func(container *v1.Container, name, value string) {
@@ -402,14 +402,14 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		case "alertmanager-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
-			if f.config.HTTPConfig.HTTPProxy != "" {
-				setEnv(&a.Spec.Containers[i], "HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+				setEnv(&a.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 			}
-			if f.config.HTTPConfig.HTTPSProxy != "" {
-				setEnv(&a.Spec.Containers[i], "HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+				setEnv(&a.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
 			}
-			if f.config.HTTPConfig.NoProxy != "" {
-				setEnv(&a.Spec.Containers[i], "NO_PROXY", f.config.HTTPConfig.NoProxy)
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+				setEnv(&a.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 			}
 
 			if trustedCABundleCM != nil {
@@ -455,8 +455,8 @@ func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
 		return nil, err
 	}
 
-	if f.config.AlertmanagerMainConfig.Hostport != "" {
-		r.Spec.Host = f.config.AlertmanagerMainConfig.Hostport
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Hostport != "" {
+		r.Spec.Host = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Hostport
 	}
 	r.Namespace = f.namespace
 
@@ -505,12 +505,12 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 		}
 	}
 
-	if f.config.KubeStateMetricsConfig.NodeSelector != nil {
-		d.Spec.Template.Spec.NodeSelector = f.config.KubeStateMetricsConfig.NodeSelector
+	if f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.NodeSelector != nil {
+		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.NodeSelector
 	}
 
-	if len(f.config.KubeStateMetricsConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.KubeStateMetricsConfig.Tolerations
+	if len(f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Tolerations
 	}
 	d.Namespace = f.namespace
 
@@ -577,12 +577,12 @@ func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) 
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
 	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.OpenShiftStateMetrics
 
-	if f.config.OpenShiftMetricsConfig.NodeSelector != nil {
-		d.Spec.Template.Spec.NodeSelector = f.config.OpenShiftMetricsConfig.NodeSelector
+	if f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.NodeSelector != nil {
+		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.NodeSelector
 	}
 
-	if len(f.config.OpenShiftMetricsConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.OpenShiftMetricsConfig.Tolerations
+	if len(f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Tolerations
 	}
 	d.Namespace = f.namespace
 
@@ -833,7 +833,7 @@ func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
-	if !f.config.EtcdConfig.IsEnabled() {
+	if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		groups := []monv1.RuleGroup{}
 		for _, g := range r.Spec.Groups {
 			if g.Name != "etcd" {
@@ -1139,8 +1139,8 @@ func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 		return nil, err
 	}
 
-	if f.config.PrometheusK8sConfig.Hostport != "" {
-		r.Spec.Host = f.config.PrometheusK8sConfig.Hostport
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport != "" {
+		r.Spec.Host = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport
 	}
 	r.Namespace = f.namespace
 
@@ -1154,8 +1154,8 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 	}
 
 	// apply hostport configuration to thanos
-	if f.config.PrometheusK8sConfig.Hostport != "" {
-		r.Spec.Host = f.config.PrometheusK8sConfig.Hostport
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport != "" {
+		r.Spec.Host = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport
 	}
 	r.Namespace = f.namespace
 
@@ -1219,50 +1219,54 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		return nil, err
 	}
 
-	if f.config.PrometheusK8sConfig.Retention != "" {
-		p.Spec.Retention = f.config.PrometheusK8sConfig.Retention
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.LogLevel != "" {
+		p.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.LogLevel
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention != "" {
+		p.Spec.Retention = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention
 	}
 
 	p.Spec.Image = &f.config.Images.Prometheus
 	p.Spec.ExternalURL = f.PrometheusExternalURL(host).String()
 
-	if f.config.PrometheusK8sConfig.Resources != nil {
-		p.Spec.Resources = *f.config.PrometheusK8sConfig.Resources
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources != nil {
+		p.Spec.Resources = *f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources
 	}
 
-	if f.config.PrometheusK8sConfig.NodeSelector != nil {
-		p.Spec.NodeSelector = f.config.PrometheusK8sConfig.NodeSelector
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.NodeSelector != nil {
+		p.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.NodeSelector
 	}
 
-	if len(f.config.PrometheusK8sConfig.Tolerations) > 0 {
-		p.Spec.Tolerations = f.config.PrometheusK8sConfig.Tolerations
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Tolerations) > 0 {
+		p.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Tolerations
 	}
 
-	if f.config.PrometheusK8sConfig.ExternalLabels != nil {
-		p.Spec.ExternalLabels = f.config.PrometheusK8sConfig.ExternalLabels
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels != nil {
+		p.Spec.ExternalLabels = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels
 	}
 
-	if f.config.PrometheusK8sConfig.VolumeClaimTemplate != nil {
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.VolumeClaimTemplate != nil {
 		p.Spec.Storage = &monv1.StorageSpec{
-			VolumeClaimTemplate: *f.config.PrometheusK8sConfig.VolumeClaimTemplate,
+			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.VolumeClaimTemplate,
 		}
 	}
 
-	telemetryEnabled := f.config.TelemeterClientConfig.IsEnabled()
+	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
 	if telemetryEnabled && f.config.RemoteWrite {
 
-		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.PrometheusK8sConfig.TelemetryMatches)
+		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
 		if err != nil {
 			return nil, errors.Wrap(err, "generate label selector relabel config")
 		}
 
 		compositeToken, err := json.Marshal(map[string]string{
-			"cluster_id":          f.config.TelemeterClientConfig.ClusterID,
-			"authorization_token": f.config.TelemeterClientConfig.Token,
+			"cluster_id":          f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
+			"authorization_token": f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Token,
 		})
 
 		spec := monv1.RemoteWriteSpec{
-			URL:         f.config.TelemeterClientConfig.TelemeterServerURL,
+			URL:         f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL,
 			BearerToken: base64.StdEncoding.EncodeToString(compositeToken),
 			QueueConfig: &monv1.QueueConfig{
 				// Amount of samples to load from the WAL into the in-memory
@@ -1288,7 +1292,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 				*selectorRelabelConfig,
 				monv1.RelabelConfig{
 					TargetLabel: "_id",
-					Replacement: f.config.TelemeterClientConfig.ClusterID,
+					Replacement: f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
 				},
 				// relabeling the `ALERTS` series to `alerts` allows us to make
 				// a distinction between the series produced in-cluster and out
@@ -1309,20 +1313,20 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		p.Spec.RemoteWrite = nil
 	}
 
-	if len(f.config.PrometheusK8sConfig.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = append(p.Spec.RemoteWrite, f.config.PrometheusK8sConfig.RemoteWrite...)
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite) > 0 {
+		p.Spec.RemoteWrite = append(p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
 	}
 
 	for _, rw := range p.Spec.RemoteWrite {
-		if f.config.HTTPConfig.HTTPProxy != "" {
-			rw.ProxyURL = f.config.HTTPConfig.HTTPProxy
+		if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+			rw.ProxyURL = f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy
 		}
-		if f.config.HTTPConfig.HTTPSProxy != "" {
-			rw.ProxyURL = f.config.HTTPConfig.HTTPSProxy
+		if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+			rw.ProxyURL = f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy
 		}
 	}
 
-	if !f.config.EtcdConfig.IsEnabled() {
+	if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		secrets := []string{}
 		for _, s := range p.Spec.Secrets {
 			if s != "kube-etcd-client-certs" {
@@ -1353,14 +1357,14 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 			}
 		}
 	}
-	if f.config.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 	}
-	if f.config.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
 	}
-	if f.config.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 	}
 
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
@@ -1404,39 +1408,77 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	if err != nil {
 		return nil, err
 	}
+	if f.config.UserWorkloadConfiguration.Prometheus.LogLevel != "" {
+		p.Spec.LogLevel = f.config.UserWorkloadConfiguration.Prometheus.LogLevel
+	}
 
-	if f.config.PrometheusUserWorkloadConfig.Retention != "" {
-		p.Spec.Retention = f.config.PrometheusUserWorkloadConfig.Retention
+	if f.config.UserWorkloadConfiguration.Prometheus.Retention != "" {
+		p.Spec.Retention = f.config.UserWorkloadConfiguration.Prometheus.Retention
 	}
 
 	p.Spec.Image = &f.config.Images.Prometheus
 
-	if f.config.PrometheusUserWorkloadConfig.Resources != nil {
-		p.Spec.Resources = *f.config.PrometheusUserWorkloadConfig.Resources
+	if f.config.UserWorkloadConfiguration.Prometheus.Resources != nil {
+		p.Spec.Resources = *f.config.UserWorkloadConfiguration.Prometheus.Resources
 	}
 
-	if f.config.PrometheusUserWorkloadConfig.NodeSelector != nil {
-		p.Spec.NodeSelector = f.config.PrometheusUserWorkloadConfig.NodeSelector
+	if f.config.UserWorkloadConfiguration.Prometheus.NodeSelector != nil {
+		p.Spec.NodeSelector = f.config.UserWorkloadConfiguration.Prometheus.NodeSelector
 	}
 
-	if len(f.config.PrometheusUserWorkloadConfig.Tolerations) > 0 {
-		p.Spec.Tolerations = f.config.PrometheusUserWorkloadConfig.Tolerations
+	if len(f.config.UserWorkloadConfiguration.Prometheus.Tolerations) > 0 {
+		p.Spec.Tolerations = f.config.UserWorkloadConfiguration.Prometheus.Tolerations
 	}
 
-	if f.config.PrometheusUserWorkloadConfig.ExternalLabels != nil {
-		p.Spec.ExternalLabels = f.config.PrometheusUserWorkloadConfig.ExternalLabels
+	if f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels != nil {
+		p.Spec.ExternalLabels = f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels
 	}
 
-	if f.config.PrometheusUserWorkloadConfig.VolumeClaimTemplate != nil {
+	if f.config.UserWorkloadConfiguration.Prometheus.VolumeClaimTemplate != nil {
 		p.Spec.Storage = &monv1.StorageSpec{
-			VolumeClaimTemplate: *f.config.PrometheusUserWorkloadConfig.VolumeClaimTemplate,
+			VolumeClaimTemplate: *f.config.UserWorkloadConfiguration.Prometheus.VolumeClaimTemplate,
 		}
 	}
 
-	if len(f.config.PrometheusUserWorkloadConfig.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = f.config.PrometheusUserWorkloadConfig.RemoteWrite
+	if len(f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite) > 0 {
+		p.Spec.RemoteWrite = f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite
 	}
 
+	// TODO: remove after 4.7
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.LogLevel != "" {
+		p.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.LogLevel
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != "" {
+		p.Spec.Retention = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Resources != nil {
+		p.Spec.Resources = *f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Resources
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.NodeSelector != nil {
+		p.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.NodeSelector
+	}
+
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Tolerations) > 0 {
+		p.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Tolerations
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.ExternalLabels != nil {
+		p.Spec.ExternalLabels = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.ExternalLabels
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.VolumeClaimTemplate != nil {
+		p.Spec.Storage = &monv1.StorageSpec{
+			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.VolumeClaimTemplate,
+		}
+	}
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.RemoteWrite) > 0 {
+		p.Spec.RemoteWrite = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.RemoteWrite
+	}
+	// end removal
 	if f.config.Images.Thanos != "" {
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
@@ -1591,12 +1633,12 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	spec := dep.Spec.Template.Spec
 
 	spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
-	if f.config.K8sPrometheusAdapter != nil && len(f.config.K8sPrometheusAdapter.NodeSelector) > 0 {
-		spec.NodeSelector = f.config.K8sPrometheusAdapter.NodeSelector
+	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil && len(f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.NodeSelector) > 0 {
+		spec.NodeSelector = f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.NodeSelector
 	}
 
-	if f.config.K8sPrometheusAdapter != nil && len(f.config.K8sPrometheusAdapter.Tolerations) > 0 {
-		spec.Tolerations = f.config.K8sPrometheusAdapter.Tolerations
+	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil && len(f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Tolerations) > 0 {
+		spec.Tolerations = f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Tolerations
 	}
 	dep.Namespace = f.namespace
 
@@ -1790,13 +1832,13 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 	if err != nil {
 		return nil, err
 	}
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.NodeSelector) > 0 {
 
-	if len(f.config.PrometheusOperatorConfig.NodeSelector) > 0 {
-		d.Spec.Template.Spec.NodeSelector = f.config.PrometheusOperatorConfig.NodeSelector
+		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.NodeSelector
 	}
 
-	if len(f.config.PrometheusOperatorConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.PrometheusOperatorConfig.Tolerations
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Tolerations
 	}
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
@@ -1835,14 +1877,24 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 	if err != nil {
 		return nil, err
 	}
-
-	if len(f.config.PrometheusOperatorUserWorkloadConfig.NodeSelector) > 0 {
-		d.Spec.Template.Spec.NodeSelector = f.config.PrometheusOperatorUserWorkloadConfig.NodeSelector
+	if len(f.config.UserWorkloadConfiguration.PrometheusOperator.NodeSelector) > 0 {
+		d.Spec.Template.Spec.NodeSelector = f.config.UserWorkloadConfiguration.PrometheusOperator.NodeSelector
 	}
 
-	if len(f.config.PrometheusOperatorUserWorkloadConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.PrometheusOperatorUserWorkloadConfig.Tolerations
+	if len(f.config.UserWorkloadConfiguration.PrometheusOperator.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.UserWorkloadConfiguration.PrometheusOperator.Tolerations
 	}
+
+	// TODO: remove in 4.7
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig.NodeSelector) > 0 {
+		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig.NodeSelector
+	}
+
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig.Tolerations
+	}
+
+	// end of remove
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
 	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
@@ -2012,7 +2064,7 @@ func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
 	configmaps := []v1.ConfigMap{}
 	for _, c := range cl.Items {
 		c.Namespace = f.namespace
-		if !f.config.EtcdConfig.IsEnabled() {
+		if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 			if c.GetName() != "grafana-dashboard-etcd" {
 				configmaps = append(configmaps, c)
 			}
@@ -2056,7 +2108,7 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.Grafana
 
-	if !f.config.EtcdConfig.IsEnabled() {
+	if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		vols := []v1.Volume{}
 		volMounts := []v1.VolumeMount{}
 		for _, v := range d.Spec.Template.Spec.Volumes {
@@ -2084,22 +2136,22 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 			}
 		}
 	}
-	if f.config.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 	}
-	if f.config.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
 	}
-	if f.config.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
-	}
-
-	if f.config.GrafanaConfig.NodeSelector != nil {
-		d.Spec.Template.Spec.NodeSelector = f.config.GrafanaConfig.NodeSelector
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 	}
 
-	if len(f.config.GrafanaConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.GrafanaConfig.Tolerations
+	if f.config.ClusterMonitoringConfiguration.GrafanaConfig.NodeSelector != nil {
+		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.GrafanaConfig.NodeSelector
+	}
+
+	if len(f.config.ClusterMonitoringConfiguration.GrafanaConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.GrafanaConfig.Tolerations
 	}
 
 	if proxyCABundleCM != nil {
@@ -2140,8 +2192,8 @@ func (f *Factory) GrafanaRoute() (*routev1.Route, error) {
 		return nil, err
 	}
 
-	if f.config.GrafanaConfig.Hostport != "" {
-		r.Spec.Host = f.config.GrafanaConfig.Hostport
+	if f.config.ClusterMonitoringConfiguration.GrafanaConfig.Hostport != "" {
+		r.Spec.Host = f.config.ClusterMonitoringConfiguration.GrafanaConfig.Hostport
 	}
 	r.Namespace = f.namespace
 
@@ -2588,14 +2640,14 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		}
 	}
 
-	if f.config.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 	}
-	if f.config.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
 	}
-	if f.config.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 	}
 
 	d.Namespace = f.namespace
@@ -2638,20 +2690,20 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
 	}
 
-	if f.config.ThanosQuerierConfig.Resources != nil {
+	if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources != nil {
 		for i, c := range d.Spec.Template.Spec.Containers {
 			if c.Name == "thanos-query" {
-				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ThanosQuerierConfig.Resources
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources
 			}
 		}
 	}
 
-	if f.config.ThanosQuerierConfig.NodeSelector != nil {
-		d.Spec.Template.Spec.NodeSelector = f.config.ThanosQuerierConfig.NodeSelector
+	if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.NodeSelector != nil {
+		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.NodeSelector
 	}
 
-	if len(f.config.ThanosQuerierConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.ThanosQuerierConfig.Tolerations
+	if len(f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Tolerations
 	}
 
 	return d, nil
@@ -2786,21 +2838,21 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 			}
 		}
 	}
-	if f.config.TelemeterClientConfig.ClusterID != "" {
-		setEnv("ID", f.config.TelemeterClientConfig.ClusterID)
+	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID != "" {
+		setEnv("ID", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID)
 	}
-	if f.config.TelemeterClientConfig.TelemeterServerURL != "" {
-		setEnv("TO", f.config.TelemeterClientConfig.TelemeterServerURL)
+	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL != "" {
+		setEnv("TO", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL)
 	}
 
-	if f.config.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 	}
-	if f.config.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
 	}
-	if f.config.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 	}
 
 	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
@@ -2813,17 +2865,17 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 			cmd = append(cmd, a)
 		}
 	}
-	for _, m := range f.config.PrometheusK8sConfig.TelemetryMatches {
+	for _, m := range f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches {
 		cmd = append(cmd, fmt.Sprintf("--match=%s", m))
 	}
 	cmd = append(cmd, "--limit-bytes=5242880")
 	d.Spec.Template.Spec.Containers[0].Command = cmd
 
-	if len(f.config.TelemeterClientConfig.NodeSelector) > 0 {
-		d.Spec.Template.Spec.NodeSelector = f.config.TelemeterClientConfig.NodeSelector
+	if len(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.NodeSelector) > 0 {
+		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.NodeSelector
 	}
-	if len(f.config.TelemeterClientConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.TelemeterClientConfig.Tolerations
+	if len(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Tolerations
 	}
 	d.Namespace = f.namespace
 	if proxyCABundleCM != nil {
@@ -2876,8 +2928,8 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 	}
 	s.Data["salt"] = []byte(salt)
 
-	if f.config.TelemeterClientConfig.Token != "" {
-		s.Data["token"] = []byte(f.config.TelemeterClientConfig.Token)
+	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Token != "" {
+		s.Data["token"] = []byte(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Token)
 	}
 
 	s.Namespace = f.namespace
@@ -3004,23 +3056,51 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 
 	t.Spec.Image = f.config.Images.Thanos
 
-	if f.config.ThanosRulerConfig.Resources != nil {
-		t.Spec.Resources = *f.config.ThanosRulerConfig.Resources
+	if f.config.UserWorkloadConfiguration.ThanosRuler.LogLevel != "" {
+		t.Spec.LogLevel = f.config.UserWorkloadConfiguration.ThanosRuler.LogLevel
 	}
 
-	if f.config.ThanosRulerConfig.VolumeClaimTemplate != nil {
+	if f.config.UserWorkloadConfiguration.ThanosRuler.Resources != nil {
+		t.Spec.Resources = *f.config.UserWorkloadConfiguration.ThanosRuler.Resources
+	}
+
+	if f.config.UserWorkloadConfiguration.ThanosRuler.VolumeClaimTemplate != nil {
 		t.Spec.Storage = &monv1.StorageSpec{
-			VolumeClaimTemplate: *f.config.ThanosRulerConfig.VolumeClaimTemplate,
+			VolumeClaimTemplate: *f.config.UserWorkloadConfiguration.ThanosRuler.VolumeClaimTemplate,
 		}
 	}
 
-	if f.config.ThanosRulerConfig.NodeSelector != nil {
-		t.Spec.NodeSelector = f.config.ThanosRulerConfig.NodeSelector
+	if f.config.UserWorkloadConfiguration.ThanosRuler.NodeSelector != nil {
+		t.Spec.NodeSelector = f.config.UserWorkloadConfiguration.ThanosRuler.NodeSelector
 	}
 
-	if len(f.config.ThanosRulerConfig.Tolerations) > 0 {
-		t.Spec.Tolerations = f.config.ThanosRulerConfig.Tolerations
+	if len(f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations) > 0 {
+		t.Spec.Tolerations = f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations
 	}
+
+	// TODO: remove in 4.7
+	if f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.LogLevel != "" {
+		t.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.LogLevel
+	}
+
+	if f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.Resources != nil {
+		t.Spec.Resources = *f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.Resources
+	}
+
+	if f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.VolumeClaimTemplate != nil {
+		t.Spec.Storage = &monv1.StorageSpec{
+			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.VolumeClaimTemplate,
+		}
+	}
+
+	if f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.NodeSelector != nil {
+		t.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.NodeSelector
+	}
+
+	if len(f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.Tolerations) > 0 {
+		t.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.Tolerations
+	}
+	// end of remove
 
 	t.Spec.Containers[1].Image = f.config.Images.OauthProxy
 	setEnv := func(name, value string) {
@@ -3031,14 +3111,14 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 			}
 		}
 	}
-	if f.config.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.HTTPConfig.HTTPProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 	}
-	if f.config.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.HTTPConfig.HTTPSProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
 	}
-	if f.config.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.HTTPConfig.NoProxy)
+	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 	}
 
 	// Mounting TLS secret to thanos-ruler

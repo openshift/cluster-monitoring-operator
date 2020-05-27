@@ -23,16 +23,16 @@ import (
 )
 
 type ThanosQuerierTask struct {
-	client             *client.Client
-	factory            *manifests.Factory
-	userWorkloadConfig *manifests.UserWorkloadConfig
+	client  *client.Client
+	factory *manifests.Factory
+	config  *manifests.Config
 }
 
-func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory, cfg *manifests.UserWorkloadConfig) *ThanosQuerierTask {
+func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory, cfg *manifests.Config) *ThanosQuerierTask {
 	return &ThanosQuerierTask{
-		client:             client,
-		factory:            factory,
-		userWorkloadConfig: cfg,
+		client:  client,
+		factory: factory,
+		config:  cfg,
 	}
 }
 
@@ -193,7 +193,7 @@ func (t *ThanosQuerierTask) Run() error {
 			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
 		}
 
-		dep, err := t.factory.ThanosQuerierDeployment(s, t.userWorkloadConfig.IsEnabled(), trustedCA)
+		dep, err := t.factory.ThanosQuerierDeployment(s, t.config.IsUserWorkloadEnabled(), trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "initializing Thanos Querier Deployment failed")
 		}

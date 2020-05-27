@@ -218,7 +218,7 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Service failed")
 	}
 
-	if t.config.EtcdConfig.IsEnabled() {
+	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		etcdCA, err := t.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
 		if err != nil {
 			return errors.Wrap(err, "failed to load etcd client CA")
@@ -328,7 +328,7 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus etcd ServiceMonitor failed")
 	}
 
-	if t.config.EtcdConfig.IsEnabled() {
+	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		err = t.client.CreateOrUpdateServiceMonitor(sme)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Prometheus etcd ServiceMonitor failed")

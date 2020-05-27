@@ -155,7 +155,8 @@ func Main() int {
 		return 1
 	}
 
-	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, *remoteWrite, images.asMap(), telemetryConfig.Matches)
+	userWorkloadConfigMapName := "user-workload-monitoring-config"
+	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, userWorkloadConfigMapName, *remoteWrite, images.asMap(), telemetryConfig.Matches)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

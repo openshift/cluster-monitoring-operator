@@ -23,10 +23,10 @@ import (
 type ThanosRulerUserWorkloadTask struct {
 	client  *client.Client
 	factory *manifests.Factory
-	config  *manifests.UserWorkloadConfig
+	config  *manifests.Config
 }
 
-func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Factory, config *manifests.UserWorkloadConfig) *ThanosRulerUserWorkloadTask {
+func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *ThanosRulerUserWorkloadTask {
 	return &ThanosRulerUserWorkloadTask{
 		client:  client,
 		factory: factory,
@@ -35,7 +35,7 @@ func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Fa
 }
 
 func (t *ThanosRulerUserWorkloadTask) Run() error {
-	if t.config.IsEnabled() {
+	if t.config.IsUserWorkloadEnabled() {
 		return t.create()
 	}
 

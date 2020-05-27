@@ -11,6 +11,11 @@ prometheusK8s:
       cpu: 200m
       memory: 2Gi
 alertmanagerMain:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: 15Gi
   baseImage: quay.io/prometheus/alertmanager
   externalUrl: https://monitoring-demo.staging.core-os.net/alertmanager
   resources:

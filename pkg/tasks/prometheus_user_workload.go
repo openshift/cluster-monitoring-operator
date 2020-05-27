@@ -23,21 +23,21 @@ import (
 )
 
 type PrometheusUserWorkloadTask struct {
-	client             *client.Client
-	factory            *manifests.Factory
-	userWorkloadConfig *manifests.UserWorkloadConfig
+	client  *client.Client
+	factory *manifests.Factory
+	config  *manifests.Config
 }
 
-func NewPrometheusUserWorkloadTask(client *client.Client, factory *manifests.Factory, userWorkloadConfig *manifests.UserWorkloadConfig) *PrometheusUserWorkloadTask {
+func NewPrometheusUserWorkloadTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *PrometheusUserWorkloadTask {
 	return &PrometheusUserWorkloadTask{
-		client:             client,
-		factory:            factory,
-		userWorkloadConfig: userWorkloadConfig,
+		client:  client,
+		factory: factory,
+		config:  config,
 	}
 }
 
 func (t *PrometheusUserWorkloadTask) Run() error {
-	if t.userWorkloadConfig.IsEnabled() {
+	if t.config.IsUserWorkloadEnabled() {
 		return t.create()
 	}
 
