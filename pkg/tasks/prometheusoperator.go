@@ -33,6 +33,16 @@ func NewPrometheusOperatorTask(client *client.Client, factory *manifests.Factory
 }
 
 func (t *PrometheusOperatorTask) Run() error {
+	cacm, err := t.factory.PrometheusOperatorCertsCABundle()
+	if err != nil {
+		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
+	}
+
+	_, err = t.client.CreateIfNotExistConfigMap(cacm)
+	if err != nil {
+		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
+	}
+
 	sa, err := t.factory.PrometheusOperatorServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Operator ServiceAccount failed")
@@ -91,6 +101,16 @@ func (t *PrometheusOperatorTask) Run() error {
 	err = t.client.WaitForPrometheusOperatorCRDsReady()
 	if err != nil {
 		return errors.Wrap(err, "waiting for Prometheus CRDs to become available failed")
+	}
+
+	w, err := t.factory.PrometheusRuleValidatingWebhook()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Rule Validating Webhook failed")
+	}
+
+	err = t.client.CreateOrUpdateValidatingWebhookConfiguration(w)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Rule Validating Webhook failed")
 	}
 
 	smpo, err := t.factory.PrometheusOperatorServiceMonitor()

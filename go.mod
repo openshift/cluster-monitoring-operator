@@ -7,6 +7,7 @@ require (
 	github.com/brancz/gojsontoyaml v0.0.0-20191212081931-bf2969bbd742
 	github.com/campoy/embedmd v1.0.0
 	github.com/coreos/prometheus-operator v0.38.1
+	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/jsonnet-bundler/jsonnet-bundler v0.3.1
