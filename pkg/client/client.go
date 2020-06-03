@@ -35,6 +35,7 @@ import (
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/pkg/errors"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	v1betaextensions "k8s.io/api/extensions/v1beta1"
@@ -180,6 +181,23 @@ func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
 
 		return true, nil
 	})
+}
+
+func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(w *admissionv1.ValidatingWebhookConfiguration) error {
+	admclient := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations()
+	existing, err := admclient.Get(w.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := admclient.Create(w)
+		return errors.Wrap(err, "creating ValidatingWebhookConfiguration object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving ValidatingWebhookConfiguration object failed")
+	}
+
+	required := w.DeepCopy()
+	required.ResourceVersion = existing.ResourceVersion
+	_, err = admclient.Update(required)
+	return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
 }
 
 func (c *Client) CreateOrUpdateSecurityContextConstraints(s *secv1.SecurityContextConstraints) error {
@@ -392,6 +410,15 @@ func (c *Client) DeleteHashedSecret(namespace, prefix, newHash string) error {
 	}
 
 	return nil
+}
+
+func (c *Client) DeleteValidatingWebhook(w *admissionv1.ValidatingWebhookConfiguration) error {
+	err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(w.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
 }
 
 func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {

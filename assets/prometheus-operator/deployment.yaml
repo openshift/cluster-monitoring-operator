@@ -32,6 +32,8 @@ spec:
         - --alertmanager-instance-namespaces=openshift-monitoring
         - --config-reloader-cpu=0
         - --config-reloader-memory=0
+        - --web.enable-tls=true
+        - --web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
         image: quay.io/coreos/prometheus-operator:v0.38.1
         name: prometheus-operator
         ports:
@@ -43,13 +45,18 @@ spec:
             memory: 60Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: prometheus-operator-tls
+          readOnly: false
       - args:
         - --logtostderr
         - --secure-listen-address=:8443
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-        - --upstream=http://127.0.0.1:8080/
+        - --upstream=https://prometheus-operator.openshift-monitoring.svc:8080/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
+        - --upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt
         image: quay.io/coreos/kube-rbac-proxy:v0.4.1
         name: kube-rbac-proxy
         ports:
@@ -65,6 +72,9 @@ spec:
         - mountPath: /etc/tls/private
           name: prometheus-operator-tls
           readOnly: false
+        - mountPath: /etc/configmaps/operator-cert-ca-bundle
+          name: operator-certs-ca-bundle
+          readOnly: false
       nodeSelector:
         beta.kubernetes.io/os: linux
         node-role.kubernetes.io/master: ""
@@ -79,3 +89,6 @@ spec:
       - name: prometheus-operator-tls
         secret:
           secretName: prometheus-operator-tls
+      - configMap:
+          name: operator-certs-ca-bundle
+        name: operator-certs-ca-bundle
