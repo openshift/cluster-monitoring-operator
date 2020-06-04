@@ -212,6 +212,7 @@ local authorizationRole =
                       '--grpc-client-tls-key=/etc/tls/grpc/client.key',
                       '--grpc-client-tls-ca=/etc/tls/grpc/ca.crt',
                       '--grpc-client-server-name=prometheus-grpc',
+                      '--rule=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local',
                     ],
                     resources: {
                       requests: {
