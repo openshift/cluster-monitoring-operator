@@ -116,6 +116,41 @@ func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
 	return body, nil
 }
 
+// PrometheusRules runs an HTTP GET request against the Prometheus rules API and returns
+// the response body.
+func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
+	// #nosec
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{Transport: tr}
+
+	req, err := http.NewRequest("GET", "https://"+c.host+"/api/v1/rules", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+c.token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
 // AlertmanagerQuery runs an HTTP GET request against the Alertmanager
 // /api/v2/alerts endpoint and returns the response body.
 func (c *PrometheusClient) AlertmanagerQueryAlerts(kvs ...string) ([]byte, error) {
@@ -233,6 +268,29 @@ func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duratio
 
 		if err := validate(v); err != nil {
 			return errors.Wrapf(err, "error validating response body %q for query %q", string(body), query)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// WaitForRulesReturn waits for Prometheus rules for a given time interval
+// and validates the **first and only** result with the given validate function.
+func (c *PrometheusClient) WaitForRulesReturn(t *testing.T, timeout time.Duration, validate func([]byte) error) {
+	t.Helper()
+
+	err := Poll(5*time.Second, timeout, func() error {
+		body, err := c.PrometheusRules()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := validate(body); err != nil {
+			return errors.Wrapf(err, "error validating response body %q", string(body))
 		}
 
 		return nil

@@ -56,6 +56,7 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"create and assert an user application is deployed", deployUserApplication},
 		{"create prometheus and alertmanager in user namespace", createPrometheusAlertmanagerInUserNamespace},
 		{"assert user workload metrics", assertUserWorkloadMetrics},
+		{"assert user workload rules", assertUserWorkloadRules},
 		{"assert tenancy model is enforced", assertTenancyForMetrics},
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
@@ -419,6 +420,44 @@ func assertUserWorkloadMetrics(t *testing.T) {
 				return nil
 			}
 			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", i)
+		},
+	)
+}
+
+func assertUserWorkloadRules(t *testing.T) {
+	f.ThanosQuerierClient.WaitForRulesReturn(
+		t, 10*time.Minute,
+		func(body []byte) error {
+			j, err := gabs.ParseJSON([]byte(body))
+			if err != nil {
+				return err
+			}
+
+			groups, err := j.Path("data.groups").Children()
+			if err != nil {
+				return err
+			}
+
+			for i := 0; i < len(groups); i++ {
+				groupName := groups[i].S("name").Data().(string)
+				if groupName != "example" {
+					continue
+				}
+
+				rules, err := groups[i].Path("rules").Children()
+				if err != nil {
+					return err
+				}
+
+				for j := 0; j < len(rules); j++ {
+					ruleName := rules[j].S("name").Data().(string)
+					if ruleName == "VersionAlert" {
+						return nil
+					}
+				}
+			}
+
+			return errors.New("VersionAlert alert not found")
 		},
 	)
 }
