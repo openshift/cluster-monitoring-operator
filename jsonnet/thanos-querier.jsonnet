@@ -25,23 +25,31 @@ local authorizationRole =
   ]) +
   policyRule.withVerbs(['create']);
 
+local thanosQuerierRules =
+  (import 'github.com/thanos-io/thanos/mixin/thanos/alerts/query.libsonnet') {
+    query+:: {
+      selector: 'job="thanos-querier"',
+    },
+  };
+
 {
   local config = super._config,
 
   thanos+:: {
 
-    querier+: (import 'kube-thanos/kube-thanos-query.libsonnet') {
-      local tq = self,
-
+    local tq = (import 'kube-thanos/kube-thanos-query.libsonnet') {
       config+:: {
         name: 'thanos-querier',
         namespace: config.namespace,
         image: config.imageRepos.openshiftThanos + ':' + config.versions.openshiftThanos,
-        version: '0.11.0',
+        version: '0.12.0',
         replicas: 2,
         replicaLabels: ['prometheus_replica', 'thanos_ruler_replica'],
         stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
       },
+    },
+
+    querier+: tq + tq.withServiceMonitor + {
 
       trustedCaBundle:
         configmap.new('thanos-querier-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
@@ -172,6 +180,36 @@ local authorizationRole =
           ports.newNamed('web', 9091, 'web'),
           ports.newNamed('tenancy', 9092, 'tenancy'),
         ]),
+
+      serviceMonitor+:
+        {
+          spec+: {
+            endpoints: [
+              {
+                port: 'web',
+                interval: '30s',
+                scheme: 'https',
+                tlsConfig: {
+                  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                  serverName: 'server-name-replaced-at-runtime',
+                },
+                bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+              },
+            ],
+          },
+        },
+
+      prometheusRule: {
+        apiVersion: 'monitoring.coreos.com/v1',
+        kind: 'PrometheusRule',
+        metadata: {
+          name: 'thanos-querier',
+          namespace: tq.config.namespace,
+          labels: tq.config.commonLabels,
+        },
+        spec: thanosQuerierRules.prometheusAlerts,
+      },
+
 
       deployment+:
         {
