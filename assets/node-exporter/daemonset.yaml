@@ -10,7 +10,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: node-exporter
-      app.kubernetes.io/version: v0.18.1
   template:
     metadata:
       labels:
@@ -25,8 +24,7 @@ spec:
         - --path.rootfs=/host/root
         - --no-collector.wifi
         - --no-collector.hwmon
-        - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+)($|/)
-        - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$
+        - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
         - --collector.mountstats
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
@@ -85,7 +83,8 @@ spec:
       - command:
         - /bin/sh
         - -c
-        - '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init -perm /111 -type f -exec {} \;'
+        - '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init
+          -perm /111 -type f -exec {} \;'
         env:
         - name: TMPDIR
           value: /tmp

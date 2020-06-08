@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.38.1
+    app.kubernetes.io/version: v0.39.0
   name: prometheus-operator
   namespace: openshift-monitoring
 spec:
@@ -18,14 +18,14 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: v0.38.1
+        app.kubernetes.io/version: v0.39.0
     spec:
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --logtostderr=true
         - --config-reloader-image=jimmidyson/configmap-reload:v0.3.0
-        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.38.1
+        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.39.0
         - --namespaces=openshift-monitoring
         - --prometheus-instance-namespaces=openshift-monitoring
         - --thanos-ruler-instance-namespaces=openshift-monitoring
@@ -34,7 +34,7 @@ spec:
         - --config-reloader-memory=0
         - --web.enable-tls=true
         - --web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-        image: quay.io/coreos/prometheus-operator:v0.38.1
+        image: quay.io/coreos/prometheus-operator:v0.39.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
