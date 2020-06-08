@@ -17,8 +17,7 @@ spec:
         severity: critical
     - alert: ThanosRuleSenderIsFailingAlerts
       annotations:
-        message: Thanos Rule {{$labels.job}} {{$labels.pod}} is failing to send alerts
-          to alertmanager.
+        message: Thanos Rule {{$labels.job}} {{$labels.pod}} is failing to send alerts to alertmanager.
       expr: |
         sum by (job) (rate(thanos_alert_sender_alerts_dropped_total{job="thanos-ruler"}[5m])) > 0
       for: 5m
@@ -26,8 +25,7 @@ spec:
         severity: critical
     - alert: ThanosRuleHighRuleEvaluationFailures
       annotations:
-        message: Thanos Rule {{$labels.job}} {{$labels.pod}} is failing to evaluate
-          rules.
+        message: Thanos Rule {{$labels.job}} {{$labels.pod}} is failing to evaluate rules.
       expr: |
         (
           sum by (job) (rate(prometheus_rule_evaluation_failures_total{job="thanos-ruler"}[5m]))
@@ -40,8 +38,7 @@ spec:
         severity: critical
     - alert: ThanosRuleHighRuleEvaluationWarnings
       annotations:
-        message: Thanos Rule {{$labels.job}} {{$labels.pod}} has high number of evaluation
-          warnings.
+        message: Thanos Rule {{$labels.job}} {{$labels.pod}} has high number of evaluation warnings.
       expr: |
         sum by (job) (rate(thanos_rule_evaluation_with_warnings_total{job="thanos-ruler"}[5m])) > 0
       for: 15m
@@ -49,8 +46,7 @@ spec:
         severity: info
     - alert: ThanosRuleRuleEvaluationLatencyHigh
       annotations:
-        message: Thanos Rule {{$labels.job}}/{{$labels.pod}} has higher evaluation
-          latency than interval for {{$labels.rule_group}}.
+        message: Thanos Rule {{$labels.job}}/{{$labels.pod}} has higher evaluation latency than interval for {{$labels.rule_group}}.
       expr: |
         (
           sum by (job, pod, rule_group) (prometheus_rule_group_last_duration_seconds{job="thanos-ruler"})
@@ -62,8 +58,7 @@ spec:
         severity: warning
     - alert: ThanosRuleGrpcErrorRate
       annotations:
-        message: Thanos Rule {{$labels.job}} is failing to handle {{ $value | humanize
-          }}% of requests.
+        message: Thanos Rule {{$labels.job}} is failing to handle {{ $value | humanize }}% of requests.
       expr: |
         (
           sum by (job) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job="thanos-ruler"}[5m]))
@@ -77,15 +72,13 @@ spec:
     - alert: ThanosRuleConfigReloadFailure
       annotations:
         message: Thanos Rule {{$labels.job}} has not been able to reload its configuration.
-      expr: avg(thanos_rule_config_last_reload_successful{job="thanos-ruler"}) by
-        (job) != 1
+      expr: avg(thanos_rule_config_last_reload_successful{job="thanos-ruler"}) by (job) != 1
       for: 5m
       labels:
         severity: info
     - alert: ThanosRuleQueryHighDNSFailures
       annotations:
-        message: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% of failing
-          DNS queries for query endpoints.
+        message: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% of failing DNS queries for query endpoints.
       expr: |
         (
           sum by (job) (rate(thanos_ruler_query_apis_dns_failures_total{job="thanos-ruler"}[5m]))
@@ -98,8 +91,7 @@ spec:
         severity: warning
     - alert: ThanosRuleAlertmanagerHighDNSFailures
       annotations:
-        message: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% of failing
-          DNS queries for Alertmanager endpoints.
+        message: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% of failing DNS queries for Alertmanager endpoints.
       expr: |
         (
           sum by (job) (rate(thanos_ruler_alertmanagers_dns_failures_total{job="thanos-ruler"}[5m]))
@@ -112,8 +104,7 @@ spec:
         severity: warning
     - alert: ThanosRuleNoEvaluationFor10Intervals
       annotations:
-        message: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% rule groups
-          that did not evaluate for at least 10x of their expected interval.
+        message: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% rule groups that did not evaluate for at least 10x of their expected interval.
       expr: |
         time() -  max by (job, group) (prometheus_rule_group_last_evaluation_timestamp_seconds{job="thanos-ruler"})
         >
@@ -123,8 +114,7 @@ spec:
         severity: info
     - alert: ThanosNoRuleEvaluations
       annotations:
-        message: Thanos Rule {{$labels.job}} did not perform any rule evaluations
-          in the past 2 minutes.
+        message: Thanos Rule {{$labels.job}} did not perform any rule evaluations in the past 2 minutes.
       expr: |
         sum(rate(prometheus_rule_evaluations_total{job="thanos-ruler"}[2m])) <= 0
           and
