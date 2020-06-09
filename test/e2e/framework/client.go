@@ -126,63 +126,34 @@ func (c *PrometheusClient) prometheusGet(endpoint string, kvs ...string) ([]byte
 
 }
 
-// PrometheusQuery runs an HTTP GET request against the Prometheus query API and returns
-// the response body.
+// PrometheusMetadata runs an HTTP GET request against the Prometheus metadata
+// API and returns the response body.
+func (c *PrometheusClient) PrometheusMetadata() ([]byte, error) {
+	return c.prometheusGet("/api/v1/metadata")
+}
+
+// PrometheusQuery runs an HTTP GET request against the Prometheus query API
+// and returns the response body.
 func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
 	return c.prometheusGet("/api/v1/query", "query", query)
 }
 
-// PrometheusRules runs an HTTP GET request against the Prometheus rules API and returns
-// the response body.
+// PrometheusRules runs an HTTP GET request against the Prometheus rules API
+// and returns the response body.
 func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
-	// #nosec
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
+	return c.prometheusGet("/api/v1/rules")
+}
 
-	client := &http.Client{Transport: tr}
-
-	req, err := http.NewRequest("GET", "https://"+c.host+"/api/v1/rules", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer "+c.token)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, clampMax(body))
-	}
-
-	return body, nil
+// PrometheusSeries runs an HTTP GET request against the Prometheus series API
+// and returns the response body.
+func (c *PrometheusClient) PrometheusSeries(kvs ...string) ([]byte, error) {
+	return c.prometheusGet("/api/v1/series", kvs...)
 }
 
 // AlertmanagerQueryAlerts runs an HTTP GET request against the Alertmanager
 // /api/v2/alerts endpoint and returns the response body.
 func (c *PrometheusClient) AlertmanagerQueryAlerts(kvs ...string) ([]byte, error) {
 	return c.prometheusGet("/api/v2/alerts", kvs...)
-}
-
-// PrometheusGetMetrics runs an HTTP GET request against the Prometheus /metrics
-// endpoint and returns the response body.
-func (c *PrometheusClient) PrometheusGetMetrics() ([]byte, error) {
-	return c.prometheusGet("/metrics")
-}
-
-// PrometheusGetRules runs an HTTP GET request against the Prometheus
-// /api/v1/rules endpoint and returns the response body.
-func (c *PrometheusClient) PrometheusGetRules() ([]byte, error) {
-	return c.prometheusGet("/api/v1/rules")
 }
 
 // GetFirstValueFromPromQuery takes a query api response body and returns the

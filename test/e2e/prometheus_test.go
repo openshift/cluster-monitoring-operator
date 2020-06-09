@@ -15,7 +15,7 @@
 package e2e
 
 import (
-	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -25,6 +25,7 @@ import (
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/testutil/promlint"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -175,26 +176,43 @@ func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
 }
 
 func TestPrometheusMetricsBestPractice(t *testing.T) {
-	metrics, err := f.PrometheusK8sClient.PrometheusGetMetrics()
+	metadata, err := f.PrometheusK8sClient.PrometheusMetadata()
 	if err != nil {
-		t.Fatalf("Could not get Prometheus metrics: %v", err)
+		t.Fatalf("Could not get Prometheus metadata: %v", err)
 	}
 
-	cmd := exec.Command(f.PromtoolBin,
-		"check",
-		"metrics",
-	)
-	cmd.Stdin = bytes.NewReader(metrics)
-
-	out, err := cmd.CombinedOutput()
-	t.Logf("%s:\n%s", cmd, out)
+	series, err := f.ThanosQuerierClient.PrometheusSeries("match[]", "{__name__=~\".+\"}")
 	if err != nil {
-		t.Fatalf("Executing %s: %v", cmd, err)
+		t.Fatalf("Could not get Prometheus series: %v", err)
+	}
+
+	families, err := framework.MetricFamilies(metadata, series)
+	if err != nil {
+		t.Fatalf("Could not create metric families: %v", err)
+	}
+
+	linter := promlint.NewWithMetricFamilies(families)
+	problems, err := linter.Lint()
+	if err != nil {
+		t.Fatalf("Could not lint metric families: %v", err)
+	}
+
+	lintOutput := ""
+	problemSet := make(map[promlint.Problem]struct{})
+	for _, problem := range problems {
+		if _, ok := problemSet[problem]; !ok {
+			problemSet[problem] = struct{}{}
+			lintOutput += fmt.Sprintln(problem)
+		}
+	}
+
+	if lintOutput != "" {
+		t.Log(lintOutput)
 	}
 }
 
 func TestPrometheusRulesBestPractice(t *testing.T) {
-	rawRules, err := f.PrometheusK8sClient.PrometheusGetRules()
+	rawRules, err := f.PrometheusK8sClient.PrometheusRules()
 	if err != nil {
 		t.Fatalf("Could not get Prometheus rules: %v", err)
 	}

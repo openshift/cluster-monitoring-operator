@@ -18,7 +18,8 @@ require (
 	github.com/openshift/client-go v0.0.0-20200116152001-92a2713fa240
 	github.com/openshift/library-go v0.0.0-20200120084036-bb27e57e2f2b
 	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v1.2.1
+	github.com/prometheus/client_golang v1.6.0
+	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/prometheus v2.9.2+incompatible
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	gopkg.in/yaml.v2 v2.2.8
