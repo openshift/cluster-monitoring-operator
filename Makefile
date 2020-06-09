@@ -27,7 +27,7 @@ CONTAINER_CMD:=docker run --rm \
 		-v "$(PWD):/go/src/$(GO_PKG):Z" \
 		-w "/go/src/$(GO_PKG)" \
 		-e GO111MODULE=$(GO111MODULE) \
-		quay.io/coreos/jsonnet-ci:release-0.38
+		quay.io/coreos/jsonnet-ci:release-0.39
 
 .PHONY: all
 all: format generate build test
@@ -150,7 +150,7 @@ $(EMBEDMD_BIN):
 	@go install -mod=vendor github.com/campoy/embedmd
 
 $(GOBINDATA_BIN):
-	@go install -mod=vendor github.com/jteeuwen/go-bindata/...
+	@go install -mod=vendor github.com/go-bindata/go-bindata/...
 
 $(JB_BINARY):
 	@go install -mod=vendor github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
