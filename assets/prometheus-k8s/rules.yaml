@@ -1461,6 +1461,10 @@ spec:
       annotations:
         message: The API server has an abnormal latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.
       expr: |
+        cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99"}
+        >
+        1
+        and on (verb,resource)
         (
           cluster:apiserver_request_duration_seconds:mean5m{job="apiserver"}
           >
@@ -1472,10 +1476,6 @@ spec:
           )
         ) > on (verb) group_left()
         1.2 * avg by (verb) (cluster:apiserver_request_duration_seconds:mean5m{job="apiserver"} >= 0)
-        and on (verb,resource)
-        cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99"}
-        >
-        1
       for: 5m
       labels:
         severity: warning
