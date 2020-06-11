@@ -15,7 +15,6 @@
 package client
 
 import (
-	"fmt"
 	"net/url"
 	"reflect"
 	"time"
@@ -449,13 +448,13 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
 		klog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
 
-		lastErr = fmt.Errorf("waiting for %d Pods to be deleted", len(pods.Items))
+		lastErr = errors.Errorf("%d pods still present", len(pods.Items))
 		return len(pods.Items) == 0, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Prometheus Pods to be gone failed")
+		return errors.Wrapf(err, "waiting for Prometheus %s/%s deletion", p.GetNamespace(), p.GetName())
 	}
 
 	return nil
@@ -479,13 +478,13 @@ func (c *Client) DeleteThanosRuler(tr *monv1.ThanosRuler) error {
 		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
 		klog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
 
-		lastErr = fmt.Errorf("waiting for %d Pods to be deleted", len(pods.Items))
+		lastErr = errors.Errorf("%d pods still present", len(pods.Items))
 		return len(pods.Items) == 0, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Thanos Ruler Pods to be gone failed")
+		return errors.Wrapf(err, "waiting for Thanos Ruler %s/%s deletion", tr.GetNamespace(), tr.GetName())
 	}
 
 	return nil
@@ -583,16 +582,22 @@ func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 		}
 
 		expectedReplicas := *p.Spec.Replicas
-		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
-			return true, nil
+		if expectedReplicas != status.UpdatedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				expectedReplicas, status.UpdatedReplicas)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
-		return false, nil
+		if status.AvailableReplicas < expectedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
+				expectedReplicas, status.AvailableReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Prometheus")
+		return errors.Wrapf(err, "waiting for Prometheus %s/%s", p.GetNamespace(), p.GetName())
 	}
 	return nil
 }
@@ -610,16 +615,22 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 		}
 
 		expectedReplicas := *a.Spec.Replicas
-		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
-			return true, nil
+		if expectedReplicas != status.UpdatedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				expectedReplicas, status.UpdatedReplicas)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
-		return false, nil
+		if status.AvailableReplicas < expectedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
+				expectedReplicas, status.AvailableReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Alertmanager")
+		return errors.Wrapf(err, "waiting for Alertmanager %s/%s", a.GetNamespace(), a.GetName())
 	}
 	return nil
 }
@@ -637,16 +648,22 @@ func (c *Client) WaitForThanosRuler(t *monv1.ThanosRuler) error {
 		}
 
 		expectedReplicas := *tr.Spec.Replicas
-		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
-			return true, nil
+		if expectedReplicas != status.UpdatedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				expectedReplicas, status.UpdatedReplicas)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
-		return false, nil
+		if status.AvailableReplicas < expectedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
+				expectedReplicas, status.AvailableReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Thanos Ruler")
+		return errors.Wrapf(err, "waiting for Thanos Ruler %s/%s", t.GetNamespace(), t.GetName())
 	}
 	return nil
 }
@@ -710,17 +727,27 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 		if err != nil {
 			return false, err
 		}
-		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedReplicas == d.Status.Replicas && d.Status.UnavailableReplicas == 0 {
-			return true, nil
+		if d.Generation > d.Status.ObservedGeneration {
+			lastErr = errors.Errorf("current generation %d, observed generation %d",
+				d.Generation, d.Status.ObservedGeneration)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("deployment %s is not ready. status: (replicas: %d, updated: %d, ready: %d, unavailable: %d)",
-			d.Name, d.Status.Replicas, d.Status.UpdatedReplicas, d.Status.ReadyReplicas, d.Status.UnavailableReplicas)
-		return false, nil
+		if d.Status.UpdatedReplicas != d.Status.Replicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				d.Status.Replicas, d.Status.UpdatedReplicas)
+			return false, nil
+		}
+		if d.Status.UnavailableReplicas != 0 {
+			lastErr = errors.Errorf("got %d unavailable replicas",
+				d.Status.UpdatedReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for DeploymentRollout of %s", dep.GetName())
+		return errors.Wrapf(err, "waiting for DeploymentRollout of %s/%s", dep.GetNamespace(), dep.GetName())
 	}
 	return nil
 }
@@ -728,21 +755,31 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 func (c *Client) WaitForStatefulsetRollout(sts *appsv1.StatefulSet) error {
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		d, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(sts.GetName(), metav1.GetOptions{})
+		s, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(sts.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
-		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedReplicas == d.Status.Replicas && d.Status.ReadyReplicas == d.Status.Replicas {
-			return true, nil
+		if s.Generation > s.Status.ObservedGeneration {
+			lastErr = errors.Errorf("expected generation %d, observed generation: %d",
+				s.Generation, s.Status.ObservedGeneration)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("statefulset %s is not ready. status: (replicas: %d, updated: %d, ready: %d)",
-			d.Name, d.Status.Replicas, d.Status.UpdatedReplicas, d.Status.ReadyReplicas)
-		return false, nil
+		if s.Status.UpdatedReplicas != s.Status.Replicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				s.Status.Replicas, s.Status.UpdatedReplicas)
+			return false, nil
+		}
+		if s.Status.ReadyReplicas != s.Status.Replicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d ready replicas",
+				s.Status.Replicas, s.Status.ReadyReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for StatefulsetRollout of %s", sts.GetName())
+		return errors.Wrapf(err, "waiting for StatefulsetRollout of %s/%s", sts.GetNamespace(), sts.GetName())
 	}
 	return nil
 }
@@ -775,7 +812,7 @@ func (c *Client) WaitForSecret(s *v1.Secret) (*v1.Secret, error) {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return nil, errors.Wrapf(err, "waiting for secret %s", s.GetName())
+		return nil, errors.Wrapf(err, "waiting for secret %s/%s", s.GetNamespace(), s.GetName())
 	}
 
 	return result, nil
@@ -790,7 +827,7 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 			return false, err
 		}
 		if len(newRoute.Status.Ingress) == 0 {
-			lastErr = fmt.Errorf("no status available for %s", newRoute.GetName())
+			lastErr = errors.New("no status available")
 			return false, nil
 		}
 		for _, c := range newRoute.Status.Ingress[0].Conditions {
@@ -799,13 +836,13 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 				return true, nil
 			}
 		}
-		lastErr = fmt.Errorf("route %s is not yet Admitted", newRoute.GetName())
+		lastErr = errors.New("route is not yet Admitted")
 		return false, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return host, errors.Wrapf(err, "waiting for RouteReady of %s", r.GetName())
+		return host, errors.Wrapf(err, "waiting for route %s/%s", r.GetNamespace(), r.GetName())
 	}
 	return host, nil
 }
@@ -864,17 +901,27 @@ func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 		if err != nil {
 			return false, err
 		}
-		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedNumberScheduled == d.Status.DesiredNumberScheduled && d.Status.NumberUnavailable == 0 {
-			return true, nil
+		if d.Generation > d.Status.ObservedGeneration {
+			lastErr = errors.Errorf("current generation %d, observed generation: %d",
+				d.Generation, d.Status.ObservedGeneration)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("daemonset %s is not ready. status: (desired: %d, updated: %d, ready: %d, unavailable: %d)",
-			d.Name, d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled, d.Status.NumberReady, d.Status.NumberUnavailable)
-		return false, nil
+		if d.Status.UpdatedNumberScheduled != d.Status.DesiredNumberScheduled {
+			lastErr = errors.Errorf("expected %d desired scheduled nodes, got %d updated scheduled nodes",
+				d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled)
+			return false, nil
+		}
+		if d.Status.NumberUnavailable != 0 {
+			lastErr = errors.Errorf("got %d unavailable nodes",
+				d.Status.NumberUnavailable)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for DaemonSetRollout of %s", ds.GetName())
+		return errors.Wrapf(err, "waiting for DaemonSetRollout of %s/%s", ds.GetNamespace(), ds.GetName())
 	}
 	return nil
 }
@@ -1196,7 +1243,7 @@ func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, er
 			}
 		case extensionsobj.NamesAccepted:
 			if cond.Status == extensionsobj.ConditionFalse {
-				return false, fmt.Errorf("CRD naming conflict (%s): %v", crd.ObjectMeta.Name, cond.Reason)
+				return false, errors.Errorf("CRD naming conflict (%s): %v", crd.ObjectMeta.Name, cond.Reason)
 			}
 		}
 	}
