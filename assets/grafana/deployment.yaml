@@ -18,6 +18,7 @@ spec:
       containers:
       - args:
         - -config=/etc/grafana/grafana.ini
+        env: []
         image: grafana/grafana:6.4.3
         name: grafana
         ports:

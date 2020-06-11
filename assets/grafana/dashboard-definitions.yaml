@@ -631,6 +631,7 @@ items:
                       "min": true,
                       "rightSide": true,
                       "show": true,
+                      "sideWidth": null,
                       "total": false,
                       "values": true
                   },
@@ -730,6 +731,7 @@ items:
                       "min": true,
                       "rightSide": true,
                       "show": true,
+                      "sideWidth": null,
                       "total": false,
                       "values": true
                   },
@@ -840,6 +842,7 @@ items:
                               "min": true,
                               "rightSide": true,
                               "show": true,
+                              "sideWidth": null,
                               "total": false,
                               "values": true
                           },
@@ -939,6 +942,7 @@ items:
                               "min": true,
                               "rightSide": true,
                               "show": true,
+                              "sideWidth": null,
                               "total": false,
                               "values": true
                           },
@@ -1058,6 +1062,7 @@ items:
                               "min": true,
                               "rightSide": true,
                               "show": true,
+                              "sideWidth": null,
                               "total": false,
                               "values": true
                           },
@@ -1157,6 +1162,7 @@ items:
                               "min": true,
                               "rightSide": true,
                               "show": true,
+                              "sideWidth": null,
                               "total": false,
                               "values": true
                           },
@@ -1384,7 +1390,6 @@ items:
           "editable": true,
           "gnetId": null,
           "hideControls": false,
-          "id": 6,
           "links": [
 
           ],
@@ -1716,7 +1721,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "etcd_debugging_mvcc_db_total_size_in_bytes{job=\"$cluster\"}",
+                                  "expr": "etcd_mvcc_db_total_size_in_bytes{job=\"$cluster\"}",
                                   "hide": false,
                                   "interval": "",
                                   "intervalFactor": 2,
@@ -2595,6 +2600,7 @@ items:
           },
           "timezone": "browser",
           "title": "etcd",
+          "uid": "c2f4e12cdf69feb95caa41a5a1b423d9",
           "version": 215
       }
   kind: ConfigMap
