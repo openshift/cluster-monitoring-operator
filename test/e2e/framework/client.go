@@ -79,6 +79,15 @@ func (c *PrometheusClient) injectQueryParameters(req *http.Request, kvs ...strin
 	return
 }
 
+func clampMax(b []byte) string {
+	const maxLength = 1000
+	s := string(b)
+	if len(s) <= maxLength {
+		return s
+	}
+	return s[0:maxLength-3] + "..."
+}
+
 // PrometheusQuery runs an HTTP GET request against the Prometheus query API and returns
 // the response body.
 func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
@@ -104,13 +113,13 @@ func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, clampMax(body))
 	}
 
 	return body, nil
@@ -139,13 +148,13 @@ func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code response, want %d, got %d", http.StatusOK, resp.StatusCode)
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, clampMax(body))
 	}
 
 	return body, nil
