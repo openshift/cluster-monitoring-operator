@@ -132,6 +132,12 @@ func (c *PrometheusClient) PrometheusMetadata() ([]byte, error) {
 	return c.prometheusGet("/api/v1/metadata")
 }
 
+// PrometheusTargetsMetadata runs an HTTP GET request against the Prometheus
+// targets metadata API and returns the response body.
+func (c *PrometheusClient) PrometheusTargetsMetadata() ([]byte, error) {
+	return c.prometheusGet("/api/v1/targets/metadata")
+}
+
 // PrometheusQuery runs an HTTP GET request against the Prometheus query API
 // and returns the response body.
 func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {

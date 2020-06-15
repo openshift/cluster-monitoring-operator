@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -197,18 +198,61 @@ func TestPrometheusMetricsBestPractice(t *testing.T) {
 		t.Fatalf("Could not lint metric families: %v", err)
 	}
 
-	lintOutput := ""
 	problemSet := make(map[promlint.Problem]struct{})
 	for _, problem := range problems {
 		if _, ok := problemSet[problem]; !ok {
 			problemSet[problem] = struct{}{}
-			lintOutput += fmt.Sprintln(problem)
 		}
 	}
 
-	if lintOutput != "" {
-		t.Log(lintOutput)
+	targetsMetadata, err := f.PrometheusK8sClient.PrometheusTargetsMetadata()
+	if err != nil {
+		t.Fatalf("Could not get Prometheus targets metadata: %v", err)
 	}
+
+	var j map[string]json.RawMessage
+	err = json.Unmarshal(targetsMetadata, &j)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var targetsMeta []struct {
+		Target map[string]string `json:"target"`
+		Metric string            `json:"metric"`
+	}
+	err = json.Unmarshal(j["data"], &targetsMeta)
+
+	assocJobs := map[string]map[string]struct{}{}
+	for _, targetMeta := range targetsMeta {
+		if assocJobs[targetMeta.Metric] == nil {
+			assocJobs[targetMeta.Metric] = map[string]struct{}{}
+		}
+		s := fmt.Sprintf("%s/%s", targetMeta.Target["namespace"], targetMeta.Target["job"])
+		assocJobs[targetMeta.Metric][s] = struct{}{}
+	}
+
+	outputJobs := map[string]map[string][]string{}
+	for problem := range problemSet {
+		jobs := assocJobs[problem.Metric]
+		for job := range jobs {
+			if outputJobs[job] == nil {
+				outputJobs[job] = map[string][]string{}
+			}
+			outputJobs[job][problem.Metric] = append(outputJobs[job][problem.Metric], problem.Text)
+		}
+	}
+
+	out, err := yaml.Marshal(outputJobs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(out))
+
+	summary := ""
+	for job, problems := range outputJobs {
+		summary += fmt.Sprintf("%s: %d\n", job, len(problems))
+	}
+	t.Log(summary)
 }
 
 func TestPrometheusRulesBestPractice(t *testing.T) {
