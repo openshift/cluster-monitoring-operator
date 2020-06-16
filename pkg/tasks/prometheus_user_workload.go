@@ -139,7 +139,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Service failed")
 	}
 
-	grpcTLS, err := t.factory.GRPCSecret(nil)
+	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus GRPC secret failed")
 	}
@@ -215,7 +215,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus ServiceMonitor failed")
 	}
 
-	grpcTLS, err := t.factory.GRPCSecret(nil)
+	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus GRPC secret failed")
 	}

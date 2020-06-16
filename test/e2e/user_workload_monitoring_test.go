@@ -59,6 +59,9 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"assert user workload rules", assertUserWorkloadRules},
 		{"assert tenancy model is enforced", assertTenancyForMetrics},
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
+		{"assert grpc tls rotation", assertGRPCTLSRotation},
+		{"assert user workload metrics", assertUserWorkloadMetrics},
+		{"assert user workload rules", assertUserWorkloadRules},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	} {
 		if ok := t.Run(scenario.name, scenario.f); !ok {
@@ -556,6 +559,45 @@ func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
 	_, err = f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get("alertmanager-not-to-be-reconciled", metav1.GetOptions{})
 	if err == nil {
 		t.Fatal("expected no Alertmanager statefulset to be deployed, but found one")
+	}
+}
+
+func assertGRPCTLSRotation(t *testing.T) {
+	s, err := f.OperatorClient.WaitForSecret(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "grpc-tls",
+			Namespace: f.Ns,
+		},
+	})
+
+	if err != nil {
+		t.Fatalf("error waiting for grpc-tls secret: %v", err)
+	}
+
+	if s.Annotations == nil {
+		s.Annotations = make(map[string]string)
+	}
+
+	s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"] = "true"
+
+	if err := f.OperatorClient.CreateOrUpdateSecret(s); err != nil {
+		t.Fatalf("error saving grpc-tls secret: %v", err)
+	}
+
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+		s, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get("grpc-tls", metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("error loading grpc-tls secret: %v", err)
+		}
+
+		if _, ok := s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"]; ok {
+			return errors.New("rotation did not execute: grpc-tls-forced-rotate annotation set")
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 

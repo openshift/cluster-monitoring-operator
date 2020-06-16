@@ -161,7 +161,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 			return errors.Wrap(err, "syncing Thanos Ruler trusted CA bundle ConfigMap failed")
 		}
 
-		grpcTLS, err := t.factory.GRPCSecret(nil)
+		grpcTLS, err := t.factory.GRPCSecret()
 		if err != nil {
 			return errors.Wrap(err, "initializing UserWorkload Thanos Ruler GRPC secret failed")
 		}
@@ -319,7 +319,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "deleting all hashed Thanos Ruler trusted CA bundle ConfigMap failed")
 	}
 
-	grpcTLS, err := t.factory.GRPCSecret(nil)
+	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Thanos Ruler GRPC secret failed")
 	}

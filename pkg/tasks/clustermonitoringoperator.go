@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/klog"
 )
 
 type ClusterMonitoringOperatorTask struct {
@@ -72,19 +73,27 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "reconciling Cluster Monitoring Operator ServiceMonitor failed")
 	}
 
-	s, err := t.client.GetSecret("openshift-monitoring", "grpc-tls")
-	if apierrors.IsNotFound(err) {
-		err = nil
-		s = nil // this will be a zero value if it was not found
+	s, err := t.factory.GRPCSecret()
+	if err != nil {
+		return errors.Wrap(err, "error initializing Cluster Monitoring Operator GRPC TLS secret")
 	}
 
-	if err != nil {
+	loaded, err := t.client.GetSecret(s.Namespace, s.Name)
+	switch {
+	case apierrors.IsNotFound(err):
+		// No secret was found, proceed with the default empty secret from manifests.
+		klog.V(5).Info("creating new Cluster Monitoring Operator GRPC TLS secret")
+	case err == nil:
+		// Secret was found, use that.
+		s = loaded
+		klog.V(5).Info("found existing Cluster Monitoring Operator GRPC TLS secret")
+	default:
 		return errors.Wrap(err, "error reading Cluster Monitoring Operator GRPC TLS secret")
 	}
 
-	s, err = t.factory.GRPCSecret(s)
+	err = manifests.RotateGRPCSecret(s)
 	if err != nil {
-		return errors.Wrap(err, "error initializing Cluster Monitoring Operator GRPC TLS secret")
+		return errors.Wrap(err, "error rotating Cluster Monitoring Operator GRPC TLS secret")
 	}
 
 	err = t.client.CreateOrUpdateSecret(s)

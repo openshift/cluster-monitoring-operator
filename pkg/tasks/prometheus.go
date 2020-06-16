@@ -240,7 +240,7 @@ func (t *PrometheusTask) Run() error {
 		}
 	}
 
-	grpcTLS, err := t.factory.GRPCSecret(nil)
+	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus GRPC secret failed")
 	}
