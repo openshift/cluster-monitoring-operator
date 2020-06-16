@@ -552,6 +552,14 @@ func (c *Client) DeleteService(svc *v1.Service) error {
 	return err
 }
 
+func (c *Client) DeleteRoute(r *routev1.Route) error {
+	err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Delete(r.GetName(), &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
 func (c *Client) DeletePrometheusRule(rule *monv1.PrometheusRule) error {
 	err := c.mclient.MonitoringV1().PrometheusRules(rule.GetNamespace()).Delete(rule.GetName(), &metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
