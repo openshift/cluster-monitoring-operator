@@ -204,5 +204,25 @@ func (t *ThanosQuerierTask) Run() error {
 		}
 	}
 
+	tqsm, err := t.factory.ThanosQuerierServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Querier ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(tqsm)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos Querier ServiceMonitor failed")
+	}
+
+	tqpr, err := t.factory.ThanosQuerierPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Querier PrometheusRule failed")
+	}
+
+	err = t.client.CreateOrUpdatePrometheusRule(tqpr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos Querier PrometheusRule failed")
+	}
+
 	return nil
 }

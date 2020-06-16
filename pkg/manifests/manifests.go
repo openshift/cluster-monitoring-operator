@@ -185,6 +185,8 @@ var (
 
 	ThanosQuerierDeployment         = "assets/thanos-querier/deployment.yaml"
 	ThanosQuerierService            = "assets/thanos-querier/service.yaml"
+	ThanosQuerierServiceMonitor     = "assets/thanos-querier/service-monitor.yaml"
+	ThanosQuerierPrometheusRule     = "assets/thanos-querier/prometheus-rule.yaml"
 	ThanosQuerierRoute              = "assets/thanos-querier/route.yaml"
 	ThanosQuerierOauthCookieSecret  = "assets/thanos-querier/oauth-cookie-secret.yaml"
 	ThanosQuerierHtpasswdSecret     = "assets/thanos-querier/oauth-htpasswd-secret.yaml"
@@ -2673,6 +2675,33 @@ func (f *Factory) ThanosQuerierService() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) ThanosQuerierPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(MustAssetReader(ThanosQuerierPrometheusRule))
+}
+
+func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(ThanosQuerierServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	var found bool
+	const endpointPort = "web"
+	for i := range sm.Spec.Endpoints {
+		if sm.Spec.Endpoints[i].Port == endpointPort {
+			found = true
+			sm.Spec.Endpoints[i].TLSConfig.ServerName = fmt.Sprintf("thanos-querier.%s.svc", f.namespace)
+		}
+	}
+	if !found {
+		return nil, errors.Errorf("failed to find endpoint port %q", endpointPort)
+	}
+
+	sm.Namespace = f.namespace
+
+	return sm, nil
 }
 
 func (f *Factory) TelemeterTrustedCABundle() (*v1.ConfigMap, error) {
