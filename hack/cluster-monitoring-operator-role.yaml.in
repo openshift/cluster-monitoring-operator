@@ -20,7 +20,7 @@ rules:
   resources: ["deployments", "daemonsets"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
 - apiGroups: ["route.openshift.io"]
-  resources: ["routes"]
+  resources: ["routes", "routes/custom-host"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
 - apiGroups: ["security.openshift.io"]
   resources: ["securitycontextconstraints"]
