@@ -29,10 +29,14 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // The namespace where to deploy the test application.
-const userWorkloadTestNs = "user-workload-test"
+const (
+	userWorkloadTestNs = "user-workload-test"
+	userWorkloadNs     = "openshift-user-workload-monitoring"
+)
 
 func TestUserWorkloadMonitoring(t *testing.T) {
 	cm := &v1.ConfigMap{
@@ -65,6 +69,85 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 			t.Fatalf("scenario %q failed", scenario.name)
 		}
 	}
+}
+
+func TestUserWorkloadMonitoringNewConfig(t *testing.T) {
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-monitoring-config",
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": `enableUserWorkload: true
+`,
+		},
+	}
+
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "user-workload-monitoring-config",
+			Namespace: userWorkloadNs,
+		},
+		Data: map[string]string{
+			"config.yaml": `prometheus:
+  volumeClaimTemplate:
+    spec:
+      storageClassName: gp2
+      resources:
+        requests:
+          storage: 2Gi
+`,
+		},
+	}
+
+	for _, scenario := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
+		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
+		{"set VolumeClaimTemplate for prometheus CR, assert that it is created", assertPrometheusVCConfig(uwmCM)},
+		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
+	} {
+		if ok := t.Run(scenario.name, scenario.f); !ok {
+			t.Fatalf("scenario %q failed", scenario.name)
+		}
+	}
+}
+
+func assertPrometheusVCConfig(cm *v1.ConfigMap) func(*testing.T) {
+	return func(t *testing.T) {
+		if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+			t.Fatal(err)
+		}
+
+		var lastErr error
+		// Wait for persistent volume claim
+		err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(userWorkloadNs).Get("prometheus-user-workload-db-prometheus-user-workload-0", metav1.GetOptions{})
+			lastErr = errors.Wrap(err, "getting prometheus persistent volume claim failed")
+			if err != nil {
+				return false, nil
+			}
+			return true, nil
+		})
+		if err != nil {
+			if err == wait.ErrWaitTimeout && lastErr != nil {
+				err = lastErr
+			}
+			t.Fatal(err)
+		}
+
+		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "prometheus-user-workload",
+				Namespace: userWorkloadNs,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
 }
 
 func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
@@ -561,12 +644,7 @@ func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
 
 func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 	return func(t *testing.T) {
-		err := f.KubeClient.CoreV1().Namespaces().Delete(userWorkloadTestNs, &metav1.DeleteOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = f.OperatorClient.DeleteConfigMap(cm)
+		err := f.OperatorClient.DeleteConfigMap(cm)
 		if err != nil {
 			t.Fatal(err)
 		}

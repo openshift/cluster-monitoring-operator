@@ -22,6 +22,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/rest"
@@ -50,10 +51,11 @@ const (
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName    string
-	images           map[string]string
-	telemetryMatches []string
-	remoteWrite      bool
+	configMapName             string
+	userWorkloadConfigMapName string
+	images                    map[string]string
+	telemetryMatches          []string
+	remoteWrite               bool
 
 	client *client.Client
 
@@ -69,21 +71,22 @@ type Operator struct {
 	reconcileErrors   prometheus.Counter
 }
 
-func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName string, remoteWrite bool, images map[string]string, telemetryMatches []string) (*Operator, error) {
+func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName, userWorkloadConfigMapName string, remoteWrite bool, images map[string]string, telemetryMatches []string) (*Operator, error) {
 	c, err := client.New(config, version, namespace, namespaceSelector)
 	if err != nil {
 		return nil, err
 	}
 
 	o := &Operator{
-		images:                images,
-		telemetryMatches:      telemetryMatches,
-		configMapName:         configMapName,
-		remoteWrite:           remoteWrite,
-		namespace:             namespace,
-		namespaceUserWorkload: namespaceUserWorkload,
-		client:                c,
-		queue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
+		images:                    images,
+		telemetryMatches:          telemetryMatches,
+		configMapName:             configMapName,
+		userWorkloadConfigMapName: userWorkloadConfigMapName,
+		remoteWrite:               remoteWrite,
+		namespace:                 namespace,
+		namespaceUserWorkload:     namespaceUserWorkload,
+		client:                    c,
+		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
 	}
 
 	o.secretInf = cache.NewSharedIndexInformer(
@@ -229,6 +232,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	klog.V(5).Infof("ConfigMap or Secret updated: %s", key)
 
 	cmoConfigMap := o.namespace + "/" + o.configMapName
+	uwmConfigMap := o.namespaceUserWorkload + "/" + o.userWorkloadConfigMapName
 
 	switch key {
 	case cmoConfigMap:
@@ -239,6 +243,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case telemeterCABundleConfigMap:
 	case alertmanagerCABundleConfigMap:
 	case grpcTLS:
+	case uwmConfigMap:
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return
@@ -312,11 +317,11 @@ func (o *Operator) sync(key string) error {
 		o.client,
 		[]*tasks.TaskSpec{
 			tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config.UserWorkloadConfig)),
+			tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
 			tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config.UserWorkloadConfig)),
+			tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
 			tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
 			tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
@@ -324,8 +329,8 @@ func (o *Operator) sync(key string) error {
 			tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTaks(o.namespace, o.client, factory)),
 			tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
 			tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config.UserWorkloadConfig)),
-			tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config.UserWorkloadConfig)),
+			tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
+			tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
 		},
 	)
 
@@ -355,6 +360,32 @@ func (o *Operator) sync(key string) error {
 	return nil
 }
 
+func (o *Operator) loadUserWorkloadConfig() (*manifests.UserWorkloadConfiguration, error) {
+	userCM, err := o.client.GetConfigmap(o.namespaceUserWorkload, o.userWorkloadConfigMapName)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Warning("No User Workload Monitoring ConfigMap was found. Using defaults.")
+			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
+		} else {
+			klog.Warningf("Error loading User Workload Monitoring ConfigMap. Error: %v", err)
+			return nil, errors.Wrap(err, "the User Workload Monitoring ConfigMap could not be loaded")
+		}
+	}
+
+	configContent, found := userCM.Data["config.yaml"]
+	if found {
+		uwc, err := manifests.NewUserConfigFromString(configContent)
+		if err != nil {
+			klog.Warningf("Error creating User Workload Configuration from ConfigMap. Error: %v", err)
+			return nil, errors.Wrap(err, "the User Workload ConfigMap ConfigMap could not be parsed")
+		}
+		return uwc, nil
+	}
+
+	klog.Warning("No User Workload Monitoring ConfigMap was found. Using defaults.")
+	return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
+}
+
 func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
@@ -374,6 +405,7 @@ func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	}
 
 	cParsed, err := manifests.NewConfigFromString(configContent)
+
 	if err != nil {
 		return nil, errors.Wrap(err, "the Cluster Monitoring ConfigMap could not be parsed")
 	}
@@ -387,8 +419,19 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		return nil, err
 	}
 
+	// Only use User Workload Monitoring ConfigMap from user ns and populate if
+	// its enabled by admin via Cluster Monitoring ConfigMap.  The above
+	// loadConfig() already initializes the structs with nil values for
+	// UserWorkloadConfiguration struct.
+	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled {
+		c.UserWorkloadConfiguration, err = o.loadUserWorkloadConfig()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Only fetch the token and cluster ID if they have not been specified in the config.
-	if c.TelemeterClientConfig.ClusterID == "" || c.TelemeterClientConfig.Token == "" {
+	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
 		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
 			return o.client.GetClusterVersion("version")
 		})
@@ -441,7 +484,7 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		keyFound && len(keyContent) > 0 {
 
 		trueBool := true
-		c.EtcdConfig.Enabled = &trueBool
+		c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &trueBool
 	}
 
 	return c, nil

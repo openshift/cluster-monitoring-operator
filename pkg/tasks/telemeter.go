@@ -39,11 +39,11 @@ func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory, c
 }
 
 func (t *TelemeterClientTask) Run() error {
-	if t.config.TelemeterClientConfig.IsEnabled() && !t.config.RemoteWrite {
+	if t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && !t.config.RemoteWrite {
 		return t.create()
 	}
 
-	if !t.config.TelemeterClientConfig.IsEnabled() || t.config.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite {
+	if !t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() || t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite {
 		return t.destroy()
 	}
 
@@ -149,7 +149,7 @@ func (t *TelemeterClientTask) create() error {
 		}
 	}
 
-	rec, err := generateTelemeterWhitelistRec(t.config.PrometheusK8sConfig.TelemetryMatches)
+	rec, err := generateTelemeterWhitelistRec(t.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
 	if err != nil {
 		return errors.Wrap(err, "generating Telemeter client Prometheus Rule failed")
 	}
