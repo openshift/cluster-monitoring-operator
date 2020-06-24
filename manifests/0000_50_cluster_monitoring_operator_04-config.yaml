@@ -70,9 +70,9 @@ data:
     # upgrades from failing for end users.
     - '{__name__="ALERTS",alertstate="firing"}'
     # the following three metrics will be used for SLA analysis reports.
-    # (@openshift/openshift-team-olm) code:apiserver_request_count:rate:sum identifies average of occurances
+    # (@openshift/openshift-team-olm) code:apiserver_request_total:rate:sum identifies average of occurences
     # of each http status code over 10 minutes
-    - '{__name__="code:apiserver_request_count:rate:sum"}'
+    - '{__name__="code:apiserver_request_total:rate:sum"}'
     # (@openshift/openshift-team-olm, @openshift/openshift-team-cluster-manager)
     # cluster:capacity_cpu_cores:sum is the total number of CPU cores in the
     # cluster labeled by node role and type.
