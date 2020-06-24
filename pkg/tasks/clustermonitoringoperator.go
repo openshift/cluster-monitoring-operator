@@ -69,7 +69,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 
 	err = t.client.CreateOrUpdateRole(uwcr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit ClusterRole failed")
+		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit Role failed")
 	}
 
 	smcmo, err := t.factory.ClusterMonitoringOperatorServiceMonitor()
