@@ -62,6 +62,16 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		}
 	}
 
+	uwcr, err := t.factory.ClusterMonitoringEditUserWorkloadConfigRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkloadConfigEdit Role failed")
+	}
+
+	err = t.client.CreateOrUpdateRole(uwcr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit ClusterRole failed")
+	}
+
 	smcmo, err := t.factory.ClusterMonitoringOperatorServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Cluster Monitoring Operator ServiceMonitor failed")
