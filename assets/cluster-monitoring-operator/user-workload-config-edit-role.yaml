@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: user-workload-monitoring-config-edit
+  namespace: openshift-user-workload-monitoring
+rules:
+- apiGroups:
+  - ""
+  resourceNames:
+  - user-workload-monitoring-config
+  resources:
+  - configmaps
+  verbs:
+  - '*'

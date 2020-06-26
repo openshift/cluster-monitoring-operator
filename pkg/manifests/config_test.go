@@ -40,7 +40,7 @@ func TestConfigParsing(t *testing.T) {
 }
 
 func TestNewUserConfigFromStringParsing(t *testing.T) {
-	c, err := ioutil.ReadFile("../../examples/user-workload/cluster-monitoring-configmap.yaml")
+	c, err := ioutil.ReadFile("../../examples/user-workload/configmap.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

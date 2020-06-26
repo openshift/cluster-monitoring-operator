@@ -165,13 +165,14 @@ var (
 	GrafanaServiceMonitor       = "assets/grafana/service-monitor.yaml"
 	GrafanaTrustedCABundle      = "assets/grafana/trusted-ca-bundle.yaml"
 
-	ClusterMonitoringOperatorService        = "assets/cluster-monitoring-operator/service.yaml"
-	ClusterMonitoringOperatorServiceMonitor = "assets/cluster-monitoring-operator/service-monitor.yaml"
-	ClusterMonitoringClusterRole            = "assets/cluster-monitoring-operator/cluster-role.yaml"
-	ClusterMonitoringRulesEditClusterRole   = "assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
-	ClusterMonitoringRulesViewClusterRole   = "assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
-	ClusterMonitoringEditClusterRole        = "assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
-	ClusterMonitoringGrpcTLSSecret          = "assets/cluster-monitoring-operator/grpc-tls-secret.yaml"
+	ClusterMonitoringOperatorService            = "assets/cluster-monitoring-operator/service.yaml"
+	ClusterMonitoringOperatorServiceMonitor     = "assets/cluster-monitoring-operator/service-monitor.yaml"
+	ClusterMonitoringClusterRole                = "assets/cluster-monitoring-operator/cluster-role.yaml"
+	ClusterMonitoringRulesEditClusterRole       = "assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
+	ClusterMonitoringRulesViewClusterRole       = "assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
+	ClusterMonitoringEditClusterRole            = "assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
+	ClusterMonitoringEditUserWorkloadConfigRole = "assets/cluster-monitoring-operator/user-workload-config-edit-role.yaml"
+	ClusterMonitoringGrpcTLSSecret              = "assets/cluster-monitoring-operator/grpc-tls-secret.yaml"
 
 	TelemeterClientClusterRole            = "assets/telemeter-client/cluster-role.yaml"
 	TelemeterClientClusterRoleBinding     = "assets/telemeter-client/cluster-role-binding.yaml"
@@ -2263,6 +2264,15 @@ func (f *Factory) ClusterMonitoringRulesViewClusterRole() (*rbacv1.ClusterRole, 
 
 func (f *Factory) ClusterMonitoringEditClusterRole() (*rbacv1.ClusterRole, error) {
 	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringEditClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringEditUserWorkloadConfigRole() (*rbacv1.Role, error) {
+	cr, err := f.NewRole(MustAssetReader(ClusterMonitoringEditUserWorkloadConfigRole))
 	if err != nil {
 		return nil, err
 	}

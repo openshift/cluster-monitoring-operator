@@ -128,5 +128,23 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
       clusterRole.new() +
       clusterRole.mixin.metadata.withName('monitoring-rules-edit') +
       clusterRole.withRules(rules),
+
+    userWorkloadConfigEditRole:
+      local role = k.rbac.v1.role;
+      local policyRule = role.rulesType;
+
+      local configmapRule = policyRule.new() +
+                            policyRule.withApiGroups(['']) +
+                            policyRule.withResources([
+                              'configmaps',
+                            ]) +
+                            policyRule.withVerbs(['*']) +
+                            policyRule.withResourceNames(['user-workload-monitoring-config']);
+
+      role.new() +
+      role.mixin.metadata.withName('user-workload-monitoring-config-edit') +
+      role.mixin.metadata.withNamespace('openshift-user-workload-monitoring') +
+      role.withRules(configmapRule),
+
   },
 }

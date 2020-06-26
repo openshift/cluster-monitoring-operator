@@ -19,6 +19,7 @@
 // assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml
 // assets/cluster-monitoring-operator/service-monitor.yaml
 // assets/cluster-monitoring-operator/service.yaml
+// assets/cluster-monitoring-operator/user-workload-config-edit-role.yaml
 // assets/grafana/cluster-role-binding.yaml
 // assets/grafana/cluster-role.yaml
 // assets/grafana/config.yaml
@@ -581,6 +582,26 @@ func assetsClusterMonitoringOperatorServiceYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/cluster-monitoring-operator/service.yaml", size: 394, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _assetsClusterMonitoringOperatorUserWorkloadConfigEditRoleYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x8e\xb1\x6a\x43\x31\x0c\x45\x77\x7d\x85\xc8\x12\x28\xf8\x95\x6e\xc5\x3f\xd0\xad\x43\x87\xee\x8a\xad\x24\xe2\x3d\x4b\x46\xb2\x53\xe8\xd7\x97\x90\x37\x74\x29\x5d\x0f\xf7\xdc\x7b\xa9\xcb\x27\x7b\x88\x69\x46\x3f\x51\x59\x68\x8e\xab\xb9\x7c\xd3\x10\xd3\x65\x7d\x8d\x45\xec\xf9\xf6\x02\xab\x68\xcd\xf8\x61\x1b\x43\xe3\x41\x95\x06\x65\x40\x54\x6a\x9c\x71\x06\x7b\xfa\x32\x5f\x37\xa3\x9a\x9a\xa9\x0c\x73\xd1\x4b\x2a\xa6\x67\xb9\x24\xae\x32\xf6\x70\x74\x2a\x9c\xd1\x3a\x6b\x5c\xe5\x3c\xd2\x5f\x2e\xf8\xdc\x38\x32\x24\xa4\x2e\x6f\x6e\xb3\xc7\x7d\x30\xe1\xe1\x00\x88\xce\x61\xd3\x0b\xbf\xdf\x2b\x1f\xfc\x9f\x13\xbf\xa4\x5d\x78\xf0\x46\x3d\x00\xf1\xc6\x7e\xda\xf9\xf1\xe9\x08\x3f\x01\x00\x00\xff\xff\x2e\x34\xd7\x6f\x18\x01\x00\x00")
+
+func assetsClusterMonitoringOperatorUserWorkloadConfigEditRoleYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsClusterMonitoringOperatorUserWorkloadConfigEditRoleYaml,
+		"assets/cluster-monitoring-operator/user-workload-config-edit-role.yaml",
+	)
+}
+
+func assetsClusterMonitoringOperatorUserWorkloadConfigEditRoleYaml() (*asset, error) {
+	bytes, err := assetsClusterMonitoringOperatorUserWorkloadConfigEditRoleYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/cluster-monitoring-operator/user-workload-config-edit-role.yaml", size: 280, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3255,6 +3276,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml": assetsClusterMonitoringOperatorMonitoringRulesViewClusterRoleYaml,
 	"assets/cluster-monitoring-operator/service-monitor.yaml":                    assetsClusterMonitoringOperatorServiceMonitorYaml,
 	"assets/cluster-monitoring-operator/service.yaml":                            assetsClusterMonitoringOperatorServiceYaml,
+	"assets/cluster-monitoring-operator/user-workload-config-edit-role.yaml":     assetsClusterMonitoringOperatorUserWorkloadConfigEditRoleYaml,
 	"assets/grafana/cluster-role-binding.yaml":                                   assetsGrafanaClusterRoleBindingYaml,
 	"assets/grafana/cluster-role.yaml":                                           assetsGrafanaClusterRoleYaml,
 	"assets/grafana/config.yaml":                                                 assetsGrafanaConfigYaml,
@@ -3450,6 +3472,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"monitoring-rules-view-cluster-role.yaml": &bintree{assetsClusterMonitoringOperatorMonitoringRulesViewClusterRoleYaml, map[string]*bintree{}},
 			"service-monitor.yaml":                    &bintree{assetsClusterMonitoringOperatorServiceMonitorYaml, map[string]*bintree{}},
 			"service.yaml":                            &bintree{assetsClusterMonitoringOperatorServiceYaml, map[string]*bintree{}},
+			"user-workload-config-edit-role.yaml":     &bintree{assetsClusterMonitoringOperatorUserWorkloadConfigEditRoleYaml, map[string]*bintree{}},
 		}},
 		"grafana": &bintree{nil, map[string]*bintree{
 			"cluster-role-binding.yaml":  &bintree{assetsGrafanaClusterRoleBindingYaml, map[string]*bintree{}},

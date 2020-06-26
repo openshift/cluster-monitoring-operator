@@ -405,7 +405,6 @@ func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	}
 
 	cParsed, err := manifests.NewConfigFromString(configContent)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "the Cluster Monitoring ConfigMap could not be parsed")
 	}
