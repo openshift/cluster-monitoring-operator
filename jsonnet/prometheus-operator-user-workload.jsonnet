@@ -64,8 +64,8 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
                       securityContext: {},
                       resources: {
                         requests: {
-                          memory: '60Mi',
-                          cpu: '10m',
+                          memory: '17Mi',
+                          cpu: '1m',
                         },
                       },
                       terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -83,7 +83,7 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
                       securityContext: {},
                       resources: {
                         requests: {
-                          memory: '40Mi',
+                          memory: '10Mi',
                           cpu: '1m',
                         },
                       },

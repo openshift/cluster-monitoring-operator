@@ -302,6 +302,12 @@ local thanosRulerRules =
           containers: [
             {
               name: 'thanos-ruler',
+              resources: {
+                requests: {
+                  memory: '21Mi',
+                  cpu: '1m',
+                },
+              },
               terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [
                 {
@@ -361,8 +367,8 @@ local thanosRulerRules =
               terminationMessagePolicy: 'FallbackToLogsOnError',
               resources: {
                 requests: {
-                  cpu: '10m',
-                  memory: '20Mi',
+                  cpu: '1m',
+                  memory: '12Mi',
                 },
               },
               volumeMounts: [
@@ -375,6 +381,15 @@ local thanosRulerRules =
                   name: 'secret-thanos-ruler-oauth-cookie',
                 },
               ],
+            },
+            {
+              name: 'rules-configmap-reloader',
+              resources: {
+                requests: {
+                  memory: '5Mi',
+                  cpu: '1m',
+                },
+              },
             },
           ],
         },
