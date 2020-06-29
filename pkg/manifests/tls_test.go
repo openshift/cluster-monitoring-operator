@@ -15,9 +15,14 @@
 package manifests
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
+
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestNeedsNewCert(t *testing.T) {
@@ -88,23 +93,99 @@ func TestNeedsNewCert(t *testing.T) {
 func TestRotateGrpcTLSSecret(t *testing.T) {
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
 
-	s, err := f.GRPCSecret(nil)
+	for _, tc := range []struct {
+		name  string
+		setup func(*v1.Secret)
+		test  func(spre, spost *v1.Secret) error
+	}{
+		{
+			name: "no rotation without modification",
+			test: func(spre, spost *v1.Secret) error {
+				if !reflect.DeepEqual(spre.Data, spost.Data) {
+					return fmt.Errorf("expected certificate data to be equal, but it isn't, pre-rotation key material %v, post-rotation key material %v", spre, spost)
+				}
+				return nil
+			},
+		},
+		{
+			name: "force rotation",
+			setup: func(s *v1.Secret) {
+				s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"] = "true"
+			},
+			test: func(spre, spost *v1.Secret) error {
+				if bytes.Compare(spre.Data["ca.crt"], spost.Data["ca.crt"]) == 0 {
+					return fmt.Errorf("expected certificate data not to be equal, but it is")
+				}
+				return nil
+			},
+		},
+		{
+			name: "force rotation",
+			setup: func(s *v1.Secret) {
+				s.Annotations["foo/bar"] = "true"
+			},
+			test: func(spre, spost *v1.Secret) error {
+				if bytes.Compare(spre.Data["ca.crt"], spost.Data["ca.crt"]) != 0 {
+					return fmt.Errorf("expected certificate data to be equal, but they aren't")
+				}
+				return nil
+			},
+		},
+		{
+			name: "broken certificate",
+			setup: func(s *v1.Secret) {
+				s.Data["ca.crt"] = []byte("broken certificate")
+			},
+			test: func(spre, spost *v1.Secret) error {
+				if string(spost.Data["ca.crt"]) == "broken certificate" {
+					return errors.New("expected certificate data to have rotated, but it wasn't")
+				}
+
+				if bytes.Compare(spre.Data["ca.crt"], spost.Data["ca.crt"]) == 0 {
+					return errors.New("expected certificate data not to be equal, but they are")
+				}
+
+				return nil
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			spre, err := f.GRPCSecret()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = RotateGRPCSecret(spre)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			spost := spre.DeepCopy()
+			if tc.setup != nil {
+				tc.setup(spost)
+			}
+
+			err = RotateGRPCSecret(spost)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := tc.test(spre, spost); err != nil {
+				t.Error(err)
+			}
+		})
+	}
+}
+
+func TestUnconfiguredGRPCManifests(t *testing.T) {
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
+	_, err := f.AlertmanagerConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// as the certs are still valid for a second reconcilation run,
-	// we do not expect them to be rotated.
-	// Unfortunately we cannot mock time in the underlying library,
-	// so we cannot test the rotation case.
-	// The rotation decision though is tested in TestNeedsNewCert.
-	s2 := s.DeepCopy()
-	s2, err = f.GRPCSecret(s2)
+	_, err = f.GRPCSecret()
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	if !reflect.DeepEqual(s.Data, s2.Data) {
-		t.Errorf("expected certificate data to be equal, but it isn't, got %v, expected %v", s2, s)
 	}
 }

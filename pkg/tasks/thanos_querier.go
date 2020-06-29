@@ -138,7 +138,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "reconciling Thanos Querier ClusterRoleBinding failed")
 	}
 
-	grpcTLS, err := t.factory.GRPCSecret(nil)
+	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier GRPC secret failed")
 	}

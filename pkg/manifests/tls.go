@@ -15,7 +15,10 @@
 package manifests
 
 import (
+	"crypto/rand"
+	"crypto/x509"
 	"fmt"
+	"math/big"
 	"time"
 
 	"k8s.io/klog"
@@ -36,94 +39,150 @@ func needsNewCert(notBefore, notAfter time.Time, now func() time.Time) bool {
 	return now().After(latestTime)
 }
 
-// This method creates a central secret containing GRPC TLS key material
-// if the given secret is nil
-// or updates it if the CA present in the given secret is about to expire.
-//
-// It "rotates" the CA 1/5 before the expiry timespan.
-// The rotation scheme is very naive, it simply creates a new self signed CA
-// and refreshes all the subsequent GRPC server/client certs.
-// For simplicity, the CA as well as all certificates have the same expiration,
-// that is crypto.DefaultCertificateLifetimeInDays = 2 years
-// in order to align rotation.
-func (f *Factory) GRPCSecret(s *v1.Secret) (*v1.Secret, error) {
-	if s == nil {
-		var err error
-		s, err = f.NewSecret(MustAssetReader(ClusterMonitoringGrpcTLSSecret))
-		if err != nil {
-			return nil, err
-		}
-		s.Namespace = f.namespace
-		s.Data = make(map[string][]byte)
-		s.Annotations = make(map[string]string)
-	}
-
-	crt, crtPresent := s.Data["ca.crt"]
-	key, keyPresent := s.Data["ca.key"]
-
-	if crtPresent && keyPresent {
-		ca, err := crypto.GetCAFromBytes(crt, key)
-		if err != nil {
-			klog.Warningf("creating a new CA due to error reading CA: %v", err)
-		} else if !needsNewCert(ca.Config.Certs[0].NotBefore, ca.Config.Certs[0].NotAfter, time.Now) {
-			return s, nil
-		}
-	}
-
-	cfg, err := crypto.MakeSelfSignedCAConfig(
-		fmt.Sprintf("%s@%d", "openshift-cluster-monitoring", time.Now().Unix()),
-		crypto.DefaultCertificateLifetimeInDays,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "error creating self signed CA")
-	}
-
-	crt, key, err = cfg.GetPEMBytes()
+func (f *Factory) GRPCSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(MustAssetReader(ClusterMonitoringGrpcTLSSecret))
 	if err != nil {
 		return nil, err
 	}
 
-	s.Data["ca.crt"] = crt
-	s.Data["ca.key"] = key
+	s.Namespace = f.namespace
+	s.Data = make(map[string][]byte)
+	s.Annotations = make(map[string]string)
 
-	ca := &crypto.CA{
-		SerialGenerator: &crypto.RandomSerialGenerator{},
-		Config:          cfg,
+	return s, nil
+}
+
+// RotateGRPCSecret rotates key material for Thanos GRPC TLS based communication.
+//
+// If no key material is present, it creates it.
+// It "rotates" the CA and all server and client certificates and keys 1/5 before the expiry timespan.
+//
+// The rotation scheme here assumes the following threat model:
+//
+// 1. CA certificates could be compromised as they are being mounted into multiple pods
+//    reachable externally i.e. via routes.
+//    This is addressed by expiry and time based rotation.
+// 2. Client and server certificates as well as their private key could be compromised
+//    as they are being mounted into multiple pods reachable externally i.e. via routes.
+//    This is addressed by re-issuing them at the same time the CA expires.
+// 3. The CA's private key is left out of the thread model as it is not mounted in any pod.
+//    This implementation assumes it can stay immutable and does not need rotation.
+func RotateGRPCSecret(s *v1.Secret) error {
+	var (
+		curCA, newCA              *crypto.CA
+		curCABytes, crtPresent    = s.Data["ca.crt"]
+		curCAKeyBytes, keyPresent = s.Data["ca.key"]
+		rotate                    = !crtPresent || !keyPresent
+	)
+
+	if crtPresent && keyPresent {
+		var err error
+		curCA, err = crypto.GetCAFromBytes(curCABytes, curCAKeyBytes)
+		if err != nil {
+			klog.Warningf("generating a new CA due to error reading CA: %v", err)
+			rotate = true
+		} else if needsNewCert(curCA.Config.Certs[0].NotBefore, curCA.Config.Certs[0].NotAfter, time.Now) {
+			rotate = true
+		}
 	}
 
+	if _, ok := s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"]; ok {
+		rotate = true
+		delete(s.Annotations, "monitoring.openshift.io/grpc-tls-forced-rotate")
+	}
+
+	if !rotate {
+		return nil
+	}
+
+	if curCA == nil {
+		newCAConfig, err := crypto.MakeSelfSignedCAConfig(
+			fmt.Sprintf("%s@%d", "openshift-cluster-monitoring", time.Now().Unix()),
+			crypto.DefaultCertificateLifetimeInDays,
+		)
+		if err != nil {
+			return errors.Wrap(err, "error generating self signed CA")
+		}
+
+		newCA = &crypto.CA{
+			SerialGenerator: &crypto.RandomSerialGenerator{},
+			Config:          newCAConfig,
+		}
+	} else {
+		template := curCA.Config.Certs[0]
+		template.NotAfter = time.Now().Add(time.Duration(crypto.DefaultCertificateLifetimeInDays) * 24 * time.Hour)
+		template.SerialNumber = template.SerialNumber.Add(template.SerialNumber, big.NewInt(1))
+
+		newCACert, err := createCertificate(template, template, template.PublicKey, curCA.Config.Key)
+		if err != nil {
+			return errors.Wrap(err, "error rotating CA")
+		}
+
+		newCA = &crypto.CA{
+			SerialGenerator: &crypto.RandomSerialGenerator{},
+			Config: &crypto.TLSCertificateConfig{
+				Certs: []*x509.Certificate{newCACert},
+				Key:   curCA.Config.Key,
+			},
+		}
+	}
+
+	newCABytes, newCAKeyBytes, err := newCA.Config.GetPEMBytes()
+	if err != nil {
+		return errors.Wrap(err, "error getting PEM bytes from CA")
+	}
+
+	s.Data["ca.crt"] = newCABytes
+	s.Data["ca.key"] = newCAKeyBytes
+
 	{
-		cfg, err := ca.MakeClientCertificateForDuration(
+		cfg, err := newCA.MakeClientCertificateForDuration(
 			&user.DefaultInfo{
 				Name: "thanos-querier",
 			},
 			time.Duration(crypto.DefaultCertificateLifetimeInDays)*24*time.Hour,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "error making thanos querier client certificate")
+			return errors.Wrap(err, "error making client certificate")
 		}
+
 		crt, key, err := cfg.GetPEMBytes()
 		if err != nil {
-			return nil, errors.Wrap(err, "error getting PEM bytes for thanos querier client certificate")
+			return errors.Wrap(err, "error getting PEM bytes for thanos querier client certificate")
 		}
 		s.Data["thanos-querier-client.crt"] = crt
 		s.Data["thanos-querier-client.key"] = key
 	}
 
 	{
-		cfg, err := ca.MakeServerCert(
+		cfg, err := newCA.MakeServerCert(
 			sets.NewString("prometheus-grpc"),
 			crypto.DefaultCertificateLifetimeInDays,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "error making prometheus-k8s server certificate")
+			return errors.Wrap(err, "error making server certificate")
 		}
+
 		crt, key, err := cfg.GetPEMBytes()
 		if err != nil {
-			return nil, errors.Wrap(err, "error getting PEM bytes for prometheus-k8s server certificate")
+			return errors.Wrap(err, "error getting PEM bytes for prometheus-k8s server certificate")
 		}
 		s.Data["prometheus-server.crt"] = crt
 		s.Data["prometheus-server.key"] = key
 	}
 
-	return s, nil
+	return nil
+}
+
+// createCertificate creates a new certificate and returns it in x509.Certificate form.
+func createCertificate(template, parent *x509.Certificate, pub, priv interface{}) (*x509.Certificate, error) {
+	rawCert, err := x509.CreateCertificate(rand.Reader, template, parent, pub, priv)
+	if err != nil {
+		return nil, fmt.Errorf("error creating certificate: %v", err)
+	}
+	parsedCerts, err := x509.ParseCertificates(rawCert)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing certificate: %v", err)
+	}
+	return parsedCerts[0], nil
 }
