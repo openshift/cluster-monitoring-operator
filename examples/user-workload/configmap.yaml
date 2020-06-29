@@ -5,11 +5,6 @@ metadata:
   namespace: openshift-user-workload-monitoring
 data:
   config.yaml: |
-    prometheusOperator:
-      resources:
-        requests:
-          cpu: 200m
-          memory: 2Gi
     prometheus:
       retention: 24h
       resources:
