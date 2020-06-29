@@ -49,8 +49,8 @@ spec:
       name: metrics
     resources:
       requests:
-        cpu: 10m
-        memory: 20Mi
+        cpu: 1m
+        memory: 10Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -67,11 +67,21 @@ spec:
     name: thanos-sidecar
     resources:
       requests:
-        cpu: 10m
-        memory: 20Mi
+        cpu: 1m
+        memory: 17Mi
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
+  - name: rules-configmap-reloader
+    resources:
+      requests:
+        cpu: 1m
+        memory: 5Mi
+  - name: prometheus-config-reloader
+    resources:
+      requests:
+        cpu: 1m
+        memory: 8Mi
   enforcedNamespaceLabel: namespace
   ignoreNamespaceSelectors: true
   image: openshift/prometheus:v2.15.2
@@ -86,8 +96,8 @@ spec:
   replicas: 2
   resources:
     requests:
-      cpu: 100m
-      memory: 1Gi
+      cpu: 6m
+      memory: 30Mi
   ruleNamespaceSelector: {}
   ruleSelector:
     matchLabels:
@@ -103,7 +113,7 @@ spec:
     image: quay.io/thanos/thanos:v0.10.0
     resources:
       requests:
-        cpu: 50m
+        cpu: 1m
         memory: 100Mi
     version: latest
   version: v2.15.2
