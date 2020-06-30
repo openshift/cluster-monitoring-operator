@@ -41,6 +41,9 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                        ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'etcdHighNumberOfFailedGRPCRequests'), ruleGroup.rules) }
                      else if ruleGroup.name == 'kubernetes-system' then
                        ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'KubeVersionMismatch'), ruleGroup.rules) }
+                     // Removing CPUThrottlingHigh alert as per https://bugzilla.redhat.com/show_bug.cgi?id=1843346
+                     else if ruleGroup.name == 'kubernetes-resources' then
+                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'CPUThrottlingHigh'), ruleGroup.rules) }
                      else if ruleGroup.name == 'prometheus' then
                        ruleGroup {
                          rules:
