@@ -40,3 +40,6 @@ done
 grep -E -v '^apiVersion: v1|^items:|^kind: ConfigMapList' "assets/grafana/console-dashboard-definitions.yaml" | sed 's/^\ \ //g;s/- apiVersion: v1/---\napiVersion: v1/g' > "manifests/0000_90_cluster_monitoring_operator_01-dashboards.yaml"
 rm -f "assets/grafana/console-dashboard-definitions.yaml"
 
+grep -H 'kind: CustomResourceDefinition' assets/prometheus-operator/* | cut -d: -f1 | while IFS= read -r f; do
+  mv "$f" "manifests/0000_50_cluster_monitoring_operator_00_$(basename "$f")"
+done
