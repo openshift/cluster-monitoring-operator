@@ -158,6 +158,7 @@ local authorizationRole = policyRule.new() +
                 '-tls-key=/etc/tls/private/tls.key',
                 '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
                 '-cookie-secret-file=/etc/proxy/secrets/session_secret',
+                '-cookie-expire=24h',
                 '-openshift-service-account=alertmanager-main',
                 '-openshift-ca=/etc/pki/tls/cert.pem',
                 '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
