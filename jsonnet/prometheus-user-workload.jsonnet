@@ -161,7 +161,7 @@ local alertmanagerRole =
             objectStorageConfig:: null,
             resources: {
               requests: {
-                cpu: '50m',
+                cpu: '1m',
                 memory: '100Mi',
               },
             },
@@ -186,8 +186,8 @@ local alertmanagerRole =
           },
           resources: {
             requests: {
-              memory: '1Gi',
-              cpu: '100m',
+              memory: '30Mi',
+              cpu: '6m',
             },
           },
           securityContext: {},
@@ -206,8 +206,8 @@ local alertmanagerRole =
               image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
               resources: {
                 requests: {
-                  memory: '20Mi',
-                  cpu: '10m',
+                  memory: '10Mi',
+                  cpu: '1m',
                 },
               },
               ports: [
@@ -245,8 +245,8 @@ local alertmanagerRole =
               ],
               resources: {
                 requests: {
-                  memory: '20Mi',
-                  cpu: '10m',
+                  memory: '17Mi',
+                  cpu: '1m',
                 },
               },
               volumeMounts: [
@@ -255,6 +255,24 @@ local alertmanagerRole =
                   name: 'secret-grpc-tls',
                 },
               ],
+            },
+            {
+              name: 'rules-configmap-reloader',
+              resources: {
+                requests: {
+                  memory: '5Mi',
+                  cpu: '1m',
+                },
+              },
+            },
+            {
+              name: 'prometheus-config-reloader',
+              resources: {
+                requests: {
+                  memory: '8Mi',
+                  cpu: '1m',
+                },
+              },
             },
           ],
         },

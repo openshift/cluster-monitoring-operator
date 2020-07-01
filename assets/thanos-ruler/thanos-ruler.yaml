@@ -11,6 +11,10 @@ spec:
     name: thanos-ruler-alertmanagers-config
   containers:
   - name: thanos-ruler
+    resources:
+      requests:
+        cpu: 1m
+        memory: 21Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -49,14 +53,19 @@ spec:
       name: web
     resources:
       requests:
-        cpu: 10m
-        memory: 20Mi
+        cpu: 1m
+        memory: 12Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-thanos-ruler-tls
     - mountPath: /etc/proxy/secrets
       name: secret-thanos-ruler-oauth-cookie
+  - name: rules-configmap-reloader
+    resources:
+      requests:
+        cpu: 1m
+        memory: 5Mi
   enforcedNamespaceLabel: namespace
   grpcServerTlsConfig:
     caFile: /etc/tls/grpc/ca.crt

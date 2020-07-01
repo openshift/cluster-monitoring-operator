@@ -39,8 +39,8 @@ spec:
           name: http
         resources:
           requests:
-            cpu: 10m
-            memory: 60Mi
+            cpu: 1m
+            memory: 17Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
       - args:
@@ -58,7 +58,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 40Mi
+            memory: 10Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
