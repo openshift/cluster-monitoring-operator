@@ -1346,17 +1346,6 @@ spec:
       for: 15m
       labels:
         severity: warning
-    - alert: CPUThrottlingHigh
-      annotations:
-        message: '{{ $value | humanizePercentage }} throttling of CPU in namespace {{ $labels.namespace }} for container {{ $labels.container }} in pod {{ $labels.pod }}.'
-      expr: |
-        sum(increase(container_cpu_cfs_throttled_periods_total{container!="", namespace=~"(openshift-.*|kube-.*|default|logging)"}[5m])) by (container, pod, namespace)
-          /
-        sum(increase(container_cpu_cfs_periods_total{namespace=~"(openshift-.*|kube-.*|default|logging)"}[5m])) by (container, pod, namespace)
-          > ( 25 / 100 )
-      for: 15m
-      labels:
-        severity: warning
   - name: kubernetes-storage
     rules:
     - alert: KubePersistentVolumeFillingUp
