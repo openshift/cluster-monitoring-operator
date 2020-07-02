@@ -201,6 +201,12 @@ data:
     # Possible values are bootstrap|cloud-resources|monitoring|authentication|products|solution-explorer|deletion|complete.
     # This metric is used by OCM to detect when an RHMI installation is complete & ready to use i.e. rhmi_status{stage='complete'}
     - '{__name__="rhmi_status"}'
+    # (workloads-team, @openshift/openshift-group-b) cluster_legacy_scheduler_policy reports whether the scheduler operator is
+    # configured with a custom Policy file. This value is a boolean 0|1
+    - '{__name__="cluster_legacy_scheduler_policy"}'
+    # (workloads-team, @openshift/openshift-group-b) cluster_master_schedulable reports whether mastersSchedulable=true in
+    # the scheduler operator. This value is a boolean 0|1
+    - '{__name__="cluster_master_schedulable"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
