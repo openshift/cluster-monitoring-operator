@@ -273,15 +273,13 @@ spec:
     rules:
     - expr: sum(rate(node_cpu{mode!="idle",mode!="iowait"}[3m])) BY (instance)
       record: instance:node_cpu:rate:sum
-    - expr: sum((node_filesystem_size{mountpoint="/"} - node_filesystem_free{mountpoint="/"}))
-        BY (instance)
+    - expr: sum((node_filesystem_size{mountpoint="/"} - node_filesystem_free{mountpoint="/"})) BY (instance)
       record: instance:node_filesystem_usage:sum
     - expr: sum(rate(node_network_receive_bytes[3m])) BY (instance)
       record: instance:node_network_receive_bytes:rate:sum
     - expr: sum(rate(node_network_transmit_bytes[3m])) BY (instance)
       record: instance:node_network_transmit_bytes:rate:sum
-    - expr: sum(rate(node_cpu{mode!="idle",mode!="iowait"}[5m])) WITHOUT (cpu, mode)
-        / ON(instance) GROUP_LEFT() count(sum(node_cpu) BY (instance, cpu)) BY (instance)
+    - expr: sum(rate(node_cpu{mode!="idle",mode!="iowait"}[5m])) WITHOUT (cpu, mode) / ON(instance) GROUP_LEFT() count(sum(node_cpu) BY (instance, cpu)) BY (instance)
       record: instance:node_cpu:ratio
     - expr: sum(rate(node_cpu{mode!="idle",mode!="iowait"}[5m]))
       record: cluster:node_cpu:sum_rate5m
@@ -469,8 +467,7 @@ spec:
       record: node_nfs_net_connections
     - expr: node_nfs_packets_total
       record: node_nfs_net_reads
-    - expr: label_replace(label_replace(node_nfs_requests_total, "proto", "$1", "version",
-        "(.+)"), "method", "$1", "procedure", "(.+)")
+    - expr: label_replace(label_replace(node_nfs_requests_total, "proto", "$1", "version", "(.+)"), "method", "$1", "procedure", "(.+)")
       record: node_nfs_procedures
     - expr: node_nfs_rpc_authentication_refreshes_total
       record: node_nfs_rpc_authentication_refreshes
@@ -484,40 +481,30 @@ spec:
       record: node_textfile_mtime
   - name: kubernetes.rules
     rules:
-    - expr: sum(container_memory_usage_bytes{container_name!="POD",container_name!="",pod_name!=""})
-        BY (pod_name, namespace)
+    - expr: sum(container_memory_usage_bytes{container_name!="POD",container_name!="",pod_name!=""}) BY (pod_name, namespace)
       record: pod_name:container_memory_usage_bytes:sum
-    - expr: sum(container_spec_cpu_shares{container_name!="POD",container_name!="",pod_name!=""})
-        BY (pod_name, namespace)
+    - expr: sum(container_spec_cpu_shares{container_name!="POD",container_name!="",pod_name!=""}) BY (pod_name, namespace)
       record: pod_name:container_spec_cpu_shares:sum
-    - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m]))
-        BY (pod_name, namespace)
+    - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m])) BY (pod_name, namespace)
       record: pod_name:container_cpu_usage:sum
-    - expr: sum(container_fs_usage_bytes{container_name!="POD",container_name!="",pod_name!=""})
-        BY (pod_name, namespace)
+    - expr: sum(container_fs_usage_bytes{container_name!="POD",container_name!="",pod_name!=""}) BY (pod_name, namespace)
       record: pod_name:container_fs_usage_bytes:sum
     - expr: sum(container_memory_usage_bytes{container_name!=""}) BY (namespace)
       record: namespace:container_memory_usage_bytes:sum
     - expr: sum(container_spec_cpu_shares{container_name!=""}) BY (namespace)
       record: namespace:container_spec_cpu_shares:sum
-    - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!=""}[5m]))
-        BY (namespace)
+    - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!=""}[5m])) BY (namespace)
       record: namespace:container_cpu_usage:sum
-    - expr: sum(container_memory_usage_bytes{container_name!="POD",container_name!="",pod_name!=""})
-        BY (cluster) / sum(machine_memory_bytes) BY (cluster)
+    - expr: sum(container_memory_usage_bytes{container_name!="POD",container_name!="",pod_name!=""}) BY (cluster) / sum(machine_memory_bytes) BY (cluster)
       record: cluster:memory_usage:ratio
-    - expr: sum(container_spec_cpu_shares{container_name!="POD",container_name!="",pod_name!=""})
-        / 1000 / sum(machine_cpu_cores)
+    - expr: sum(container_spec_cpu_shares{container_name!="POD",container_name!="",pod_name!=""}) / 1000 / sum(machine_cpu_cores)
       record: cluster:container_spec_cpu_shares:ratio
-    - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m]))
-        / sum(machine_cpu_cores)
+    - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod_name!=""}[5m])) / sum(machine_cpu_cores)
       record: cluster:container_cpu_usage:ratio
     - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
-        message: Cluster Monitoring Operator is experiencing reconciliation error
-          rate of {{ printf "%0.0f" $value }}%.
-      expr: rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 /
-        rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10
+        message: Cluster Monitoring Operator is experiencing reconciliation error rate of {{ printf "%0.0f" $value }}%.
+      expr: rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10
       for: 30m
       labels:
         severity: warning
@@ -537,8 +524,7 @@ spec:
         severity: critical
     - alert: ClusterMonitoringOperatorDown
       annotations:
-        message: ClusterMonitoringOperator has disappeared from Prometheus target
-          discovery.
+        message: ClusterMonitoringOperator has disappeared from Prometheus target discovery.
       expr: |
         absent(up{job="cluster-monitoring-operator"} == 1)
       for: 15m
@@ -612,8 +598,7 @@ spec:
     rules:
     - alert: KubePodCrashLooping
       annotations:
-        message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
-          }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
+        message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
       expr: |
         rate(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[15m]) * 60 * 5 > 0
       for: 1h
@@ -629,8 +614,7 @@ spec:
         severity: critical
     - alert: KubeDeploymentGenerationMismatch
       annotations:
-        message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} generation
-          mismatch
+        message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} generation mismatch
       expr: |
         kube_deployment_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
@@ -640,8 +624,7 @@ spec:
         severity: critical
     - alert: KubeDeploymentReplicasMismatch
       annotations:
-        message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replica
-          mismatch
+        message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replica mismatch
       expr: |
         kube_deployment_spec_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
@@ -651,8 +634,7 @@ spec:
         severity: critical
     - alert: KubeStatefulSetReplicasMismatch
       annotations:
-        message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} replica
-          mismatch
+        message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} replica mismatch
       expr: |
         kube_statefulset_status_replicas_ready{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
@@ -662,8 +644,7 @@ spec:
         severity: critical
     - alert: KubeStatefulSetGenerationMismatch
       annotations:
-        message: StatefulSet {{ $labels.namespace }}/{{ labels.statefulset }} generation
-          mismatch
+        message: StatefulSet {{ $labels.namespace }}/{{ labels.statefulset }} generation mismatch
       expr: |
         kube_statefulset_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
@@ -673,8 +654,7 @@ spec:
         severity: critical
     - alert: KubeDaemonSetRolloutStuck
       annotations:
-        message: Only {{$value}}% of desired pods scheduled and ready for daemon set
-          {{$labels.namespace}}/{{$labels.daemonset}}
+        message: Only {{$value}}% of desired pods scheduled and ready for daemon set {{$labels.namespace}}/{{$labels.daemonset}}
       expr: |
         kube_daemonset_status_number_ready{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           /
@@ -684,8 +664,7 @@ spec:
         severity: critical
     - alert: KubeDaemonSetNotScheduled
       annotations:
-        message: A number of pods of daemonset {{$labels.namespace}}/{{$labels.daemonset}}
-          are not scheduled.
+        message: A number of pods of daemonset {{$labels.namespace}}/{{$labels.daemonset}} are not scheduled.
       expr: |
         kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           -
@@ -695,8 +674,7 @@ spec:
         severity: warning
     - alert: KubeDaemonSetMisScheduled
       annotations:
-        message: A number of pods of daemonset {{$labels.namespace}}/{{$labels.daemonset}}
-          are running where they are not supposed to run.
+        message: A number of pods of daemonset {{$labels.namespace}}/{{$labels.daemonset}} are running where they are not supposed to run.
       expr: |
         kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
       for: 10m
@@ -704,8 +682,7 @@ spec:
         severity: warning
     - alert: KubeCronJobRunning
       annotations:
-        message: CronJob {{ $labels.namespaces }}/{{ $labels.cronjob }} is taking
-          more than 1h to complete.
+        message: CronJob {{ $labels.namespaces }}/{{ $labels.cronjob }} is taking more than 1h to complete.
       expr: |
         time() - kube_cronjob_next_schedule_time{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 3600
       for: 1h
@@ -713,8 +690,7 @@ spec:
         severity: warning
     - alert: KubeJobCompletion
       annotations:
-        message: Job {{ $labels.namespaces }}/{{ $labels.job }} is taking more than
-          1h to complete.
+        message: Job {{ $labels.namespaces }}/{{ $labels.job }} is taking more than 1h to complete.
       expr: |
         kube_job_spec_completions{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
       for: 1h
@@ -732,8 +708,7 @@ spec:
     rules:
     - alert: KubeCPUOvercommit
       annotations:
-        message: Overcommited CPU resource requests on Pods, cannot tolerate node
-          failure.
+        message: Overcommited CPU resource requests on Pods, cannot tolerate node failure.
       expr: |
         sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
           /
@@ -745,8 +720,7 @@ spec:
         severity: warning
     - alert: KubeMemOvercommit
       annotations:
-        message: Overcommited Memory resource requests on Pods, cannot tolerate node
-          failure.
+        message: Overcommited Memory resource requests on Pods, cannot tolerate node failure.
       expr: |
         sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
           /
@@ -782,8 +756,7 @@ spec:
         severity: warning
     - alert: KubeQuotaExceeded
       annotations:
-        message: '{{ printf "%0.0f" $value }}% usage of {{ $labels.resource }} in
-          namespace {{ $labels.namespace }}.'
+        message: '{{ printf "%0.0f" $value }}% usage of {{ $labels.resource }} in namespace {{ $labels.namespace }}.'
       expr: |
         100 * kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
@@ -796,9 +769,7 @@ spec:
     rules:
     - alert: KubePersistentVolumeUsageCritical
       annotations:
-        message: The persistent volume claimed by {{ $labels.persistentvolumeclaim
-          }} in namespace {{ $labels.namespace }} has {{ printf "%0.0f" $value }}%
-          free.
+        message: The persistent volume claimed by {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} has {{ printf "%0.0f" $value }}% free.
       expr: |
         100 * kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
           /
@@ -809,9 +780,7 @@ spec:
         severity: critical
     - alert: KubePersistentVolumeFullInFourDays
       annotations:
-        message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim
-          }} in Namespace {{ $labels.namespace }} is expected to fill up within four
-          days. Currently {{ printf "%0.2f" $value }}% is available.
+        message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ printf "%0.2f" $value }}% is available.
       expr: |
         100 * (
           kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet"}
@@ -835,8 +804,7 @@ spec:
         severity: warning
     - alert: KubeVersionMismatch
       annotations:
-        message: There are {{ $value }} different versions of Kubernetes components
-          running.
+        message: There are {{ $value }} different versions of Kubernetes components running.
       expr: |
         count(count(kubernetes_build_info{job!="kube-dns"}) by (gitVersion)) > 1
       for: 1h
@@ -844,8 +812,7 @@ spec:
         severity: warning
     - alert: KubeClientErrors
       annotations:
-        message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
-          }}' is experiencing {{ printf "%0.0f" $value }}% errors.'
+        message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing {{ printf "%0.0f" $value }}% errors.'
       expr: |
         (sum(rate(rest_client_requests_total{code!~"2..|404"}[5m])) by (instance, job)
           /
@@ -856,8 +823,7 @@ spec:
         severity: warning
     - alert: KubeClientErrors
       annotations:
-        message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
-          }}' is experiencing {{ printf "%0.0f" $value }} errors / sec.'
+        message: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing {{ printf "%0.0f" $value }} errors / sec.'
       expr: |
         sum(rate(ksm_scrape_error_total{job="kube-state-metrics"}[5m])) by (instance, job) > 0.1
       for: 15m
@@ -865,8 +831,7 @@ spec:
         severity: warning
     - alert: KubeletTooManyPods
       annotations:
-        message: Kubelet {{ $labels.instance }} is running {{ $value }} Pods, close
-          to the limit of 250.
+        message: Kubelet {{ $labels.instance }} is running {{ $value }} Pods, close to the limit of 250.
       expr: |
         kubelet_running_pod_count{job="kubelet"} > 250 * 0.9
       for: 15m
@@ -874,8 +839,7 @@ spec:
         severity: warning
     - alert: KubeAPILatencyHigh
       annotations:
-        message: The API server has an abnormal latency of {{ $value }} seconds for
-          {{ $labels.verb }} {{ $labels.resource }}.
+        message: The API server has an abnormal latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.
       expr: |
         (
           cluster:apiserver_request_latencies_sum:mean5m >
@@ -893,8 +857,7 @@ spec:
         severity: warning
     - alert: KubeAPILatencyHigh
       annotations:
-        message: The API server has an abnormal latency of {{ $value }} seconds for
-          {{ $labels.verb }} {{ $labels.resource }}.
+        message: The API server has an abnormal latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.
       expr: |
         (
           cluster:apiserver_request_latencies_sum:mean5m >
@@ -948,8 +911,7 @@ spec:
     rules:
     - alert: AlertmanagerConfigInconsistent
       annotations:
-        description: The configuration of the instances of the Alertmanager cluster
-          `{{$labels.service}}` are out of sync.
+        description: The configuration of the instances of the Alertmanager cluster `{{$labels.service}}` are out of sync.
         summary: Configuration out of sync
       expr: |
         count_values("config_hash", alertmanager_config_hash{job="alertmanager-main"}) BY (service) / ON(service) GROUP_LEFT() label_replace(prometheus_operator_alertmanager_spec_replicas{job="prometheus-operator"}, "service", "alertmanager-$1", "alertmanager", "(.*)") != 1
@@ -958,8 +920,7 @@ spec:
         severity: critical
     - alert: AlertmanagerDownOrMissing
       annotations:
-        description: An unexpected number of Alertmanagers are scraped or Alertmanagers
-          disappeared from discovery.
+        description: An unexpected number of Alertmanagers are scraped or Alertmanagers disappeared from discovery.
         summary: Alertmanager down or missing
       expr: |
         label_replace(prometheus_operator_alertmanager_spec_replicas{job="prometheus-operator"}, "job", "alertmanager-$1", "alertmanager", "(.*)") / ON(job) GROUP_RIGHT() sum(up{job="alertmanager-main"}) BY (job) != 1
@@ -968,8 +929,7 @@ spec:
         severity: warning
     - alert: AlertmanagerFailedReload
       annotations:
-        description: Reloading Alertmanager's configuration has failed for {{ $labels.namespace
-          }}/{{ $labels.pod}}.
+        description: Reloading Alertmanager's configuration has failed for {{ $labels.namespace }}/{{ $labels.pod}}.
         summary: Alertmanager's configuration reload failed
       expr: |
         alertmanager_config_last_reload_successful{job="alertmanager-main"} == 0
@@ -988,8 +948,7 @@ spec:
         severity: warning
     - alert: DeadMansSwitch
       annotations:
-        description: This is a DeadMansSwitch meant to ensure that the entire Alerting
-          pipeline is functional.
+        description: This is a DeadMansSwitch meant to ensure that the entire Alerting pipeline is functional.
         summary: Alerting DeadMansSwitch
       expr: vector(1)
       labels:
@@ -998,8 +957,7 @@ spec:
     rules:
     - alert: NodeDiskRunningFull
       annotations:
-        message: Device {{ $labels.device }} of node-exporter {{ $labels.namespace
-          }}/{{ $labels.pod }} is running full within the next 24 hours.
+        message: Device {{ $labels.device }} of node-exporter {{ $labels.namespace }}/{{ $labels.pod }} is running full within the next 24 hours.
       expr: |
         (node:node_filesystem_usage: > 0.85) and (predict_linear(node:node_filesystem_avail:[6h], 3600 * 24) < 0)
       for: 30m
@@ -1007,8 +965,7 @@ spec:
         severity: warning
     - alert: NodeDiskRunningFull
       annotations:
-        message: Device {{ $labels.device }} of node-exporter {{ $labels.namespace
-          }}/{{ $labels.pod }} is running full within the next 2 hours.
+        message: Device {{ $labels.device }} of node-exporter {{ $labels.namespace }}/{{ $labels.pod }} is running full within the next 2 hours.
       expr: |
         (node:node_filesystem_usage: > 0.85) and (predict_linear(node:node_filesystem_avail:[30m], 3600 * 2) < 0)
       for: 10m
@@ -1027,8 +984,7 @@ spec:
         severity: warning
     - alert: PrometheusNotificationQueueRunningFull
       annotations:
-        description: Prometheus' alert notification queue is running full for {{$labels.namespace}}/{{
-          $labels.pod}}
+        description: Prometheus' alert notification queue is running full for {{$labels.namespace}}/{{ $labels.pod}}
         summary: Prometheus' alert notification queue is running full
       expr: |
         predict_linear(prometheus_notifications_queue_length{job="prometheus-k8s"}[5m], 60 * 30) > prometheus_notifications_queue_capacity{job="prometheus-k8s"}
@@ -1037,8 +993,7 @@ spec:
         severity: warning
     - alert: PrometheusErrorSendingAlerts
       annotations:
-        description: Errors while sending alerts from Prometheus {{$labels.namespace}}/{{
-          $labels.pod}} to Alertmanager {{$labels.Alertmanager}}
+        description: Errors while sending alerts from Prometheus {{$labels.namespace}}/{{ $labels.pod}} to Alertmanager {{$labels.Alertmanager}}
         summary: Errors while sending alert from Prometheus
       expr: |
         rate(prometheus_notifications_errors_total{job="prometheus-k8s"}[5m]) / rate(prometheus_notifications_sent_total{job="prometheus-k8s"}[5m]) > 0.01
@@ -1047,8 +1002,7 @@ spec:
         severity: warning
     - alert: PrometheusErrorSendingAlerts
       annotations:
-        description: Errors while sending alerts from Prometheus {{$labels.namespace}}/{{
-          $labels.pod}} to Alertmanager {{$labels.Alertmanager}}
+        description: Errors while sending alerts from Prometheus {{$labels.namespace}}/{{ $labels.pod}} to Alertmanager {{$labels.Alertmanager}}
         summary: Errors while sending alerts from Prometheus
       expr: |
         rate(prometheus_notifications_errors_total{job="prometheus-k8s"}[5m]) / rate(prometheus_notifications_sent_total{job="prometheus-k8s"}[5m]) > 0.03
@@ -1057,8 +1011,7 @@ spec:
         severity: critical
     - alert: PrometheusNotConnectedToAlertmanagers
       annotations:
-        description: Prometheus {{ $labels.namespace }}/{{ $labels.pod}} is not connected
-          to any Alertmanagers
+        description: Prometheus {{ $labels.namespace }}/{{ $labels.pod}} is not connected to any Alertmanagers
         summary: Prometheus is not connected to any Alertmanagers
       expr: |
         prometheus_notifications_alertmanagers_discovered{job="prometheus-k8s"} < 1
@@ -1067,8 +1020,7 @@ spec:
         severity: warning
     - alert: PrometheusTSDBReloadsFailing
       annotations:
-        description: '{{$labels.job}} at {{$labels.instance}} had {{$value | humanize}}
-          reload failures over the last four hours.'
+        description: '{{$labels.job}} at {{$labels.instance}} had {{$value | humanize}} reload failures over the last four hours.'
         summary: Prometheus has issues reloading data blocks from disk
       expr: |
         increase(prometheus_tsdb_reloads_failures_total{job="prometheus-k8s"}[2h]) > 0
@@ -1077,8 +1029,7 @@ spec:
         severity: warning
     - alert: PrometheusTSDBCompactionsFailing
       annotations:
-        description: '{{$labels.job}} at {{$labels.instance}} had {{$value | humanize}}
-          compaction failures over the last four hours.'
+        description: '{{$labels.job}} at {{$labels.instance}} had {{$value | humanize}} compaction failures over the last four hours.'
         summary: Prometheus has issues compacting sample blocks
       expr: |
         increase(prometheus_tsdb_compactions_failed_total{job="prometheus-k8s"}[2h]) > 0
@@ -1087,8 +1038,7 @@ spec:
         severity: warning
     - alert: PrometheusTSDBWALCorruptions
       annotations:
-        description: '{{$labels.job}} at {{$labels.instance}} has a corrupted write-ahead
-          log (WAL).'
+        description: '{{$labels.job}} at {{$labels.instance}} has a corrupted write-ahead log (WAL).'
         summary: Prometheus write-ahead log is corrupted
       expr: |
         tsdb_wal_corruptions_total{job="prometheus-k8s"} > 0
@@ -1097,8 +1047,7 @@ spec:
         severity: warning
     - alert: PrometheusNotIngestingSamples
       annotations:
-        description: Prometheus {{ $labels.namespace }}/{{ $labels.pod}} isn't ingesting
-          samples.
+        description: Prometheus {{ $labels.namespace }}/{{ $labels.pod}} isn't ingesting samples.
         summary: Prometheus isn't ingesting samples
       expr: |
         rate(prometheus_tsdb_head_samples_appended_total{job="prometheus-k8s"}[5m]) <= 0
@@ -1107,8 +1056,7 @@ spec:
         severity: warning
     - alert: PrometheusTargetScrapesDuplicate
       annotations:
-        description: '{{$labels.namespace}}/{{$labels.pod}} has many samples rejected
-          due to duplicate timestamps but different values'
+        description: '{{$labels.namespace}}/{{$labels.pod}} has many samples rejected due to duplicate timestamps but different values'
         summary: Prometheus has many samples rejected
       expr: |
         increase(prometheus_target_scrapes_sample_duplicate_timestamp_total{job="prometheus-k8s"}[5m]) > 0
@@ -1119,8 +1067,7 @@ spec:
     rules:
     - alert: EtcdInsufficientMembers
       annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": insufficient members ({{ $value
-          }}).'
+        message: 'Etcd cluster "{{ $labels.job }}": insufficient members ({{ $value }}).'
       expr: |
         count(up{job=~".*etcd.*"} == 0) by (job) > (count(up{job=~".*etcd.*"}) by (job) / 2 - 1)
       for: 3m
@@ -1128,8 +1075,7 @@ spec:
         severity: critical
     - alert: EtcdNoLeader
       annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": member {{ $labels.instance }}
-          has no leader.'
+        message: 'Etcd cluster "{{ $labels.job }}": member {{ $labels.instance }} has no leader.'
       expr: |
         etcd_server_has_leader{job=~".*etcd.*"} == 0
       for: 1m
@@ -1137,8 +1083,7 @@ spec:
         severity: critical
     - alert: EtcdHighNumberOfLeaderChanges
       annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": instance {{ $labels.instance }}
-          has seen {{ $value }} leader changes within the last hour.'
+        message: 'Etcd cluster "{{ $labels.job }}": instance {{ $labels.instance }} has seen {{ $value }} leader changes within the last hour.'
       expr: |
         rate(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}[15m]) > 3
       for: 15m
@@ -1146,8 +1091,7 @@ spec:
         severity: warning
     - alert: EtcdGRPCRequestsSlow
       annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method
-          }} are taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        message: 'Etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method }} are taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
       expr: |
         histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job=~".*etcd.*", grpc_type="unary"}[5m])) by (job, instance, grpc_service, grpc_method, le))
         > 0.15
@@ -1156,8 +1100,7 @@ spec:
         severity: critical
     - alert: EtcdMemberCommunicationSlow
       annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To
-          }} is taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        message: 'Etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To }} is taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
       expr: |
         histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.15
@@ -1166,8 +1109,7 @@ spec:
         severity: warning
     - alert: EtcdHighNumberOfFailedProposals
       annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": {{ $value }} proposal failures
-          within the last hour on etcd instance {{ $labels.instance }}.'
+        message: 'Etcd cluster "{{ $labels.job }}": {{ $value }} proposal failures within the last hour on etcd instance {{ $labels.instance }}.'
       expr: |
         rate(etcd_server_proposals_failed_total{job=~".*etcd.*"}[15m]) > 5
       for: 15m
@@ -1175,8 +1117,7 @@ spec:
         severity: warning
     - alert: EtcdHighFsyncDurations
       annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": 99th percentile fync durations
-          are {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        message: 'Etcd cluster "{{ $labels.job }}": 99th percentile fync durations are {{ $value }}s on etcd instance {{ $labels.instance }}.'
       expr: |
         histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.5
@@ -1185,8 +1126,7 @@ spec:
         severity: warning
     - alert: EtcdHighCommitDurations
       annotations:
-        message: 'Etcd cluster "{{ $labels.job }}": 99th percentile commit durations
-          {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        message: 'Etcd cluster "{{ $labels.job }}": 99th percentile commit durations {{ $value }}s on etcd instance {{ $labels.instance }}.'
       expr: |
         histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.25
@@ -1197,8 +1137,7 @@ spec:
       record: instance:fd_utilization
     - alert: FdExhaustionClose
       annotations:
-        message: '{{ $labels.job }} instance {{ $labels.instance }} will exhaust its
-          file descriptors soon'
+        message: '{{ $labels.job }} instance {{ $labels.instance }} will exhaust its file descriptors soon'
       expr: |
         predict_linear(instance:fd_utilization{job=~".*etcd.*"}[1h], 3600 * 4) > 1
       for: 10m
@@ -1206,8 +1145,7 @@ spec:
         severity: warning
     - alert: FdExhaustionClose
       annotations:
-        description: '{{ $labels.job }} instance {{ $labels.instance }} will exhaust
-          its file descriptors soon'
+        description: '{{ $labels.job }} instance {{ $labels.instance }} will exhaust its file descriptors soon'
       expr: |
         predict_linear(instance:fd_utilization{job=~".*etcd.*"}[10m], 3600) > 1
       for: 10m
