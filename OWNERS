@@ -1,15 +1,22 @@
+component: "Monitoring"
+
 reviewers:
 - brancz
-- mxinden
-- elad661
-- ironcladlou
-- squat
 - s-urbaniak
+- paulfantom
+- lilic
+- pgier
+- simonpasquier
 
 approvers:
 - brancz
-- mxinden
-- elad661
-- ironcladlou
-- squat
+- bparees
 - s-urbaniak
+- paulfantom
+- lilic
+- pgier
+- simonpasquier
+
+emeritus_approvers:
+- squat
+- metalmatze

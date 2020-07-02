@@ -329,6 +329,7 @@ local patchRules(groups) = [
                 '-tls-key=/etc/tls/private/tls.key',
                 '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
                 '-cookie-secret-file=/etc/proxy/secrets/session_secret',
+                '-cookie-expire=24h',
                 '-openshift-ca=/etc/pki/tls/cert.pem',
                 '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
                 '-skip-auth-regex=^/metrics',
