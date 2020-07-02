@@ -26,6 +26,10 @@ import (
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
+const (
+	DefaultRetentionValue = "15d"
+)
+
 type Config struct {
 	Images      *Images               `json:"-"`
 	RemoteWrite bool                  `json:"-"`
@@ -213,13 +217,13 @@ func (c *Config) applyDefaults() {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" {
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = "15d"
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = DefaultRetentionValue
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig = &PrometheusK8sConfig{}
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention == "" {
-		c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention = "15d"
+		c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention = DefaultRetentionValue
 	}
 	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
 		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}

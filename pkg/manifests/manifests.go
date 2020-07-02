@@ -1451,7 +1451,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.LogLevel
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != "" {
+	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != "" && f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != DefaultRetentionValue {
 		p.Spec.Retention = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention
 	}
 
@@ -1878,6 +1878,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 	if err != nil {
 		return nil, err
 	}
+
 	if len(f.config.UserWorkloadConfiguration.PrometheusOperator.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.UserWorkloadConfiguration.PrometheusOperator.NodeSelector
 	}
