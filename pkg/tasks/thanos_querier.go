@@ -108,6 +108,16 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "creating Thanos Querier RBAC proxy Secret failed")
 	}
 
+	rs, err = t.factory.ThanosQuerierRBACProxyRulesSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Querier RBAC proxy rules Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(rs)
+	if err != nil {
+		return errors.Wrap(err, "creating Thanos Querier RBAC proxy rules Secret failed")
+	}
+
 	sa, err := t.factory.ThanosQuerierServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier ServiceAccount failed")

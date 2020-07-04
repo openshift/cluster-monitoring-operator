@@ -15,13 +15,9 @@
 package e2e
 
 import (
-	"bytes"
-	"context"
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"testing"
 	"time"
 
@@ -170,56 +166,6 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 	}
 }
 
-type silenceClient struct {
-	t         *testing.T
-	host      string
-	token     string
-	namespace string
-}
-
-func (s silenceClient) do(method string, endpoint string, body []byte, expectedCode int) []byte {
-	s.t.Helper()
-
-	u := url.URL{
-		Scheme:   "https",
-		Host:     s.host,
-		Path:     endpoint,
-		RawQuery: url.Values{"namespace": []string{s.namespace}}.Encode(),
-	}
-	req, err := http.NewRequest(method, u.String(), bytes.NewBuffer(body))
-	if err != nil {
-		s.t.Fatal(err)
-	}
-
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.token))
-	req.Header.Add("Content-Type", "application/json")
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	req = req.WithContext(ctx)
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		s.t.Fatalf("%s request to %q failed: %v", method, endpoint, err)
-	}
-	defer resp.Body.Close()
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		s.t.Fatalf("fail to read response body from %s %q: %v", method, endpoint, err)
-	}
-
-	if resp.StatusCode != expectedCode {
-		s.t.Fatalf("expecting %d status code in response to %s %q request, got %d (%q)", expectedCode, method, endpoint, resp.StatusCode, string(b))
-	}
-
-	return b
-}
-
 // The Alertmanager API should be protected by kube-rbac-proxy (and prom-label-proxy).
 func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	const testNs = "test-kube-rbac-proxy"
@@ -248,7 +194,7 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	}()
 
 	// Creating service accounts with different role bindings.
-	clients := make(map[string]silenceClient)
+	clients := make(map[string]*framework.PrometheusClient)
 	for sa, cr := range map[string]string{
 		"editor":    "monitoring-rules-edit",
 		"viewer":    "monitoring-rules-view",
@@ -273,12 +219,18 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			clients[sa] = silenceClient{
-				t:         t,
-				host:      host,
-				token:     token,
-				namespace: testNs,
-			}
+			clients[sa] = framework.NewPrometheusClient(
+				host,
+				token,
+				&framework.QueryParameterInjector{
+					Name:  "namespace",
+					Value: testNs,
+				},
+				&framework.HeaderInjector{
+					Name:  "Content-Type",
+					Value: "application/json",
+				},
+			)
 			return nil
 		})
 		if err != nil {
@@ -294,13 +246,44 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		now.Add(time.Hour).Format(time.RFC3339),
 	))
 
+	assertDo := func(expectedCode int, do func() (*http.Response, error)) []byte {
+		t.Helper()
+
+		resp, err := do()
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("fail to read response body: %v", err)
+		}
+
+		if resp.StatusCode != expectedCode {
+			t.Fatalf("expecting %d status code,  got %d (%q)", expectedCode, resp.StatusCode, framework.ClampMax(b))
+		}
+
+		return b
+	}
+
 	for _, sa := range []string{"viewer", "anonymous"} {
 		t.Logf("creating silence as %q (denied)", sa)
-		_ = clients[sa].do("POST", "/api/v2/silences", sil, http.StatusForbidden)
+		assertDo(
+			http.StatusForbidden,
+			func() (*http.Response, error) {
+				return clients[sa].Do("POST", "/api/v2/silences", sil)
+			},
+		)
 	}
 
 	t.Log("creating silence as 'editor' (allowed)")
-	b := clients["editor"].do("POST", "/api/v2/silences", sil, http.StatusOK)
+	b := assertDo(
+		http.StatusOK,
+		func() (*http.Response, error) {
+			return clients["editor"].Do("POST", "/api/v2/silences", sil)
+		},
+	)
 
 	// Save silence ID for deletion.
 	parsed, err := gabs.ParseJSON(b)
@@ -314,11 +297,21 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 
 	// List silences and check that the 'namespace' label matcher has been overwritten.
 	t.Log("listing silences as 'anonymous' (denied)")
-	clients["anonymous"].do("GET", "/api/v2/silences", nil, http.StatusForbidden)
+	assertDo(
+		http.StatusForbidden,
+		func() (*http.Response, error) {
+			return clients["anonymous"].Do("GET", "/api/v2/silences", nil)
+		},
+	)
 
 	for _, sa := range []string{"viewer", "editor"} {
 		t.Logf("listing silences as %q (allowed)", sa)
-		b = clients[sa].do("GET", "/api/v2/silences", nil, http.StatusOK)
+		b = assertDo(
+			http.StatusOK,
+			func() (*http.Response, error) {
+				return clients[sa].Do("GET", "/api/v2/silences", nil)
+			},
+		)
 
 		parsed, err = gabs.ParseJSON(b)
 		if err != nil {
@@ -365,11 +358,21 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	// Delete the silence.
 	for _, sa := range []string{"viewer", "anonymous"} {
 		t.Logf("deleting silence as %q (denied)", sa)
-		_ = clients[sa].do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), nil, http.StatusForbidden)
+		assertDo(
+			http.StatusForbidden,
+			func() (*http.Response, error) {
+				return clients[sa].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), nil)
+			},
+		)
 	}
 
 	t.Log("deleting silence as 'editor' (allowed)")
-	_ = clients["editor"].do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil, http.StatusOK)
+	assertDo(
+		http.StatusOK,
+		func() (*http.Response, error) {
+			return clients["editor"].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil)
+		},
+	)
 }
 
 // The Alertmanager API should be protected by the OAuth proxy.

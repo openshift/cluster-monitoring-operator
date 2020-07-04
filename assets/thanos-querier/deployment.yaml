@@ -151,6 +151,29 @@ spec:
             cpu: 1m
             memory: 20Mi
         terminationMessagePolicy: FallbackToLogsOnError
+      - args:
+        - --secure-listen-address=0.0.0.0:9093
+        - --upstream=http://127.0.0.1:9095
+        - --config-file=/etc/kube-rbac-proxy/config.yaml
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+        - --logtostderr=true
+        image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+        name: kube-rbac-proxy-rules
+        ports:
+        - containerPort: 9093
+          name: tenancy-rules
+        resources:
+          requests:
+            cpu: 1m
+            memory: 20Mi
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: secret-thanos-querier-tls
+        - mountPath: /etc/kube-rbac-proxy
+          name: secret-thanos-querier-kube-rbac-proxy-rules
       priorityClassName: system-cluster-critical
       serviceAccountName: thanos-querier
       terminationGracePeriodSeconds: 120
@@ -167,3 +190,6 @@ spec:
       - name: secret-thanos-querier-kube-rbac-proxy
         secret:
           secretName: thanos-querier-kube-rbac-proxy
+      - name: secret-thanos-querier-kube-rbac-proxy-rules
+        secret:
+          secretName: thanos-querier-kube-rbac-proxy-rules

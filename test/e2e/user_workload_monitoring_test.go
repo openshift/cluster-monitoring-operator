@@ -16,6 +16,8 @@ package e2e
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"testing"
 	"time"
 
@@ -61,7 +63,8 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"create prometheus and alertmanager in user namespace", createPrometheusAlertmanagerInUserNamespace},
 		{"assert user workload metrics", assertUserWorkloadMetrics},
 		{"assert user workload rules", assertUserWorkloadRules},
-		{"assert tenancy model is enforced", assertTenancyForMetrics},
+		{"assert tenancy model is enforced for metrics", assertTenancyForMetrics},
+		{"assert tenancy model is enforced for rules", assertTenancyForRules},
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
 		{"assert grpc tls rotation", assertGRPCTLSRotation},
 		{"assert user workload metrics", assertUserWorkloadMetrics},
@@ -550,20 +553,22 @@ func assertUserWorkloadRules(t *testing.T) {
 
 // assertTenancyForMetrics ensures that a tenant can access metrics from her namespace (and only from this one).
 func assertTenancyForMetrics(t *testing.T) {
-	_, err := f.CreateServiceAccount(userWorkloadTestNs, "test")
+	const testAccount = "test-metrics"
+
+	_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Grant enough permissions to the account so it can read metrics.
-	_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, "test", "admin")
+	_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var token string
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		token, err = f.GetServiceAccountToken(userWorkloadTestNs, "test")
+		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
 		if err != nil {
 			return err
 		}
@@ -588,7 +593,10 @@ func assertTenancyForMetrics(t *testing.T) {
 			client := framework.NewPrometheusClient(
 				host,
 				token,
-				map[string][]string{"namespace": []string{userWorkloadTestNs}},
+				&framework.QueryParameterInjector{
+					Name:  "namespace",
+					Value: userWorkloadTestNs,
+				},
 			)
 
 			b, err := client.PrometheusQuery(q)
@@ -630,6 +638,134 @@ func assertTenancyForMetrics(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to query Thanos querier: %v", err)
 		}
+	}
+}
+
+// assertTenancyForRules ensures that a tenant can access rules from her namespace (and only from this one).
+func assertTenancyForRules(t *testing.T) {
+	const testAccount = "test-rules"
+
+	_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Grant enough permissions to the account so it can read rules.
+	_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "monitoring-rules-view")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var token string
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The tenancy port (9093) is only exposed in-cluster so we need to use
+	// port forwarding to access kube-rbac-proxy.
+	host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9093)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanUp()
+
+	client := framework.NewPrometheusClient(
+		host,
+		token,
+		&framework.QueryParameterInjector{
+			Name:  "namespace",
+			Value: userWorkloadTestNs,
+		},
+	)
+
+	t.Logf("Retrieving rules")
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		resp, err := client.Do("GET", "/api/v1/rules", nil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+
+		res, err := gabs.ParseJSON(b)
+		if err != nil {
+			return err
+		}
+
+		groups, err := res.Path("data.groups").Children()
+		if err != nil {
+			return err
+		}
+		if len(groups) != 1 {
+			return errors.Errorf("expecting 1 rules group, got %d", len(groups))
+		}
+
+		expected := []struct {
+			ruleType string
+			name     string
+		}{
+			{
+				ruleType: "recording",
+				name:     "version:blah:count",
+			},
+			{
+				ruleType: "alerting",
+				name:     "VersionAlert",
+			},
+		}
+		rules, err := groups[0].Path("rules").Children()
+		if len(rules) != len(expected) {
+			return errors.Errorf("expecting %d rules, got %d", len(expected), len(rules))
+		}
+
+		for _, exp := range expected {
+			var found bool
+			for i := range rules {
+				rule, err := rules[i].ChildrenMap()
+				if err != nil {
+					return err
+				}
+
+				if rule["type"].Data().(string) != exp.ruleType {
+					continue
+				}
+				if rule["name"].Data().(string) != exp.name {
+					continue
+				}
+				labels, err := rule["labels"].ChildrenMap()
+				if err != nil {
+					return err
+				}
+				if labels["namespace"].Data().(string) != userWorkloadTestNs {
+					continue
+				}
+				found = true
+				break
+			}
+			if !found {
+				return errors.Errorf("couldn't find %s rule %q with label 'namespace=%q' in %q", exp.ruleType, exp.name, userWorkloadTestNs, string(b))
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("failed to query rules from Thanos querier: %v", err)
 	}
 }
 

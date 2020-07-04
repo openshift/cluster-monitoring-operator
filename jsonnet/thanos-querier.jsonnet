@@ -129,7 +129,7 @@ local thanosQuerierRules =
       // The asserted verb (PUT, GET, POST, etc.) is implied from the http request verb in flight.
       kubeRbacProxySecret:
         local config = {
-          'config.yaml': std.base64(std.manifestYamlDoc({
+          'config.yaml': std.manifestYamlDoc({
             authorization: {
               rewrites: {
                 byQueryParameter: {
@@ -142,10 +142,35 @@ local thanosQuerierRules =
                 namespace: '{{ .Value }}',
               },
             },
-          })),
+          }),
         };
 
-        secret.new('thanos-querier-kube-rbac-proxy', config) +
+        secret.new('thanos-querier-kube-rbac-proxy', {}).withStringData(config) +
+        secret.mixin.metadata.withNamespace(tq.config.namespace) +
+        secret.mixin.metadata.withLabels(tq.config.commonLabels),
+
+      // Same as kubeRbacProxySecret but performs a SubjectAccessReview
+      // asserting if the request bearer token in flight has permissions
+      // to access the prometheusrules.monitoring.coreos.com API.
+      kubeRbacProxyRulesSecret:
+        local config = {
+          'config.yaml': std.manifestYamlDoc({
+            authorization: {
+              rewrites: {
+                byQueryParameter: {
+                  name: 'namespace',
+                },
+              },
+              resourceAttributes: {
+                apiGroup: 'monitoring.coreos.com',
+                resource: 'prometheusrules',
+                namespace: '{{ .Value }}',
+              },
+            },
+          }),
+        };
+
+        secret.new('thanos-querier-kube-rbac-proxy-rules', {}).withStringData(config) +
         secret.mixin.metadata.withNamespace(tq.config.namespace) +
         secret.mixin.metadata.withLabels(tq.config.commonLabels),
 
@@ -179,6 +204,7 @@ local thanosQuerierRules =
         service.mixin.spec.withPorts([
           ports.newNamed('web', 9091, 'web'),
           ports.newNamed('tenancy', 9092, 'tenancy'),
+          ports.newNamed('tenancy-rules', 9093, 'tenancy-rules'),
         ]),
 
       serviceMonitor+:
@@ -221,6 +247,7 @@ local thanosQuerierRules =
                   volume.fromSecret('secret-thanos-querier-oauth-cookie', 'thanos-querier-oauth-cookie'),
                   volume.fromSecret('secret-thanos-querier-oauth-htpasswd', 'thanos-querier-oauth-htpasswd'),
                   volume.fromSecret('secret-thanos-querier-kube-rbac-proxy', 'thanos-querier-kube-rbac-proxy'),
+                  volume.fromSecret('secret-thanos-querier-kube-rbac-proxy-rules', 'thanos-querier-kube-rbac-proxy-rules'),
                 ],
                 serviceAccountName: 'thanos-querier',
                 priorityClassName: 'system-cluster-critical',
@@ -385,6 +412,42 @@ local thanosQuerierRules =
                       },
                     },
                     terminationMessagePolicy: 'FallbackToLogsOnError',
+                  },
+                  {
+                    name: 'kube-rbac-proxy-rules',
+                    image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
+                    resources: {
+                      requests: {
+                        memory: '20Mi',
+                        cpu: '1m',
+                      },
+                    },
+                    ports: [
+                      {
+                        containerPort: 9093,
+                        name: 'tenancy-rules',
+                      },
+                    ],
+                    args: [
+                      '--secure-listen-address=0.0.0.0:9093',
+                      '--upstream=http://127.0.0.1:9095',
+                      '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                      '--tls-cert-file=/etc/tls/private/tls.crt',
+                      '--tls-private-key-file=/etc/tls/private/tls.key',
+                      '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                      '--logtostderr=true',
+                    ],
+                    terminationMessagePolicy: 'FallbackToLogsOnError',
+                    volumeMounts: [
+                      {
+                        mountPath: '/etc/tls/private',
+                        name: 'secret-thanos-querier-tls',
+                      },
+                      {
+                        mountPath: '/etc/kube-rbac-proxy',
+                        name: 'secret-' + $.thanos.querier.kubeRbacProxyRulesSecret.metadata.name,
+                      },
+                    ],
                   },
                 ],
               },
