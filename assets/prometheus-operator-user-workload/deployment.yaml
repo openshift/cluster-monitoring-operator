@@ -30,7 +30,6 @@ spec:
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
-        - --manage-crds=false
         - --config-reloader-cpu=0
         image: quay.io/coreos/prometheus-operator:v0.38.1
         name: prometheus-operator
