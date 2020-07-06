@@ -58,7 +58,6 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
                         '--prometheus-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--alertmanager-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--thanos-ruler-instance-namespaces=' + $._config.namespaceUserWorkload,
-                        '--manage-crds=false',
                         '--config-reloader-cpu=0',
                       ],
                       securityContext: {},
