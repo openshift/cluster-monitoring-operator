@@ -196,6 +196,10 @@ func NewConfig(content io.Reader) (*Config, error) {
 	return res, nil
 }
 
+const (
+	defaultPrometheusRetention = "15d"
+)
+
 func (c *Config) applyDefaults() {
 	if c.Images == nil {
 		c.Images = &Images{}
@@ -213,13 +217,13 @@ func (c *Config) applyDefaults() {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" {
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = "15d"
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = defaultPrometheusRetention
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig = &PrometheusK8sConfig{}
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention == "" {
-		c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention = "15d"
+		c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention = defaultPrometheusRetention
 	}
 	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
 		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
