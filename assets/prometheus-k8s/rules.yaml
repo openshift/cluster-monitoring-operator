@@ -1075,10 +1075,18 @@ spec:
         severity: warning
     - alert: NodeHighNumberConntrackEntriesUsed
       annotations:
-        description: '{{ $value | humanizePercentage }} of conntrack entries are used'
-        summary: Number of conntrack are getting close to the limit
+        description: '{{ $value | humanizePercentage }} of conntrack entries are used.'
+        summary: Number of conntrack are getting close to the limit.
       expr: |
         (node_nf_conntrack_entries / node_nf_conntrack_entries_limit) > 0.75
+      labels:
+        severity: warning
+    - alert: NodeTextFileCollectorScrapeError
+      annotations:
+        description: Node Exporter text file collector failed to scrape.
+        summary: Node Exporter text file collector failed to scrape.
+      expr: |
+        node_textfile_scrape_error{job="node-exporter"} == 1
       labels:
         severity: warning
     - alert: NodeClockSkewDetected
@@ -1892,7 +1900,7 @@ spec:
       annotations:
         message: 'etcd cluster "{{ $labels.job }}": {{ $value }} leader changes within the last 15 minutes. Frequent elections may be a sign of insufficient resources, high network latency, or disruptions by other components and should be investigated.'
       expr: |
-        increase((max by (job) (etcd_server_leader_changes_seen_total{job=~".*etcd.*"}) or 0*absent(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}))[15m:1m]) >= 3
+        increase((max by (job) (etcd_server_leader_changes_seen_total{job=~".*etcd.*"}) or 0*absent(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}))[15m:1m]) >= 4
       for: 5m
       labels:
         severity: warning
