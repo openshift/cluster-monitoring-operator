@@ -98,7 +98,7 @@ spec:
     resources:
       requests:
         cpu: 1m
-  image: openshift/prometheus-alertmanager:v0.20.0
+  image: openshift/prometheus-alertmanager:v0.21.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -113,4 +113,4 @@ spec:
   - alertmanager-kube-rbac-proxy
   securityContext: {}
   serviceAccountName: alertmanager-main
-  version: v0.20.0
+  version: v0.21.0

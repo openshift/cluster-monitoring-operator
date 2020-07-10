@@ -84,7 +84,7 @@ spec:
         memory: 8Mi
   enforcedNamespaceLabel: namespace
   ignoreNamespaceSelectors: true
-  image: openshift/prometheus:v2.15.2
+  image: openshift/prometheus:v2.19.2
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -116,4 +116,4 @@ spec:
         cpu: 1m
         memory: 100Mi
     version: latest
-  version: v2.15.2
+  version: v2.19.2
