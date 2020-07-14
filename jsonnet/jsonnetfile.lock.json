@@ -34,12 +34,12 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/coreos/prometheus-operator",
+          "remote": "https://github.com/coreos/prometheus-operator.git",
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "8fa7349020073bcc7932abb2bc4bd08e4bc3a0ac",
-      "sum": "z4e20kyCOyqH3V+wnq2yEzch6LsZa37bsimcl5+eYA4="
+      "version": "e31c69f9b5c6555e0f4a5c1f39d0f03182dd6b41",
+      "sum": "WggWVWZ+CBEUThQCztSaRELbtqdXf9s3OFzf06HbYNA="
     },
     {
       "source": {
