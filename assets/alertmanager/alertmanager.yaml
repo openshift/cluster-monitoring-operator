@@ -52,7 +52,7 @@ spec:
       name: web
     resources:
       requests:
-        cpu: 10m
+        cpu: 1m
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
@@ -65,6 +65,9 @@ spec:
     kubernetes.io/os: linux
   priorityClassName: system-cluster-critical
   replicas: 3
+  resources:
+    requests:
+      cpu: 4m
   secrets:
   - alertmanager-main-tls
   - alertmanager-main-proxy
