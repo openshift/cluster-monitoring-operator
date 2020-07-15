@@ -16,8 +16,42 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
     '0podmonitorCustomResourceDefinition':: {},
     '0prometheusruleCustomResourceDefinition':: {},
     '0thanosrulerCustomResourceDefinition':: {},
-
+    // TODO: remove after 0.40 prometheus-operator is merged.
     clusterRole+: {
+     rules+:
+      [
+	  {
+	    "apiGroups": [
+	      "apiextensions.k8s.io"
+	    ],
+	    "resources": [
+	      "customresourcedefinitions"
+	    ],
+	    "verbs": [
+	      "create"
+	    ]
+	  },
+	  {
+	    "apiGroups": [
+	      "apiextensions.k8s.io"
+	    ],
+	    "resourceNames": [
+	      "alertmanagers.monitoring.coreos.com",
+	      "podmonitors.monitoring.coreos.com",
+	      "prometheuses.monitoring.coreos.com",
+	      "prometheusrules.monitoring.coreos.com",
+	      "servicemonitors.monitoring.coreos.com",
+	      "thanosrulers.monitoring.coreos.com"
+	    ],
+	    "resources": [
+	      "customresourcedefinitions"
+	    ],
+	    "verbs": [
+	      "get",
+	      "update"
+	    ]
+	  }
+	],
       metadata+: {
         name: 'prometheus-user-workload-operator',
       },
