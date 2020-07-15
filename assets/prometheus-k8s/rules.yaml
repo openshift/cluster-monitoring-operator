@@ -1343,17 +1343,17 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeQuotaExceeded
+    - alert: KubeQuotaFullyUsed
       annotations:
         message: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
       expr: |
         kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
         (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard"} > 0)
-          > 0.90
+          >= 1
       for: 15m
       labels:
-        severity: warning
+        severity: info
   - name: kubernetes-storage
     rules:
     - alert: KubePersistentVolumeFillingUp
