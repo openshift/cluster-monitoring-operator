@@ -17,9 +17,9 @@ require (
 	github.com/prometheus/client_golang v1.2.1
 	github.com/prometheus/prometheus v2.9.2+incompatible
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	k8s.io/api v0.17.3
+	k8s.io/api v0.18.3
 	k8s.io/apiextensions-apiserver v0.17.3
-	k8s.io/apimachinery v0.17.3
+	k8s.io/apimachinery v0.18.3
 	k8s.io/apiserver v0.17.3
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
@@ -31,7 +31,7 @@ replace (
 	github.com/prometheus/prometheus => github.com/prometheus/prometheus v1.8.2-0.20190819201610-48b2c9c8eae2 // v1.8.2 is misleading as Prometheus does not have v2 module. This is pointing to one commit after 2.12.0.
 	k8s.io/api => k8s.io/api v0.17.1
 	k8s.io/apimachinery => k8s.io/apimachinery v0.17.1
-	k8s.io/client-go => k8s.io/client-go v0.17.1
+	k8s.io/client-go => k8s.io/client-go v0.18.3
 	k8s.io/code-generator => k8s.io/code-generator v0.0.0-20190912054826-cd179ad6a269
 	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
 )

@@ -209,18 +209,18 @@ func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (clea
 		},
 	}
 
-	sa, err := f.KubeClient.CoreV1().ServiceAccounts(namespace).Create(sa)
+	sa, err := f.KubeClient.CoreV1().ServiceAccounts(namespace).Create(context.TODO(), sa, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return func() error {
-		return f.KubeClient.CoreV1().ServiceAccounts(namespace).Delete(sa.Name, &metav1.DeleteOptions{})
+		return f.KubeClient.CoreV1().ServiceAccounts(namespace).Delete(context.TODO(), sa.Name, metav1.DeleteOptions{})
 	}, nil
 }
 
 func (f *Framework) GetServiceAccountToken(namespace, name string) (string, error) {
-	secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
+	secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -256,13 +256,13 @@ func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterR
 		},
 	}
 
-	clusterRoleBinding, err := f.KubeClient.RbacV1().ClusterRoleBindings().Create(clusterRoleBinding)
+	clusterRoleBinding, err := f.KubeClient.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterRoleBinding, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return func() error {
-		return f.KubeClient.RbacV1().ClusterRoleBindings().Delete(clusterRoleBinding.Name, &metav1.DeleteOptions{})
+		return f.KubeClient.RbacV1().ClusterRoleBindings().Delete(context.TODO(), clusterRoleBinding.Name, metav1.DeleteOptions{})
 	}, nil
 }
 
@@ -285,13 +285,13 @@ func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, 
 		},
 	}
 
-	roleBinding, err := f.KubeClient.RbacV1().RoleBindings(namespace).Create(roleBinding)
+	roleBinding, err := f.KubeClient.RbacV1().RoleBindings(namespace).Create(context.TODO(), roleBinding, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return func() error {
-		return f.KubeClient.RbacV1().RoleBindings(namespace).Delete(roleBinding.Name, &metav1.DeleteOptions{})
+		return f.KubeClient.RbacV1().RoleBindings(namespace).Delete(context.TODO(), roleBinding.Name, metav1.DeleteOptions{})
 	}, nil
 }
 
