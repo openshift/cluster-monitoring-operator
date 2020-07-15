@@ -15,6 +15,7 @@
 package client
 
 import (
+	"context"
 	"net/url"
 	"reflect"
 	"time"
@@ -184,9 +185,9 @@ func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(w *admissionv1.ValidatingWebhookConfiguration) error {
 	admclient := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations()
-	existing, err := admclient.Get(w.GetName(), metav1.GetOptions{})
+	existing, err := admclient.Get(context.TODO(), w.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := admclient.Create(w)
+		_, err := admclient.Create(context.TODO(), w, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ValidatingWebhookConfiguration object failed")
 	}
 	if err != nil {
@@ -195,7 +196,7 @@ func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(w *admissionv1.Val
 
 	required := w.DeepCopy()
 	required.ResourceVersion = existing.ResourceVersion
-	_, err = admclient.Update(required)
+	_, err = admclient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
 }
 
@@ -260,15 +261,15 @@ func (c *Client) GetInfrastructure(name string) (*configv1.Infrastructure, error
 }
 
 func (c *Client) GetConfigmap(namespace, name string) (*v1.ConfigMap, error) {
-	return c.kclient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
+	return c.kclient.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 func (c *Client) GetSecret(namespace, name string) (*v1.Secret, error) {
-	return c.kclient.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+	return c.kclient.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 func (c *Client) NamespacesToMonitor() ([]string, error) {
-	namespaces, err := c.kclient.CoreV1().Namespaces().List(metav1.ListOptions{
+	namespaces, err := c.kclient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: c.namespaceSelector,
 	})
 	if err != nil {
@@ -361,7 +362,7 @@ func (c *Client) CreateOrUpdateThanosRuler(t *monv1.ThanosRuler) error {
 }
 
 func (c *Client) DeleteConfigMap(cm *v1.ConfigMap) error {
-	err := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace()).Delete(cm.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace()).Delete(context.TODO(), cm.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -373,7 +374,7 @@ func (c *Client) DeleteConfigMap(cm *v1.ConfigMap) error {
 // the specified prefix, and DO NOT have the given hash.
 func (c *Client) DeleteHashedConfigMap(namespace, prefix, newHash string) error {
 	ls := "monitoring.openshift.io/name=" + prefix + ",monitoring.openshift.io/hash!=" + newHash
-	configMaps, err := c.KubernetesInterface().CoreV1().ConfigMaps(namespace).List(metav1.ListOptions{
+	configMaps, err := c.KubernetesInterface().CoreV1().ConfigMaps(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: ls,
 	})
 	if err != nil {
@@ -381,7 +382,7 @@ func (c *Client) DeleteHashedConfigMap(namespace, prefix, newHash string) error 
 	}
 
 	for _, cm := range configMaps.Items {
-		err := c.KubernetesInterface().CoreV1().ConfigMaps(namespace).Delete(cm.Name, &metav1.DeleteOptions{})
+		err := c.KubernetesInterface().CoreV1().ConfigMaps(namespace).Delete(context.TODO(), cm.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "error deleting configmap: %s/%s", namespace, cm.Name)
 		}
@@ -394,7 +395,7 @@ func (c *Client) DeleteHashedConfigMap(namespace, prefix, newHash string) error 
 // the specified prefix, and DO NOT have the given hash.
 func (c *Client) DeleteHashedSecret(namespace, prefix, newHash string) error {
 	ls := "monitoring.openshift.io/name=" + prefix + ",monitoring.openshift.io/hash!=" + newHash
-	secrets, err := c.KubernetesInterface().CoreV1().Secrets(namespace).List(metav1.ListOptions{
+	secrets, err := c.KubernetesInterface().CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: ls,
 	})
 	if err != nil {
@@ -402,7 +403,7 @@ func (c *Client) DeleteHashedSecret(namespace, prefix, newHash string) error {
 	}
 
 	for _, s := range secrets.Items {
-		err := c.KubernetesInterface().CoreV1().Secrets(namespace).Delete(s.Name, &metav1.DeleteOptions{})
+		err := c.KubernetesInterface().CoreV1().Secrets(namespace).Delete(context.TODO(), s.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "error deleting secret: %s/%s", namespace, s.Name)
 		}
@@ -412,7 +413,7 @@ func (c *Client) DeleteHashedSecret(namespace, prefix, newHash string) error {
 }
 
 func (c *Client) DeleteValidatingWebhook(w *admissionv1.ValidatingWebhookConfiguration) error {
-	err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(w.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(context.TODO(), w.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -422,7 +423,7 @@ func (c *Client) DeleteValidatingWebhook(w *admissionv1.ValidatingWebhookConfigu
 
 func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 	p := metav1.DeletePropagationForeground
-	err := c.kclient.AppsV1().Deployments(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{PropagationPolicy: &p})
+	err := c.kclient.AppsV1().Deployments(d.GetNamespace()).Delete(context.TODO(), d.GetName(), metav1.DeleteOptions{PropagationPolicy: &p})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -440,7 +441,7 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
-		pods, err := c.KubernetesInterface().CoreV1().Pods(p.GetNamespace()).List(prometheusoperator.ListOptions(p.GetName()))
+		pods, err := c.KubernetesInterface().CoreV1().Pods(p.GetNamespace()).List(context.TODO(), prometheusoperator.ListOptions(p.GetName()))
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving pods during polling failed")
 		}
@@ -470,7 +471,7 @@ func (c *Client) DeleteThanosRuler(tr *monv1.ThanosRuler) error {
 
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
-		pods, err := c.KubernetesInterface().CoreV1().Pods(tr.GetNamespace()).List(thanosoperator.ListOptions(tr.GetName()))
+		pods, err := c.KubernetesInterface().CoreV1().Pods(tr.GetNamespace()).List(context.TODO(), thanosoperator.ListOptions(tr.GetName()))
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving pods during polling failed")
 		}
@@ -492,7 +493,7 @@ func (c *Client) DeleteThanosRuler(tr *monv1.ThanosRuler) error {
 
 func (c *Client) DeleteDaemonSet(d *appsv1.DaemonSet) error {
 	orphanDependents := false
-	err := c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Delete(d.GetName(), &metav1.DeleteOptions{OrphanDependents: &orphanDependents})
+	err := c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Delete(context.TODO(), d.GetName(), metav1.DeleteOptions{OrphanDependents: &orphanDependents})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -517,7 +518,7 @@ func (c *Client) DeleteServiceMonitorByNamespaceAndName(namespace, name string) 
 }
 
 func (c *Client) DeleteServiceAccount(sa *v1.ServiceAccount) error {
-	err := c.kclient.CoreV1().ServiceAccounts(sa.Namespace).Delete(sa.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.CoreV1().ServiceAccounts(sa.Namespace).Delete(context.TODO(), sa.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -526,7 +527,7 @@ func (c *Client) DeleteServiceAccount(sa *v1.ServiceAccount) error {
 }
 
 func (c *Client) DeleteClusterRole(cr *rbacv1.ClusterRole) error {
-	err := c.kclient.RbacV1().ClusterRoles().Delete(cr.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.RbacV1().ClusterRoles().Delete(context.TODO(), cr.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -535,7 +536,7 @@ func (c *Client) DeleteClusterRole(cr *rbacv1.ClusterRole) error {
 }
 
 func (c *Client) DeleteClusterRoleBinding(crb *rbacv1.ClusterRoleBinding) error {
-	err := c.kclient.RbacV1().ClusterRoleBindings().Delete(crb.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.RbacV1().ClusterRoleBindings().Delete(context.TODO(), crb.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -544,7 +545,7 @@ func (c *Client) DeleteClusterRoleBinding(crb *rbacv1.ClusterRoleBinding) error 
 }
 
 func (c *Client) DeleteService(svc *v1.Service) error {
-	err := c.kclient.CoreV1().Services(svc.Namespace).Delete(svc.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.CoreV1().Services(svc.Namespace).Delete(context.TODO(), svc.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -569,7 +570,7 @@ func (c *Client) DeletePrometheusRule(rule *monv1.PrometheusRule) error {
 }
 
 func (c *Client) DeleteSecret(s *v1.Secret) error {
-	err := c.kclient.CoreV1().Secrets(s.Namespace).Delete(s.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.CoreV1().Secrets(s.Namespace).Delete(context.TODO(), s.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -677,7 +678,7 @@ func (c *Client) WaitForThanosRuler(t *monv1.ThanosRuler) error {
 }
 
 func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
-	d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
+	d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(context.TODO(), dep.GetName(), metav1.GetOptions{})
 
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDeployment(dep)
@@ -711,7 +712,7 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 }
 
 func (c *Client) CreateDeployment(dep *appsv1.Deployment) error {
-	d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Create(dep)
+	d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Create(context.TODO(), dep, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -720,7 +721,7 @@ func (c *Client) CreateDeployment(dep *appsv1.Deployment) error {
 }
 
 func (c *Client) UpdateDeployment(dep *appsv1.Deployment) error {
-	updated, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Update(dep)
+	updated, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Update(context.TODO(), dep, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -731,7 +732,7 @@ func (c *Client) UpdateDeployment(dep *appsv1.Deployment) error {
 func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(dep.GetName(), metav1.GetOptions{})
+		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(context.TODO(), dep.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -763,7 +764,7 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 func (c *Client) WaitForStatefulsetRollout(sts *appsv1.StatefulSet) error {
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		s, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(sts.GetName(), metav1.GetOptions{})
+		s, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(context.TODO(), sts.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -797,7 +798,7 @@ func (c *Client) WaitForSecret(s *v1.Secret) (*v1.Secret, error) {
 	var lastErr error
 	if err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
 		var err error
-		result, err = c.kclient.CoreV1().Secrets(s.Namespace).Get(s.Name, metav1.GetOptions{})
+		result, err = c.kclient.CoreV1().Secrets(s.Namespace).Get(context.TODO(), s.Name, metav1.GetOptions{})
 
 		if apierrors.IsNotFound(err) {
 			lastErr = err
@@ -856,7 +857,7 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 }
 
 func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
-	_, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(ds.GetName(), metav1.GetOptions{})
+	_, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(context.TODO(), ds.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDaemonSet(ds)
 		return errors.Wrap(err, "creating DaemonSet object failed")
@@ -885,7 +886,7 @@ func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
 }
 
 func (c *Client) CreateDaemonSet(ds *appsv1.DaemonSet) error {
-	d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Create(ds)
+	d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Create(context.TODO(), ds, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -894,7 +895,7 @@ func (c *Client) CreateDaemonSet(ds *appsv1.DaemonSet) error {
 }
 
 func (c *Client) UpdateDaemonSet(ds *appsv1.DaemonSet) error {
-	updated, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Update(ds)
+	updated, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Update(context.TODO(), ds, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -905,7 +906,7 @@ func (c *Client) UpdateDaemonSet(ds *appsv1.DaemonSet) error {
 func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(ds.GetName(), metav1.GetOptions{})
+		d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(context.TODO(), ds.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -936,24 +937,24 @@ func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 
 func (c *Client) CreateOrUpdateSecret(s *v1.Secret) error {
 	sClient := c.kclient.CoreV1().Secrets(s.GetNamespace())
-	_, err := sClient.Get(s.GetName(), metav1.GetOptions{})
+	_, err := sClient.Get(context.TODO(), s.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := sClient.Create(s)
+		_, err := sClient.Create(context.TODO(), s, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Secret object failed")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving Secret object failed")
 	}
 
-	_, err = sClient.Update(s)
+	_, err = sClient.Update(context.TODO(), s, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Secret object failed")
 }
 
 func (c *Client) CreateIfNotExistSecret(s *v1.Secret) error {
 	sClient := c.kclient.CoreV1().Secrets(s.GetNamespace())
-	_, err := sClient.Get(s.GetName(), metav1.GetOptions{})
+	_, err := sClient.Get(context.TODO(), s.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := sClient.Create(s)
+		_, err := sClient.Create(context.TODO(), s, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Secret object failed")
 	}
 
@@ -972,37 +973,37 @@ func (c *Client) CreateOrUpdateConfigMapList(cml *v1.ConfigMapList) error {
 
 func (c *Client) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 	cmClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
-	_, err := cmClient.Get(cm.GetName(), metav1.GetOptions{})
+	_, err := cmClient.Get(context.TODO(), cm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := cmClient.Create(cm)
+		_, err := cmClient.Create(context.TODO(), cm, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ConfigMap object failed")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving ConfigMap object failed")
 	}
 
-	_, err = cmClient.Update(cm)
+	_, err = cmClient.Update(context.TODO(), cm, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ConfigMap object failed")
 }
 
 func (c *Client) CreateOrUpdateNamespace(n *v1.Namespace) error {
 	nClient := c.kclient.CoreV1().Namespaces()
-	_, err := nClient.Get(n.GetName(), metav1.GetOptions{})
+	_, err := nClient.Get(context.TODO(), n.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := nClient.Create(n)
+		_, err := nClient.Create(context.TODO(), n, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Namespace object failed")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving Namespace object failed")
 	}
 
-	_, err = nClient.Update(n)
+	_, err = nClient.Update(context.TODO(), n, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ConfigMap object failed")
 }
 
 func (c *Client) DeleteIfExists(nsName string) error {
 	nClient := c.kclient.CoreV1().Namespaces()
-	_, err := nClient.Get(nsName, metav1.GetOptions{})
+	_, err := nClient.Get(context.TODO(), nsName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		// Namespace already deleted
 		return nil
@@ -1011,15 +1012,15 @@ func (c *Client) DeleteIfExists(nsName string) error {
 		return errors.Wrap(err, "retrieving Namespace object failed")
 	}
 
-	err = nClient.Delete(nsName, &metav1.DeleteOptions{})
+	err = nClient.Delete(context.TODO(), nsName, metav1.DeleteOptions{})
 	return errors.Wrap(err, "deleting ConfigMap object failed")
 }
 
 func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) (*v1.ConfigMap, error) {
 	cClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
-	res, err := cClient.Get(cm.GetName(), metav1.GetOptions{})
+	res, err := cClient.Get(context.TODO(), cm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		res, err := cClient.Create(cm)
+		res, err := cClient.Create(context.TODO(), cm, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "creating ConfigMap object failed")
 		}
@@ -1033,9 +1034,9 @@ func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) (*v1.ConfigMap, err
 
 func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
 	sclient := c.kclient.CoreV1().Services(svc.GetNamespace())
-	s, err := sclient.Get(svc.GetName(), metav1.GetOptions{})
+	s, err := sclient.Get(context.TODO(), svc.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err = sclient.Create(svc)
+		_, err = sclient.Create(context.TODO(), svc, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Service object failed")
 	}
 	if err != nil {
@@ -1051,15 +1052,15 @@ func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
 		return nil
 	}
 
-	_, err = sclient.Update(svc)
+	_, err = sclient.Update(context.TODO(), svc, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Service object failed")
 }
 
 func (c *Client) CreateOrUpdateEndpoints(endpoints *v1.Endpoints) error {
 	eclient := c.kclient.CoreV1().Endpoints(endpoints.GetNamespace())
-	e, err := eclient.Get(endpoints.GetName(), metav1.GetOptions{})
+	e, err := eclient.Get(context.TODO(), endpoints.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err = eclient.Create(endpoints)
+		_, err = eclient.Create(context.TODO(), endpoints, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Endpoints object failed")
 	}
 	if err != nil {
@@ -1067,15 +1068,15 @@ func (c *Client) CreateOrUpdateEndpoints(endpoints *v1.Endpoints) error {
 	}
 
 	endpoints.ResourceVersion = e.ResourceVersion
-	_, err = eclient.Update(endpoints)
+	_, err = eclient.Update(context.TODO(), endpoints, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Endpoints object failed")
 }
 
 func (c *Client) CreateOrUpdateRoleBinding(rb *rbacv1.RoleBinding) error {
 	rbClient := c.kclient.RbacV1().RoleBindings(rb.GetNamespace())
-	r, err := rbClient.Get(rb.GetName(), metav1.GetOptions{})
+	r, err := rbClient.Get(context.TODO(), rb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := rbClient.Create(rb)
+		_, err := rbClient.Create(context.TODO(), rb, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating RoleBinding object failed")
 	}
 	if err != nil {
@@ -1089,45 +1090,45 @@ func (c *Client) CreateOrUpdateRoleBinding(rb *rbacv1.RoleBinding) error {
 		return nil
 	}
 
-	_, err = rbClient.Update(rb)
+	_, err = rbClient.Update(context.TODO(), rb, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating RoleBinding object failed")
 }
 
 func (c *Client) CreateOrUpdateRole(r *rbacv1.Role) error {
 	rClient := c.kclient.RbacV1().Roles(r.GetNamespace())
-	_, err := rClient.Get(r.GetName(), metav1.GetOptions{})
+	_, err := rClient.Get(context.TODO(), r.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := rClient.Create(r)
+		_, err := rClient.Create(context.TODO(), r, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Role object failed")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving Role object failed")
 	}
 
-	_, err = rClient.Update(r)
+	_, err = rClient.Update(context.TODO(), r, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Role object failed")
 }
 
 func (c *Client) CreateOrUpdateClusterRole(cr *rbacv1.ClusterRole) error {
 	crClient := c.kclient.RbacV1().ClusterRoles()
-	_, err := crClient.Get(cr.GetName(), metav1.GetOptions{})
+	_, err := crClient.Get(context.TODO(), cr.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := crClient.Create(cr)
+		_, err := crClient.Create(context.TODO(), cr, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ClusterRole object failed")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving ClusterRole object failed")
 	}
 
-	_, err = crClient.Update(cr)
+	_, err = crClient.Update(context.TODO(), cr, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ClusterRole object failed")
 }
 
 func (c *Client) CreateOrUpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding) error {
 	crbClient := c.kclient.RbacV1().ClusterRoleBindings()
-	existing, err := crbClient.Get(crb.GetName(), metav1.GetOptions{})
+	existing, err := crbClient.Get(context.TODO(), crb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := crbClient.Create(crb)
+		_, err := crbClient.Create(context.TODO(), crb, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ClusterRoleBinding object failed")
 	}
 	if err != nil {
@@ -1143,20 +1144,20 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding
 		return nil
 	}
 
-	err = crbClient.Delete(crb.Name, nil)
+	err = crbClient.Delete(context.TODO(), crb.Name, metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrap(err, "deleting ClusterRoleBinding object failed")
 	}
 
-	_, err = crbClient.Create(crb)
+	_, err = crbClient.Create(context.TODO(), crb, metav1.CreateOptions{})
 	return errors.Wrap(err, "updating ClusterRoleBinding object failed")
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(sa *v1.ServiceAccount) error {
 	sClient := c.kclient.CoreV1().ServiceAccounts(sa.GetNamespace())
-	_, err := sClient.Get(sa.GetName(), metav1.GetOptions{})
+	_, err := sClient.Get(context.TODO(), sa.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := sClient.Create(sa)
+		_, err := sClient.Create(context.TODO(), sa, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ServiceAccount object failed")
 	}
 	return errors.Wrap(err, "retrieving ServiceAccount object failed")
@@ -1197,24 +1198,24 @@ func (c *Client) CreateOrUpdateServiceMonitor(sm *monv1.ServiceMonitor) error {
 
 func (c *Client) CreateOrUpdateIngress(ing *v1betaextensions.Ingress) error {
 	ic := c.kclient.ExtensionsV1beta1().Ingresses(ing.GetNamespace())
-	_, err := ic.Get(ing.GetName(), metav1.GetOptions{})
+	_, err := ic.Get(context.TODO(), ing.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err = ic.Create(ing)
+		_, err = ic.Create(context.TODO(), ing, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Ingress object failed")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving Ingress object failed")
 	}
 
-	_, err = ic.Update(ing)
+	_, err = ic.Update(context.TODO(), ing, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Ingress object failed")
 }
 
 func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.APIService) error {
 	apsc := c.aggclient.ApiregistrationV1beta1().APIServices()
-	oldAPIService, err := apsc.Get(apiService.GetName(), metav1.GetOptions{})
+	oldAPIService, err := apsc.Get(context.TODO(), apiService.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err = apsc.Create(apiService)
+		_, err = apsc.Create(context.TODO(), apiService, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating APIService object failed")
 	}
 	if err != nil {
@@ -1225,7 +1226,7 @@ func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.API
 	if len(oldAPIService.Spec.CABundle) > 0 {
 		apiService.Spec.CABundle = oldAPIService.Spec.CABundle
 	}
-	_, err = apsc.Update(apiService)
+	_, err = apsc.Update(context.TODO(), apiService, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating APIService object failed")
 
 }
@@ -1239,7 +1240,7 @@ func (c *Client) WaitForCRDReady(crd *extensionsobj.CustomResourceDefinition) er
 func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, error) {
 	crdClient := c.eclient.ApiextensionsV1beta1().CustomResourceDefinitions()
 
-	crdEst, err := crdClient.Get(crd.ObjectMeta.Name, metav1.GetOptions{})
+	crdEst, err := crdClient.Get(context.TODO(), crd.ObjectMeta.Name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -1263,7 +1264,7 @@ func (c *Client) StatusReporter() *StatusReporter {
 }
 
 func (c *Client) DeleteRoleBinding(binding *rbacv1.RoleBinding) error {
-	err := c.kclient.RbacV1().RoleBindings(binding.Namespace).Delete(binding.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.RbacV1().RoleBindings(binding.Namespace).Delete(context.TODO(), binding.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1272,7 +1273,7 @@ func (c *Client) DeleteRoleBinding(binding *rbacv1.RoleBinding) error {
 }
 
 func (c *Client) DeleteRole(role *rbacv1.Role) error {
-	err := c.kclient.RbacV1().Roles(role.Namespace).Delete(role.GetName(), &metav1.DeleteOptions{})
+	err := c.kclient.RbacV1().Roles(role.Namespace).Delete(context.TODO(), role.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
