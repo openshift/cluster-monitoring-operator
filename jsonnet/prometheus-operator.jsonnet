@@ -94,7 +94,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
           },
         },
       },
-
+    // TODO: remove after 0.40 prometheus-operator is merged.
     clusterRole+: {
      rules+:
       [

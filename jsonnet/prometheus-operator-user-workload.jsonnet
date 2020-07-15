@@ -16,7 +16,7 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
     '0podmonitorCustomResourceDefinition':: {},
     '0prometheusruleCustomResourceDefinition':: {},
     '0thanosrulerCustomResourceDefinition':: {},
-
+    // TODO: remove after 0.40 prometheus-operator is merged.
     clusterRole+: {
      rules+:
       [
