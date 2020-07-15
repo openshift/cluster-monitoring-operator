@@ -22,6 +22,10 @@ spec:
         weight: 100
   baseImage: openshift/prometheus-alertmanager
   containers:
+  - name: config-reloader
+    resources:
+      requests:
+        cpu: 1m
   - args:
     - -provider=openshift
     - -https-address=:9095
