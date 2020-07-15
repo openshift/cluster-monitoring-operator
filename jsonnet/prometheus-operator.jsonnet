@@ -95,6 +95,43 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
         },
       },
 
+    clusterRole+: {
+     rules+:
+      [
+	  {
+	    "apiGroups": [
+	      "apiextensions.k8s.io"
+	    ],
+	    "resources": [
+	      "customresourcedefinitions"
+	    ],
+	    "verbs": [
+	      "create"
+	    ]
+	  },
+	  {
+	    "apiGroups": [
+	      "apiextensions.k8s.io"
+	    ],
+	    "resourceNames": [
+	      "alertmanagers.monitoring.coreos.com",
+	      "podmonitors.monitoring.coreos.com",
+	      "prometheuses.monitoring.coreos.com",
+	      "prometheusrules.monitoring.coreos.com",
+	      "servicemonitors.monitoring.coreos.com",
+	      "thanosrulers.monitoring.coreos.com"
+	    ],
+	    "resources": [
+	      "customresourcedefinitions"
+	    ],
+	    "verbs": [
+	      "get",
+	      "update"
+	    ]
+	  }
+	],
+    },
+
     service+:
       service.mixin.metadata.withAnnotations({
         'service.beta.openshift.io/serving-cert-secret-name': "prometheus-operator-tls",
