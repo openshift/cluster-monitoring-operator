@@ -30,7 +30,7 @@ spec:
           name: https-main
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         volumeMounts:
         - mountPath: /etc/tls/private
@@ -50,7 +50,7 @@ spec:
           name: https-self
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         volumeMounts:
         - mountPath: /etc/tls/private
@@ -65,7 +65,7 @@ spec:
         name: openshift-state-metrics
         resources:
           requests:
-            cpu: 100m
+            cpu: 1m
             memory: 150Mi
       nodeSelector:
         kubernetes.io/os: linux
