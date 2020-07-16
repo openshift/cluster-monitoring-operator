@@ -644,7 +644,7 @@ spec:
         severity: critical
     - alert: KubeStatefulSetGenerationMismatch
       annotations:
-        message: StatefulSet {{ $labels.namespace }}/{{ labels.statefulset }} generation mismatch
+        message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} generation mismatch
       expr: |
         kube_statefulset_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
           !=
