@@ -4,14 +4,10 @@ go 1.13
 
 require (
 	github.com/Jeffail/gabs v1.1.1
-	github.com/brancz/gojsontoyaml v0.0.0-20191212081931-bf2969bbd742
-	github.com/campoy/embedmd v1.0.0
 	github.com/coreos/prometheus-operator v0.38.1
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-bindata/go-bindata/v3 v3.1.3
 	github.com/gogo/protobuf v1.3.1
 	github.com/imdario/mergo v0.3.6 // indirect
-	github.com/jsonnet-bundler/jsonnet-bundler v0.3.1
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
 	github.com/openshift/api v0.0.0-20200116145750-0e2ff1e215dd
