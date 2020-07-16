@@ -730,6 +730,10 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 		}
 	}
 
+	if len(f.config.PrometheusK8sConfig.RemoteWrite) > 0 {
+		p.Spec.RemoteWrite = f.config.PrometheusK8sConfig.RemoteWrite
+	}
+
 	if f.config.EtcdConfig == nil {
 		secrets := []string{}
 		for _, s := range p.Spec.Secrets {

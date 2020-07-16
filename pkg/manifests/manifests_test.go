@@ -515,6 +515,8 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
       memory: 750Mi
   externalLabels:
     datacenter: eu-west
+  remoteWrite:
+  - url: "https://test.remotewrite.com/api/write"
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
 `)
@@ -568,6 +570,10 @@ ingress:
 	storageRequestPtr := &storageRequest
 	if storageRequestPtr.String() != "15Gi" {
 		t.Fatal("Prometheus volumeClaimTemplate not configured correctly, expected 15Gi storage request, but found", storageRequestPtr.String())
+	}
+
+	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
+		t.Fatal("Prometheus remote-write is not configured correctly")
 	}
 }
 
