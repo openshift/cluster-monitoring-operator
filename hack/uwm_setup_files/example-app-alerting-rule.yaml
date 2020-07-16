@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: prometheus-example-rule
+  namespace: ns1
+spec:
+  groups:
+  - name: example
+    rules:
+    - record: version:blah:count
+      expr: count(version)
+    - alert: VersionAlert
+      expr: version{namespace="ns1",job="prometheus-example-app"} == 1
+      for: 1s
