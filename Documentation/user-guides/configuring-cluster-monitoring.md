@@ -80,6 +80,8 @@ resources: [v1.ResourceRequirements](https://kubernetes.io/docs/api-reference/v1
 # specified by users
 externalLabels:
   [ - <labelname>: <labelvalue> ]
+remoteWrite:
+  - [RemoteWriteSpec](https://github.com/coreos/prometheus-operator/blob/v0.23.2/Documentation/api.md#remotewritespec)
 ```
 
 ### AlertmanagerMainConfig
