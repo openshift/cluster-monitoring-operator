@@ -121,7 +121,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
           },
           {
             expr: |||
-              cluster:nodes_roles * on (node)
+              topk by(node) (1, cluster:nodes_roles) * on (node)
                 group_right( label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io, label_node_openshift_io_os_id, label_kubernetes_io_arch,
                              label_node_role_kubernetes_io_master, label_node_role_kubernetes_io_infra)
               label_replace( cluster:cpu_core_hyperthreading, "node", "$1", "instance", "(.*)" )
