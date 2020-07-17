@@ -255,10 +255,6 @@ func NewFactory(namespace, namespaceUserWorkload string, c *Config) *Factory {
 }
 
 func (f *Factory) PrometheusExternalURL(host string) *url.URL {
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport != "" {
-		host = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport
-	}
-
 	return &url.URL{
 		Scheme: "https",
 		Host:   host,
@@ -267,10 +263,6 @@ func (f *Factory) PrometheusExternalURL(host string) *url.URL {
 }
 
 func (f *Factory) AlertmanagerExternalURL(host string) *url.URL {
-	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Hostport != "" {
-		host = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Hostport
-	}
-
 	return &url.URL{
 		Scheme: "https",
 		Host:   host,
@@ -457,9 +449,6 @@ func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
 		return nil, err
 	}
 
-	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Hostport != "" {
-		r.Spec.Host = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Hostport
-	}
 	r.Namespace = f.namespace
 
 	return r, nil
@@ -1151,9 +1140,6 @@ func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 		return nil, err
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport != "" {
-		r.Spec.Host = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport
-	}
 	r.Namespace = f.namespace
 
 	return r, nil
@@ -1165,10 +1151,6 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 		return nil, err
 	}
 
-	// apply hostport configuration to thanos
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport != "" {
-		r.Spec.Host = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Hostport
-	}
 	r.Namespace = f.namespace
 
 	return r, nil
@@ -2204,9 +2186,6 @@ func (f *Factory) GrafanaRoute() (*routev1.Route, error) {
 		return nil, err
 	}
 
-	if f.config.ClusterMonitoringConfiguration.GrafanaConfig.Hostport != "" {
-		r.Spec.Host = f.config.ClusterMonitoringConfiguration.GrafanaConfig.Hostport
-	}
 	r.Namespace = f.namespace
 
 	return r, nil

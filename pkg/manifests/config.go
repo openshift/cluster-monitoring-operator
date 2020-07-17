@@ -93,7 +93,6 @@ type PrometheusK8sConfig struct {
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	ExternalLabels      map[string]string         `json:"externalLabels"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
-	Hostport            string                    `json:"hostport"`
 	RemoteWrite         []monv1.RemoteWriteSpec   `json:"remoteWrite"`
 	TelemetryMatches    []string                  `json:"-"`
 }
@@ -103,7 +102,6 @@ type AlertmanagerMainConfig struct {
 	Tolerations         []v1.Toleration           `json:"tolerations"`
 	Resources           *v1.ResourceRequirements  `json:"resources"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
-	Hostport            string                    `json:"hostport"`
 }
 
 type ThanosRulerConfig struct {
@@ -123,7 +121,6 @@ type ThanosQuerierConfig struct {
 type GrafanaConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Tolerations  []v1.Toleration   `json:"tolerations"`
-	Hostport     string            `json:"hostport"`
 }
 
 type KubeStateMetricsConfig struct {
