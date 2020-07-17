@@ -73,12 +73,14 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
 	}
 
-	// TODO(spasquie): to be removed once the console uses the configmap from the "openshift-config-managed" namespace.
+	// TODO: remove in 4.7
+	// The sharing-config configmap isn't used anymore by the console in 4.6 and should be deleted if present.
 	cm := t.factory.SharingConfigDeprecated(promURL, amURL, grafanaURL, thanosURL)
-	err = t.client.CreateOrUpdateConfigMap(cm)
+	err = t.client.DeleteConfigMap(cm)
 	if err != nil {
-		return errors.Wrapf(err, "reconciling %s/%s ConfigMap failed", cm.Namespace, cm.Name)
+		return errors.Wrapf(err, "failed to delete %s/%s ConfigMap", cm.Namespace, cm.Name)
 	}
+	// End of remove
 
 	cm = t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
 	err = t.client.CreateOrUpdateConfigMap(cm)
