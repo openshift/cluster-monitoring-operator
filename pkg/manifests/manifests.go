@@ -1156,6 +1156,7 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 	return r, nil
 }
 
+// TODO: remove in 4.7
 func (f *Factory) SharingConfigDeprecated(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1170,6 +1171,8 @@ func (f *Factory) SharingConfigDeprecated(promHost, amHost, grafanaHost, thanosH
 		},
 	}
 }
+
+// End of remove
 
 func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
 	return &v1.ConfigMap{
