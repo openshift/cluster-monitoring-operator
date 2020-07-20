@@ -355,6 +355,15 @@ func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
+func setContainerEnvironmentVariable(container *v1.Container, name, value string) {
+	for i := range container.Env {
+		if container.Env[i].Name == name {
+			container.Env[i].Value = value
+			break
+		}
+	}
+}
+
 func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(MustAssetReader(AlertmanagerMain))
 	if err != nil {
@@ -383,27 +392,19 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		a.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Tolerations
 	}
 
-	setEnv := func(container *v1.Container, name, value string) {
-		for i := range container.Env {
-			if container.Env[i].Name == name {
-				container.Env[i].Value = value
-				break
-			}
-		}
-	}
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
 		case "alertmanager-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
 			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-				setEnv(&a.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
+				setContainerEnvironmentVariable(&a.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 			}
 			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-				setEnv(&a.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+				setContainerEnvironmentVariable(&a.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
 			}
 			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-				setEnv(&a.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
+				setContainerEnvironmentVariable(&a.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 			}
 
 			if trustedCABundleCM != nil {
@@ -564,9 +565,16 @@ func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) 
 		return nil, err
 	}
 
-	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.KubeRbacProxy
-	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
-	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.OpenShiftStateMetrics
+	for i, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "kube-rbac-proxy-main":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "kube-rbac-proxy-self":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "openshift-state-metrics":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OpenShiftStateMetrics
+		}
+	}
 
 	if f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.NodeSelector != nil {
 		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.NodeSelector
@@ -620,9 +628,21 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	ds.Spec.Template.Spec.InitContainers[0].Image = f.config.Images.NodeExporter
-	ds.Spec.Template.Spec.Containers[0].Image = f.config.Images.NodeExporter
-	ds.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
+	for i, container := range ds.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "node-exporter":
+			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.NodeExporter
+		case "kube-rbac-proxy":
+			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		}
+	}
+
+	for i, container := range ds.Spec.Template.Spec.InitContainers {
+		switch container.Name {
+		case "init-textfile":
+			ds.Spec.Template.Spec.InitContainers[i].Image = f.config.Images.NodeExporter
+		}
+	}
 
 	ds.Namespace = f.namespace
 
@@ -1200,16 +1220,6 @@ func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
-const (
-	// These constants refer to indices of prometheus-k8s containers.
-	// They need to be in sync with jsonnet/prometheus.jsonnet
-	K8S_CONTAINER_OAUTH_PROXY      = 0
-	K8S_CONTAINER_KUBE_RBAC_PROXY  = 1
-	K8S_CONTAINER_PROM_LABEL_PROXY = 2
-	K8S_CONTAINER_THANOS_SIDECAR   = 3
-	K8S_CONTAINER_PROMETHEUS       = 4
-)
-
 func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(MustAssetReader(PrometheusK8s))
 	if err != nil {
@@ -1338,32 +1348,29 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Image = f.config.Images.OauthProxy
-	p.Spec.Containers[K8S_CONTAINER_KUBE_RBAC_PROXY].Image = f.config.Images.KubeRbacProxy
-	p.Spec.Containers[K8S_CONTAINER_PROM_LABEL_PROXY].Image = f.config.Images.PromLabelProxy
-
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespace
 
-	setEnv := func(name, value string) {
-		for i := range p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Env {
-			if p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Env[i].Name == name {
-				p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Env[i].Value = value
-				break
+	for i, container := range p.Spec.Containers {
+		switch container.Name {
+		case "prometheus-proxy":
+			p.Spec.Containers[i].Image = f.config.Images.OauthProxy
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+				setContainerEnvironmentVariable(&p.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+				setContainerEnvironmentVariable(&p.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+				setContainerEnvironmentVariable(&p.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
+			}
+		case "kube-rbac-proxy":
+			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "prom-label-proxy":
+			p.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}
 	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-	}
-
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
 		VolumeSource: v1.VolumeSource{
@@ -1385,16 +1392,14 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		// we only need the trusted CA bundle in:
 		// 1. Prometheus, because users might want to configure external remote write.
 		// 2. In OAuth proxy, as that communicates externally when executing the OAuth handshake.
-
-		p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].VolumeMounts = append(
-			p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].VolumeMounts,
-			trustedCABundleVolumeMount(volumeName),
-		)
-
-		p.Spec.Containers[K8S_CONTAINER_PROMETHEUS].VolumeMounts = append(
-			p.Spec.Containers[K8S_CONTAINER_PROMETHEUS].VolumeMounts,
-			trustedCABundleVolumeMount(volumeName),
-		)
+		for i, container := range p.Spec.Containers {
+			if container.Name == "prometeus-proxy" || container.Name == "prometheus" {
+				p.Spec.Containers[i].VolumeMounts = append(
+					p.Spec.Containers[i].VolumeMounts,
+					trustedCABundleVolumeMount(volumeName),
+				)
+			}
+		}
 	}
 
 	return p, nil
@@ -1480,7 +1485,11 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	p.Spec.Containers[0].Image = f.config.Images.KubeRbacProxy
+	for i, container := range p.Spec.Containers {
+		if container.Name == "kube-rbac-proxy" {
+			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		}
+	}
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
 	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	p.Namespace = f.namespaceUserWorkload
@@ -1838,32 +1847,38 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Tolerations
 	}
 
-	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
-	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
+	for i, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "kube-rbac-proxy":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "prometheus-operator":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusOperator
 
-	args := d.Spec.Template.Spec.Containers[0].Args
-	for i := range args {
-		if strings.HasPrefix(args[i], PrometheusOperatorNamespaceFlag) && len(namespaces) > 0 {
-			args[i] = PrometheusOperatorNamespaceFlag + strings.Join(namespaces, ",")
-		}
+			args := d.Spec.Template.Spec.Containers[i].Args
+			for i := range args {
+				if strings.HasPrefix(args[i], PrometheusOperatorNamespaceFlag) && len(namespaces) > 0 {
+					args[i] = PrometheusOperatorNamespaceFlag + strings.Join(namespaces, ",")
+				}
 
-		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.Images.PrometheusConfigReloader != "" {
-			args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
-		}
+				if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.Images.PrometheusConfigReloader != "" {
+					args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
+				}
 
-		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) && f.config.Images.ConfigmapReloader != "" {
-			args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
-		}
+				if strings.HasPrefix(args[i], ConfigReloaderImageFlag) && f.config.Images.ConfigmapReloader != "" {
+					args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
+				}
 
-		if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) && f.namespace != "" {
-			args[i] = PrometheusOperatorAlertmanagerInstanceNamespacesFlag + f.namespace
-		}
+				if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) && f.namespace != "" {
+					args[i] = PrometheusOperatorAlertmanagerInstanceNamespacesFlag + f.namespace
+				}
 
-		if strings.HasPrefix(args[i], PrometheusOperatorPrometheusInstanceNamespacesFlag) && f.namespace != "" {
-			args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespace
+				if strings.HasPrefix(args[i], PrometheusOperatorPrometheusInstanceNamespacesFlag) && f.namespace != "" {
+					args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespace
+				}
+			}
+			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
-	d.Spec.Template.Spec.Containers[0].Args = args
 	d.Namespace = f.namespace
 
 	return d, nil
@@ -1893,32 +1908,39 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 
 	// end of remove
 
-	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.PrometheusOperator
-	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.KubeRbacProxy
+	for i, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "kube-rbac-proxy":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "prometheus-operator":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusOperator
 
-	args := d.Spec.Template.Spec.Containers[0].Args
-	for i := range args {
-		if strings.HasPrefix(args[i], PrometheusOperatorDenyNamespaceFlag) {
-			args[i] = PrometheusOperatorDenyNamespaceFlag + strings.Join(denyNamespaces, ",")
-		}
+			args := d.Spec.Template.Spec.Containers[i].Args
+			for i := range args {
+				if strings.HasPrefix(args[i], PrometheusOperatorDenyNamespaceFlag) {
+					args[i] = PrometheusOperatorDenyNamespaceFlag + strings.Join(denyNamespaces, ",")
+				}
 
-		if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) {
-			args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
-		}
+				if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) {
+					args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
+				}
 
-		if strings.HasPrefix(args[i], ConfigReloaderImageFlag) {
-			args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
-		}
+				if strings.HasPrefix(args[i], ConfigReloaderImageFlag) {
+					args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
+				}
 
-		if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) {
-			args[i] = PrometheusOperatorAlertmanagerInstanceNamespacesFlag + f.namespaceUserWorkload
-		}
+				if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) {
+					args[i] = PrometheusOperatorAlertmanagerInstanceNamespacesFlag + f.namespaceUserWorkload
+				}
 
-		if strings.HasPrefix(args[i], PrometheusOperatorPrometheusInstanceNamespacesFlag) {
-			args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespaceUserWorkload
+				if strings.HasPrefix(args[i], PrometheusOperatorPrometheusInstanceNamespacesFlag) {
+					args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespaceUserWorkload
+				}
+			}
+			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
-	d.Spec.Template.Spec.Containers[0].Args = args
+
 	d.Namespace = f.namespaceUserWorkload
 
 	return d, nil
@@ -2103,44 +2125,53 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 		return nil, err
 	}
 
-	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.Grafana
+	for i, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "grafana":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.Grafana
 
-	if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		vols := []v1.Volume{}
-		volMounts := []v1.VolumeMount{}
-		for _, v := range d.Spec.Template.Spec.Volumes {
-			if v.Name != "grafana-dashboard-etcd" {
-				vols = append(vols, v)
+			if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
+				vols := []v1.Volume{}
+				volMounts := []v1.VolumeMount{}
+				for _, v := range d.Spec.Template.Spec.Volumes {
+					if v.Name != "grafana-dashboard-etcd" {
+						vols = append(vols, v)
+					}
+				}
+				for _, vm := range d.Spec.Template.Spec.Containers[i].VolumeMounts {
+					if vm.Name != "grafana-dashboard-etcd" {
+						volMounts = append(volMounts, vm)
+					}
+				}
+
+				d.Spec.Template.Spec.Volumes = vols
+				d.Spec.Template.Spec.Containers[i].VolumeMounts = volMounts
+			}
+
+		case "grafana-proxy":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OauthProxy
+
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
+			}
+
+			if proxyCABundleCM != nil {
+				volumeName := "grafana-trusted-ca-bundle"
+				d.Spec.Template.Spec.Containers[i].VolumeMounts = append(d.Spec.Template.Spec.Containers[i].VolumeMounts, trustedCABundleVolumeMount(volumeName))
+				volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
+				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+					Key:  TrustedCABundleKey,
+					Path: "tls-ca-bundle.pem",
+				})
+				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
 			}
 		}
-		for _, vm := range d.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if vm.Name != "grafana-dashboard-etcd" {
-				volMounts = append(volMounts, vm)
-			}
-		}
-
-		d.Spec.Template.Spec.Volumes = vols
-		d.Spec.Template.Spec.Containers[0].VolumeMounts = volMounts
-	}
-
-	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.OauthProxy
-
-	setEnv := func(name, value string) {
-		for i := range d.Spec.Template.Spec.Containers[1].Env {
-			if d.Spec.Template.Spec.Containers[1].Env[i].Name == name {
-				d.Spec.Template.Spec.Containers[1].Env[i].Value = value
-				break
-			}
-		}
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 	}
 
 	if f.config.ClusterMonitoringConfiguration.GrafanaConfig.NodeSelector != nil {
@@ -2149,17 +2180,6 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 
 	if len(f.config.ClusterMonitoringConfiguration.GrafanaConfig.Tolerations) > 0 {
 		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.GrafanaConfig.Tolerations
-	}
-
-	if proxyCABundleCM != nil {
-		volumeName := "grafana-trusted-ca-bundle"
-		d.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.Spec.Template.Spec.Containers[1].VolumeMounts, trustedCABundleVolumeMount(volumeName))
-		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  TrustedCABundleKey,
-			Path: "tls-ca-bundle.pem",
-		})
-		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
 	}
 
 	d.Namespace = f.namespace
@@ -2627,27 +2647,19 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 
 	d.Namespace = f.namespace
 
-	setEnv := func(container *v1.Container, name, value string) {
-		for i := range container.Env {
-			if container.Env[i].Name == name {
-				container.Env[i].Value = value
-				break
-			}
-		}
-	}
 	for i, c := range d.Spec.Template.Spec.Containers {
 		switch c.Name {
 		case "oauth-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
 			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-				setEnv(&d.Spec.Template.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
 			}
 			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-				setEnv(&d.Spec.Template.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
 			}
 			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-				setEnv(&d.Spec.Template.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 			}
 
 			if trustedCA != nil {
@@ -2834,46 +2846,57 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 		return nil, err
 	}
 
-	setEnv := func(name, value string) {
-		for i := range d.Spec.Template.Spec.Containers[0].Env {
-			if d.Spec.Template.Spec.Containers[0].Env[i].Name == name {
-				d.Spec.Template.Spec.Containers[0].Env[i].Value = value
-				break
+	for i, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "telemeter-client":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.TelemeterClient
+
+			if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID != "" {
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "ID", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID)
 			}
+			if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL != "" {
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "TO", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL)
+			}
+
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
+			}
+
+			cmd := []string{}
+			for _, a := range d.Spec.Template.Spec.Containers[i].Command {
+				if !strings.HasPrefix(a, "--match=") {
+					cmd = append(cmd, a)
+				}
+			}
+			for _, m := range f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches {
+				cmd = append(cmd, fmt.Sprintf("--match=%s", m))
+			}
+			cmd = append(cmd, "--limit-bytes=5242880")
+			d.Spec.Template.Spec.Containers[i].Command = cmd
+
+			if proxyCABundleCM != nil {
+				volumeName := "telemeter-trusted-ca-bundle"
+				d.Spec.Template.Spec.Containers[i].VolumeMounts = append(d.Spec.Template.Spec.Containers[i].VolumeMounts, trustedCABundleVolumeMount(volumeName))
+				volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
+				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+					Key:  TrustedCABundleKey,
+					Path: "tls-ca-bundle.pem",
+				})
+				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
+			}
+
+		case "reload":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.ConfigmapReloader
+		case "kube-rbac-proxy":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		}
 	}
-	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID != "" {
-		setEnv("ID", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID)
-	}
-	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL != "" {
-		setEnv("TO", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL)
-	}
-
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-	}
-
-	d.Spec.Template.Spec.Containers[0].Image = f.config.Images.TelemeterClient
-	d.Spec.Template.Spec.Containers[1].Image = f.config.Images.ConfigmapReloader
-	d.Spec.Template.Spec.Containers[2].Image = f.config.Images.KubeRbacProxy
-
-	cmd := []string{}
-	for _, a := range d.Spec.Template.Spec.Containers[0].Command {
-		if !strings.HasPrefix(a, "--match=") {
-			cmd = append(cmd, a)
-		}
-	}
-	for _, m := range f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches {
-		cmd = append(cmd, fmt.Sprintf("--match=%s", m))
-	}
-	cmd = append(cmd, "--limit-bytes=5242880")
-	d.Spec.Template.Spec.Containers[0].Command = cmd
 
 	if len(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.NodeSelector
@@ -2882,16 +2905,6 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Tolerations
 	}
 	d.Namespace = f.namespace
-	if proxyCABundleCM != nil {
-		volumeName := "telemeter-trusted-ca-bundle"
-		d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCABundleVolumeMount(volumeName))
-		volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  TrustedCABundleKey,
-			Path: "tls-ca-bundle.pem",
-		})
-		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
-	}
 	return d, nil
 }
 
@@ -3106,23 +3119,35 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 	}
 	// end of remove
 
-	t.Spec.Containers[1].Image = f.config.Images.OauthProxy
-	setEnv := func(name, value string) {
-		for i := range t.Spec.Containers[1].Env {
-			if t.Spec.Containers[1].Env[i].Name == name {
-				t.Spec.Containers[1].Env[i].Value = value
-				break
+	for i, container := range t.Spec.Containers {
+		switch container.Name {
+		case "thanos-ruler-proxy":
+			t.Spec.Containers[i].Image = f.config.Images.OauthProxy
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
+				setContainerEnvironmentVariable(&t.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
+				setContainerEnvironmentVariable(&t.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+			}
+			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
+				setContainerEnvironmentVariable(&t.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
+			}
+
+			if trustedCA != nil {
+				volumeName := "thanos-ruler-trusted-ca-bundle"
+				t.Spec.Containers[i].VolumeMounts = append(
+					t.Spec.Containers[i].VolumeMounts,
+					trustedCABundleVolumeMount(volumeName),
+				)
+
+				volume := trustedCABundleVolume(trustedCA.Name, volumeName)
+				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+					Key:  TrustedCABundleKey,
+					Path: "tls-ca-bundle.pem",
+				})
+				t.Spec.Volumes = append(t.Spec.Volumes, volume)
 			}
 		}
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-		setEnv("HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-		setEnv("HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-	}
-	if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-		setEnv("NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 	}
 
 	// Mounting TLS secret to thanos-ruler
@@ -3139,21 +3164,6 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 		},
 	}
 	t.Spec.Volumes = append(t.Spec.Volumes, secretVolume)
-
-	if trustedCA != nil {
-		volumeName := "thanos-ruler-trusted-ca-bundle"
-		t.Spec.Containers[1].VolumeMounts = append(
-			t.Spec.Containers[1].VolumeMounts,
-			trustedCABundleVolumeMount(volumeName),
-		)
-
-		volume := trustedCABundleVolume(trustedCA.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  TrustedCABundleKey,
-			Path: "tls-ca-bundle.pem",
-		})
-		t.Spec.Volumes = append(t.Spec.Volumes, volume)
-	}
 
 	if queryURL != "" {
 		t.Spec.AlertQueryURL = queryURL

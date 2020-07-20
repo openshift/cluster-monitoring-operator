@@ -967,16 +967,18 @@ ingress:
 		t.Fatal("Prometheus image is not configured correctly")
 	}
 
-	if p.Spec.Containers[K8S_CONTAINER_OAUTH_PROXY].Image != "docker.io/openshift/origin-oauth-proxy:latest" {
-		t.Fatal("oauth-proxy image is not configured correctly")
-	}
+	for _, container := range p.Spec.Containers {
+		if container.Name == "oauth-proxy" && container.Image != "docker.io/openshift/origin-oauth-proxy:latest" {
+			t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
+		}
 
-	if p.Spec.Containers[K8S_CONTAINER_KUBE_RBAC_PROXY].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
-		t.Fatal("kube-rbac-proxy image is not configured correctly")
-	}
+		if container.Name == "kube-rbac-proxy" && container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+			t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
+		}
 
-	if p.Spec.Containers[K8S_CONTAINER_PROM_LABEL_PROXY].Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
-		t.Fatal("prom-label-proxy image is not configured correctly")
+		if container.Name == "prom-label-proxy" && container.Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
+			t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
+		}
 	}
 
 	cpuLimit := p.Spec.Resources.Limits[v1.ResourceCPU]
