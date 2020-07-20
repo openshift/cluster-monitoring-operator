@@ -182,7 +182,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	go o.kubeSystemCmapInf.Run(stopc)
 
 	klog.V(4).Info("Waiting for initial cache sync.")
-	ok := cache.WaitForCacheSync(stopc, o.cmapInf.HasSynced, o.kubeSystemCmapInf.HasSynced)
+	ok := cache.WaitForCacheSync(stopc, o.cmapInf.HasSynced, o.secretInf.HasSynced, o.kubeSystemCmapInf.HasSynced)
 	if !ok {
 		return errors.New("failed to sync informers")
 	}
