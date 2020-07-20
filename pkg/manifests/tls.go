@@ -30,6 +30,8 @@ import (
 	"k8s.io/apiserver/pkg/authentication/user"
 )
 
+const certificateLifetime = time.Duration(crypto.DefaultCertificateLifetimeInDays) * 24 * time.Hour
+
 // Taken from
 // https://github.com/openshift/library-go/blob/08c2fd1b452520da35ad210930ea9d100545589a/pkg/operator/certrotation/signer.go#L68-L86
 // without refresh time handling. We just take care of rotation if we reach 1/5 of the validity timespan before expiration.
@@ -110,7 +112,9 @@ func RotateGRPCSecret(s *v1.Secret) error {
 		}
 	} else {
 		template := curCA.Config.Certs[0]
-		template.NotAfter = time.Now().Add(time.Duration(crypto.DefaultCertificateLifetimeInDays) * 24 * time.Hour)
+		now := time.Now()
+		template.NotBefore = now.Add(-1 * time.Second)
+		template.NotAfter = now.Add(certificateLifetime)
 		template.SerialNumber = template.SerialNumber.Add(template.SerialNumber, big.NewInt(1))
 
 		newCACert, err := createCertificate(template, template, template.PublicKey, curCA.Config.Key)
