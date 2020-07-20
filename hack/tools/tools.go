@@ -1,4 +1,4 @@
-// Copyright 2018 jsonnet-bundler authors
+// Copyright 2020 The prometheus-operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !go1.12
+//+build tools
 
-package main
+// Package tools tracks dependencies for tools that used in the build process.
+// See https://github.com/golang/go/issues/25922
+package tools
 
 import (
-	"os"
-	"path/filepath"
-
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	_ "github.com/brancz/gojsontoyaml"
+	_ "github.com/campoy/embedmd"
+	_ "github.com/go-bindata/go-bindata/v3/go-bindata"
+	_ "github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb"
+	_ "github.com/google/go-jsonnet/cmd/jsonnet"
+	_ "github.com/google/go-jsonnet/cmd/jsonnetfmt"
+	_ "github.com/prometheus/prometheus/cmd/promtool"
 )
-
-func newApp() *kingpin.Application {
-	a := kingpin.New(filepath.Base(os.Args[0]), "A jsonnet package manager")
-	return a
-}

@@ -4,6 +4,7 @@ GO_PKG=github.com/openshift/cluster-monitoring-operator
 REPO?=quay.io/openshift/cluster-monitoring-operator
 TAG?=$(shell git rev-parse --short HEAD)
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
+
 GO111MODULE?=on
 GOPROXY?=http://proxy.golang.org
 export GO111MODULE
@@ -11,39 +12,34 @@ export GOPROXY
 
 PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
 GOLANG_FILES:=$(shell find . -name \*.go -print) pkg/manifests/bindata.go
-FIRST_GOPATH:=$(firstword $(subst :, ,$(shell go env GOPATH)))
-EMBEDMD_BIN=$(FIRST_GOPATH)/bin/embedmd
-GOBINDATA_BIN=$(FIRST_GOPATH)/bin/go-bindata
-JB_BINARY=$(FIRST_GOPATH)/bin/jb
-GOJSONTOYAML_BINARY=$(FIRST_GOPATH)/bin/gojsontoyaml
 ASSETS=$(shell grep -oh 'assets/.*\.yaml' pkg/manifests/manifests.go)
-JSONNET_SRC=$(shell find ./jsonnet -type f)
-JSONNET_VENDOR=jsonnet/jsonnetfile.lock.json jsonnet/vendor
+
+BIN_DIR ?= $(shell pwd)/tmp/bin
+
+EMBEDMD_BIN=$(BIN_DIR)/embedmd
+GOBINDATA_BIN=$(BIN_DIR)/go-bindata
+JB_BIN=$(BIN_DIR)/jb
+GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
+JSONNET_BIN=$(BIN_DIR)/jsonnet
+JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
+PROMTOOL_BIN=$(BIN_DIR)/promtool
+TOOLING=$(EMBEDMD_BIN) $(GOBINDATA_BIN) $(JB_BIN) $(GOJSONTOYAML) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN)
+
+JSONNET_SRC=$(shell find ./jsonnet -type f -not -path "./jsonnet/vendor*")
+JSONNET_VENDOR=jsonnet/vendor
 
 GO_BUILD_RECIPE=GOOS=linux CGO_ENABLED=0 go build --ldflags="-s -X $(GO_PKG)/pkg/operator.Version=$(VERSION)"
-CONTAINER_CMD:=docker run --rm \
-		-u="$(shell id -u):$(shell id -g)" \
-		-v "$(shell go env GOCACHE):/.cache/go-build:Z" \
-		-v "$(PWD):/go/src/$(GO_PKG):Z" \
-		-w "/go/src/$(GO_PKG)" \
-		-e GO111MODULE=$(GO111MODULE) \
-		quay.io/coreos/jsonnet-ci:release-0.39
 
 .PHONY: all
-all: format generate build test
+all: clean format generate build test
 
 .PHONY: clean
 clean:
-	# Remove all files and directories ignored by git.
-	git clean -Xfd .
+	rm -rf $(JSONNET_VENDOR) operator .hack-operator-image tmp/
 
 ############
 # Building #
 ############
-
-.PHONY: build-in-docker
-build-in-docker:
-	$(CONTAINER_CMD) $(MAKE) $(MFLAGS) build
 
 .PHONY: build
 build: operator
@@ -79,29 +75,30 @@ vendor:
 	go mod verify
 
 .PHONY: generate
-generate: $(EMBEDMD_BIN) merge-cluster-roles pkg/manifests/bindata.go docs
+generate: pkg/manifests/bindata.go manifests/0000_50_cluster_monitoring_operator_02-role.yaml docs
 
-.PHONY: generate-in-docker
-generate-in-docker:
-	$(CONTAINER_CMD) $(MAKE) $(MFLAGS) generate
+$(JSONNET_VENDOR): $(JB_BIN) jsonnet/jsonnetfile.json
+	cd jsonnet && $(JB_BIN) install
 
-jsonnet/vendor: $(JB_BINARY) jsonnet/jsonnetfile.json
-	cd jsonnet && jb install
+$(ASSETS): build-jsonnet
+	# Check if files were properly generated
+	[ -f "$@" ] || exit 1
 
-$(ASSETS): $(JSONNET_SRC) $(JSONNET_VENDOR) $(GOJSONTOYAML_BINARY) hack/build-jsonnet.sh
+.PHONY: build-jsonnet
+build-jsonnet: $(JSONNET_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_SRC) $(JSONNET_VENDOR)
 	./hack/build-jsonnet.sh
 
 pkg/manifests/bindata.go: $(GOBINDATA_BIN) $(ASSETS)
 	# Using "-modtime 1" to make generate target deterministic. It sets all file time stamps to unix timestamp 1
-	go-bindata -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
+	$(GOBINDATA_BIN) -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
 
-merge-cluster-roles: manifests/0000_50_cluster_monitoring_operator_02-role.yaml
-manifests/0000_50_cluster_monitoring_operator_02-role.yaml: $(ASSETS) hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in
+# Merge cluster roles
+manifests/0000_50_cluster_monitoring_operator_02-role.yaml: hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
 	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > $@
 
 .PHONY: docs
-docs: Documentation/telemeter_query
-	embedmd -w `find Documentation -name "*.md"`
+docs: $(EMBEDMD_BIN) Documentation/telemeter_query
+	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
 
 Documentation/telemeter_query: manifests/0000_50_cluster_monitoring_operator_04-config.yaml hack/telemeter_query.go
 	go generate ./hack/telemeter_query.go > Documentation/telemeter_query
@@ -111,15 +108,23 @@ Documentation/telemeter_query: manifests/0000_50_cluster_monitoring_operator_04-
 ##############
 
 .PHONY: format
-format: go-fmt shellcheck
+format: go-fmt shellcheck jsonnet-fmt check-rules
 
 .PHONY: go-fmt
 go-fmt:
 	go fmt $(PKGS)
 
+.PHONY: jsonnet-fmt
+jsonnet-fmt: $(JSONNETFMT_BIN)
+	find jsonnet/ -name 'vendor' -prune -o -name '*.libsonnet' -o -name '*.jsonnet' -print | xargs -n 1 -- $(JSONNETFMT_BIN) -i
+
 .PHONY: shellcheck
 shellcheck:
 	hack/shellcheck.sh
+
+.PHONY: check-rules
+check-rules: $(PROMTOOL_BIN) $(GOJSONTOYAML_BIN) assets/prometheus-k8s/rules.yaml
+	@$(PROMTOOL_BIN) check rules <(cat assets/prometheus-k8s/rules.yaml | $(GOJSONTOYAML_BIN) -yamltojson | jq .spec) | tee tmp/rules.out
 
 ###########
 # Testing #
@@ -137,23 +142,9 @@ test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
 	go test -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG)
 
-.PHONY: test-sec
-test-sec:
-	@which gosec 2> /dev/null >&1 || { echo "gosec must be installed to lint code";  exit 1; }
-	gosec -severity medium --confidence medium -quiet ./...
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
-############
-# Binaries #
-############
-
-$(EMBEDMD_BIN):
-	@go install -mod=vendor github.com/campoy/embedmd
-
-$(GOBINDATA_BIN):
-	@go install -mod=vendor github.com/go-bindata/go-bindata/...
-
-$(JB_BINARY):
-	@go install -mod=vendor github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
-
-$(GOJSONTOYAML_BINARY):
-	@go install -mod=vendor github.com/brancz/gojsontoyaml
+$(TOOLING): $(BIN_DIR)
+	@echo Installing tools from hack/tools.go
+	@cd hack/tools && go list -tags tools -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -o $(BIN_DIR) %
