@@ -15,12 +15,12 @@
 package thanos
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
@@ -36,8 +36,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,16 +58,16 @@ const (
 // Operator manages life cycle of Thanos deployments and
 // monitoring configurations.
 type Operator struct {
-	kclient   kubernetes.Interface
-	mclient   monitoringclient.Interface
-	crdclient apiextensionsclient.Interface
-	logger    log.Logger
+	kclient kubernetes.Interface
+	mclient monitoringclient.Interface
+	logger  log.Logger
 
-	thanosRulerInf cache.SharedIndexInformer
-	nsInf          cache.SharedIndexInformer
-	cmapInf        cache.SharedIndexInformer
-	ruleInf        cache.SharedIndexInformer
-	ssetInf        cache.SharedIndexInformer
+	thanosRulerInf   cache.SharedIndexInformer
+	nsThanosRulerInf cache.SharedIndexInformer
+	nsRuleInf        cache.SharedIndexInformer
+	cmapInf          cache.SharedIndexInformer
+	ruleInf          cache.SharedIndexInformer
+	ssetInf          cache.SharedIndexInformer
 
 	queue workqueue.RateLimitingInterface
 
@@ -89,12 +87,9 @@ type Config struct {
 	ThanosDefaultBaseImage string
 	Namespaces             prometheusoperator.Namespaces
 	Labels                 prometheusoperator.Labels
-	CrdKinds               monitoringv1.CrdKinds
-	EnableValidation       bool
 	LocalHost              string
 	LogLevel               string
 	LogFormat              string
-	ManageCRDs             bool
 	ThanosRulerSelector    string
 }
 
@@ -110,11 +105,6 @@ func New(conf prometheusoperator.Config, logger log.Logger, r prometheus.Registe
 		return nil, errors.Wrap(err, "instantiating kubernetes client failed")
 	}
 
-	crdclient, err := apiextensionsclient.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "instantiating apiextensions client failed")
-	}
-
 	mclient, err := monitoringclient.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating monitoring client failed")
@@ -125,12 +115,11 @@ func New(conf prometheusoperator.Config, logger log.Logger, r prometheus.Registe
 	}
 
 	o := &Operator{
-		kclient:   client,
-		mclient:   mclient,
-		crdclient: crdclient,
-		logger:    logger,
-		queue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "thanos"),
-		metrics:   operator.NewMetrics("thanos", r),
+		kclient: client,
+		mclient: mclient,
+		logger:  logger,
+		queue:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "thanos"),
+		metrics: operator.NewMetrics("thanos", r),
 		config: Config{
 			Host:                   conf.Host,
 			TLSInsecure:            conf.TLSInsecure,
@@ -141,12 +130,9 @@ func New(conf prometheusoperator.Config, logger log.Logger, r prometheus.Registe
 			ThanosDefaultBaseImage: conf.ThanosDefaultBaseImage,
 			Namespaces:             conf.Namespaces,
 			Labels:                 conf.Labels,
-			CrdKinds:               conf.CrdKinds,
-			EnableValidation:       conf.EnableValidation,
 			LocalHost:              conf.LocalHost,
 			LogLevel:               conf.LogLevel,
 			LogFormat:              conf.LogFormat,
-			ManageCRDs:             conf.ManageCRDs,
 			ThanosRulerSelector:    conf.ThanosRulerSelector,
 		},
 	}
@@ -157,11 +143,11 @@ func New(conf prometheusoperator.Config, logger log.Logger, r prometheus.Registe
 				return &cache.ListWatch{
 					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 						options.LabelSelector = labelThanosRulerName
-						return o.kclient.CoreV1().ConfigMaps(namespace).List(options)
+						return o.kclient.CoreV1().ConfigMaps(namespace).List(context.TODO(), options)
 					},
 					WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 						options.LabelSelector = labelThanosRulerName
-						return o.kclient.CoreV1().ConfigMaps(namespace).Watch(options)
+						return o.kclient.CoreV1().ConfigMaps(namespace).Watch(context.TODO(), options)
 					},
 				}
 			}),
@@ -175,11 +161,11 @@ func New(conf prometheusoperator.Config, logger log.Logger, r prometheus.Registe
 				return &cache.ListWatch{
 					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 						options.LabelSelector = o.config.ThanosRulerSelector
-						return o.mclient.MonitoringV1().ThanosRulers(namespace).List(options)
+						return o.mclient.MonitoringV1().ThanosRulers(namespace).List(context.TODO(), options)
 					},
 					WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 						options.LabelSelector = o.config.ThanosRulerSelector
-						return o.mclient.MonitoringV1().ThanosRulers(namespace).Watch(options)
+						return o.mclient.MonitoringV1().ThanosRulers(namespace).Watch(context.TODO(), options)
 					},
 				}
 			}),
@@ -193,9 +179,11 @@ func New(conf prometheusoperator.Config, logger log.Logger, r prometheus.Registe
 			listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces.AllowList, o.config.Namespaces.DenyList, func(namespace string) cache.ListerWatcher {
 				return &cache.ListWatch{
 					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-						return mclient.MonitoringV1().PrometheusRules(namespace).List(options)
+						return mclient.MonitoringV1().PrometheusRules(namespace).List(context.TODO(), options)
 					},
-					WatchFunc: mclient.MonitoringV1().PrometheusRules(namespace).Watch,
+					WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+						return mclient.MonitoringV1().PrometheusRules(namespace).Watch(context.TODO(), options)
+					},
 				}
 			}),
 		),
@@ -203,27 +191,39 @@ func New(conf prometheusoperator.Config, logger log.Logger, r prometheus.Registe
 	)
 
 	o.ssetInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces.PrometheusAllowList, o.config.Namespaces.DenyList, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces.ThanosRulerAllowList, o.config.Namespaces.DenyList, func(namespace string) cache.ListerWatcher {
 			return cache.NewListWatchFromClient(o.kclient.AppsV1().RESTClient(), "statefulsets", namespace, fields.Everything())
 		}),
 		&appsv1.StatefulSet{}, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
 
-	// nsResyncPeriod is used to control how often the namespace informer
-	// should resync. If the unprivileged ListerWatcher is used, then the
-	// informer must resync more often because it cannot watch for
-	// namespace changes.
-	nsResyncPeriod := 15 * time.Second
-	// If the only namespace is v1.NamespaceAll, then the client must be
-	// privileged and a regular cache.ListWatch will be used. In this case
-	// watching works and we do not need to resync so frequently.
-	if listwatch.IsAllNamespaces(o.config.Namespaces.AllowList) {
-		nsResyncPeriod = resyncPeriod
+	newNamespaceInformer := func(o *Operator, allowList map[string]struct{}) cache.SharedIndexInformer {
+		// nsResyncPeriod is used to control how often the namespace informer
+		// should resync. If the unprivileged ListerWatcher is used, then the
+		// informer must resync more often because it cannot watch for
+		// namespace changes.
+		nsResyncPeriod := 15 * time.Second
+		// If the only namespace is v1.NamespaceAll, then the client must be
+		// privileged and a regular cache.ListWatch will be used. In this case
+		// watching works and we do not need to resync so frequently.
+		if listwatch.IsAllNamespaces(allowList) {
+			nsResyncPeriod = resyncPeriod
+		}
+		nsInf := cache.NewSharedIndexInformer(
+			o.metrics.NewInstrumentedListerWatcher(
+				listwatch.NewUnprivilegedNamespaceListWatchFromClient(o.logger, o.kclient.CoreV1().RESTClient(), allowList, o.config.Namespaces.DenyList, fields.Everything()),
+			),
+			&v1.Namespace{}, nsResyncPeriod, cache.Indexers{},
+		)
+
+		return nsInf
 	}
-	o.nsInf = cache.NewSharedIndexInformer(
-		listwatch.NewUnprivilegedNamespaceListWatchFromClient(o.logger, o.kclient.CoreV1().RESTClient(), o.config.Namespaces.AllowList, o.config.Namespaces.DenyList, fields.Everything()),
-		&v1.Namespace{}, nsResyncPeriod, cache.Indexers{},
-	)
+	o.nsRuleInf = newNamespaceInformer(o, o.config.Namespaces.AllowList)
+	if listwatch.IdenticalNamespaces(o.config.Namespaces.AllowList, o.config.Namespaces.ThanosRulerAllowList) {
+		o.nsThanosRulerInf = o.nsRuleInf
+	} else {
+		o.nsThanosRulerInf = newNamespaceInformer(o, o.config.Namespaces.ThanosRulerAllowList)
+	}
 
 	return o, nil
 }
@@ -236,7 +236,8 @@ func (o *Operator) waitForCacheSync(stopc <-chan struct{}) error {
 		informer cache.SharedIndexInformer
 	}{
 		{"ThanosRuler", o.thanosRulerInf},
-		{"Namespace", o.nsInf},
+		{"ThanosRulerNamespace", o.nsThanosRulerInf},
+		{"RuleNamespace", o.nsRuleInf},
 		{"ConfigMap", o.cmapInf},
 		{"PrometheusRule", o.ruleInf},
 		{"StatefulSet", o.ssetInf},
@@ -292,13 +293,6 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 			return
 		}
 		level.Info(o.logger).Log("msg", "connection established", "cluster-version", v)
-
-		if o.config.ManageCRDs {
-			if err := o.createCRDs(); err != nil {
-				errChan <- errors.Wrap(err, "creating CRDs failed")
-				return
-			}
-		}
 		errChan <- nil
 	}()
 
@@ -317,7 +311,10 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	go o.thanosRulerInf.Run(stopc)
 	go o.cmapInf.Run(stopc)
 	go o.ruleInf.Run(stopc)
-	go o.nsInf.Run(stopc)
+	go o.nsRuleInf.Run(stopc)
+	if o.nsRuleInf != o.nsThanosRulerInf {
+		go o.nsThanosRulerInf.Run(stopc)
+	}
 	go o.ssetInf.Run(stopc)
 	if err := o.waitForCacheSync(stopc); err != nil {
 		return err
@@ -381,7 +378,7 @@ func (o *Operator) handleConfigMapAdd(obj interface{}) {
 		level.Debug(o.logger).Log("msg", "ConfigMap added")
 		o.metrics.TriggerByCounter("ConfigMap", "add").Inc()
 
-		o.enqueueForNamespace(meta.GetNamespace())
+		o.enqueueForThanosRulerNamespace(meta.GetNamespace())
 	}
 }
 
@@ -391,7 +388,7 @@ func (o *Operator) handleConfigMapDelete(obj interface{}) {
 		level.Debug(o.logger).Log("msg", "ConfigMap deleted")
 		o.metrics.TriggerByCounter("ConfigMap", "delete").Inc()
 
-		o.enqueueForNamespace(meta.GetNamespace())
+		o.enqueueForThanosRulerNamespace(meta.GetNamespace())
 	}
 }
 
@@ -405,7 +402,7 @@ func (o *Operator) handleConfigMapUpdate(old, cur interface{}) {
 		level.Debug(o.logger).Log("msg", "ConfigMap updated")
 		o.metrics.TriggerByCounter("ConfigMap", "update").Inc()
 
-		o.enqueueForNamespace(meta.GetNamespace())
+		o.enqueueForThanosRulerNamespace(meta.GetNamespace())
 	}
 }
 
@@ -416,7 +413,7 @@ func (o *Operator) handleRuleAdd(obj interface{}) {
 		level.Debug(o.logger).Log("msg", "PrometheusRule added")
 		o.metrics.TriggerByCounter(monitoringv1.PrometheusRuleKind, "add").Inc()
 
-		o.enqueueForNamespace(meta.GetNamespace())
+		o.enqueueForRulesNamespace(meta.GetNamespace())
 	}
 }
 
@@ -431,7 +428,7 @@ func (o *Operator) handleRuleUpdate(old, cur interface{}) {
 		level.Debug(o.logger).Log("msg", "PrometheusRule updated")
 		o.metrics.TriggerByCounter(monitoringv1.PrometheusRuleKind, "update").Inc()
 
-		o.enqueueForNamespace(meta.GetNamespace())
+		o.enqueueForRulesNamespace(meta.GetNamespace())
 	}
 }
 
@@ -442,7 +439,7 @@ func (o *Operator) handleRuleDelete(obj interface{}) {
 		level.Debug(o.logger).Log("msg", "PrometheusRule deleted")
 		o.metrics.TriggerByCounter(monitoringv1.PrometheusRuleKind, "delete").Inc()
 
-		o.enqueueForNamespace(meta.GetNamespace())
+		o.enqueueForRulesNamespace(meta.GetNamespace())
 	}
 }
 
@@ -612,7 +609,7 @@ func (o *Operator) sync(key string) error {
 			return errors.Wrap(err, "making thanos statefulset config failed")
 		}
 		operator.SanitizeSTS(sset)
-		if _, err := ssetClient.Create(sset); err != nil {
+		if _, err := ssetClient.Create(context.TODO(), sset, metav1.CreateOptions{}); err != nil {
 			return errors.Wrap(err, "creating thanos statefulset failed")
 		}
 		return nil
@@ -642,14 +639,14 @@ func (o *Operator) sync(key string) error {
 		return nil
 	}
 
-	_, err = ssetClient.Update(sset)
+	_, err = ssetClient.Update(context.TODO(), sset, metav1.UpdateOptions{})
 	sErr, ok := err.(*apierrors.StatusError)
 
 	if ok && sErr.ErrStatus.Code == 422 && sErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
 		o.metrics.StsDeleteCreateCounter().Inc()
 		level.Info(o.logger).Log("msg", "resolving illegal update of ThanosRuler StatefulSet", "details", sErr.ErrStatus.Details)
 		propagationPolicy := metav1.DeletePropagationForeground
-		if err := ssetClient.Delete(sset.GetName(), &metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
+		if err := ssetClient.Delete(context.TODO(), sset.GetName(), metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
 			return errors.Wrap(err, "failed to delete StatefulSet to avoid forbidden action")
 		}
 		return nil
@@ -666,76 +663,13 @@ func (o *Operator) sync(key string) error {
 // selector.
 func (o *Operator) listMatchingNamespaces(selector labels.Selector) ([]string, error) {
 	var ns []string
-	err := cache.ListAll(o.nsInf.GetStore(), selector, func(obj interface{}) {
+	err := cache.ListAll(o.nsRuleInf.GetStore(), selector, func(obj interface{}) {
 		ns = append(ns, obj.(*v1.Namespace).Name)
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list namespaces")
 	}
 	return ns, nil
-}
-
-func (o *Operator) createCRDs() error {
-	crds := []*extensionsobj.CustomResourceDefinition{
-		k8sutil.NewCustomResourceDefinition(o.config.CrdKinds.ThanosRuler, monitoring.GroupName, o.config.Labels.LabelsMap, o.config.EnableValidation),
-	}
-
-	crdClient := o.crdclient.ApiextensionsV1beta1().CustomResourceDefinitions()
-
-	for _, crd := range crds {
-		oldCRD, err := crdClient.Get(crd.Name, metav1.GetOptions{})
-		if err != nil && !apierrors.IsNotFound(err) {
-			return errors.Wrapf(err, "getting CRD: %s", crd.Spec.Names.Kind)
-		}
-		if apierrors.IsNotFound(err) {
-			if _, err := crdClient.Create(crd); err != nil {
-				return errors.Wrapf(err, "creating CRD: %s", crd.Spec.Names.Kind)
-			}
-			level.Info(o.logger).Log("msg", "CRD created", "crd", crd.Spec.Names.Kind)
-		}
-		if err == nil {
-			crd.ResourceVersion = oldCRD.ResourceVersion
-			if _, err := crdClient.Update(crd); err != nil {
-				return errors.Wrapf(err, "creating CRD: %s", crd.Spec.Names.Kind)
-			}
-			level.Info(o.logger).Log("msg", "CRD updated", "crd", crd.Spec.Names.Kind)
-		}
-	}
-
-	crdListFuncs := []struct {
-		name     string
-		listFunc func(opts metav1.ListOptions) (runtime.Object, error)
-	}{
-		{
-			monitoringv1.ThanosRulerKind,
-			listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces.ThanosRulerAllowList, o.config.Namespaces.DenyList, func(namespace string) cache.ListerWatcher {
-				return &cache.ListWatch{
-					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-						return o.mclient.MonitoringV1().Prometheuses(namespace).List(options)
-					},
-				}
-			}).List,
-		},
-		{
-			monitoringv1.PrometheusRuleKind,
-			listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces.AllowList, o.config.Namespaces.DenyList, func(namespace string) cache.ListerWatcher {
-				return &cache.ListWatch{
-					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-						return o.mclient.MonitoringV1().PrometheusRules(namespace).List(options)
-					},
-				}
-			}).List,
-		},
-	}
-
-	for _, crdListFunc := range crdListFuncs {
-		err := k8sutil.WaitForCRDReady(crdListFunc.listFunc)
-		if err != nil {
-			return errors.Wrapf(err, "waiting for %v crd failed", crdListFunc.name)
-		}
-	}
-
-	return nil
 }
 
 func createSSetInputHash(tr monitoringv1.ThanosRuler, c Config, ruleConfigMapNames []string, ss interface{}) (string, error) {
@@ -773,11 +707,11 @@ func ListOptions(name string) metav1.ListOptions {
 func ThanosRulerStatus(kclient kubernetes.Interface, tr *monitoringv1.ThanosRuler) (*monitoringv1.ThanosRulerStatus, []v1.Pod, error) {
 	res := &monitoringv1.ThanosRulerStatus{Paused: tr.Spec.Paused}
 
-	pods, err := kclient.CoreV1().Pods(tr.Namespace).List(ListOptions(tr.Name))
+	pods, err := kclient.CoreV1().Pods(tr.Namespace).List(context.TODO(), ListOptions(tr.Name))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "retrieving pods of failed")
 	}
-	sset, err := kclient.AppsV1().StatefulSets(tr.Namespace).Get(statefulSetNameFromThanosName(tr.Name), metav1.GetOptions{})
+	sset, err := kclient.AppsV1().StatefulSets(tr.Namespace).Get(context.TODO(), statefulSetNameFromThanosName(tr.Name), metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "retrieving stateful set failed")
 	}
@@ -822,10 +756,18 @@ func needsUpdate(pod *v1.Pod, tmpl v1.PodTemplateSpec) bool {
 	return false
 }
 
+func (o *Operator) enqueueForThanosRulerNamespace(nsName string) {
+	o.enqueueForNamespace(o.nsThanosRulerInf.GetStore(), nsName)
+}
+
+func (o *Operator) enqueueForRulesNamespace(nsName string) {
+	o.enqueueForNamespace(o.nsRuleInf.GetStore(), nsName)
+}
+
 // enqueueForNamespace enqueues all ThanosRuler object keys that belong to the
 // given namespace or select objects in the given namespace.
-func (o *Operator) enqueueForNamespace(nsName string) {
-	nsObject, exists, err := o.nsInf.GetStore().GetByKey(nsName)
+func (o *Operator) enqueueForNamespace(store cache.Store, nsName string) {
+	nsObject, exists, err := store.GetByKey(nsName)
 	if err != nil {
 		level.Error(o.logger).Log(
 			"msg", "get namespace to enqueue ThanosRuler instances failed",
@@ -842,7 +784,7 @@ func (o *Operator) enqueueForNamespace(nsName string) {
 	ns := nsObject.(*v1.Namespace)
 
 	err = cache.ListAll(o.thanosRulerInf.GetStore(), labels.Everything(), func(obj interface{}) {
-		// Check for ThanosRuler instances in the NS.
+		// Check for ThanosRuler instances in the namespace.
 		tr := obj.(*monitoringv1.ThanosRuler)
 		if tr.Namespace == nsName {
 			o.enqueue(tr)
@@ -850,7 +792,7 @@ func (o *Operator) enqueueForNamespace(nsName string) {
 		}
 
 		// Check for ThanosRuler instances selecting PrometheusRules in
-		// the NS.
+		// the namespace.
 		ruleNSSelector, err := metav1.LabelSelectorAsSelector(tr.Spec.RuleNamespaceSelector)
 		if err != nil {
 			level.Error(o.logger).Log(
