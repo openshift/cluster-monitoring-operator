@@ -10,133 +10,96 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
 {
   clusterPrometheusOperator+:: $.prometheusOperator {
     deployment+: {
-        spec+: {
-          template+: {
-            spec+: {
-              nodeSelector+: {
-                'node-role.kubernetes.io/master': '',
-              },
-              tolerations: [
-                {
-                  key: 'node-role.kubernetes.io/master',
-                  operator: 'Exists',
-                  effect: 'NoSchedule',
-                },
-              ],
-              securityContext: {},
-              priorityClassName: 'system-cluster-critical',
-              containers:
-                std.map(
-                  function(c)
-                    if c.name == 'prometheus-operator' then
-                      c {
-                        args+: [
-                          '--namespaces=' + $._config.namespace,
-                          '--prometheus-instance-namespaces=' + $._config.namespace,
-                          '--thanos-ruler-instance-namespaces=' + $._config.namespace,
-                          '--alertmanager-instance-namespaces=' + $._config.namespace,
-                          '--config-reloader-cpu=0',
-                          '--config-reloader-memory=0',
-                          '--web.enable-tls=true',
-                          '--web.tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
-                          '--web.tls-min-version=VersionTLS12',
-                        ],
-                        securityContext: {},
-                        resources: {
-                          requests: {
-                            memory: '60Mi',
-                            cpu: '5m',
-                          },
-                        },
-                        terminationMessagePolicy: 'FallbackToLogsOnError',
-                        volumeMounts+: [
-                          containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
-                        ],
-                      }
-                    else if c.name == 'kube-rbac-proxy' then
-                      c {
-                        args: [
-                          '--logtostderr',
-                          '--secure-listen-address=:8443',
-                          '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
-                          '--upstream=https://prometheus-operator.openshift-monitoring.svc:8080/',
-                          '--tls-cert-file=/etc/tls/private/tls.crt',
-                          '--tls-private-key-file=/etc/tls/private/tls.key',
-                          '--upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt',
-                        ],
-                        terminationMessagePolicy: 'FallbackToLogsOnError',
-                        volumeMounts: [
-                          containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
-                          containerVolumeMount.new(certsCAVolumeName, '/etc/configmaps/operator-cert-ca-bundle'),
-                        ],
-                        securityContext: {},
-                        resources: {
-                          requests: {
-                            memory: '40Mi',
-                            cpu: '1m',
-                          },
-                        },
-                      }
-                    else
-                      c,
-                  super.containers,
-                ),
-              volumes+: [
-                volume.fromSecret(tlsVolumeName, 'prometheus-operator-tls'),
-                {
-                  name: certsCAVolumeName,
-                  configMap: {
-                    name: certsCAVolumeName,
-                  },
-                },
-              ],
+      spec+: {
+        template+: {
+          spec+: {
+            nodeSelector+: {
+              'node-role.kubernetes.io/master': '',
             },
+            tolerations: [
+              {
+                key: 'node-role.kubernetes.io/master',
+                operator: 'Exists',
+                effect: 'NoSchedule',
+              },
+            ],
+            securityContext: {},
+            priorityClassName: 'system-cluster-critical',
+            containers:
+              std.map(
+                function(c)
+                  if c.name == 'prometheus-operator' then
+                    c {
+                      args+: [
+                        '--namespaces=' + $._config.namespace,
+                        '--prometheus-instance-namespaces=' + $._config.namespace,
+                        '--thanos-ruler-instance-namespaces=' + $._config.namespace,
+                        '--alertmanager-instance-namespaces=' + $._config.namespace,
+                        '--config-reloader-cpu=0',
+                        '--config-reloader-memory=0',
+                        '--web.enable-tls=true',
+                        '--web.tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                        '--web.tls-min-version=VersionTLS12',
+                      ],
+                      securityContext: {},
+                      resources: {
+                        requests: {
+                          memory: '60Mi',
+                          cpu: '5m',
+                        },
+                      },
+                      terminationMessagePolicy: 'FallbackToLogsOnError',
+                      volumeMounts+: [
+                        containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
+                      ],
+                    }
+                  else if c.name == 'kube-rbac-proxy' then
+                    c {
+                      args: [
+                        '--logtostderr',
+                        '--secure-listen-address=:8443',
+                        '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                        '--upstream=https://prometheus-operator.openshift-monitoring.svc:8080/',
+                        '--tls-cert-file=/etc/tls/private/tls.crt',
+                        '--tls-private-key-file=/etc/tls/private/tls.key',
+                        '--upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt',
+                      ],
+                      terminationMessagePolicy: 'FallbackToLogsOnError',
+                      volumeMounts: [
+                        containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
+                        containerVolumeMount.new(certsCAVolumeName, '/etc/configmaps/operator-cert-ca-bundle'),
+                      ],
+                      securityContext: {},
+                      resources: {
+                        requests: {
+                          memory: '40Mi',
+                          cpu: '1m',
+                        },
+                      },
+                    }
+                  else
+                    c,
+                super.containers,
+              ),
+            volumes+: [
+              volume.fromSecret(tlsVolumeName, 'prometheus-operator-tls'),
+              {
+                name: certsCAVolumeName,
+                configMap: {
+                  name: certsCAVolumeName,
+                },
+              },
+            ],
           },
         },
       },
-    // TODO: remove after 0.40 prometheus-operator is merged.
-    clusterRole+: {
-     rules+:
-      [
-	  {
-	    "apiGroups": [
-	      "apiextensions.k8s.io"
-	    ],
-	    "resources": [
-	      "customresourcedefinitions"
-	    ],
-	    "verbs": [
-	      "create"
-	    ]
-	  },
-	  {
-	    "apiGroups": [
-	      "apiextensions.k8s.io"
-	    ],
-	    "resourceNames": [
-	      "alertmanagers.monitoring.coreos.com",
-	      "podmonitors.monitoring.coreos.com",
-	      "prometheuses.monitoring.coreos.com",
-	      "prometheusrules.monitoring.coreos.com",
-	      "servicemonitors.monitoring.coreos.com",
-	      "thanosrulers.monitoring.coreos.com"
-	    ],
-	    "resources": [
-	      "customresourcedefinitions"
-	    ],
-	    "verbs": [
-	      "get",
-	      "update"
-	    ]
-	  }
-	],
     },
 
     service+:
       service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': "prometheus-operator-tls",
+        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-tls',
       }) +
-      service.mixin.spec.withPortsMixin([{name: 'web', port: 8080, targetPort: 8080,}]),
+      service.mixin.spec.withPortsMixin([{ name: 'web', port: 8080, targetPort: 8080 }]),
 
     serviceMonitor+: {
       spec+: {
@@ -156,17 +119,17 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
     },
 
     operatorCertsCaBundle: {
-      apiVersion: "v1",
-      kind: "ConfigMap",
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
       metadata: {
         annotations: {
-          "service.alpha.openshift.io/inject-cabundle": "true",
+          'service.alpha.openshift.io/inject-cabundle': 'true',
         },
         name: certsCAVolumeName,
         namespace: $._config.namespace,
       },
       data: {
-        "service-ca.crt": ""
+        'service-ca.crt': '',
       },
     },
 
@@ -181,7 +144,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
           'app.kubernetes.io/version': $._config.versions.prometheusOperator,
         },
         annotations: {
-          "service.beta.openshift.io/inject-cabundle": true
+          'service.beta.openshift.io/inject-cabundle': true,
         },
       },
       webhooks: [
@@ -191,9 +154,9 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
             {
               apiGroups: ['monitoring.coreos.com'],
               apiVersions: ['v1'],
-              operations:  ['CREATE', 'UPDATE'],
-              resources:   ['prometheusrules'],
-              scope:       'Namespaced',
+              operations: ['CREATE', 'UPDATE'],
+              resources: ['prometheusrules'],
+              scope: 'Namespaced',
             },
           ],
           clientConfig: {
@@ -201,7 +164,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
               namespace: 'openshift-monitoring',
               name: 'prometheus-operator',
               port: 8080,
-              path: '/admission-prometheusrules/validate'
+              path: '/admission-prometheusrules/validate',
             },
           },
           admissionReviewVersions: ['v1beta1'],
