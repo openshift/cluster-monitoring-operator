@@ -16,6 +16,7 @@ package framework
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
@@ -47,7 +48,7 @@ func NewPrometheusClientFromRoute(
 	namespace, name string,
 	token string,
 ) (*PrometheusClient, error) {
-	route, err := routeClient.Routes(namespace).Get(name, metav1.GetOptions{})
+	route, err := routeClient.Routes(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

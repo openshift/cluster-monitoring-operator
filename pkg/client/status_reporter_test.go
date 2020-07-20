@@ -15,6 +15,7 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -394,41 +395,41 @@ type clusterOperatorMock struct {
 // ensure the mock satisfies the ClusterOperatorInterface interface.
 var _ clientv1.ClusterOperatorInterface = (*clusterOperatorMock)(nil)
 
-func (com *clusterOperatorMock) Create(co *v1.ClusterOperator) (*v1.ClusterOperator, error) {
+func (com *clusterOperatorMock) Create(ctx context.Context, co *v1.ClusterOperator, opts metav1.CreateOptions) (*v1.ClusterOperator, error) {
 	com.created = co
 	return com.createFunc(co)
 }
 
-func (com *clusterOperatorMock) Update(co *v1.ClusterOperator) (*v1.ClusterOperator, error) {
+func (com *clusterOperatorMock) Update(ctx context.Context, co *v1.ClusterOperator, opts metav1.UpdateOptions) (*v1.ClusterOperator, error) {
 	com.updated = co
 	return com.updateFunc(co)
 }
 
-func (com *clusterOperatorMock) UpdateStatus(co *v1.ClusterOperator) (*v1.ClusterOperator, error) {
+func (com *clusterOperatorMock) UpdateStatus(ctx context.Context, co *v1.ClusterOperator, opts metav1.UpdateOptions) (*v1.ClusterOperator, error) {
 	com.statusUpdated = co
 	return com.updateStatusFunc(co)
 }
 
-func (com *clusterOperatorMock) Delete(name string, options *metav1.DeleteOptions) error {
+func (com *clusterOperatorMock) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
 	return nil
 }
 
-func (com *clusterOperatorMock) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+func (com *clusterOperatorMock) DeleteCollection(ctx context.Context, options metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return nil
 }
 
-func (com *clusterOperatorMock) Get(name string, options metav1.GetOptions) (*v1.ClusterOperator, error) {
-	return com.getFunc(name, options)
+func (com *clusterOperatorMock) Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.ClusterOperator, error) {
+	return com.getFunc(name, opts)
 }
 
-func (com *clusterOperatorMock) List(opts metav1.ListOptions) (*v1.ClusterOperatorList, error) {
+func (com *clusterOperatorMock) List(ctx context.Context, opts metav1.ListOptions) (*v1.ClusterOperatorList, error) {
 	return nil, nil
 }
 
-func (com *clusterOperatorMock) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (com *clusterOperatorMock) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
 	return nil, nil
 }
 
-func (com *clusterOperatorMock) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.ClusterOperator, err error) {
+func (com *clusterOperatorMock) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.ClusterOperator, err error) {
 	return nil, nil
 }
