@@ -27,7 +27,7 @@
 # 	assets/telemeter-client/cluster-role.yaml
 # 	assets/thanos-querier/cluster-role.yaml
 # 	assets/thanos-ruler/cluster-role.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cluster-monitoring-operator
