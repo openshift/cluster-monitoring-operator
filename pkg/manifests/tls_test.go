@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openshift/library-go/pkg/crypto"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -111,10 +112,35 @@ func TestRotateGrpcTLSSecret(t *testing.T) {
 			name: "force rotation",
 			setup: func(s *v1.Secret) {
 				s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"] = "true"
+				// Introduce a delay to make sure that the initial and rotated
+				// certificates aren't created within the same second.
+				time.Sleep(1 * time.Second)
 			},
 			test: func(spre, spost *v1.Secret) error {
 				if bytes.Compare(spre.Data["ca.crt"], spost.Data["ca.crt"]) == 0 {
 					return fmt.Errorf("expected certificate data not to be equal, but it is")
+				}
+
+				preCA, err := crypto.GetCAFromBytes(spre.Data["ca.crt"], spre.Data["ca.key"])
+				if err != nil {
+					return err
+				}
+
+				postCA, err := crypto.GetCAFromBytes(spost.Data["ca.crt"], spost.Data["ca.key"])
+				if err != nil {
+					return err
+				}
+
+				preCert, postCert := preCA.Config.Certs[0], postCA.Config.Certs[0]
+
+				if postCert.NotAfter.Before(preCert.NotAfter) || postCert.NotAfter.Equal(preCert.NotAfter) {
+					return fmt.Errorf("expected renewed certificate to expire after old certificate but %s is before or equal to %s",
+						postCert.NotAfter, preCert.NotAfter)
+				}
+
+				if postCert.NotAfter.Sub(postCert.NotBefore) > certificateLifetime+time.Second {
+					return fmt.Errorf("expected certificate lifetime to be less than %s but it is valid between %s and %s",
+						certificateLifetime+time.Second, postCert.NotBefore, postCert.NotAfter)
 				}
 				return nil
 			},
