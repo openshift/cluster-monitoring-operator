@@ -145,7 +145,7 @@ func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "secrets", ns, fields.Everything())
 }
 
-func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
+func (c *Client) AssurePrometheusOperatorCRsExist() error {
 	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
 		_, err := c.mclient.MonitoringV1().Prometheuses(c.namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
