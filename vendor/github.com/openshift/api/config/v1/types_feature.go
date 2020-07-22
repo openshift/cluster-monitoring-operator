@@ -37,6 +37,9 @@ var (
 
 	// TopologyManager enables ToplogyManager support. Upgrades are enabled with this feature.
 	LatencySensitive FeatureSet = "LatencySensitive"
+
+	// IPv6DualStackNoUpgrade enables dual-stack. Turning this feature set on IS NOT SUPPORTED, CANNOT BE UNDONE, and PREVENTS UPGRADES.
+	IPv6DualStackNoUpgrade FeatureSet = "IPv6DualStackNoUpgrade"
 )
 
 type FeatureGateSpec struct {
@@ -108,16 +111,21 @@ var FeatureSets = map[FeatureSet]*FeatureGateEnabledDisabled{
 			"TopologyManager", // sig-pod, sjenning
 		).
 		toFeatures(),
+	IPv6DualStackNoUpgrade: newDefaultFeatures().
+		with(
+			"IPv6DualStack", // sig-network, danwinship
+		).
+		toFeatures(),
 }
 
 var defaultFeatures = &FeatureGateEnabledDisabled{
 	Enabled: []string{
+		"APIPriorityAndFairness",         // sig-apimachinery, deads2k
 		"RotateKubeletServerCertificate", // sig-pod, sjenning
 		"SupportPodPidsLimit",            // sig-pod, sjenning
 		"NodeDisruptionExclusion",        // sig-scheduling, ccoleman
 		"ServiceNodeExclusion",           // sig-scheduling, ccoleman
 		"SCTPSupport",                    // sig-network, ccallend
-		"IPv6DualStack",                  // sig-network, ccoleman
 	},
 	Disabled: []string{
 		"LegacyNodeRoleBehavior", // sig-scheduling, ccoleman

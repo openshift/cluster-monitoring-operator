@@ -98,9 +98,9 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Operator Deployment failed")
 	}
 
-	err = t.client.WaitForPrometheusOperatorCRDsReady()
+	err = t.client.AssurePrometheusOperatorCRsExist()
 	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus CRDs to become available failed")
+		return errors.Wrap(err, "waiting for Prometheus Operator CRs to become available failed")
 	}
 
 	w, err := t.factory.PrometheusRuleValidatingWebhook()

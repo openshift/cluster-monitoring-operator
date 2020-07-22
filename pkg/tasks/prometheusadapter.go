@@ -1,6 +1,8 @@
 package tasks
 
 import (
+	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -195,7 +197,7 @@ func (t *PrometheusAdapterTask) Run() error {
 }
 
 func (t *PrometheusAdapterTask) deleteOldPrometheusAdapterSecrets(newHash string) error {
-	secrets, err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).List(metav1.ListOptions{
+	secrets, err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "monitoring.openshift.io/name=prometheus-adapter,monitoring.openshift.io/hash!=" + newHash,
 	})
 
@@ -204,7 +206,7 @@ func (t *PrometheusAdapterTask) deleteOldPrometheusAdapterSecrets(newHash string
 	}
 
 	for i := range secrets.Items {
-		err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).Delete(secrets.Items[i].Name, &metav1.DeleteOptions{})
+		err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).Delete(context.TODO(), secrets.Items[i].Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "error deleting secret: %s", secrets.Items[i].Name)
 		}

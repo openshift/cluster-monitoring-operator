@@ -165,7 +165,7 @@ func (cg *configGenerator) generateConfig(
 		versionStr = operator.DefaultPrometheusVersion
 	}
 
-	version, err := semver.Parse(strings.TrimLeft(versionStr, "v"))
+	version, err := semver.ParseTolerant(versionStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse version")
 	}
@@ -182,14 +182,25 @@ func (cg *configGenerator) generateConfig(
 		evaluationInterval = p.Spec.EvaluationInterval
 	}
 
-	cfg = append(cfg, yaml.MapItem{
-		Key: "global",
-		Value: yaml.MapSlice{
-			{Key: "evaluation_interval", Value: evaluationInterval},
-			{Key: "scrape_interval", Value: scrapeInterval},
-			{Key: "external_labels", Value: buildExternalLabels(p)},
-		},
-	})
+	globalItems := yaml.MapSlice{
+		{Key: "evaluation_interval", Value: evaluationInterval},
+		{Key: "scrape_interval", Value: scrapeInterval},
+		{Key: "external_labels", Value: buildExternalLabels(p)},
+	}
+
+	if p.Spec.ScrapeTimeout != "" {
+		globalItems = append(globalItems, yaml.MapItem{
+			Key: "scrape_timeout", Value: p.Spec.ScrapeTimeout,
+		})
+	}
+
+	if version.GTE(semver.MustParse("2.16.0")) && p.Spec.QueryLogFile != "" {
+		globalItems = append(globalItems, yaml.MapItem{
+			Key: "query_log_file", Value: p.Spec.QueryLogFile,
+		})
+	}
+
+	cfg = append(cfg, yaml.MapItem{Key: "global", Value: globalItems})
 
 	ruleFilePaths := []string{}
 	for _, name := range ruleConfigMapNames {
@@ -236,7 +247,8 @@ func (cg *configGenerator) generateConfig(
 					p.Spec.OverrideHonorLabels,
 					p.Spec.OverrideHonorTimestamps,
 					p.Spec.IgnoreNamespaceSelectors,
-					p.Spec.EnforcedNamespaceLabel))
+					p.Spec.EnforcedNamespaceLabel,
+					p.Spec.EnforcedSampleLimit))
 		}
 	}
 	for _, identifier := range pMonIdentifiers {
@@ -250,7 +262,8 @@ func (cg *configGenerator) generateConfig(
 					p.Spec.OverrideHonorLabels,
 					p.Spec.OverrideHonorTimestamps,
 					p.Spec.IgnoreNamespaceSelectors,
-					p.Spec.EnforcedNamespaceLabel))
+					p.Spec.EnforcedNamespaceLabel,
+					p.Spec.EnforcedSampleLimit))
 		}
 	}
 
@@ -370,7 +383,8 @@ func (cg *configGenerator) generatePodMonitorConfig(
 	ignoreHonorLabels bool,
 	overrideHonorTimestamps bool,
 	ignoreNamespaceSelectors bool,
-	enforcedNamespaceLabel string) yaml.MapSlice {
+	enforcedNamespaceLabel string,
+	enforcedSampleLimit *uint64) yaml.MapSlice {
 
 	hl := honorLabels(ep.HonorLabels, ignoreHonorLabels)
 	cfg := yaml.MapSlice{
@@ -561,8 +575,8 @@ func (cg *configGenerator) generatePodMonitorConfig(
 	relabelings = enforceNamespaceLabel(relabelings, m.Namespace, enforcedNamespaceLabel)
 	cfg = append(cfg, yaml.MapItem{Key: "relabel_configs", Value: relabelings})
 
-	if m.Spec.SampleLimit > 0 {
-		cfg = append(cfg, yaml.MapItem{Key: "sample_limit", Value: m.Spec.SampleLimit})
+	if m.Spec.SampleLimit > 0 || enforcedSampleLimit != nil {
+		cfg = append(cfg, yaml.MapItem{Key: "sample_limit", Value: getSampleLimit(m.Spec.SampleLimit, enforcedSampleLimit)})
 	}
 
 	if ep.MetricRelabelConfigs != nil {
@@ -592,7 +606,8 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 	overrideHonorLabels bool,
 	overrideHonorTimestamps bool,
 	ignoreNamespaceSelectors bool,
-	enforcedNamespaceLabel string) yaml.MapSlice {
+	enforcedNamespaceLabel string,
+	enforcedSampleLimit *uint64) yaml.MapSlice {
 
 	hl := honorLabels(ep.HonorLabels, overrideHonorLabels)
 	cfg := yaml.MapSlice{
@@ -828,8 +843,8 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 	relabelings = enforceNamespaceLabel(relabelings, m.Namespace, enforcedNamespaceLabel)
 	cfg = append(cfg, yaml.MapItem{Key: "relabel_configs", Value: relabelings})
 
-	if m.Spec.SampleLimit > 0 {
-		cfg = append(cfg, yaml.MapItem{Key: "sample_limit", Value: m.Spec.SampleLimit})
+	if m.Spec.SampleLimit > 0 || enforcedSampleLimit != nil {
+		cfg = append(cfg, yaml.MapItem{Key: "sample_limit", Value: getSampleLimit(m.Spec.SampleLimit, enforcedSampleLimit)})
 	}
 
 	if ep.MetricRelabelConfigs != nil {
@@ -846,6 +861,16 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 	}
 
 	return cfg
+}
+
+func getSampleLimit(user uint64, enforced *uint64) uint64 {
+	if enforced != nil {
+		if user < *enforced && user != 0 || *enforced == 0 {
+			return user
+		}
+		return *enforced
+	}
+	return user
 }
 
 // appendPre17RelabelConfig appends relabel config to pre-1.7 prometheus versions
@@ -1088,6 +1113,10 @@ func (cg *configGenerator) generateRemoteReadConfig(version semver.Version, spec
 			{Key: "remote_timeout", Value: spec.RemoteTimeout},
 		}
 
+		if spec.Name != "" && version.GTE(semver.MustParse("2.15.0")) {
+			cfg = append(cfg, yaml.MapItem{Key: "name", Value: spec.Name})
+		}
+
 		if len(spec.RequiredMatchers) > 0 {
 			cfg = append(cfg, yaml.MapItem{Key: "required_matchers", Value: stringMapToMapSlice(spec.RequiredMatchers)})
 		}
@@ -1146,6 +1175,10 @@ func (cg *configGenerator) generateRemoteWriteConfig(version semver.Version, spe
 		cfg := yaml.MapSlice{
 			{Key: "url", Value: spec.URL},
 			{Key: "remote_timeout", Value: spec.RemoteTimeout},
+		}
+
+		if spec.Name != "" && version.GTE(semver.MustParse("2.15.0")) {
+			cfg = append(cfg, yaml.MapItem{Key: "name", Value: spec.Name})
 		}
 
 		if spec.WriteRelabelConfigs != nil {
