@@ -192,7 +192,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 
 		err = t.client.DeleteHashedSecret(
 			grpcSecret.GetNamespace(),
-			"thanos-ruler-user-workload-grpc-tls",
+			"thanos-ruler-grpc-tls",
 			string(grpcSecret.Labels["monitoring.openshift.io/hash"]),
 		)
 		if err != nil {
