@@ -43,9 +43,10 @@ import (
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
-var (
+const (
 	namespaceName             = "openshift-monitoring"
 	userWorkloadNamespaceName = "openshift-user-workload-monitoring"
+	e2eServiceAccount         = "cluster-monitoring-operator-e2e"
 )
 
 type Framework struct {
@@ -124,7 +125,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "failed to setup test framework")
 	}
 
-	token, err := f.GetServiceAccountToken("openshift-monitoring", "cluster-monitoring-operator-e2e")
+	token, err := f.GetServiceAccountToken(namespaceName, e2eServiceAccount)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -132,7 +133,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	// Prometheus client depends on setup above.
 	f.ThanosQuerierClient, err = NewPrometheusClientFromRoute(
 		openshiftRouteClient,
-		"openshift-monitoring", "thanos-querier",
+		namespaceName, "thanos-querier",
 		token,
 	)
 	if err != nil {
@@ -141,7 +142,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 
 	f.PrometheusK8sClient, err = NewPrometheusClientFromRoute(
 		openshiftRouteClient,
-		"openshift-monitoring", "prometheus-k8s",
+		namespaceName, "prometheus-k8s",
 		token,
 	)
 	if err != nil {
@@ -150,7 +151,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 
 	f.AlertmanagerClient, err = NewPrometheusClientFromRoute(
 		openshiftRouteClient,
-		"openshift-monitoring", "alertmanager-main",
+		namespaceName, "alertmanager-main",
 		token,
 	)
 	if err != nil {
@@ -166,14 +167,14 @@ type cleanUpFunc func() error
 func (f *Framework) setup() (cleanUpFunc, error) {
 	cleanUpFuncs := []cleanUpFunc{}
 
-	cf, err := f.CreateServiceAccount(f.Ns, "cluster-monitoring-operator-e2e")
+	cf, err := f.CreateServiceAccount(f.Ns, e2eServiceAccount)
 	if err != nil {
 		return nil, err
 	}
 
 	cleanUpFuncs = append(cleanUpFuncs, cf)
 
-	cf, err = f.CreateClusterRoleBinding(f.Ns, "cluster-monitoring-operator-e2e", "cluster-monitoring-view")
+	cf, err = f.CreateClusterRoleBinding(f.Ns, e2eServiceAccount, "cluster-monitoring-view")
 	if err != nil {
 		return nil, err
 	}
@@ -220,21 +221,26 @@ func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (clea
 }
 
 func (f *Framework) GetServiceAccountToken(namespace, name string) (string, error) {
-	secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return "", err
-	}
-	for _, secret := range secrets.Items {
-		_, dockerToken := secret.Annotations["openshift.io/create-dockercfg-secrets"]
-		token := strings.Contains(secret.Name, fmt.Sprintf("%s-token-", name))
-
-		// we have to skip the token secret that contains the openshift.io/create-dockercfg-secrets annotation
-		// as this is the token to talk to the internal registry.
-		if !dockerToken && token {
-			return string(secret.Data["token"]), nil
+	var token string
+	err := Poll(5*time.Second, time.Minute, func() error {
+		secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return err
 		}
-	}
-	return "", errors.Errorf("cannot find token for %s/%s service account", namespace, name)
+		for _, secret := range secrets.Items {
+			// we have to skip the token secret that contains the openshift.io/create-dockercfg-secrets annotation
+			// as this is the token to talk to the internal registry.
+			if _, dockerToken := secret.Annotations["openshift.io/create-dockercfg-secrets"]; dockerToken {
+				continue
+			}
+			if strings.Contains(secret.Name, fmt.Sprintf("%s-token-", name)) {
+				token = string(secret.Data["token"])
+				return nil
+			}
+		}
+		return errors.Errorf("cannot find token for %s/%s service account", namespace, name)
+	})
+	return token, err
 }
 
 func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterRole string) (cleanUpFunc, error) {
