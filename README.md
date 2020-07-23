@@ -77,7 +77,14 @@ git checkout jsonnet/jsonnet.lock.json
 ```
 
 The last step is to regenerate all assets.
-This is easiest done in a container using the following command;
+
+Since rlease-4.6, this just requires the following command:
+
+```
+make generate
+```
+
+For all older branches this is easiest done in a container using the following command
 
 ```
 make generate-in-docker
