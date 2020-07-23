@@ -55,7 +55,7 @@ jb update
 Now make sure that you only update or adjust the dependency you need to and commit that update
 
 ```
-git add -p jsonnet/jsonnet.lock.json
+git add -p jsonnet/jsonnetfile.lock.json
 git commit -m 'jsonnet: <meaningful message about what you did>'
 git push
 git checkout jsonnet/jsonnet.lock.json
