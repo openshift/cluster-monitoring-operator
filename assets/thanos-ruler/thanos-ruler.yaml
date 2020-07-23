@@ -72,6 +72,7 @@ spec:
     certFile: /etc/tls/grpc/server.crt
     keyFile: /etc/tls/grpc/server.key
   image: quay.io/openshift/origin-thanos:latest
+  listenLocal: true
   queryConfig:
     key: query.yaml
     name: thanos-ruler-query-config

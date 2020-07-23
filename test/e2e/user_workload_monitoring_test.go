@@ -59,6 +59,7 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 	}{
 		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
 		{"assert thanos ruler deployment", assertThanosRulerDeployment},
+		{"assert metrics for user workload components", assertMetricsForMonitoringComponents},
 		{"create and assert an user application is deployed", deployUserApplication},
 		{"create prometheus and alertmanager in user namespace", createPrometheusAlertmanagerInUserNamespace},
 		{"assert user workload metrics", assertUserWorkloadMetrics},
@@ -243,6 +244,25 @@ func assertThanosRulerDeployment(t *testing.T) {
 		t.Fatal(err)
 	}
 
+}
+
+func assertMetricsForMonitoringComponents(t *testing.T) {
+	for service, expected := range map[string]int{
+		"prometheus-operator":      1,
+		"prometheus-user-workload": 2,
+		"thanos-ruler":             2,
+	} {
+		f.ThanosQuerierClient.WaitForQueryReturn(
+			t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"})`, service),
+			func(i int) error {
+				if i == expected {
+					return nil
+				}
+
+				return fmt.Errorf("expected %d targets for service %q but got %d", expected, service, i)
+			},
+		)
+	}
 }
 
 func deployUserApplication(t *testing.T) {

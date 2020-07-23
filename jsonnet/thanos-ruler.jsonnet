@@ -285,6 +285,7 @@ local thanosRulerRules =
             name: 'thanos-ruler-query-config',
           },
           enforcedNamespaceLabel: 'namespace',
+          listenLocal: true,
           ruleSelector: {},
           ruleNamespaceSelector: {},
           volumes: [
