@@ -132,11 +132,6 @@ func (c *Client) Namespace() string {
 	return c.namespace
 }
 
-// ConfigMapListWatch returns a new ListWatch on the ConfigMap resource.
-func (c *Client) ConfigMapListWatch() *cache.ListWatch {
-	return c.ConfigMapListWatchForNamespace(c.namespace)
-}
-
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
