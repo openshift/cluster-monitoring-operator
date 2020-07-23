@@ -42,7 +42,7 @@ spec:
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-    image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+    image: quay.io/coreos/kube-rbac-proxy:v0.6.0
     name: kube-rbac-proxy
     ports:
     - containerPort: 9091
@@ -84,7 +84,7 @@ spec:
         memory: 8Mi
   enforcedNamespaceLabel: namespace
   ignoreNamespaceSelectors: true
-  image: openshift/prometheus:v2.19.2
+  image: openshift/prometheus:v2.20.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -110,10 +110,10 @@ spec:
   serviceMonitorSelector: {}
   thanos:
     baseImage: quay.io/openshift/origin-thanos
-    image: quay.io/thanos/thanos:v0.10.0
+    image: quay.io/openshift/origin-thanos:v0.14.0
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: latest
-  version: v2.19.2
+    version: v0.14.0
+  version: v2.20.0

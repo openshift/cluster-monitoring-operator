@@ -58,7 +58,7 @@ spec:
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt
-        image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+        image: quay.io/coreos/kube-rbac-proxy:v0.6.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
