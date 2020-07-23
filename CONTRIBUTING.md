@@ -32,11 +32,21 @@ These steps outline the general contribution workflow:
 
 ## Working with jsonnet
 This project is making use of a lot of upstream projects and imports them.
-To work with jsonnet you should have [jsonnet bundler](https://github.com/jsonnet-bundler/jsonnet-bundler) installed and [updated](https://github.com/coreos/kube-prometheus#update-jb).
+
+All tools required, should be installed on demand as part of the `make` command starting from release-4.6.
+
+Prior to release-4.6 to work with jsonnet you should have [jsonnet bundler](https://github.com/jsonnet-bundler/jsonnet-bundler) installed and [updated](https://github.com/coreos/kube-prometheus#update-jb).
 
 Assuming you have made your changes upstream ([see an example change](https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/466/files)),
-you can now go ahead and update the dependency here:
+you can now go ahead and update the dependency.
 
+Since release-4.6:
+
+```
+make jsonnet/vendor --always-make
+```
+
+Earlier release branches:
 ```
 cd jsonnet
 jb update
