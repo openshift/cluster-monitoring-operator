@@ -60,11 +60,8 @@ type Operator struct {
 
 	client *client.Client
 
-	cmapInf                       cache.SharedIndexInformer
-	kubeSystemCmapInf             cache.SharedIndexInformer
-	openshiftConfigManagedCmapInf cache.SharedIndexInformer
-	openshiftConfigCmapInf        cache.SharedIndexInformer
-	secretInf                     cache.SharedIndexInformer
+	cmapInf   cache.SharedIndexInformer
+	informers []cache.SharedIndexInformer
 
 	queue workqueue.RateLimitingInterface
 
@@ -88,19 +85,21 @@ func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespa
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
 		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
+		informers:                 make([]cache.SharedIndexInformer, 0),
 	}
 
-	o.secretInf = cache.NewSharedIndexInformer(
+	informer := cache.NewSharedIndexInformer(
 		o.client.SecretListWatchForNamespace(namespace), &v1.Secret{}, resyncPeriod, cache.Indexers{},
 	)
-	o.secretInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 		DeleteFunc: o.handleEvent,
 	})
+	o.informers = append(o.informers, informer)
 
 	o.cmapInf = cache.NewSharedIndexInformer(
-		o.client.ConfigMapListWatch(), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
+		o.client.ConfigMapListWatchForNamespace(namespace), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
 	o.cmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
@@ -108,29 +107,42 @@ func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespa
 		DeleteFunc: o.handleEvent,
 	})
 
-	o.kubeSystemCmapInf = cache.NewSharedIndexInformer(
+	informer = cache.NewSharedIndexInformer(
+		o.client.ConfigMapListWatchForNamespace(namespaceUserWorkload), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
+	)
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    o.handleEvent,
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+		DeleteFunc: o.handleEvent,
+	})
+	o.informers = append(o.informers, informer)
+
+	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("kube-system"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
-	o.kubeSystemCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
+	o.informers = append(o.informers, informer)
 
-	o.openshiftConfigManagedCmapInf = cache.NewSharedIndexInformer(
+	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config-managed"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
-	o.openshiftConfigManagedCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
+	o.informers = append(o.informers, informer)
 
-	o.openshiftConfigCmapInf = cache.NewSharedIndexInformer(
+	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
-	o.openshiftConfigCmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
+	o.informers = append(o.informers, informer)
 
 	return o, nil
 }
@@ -179,11 +191,14 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	}
 
 	go o.cmapInf.Run(stopc)
-	go o.secretInf.Run(stopc)
-	go o.kubeSystemCmapInf.Run(stopc)
+	synced := []cache.InformerSynced{o.cmapInf.HasSynced}
+	for _, inf := range o.informers {
+		go inf.Run(stopc)
+		synced = append(synced, inf.HasSynced)
+	}
 
 	klog.V(4).Info("Waiting for initial cache sync.")
-	ok := cache.WaitForCacheSync(stopc, o.cmapInf.HasSynced, o.kubeSystemCmapInf.HasSynced)
+	ok := cache.WaitForCacheSync(stopc, synced...)
 	if !ok {
 		return errors.New("failed to sync informers")
 	}
@@ -249,6 +264,8 @@ func (o *Operator) handleEvent(obj interface{}) {
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return
 	}
+
+	klog.Infof("Triggering an update due to ConfigMap or Secret: %s", key)
 
 	// Always enqueue the cluster monitoring operator configmap.
 	// That way we reuse the same synchronization logic for all triggering object changes.
