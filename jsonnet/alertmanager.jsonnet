@@ -142,7 +142,20 @@ local authorizationRole = policyRule.new() +
             'alertmanager-main-proxy',
           ],
           listenLocal: true,
+          resources: {
+            requests: {
+              cpu: '4m',
+            },
+          },
           containers: [
+            {
+              name: 'config-reloader',
+              resources: {
+                requests: {
+                  cpu: '1m',
+                },
+              },
+            },
             {
               name: 'alertmanager-proxy',
               image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
@@ -154,16 +167,16 @@ local authorizationRole = policyRule.new() +
               ],
               env: [
                 {
-                  name: "HTTP_PROXY",
-                  value: "",
+                  name: 'HTTP_PROXY',
+                  value: '',
                 },
                 {
-                  name: "HTTPS_PROXY",
-                  value: "",
+                  name: 'HTTPS_PROXY',
+                  value: '',
                 },
                 {
-                  name: "NO_PROXY",
-                  value: "",
+                  name: 'NO_PROXY',
+                  value: '',
                 },
               ],
               args: [
@@ -186,7 +199,7 @@ local authorizationRole = policyRule.new() +
               terminationMessagePolicy: 'FallbackToLogsOnError',
               resources: {
                 requests: {
-                  cpu: '10m',
+                  cpu: '1m',
                   memory: '20Mi',
                 },
               },

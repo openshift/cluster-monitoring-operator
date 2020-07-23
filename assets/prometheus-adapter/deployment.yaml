@@ -31,7 +31,7 @@ spec:
         - containerPort: 6443
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 20Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:

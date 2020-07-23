@@ -87,7 +87,7 @@ local tlsVolumeName = 'node-exporter-tls';
                 {
                   name: 'init-textfile',
                   command: ['/bin/sh', '-c', '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init -perm /111 -type f -exec {} \\;'],
-                  env: [{name: "TMPDIR", value: "/tmp"}],
+                  env: [{ name: 'TMPDIR', value: '/tmp' }],
                   image: $._config.imageRepos.nodeExporter + ':' + $._config.versions.nodeExporter,
                   resources: {},
                   securityContext: {
@@ -114,15 +114,26 @@ local tlsVolumeName = 'node-exporter-tls';
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
                         ],
+                        resources: {
+                          requests: {
+                            memory: '30Mi',
+                            cpu: '1m',
+                          },
+                        },
                       }
                     else
                       c {
-                        args+: ['--no-collector.wifi', '--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory='+textfileDir ],
+                        args+: ['--no-collector.wifi', '--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory=' + textfileDir],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [
                           containerVolumeMount.new(textfileVolumeName, textfileDir, true),
                         ],
                         workingDir: textfileDir,
+                        resources+: {
+                          requests+: {
+                            cpu: '8m',
+                          },
+                        },
                       },
                   super.containers,
                 ),

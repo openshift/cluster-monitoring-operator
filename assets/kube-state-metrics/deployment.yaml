@@ -30,7 +30,7 @@ spec:
           name: https-main
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 40Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -51,7 +51,7 @@ spec:
           name: https-self
         resources:
           requests:
-            cpu: 10m
+            cpu: 1m
             memory: 40Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -67,7 +67,7 @@ spec:
         name: kube-state-metrics
         resources:
           requests:
-            cpu: 10m
+            cpu: 2m
             memory: 40Mi
         volumeMounts:
         - mountPath: /tmp
