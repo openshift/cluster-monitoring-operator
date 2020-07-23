@@ -38,7 +38,6 @@ import (
 // The namespace where to deploy the test application.
 const (
 	userWorkloadTestNs = "user-workload-test"
-	userWorkloadNs     = "openshift-user-workload-monitoring"
 )
 
 func TestUserWorkloadMonitoring(t *testing.T) {
@@ -93,7 +92,7 @@ func TestUserWorkloadMonitoringNewConfig(t *testing.T) {
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "user-workload-monitoring-config",
-			Namespace: userWorkloadNs,
+			Namespace: f.UserWorkloadMonitoringNs,
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheus:
@@ -130,7 +129,7 @@ func assertPrometheusVCConfig(cm *v1.ConfigMap) func(*testing.T) {
 		var lastErr error
 		// Wait for persistent volume claim
 		err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(userWorkloadNs).Get(context.TODO(), "prometheus-user-workload-db-prometheus-user-workload-0", metav1.GetOptions{})
+			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.UserWorkloadMonitoringNs).Get(context.TODO(), "prometheus-user-workload-db-prometheus-user-workload-0", metav1.GetOptions{})
 			lastErr = errors.Wrap(err, "getting prometheus persistent volume claim failed")
 			if err != nil {
 				return false, nil
@@ -147,7 +146,7 @@ func assertPrometheusVCConfig(cm *v1.ConfigMap) func(*testing.T) {
 		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "prometheus-user-workload",
-				Namespace: userWorkloadNs,
+				Namespace: f.UserWorkloadMonitoringNs,
 			},
 		})
 		if err != nil {
