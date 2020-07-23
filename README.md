@@ -52,8 +52,8 @@ Cluster Monitoring Operator is part of OpenShift and therefore follows the [Open
 You should keep this in mind when decding in which release you want your feature or fix.
 
 ### Technical procedure
-Before you get started, you should:
-* Open an Issue or a bug in Bugzilla
+Before you get started, you have to perform the following *mandatory* steps:
+* Open an bug in Bugzilla
 * Fork this repository
 
 Very little things are defined explictly in this repository but most things are imported from upstream projects instead.
