@@ -45,64 +45,7 @@ Documentation on the data sent can be found in the [data collection documentatio
 - **End-to-end tests**: `make test-e2e`
 
 ## Contributing
-
-### Notes
-Cluster Monitoring Operator is part of OpenShift and therefore follows the [OpenShift Life Cycle](https://access.redhat.com/support/policy/updates/openshift)
-
-You should keep this in mind when decding in which release you want your feature or fix.
-
-### Technical procedure
-Before you get started, you have to perform the following *mandatory* steps:
-* Open an bug in Bugzilla
-* Fork this repository
-
-Very little things are defined explictly in this repository but most things are imported from upstream projects instead.
-Therefore you should have [jsonnet bundler](https://github.com/jsonnet-bundler/jsonnet-bundler) installed and [udpated](https://github.com/coreos/kube-prometheus#update-jb).
-
-Assuming you have made your changes upstream ([see an example change](https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/466/files)), you can now go ahead
-and update the dependency here:
-
-```
-cd jsonnet
-jb update
-```
-
-Now make sure that you only update or adjust the dependency you need to and commit that update
-
-```
-git add -p jsonnet/jsonnet.lock.json
-git commit -m 'jsonnet: <meaningful message about what you did>'
-git push
-git checkout jsonnet/jsonnet.lock.json
-```
-
-The last step is to regenerate all assets.
-
-Since rlease-4.6, this just requires the following command:
-
-```
-make generate
-```
-
-For all older branches this is easiest done in a container using the following command
-
-```
-make generate-in-docker
-```
-or if you are on a Mac
-
-```
-MAKE=make make generate-in-docker
-```
-
-At this point, you should follow a standard git workflow:
-
-* review your changes using `git diff`
-* add all generated files in one commit
-* push to your branch
-* open a Pull Request
-
-If your Pull Request is related to a Bugzilla ticket, it should have the following structure: "Bug 123456: this is the exact problem or fix"
+Please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) document for information.
 
 ## Release
 
