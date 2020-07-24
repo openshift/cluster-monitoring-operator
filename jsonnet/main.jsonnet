@@ -80,13 +80,13 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  // Because we build OpenShift images separately to upstream,
                  // we have to ensure these versions exist before upgrading.
                  openshiftOauthProxy: 'latest',
-                 prometheus: 'v2.19.2',
+                 prometheus: 'v2.20.0',
                  alertmanager: 'v0.21.0',
                  nodeExporter: 'v1.0.1',
                  promLabelProxy: 'v0.1.0',
-                 kubeRbacProxy: 'v0.4.1',
+                 kubeRbacProxy: 'v0.6.0',
                  prometheusAdapter: 'v0.4.1',
-                 openshiftThanos: 'latest',
+                 openshiftThanos: 'v0.14.0',
                },
                prometheusAdapter+:: {
                  prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',

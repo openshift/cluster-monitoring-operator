@@ -51,7 +51,7 @@ spec:
         - --grpc-client-tls-ca=/etc/tls/grpc/ca.crt
         - --grpc-client-server-name=prometheus-grpc
         - --rule=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
-        image: quay.io/openshift/origin-thanos:latest
+        image: quay.io/openshift/origin-thanos:v0.14.0
         livenessProbe:
           exec:
             command:
@@ -129,7 +129,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
         - --logtostderr=true
-        image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+        image: quay.io/coreos/kube-rbac-proxy:v0.6.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 9092
@@ -163,7 +163,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
         - --logtostderr=true
-        image: quay.io/coreos/kube-rbac-proxy:v0.4.1
+        image: quay.io/coreos/kube-rbac-proxy:v0.6.0
         name: kube-rbac-proxy-rules
         ports:
         - containerPort: 9093
