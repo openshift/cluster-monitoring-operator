@@ -1842,6 +1842,7 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 	if err != nil {
 		return nil, err
 	}
+
 	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.NodeSelector) > 0 {
 
 		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.NodeSelector
@@ -1880,6 +1881,9 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 					args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespace
 				}
 			}
+			if f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel != "" {
+				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel))
+			}
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
@@ -1893,6 +1897,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 	if err != nil {
 		return nil, err
 	}
+
 	if len(f.config.UserWorkloadConfiguration.PrometheusOperator.NodeSelector) > 0 {
 		d.Spec.Template.Spec.NodeSelector = f.config.UserWorkloadConfiguration.PrometheusOperator.NodeSelector
 	}
@@ -1941,10 +1946,12 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 					args[i] = PrometheusOperatorPrometheusInstanceNamespacesFlag + f.namespaceUserWorkload
 				}
 			}
+			if f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel != "" {
+				args = append(args, fmt.Sprintf("--log-level=%s", f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel))
+			}
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
-
 	d.Namespace = f.namespaceUserWorkload
 
 	return d, nil
