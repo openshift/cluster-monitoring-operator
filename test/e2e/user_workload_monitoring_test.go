@@ -836,8 +836,6 @@ func assertGRPCTLSRotation(t *testing.T) {
 		t.Fatalf("error waiting for grpc-tls secret: %v", err)
 	}
 
-	expected := countGRPCSecrets(f.Ns) + countGRPCSecrets(f.UserWorkloadMonitoringNs)
-
 	if s.Annotations == nil {
 		s.Annotations = make(map[string]string)
 	}
@@ -847,6 +845,16 @@ func assertGRPCTLSRotation(t *testing.T) {
 	if err := f.OperatorClient.CreateOrUpdateSecret(s); err != nil {
 		t.Fatalf("error saving grpc-tls secret: %v", err)
 	}
+
+	// We know the amount of expected secrets in forehand.
+	// We should not calculate it on-the-fly as the calculation could be racy.
+	//
+	// 1. openshift-monitoring/grpc-tls
+	// 2. openshift-monitoring/prometheus-k8s-grpc-tls-[hash]
+	// 3. openshift-user-workload-monitoring/prometheus-user-workload-grpc-tls-[hash]
+	// 4. openshift-monitoring/thanos-querier-grpc-tls-[hash]
+	// 5. openshift-user-workload-monitoring/thanos-ruler-grpc-tls-[hash]
+	const expectedGRPCSecretCount = 5
 
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		s, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(context.TODO(), "grpc-tls", metav1.GetOptions{})
@@ -859,8 +867,8 @@ func assertGRPCTLSRotation(t *testing.T) {
 		}
 
 		got := countGRPCSecrets(f.Ns) + countGRPCSecrets(f.UserWorkloadMonitoringNs)
-		if expected != got {
-			return errors.Errorf("expecting %d gRPC secrets, got %d", expected, got)
+		if expectedGRPCSecretCount != got {
+			return errors.Errorf("expecting %d gRPC secrets, got %d", expectedGRPCSecretCount, got)
 		}
 
 		return nil
