@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -802,13 +803,35 @@ func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
 }
 
 func assertGRPCTLSRotation(t *testing.T) {
+	countGRPCSecrets := func(ns string) int {
+		t.Helper()
+		var result int
+		err := framework.Poll(5*time.Second, time.Minute, func() error {
+			s, err := f.KubeClient.CoreV1().Secrets(ns).List(context.TODO(), metav1.ListOptions{LabelSelector: "monitoring.openshift.io/hash"})
+			if err != nil {
+				return err
+			}
+
+			for _, s := range s.Items {
+				if strings.Contains(s.Name, "grpc-tls") {
+					result++
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return result
+	}
+
 	s, err := f.OperatorClient.WaitForSecret(&v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "grpc-tls",
 			Namespace: f.Ns,
 		},
 	})
-
 	if err != nil {
 		t.Fatalf("error waiting for grpc-tls secret: %v", err)
 	}
@@ -823,6 +846,16 @@ func assertGRPCTLSRotation(t *testing.T) {
 		t.Fatalf("error saving grpc-tls secret: %v", err)
 	}
 
+	// We know the amount of expected secrets in forehand.
+	// We should not calculate it on-the-fly as the calculation could be racy.
+	//
+	// 1. openshift-monitoring/grpc-tls
+	// 2. openshift-monitoring/prometheus-k8s-grpc-tls-[hash]
+	// 3. openshift-user-workload-monitoring/prometheus-user-workload-grpc-tls-[hash]
+	// 4. openshift-monitoring/thanos-querier-grpc-tls-[hash]
+	// 5. openshift-user-workload-monitoring/thanos-ruler-grpc-tls-[hash]
+	const expectedGRPCSecretCount = 5
+
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		s, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(context.TODO(), "grpc-tls", metav1.GetOptions{})
 		if err != nil {
@@ -831,6 +864,11 @@ func assertGRPCTLSRotation(t *testing.T) {
 
 		if _, ok := s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"]; ok {
 			return errors.New("rotation did not execute: grpc-tls-forced-rotate annotation set")
+		}
+
+		got := countGRPCSecrets(f.Ns) + countGRPCSecrets(f.UserWorkloadMonitoringNs)
+		if expectedGRPCSecretCount != got {
+			return errors.Errorf("expecting %d gRPC secrets, got %d", expectedGRPCSecretCount, got)
 		}
 
 		return nil
