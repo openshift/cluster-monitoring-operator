@@ -1,35 +1,109 @@
 # How to Contribute
 
-cluster-monitoring-operator projects are [Apache 2.0 licensed](LICENSE) and accept contributions via GitHub pull requests.  This document outlines some of the conventions on development workflow, commit message formatting, contact points and other resources to make it easier to get your contribution accepted.
+cluster-monitoring-operator projects are [Apache 2.0 licensed](LICENSE) and accept contributions via GitHub pull requests.
+This document outlines some of the conventions on development workflow, commit message formatting, contact points and other resources to make it easier to get your contribution accepted.
 
 # Certificate of Origin
 
-By contributing to this project you agree to the Developer Certificate of Origin (DCO). This document was created by the Linux Kernel community and is a simple statement that you, as a contributor, have the legal right to make the contribution. See the [DCO](DCO) file for details.
+By contributing to this project you agree to the Developer Certificate of Origin (DCO). 
+This document was created by the Linux Kernel community and is a simple statement that you, as a contributor, have the legal right to make the contribution. See the [DCO](DCO) file for details.
 
-## Getting Started
+# Notes
+Cluster Monitoring Operator is part of OpenShift and therefore follows the [OpenShift Life Cycle](https://access.redhat.com/support/policy/updates/openshift)
 
-- Fork the repository on GitHub
-- Read the [README](README.md) for build and test instructions
-- Play with the project, submit bugs, submit patches!
+You should keep this in mind when decding in which release you want your feature or fix.
 
-## Contribution Flow
+# Contribution Flow
+Before you get started, you have to perform the following **mandatory** steps:
+* Open an bug in Bugzilla
+* Fork this repository
 
-This is a rough outline of what a contributor's workflow looks like:
+If you want to make changes to the actual code, please follow the [Coding Style](#coding-style) for code changes.
 
-- Create a topic branch from where you want to base your work (usually master).
-- Make commits of logical units.
-- Make sure your commit messages are in the proper format (see below).
-- Push your changes to a topic branch in your fork of the repository.
-- Make sure the tests pass, and add any new tests as appropriate.
-- Submit a pull request to the original repository.
+## General workflow information
+These steps outline the general contribution workflow:
 
-Thanks for your contributions!
+* Create a topic branch from where you want to base your work (usually master).
+* Make commits of logical units.
+* Make sure your commit messages are in the proper format (see [Format of the Commit Message](#format-of-the-commit-message))
+* Push your changes to a topic branch in your fork of the repository.
+* Make sure the tests pass, and add any new tests as appropriate.
+* Submit a pull request to the original repository. (see [Format of Pull Requests](#format-of-pull-requests))
 
-### Coding Style
+## Working with jsonnet
+This project is making use of a lot of upstream projects and imports them.
 
-cluster-monitoring-operator projects written in Go follow a set of style guidelines that we've documented [here](https://github.com/coreos/docs/tree/master/golang). Please follow them when working on your contributions.
+All tools required, should be installed on demand as part of the `make` command starting from release-4.6.
 
-### Format of the Commit Message
+Prior to release-4.6 to work with jsonnet you should have [jsonnet bundler](https://github.com/jsonnet-bundler/jsonnet-bundler) installed and [updated](https://github.com/coreos/kube-prometheus#update-jb).
+
+Assuming you have made your changes upstream ([see an example change](https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/466/files)),
+you can now go ahead and update the dependency.
+
+Since release-4.6:
+
+```
+make jsonnet/vendor --always-make
+```
+
+Earlier release branches:
+```
+cd jsonnet
+jb update
+```
+
+Now make sure that you only update or adjust the dependency you need to and commit that update
+
+```
+git add -p jsonnet/jsonnetfile.lock.json
+git commit -m 'jsonnet: <meaningful message about what you did>'
+git push
+git checkout jsonnet/jsonnet.lock.json
+```
+See [Format of the Commit Message](#format-of-the-commit-message) for help on how to format your commit message
+
+
+The last step is to regenerate all assets.
+
+Since release-4.6, this just requires the following command:
+
+```
+make generate
+```
+
+For all older branches this is easiest done in a container using the following command
+
+```
+make generate-in-docker
+```
+or if you are on a Mac
+
+```
+MAKE=make make generate-in-docker
+```
+
+At this point, you should follow a standard git workflow:
+
+* review your changes using `git diff`
+* add all generated files in one commit
+* push to your branch
+* open a Pull Request (see [Format of Pull Requests](#format-of-pull-requests))
+
+
+## Coding Style
+
+cluster-monitoring-operator projects written in Go follow a set of style guidelines that we've documented [here](https://github.com/coreos/docs/tree/master/golang).
+Please follow them when working on your contributions.
+
+## Format of Pull Requests
+We are making heavy use of bots and integrations.
+In order for those to work properly, your Pull Request should match the following structure:
+
+```
+Bug 123456: this is the exact problem or fix
+```
+
+## Format of the Commit Message
 
 We follow a rough convention for commit messages that is designed to answer two
 questions: what changed and why. The subject line should feature the what and
@@ -58,3 +132,7 @@ The first line is the subject and should be no longer than 70 characters, the
 second line is always blank, and other lines should be wrapped at 80 characters.
 This allows the message to be easier to read on GitHub as well as in various
 git tools.
+
+
+
+Thank you for contributing!

@@ -44,6 +44,9 @@ Documentation on the data sent can be found in the [data collection documentatio
 
 - **End-to-end tests**: `make test-e2e`
 
+## Contributing
+Please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) document for information.
+
 ## Release
 
 Before a new OpenShift release happens make sure to pin the dependencies to the release branches:
