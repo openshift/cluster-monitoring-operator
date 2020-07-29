@@ -1456,7 +1456,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.LogLevel
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != "" {
+	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != "" && f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != DefaultRetentionValue {
 		p.Spec.Retention = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention
 	}
 
