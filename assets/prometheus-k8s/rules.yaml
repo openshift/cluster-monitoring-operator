@@ -1633,7 +1633,7 @@ spec:
         message: '{{ $labels.node }} is unreachable and some workloads may be rescheduled.'
       expr: |
         kube_node_spec_taint{job="kube-state-metrics",key="node.kubernetes.io/unreachable",effect="NoSchedule"} == 1
-      for: 2m
+      for: 15m
       labels:
         severity: warning
     - alert: KubeletTooManyPods
