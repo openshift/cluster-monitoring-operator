@@ -26,7 +26,7 @@ local authorizationRole =
   policyRule.withVerbs(['create']);
 
 local thanosRulerRules =
-  (import 'github.com/thanos-io/thanos/mixin/thanos/alerts/rule.libsonnet') {
+  (import 'github.com/thanos-io/thanos/mixin/alerts/rule.libsonnet') {
     rule+:: {
       selector: 'job="thanos-ruler"',
     },
