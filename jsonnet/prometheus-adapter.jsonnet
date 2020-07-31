@@ -54,6 +54,9 @@ local tlsVolumeName = 'kube-state-metrics-tls';
         },
       },
 
+    # See BZ: https://bugzilla.redhat.com/show_bug.cgi?id=1862432
+    serviceMonitor+:: {},
+
     deployment+:
       {
         spec+: {
