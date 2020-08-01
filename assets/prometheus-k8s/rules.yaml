@@ -711,9 +711,6 @@ spec:
     - expr: sum(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait"}[3m])) BY
         (instance)
       record: instance:node_cpu:rate:sum
-    - expr: sum((node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}))
-        BY (instance)
-      record: instance:node_filesystem_usage:sum
     - expr: sum(rate(node_network_receive_bytes_total[3m])) BY (instance)
       record: instance:node_network_receive_bytes:rate:sum
     - expr: sum(rate(node_network_transmit_bytes_total[3m])) BY (instance)
@@ -1332,10 +1329,10 @@ spec:
     - alert: KubeJobCompletion
       annotations:
         message: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more
-          than one hour to complete.
+          than 12 hours to complete.
       expr: |
         kube_job_spec_completions{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
-      for: 1h
+      for: 12h
       labels:
         severity: warning
     - alert: KubeJobFailed
@@ -1974,6 +1971,24 @@ spec:
         severity: warning
   - name: prometheus-operator
     rules:
+    - alert: PrometheusOperatorListErrors
+      annotations:
+        message: Errors while performing List operations in controller {{$labels.controller}}
+          in {{$labels.namespace}} namespace.
+      expr: |
+        (sum by (controller,namespace) (rate(prometheus_operator_list_operations_failed_total{job="prometheus-operator",namespace="openshift-monitoring"}[1h])) / sum by (controller,namespace) (rate(prometheus_operator_list_operations_total{job="prometheus-operator",namespace="openshift-monitoring"}[1h]))) > 0.4
+      for: 15m
+      labels:
+        severity: warning
+    - alert: PrometheusOperatorWatchErrors
+      annotations:
+        message: Errors while performing Watch operations in controller {{$labels.controller}}
+          in {{$labels.namespace}} namespace.
+      expr: |
+        (sum by (controller,namespace) (rate(prometheus_operator_watch_operations_failed_total{job="prometheus-operator",namespace="openshift-monitoring"}[1h])) / sum by (controller,namespace) (rate(prometheus_operator_watch_operations_total{job="prometheus-operator",namespace="openshift-monitoring"}[1h]))) > 0.4
+      for: 15m
+      labels:
+        severity: warning
     - alert: PrometheusOperatorReconcileErrors
       annotations:
         message: Errors while reconciling {{ $labels.controller }} in {{ $labels.namespace
@@ -1997,11 +2012,11 @@ spec:
       annotations:
         message: 'etcd cluster "{{ $labels.job }}": members are down ({{ $value }}).'
       expr: |
-        max by (job) (
-          sum by (job) (up{job=~".*etcd.*"} == bool 0)
+        max without (endpoint) (
+          sum without (instance) (up{job=~".*etcd.*"} == bool 0)
         or
-          count by (job,endpoint) (
-            sum by (job,endpoint,To) (rate(etcd_network_peer_sent_failures_total{job=~".*etcd.*"}[3m])) > 0.01
+          count without (To) (
+            sum without (instance) (rate(etcd_network_peer_sent_failures_total{job=~".*etcd.*"}[1m])) > 0.01
           )
         )
         > 0
@@ -2013,7 +2028,7 @@ spec:
         message: 'etcd cluster "{{ $labels.job }}": insufficient members ({{ $value
           }}).'
       expr: |
-        sum(up{job=~".*etcd.*"} == bool 1) by (job) < ((count(up{job=~".*etcd.*"}) by (job) + 1) / 2)
+        sum(up{job=~".*etcd.*"} == bool 1) without (instance) < ((count(up{job=~".*etcd.*"}) without (instance) + 1) / 2)
       for: 3m
       labels:
         severity: critical
@@ -2032,7 +2047,7 @@ spec:
           the last 15 minutes. Frequent elections may be a sign of insufficient resources,
           high network latency, or disruptions by other components and should be investigated.'
       expr: |
-        increase((max by (job) (etcd_server_leader_changes_seen_total{job=~".*etcd.*"}) or 0*absent(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}))[15m:1m]) >= 4
+        increase((max without (instance) (etcd_server_leader_changes_seen_total{job=~".*etcd.*"}) or 0*absent(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}))[15m:1m]) >= 4
       for: 5m
       labels:
         severity: warning
@@ -2041,7 +2056,7 @@ spec:
         message: 'etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method
           }} are taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
       expr: |
-        histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job=~".*etcd.*", grpc_type="unary"}[5m])) by (job, instance, grpc_service, grpc_method, le))
+        histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job=~".*etcd.*", grpc_type="unary"}[5m])) without(grpc_type))
         > 0.15
       for: 10m
       labels:
@@ -2090,8 +2105,8 @@ spec:
         message: '{{ $value }}% of requests for {{ $labels.method }} failed on etcd
           instance {{ $labels.instance }}'
       expr: |
-        sum(rate(etcd_http_failed_total{job=~".*etcd.*", code!="404"}[5m])) BY (method) / sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m]))
-        BY (method) > 0.01
+        sum(rate(etcd_http_failed_total{job=~".*etcd.*", code!="404"}[5m])) without (code) / sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m]))
+        without (code) > 0.01
       for: 10m
       labels:
         severity: warning
@@ -2100,8 +2115,8 @@ spec:
         message: '{{ $value }}% of requests for {{ $labels.method }} failed on etcd
           instance {{ $labels.instance }}.'
       expr: |
-        sum(rate(etcd_http_failed_total{job=~".*etcd.*", code!="404"}[5m])) BY (method) / sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m]))
-        BY (method) > 0.05
+        sum(rate(etcd_http_failed_total{job=~".*etcd.*", code!="404"}[5m])) without (code) / sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m]))
+        without (code) > 0.05
       for: 10m
       labels:
         severity: critical

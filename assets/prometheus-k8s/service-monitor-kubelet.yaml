@@ -70,6 +70,19 @@ spec:
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
       insecureSkipVerify: false
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    interval: 30s
+    path: /metrics/probes
+    port: https-metrics
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
+      insecureSkipVerify: false
   - interval: 30s
     port: https-metrics
     relabelings:
