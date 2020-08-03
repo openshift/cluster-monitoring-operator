@@ -849,12 +849,14 @@ func assertGRPCTLSRotation(t *testing.T) {
 	// We know the amount of expected secrets in forehand.
 	// We should not calculate it on-the-fly as the calculation could be racy.
 	//
-	// 1. openshift-monitoring/grpc-tls
-	// 2. openshift-monitoring/prometheus-k8s-grpc-tls-[hash]
-	// 3. openshift-user-workload-monitoring/prometheus-user-workload-grpc-tls-[hash]
-	// 4. openshift-monitoring/thanos-querier-grpc-tls-[hash]
-	// 5. openshift-user-workload-monitoring/thanos-ruler-grpc-tls-[hash]
-	const expectedGRPCSecretCount = 5
+	// 1. openshift-monitoring/prometheus-k8s-grpc-tls-[hash]
+	// 2. openshift-user-workload-monitoring/prometheus-user-workload-grpc-tls-[hash]
+	// 3. openshift-monitoring/thanos-querier-grpc-tls-[hash]
+	// 4. openshift-user-workload-monitoring/thanos-ruler-grpc-tls-[hash]
+	//
+	// The central grpc-tls secret is verified independently by getting it directly
+	// and verifying if the force-rotation annotation has been removed.
+	const expectedGRPCSecretCount = 4
 
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		s, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(context.TODO(), "grpc-tls", metav1.GetOptions{})
