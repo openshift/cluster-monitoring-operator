@@ -74,8 +74,14 @@ spec:
             sum(rate(apiserver_request_duration_seconds_count{job="apiserver",verb=~"LIST|GET"}[1d]))
             -
             (
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[1d])) +
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[1d])) +
+              (
+                sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[1d]))
+                or
+                vector(0)
+              )
+              +
+              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[1d]))
+              +
               sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="cluster",le="5"}[1d]))
             )
           )
@@ -95,8 +101,14 @@ spec:
             sum(rate(apiserver_request_duration_seconds_count{job="apiserver",verb=~"LIST|GET"}[1h]))
             -
             (
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[1h])) +
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[1h])) +
+              (
+                sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[1h]))
+                or
+                vector(0)
+              )
+              +
+              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[1h]))
+              +
               sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="cluster",le="5"}[1h]))
             )
           )
@@ -116,8 +128,14 @@ spec:
             sum(rate(apiserver_request_duration_seconds_count{job="apiserver",verb=~"LIST|GET"}[2h]))
             -
             (
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[2h])) +
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[2h])) +
+              (
+                sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[2h]))
+                or
+                vector(0)
+              )
+              +
+              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[2h]))
+              +
               sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="cluster",le="5"}[2h]))
             )
           )
@@ -137,8 +155,14 @@ spec:
             sum(rate(apiserver_request_duration_seconds_count{job="apiserver",verb=~"LIST|GET"}[30m]))
             -
             (
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[30m])) +
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[30m])) +
+              (
+                sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[30m]))
+                or
+                vector(0)
+              )
+              +
+              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[30m]))
+              +
               sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="cluster",le="5"}[30m]))
             )
           )
@@ -158,8 +182,14 @@ spec:
             sum(rate(apiserver_request_duration_seconds_count{job="apiserver",verb=~"LIST|GET"}[3d]))
             -
             (
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[3d])) +
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[3d])) +
+              (
+                sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[3d]))
+                or
+                vector(0)
+              )
+              +
+              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[3d]))
+              +
               sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="cluster",le="5"}[3d]))
             )
           )
@@ -179,8 +209,14 @@ spec:
             sum(rate(apiserver_request_duration_seconds_count{job="apiserver",verb=~"LIST|GET"}[5m]))
             -
             (
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[5m])) +
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[5m])) +
+              (
+                sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[5m]))
+                or
+                vector(0)
+              )
+              +
+              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[5m]))
+              +
               sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="cluster",le="5"}[5m]))
             )
           )
@@ -200,8 +236,14 @@ spec:
             sum(rate(apiserver_request_duration_seconds_count{job="apiserver",verb=~"LIST|GET"}[6h]))
             -
             (
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[6h])) +
-              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[6h])) +
+              (
+                sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[6h]))
+                or
+                vector(0)
+              )
+              +
+              sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[6h]))
+              +
               sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="cluster",le="5"}[6h]))
             )
           )
@@ -384,8 +426,14 @@ spec:
             sum(increase(apiserver_request_duration_seconds_count{verb=~"LIST|GET"}[30d]))
             -
             (
-              sum(increase(apiserver_request_duration_seconds_bucket{verb=~"LIST|GET",scope=~"resource|",le="0.1"}[30d])) +
-              sum(increase(apiserver_request_duration_seconds_bucket{verb=~"LIST|GET",scope="namespace",le="0.5"}[30d])) +
+              (
+                sum(increase(apiserver_request_duration_seconds_bucket{verb=~"LIST|GET",scope=~"resource|",le="0.1"}[30d]))
+                or
+                vector(0)
+              )
+              +
+              sum(increase(apiserver_request_duration_seconds_bucket{verb=~"LIST|GET",scope="namespace",le="0.5"}[30d]))
+              +
               sum(increase(apiserver_request_duration_seconds_bucket{verb=~"LIST|GET",scope="cluster",le="5"}[30d]))
             )
           ) +
@@ -403,8 +451,14 @@ spec:
           -
           (
             # too slow
-            sum(increase(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[30d])) +
-            sum(increase(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[30d])) +
+            (
+              sum(increase(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope=~"resource|",le="0.1"}[30d]))
+              or
+              vector(0)
+            )
+            +
+            sum(increase(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="namespace",le="0.5"}[30d]))
+            +
             sum(increase(apiserver_request_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",scope="cluster",le="5"}[30d]))
           )
           +
@@ -592,7 +646,7 @@ spec:
         )
       labels:
         workload_type: deployment
-      record: mixin_pod_workload
+      record: namespace_workload_pod:kube_pod_owner:relabel
     - expr: |
         max by (cluster, namespace, workload, pod) (
           label_replace(
@@ -602,7 +656,7 @@ spec:
         )
       labels:
         workload_type: daemonset
-      record: mixin_pod_workload
+      record: namespace_workload_pod:kube_pod_owner:relabel
     - expr: |
         max by (cluster, namespace, workload, pod) (
           label_replace(
@@ -612,7 +666,7 @@ spec:
         )
       labels:
         workload_type: statefulset
-      record: mixin_pod_workload
+      record: namespace_workload_pod:kube_pod_owner:relabel
   - name: kube-scheduler.rules
     rules:
     - expr: |
@@ -1181,10 +1235,10 @@ spec:
         message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
           }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
       expr: |
-        rate(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[15m]) * 60 * 5 > 0
+        rate(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m]) * 60 * 5 > 0
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubePodNotReady
       annotations:
         message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
@@ -1199,7 +1253,7 @@ spec:
         ) > 0
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubeDeploymentGenerationMismatch
       annotations:
         message: Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment
@@ -1211,7 +1265,7 @@ spec:
         kube_deployment_metadata_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubeDeploymentReplicasMismatch
       annotations:
         message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not
@@ -1228,7 +1282,7 @@ spec:
         )
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubeStatefulSetReplicasMismatch
       annotations:
         message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has
@@ -1245,7 +1299,7 @@ spec:
         )
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubeStatefulSetGenerationMismatch
       annotations:
         message: StatefulSet generation for {{ $labels.namespace }}/{{ $labels.statefulset
@@ -1257,37 +1311,63 @@ spec:
         kube_statefulset_metadata_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubeStatefulSetUpdateNotRolledOut
       annotations:
         message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} update
           has not been rolled out.
       expr: |
-        max without (revision) (
-          kube_statefulset_status_current_revision{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
-            unless
-          kube_statefulset_status_update_revision{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
-        )
-          *
         (
-          kube_statefulset_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
-            !=
-          kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          max without (revision) (
+            kube_statefulset_status_current_revision{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+              unless
+            kube_statefulset_status_update_revision{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          )
+            *
+          (
+            kube_statefulset_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+              !=
+            kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          )
+        )  and (
+          changes(kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
+            ==
+          0
         )
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubeDaemonSetRolloutStuck
       annotations:
-        message: Only {{ $value | humanizePercentage }} of the desired Pods of DaemonSet
-          {{ $labels.namespace }}/{{ $labels.daemonset }} are scheduled and ready.
+        message: DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has not
+          finished or progressed for at least 15 minutes.
       expr: |
-        kube_daemonset_status_number_ready{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
-          /
-        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} < 1.00
+        (
+          (
+            kube_daemonset_status_current_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+             !=
+            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          ) or (
+            kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+             !=
+            0
+          ) or (
+            kube_daemonset_updated_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+             !=
+            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          ) or (
+            kube_daemonset_status_number_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+             !=
+            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          )
+        ) and (
+          changes(kube_daemonset_updated_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
+            ==
+          0
+        )
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubeContainerWaiting
       annotations:
         message: Pod {{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container}}
@@ -1315,15 +1395,6 @@ spec:
       expr: |
         kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
       for: 15m
-      labels:
-        severity: warning
-    - alert: KubeCronJobRunning
-      annotations:
-        message: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is taking more
-          than 1h to complete.
-      expr: |
-        time() - kube_cronjob_next_schedule_time{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 3600
-      for: 1h
       labels:
         severity: warning
     - alert: KubeJobCompletion
@@ -1537,41 +1608,6 @@ spec:
         short: 6h
   - name: kubernetes-system-apiserver
     rules:
-    - alert: KubeAPILatencyHigh
-      annotations:
-        message: The API server has an abnormal latency of {{ $value }} seconds for
-          {{ $labels.verb }} {{ $labels.resource }}.
-      expr: |
-        cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99"}
-        >
-        1
-        and on (verb,resource)
-        (
-          cluster:apiserver_request_duration_seconds:mean5m{job="apiserver"}
-          >
-          on (verb) group_left()
-          (
-            avg by (verb) (cluster:apiserver_request_duration_seconds:mean5m{job="apiserver"} >= 0)
-            +
-            2*stddev by (verb) (cluster:apiserver_request_duration_seconds:mean5m{job="apiserver"} >= 0)
-          )
-        ) > on (verb) group_left()
-        1.2 * avg by (verb) (cluster:apiserver_request_duration_seconds:mean5m{job="apiserver"} >= 0)
-      for: 5m
-      labels:
-        severity: warning
-    - alert: KubeAPIErrorsHigh
-      annotations:
-        message: API server is returning errors for {{ $value | humanizePercentage
-          }} of requests for {{ $labels.verb }} {{ $labels.resource }} {{ $labels.subresource
-          }}.
-      expr: |
-        sum(rate(apiserver_request_total{job="apiserver",code=~"5.."}[5m])) by (resource,subresource,verb)
-          /
-        sum(rate(apiserver_request_total{job="apiserver"}[5m])) by (resource,subresource,verb) > 0.05
-      for: 10m
-      labels:
-        severity: warning
     - alert: KubeClientCertificateExpiration
       annotations:
         message: A client certificate used to authenticate to the apiserver is expiring
@@ -1600,10 +1636,10 @@ spec:
         severity: warning
     - alert: AggregatedAPIDown
       annotations:
-        message: An aggregated API {{ $labels.name }}/{{ $labels.namespace }} is down.
-          It has not been available at least for the past five minutes.
+        message: An aggregated API {{ $labels.name }}/{{ $labels.namespace }} has
+          been only {{ $value | humanize }}% available over the last 5m.
       expr: |
-        sum by(name, namespace)(sum_over_time(aggregator_unavailable_apiservice[5m])) > 0
+        (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice[5m]))) * 100 < 90
       for: 5m
       labels:
         severity: warning
@@ -1629,8 +1665,7 @@ spec:
       annotations:
         message: '{{ $labels.node }} is unreachable and some workloads may be rescheduled.'
       expr: |
-        kube_node_spec_taint{job="kube-state-metrics",key="node.kubernetes.io/unreachable",effect="NoSchedule"} == 1
-      for: 2m
+        (kube_node_spec_taint{job="kube-state-metrics",key="node.kubernetes.io/unreachable",effect="NoSchedule"} unless ignoring(key,value) kube_node_spec_taint{job="kube-state-metrics",key=~"ToBeDeletedByClusterAutoscaler|cloud.google.com/impending-node-termination|aws-node-termination-handler/spot-itn"}) == 1
       labels:
         severity: warning
     - alert: KubeletTooManyPods
@@ -1638,7 +1673,13 @@ spec:
         message: Kubelet '{{ $labels.node }}' is running at {{ $value | humanizePercentage
           }} of its Pod capacity.
       expr: |
-        max(max(kubelet_running_pod_count{job="kubelet", metrics_path="/metrics"}) by(instance) * on(instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"}) by(node) / max(kube_node_status_capacity_pods{job="kube-state-metrics"} != 1) by(node) > 0.95
+        count by(node) (
+          (kube_pod_status_phase{job="kube-state-metrics",phase="Running"} == 1) * on(instance,pod,namespace,cluster) group_left(node) topk by(instance,pod,namespace,cluster) (1, kube_pod_info{job="kube-state-metrics"})
+        )
+        /
+        max by(node) (
+          kube_node_status_capacity_pods{job="kube-state-metrics"} != 1
+        ) > 0.95
       for: 15m
       labels:
         severity: warning
@@ -2016,11 +2057,11 @@ spec:
           sum without (instance) (up{job=~".*etcd.*"} == bool 0)
         or
           count without (To) (
-            sum without (instance) (rate(etcd_network_peer_sent_failures_total{job=~".*etcd.*"}[1m])) > 0.01
+            sum without (instance) (rate(etcd_network_peer_sent_failures_total{job=~".*etcd.*"}[120s])) > 0.01
           )
         )
         > 0
-      for: 3m
+      for: 10m
       labels:
         severity: critical
     - alert: etcdInsufficientMembers
