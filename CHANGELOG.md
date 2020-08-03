@@ -16,3 +16,7 @@
   - etcd: https://github.com/etcd-io/etcd/pull/12122: Documentation/etcd-mixin: Reformulate alerting rules to use `without` rather than `by`
   - kubelet: https://github.com/coreos/kube-prometheus/pull/623: Add scraping of endpoint for kubelet probe metrics
   - thanos: https://github.com/thanos-io/thanos/pull/2374: mixin: Added critical Rules alerts.
+- [#898](https://github.com/openshift/cluster-monitoring-operator/pull/898) Bump jsonnet depdencies for kube-mixin:
+  - Adjusts severity levels of many alerts from critical to warning as they were cause based alerts
+  - Adjusts KubeStatefulSetUpdateNotRolledOut, KubeDaemonSetRolloutStuck
+  - Removes KubeAPILatencyHigh and KubeAPIErrorsHigh
