@@ -134,6 +134,9 @@ data:
     # subscription_sync_total is the number of times an OLM operator
     # Subscription has been synced, labelled by name and installed csv
     - '{__name__="subscription_sync_total"}'
+    # olm_resolution_duration_seconds is the duration of a dependency resolution attempt
+    # (@openshift/openshift-team-olm)
+    - '{__name__="olm_resolution_duration_seconds"}'
     # (@openshift/openshift-team-cluster-manager) csv_succeeded is unique to the
     # namespace, name, version, and phase labels.  The metrics is always
     # present and can be equal to 0 or 1, where 0 represents that the csv is
