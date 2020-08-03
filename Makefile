@@ -77,6 +77,15 @@ vendor:
 .PHONY: generate
 generate: pkg/manifests/bindata.go manifests/0000_50_cluster_monitoring_operator_02-role.yaml docs
 
+.PHONY: generate-in-docker
+generate-in-docker:
+	echo -e "FROM golang:1.14 \n RUN apt update && apt install python-yaml jq -y" | docker build -t cmo-tooling -
+	docker run -it --user $(shell id -u):$(shell id -g) \
+		-w /go/src/github.com/openshift/cluster-monitoring-operator \
+		-v ${PWD}:/go/src/github.com/openshift/cluster-monitoring-operator \
+		cmo-tooling make generate
+
+
 $(JSONNET_VENDOR): $(JB_BIN) jsonnet/jsonnetfile.json
 	cd jsonnet && $(JB_BIN) install
 
