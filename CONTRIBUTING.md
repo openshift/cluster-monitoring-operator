@@ -30,6 +30,18 @@ These steps outline the general contribution workflow:
 * Make sure the tests pass, and add any new tests as appropriate.
 * Submit a pull request to the original repository. (see [Format of Pull Requests](#format-of-pull-requests))
 
+## Required tools
+To allow scripts and `make` targets working correctly, ensure you have following tools installed in your system:
+
+* golang (see `go.mod` file for minimum required go version)
+* `awk` (GNU variant)
+* `sed` (GNU variant)
+* `make`
+* `curl`
+* python and pyyaml package
+
+All other tools are downloaded automatically by `make` and put into `tmp/bin` directory.
+
 ## Working with jsonnet
 This project is making use of a lot of upstream projects and imports them.
 
@@ -89,6 +101,9 @@ At this point, you should follow a standard git workflow:
 * push to your branch
 * open a Pull Request (see [Format of Pull Requests](#format-of-pull-requests))
 
+## Troubleshooting
+
+In case generation step or CI `ci/prow/generate` check fails, try running `make clean` to remove stale jsonnet vendor directory.
 
 ## Coding Style
 
