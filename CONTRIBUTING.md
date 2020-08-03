@@ -103,7 +103,11 @@ At this point, you should follow a standard git workflow:
 
 ## Troubleshooting
 
-In case generation step or CI `ci/prow/generate` check fails, try running `make clean` to remove stale jsonnet vendor directory.
+- In case generation step or CI `ci/prow/generate` check fails, try running `make clean` to remove stale jsonnet vendor directory.
+
+- In case you have problems with `make generate` due to problems with system-wide tooling, you can use slower
+`make generate-in-docker` target which will install necessary tools in containerized environment and will generate assets.
+This targets needs `docker` to be installed on host and was not tested with other container runtime environments.
 
 ## Coding Style
 
