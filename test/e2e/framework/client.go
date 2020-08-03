@@ -255,6 +255,22 @@ func GetFirstValueFromPromQuery(body []byte) (int, error) {
 	return v, nil
 }
 
+// GetResultSizeFromPromQuery takes a query api response body and returns the
+// size of the result vector.
+func GetResultSizeFromPromQuery(body []byte) (int, error) {
+	res, err := gabs.ParseJSON(body)
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := res.ArrayCountP("data.result")
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 // WaitForQueryReturnGreaterEqualOne see WaitForQueryReturn.
 func (c *PrometheusClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeout time.Duration, query string) {
 	t.Helper()

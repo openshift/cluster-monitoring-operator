@@ -398,6 +398,32 @@ func deployUserApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.PrometheusRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "prometheus-example-rule-leaf",
+			Labels: map[string]string{
+				"k8s-app": "prometheus-example-rule-leaf",
+				"openshift.io/prometheus-rule-evaluation-scope": "leaf-prometheus",
+			},
+		},
+		Spec: monitoringv1.PrometheusRuleSpec{
+			Groups: []monitoringv1.RuleGroup{
+				{
+					Name: "example",
+					Rules: []monitoringv1.Rule{
+						{
+							Record: "version:blah:leaf:count",
+							Expr:   intstr.FromString(`count(version)`),
+						},
+					},
+				},
+			},
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	err = f.OperatorClient.WaitForDeploymentRollout(app)
 	if err != nil {
 		t.Fatal(err)
@@ -532,6 +558,44 @@ func assertUserWorkloadMetrics(t *testing.T) {
 			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", i)
 		},
 	)
+
+	// Assert that recording rule is in thanos querier and we get it
+	// via user workload prometheus.
+	f.ThanosQuerierClient.WaitForQueryReturn(
+		t, 10*time.Minute, `version:blah:leaf:count{prometheus_replica="prometheus-user-workload-0"}`,
+		func(i int) error {
+			if i == 1 {
+				return nil
+			}
+			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", i)
+		},
+	)
+
+	// Assert that recording rule is not present in thanos ruler.
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		var (
+			body []byte
+			v    int
+		)
+		body, err := f.ThanosQuerierClient.PrometheusQuery(`version:blah:leaf:count{thanos_ruler_replica="thanos-ruler-user-workload-0"}`)
+		if err != nil {
+			return err
+		}
+
+		v, err = framework.GetResultSizeFromPromQuery(body)
+		if err != nil {
+			return err
+		}
+
+		if v != 0 {
+			return fmt.Errorf("expected result size 0 but got: %v", v)
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func assertUserWorkloadRules(t *testing.T) {
@@ -743,6 +807,10 @@ func assertTenancyForRules(t *testing.T) {
 			{
 				ruleType: "recording",
 				name:     "version:blah:count",
+			},
+			{
+				ruleType: "recording",
+				name:     "version:blah:leaf:count",
 			},
 			{
 				ruleType: "alerting",

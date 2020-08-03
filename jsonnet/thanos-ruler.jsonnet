@@ -286,7 +286,16 @@ local thanosRulerRules =
           },
           enforcedNamespaceLabel: 'namespace',
           listenLocal: true,
-          ruleSelector: {},
+          ruleSelector: {
+            matchExpressions:
+              [
+                {
+                  key: 'openshift.io/prometheus-rule-evaluation-scope',
+                  operator: 'NotIn',
+                  values: ['leaf-prometheus'],
+                },
+              ],
+          },
           ruleNamespaceSelector: {},
           volumes: [
             {
