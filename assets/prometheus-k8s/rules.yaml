@@ -917,6 +917,14 @@ spec:
     - expr: sum(cluster:master_nodes or on(node) kube_node_labels ) BY (label_beta_kubernetes_io_instance_type,
         label_node_role_kubernetes_io)
       record: cluster:node_instance_type_count:sum
+    - expr: sum  by (provisioner) (kube_persistentvolumeclaim_resource_requests_storage_bytes
+        * on (namespace,persistentvolumeclaim) group_right() (kube_persistentvolumeclaim_info
+        * on (storageclass)  group_left(provisioner) kube_storageclass_info))
+      record: cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum
+    - expr: sum  by (provisioner) (kubelet_volume_stats_used_bytes * on (namespace,persistentvolumeclaim)
+        group_right() (kube_persistentvolumeclaim_info * on (storageclass)  group_left(provisioner)
+        kube_storageclass_info))
+      record: cluster:kubelet_volume_stats_used_bytes:provisioner:sum
     - expr: sum(etcd_object_counts) BY (instance)
       record: instance:etcd_object_counts:sum
     - expr: max(etcd_object_counts{resource=~"builds\\.build\\.openshift\\.io|deploymentconfigs\\.apps\\.openshift\\.io|images\\.image\\.openshift\\.io|statefulsets\\.apps|deployments\\.apps|cronjobs\\.batch|jobs\\.batch|pods|persistentvolumeclaims|persistentvolumes|services|namespaces|routes\\.route\\.openshift\\.io|ingresses\\.networking\\.k8s\\.io|horizontalpodautoscalers\\.autoscaling|users\\.user\\.openshift\\.io|machinesets\\.machine\\.openshift\\.io|resourcequotas"})
