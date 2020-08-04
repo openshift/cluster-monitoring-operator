@@ -78,7 +78,12 @@ spec:
     name: thanos-ruler-query-config
   replicas: 2
   ruleNamespaceSelector: {}
-  ruleSelector: {}
+  ruleSelector:
+    matchExpressions:
+    - key: openshift.io/prometheus-rule-evaluation-scope
+      operator: NotIn
+      values:
+      - leaf-prometheus
   serviceAccountName: thanos-ruler
   volumes:
   - configmap:
