@@ -182,7 +182,7 @@ var (
 	TelemeterClientService                = "assets/telemeter-client/service.yaml"
 	TelemeterClientServiceAccount         = "assets/telemeter-client/service-account.yaml"
 	TelemeterClientServiceMonitor         = "assets/telemeter-client/service-monitor.yaml"
-	TelemeterClientServingCertsCABundle   = "assets/telemeter-client/serving-certs-c-a-bundle.yaml"
+	TelemeterClientServingCertsCABundle   = "assets/telemeter-client/serving-certs-ca-bundle.yaml"
 
 	ThanosQuerierDeployment           = "assets/thanos-querier/deployment.yaml"
 	ThanosQuerierService              = "assets/thanos-querier/service.yaml"

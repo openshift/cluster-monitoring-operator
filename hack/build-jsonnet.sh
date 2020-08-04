@@ -27,11 +27,7 @@ do
 	path="${prefix}/${dir}"
 	mkdir -p "${path}"
 	# convert file name from camelCase to snake-case
-	fullfile=$(echo "${file}" | awk '{
-  while ( match($0, /(.*)([a-z0-9])([A-Z])(.*)/, cap))
-      $0 = cap[1] cap[2] "-" tolower(cap[3]) cap[4];
-    print
-}')
+	fullfile=$(echo "${file}" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
 	jq -r ".[\"${file}\"]" "${TMP}/main.json" | gojsontoyaml > "${prefix}/${fullfile}.yaml"
 done
 

@@ -120,7 +120,7 @@
 // assets/telemeter-client/service-account.yaml
 // assets/telemeter-client/service-monitor.yaml
 // assets/telemeter-client/service.yaml
-// assets/telemeter-client/serving-certs-c-a-bundle.yaml
+// assets/telemeter-client/serving-certs-ca-bundle.yaml
 // assets/telemeter-client/trusted-ca-bundle.yaml
 // assets/thanos-querier/cluster-role-binding.yaml
 // assets/thanos-querier/cluster-role.yaml
@@ -2607,22 +2607,22 @@ func assetsTelemeterClientServiceYaml() (*asset, error) {
 	return a, nil
 }
 
-var _assetsTelemeterClientServingCertsCABundleYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x3c\xcd\xbd\x4e\x04\x31\x0c\x04\xe0\x3e\x4f\x61\x6d\xef\x45\xb4\x69\xa9\x69\xe9\x8d\x77\x6e\xcf\x90\xd8\x51\xe2\xbb\xe7\x47\xfc\x5d\x39\xd2\x7c\x33\x32\xec\x0d\x73\x59\x78\xa5\xfb\x73\x39\x24\xa5\x16\xa2\x85\x79\x37\x05\xab\xec\x3a\xb3\xd2\xb6\x95\x4f\xf3\xa3\xd2\x4b\xf8\xc5\xce\x57\x19\xa5\x23\xe5\xbf\x2e\xee\x91\x92\x16\xbe\xbe\xe3\xc3\xef\xd2\xc6\x55\xf6\x18\xf0\x75\xb5\x4b\xee\x16\x4f\xe6\x1f\xd0\x64\x95\xf7\x9b\x1f\x0d\x95\xb6\x9c\x37\x6c\x85\xc8\xa5\xa3\x52\xa2\xa1\x23\x31\x59\x9b\xc1\x93\x7f\xb6\xfc\x64\xc5\xcc\xc5\x2a\xfc\x0b\xff\xc0\x1a\xa2\xa8\xf4\xb8\xe0\x1e\x6e\x19\xd3\xfc\x2c\x5f\x01\x00\x00\xff\xff\x5b\xf6\x44\xa4\xdd\x00\x00\x00")
+var _assetsTelemeterClientServingCertsCaBundleYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x3c\xcd\xbd\x4e\x04\x31\x0c\x04\xe0\x3e\x4f\x61\x6d\xef\x45\xb4\x69\xa9\x69\xe9\x8d\x77\x6e\xcf\x90\xd8\x51\xe2\xbb\xe7\x47\xfc\x5d\x39\xd2\x7c\x33\x32\xec\x0d\x73\x59\x78\xa5\xfb\x73\x39\x24\xa5\x16\xa2\x85\x79\x37\x05\xab\xec\x3a\xb3\xd2\xb6\x95\x4f\xf3\xa3\xd2\x4b\xf8\xc5\xce\x57\x19\xa5\x23\xe5\xbf\x2e\xee\x91\x92\x16\xbe\xbe\xe3\xc3\xef\xd2\xc6\x55\xf6\x18\xf0\x75\xb5\x4b\xee\x16\x4f\xe6\x1f\xd0\x64\x95\xf7\x9b\x1f\x0d\x95\xb6\x9c\x37\x6c\x85\xc8\xa5\xa3\x52\xa2\xa1\x23\x31\x59\x9b\xc1\x93\x7f\xb6\xfc\x64\xc5\xcc\xc5\x2a\xfc\x0b\xff\xc0\x1a\xa2\xa8\xf4\xb8\xe0\x1e\x6e\x19\xd3\xfc\x2c\x5f\x01\x00\x00\xff\xff\x5b\xf6\x44\xa4\xdd\x00\x00\x00")
 
-func assetsTelemeterClientServingCertsCABundleYamlBytes() ([]byte, error) {
+func assetsTelemeterClientServingCertsCaBundleYamlBytes() ([]byte, error) {
 	return bindataRead(
-		_assetsTelemeterClientServingCertsCABundleYaml,
-		"assets/telemeter-client/serving-certs-c-a-bundle.yaml",
+		_assetsTelemeterClientServingCertsCaBundleYaml,
+		"assets/telemeter-client/serving-certs-ca-bundle.yaml",
 	)
 }
 
-func assetsTelemeterClientServingCertsCABundleYaml() (*asset, error) {
-	bytes, err := assetsTelemeterClientServingCertsCABundleYamlBytes()
+func assetsTelemeterClientServingCertsCaBundleYaml() (*asset, error) {
+	bytes, err := assetsTelemeterClientServingCertsCaBundleYamlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/telemeter-client/serving-certs-c-a-bundle.yaml", size: 221, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	info := bindataFileInfo{name: "assets/telemeter-client/serving-certs-ca-bundle.yaml", size: 221, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3398,7 +3398,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/telemeter-client/service-account.yaml":                               assetsTelemeterClientServiceAccountYaml,
 	"assets/telemeter-client/service-monitor.yaml":                               assetsTelemeterClientServiceMonitorYaml,
 	"assets/telemeter-client/service.yaml":                                       assetsTelemeterClientServiceYaml,
-	"assets/telemeter-client/serving-certs-c-a-bundle.yaml":                      assetsTelemeterClientServingCertsCABundleYaml,
+	"assets/telemeter-client/serving-certs-ca-bundle.yaml":                       assetsTelemeterClientServingCertsCaBundleYaml,
 	"assets/telemeter-client/trusted-ca-bundle.yaml":                             assetsTelemeterClientTrustedCaBundleYaml,
 	"assets/thanos-querier/cluster-role-binding.yaml":                            assetsThanosQuerierClusterRoleBindingYaml,
 	"assets/thanos-querier/cluster-role.yaml":                                    assetsThanosQuerierClusterRoleYaml,
@@ -3615,7 +3615,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"service-account.yaml":           &bintree{assetsTelemeterClientServiceAccountYaml, map[string]*bintree{}},
 			"service-monitor.yaml":           &bintree{assetsTelemeterClientServiceMonitorYaml, map[string]*bintree{}},
 			"service.yaml":                   &bintree{assetsTelemeterClientServiceYaml, map[string]*bintree{}},
-			"serving-certs-c-a-bundle.yaml":  &bintree{assetsTelemeterClientServingCertsCABundleYaml, map[string]*bintree{}},
+			"serving-certs-ca-bundle.yaml":   &bintree{assetsTelemeterClientServingCertsCaBundleYaml, map[string]*bintree{}},
 			"trusted-ca-bundle.yaml":         &bintree{assetsTelemeterClientTrustedCaBundleYaml, map[string]*bintree{}},
 		}},
 		"thanos-querier": &bintree{nil, map[string]*bintree{
