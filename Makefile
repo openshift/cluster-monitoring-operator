@@ -147,4 +147,4 @@ $(BIN_DIR):
 
 $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools.go
-	@cd hack/tools && go list -mod=mod -tags tools -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
+	@cd hack/tools && go list -mod=readonly -tags tools -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=readonly -o $(BIN_DIR) %
