@@ -20,3 +20,5 @@
   - Adjusts severity levels of many alerts from critical to warning as they were cause based alerts
   - Adjusts KubeStatefulSetUpdateNotRolledOut, KubeDaemonSetRolloutStuck
   - Removes KubeAPILatencyHigh and KubeAPIErrorsHigh
+- [#902](https://github.com/openshift/cluster-monitoring-operator/pull/902) ds/node-exporter: Set maxUnavailable 10%
+  - Daemonsets which are not critical to availability should have higher maxUnavailable, this will potentially speed up upgrades in large clusters.
