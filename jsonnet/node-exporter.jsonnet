@@ -81,6 +81,12 @@ local tlsVolumeName = 'node-exporter-tls';
     daemonset+:
       {
         spec+: {
+          updateStrategy+: {
+            type: 'RollingUpdate',
+            rollingUpdate+: {
+              maxUnavailable: '10%'
+            }
+          },
           template+: {
             spec+: {
               initContainers+: [

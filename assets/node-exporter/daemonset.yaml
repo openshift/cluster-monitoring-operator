@@ -122,3 +122,7 @@ spec:
       - name: node-exporter-tls
         secret:
           secretName: node-exporter-tls
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 10%
+    type: RollingUpdate
