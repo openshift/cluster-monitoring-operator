@@ -251,7 +251,17 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 
 	err = t.client.DeletePrometheusRule(prmrl)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Thanos Ruler PrometheusRule failed")
+		return errors.Wrap(err, "deleting Thanos Ruler PrometheusRule failed")
+	}
+
+	route, err := t.factory.ThanosRulerRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler Route failed")
+	}
+
+	err = t.client.DeleteRoute(route)
+	if err != nil {
+		return errors.Wrap(err, "deleting Thanos Ruler Route failed")
 	}
 
 	svc, err := t.factory.ThanosRulerService()
@@ -271,12 +281,12 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 
 	err = t.client.DeleteClusterRole(cr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Thanos Ruler ClusterRole failed")
+		return errors.Wrap(err, "deleting Thanos Ruler ClusterRole failed")
 	}
 
 	crb, err := t.factory.ThanosRulerClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "deleting Thanos Ruler ClusterRoleBinding failed")
+		return errors.Wrap(err, "initializing Thanos Ruler ClusterRoleBinding failed")
 	}
 
 	err = t.client.DeleteClusterRoleBinding(crb)
