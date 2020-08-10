@@ -148,7 +148,14 @@ data:
     # version, phase, reason labels. When a csv is updated, the previous time
     # series associated with the csv will be deleted.
     - '{__name__="csv_abnormal"}'
-    # OCS metrics to be collected:
+    # (@openshift/ocs-operator, OCS-storage-management-team) Generic Storage metrics:
+    # cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum gives 
+    # the total amount of storage requested by PVCs from a particular storage provisioner in bytes.
+    - '{__name__="cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum"}'
+    # cluster:kubelet_volume_stats_used_bytes:provisioner:sum will gives 
+    # the total amount of storage used by PVCs from a particular storage provisioner in bytes.
+    - '{__name__="cluster:kubelet_volume_stats_used_bytes:provisioner:sum"}'
+    # OCS specific metrics:
     # ceph_cluster_total_bytes gives the size of ceph cluster in bytes.
     - '{__name__="ceph_cluster_total_bytes"}'
     # ceph_cluster_total_used_raw_bytes is the amount of ceph cluster storage used in bytes.
