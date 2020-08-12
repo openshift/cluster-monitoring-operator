@@ -132,8 +132,6 @@ else
 fi
 htpasswd -b "${TMP}/htpasswd_file" user2 Passwd01
 htpasswd -b "${TMP}/htpasswd_file" user3 Passwd01
-# shellcheck disable=SC2086
-echo "Test users 'user1', 'user2' and 'user3' have been allocated the password 'Passwd01'. Please change accordingly using 'htpasswd -b "${TMP}/htpasswd_file" <user_name> <password>' after this script completes."
 
 # Create a secret resource called `localusers` from the `${TMP}/htpasswd_file` file. If a `localusers` secret already exists, ask for user confirmation before deleting and recreating:
 SECRETNAME=$(oc get secrets -n openshift-config | grep -is 'localusers' | awk '{print $1}')
@@ -179,6 +177,7 @@ oc apply -f "${TMP}/oauth.yaml"
 echo "Waiting for oauth Pods to restart..."
 sleep 60
 oc get pods -n openshift-authentication
+echo "Login information will be provided at the end of this script."
 echo
 }
 
@@ -246,6 +245,21 @@ oc get prometheusrule.monitoring.coreos.com/prometheus-example-rule -n ns1
 echo
 }
 
+function provide_login_details ()
+{
+echo "########## Outputting login information ##########"
+
+# Provide details on how to login and how to change user passwords:
+echo "Test users 'user1', 'user2' and 'user3' have been allocated the password 'Passwd01'."
+echo "To change user passwords, update the htpasswd file:"; echo
+# shellcheck disable=SC2086
+echo "htpasswd -b "${TMP}/htpasswd_file" <user_name> <password>"; echo
+echo "Then, update the secret. You need 'cluster-admin' privileges to run the following command:"; echo
+# shellcheck disable=SC2086
+echo "oc create secret generic localusers --from-file htpasswd="${TMP}/htpasswd_file" --dry-run -o yaml | oc replace -n openshift-config -f -"; echo
+echo "After running that command, oauth Pods are restarted. You will need to wait for the restart to complete before the updated credentials become active."; echo
+}
+
 function provide_urls ()
 {
 echo "########## Outputting cluster and Thanos URLS ##########"
@@ -270,4 +284,5 @@ create_users
 apply_roles
 add_service_monitor
 create_alerting_rule
+provide_login_details
 provide_urls
