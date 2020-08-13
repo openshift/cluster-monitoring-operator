@@ -384,6 +384,7 @@ local thanosQuerierRules =
                       '--tls-private-key-file=/etc/tls/private/tls.key',
                       '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
                       '--logtostderr=true',
+                      '--allow-paths=/api/v1/query,/api/v1/query_range',
                     ],
                     terminationMessagePolicy: 'FallbackToLogsOnError',
                     volumeMounts: [
@@ -436,6 +437,7 @@ local thanosQuerierRules =
                       '--tls-private-key-file=/etc/tls/private/tls.key',
                       '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
                       '--logtostderr=true',
+                      '--allow-paths=/api/v1/rules',
                     ],
                     terminationMessagePolicy: 'FallbackToLogsOnError',
                     volumeMounts: [
