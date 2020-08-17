@@ -4,7 +4,7 @@ Red Hat values our customers' experience and privacy. It is important to us that
 
 OpenShift 4 clusters send anonymized telemetry back to Red Hat about the following attributes. The telemetry is gathered by referencing your cluster ID and pull secret:
 
-[embedmd]:# (../manifests/0000_50_cluster_monitoring_operator_04-config.yaml)
+[embedmd]:# (../manifests/0000_50_cluster-monitoring-operator_04-config.yaml)
 ```yaml
 apiVersion: v1
 data:

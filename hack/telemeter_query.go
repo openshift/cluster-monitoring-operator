@@ -65,4 +65,4 @@ func main() {
 	fmt.Println(s)
 }
 
-//go:generate go run -mod=vendor telemeter_query.go ../manifests/0000_50_cluster_monitoring_operator_04-config.yaml
+//go:generate go run -mod=vendor telemeter_query.go ../manifests/0000_50_cluster-monitoring-operator_04-config.yaml
