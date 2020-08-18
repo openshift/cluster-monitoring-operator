@@ -724,6 +724,46 @@ func assertTenancyForMetrics(t *testing.T) {
 			t.Fatalf("failed to query Thanos querier: %v", err)
 		}
 	}
+
+	// Check that the account doesn't have to access the rules endpoint.
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		// The tenancy port (9092) is only exposed in-cluster so we need to use
+		// port forwarding to access kube-rbac-proxy.
+		host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9092)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cleanUp()
+
+		client := framework.NewPrometheusClient(
+			host,
+			token,
+			&framework.QueryParameterInjector{
+				Name:  "namespace",
+				Value: userWorkloadTestNs,
+			},
+		)
+
+		resp, err := client.Do("GET", "/api/v1/rules", nil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode/100 == 2 {
+			return fmt.Errorf("expected request to be rejected, but got status code %d (%s)", resp.StatusCode, framework.ClampMax(b))
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("the account has access to the rules endpoint of Thanos querier: %v", err)
+	}
 }
 
 // assertTenancyForRules ensures that a tenant can access rules from her namespace (and only from this one).
@@ -770,7 +810,6 @@ func assertTenancyForRules(t *testing.T) {
 		},
 	)
 
-	t.Logf("Retrieving rules")
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
 		resp, err := client.Do("GET", "/api/v1/rules", nil)
 		if err != nil {
@@ -855,6 +894,31 @@ func assertTenancyForRules(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("failed to query rules from Thanos querier: %v", err)
+	}
+
+	// Check that the account doesn't have to access the query endpoints.
+	for _, path := range []string{"/api/v1/range?query=up", "/api/v1/query_range?query=up&start=0&end=0&step=1s"} {
+		err = framework.Poll(5*time.Second, time.Minute, func() error {
+			resp, err := client.Do("GET", path, nil)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+
+			if resp.StatusCode/100 == 2 {
+				return fmt.Errorf("unexpected status code response, got %d (%s)", resp.StatusCode, framework.ClampMax(b))
+			}
+
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("the account has access to the %q endpoint of Thanos querier: %v", path, err)
+		}
 	}
 }
 
