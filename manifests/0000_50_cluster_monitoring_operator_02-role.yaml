@@ -46,6 +46,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingwebhookconfigurations
+  verbs:
+  - delete
+- apiGroups:
   - ''
   resources:
   - configmaps

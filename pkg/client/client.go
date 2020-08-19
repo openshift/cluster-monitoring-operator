@@ -551,6 +551,14 @@ func (c *Client) DeleteSecret(s *v1.Secret) error {
 	return err
 }
 
+func (c *Client) DeleteValidatingWebhookConfiguration(name string) error {
+	err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(name, &metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
 func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {

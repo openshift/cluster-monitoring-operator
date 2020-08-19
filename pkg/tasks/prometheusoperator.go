@@ -33,6 +33,13 @@ func NewPrometheusOperatorTask(client *client.Client, factory *manifests.Factory
 }
 
 func (t *PrometheusOperatorTask) Run() error {
+	// Remove existing ValidatingWebhookConfigration resource in case we're downgrading from 4.6.
+	// See https://bugzilla.redhat.com/show_bug.cgi?id=1868304
+	err := t.client.DeleteValidatingWebhookConfiguration("prometheusrules.openshift.io")
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Operator ValidatingWebhookConfiguration failed")
+	}
+
 	sa, err := t.factory.PrometheusOperatorServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Operator ServiceAccount failed")
