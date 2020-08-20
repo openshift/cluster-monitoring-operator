@@ -1,8 +1,8 @@
 # OpenShift 4 Data Collection
 
-Red Hat values our customer experience and privacy. It is important to us that our customers understand exactly what we are sending back to engineering and why. During the developer preview or beta release of our software, we want to be able to make changes to our designs and coding practices in real-time based on customer environments. The faster the feedback loop during these development stages the better.
+Red Hat values our customers' experience and privacy. It is important to us that our customers understand exactly what we are sending back to Red Hat Engineering and why. We want to be able to make changes to our designs and coding practices rapidly, based on our customers' environments. The faster the feedback loop the better.
 
-For the OpenShift 4 Developer Preview we will be sending back these exact attributes based on your cluster ID and pull secret from Red Hat:
+OpenShift 4 clusters send anonymized telemetry back to Red Hat about the following attributes. The telemetry is gathered by referencing your cluster ID and pull secret:
 
 [embedmd]:# (../manifests/0000_50_cluster_monitoring_operator_04-config.yaml)
 ```yaml
@@ -231,6 +231,6 @@ metadata:
   namespace: openshift-monitoring
 ```
 
-These attributes are focused on the health of the cluster based on the CPU/MEM environmental attributes. From this telemetry we hope to be able to determine the immediate functionality of the framework components and whether or not we have a correlation of issues across similar developer preview environmental characteristics. This information will allow us to immediately make changes to the OpenShift solution to improve our customer's experience and software resiliency.
+These attributes provide a snapshot of the health, usage, and size of a cluster. From this we can determine the functionality of the framework components. This information helps Red Hat to identify correlations between issues experienced across many OpenShift 4 clusters that have similar environmental characteristics. This enables Red Hat to rapidly develop changes in OpenShift 4 to improve software resilience and customer experience.
 
-We are extremely excited about showing you where the product is headed during this developer preview and we hope you will allow us this information to enhance the solution for all those involved.
+In some situations it might be necessary to opt out of remote health reporting. For more information on this topic, please see [Opting out of remote health reporting](https://docs.openshift.com/container-platform/4.5/support/remote_health_monitoring/opting-out-of-remote-health-reporting.html) in the OpenShift Container Platform 4 documentation.
