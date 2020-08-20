@@ -16,6 +16,7 @@ package operator
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -379,29 +380,31 @@ func (o *Operator) sync(key string) error {
 }
 
 func (o *Operator) loadUserWorkloadConfig() (*manifests.UserWorkloadConfiguration, error) {
+	cmKey := fmt.Sprintf("%s/%s", o.namespaceUserWorkload, o.userWorkloadConfigMapName)
+
 	userCM, err := o.client.GetConfigmap(o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			klog.Warning("No User Workload Monitoring ConfigMap was found. Using defaults.")
+			klog.Warningf("User Workload Monitoring %q ConfigMap not found. Using defaults.", cmKey)
 			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
-		} else {
-			klog.Warningf("Error loading User Workload Monitoring ConfigMap. Error: %v", err)
-			return nil, errors.Wrap(err, "the User Workload Monitoring ConfigMap could not be loaded")
 		}
+		klog.Warningf("Error loading User Workload Monitoring %q ConfigMap. Error: %v", cmKey, err)
+		return nil, errors.Wrapf(err, "the User Workload Monitoring %q ConfigMap could not be loaded", cmKey)
 	}
 
-	configContent, found := userCM.Data["config.yaml"]
-	if found {
-		uwc, err := manifests.NewUserConfigFromString(configContent)
-		if err != nil {
-			klog.Warningf("Error creating User Workload Configuration from ConfigMap. Error: %v", err)
-			return nil, errors.Wrap(err, "the User Workload ConfigMap ConfigMap could not be parsed")
-		}
-		return uwc, nil
+	const configKey = "config.yaml"
+	configContent, found := userCM.Data[configKey]
+	if !found {
+		klog.Warningf("No %q key found in User Workload Monitoring %q ConfigMap. Using defaults.", configKey, cmKey)
+		return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
 	}
 
-	klog.Warning("No User Workload Monitoring ConfigMap was found. Using defaults.")
-	return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
+	uwc, err := manifests.NewUserConfigFromString(configContent)
+	if err != nil {
+		klog.Warningf("Error creating User Workload Configuration from %q key in the %q ConfigMap. Error: %v", configKey, cmKey, err)
+		return nil, errors.Wrapf(err, "the User Workload Configuration from %q key in the %q ConfigMap could not be parsed", configKey, cmKey)
+	}
+	return uwc, nil
 }
 
 func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
@@ -445,6 +448,8 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else if c.ClusterMonitoringConfiguration.UserWorkloadConfig != nil && c.ClusterMonitoringConfiguration.UserWorkloadConfig.Enabled != nil && *c.ClusterMonitoringConfiguration.UserWorkloadConfig.Enabled {
+		klog.Warningf("User Workload Monitoring enabled via the deprecated 'techPreviewUserWorkload' setting in %q configmap. Use the 'enableUserWorkload' setting instead.", key)
 	}
 
 	// Only fetch the token and cluster ID if they have not been specified in the config.
