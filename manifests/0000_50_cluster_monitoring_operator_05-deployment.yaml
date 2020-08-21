@@ -71,7 +71,7 @@ spec:
         - "-configmap=cluster-monitoring-config"
         - "-release-version=$(RELEASE_VERSION)"
         - "-logtostderr=true"
-        - "-v=3"
+        - "-v=2"
         - "-images=prometheus-operator=quay.io/openshift/origin-prometheus-operator:latest"
         - "-images=prometheus-config-reloader=quay.io/openshift/origin-prometheus-config-reloader:latest"
         - "-images=configmap-reloader=quay.io/openshift/origin-configmap-reloader:latest"

@@ -155,6 +155,10 @@ func Main() int {
 		return 1
 	}
 
+	// CMO runs many tasks in parallel and the default values for rate limiting are too low.
+	config.QPS = 20
+	config.Burst = 40
+
 	userWorkloadConfigMapName := "user-workload-monitoring-config"
 	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, userWorkloadConfigMapName, *remoteWrite, images.asMap(), telemetryConfig.Matches)
 	if err != nil {
