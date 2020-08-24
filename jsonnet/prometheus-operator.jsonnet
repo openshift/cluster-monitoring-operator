@@ -40,6 +40,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
                         '--web.enable-tls=true',
                         '--web.tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
                         '--web.tls-min-version=VersionTLS12',
+                        '--v=9',
                       ],
                       securityContext: {},
                       resources: {
