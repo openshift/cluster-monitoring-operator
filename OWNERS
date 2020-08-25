@@ -1,7 +1,6 @@
 component: "Monitoring"
 
 reviewers:
-- brancz
 - s-urbaniak
 - paulfantom
 - LiliC
@@ -9,7 +8,6 @@ reviewers:
 - simonpasquier
 
 approvers:
-- brancz
 - bparees
 - s-urbaniak
 - paulfantom
@@ -18,5 +16,6 @@ approvers:
 - simonpasquier
 
 emeritus_approvers:
+- brancz
 - squat
 - metalmatze

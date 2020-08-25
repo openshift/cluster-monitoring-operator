@@ -716,7 +716,7 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 		}
 		if d.Status.UnavailableReplicas != 0 {
 			lastErr = errors.Errorf("got %d unavailable replicas",
-				d.Status.UpdatedReplicas)
+				d.Status.UnavailableReplicas)
 			return false, nil
 		}
 		return true, nil
