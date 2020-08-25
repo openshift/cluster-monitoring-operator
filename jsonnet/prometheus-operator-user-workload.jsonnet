@@ -87,7 +87,10 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
                 function(c)
                   if c.name == 'prometheus-operator' then
                     c {
-                      args+: [
+                      args: std.filter(
+                        function(arg) !std.startsWith(arg, '--kubelet-service'),
+                        super.args,
+                      ) + [
                         '--deny-namespaces=' + $._config.namespace,
                         '--prometheus-instance-namespaces=' + $._config.namespaceUserWorkload,
                         '--alertmanager-instance-namespaces=' + $._config.namespaceUserWorkload,
