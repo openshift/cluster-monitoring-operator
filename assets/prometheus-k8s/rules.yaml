@@ -1239,10 +1239,10 @@ spec:
         severity: warning
     - alert: KubeJobCompletion
       annotations:
-        message: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more than one hour to complete.
+        message: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more than 12 hours to complete.
       expr: |
         kube_job_spec_completions{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
-      for: 1h
+      for: 12h
       labels:
         severity: warning
     - alert: KubeJobFailed
