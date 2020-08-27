@@ -29,7 +29,7 @@ Metrics are collected from the following components:
 
 ## Adding new metrics to be sent via telemetry
 
-To add new metrics to be sent via telemetry, simply add a selector that matches the time-series to be sent in [manifests/0000_50_cluster_monitoring_operator_04-config.yaml](manifests/0000_50_cluster_monitoring_operator_04-config.yaml).
+To add new metrics to be sent via telemetry, simply add a selector that matches the time-series to be sent in [manifests/0000_50_cluster-monitoring-operator_04-config.yaml](manifests/0000_50_cluster-monitoring-operator_04-config.yaml).
 
 Documentation on the data sent can be found in the [data collection documentation](Documentation/data-collection.md).
 

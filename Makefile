@@ -75,7 +75,7 @@ vendor:
 	go mod verify
 
 .PHONY: generate
-generate: pkg/manifests/bindata.go manifests/0000_50_cluster_monitoring_operator_02-role.yaml docs
+generate: pkg/manifests/bindata.go manifests/0000_50_cluster-monitoring-operator_02-role.yaml docs
 
 .PHONY: generate-in-docker
 generate-in-docker:
@@ -102,14 +102,14 @@ pkg/manifests/bindata.go: $(GOBINDATA_BIN) $(ASSETS)
 	$(GOBINDATA_BIN) -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
 
 # Merge cluster roles
-manifests/0000_50_cluster_monitoring_operator_02-role.yaml: hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
+manifests/0000_50_cluster-monitoring-operator_02-role.yaml: hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
 	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > $@
 
 .PHONY: docs
 docs: $(EMBEDMD_BIN) Documentation/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
 
-Documentation/telemeter_query: manifests/0000_50_cluster_monitoring_operator_04-config.yaml hack/telemeter_query.go
+Documentation/telemeter_query: manifests/0000_50_cluster-monitoring-operator_04-config.yaml hack/telemeter_query.go
 	go generate ./hack/telemeter_query.go > Documentation/telemeter_query
 
 ##############
