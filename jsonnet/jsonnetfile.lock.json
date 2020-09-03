@@ -24,12 +24,12 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/coreos/kube-prometheus.git",
+          "remote": "https://github.com/coreos/kube-prometheus",
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "f1d92c8a803dcfc1a3f6dd20215452f61f2de6ba",
-      "sum": "IqAA65d8ZkOnE9U5cZR5RcjuPJvFQ+umSAnrF7ldOnY="
+      "version": "82fe2a3b06d74f9b31196e4d9cc503b86c4d0f0d",
+      "sum": "TKveGzwy9vljvq6YFNIMeBqzxt2dDv9ZSuQOtwxF9ik="
     },
     {
       "source": {
