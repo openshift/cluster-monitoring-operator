@@ -110,10 +110,10 @@ spec:
   serviceMonitorSelector: {}
   thanos:
     baseImage: quay.io/openshift/origin-thanos
-    image: quay.io/openshift/origin-thanos:v0.14.0
+    image: quay.io/openshift/origin-thanos:v0.15.0
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: v0.14.0
+    version: v0.15.0
   version: v2.20.0
