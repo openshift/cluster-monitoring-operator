@@ -86,7 +86,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  promLabelProxy: 'v0.1.0',
                  kubeRbacProxy: 'v0.6.0',
                  prometheusAdapter: 'v0.4.1',
-                 openshiftThanos: 'v0.14.0',
+                 openshiftThanos: 'v0.15.0',
                },
                prometheusAdapter+:: {
                  prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
