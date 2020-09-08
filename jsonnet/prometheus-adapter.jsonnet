@@ -54,6 +54,21 @@ local tlsVolumeName = 'kube-state-metrics-tls';
         },
       },
 
+    serviceMonitor+: {
+      spec+: {
+        endpoints: std.map(
+          function(e) e {
+            tlsConfig+: {
+              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+              serverName: 'server-name-replaced-at-runtime',
+              insecureSkipVerify: false,
+            },
+          },
+          super.endpoints
+        ),
+      },
+    },
+
     deployment+:
       {
         spec+: {
