@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -835,59 +836,64 @@ func assertTenancyForRules(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		if len(groups) != 1 {
-			return errors.Errorf("expecting 1 rules group, got %d", len(groups))
+
+		if len(groups) != 2 {
+			return errors.Errorf("expecting 2 rules group, got %d", len(groups))
 		}
 
-		expected := []struct {
-			ruleType string
-			name     string
-		}{
-			{
-				ruleType: "recording",
-				name:     "version:blah:count",
-			},
-			{
-				ruleType: "recording",
-				name:     "version:blah:leaf:count",
-			},
-			{
-				ruleType: "alerting",
-				name:     "VersionAlert",
-			},
-		}
-		rules, err := groups[0].Path("rules").Children()
-		if len(rules) != len(expected) {
-			return errors.Errorf("expecting %d rules, got %d", len(expected), len(rules))
+		type testData struct {
+			file      string
+			ruleType  string
+			name      string
+			namespace string
 		}
 
-		for _, exp := range expected {
-			var found bool
-			for i := range rules {
-				rule, err := rules[i].ChildrenMap()
+		expected := []testData{
+			{
+				file:      "/etc/prometheus/rules/prometheus-user-workload-rulefiles-0/user-workload-test-prometheus-example-rule-leaf.yaml",
+				ruleType:  "recording",
+				name:      "version:blah:leaf:count",
+				namespace: "user-workload-test",
+			},
+			{
+				file:      "/etc/thanos/rules/thanos-ruler-user-workload-rulefiles-0/user-workload-test-prometheus-example-rule.yaml",
+				ruleType:  "alerting",
+				name:      "VersionAlert",
+				namespace: "user-workload-test",
+			},
+			{
+				file:      "/etc/thanos/rules/thanos-ruler-user-workload-rulefiles-0/user-workload-test-prometheus-example-rule.yaml",
+				ruleType:  "recording",
+				name:      "version:blah:count",
+				namespace: "user-workload-test",
+			},
+		}
+
+		var got []testData
+
+		for _, group := range groups {
+			rules, err := group.Path("rules").Children()
+			if err != nil {
+				return err
+			}
+
+			for _, rule := range rules {
+				labels, err := rule.Path("labels").ChildrenMap()
 				if err != nil {
 					return err
 				}
 
-				if rule["type"].Data().(string) != exp.ruleType {
-					continue
-				}
-				if rule["name"].Data().(string) != exp.name {
-					continue
-				}
-				labels, err := rule["labels"].ChildrenMap()
-				if err != nil {
-					return err
-				}
-				if labels["namespace"].Data().(string) != userWorkloadTestNs {
-					continue
-				}
-				found = true
-				break
+				got = append(got, testData{
+					file:      group.Path("file").Data().(string),
+					ruleType:  rule.Path("type").Data().(string),
+					name:      rule.Path("name").Data().(string),
+					namespace: labels["namespace"].Data().(string),
+				})
 			}
-			if !found {
-				return errors.Errorf("couldn't find %s rule %q with label 'namespace=%q' in %q", exp.ruleType, exp.name, userWorkloadTestNs, string(b))
-			}
+		}
+
+		if !reflect.DeepEqual(expected, got) {
+			return errors.Errorf("expected rules %v, got %v", expected, got)
 		}
 
 		return nil
