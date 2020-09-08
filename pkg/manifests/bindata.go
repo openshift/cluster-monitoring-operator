@@ -64,6 +64,7 @@
 // assets/prometheus-adapter/deployment.yaml
 // assets/prometheus-adapter/role-binding-auth-reader.yaml
 // assets/prometheus-adapter/service-account.yaml
+// assets/prometheus-adapter/service-monitor.yaml
 // assets/prometheus-adapter/service.yaml
 // assets/prometheus-k8s/cluster-role-binding.yaml
 // assets/prometheus-k8s/cluster-role.yaml
@@ -1483,6 +1484,26 @@ func assetsPrometheusAdapterServiceAccountYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/prometheus-adapter/service-account.yaml", size: 107, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _assetsPrometheusAdapterServiceMonitorYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x91\xb1\xae\xdb\x30\x0c\x45\x77\x7f\x85\x7e\x40\x51\x8b\x6e\x5a\x0b\x74\x6a\xbb\xbc\xe2\xed\x0c\x7d\x13\x0b\x91\x28\x81\xa4\x0d\xf4\xef\x0b\xdb\x29\xd2\xa9\x6f\xa3\x48\x5e\xea\x5c\x92\x46\x79\x87\x5a\xe9\x92\x43\xeb\x52\xbc\x6b\x91\xfb\x85\xbb\xa2\xdb\x85\x7b\x4b\xdb\xe7\xe9\x51\x64\xce\xe1\x0d\xba\x15\xc6\x8f\xb3\x6b\x6a\x70\x9a\xc9\x29\x4f\x21\x54\xba\xa2\xda\x1e\x85\x20\xd4\x90\xc3\xd0\xde\xe0\x0b\x56\x8b\x34\xd3\x70\xe8\xf4\x61\xc9\x06\x31\x72\xe8\x03\x62\x4b\xb9\x79\x7c\x01\x4d\x36\xc0\xfb\x7c\xc8\x3c\x7a\x11\x3f\x3e\x8b\xe1\x0a\x52\xe8\xaf\xfe\x80\x7c\x2b\x15\x39\xa4\x8d\x34\xe9\x2a\xc9\xc0\x0a\xb7\xf4\x58\xaf\x50\x81\xc3\x2e\xa5\x27\x3b\x3d\x10\x73\x5f\xc5\x93\xef\xc2\x83\xba\x88\x43\x37\xaa\x39\x7c\xf9\x64\x47\x66\x74\xf5\x1c\x16\xf7\x71\xbe\x8d\x17\xec\xf8\xaf\x8c\x57\xfb\xda\xe5\x56\xee\xa7\xf1\x10\x98\x9e\x10\x70\x4e\x2f\x9b\x89\x8f\xae\x46\xc3\x4e\x00\xb9\x47\x86\xba\x45\xa6\x78\x5d\x65\xae\xf8\x0b\x16\x99\x2e\xac\xfe\x9c\x57\xc4\xc0\xab\xe2\xed\x51\xc6\x3b\xb4\xdc\x7e\xe7\x70\xa3\x6a\x78\xd6\x77\x11\xf4\xe7\xb1\xd5\x33\x8e\xfb\x1e\xa3\x62\x54\x62\xcc\x91\x3c\xea\x2a\x5e\xda\xae\x30\x54\xb0\x77\x3d\x69\x1b\x39\x2f\xdf\xff\xb9\xdb\x7f\xce\xf3\x27\x00\x00\xff\xff\xa2\x78\x6f\xcb\x25\x02\x00\x00")
+
+func assetsPrometheusAdapterServiceMonitorYamlBytes() ([]byte, error) {
+	return bindataRead(
+		_assetsPrometheusAdapterServiceMonitorYaml,
+		"assets/prometheus-adapter/service-monitor.yaml",
+	)
+}
+
+func assetsPrometheusAdapterServiceMonitorYaml() (*asset, error) {
+	bytes, err := assetsPrometheusAdapterServiceMonitorYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "assets/prometheus-adapter/service-monitor.yaml", size: 549, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3342,6 +3363,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/prometheus-adapter/deployment.yaml":                                  assetsPrometheusAdapterDeploymentYaml,
 	"assets/prometheus-adapter/role-binding-auth-reader.yaml":                    assetsPrometheusAdapterRoleBindingAuthReaderYaml,
 	"assets/prometheus-adapter/service-account.yaml":                             assetsPrometheusAdapterServiceAccountYaml,
+	"assets/prometheus-adapter/service-monitor.yaml":                             assetsPrometheusAdapterServiceMonitorYaml,
 	"assets/prometheus-adapter/service.yaml":                                     assetsPrometheusAdapterServiceYaml,
 	"assets/prometheus-k8s/cluster-role-binding.yaml":                            assetsPrometheusK8sClusterRoleBindingYaml,
 	"assets/prometheus-k8s/cluster-role.yaml":                                    assetsPrometheusK8sClusterRoleYaml,
@@ -3549,6 +3571,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"deployment.yaml":                             &bintree{assetsPrometheusAdapterDeploymentYaml, map[string]*bintree{}},
 			"role-binding-auth-reader.yaml":               &bintree{assetsPrometheusAdapterRoleBindingAuthReaderYaml, map[string]*bintree{}},
 			"service-account.yaml":                        &bintree{assetsPrometheusAdapterServiceAccountYaml, map[string]*bintree{}},
+			"service-monitor.yaml":                        &bintree{assetsPrometheusAdapterServiceMonitorYaml, map[string]*bintree{}},
 			"service.yaml":                                &bintree{assetsPrometheusAdapterServiceYaml, map[string]*bintree{}},
 		}},
 		"prometheus-k8s": &bintree{nil, map[string]*bintree{
