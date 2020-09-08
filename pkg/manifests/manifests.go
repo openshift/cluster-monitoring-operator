@@ -133,6 +133,7 @@ var (
 	PrometheusAdapterDeployment                         = "assets/prometheus-adapter/deployment.yaml"
 	PrometheusAdapterRoleBindingAuthReader              = "assets/prometheus-adapter/role-binding-auth-reader.yaml"
 	PrometheusAdapterService                            = "assets/prometheus-adapter/service.yaml"
+	PrometheusAdapterServiceMonitor                     = "assets/prometheus-adapter/service-monitor.yaml"
 	PrometheusAdapterServiceAccount                     = "assets/prometheus-adapter/service-account.yaml"
 
 	PrometheusOperatorClusterRoleBinding    = "assets/prometheus-operator/cluster-role-binding.yaml"
@@ -1709,6 +1710,18 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusAdapterServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespace
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-adapter.%s.svc", f.namespace)
+
+	return sm, nil
 }
 
 func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1.ConfigMap) (*v1.Secret, error) {

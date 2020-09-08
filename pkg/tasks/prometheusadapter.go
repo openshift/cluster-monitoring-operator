@@ -182,6 +182,17 @@ func (t *PrometheusAdapterTask) Run() error {
 		}
 	}
 	{
+		sm, err := t.factory.PrometheusAdapterServiceMonitor()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter ServiceMonitor failed")
+		}
+
+		err = t.client.CreateOrUpdateServiceMonitor(sm)
+		if err != nil {
+			return errors.Wrap(err, "reconciling PrometheusAdapter ServiceMonitor failed")
+		}
+	}
+	{
 		api, err := t.factory.PrometheusAdapterAPIService()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter APIService failed")
