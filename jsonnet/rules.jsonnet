@@ -86,7 +86,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
           },
           {
             expr: |||
-              sum by(label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io) (
+              sum by(label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io, label_kubernetes_io_arch, label_node_openshift_io_os_id) (
                 (
                   cluster:master_nodes
                   * on(node) group_left() max by(node)
@@ -183,7 +183,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'openshift:memory_usage_bytes:sum',
           },
           {
-            expr: 'sum(cluster:master_nodes or on(node) kube_node_labels ) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io)',
+            expr: 'sum(cluster:master_nodes or on(node) kube_node_labels ) BY (label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io, label_kubernetes_io_arch, label_node_openshift_io_os_id)',
             record: 'cluster:node_instance_type_count:sum',
           },
           {
