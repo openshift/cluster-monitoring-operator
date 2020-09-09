@@ -71,7 +71,7 @@ spec:
     caFile: /etc/tls/grpc/ca.crt
     certFile: /etc/tls/grpc/server.crt
     keyFile: /etc/tls/grpc/server.key
-  image: quay.io/openshift/origin-thanos:v0.14.0
+  image: quay.io/openshift/origin-thanos:v0.15.0
   listenLocal: true
   queryConfig:
     key: query.yaml
