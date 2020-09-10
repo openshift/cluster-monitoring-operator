@@ -524,6 +524,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.PrometheusAdapterServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.PrometheusAdapterAPIService()
 	if err != nil {
 		t.Fatal(err)
