@@ -84,6 +84,10 @@ local authorizationRole = policyRule.new() +
             header_name: 'X-Forwarded-User',
             auto_sign_up: true,
           },
+          'analytics': {
+            reporting_enabled: false,
+            check_for_updates: false,
+          },
         },
       },
     },
