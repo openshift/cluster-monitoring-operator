@@ -135,6 +135,9 @@ local authorizationRole = policyRule.new() +
     alertmanager+:
       {
         spec+: {
+          image: $._config.imageRepos.alertmanager + ':' + $._config.versions.alertmanager,
+          // disable deprecated baseImage
+          baseImage:: null,
           securityContext: {},
           priorityClassName: 'system-cluster-critical',
           secrets: [

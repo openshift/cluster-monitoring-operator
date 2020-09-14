@@ -142,6 +142,9 @@ local alertmanagerRole =
     prometheus+:
       {
         spec+: {
+          image: $._config.imageRepos.prometheus + ':' + $._config.versions.prometheus,
+          // disable deprecated baseImage
+          baseImage:: null,
           overrideHonorTimestamps: true,
           overrideHonorLabels: true,
           ignoreNamespaceSelectors: true,
@@ -150,8 +153,10 @@ local alertmanagerRole =
             deny: true,
           },
           thanos+: {
-            baseImage: $._config.imageRepos.openshiftThanos,
+            image: $._config.imageRepos.openshiftThanos + ':' + $._config.versions.openshiftThanos,
             version: $._config.versions.openshiftThanos,
+            // disable deprecated baseImage
+            baseImage:: null,
             // disable thanos object storage
             objectStorageConfig:: null,
             resources: {

@@ -247,9 +247,14 @@ local namespacesRole =
     prometheus+:
       {
         spec+: {
+          image: $._config.imageRepos.prometheus + ':' + $._config.versions.prometheus,
+          // disable deprecated baseImage
+          baseImage:: null,
           thanos+: {
-            baseImage: $._config.imageRepos.openshiftThanos,
+            image: $._config.imageRepos.openshiftThanos + ':' + $._config.versions.openshiftThanos,
             version: $._config.versions.openshiftThanos,
+            // disable deprecated baseImage
+            baseImage:: null,
             // disable thanos object storage
             objectStorageConfig:: null,
             resources: {
