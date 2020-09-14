@@ -109,7 +109,6 @@ spec:
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
   thanos:
-    baseImage: quay.io/openshift/origin-thanos
     image: quay.io/openshift/origin-thanos:v0.15.0
     resources:
       requests:
