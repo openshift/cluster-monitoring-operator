@@ -155,7 +155,7 @@ local alertmanagerRole =
             deny: true,
           },
           thanos+: {
-            baseImage: $._config.imageRepos.openshiftThanos,
+            image: $._config.imageRepos.openshiftThanos + ':' + $._config.versions.openshiftThanos,
             version: $._config.versions.openshiftThanos,
             // disable thanos object storage
             objectStorageConfig:: null,
