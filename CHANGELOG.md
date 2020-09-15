@@ -2,6 +2,10 @@
 
 ## 4.6
 
+- [#928](https://github.com/openshift/cluster-monitoring-operator/pull/928) Bump prometheus-operator 0.42:
+  - 0.42.0 changes: https://github.com/prometheus-operator/prometheus-operator/releases/tag/v0.42.0
+  - 0.41.1 changes: https://github.com/prometheus-operator/prometheus-operator/releases/tag/v0.41.1
+  - 0.41.0 changes: https://github.com/prometheus-operator/prometheus-operator/releases/tag/v0.41.0
 - [#714](https://github.com/openshift/cluster-monitoring-operator/pull/714) Validate new/updated PrometheusRule custom resources against the prometheus-operator rule validation API.
 - [#799](https://github.com/openshift/cluster-monitoring-operator/pull/799) Rules federation support.
 - [#800](https://github.com/openshift/cluster-monitoring-operator/pull/800) Collect metrics and implement alerting rules for Thanos querier.
