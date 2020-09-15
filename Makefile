@@ -79,7 +79,7 @@ generate: pkg/manifests/bindata.go manifests/0000_50_cluster-monitoring-operator
 
 .PHONY: generate-in-docker
 generate-in-docker:
-	echo -e "FROM golang:1.14 \n RUN apt update && apt install python-yaml jq -y" | docker build -t cmo-tooling -
+	echo -e "FROM golang:1.14 \n RUN apt update && apt install python-yaml jq -y \n RUN mkdir /.cache && chown $(shell id -u):$(shell id -g) /.cache" | docker build -t cmo-tooling -
 	docker run -it --user $(shell id -u):$(shell id -g) \
 		-w /go/src/github.com/openshift/cluster-monitoring-operator \
 		-v ${PWD}:/go/src/github.com/openshift/cluster-monitoring-operator \
