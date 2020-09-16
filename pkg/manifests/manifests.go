@@ -2893,6 +2893,10 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 			}
 
 			cmd := []string{}
+			// Note: matchers are read only during CMO bootstrap. This mechanism was chosen as CMO image will be reloaded during upgrades
+			// and matchers shouldn't change during runtime. It offers similar amount of protection against unwanted configuration changes
+			// while not having any performace penalty. However it should be changed to usual reconciliation mechanism after CMO performance
+			// issues are solved.
 			for _, a := range d.Spec.Template.Spec.Containers[i].Command {
 				if !strings.HasPrefix(a, "--match=") {
 					cmd = append(cmd, a)
