@@ -38,7 +38,6 @@ To allow scripts and `make` targets working correctly, ensure you have following
 * `sed` (GNU variant)
 * `make`
 * `curl`
-* python2 and pyyaml package
 
 All other tools are downloaded automatically by `make` and put into `tmp/bin` directory.
 
