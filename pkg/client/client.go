@@ -26,6 +26,7 @@ import (
 	prometheusoperator "github.com/coreos/prometheus-operator/pkg/prometheus"
 	"github.com/coreos/prometheus-operator/pkg/thanos"
 	thanosoperator "github.com/coreos/prometheus-operator/pkg/thanos"
+	"github.com/imdario/mergo"
 	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
@@ -1044,7 +1045,7 @@ func (c *Client) CreateOrUpdateEndpoints(endpoints *v1.Endpoints) error {
 
 func (c *Client) CreateOrUpdateRoleBinding(rb *rbacv1.RoleBinding) error {
 	rbClient := c.kclient.RbacV1().RoleBindings(rb.GetNamespace())
-	r, err := rbClient.Get(context.TODO(), rb.GetName(), metav1.GetOptions{})
+	existing, err := rbClient.Get(context.TODO(), rb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := rbClient.Create(context.TODO(), rb, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating RoleBinding object failed")
@@ -1053,10 +1054,12 @@ func (c *Client) CreateOrUpdateRoleBinding(rb *rbacv1.RoleBinding) error {
 		return errors.Wrap(err, "retrieving RoleBinding object failed")
 	}
 
-	if reflect.DeepEqual(rb.RoleRef, r.RoleRef) &&
-		reflect.DeepEqual(rb.Subjects, r.Subjects) &&
-		reflect.DeepEqual(rb.Labels, r.Labels) &&
-		reflect.DeepEqual(rb.Annotations, r.Annotations) {
+	// Merge existing annotations with ones defined by operator. Old annotations are preserved.
+	mergo.Merge(&rb.Annotations, existing.Annotations)
+
+	if reflect.DeepEqual(rb.RoleRef, existing.RoleRef) &&
+		reflect.DeepEqual(rb.Subjects, existing.Subjects) &&
+		reflect.DeepEqual(rb.Labels, existing.Labels) {
 		return nil
 	}
 
@@ -1105,14 +1108,14 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding
 		return errors.Wrap(err, "retrieving ClusterRoleBinding object failed")
 	}
 
-	changed := reflect.DeepEqual(crb.RoleRef, existing.RoleRef)
-	changed = changed || reflect.DeepEqual(crb.Subjects, existing.Subjects)
-	changed = changed || reflect.DeepEqual(crb.Labels, existing.Labels)
-	changed = changed || reflect.DeepEqual(crb.Annotations, existing.Annotations)
-
-	if !changed {
+	if reflect.DeepEqual(crb.RoleRef, existing.RoleRef) &&
+		reflect.DeepEqual(crb.Subjects, existing.Subjects) &&
+		reflect.DeepEqual(crb.Labels, existing.Labels) {
 		return nil
 	}
+
+	// Merge existing annotations with ones defined by operator. Old annotations are preserved.
+	mergo.Merge(&crb.Annotations, existing.Annotations)
 
 	err = crbClient.Delete(context.TODO(), crb.Name, metav1.DeleteOptions{})
 	if err != nil {
