@@ -57,19 +57,20 @@ const (
 )
 
 type Client struct {
-	version           string
-	namespace         string
-	namespaceSelector string
-	kclient           kubernetes.Interface
-	oscclient         openshiftconfigclientset.Interface
-	ossclient         openshiftsecurityclientset.Interface
-	osrclient         openshiftrouteclientset.Interface
-	mclient           monitoring.Interface
-	eclient           apiextensionsclient.Interface
-	aggclient         aggregatorclient.Interface
+	version               string
+	namespace             string
+	userWorkloadNamespace string
+	namespaceSelector     string
+	kclient               kubernetes.Interface
+	oscclient             openshiftconfigclientset.Interface
+	ossclient             openshiftsecurityclientset.Interface
+	osrclient             openshiftrouteclientset.Interface
+	mclient               monitoring.Interface
+	eclient               apiextensionsclient.Interface
+	aggclient             aggregatorclient.Interface
 }
 
-func New(cfg *rest.Config, version string, namespace string, namespaceSelector string) (*Client, error) {
+func New(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, namespaceSelector string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -111,16 +112,17 @@ func New(cfg *rest.Config, version string, namespace string, namespaceSelector s
 	}
 
 	return &Client{
-		version:           version,
-		namespace:         namespace,
-		namespaceSelector: namespaceSelector,
-		kclient:           kclient,
-		oscclient:         oscclient,
-		ossclient:         ossclient,
-		osrclient:         osrclient,
-		mclient:           mclient,
-		eclient:           eclient,
-		aggclient:         aggclient,
+		version:               version,
+		namespace:             namespace,
+		userWorkloadNamespace: userWorkloadNamespace,
+		namespaceSelector:     namespaceSelector,
+		kclient:               kclient,
+		oscclient:             oscclient,
+		ossclient:             ossclient,
+		osrclient:             osrclient,
+		mclient:               mclient,
+		eclient:               eclient,
+		aggclient:             aggclient,
 	}, nil
 }
 
@@ -1228,7 +1230,7 @@ func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, er
 }
 
 func (c *Client) StatusReporter() *StatusReporter {
-	return NewStatusReporter(c.oscclient.ConfigV1().ClusterOperators(), "monitoring", c.namespace, c.version)
+	return NewStatusReporter(c.oscclient.ConfigV1().ClusterOperators(), "monitoring", c.namespace, c.userWorkloadNamespace, c.version)
 }
 
 func (c *Client) DeleteRoleBinding(binding *rbacv1.RoleBinding) error {

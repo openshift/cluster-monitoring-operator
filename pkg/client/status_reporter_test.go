@@ -42,9 +42,10 @@ func TestStatusReporterSetDone(t *testing.T) {
 			name: "not found",
 
 			given: givenStatusReporter{
-				operatorName: "foo",
-				namespace:    "bar",
-				version:      "1.0",
+				operatorName:          "foo",
+				namespace:             "bar",
+				userWorkloadNamespace: "fred",
+				version:               "1.0",
 			},
 
 			when: []whenFunc{
@@ -71,9 +72,10 @@ func TestStatusReporterSetDone(t *testing.T) {
 			name: "found",
 
 			given: givenStatusReporter{
-				operatorName: "foo",
-				namespace:    "bar",
-				version:      "1.0",
+				operatorName:          "foo",
+				namespace:             "bar",
+				userWorkloadNamespace: "fred",
+				version:               "1.0",
 			},
 
 			when: []whenFunc{
@@ -101,6 +103,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,
+				tc.given.userWorkloadNamespace,
 				tc.given.version,
 			)
 
@@ -130,9 +133,10 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 			name: "not found",
 
 			given: givenStatusReporter{
-				operatorName: "foo",
-				namespace:    "bar",
-				version:      "1.0",
+				operatorName:          "foo",
+				namespace:             "bar",
+				userWorkloadNamespace: "fred",
+				version:               "1.0",
 			},
 
 			when: []whenFunc{
@@ -159,9 +163,10 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 			name: "found",
 
 			given: givenStatusReporter{
-				operatorName: "foo",
-				namespace:    "bar",
-				version:      "1.0",
+				operatorName:          "foo",
+				namespace:             "bar",
+				userWorkloadNamespace: "fred",
+				version:               "1.0",
 			},
 
 			when: []whenFunc{
@@ -189,6 +194,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,
+				tc.given.userWorkloadNamespace,
 				tc.given.version,
 			)
 
@@ -220,10 +226,11 @@ func TestStatusReporterSetFailed(t *testing.T) {
 			name: "not found",
 
 			given: givenStatusReporter{
-				operatorName: "foo",
-				namespace:    "bar",
-				version:      "1.0",
-				err:          failedErr,
+				operatorName:          "foo",
+				namespace:             "bar",
+				userWorkloadNamespace: "fred",
+				version:               "1.0",
+				err:                   failedErr,
 			},
 
 			when: []whenFunc{
@@ -250,9 +257,10 @@ func TestStatusReporterSetFailed(t *testing.T) {
 			name: "found",
 
 			given: givenStatusReporter{
-				operatorName: "foo",
-				namespace:    "bar",
-				version:      "1.0",
+				operatorName:          "foo",
+				namespace:             "bar",
+				userWorkloadNamespace: "fred",
+				version:               "1.0",
 			},
 
 			when: []whenFunc{
@@ -280,6 +288,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,
+				tc.given.userWorkloadNamespace,
 				tc.given.version,
 			)
 
@@ -299,8 +308,8 @@ func TestStatusReporterSetFailed(t *testing.T) {
 }
 
 type givenStatusReporter struct {
-	operatorName, namespace, version string
-	err                              error
+	operatorName, namespace, userWorkloadNamespace, version string
+	err                                                     error
 }
 
 type checkFunc func(*clusterOperatorMock, error) error

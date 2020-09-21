@@ -27,30 +27,35 @@ import (
 )
 
 type StatusReporter struct {
-	client              clientv1.ClusterOperatorInterface
-	clusterOperatorName string
-	namespace           string
-	version             string
+	client                clientv1.ClusterOperatorInterface
+	clusterOperatorName   string
+	namespace             string
+	userWorkloadNamespace string
+	version               string
 }
 
-func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, namespace, version string) *StatusReporter {
+func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, namespace, userWorkloadNamespace, version string) *StatusReporter {
 	return &StatusReporter{
-		client:              client,
-		clusterOperatorName: name,
-		namespace:           namespace,
-		version:             version,
+		client:                client,
+		clusterOperatorName:   name,
+		namespace:             namespace,
+		userWorkloadNamespace: userWorkloadNamespace,
+		version:               version,
 	}
 }
 
-func newRelatedObjects(namespace string) []v1.ObjectReference {
+func (r *StatusReporter) relatedObjects() []v1.ObjectReference {
 	return []v1.ObjectReference{
-		// Gather pods, services, daemonsets, deployments, replocasets, statefulsets, and routes
-		{Resource: "namespaces", Name: namespace},
-		// Gather all ServiceMonitors, PrometheusRules, Alertmanagers, and Prometheus CRs
+		// Gather pods, services, daemonsets, deployments, replocasets, statefulsets, and routes.
+		{Resource: "namespaces", Name: r.namespace},
+		{Resource: "namespaces", Name: r.userWorkloadNamespace},
+		// Gather all ServiceMonitors, PodMonitors, PrometheusRules, Alertmanagers, ThanosRulers and Prometheus CRs
 		{Group: "monitoring.coreos.com", Resource: "servicemonitors"},
+		{Group: "monitoring.coreos.com", Resource: "podmonitors"},
 		{Group: "monitoring.coreos.com", Resource: "prometheusrules"},
 		{Group: "monitoring.coreos.com", Resource: "alertmanagers"},
 		{Group: "monitoring.coreos.com", Resource: "prometheuses"},
+		{Group: "monitoring.coreos.com", Resource: "thanosrulers"},
 	}
 }
 
@@ -118,7 +123,7 @@ func (r *StatusReporter) SetInProgress() error {
 		time,
 	)
 	co.Status.Conditions = conditions.entries()
-	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
+	co.Status.RelatedObjects = r.relatedObjects()
 
 	_, err = r.client.UpdateStatus(context.TODO(), co, metav1.UpdateOptions{})
 	return err
@@ -170,7 +175,7 @@ func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
 		Spec:   v1.ClusterOperatorSpec{},
 		Status: v1.ClusterOperatorStatus{},
 	}
-	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
+	co.Status.RelatedObjects = r.relatedObjects()
 	co.Status.Conditions = newConditions(co.Status, r.version, time).entries()
 
 	return co

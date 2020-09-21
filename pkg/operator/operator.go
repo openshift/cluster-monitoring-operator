@@ -71,7 +71,7 @@ type Operator struct {
 }
 
 func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName, userWorkloadConfigMapName string, remoteWrite bool, images map[string]string, telemetryMatches []string) (*Operator, error) {
-	c, err := client.New(config, version, namespace, namespaceSelector)
+	c, err := client.New(config, version, namespace, namespaceUserWorkload, namespaceSelector)
 	if err != nil {
 		return nil, err
 	}
