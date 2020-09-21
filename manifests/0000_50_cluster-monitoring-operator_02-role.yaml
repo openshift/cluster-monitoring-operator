@@ -388,6 +388,21 @@ rules:
   - list
   - watch
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  - alertmanagers/finalizers
+  - podmonitors
+  - probes
+  - prometheuses
+  - prometheuses/finalizers
+  - prometheusrules
+  - servicemonitors
+  - thanosrulers
+  - thanosrulers/finalizers
+  verbs:
+  - '*'
+- apiGroups:
   - ''
   resources:
   - nodes
@@ -433,20 +448,6 @@ rules:
   - apps
   resources:
   - statefulsets
-  verbs:
-  - '*'
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - alertmanagers
-  - alertmanagers/finalizers
-  - podmonitors
-  - prometheuses
-  - prometheuses/finalizers
-  - prometheusrules
-  - servicemonitors
-  - thanosrulers
-  - thanosrulers/finalizers
   verbs:
   - '*'
 - apiGroups:
