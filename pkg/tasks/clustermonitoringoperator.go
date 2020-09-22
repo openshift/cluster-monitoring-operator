@@ -47,10 +47,11 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 	}
 
 	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
-		"cluster-monitoring-view": t.factory.ClusterMonitoringClusterRole,
-		"monitoring-rules-edit":   t.factory.ClusterMonitoringRulesEditClusterRole,
-		"monitoring-rules-view":   t.factory.ClusterMonitoringRulesViewClusterRole,
-		"monitoring-edit":         t.factory.ClusterMonitoringEditClusterRole,
+		"cluster-monitoring-view":              t.factory.ClusterMonitoringClusterRole,
+		"monitoring-rules-edit":                t.factory.ClusterMonitoringRulesEditClusterRole,
+		"monitoring-rules-view":                t.factory.ClusterMonitoringRulesViewClusterRole,
+		"monitoring-edit":                      t.factory.ClusterMonitoringEditClusterRole,
+		"user-workload-monitoring-config-edit": t.factory.ClusterMonitoringEditUserWorkloadConfigClusterRole,
 	} {
 		cr, err := crf()
 		if err != nil {
@@ -61,16 +62,6 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "reconciling %s ClusterRole failed", name)
 		}
-	}
-
-	uwcr, err := t.factory.ClusterMonitoringEditUserWorkloadConfigRole()
-	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkloadConfigEdit Role failed")
-	}
-
-	err = t.client.CreateOrUpdateRole(uwcr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit Role failed")
 	}
 
 	smcmo, err := t.factory.ClusterMonitoringOperatorServiceMonitor()
