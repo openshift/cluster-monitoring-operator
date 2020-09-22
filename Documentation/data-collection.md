@@ -225,6 +225,17 @@ data:
     # (workloads-team, @openshift/openshift-group-b) cluster_master_schedulable reports whether mastersSchedulable=true in
     # the scheduler operator. This value is a boolean 0|1
     - '{__name__="cluster_master_schedulable"}'
+    # (codeready workspaces, @ibuziuk) The number of workspaces with a given status STARTING|STOPPED|RUNNING|STOPPING. Type 'gauge'.
+    - '{__name__="che_workspace_status"}'
+    # (codeready workspaces, @ibuziuk) The number of started workspaces. Type 'counter'.
+    - '{__name__="che_workspace_started_total"}'
+    # (codeready workspaces, @ibuziuk) The number of failed workspaces.
+    # Can be used with the 'while' label e.g. {while="STARTING"}, {while="RUNNING"}, {while="STOPPING"}.Type 'counter'.
+    - '{__name__="che_workspace_failure_total"}'
+    # (codeready workspaces, @ibuziuk) The time in seconds required for the startup of all the workspaces.
+    - '{__name__="che_workspace_start_time_seconds_sum"}'
+    # (codeready workspaces, @ibuziuk) The overall number of attempts for starting all the workspaces.
+    - '{__name__="che_workspace_start_time_seconds_count"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
