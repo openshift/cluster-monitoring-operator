@@ -2,6 +2,7 @@
 
 ## 4.6
 
+- [#936](https://github.com/openshift/cluster-monitoring-operator/pull/9936) Bump prometheus-operator 0.42.1
 - [#928](https://github.com/openshift/cluster-monitoring-operator/pull/928) Bump prometheus-operator 0.42:
   - 0.42.0 changes: https://github.com/prometheus-operator/prometheus-operator/releases/tag/v0.42.0
   - 0.41.1 changes: https://github.com/prometheus-operator/prometheus-operator/releases/tag/v0.41.1
