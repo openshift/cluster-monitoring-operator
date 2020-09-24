@@ -128,14 +128,6 @@ spec:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
   - name: prometheus
-  - name: rules-configmap-reloader
-    resources:
-      requests:
-        cpu: 1m
-  - name: prometheus-config-reloader
-    resources:
-      requests:
-        cpu: 1m
   image: openshift/prometheus:v2.20.0
   listenLocal: true
   nodeSelector:

@@ -61,11 +61,6 @@ spec:
       name: secret-thanos-ruler-tls
     - mountPath: /etc/proxy/secrets
       name: secret-thanos-ruler-oauth-cookie
-  - name: rules-configmap-reloader
-    resources:
-      requests:
-        cpu: 1m
-        memory: 5Mi
   enforcedNamespaceLabel: namespace
   grpcServerTlsConfig:
     caFile: /etc/tls/grpc/ca.crt
