@@ -7,6 +7,7 @@ require (
 	github.com/coreos/prometheus-operator v0.40.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.1
+	github.com/imdario/mergo v0.3.7
 	github.com/openshift/api v0.0.0-20200623075207-eb651a5bb0ad
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/openshift/library-go v0.0.0-20200421122923-c1de486c7d47
