@@ -161,8 +161,7 @@ spec:
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
   thanos:
-    baseImage: quay.io/openshift/origin-thanos
-    image: quay.io/thanos/thanos:v0.10.0
+    image: quay.io/openshift/origin-thanos:latest
     resources:
       requests:
         cpu: 1m
