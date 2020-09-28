@@ -72,16 +72,6 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
-  - name: rules-configmap-reloader
-    resources:
-      requests:
-        cpu: 1m
-        memory: 5Mi
-  - name: prometheus-config-reloader
-    resources:
-      requests:
-        cpu: 1m
-        memory: 8Mi
   enforcedNamespaceLabel: namespace
   ignoreNamespaceSelectors: true
   image: openshift/prometheus:v2.20.0
