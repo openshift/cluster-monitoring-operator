@@ -37,7 +37,6 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	v1betaextensions "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -957,21 +956,6 @@ func (c *Client) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 	return errors.Wrap(err, "updating ConfigMap object failed")
 }
 
-func (c *Client) CreateOrUpdateNamespace(n *v1.Namespace) error {
-	nClient := c.kclient.CoreV1().Namespaces()
-	_, err := nClient.Get(context.TODO(), n.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := nClient.Create(context.TODO(), n, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Namespace object failed")
-	}
-	if err != nil {
-		return errors.Wrap(err, "retrieving Namespace object failed")
-	}
-
-	_, err = nClient.Update(context.TODO(), n, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating ConfigMap object failed")
-}
-
 func (c *Client) DeleteIfExists(nsName string) error {
 	nClient := c.kclient.CoreV1().Namespaces()
 	_, err := nClient.Get(context.TODO(), nsName, metav1.GetOptions{})
@@ -1025,22 +1009,6 @@ func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
 
 	_, err = sclient.Update(context.TODO(), svc, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Service object failed")
-}
-
-func (c *Client) CreateOrUpdateEndpoints(endpoints *v1.Endpoints) error {
-	eclient := c.kclient.CoreV1().Endpoints(endpoints.GetNamespace())
-	e, err := eclient.Get(context.TODO(), endpoints.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err = eclient.Create(context.TODO(), endpoints, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Endpoints object failed")
-	}
-	if err != nil {
-		return errors.Wrap(err, "retrieving Endpoints object failed")
-	}
-
-	endpoints.ResourceVersion = e.ResourceVersion
-	_, err = eclient.Update(context.TODO(), endpoints, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Endpoints object failed")
 }
 
 func (c *Client) CreateOrUpdateRoleBinding(rb *rbacv1.RoleBinding) error {
@@ -1167,21 +1135,6 @@ func (c *Client) CreateOrUpdateServiceMonitor(sm *monv1.ServiceMonitor) error {
 	sm.ResourceVersion = oldSm.ResourceVersion
 	_, err = smClient.Update(context.TODO(), sm, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ServiceMonitor object failed")
-}
-
-func (c *Client) CreateOrUpdateIngress(ing *v1betaextensions.Ingress) error {
-	ic := c.kclient.ExtensionsV1beta1().Ingresses(ing.GetNamespace())
-	_, err := ic.Get(context.TODO(), ing.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err = ic.Create(context.TODO(), ing, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Ingress object failed")
-	}
-	if err != nil {
-		return errors.Wrap(err, "retrieving Ingress object failed")
-	}
-
-	_, err = ic.Update(context.TODO(), ing, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Ingress object failed")
 }
 
 func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1.APIService) error {
