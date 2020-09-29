@@ -290,6 +290,7 @@ local authorizationRole = policyRule.new() +
               resources: {
                 requests: {
                   cpu: '1m',
+                  memory: '10Mi',
                 },
               },
             },

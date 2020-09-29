@@ -256,21 +256,15 @@ local alertmanagerRole =
                 },
               ],
             },
-            // TODO(simonpasquier): disable resource requests temporarily
-            // because we need to update prometheus-operator to use a single
-            // reloader sidecar which will be named 'config-reloader'.
-            // Once prometheus-operator has been updated, the following code
-            // can be uncommented.
-            // See https://bugzilla.redhat.com/show_bug.cgi?id=1845561
-            //{
-            //  name: 'config-reloader',
-            //  resources: {
-            //    requests: {
-            //      memory: '5Mi',
-            //      cpu: '1m',
-            //    },
-            //  },
-            //},
+            {
+              name: 'config-reloader',
+              resources: {
+                requests: {
+                  cpu: '1m',
+                  memory: '10Mi',
+                },
+              },
+            },
           ],
         },
       },
