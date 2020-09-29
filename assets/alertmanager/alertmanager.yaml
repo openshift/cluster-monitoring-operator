@@ -98,6 +98,7 @@ spec:
     resources:
       requests:
         cpu: 1m
+        memory: 10Mi
   image: openshift/prometheus-alertmanager:v0.21.0
   listenLocal: true
   nodeSelector:
