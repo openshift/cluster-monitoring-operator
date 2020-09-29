@@ -43,7 +43,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 const (
@@ -1770,7 +1770,7 @@ func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap
 	}, nil
 }
 
-func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1beta1.APIService, error) {
+func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1.APIService, error) {
 	return f.NewAPIService(MustAssetReader(PrometheusAdapterAPIService))
 }
 
@@ -2643,7 +2643,7 @@ func (f *Factory) NewIngress(manifest io.Reader) (*v1beta1.Ingress, error) {
 	return i, nil
 }
 
-func (f *Factory) NewAPIService(manifest io.Reader) (*apiregistrationv1beta1.APIService, error) {
+func (f *Factory) NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
 	return NewAPIService(manifest)
 }
 
@@ -3411,8 +3411,8 @@ func NewIngress(manifest io.Reader) (*v1beta1.Ingress, error) {
 	return &i, nil
 }
 
-func NewAPIService(manifest io.Reader) (*apiregistrationv1beta1.APIService, error) {
-	s := apiregistrationv1beta1.APIService{}
+func NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
+	s := apiregistrationv1.APIService{}
 	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
 	if err != nil {
 		return nil, err

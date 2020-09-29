@@ -49,7 +49,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
@@ -1184,8 +1184,8 @@ func (c *Client) CreateOrUpdateIngress(ing *v1betaextensions.Ingress) error {
 	return errors.Wrap(err, "updating Ingress object failed")
 }
 
-func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.APIService) error {
-	apsc := c.aggclient.ApiregistrationV1beta1().APIServices()
+func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1.APIService) error {
+	apsc := c.aggclient.ApiregistrationV1().APIServices()
 	oldAPIService, err := apsc.Get(context.TODO(), apiService.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err = apsc.Create(context.TODO(), apiService, metav1.CreateOptions{})
