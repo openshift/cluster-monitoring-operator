@@ -19,14 +19,14 @@ require (
 	github.com/prometheus/client_golang v1.2.1
 	github.com/prometheus/prometheus v2.9.2+incompatible
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	k8s.io/api v0.18.6
+	k8s.io/api v0.19.2
 	k8s.io/apiextensions-apiserver v0.18.2
-	k8s.io/apimachinery v0.18.6
+	k8s.io/apimachinery v0.19.2
 	k8s.io/apiserver v0.18.2
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.18.0
-	k8s.io/metrics v0.0.0-20191014074242-8b0351268f72
+	k8s.io/metrics v0.18.6
 )
 
 replace (
