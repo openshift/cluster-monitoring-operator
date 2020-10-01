@@ -16,16 +16,13 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"reflect"
 	"time"
 
 	"github.com/coreos/prometheus-operator/pkg/alertmanager"
-	mon "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/coreos/prometheus-operator/pkg/client/versioned"
-	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 	prometheusoperator "github.com/coreos/prometheus-operator/pkg/prometheus"
 	"github.com/coreos/prometheus-operator/pkg/thanos"
 	thanosoperator "github.com/coreos/prometheus-operator/pkg/thanos"
@@ -147,34 +144,19 @@ func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "secrets", ns, fields.Everything())
 }
 
-func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
+func (c *Client) AssurePrometheusOperatorCRsExist() error {
 	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
-		err := c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.Prometheus, mon.GroupName, map[string]string{}, false))
+		_, err := c.mclient.MonitoringV1().Prometheuses(c.namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return false, err
 		}
 
-		err = c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.Alertmanager, mon.GroupName, map[string]string{}, false))
+		_, err = c.mclient.MonitoringV1().Alertmanagers(c.namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return false, err
 		}
 
-		err = c.WaitForCRDReady(k8sutil.NewCustomResourceDefinition(monv1.DefaultCrdKinds.ServiceMonitor, mon.GroupName, map[string]string{}, false))
-		if err != nil {
-			return false, err
-		}
-
-		_, err = c.mclient.MonitoringV1().Prometheuses(c.namespace).List(metav1.ListOptions{})
-		if err != nil {
-			return false, err
-		}
-
-		_, err = c.mclient.MonitoringV1().Alertmanagers(c.namespace).List(metav1.ListOptions{})
-		if err != nil {
-			return false, err
-		}
-
-		_, err = c.mclient.MonitoringV1().ServiceMonitors(c.namespace).List(metav1.ListOptions{})
+		_, err = c.mclient.MonitoringV1().ServiceMonitors(c.namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -185,9 +167,9 @@ func (c *Client) WaitForPrometheusOperatorCRDsReady() error {
 
 func (c *Client) CreateOrUpdateSecurityContextConstraints(s *secv1.SecurityContextConstraints) error {
 	sccclient := c.ossclient.SecurityV1().SecurityContextConstraints()
-	existing, err := sccclient.Get(s.GetName(), metav1.GetOptions{})
+	existing, err := sccclient.Get(context.TODO(), s.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := sccclient.Create(s)
+		_, err := sccclient.Create(context.TODO(), s, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating SecurityContextConstraints object failed")
 	}
 	if err != nil {
@@ -198,15 +180,15 @@ func (c *Client) CreateOrUpdateSecurityContextConstraints(s *secv1.SecurityConte
 	required := s.DeepCopy()
 	required.ResourceVersion = existing.ResourceVersion
 
-	_, err = sccclient.Update(required)
+	_, err = sccclient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating SecurityContextConstraints object failed")
 }
 
 func (c *Client) CreateRouteIfNotExists(r *routev1.Route) error {
 	rclient := c.osrclient.RouteV1().Routes(r.GetNamespace())
-	_, err := rclient.Get(r.GetName(), metav1.GetOptions{})
+	_, err := rclient.Get(context.TODO(), r.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := rclient.Create(r)
+		_, err := rclient.Create(context.TODO(), r, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Route object failed")
 	}
 	return nil
@@ -214,7 +196,7 @@ func (c *Client) CreateRouteIfNotExists(r *routev1.Route) error {
 
 func (c *Client) GetRouteURL(r *routev1.Route) (*url.URL, error) {
 	rclient := c.osrclient.RouteV1().Routes(r.GetNamespace())
-	newRoute, err := rclient.Get(r.GetName(), metav1.GetOptions{})
+	newRoute, err := rclient.Get(context.TODO(), r.GetName(), metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "getting Route object failed")
 	}
@@ -232,15 +214,15 @@ func (c *Client) GetRouteURL(r *routev1.Route) (*url.URL, error) {
 }
 
 func (c *Client) GetClusterVersion(name string) (*configv1.ClusterVersion, error) {
-	return c.oscclient.ConfigV1().ClusterVersions().Get(name, metav1.GetOptions{})
+	return c.oscclient.ConfigV1().ClusterVersions().Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 func (c *Client) GetProxy(name string) (*configv1.Proxy, error) {
-	return c.oscclient.ConfigV1().Proxies().Get(name, metav1.GetOptions{})
+	return c.oscclient.ConfigV1().Proxies().Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 func (c *Client) GetInfrastructure(name string) (*configv1.Infrastructure, error) {
-	return c.oscclient.ConfigV1().Infrastructures().Get(name, metav1.GetOptions{})
+	return c.oscclient.ConfigV1().Infrastructures().Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 func (c *Client) GetConfigmap(namespace, name string) (*v1.ConfigMap, error) {
@@ -268,14 +250,10 @@ func (c *Client) NamespacesToMonitor() ([]string, error) {
 }
 
 func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
-	if p.Spec.Storage != nil {
-		p.Spec.Storage.VolumeClaimTemplate.CreationTimestamp = metav1.Unix(0, 0)
-	}
-
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
-	oldProm, err := pclient.Get(p.GetName(), metav1.GetOptions{})
+	oldProm, err := pclient.Get(context.TODO(), p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := pclient.Create(p)
+		_, err := pclient.Create(context.TODO(), p, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Prometheus object failed")
 	}
 	if err != nil {
@@ -283,15 +261,15 @@ func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 	}
 
 	p.ResourceVersion = oldProm.ResourceVersion
-	_, err = pclient.Update(p)
+	_, err = pclient.Update(context.TODO(), p, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Prometheus object failed")
 }
 
 func (c *Client) CreateOrUpdatePrometheusRule(p *monv1.PrometheusRule) error {
 	pclient := c.mclient.MonitoringV1().PrometheusRules(p.GetNamespace())
-	oldRule, err := pclient.Get(p.GetName(), metav1.GetOptions{})
+	oldRule, err := pclient.Get(context.TODO(), p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := pclient.Create(p)
+		_, err := pclient.Create(context.TODO(), p, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating PrometheusRule object failed")
 	}
 	if err != nil {
@@ -300,15 +278,15 @@ func (c *Client) CreateOrUpdatePrometheusRule(p *monv1.PrometheusRule) error {
 
 	p.ResourceVersion = oldRule.ResourceVersion
 
-	_, err = pclient.Update(p)
+	_, err = pclient.Update(context.TODO(), p, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating PrometheusRule object failed")
 }
 
 func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	aclient := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace())
-	oldAm, err := aclient.Get(a.GetName(), metav1.GetOptions{})
+	oldAm, err := aclient.Get(context.TODO(), a.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := aclient.Create(a)
+		_, err := aclient.Create(context.TODO(), a, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Alertmanager object failed")
 	}
 	if err != nil {
@@ -316,19 +294,16 @@ func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	}
 
 	a.ResourceVersion = oldAm.ResourceVersion
-	if a.Spec.Storage != nil {
-		a.Spec.Storage.VolumeClaimTemplate.CreationTimestamp = metav1.Unix(0, 0)
-	}
 
-	_, err = aclient.Update(a)
+	_, err = aclient.Update(context.TODO(), a, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Alertmanager object failed")
 }
 
 func (c *Client) CreateOrUpdateThanosRuler(t *monv1.ThanosRuler) error {
 	trclient := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace())
-	oldTr, err := trclient.Get(t.GetName(), metav1.GetOptions{})
+	oldTr, err := trclient.Get(context.TODO(), t.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := trclient.Create(t)
+		_, err := trclient.Create(context.TODO(), t, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Thanos Ruler object failed")
 	}
 	if err != nil {
@@ -336,11 +311,8 @@ func (c *Client) CreateOrUpdateThanosRuler(t *monv1.ThanosRuler) error {
 	}
 
 	t.ResourceVersion = oldTr.ResourceVersion
-	if t.Spec.Storage != nil {
-		t.Spec.Storage.VolumeClaimTemplate.CreationTimestamp = metav1.Unix(0, 0)
-	}
 
-	_, err = trclient.Update(t)
+	_, err = trclient.Update(context.TODO(), t, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Thanos Ruler object failed")
 }
 
@@ -408,7 +380,7 @@ func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
 
-	err := pclient.Delete(p.GetName(), nil)
+	err := pclient.Delete(context.TODO(), p.GetName(), metav1.DeleteOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrap(err, "deleting Prometheus object failed")
 	}
@@ -423,13 +395,13 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
 		klog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
 
-		lastErr = fmt.Errorf("waiting for %d Pods to be deleted", len(pods.Items))
+		lastErr = errors.Errorf("%d pods still present", len(pods.Items))
 		return len(pods.Items) == 0, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Prometheus Pods to be gone failed")
+		return errors.Wrapf(err, "waiting for Prometheus %s/%s deletion", p.GetNamespace(), p.GetName())
 	}
 
 	return nil
@@ -438,7 +410,7 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 func (c *Client) DeleteThanosRuler(tr *monv1.ThanosRuler) error {
 	trclient := c.mclient.MonitoringV1().ThanosRulers(tr.GetNamespace())
 
-	err := trclient.Delete(tr.GetName(), nil)
+	err := trclient.Delete(context.TODO(), tr.GetName(), metav1.DeleteOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrap(err, "deleting Thanos Ruler object failed")
 	}
@@ -453,13 +425,13 @@ func (c *Client) DeleteThanosRuler(tr *monv1.ThanosRuler) error {
 		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
 		klog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
 
-		lastErr = fmt.Errorf("waiting for %d Pods to be deleted", len(pods.Items))
+		lastErr = errors.Errorf("%d pods still present", len(pods.Items))
 		return len(pods.Items) == 0, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Thanos Ruler Pods to be gone failed")
+		return errors.Wrapf(err, "waiting for Thanos Ruler %s/%s deletion", tr.GetNamespace(), tr.GetName())
 	}
 
 	return nil
@@ -482,7 +454,7 @@ func (c *Client) DeleteServiceMonitor(sm *monv1.ServiceMonitor) error {
 func (c *Client) DeleteServiceMonitorByNamespaceAndName(namespace, name string) error {
 	sclient := c.mclient.MonitoringV1().ServiceMonitors(namespace)
 
-	err := sclient.Delete(name, nil)
+	err := sclient.Delete(context.TODO(), name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrap(err, "deleting ServiceMonitor object failed")
@@ -528,7 +500,7 @@ func (c *Client) DeleteService(svc *v1.Service) error {
 }
 
 func (c *Client) DeleteRoute(r *routev1.Route) error {
-	err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Delete(r.GetName(), &metav1.DeleteOptions{})
+	err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Delete(context.TODO(), r.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -536,7 +508,7 @@ func (c *Client) DeleteRoute(r *routev1.Route) error {
 }
 
 func (c *Client) DeletePrometheusRule(rule *monv1.PrometheusRule) error {
-	err := c.mclient.MonitoringV1().PrometheusRules(rule.GetNamespace()).Delete(rule.GetName(), &metav1.DeleteOptions{})
+	err := c.mclient.MonitoringV1().PrometheusRules(rule.GetNamespace()).Delete(context.TODO(), rule.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -563,7 +535,7 @@ func (c *Client) DeleteValidatingWebhookConfiguration(name string) error {
 func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
-		p, err := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace()).Get(p.GetName(), metav1.GetOptions{})
+		p, err := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace()).Get(context.TODO(), p.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Prometheus object failed")
 		}
@@ -573,16 +545,22 @@ func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 		}
 
 		expectedReplicas := *p.Spec.Replicas
-		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
-			return true, nil
+		if expectedReplicas != status.UpdatedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				expectedReplicas, status.UpdatedReplicas)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
-		return false, nil
+		if status.AvailableReplicas < expectedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
+				expectedReplicas, status.AvailableReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Prometheus")
+		return errors.Wrapf(err, "waiting for Prometheus %s/%s", p.GetNamespace(), p.GetName())
 	}
 	return nil
 }
@@ -590,7 +568,7 @@ func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
-		a, err := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace()).Get(a.GetName(), metav1.GetOptions{})
+		a, err := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace()).Get(context.TODO(), a.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Alertmanager object failed")
 		}
@@ -600,16 +578,22 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 		}
 
 		expectedReplicas := *a.Spec.Replicas
-		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
-			return true, nil
+		if expectedReplicas != status.UpdatedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				expectedReplicas, status.UpdatedReplicas)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
-		return false, nil
+		if status.AvailableReplicas < expectedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
+				expectedReplicas, status.AvailableReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Alertmanager")
+		return errors.Wrapf(err, "waiting for Alertmanager %s/%s", a.GetNamespace(), a.GetName())
 	}
 	return nil
 }
@@ -617,7 +601,7 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 func (c *Client) WaitForThanosRuler(t *monv1.ThanosRuler) error {
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
-		tr, err := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace()).Get(t.GetName(), metav1.GetOptions{})
+		tr, err := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace()).Get(context.TODO(), t.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Thanos Ruler object failed")
 		}
@@ -627,16 +611,22 @@ func (c *Client) WaitForThanosRuler(t *monv1.ThanosRuler) error {
 		}
 
 		expectedReplicas := *tr.Spec.Replicas
-		if status.UpdatedReplicas == expectedReplicas && status.AvailableReplicas >= expectedReplicas {
-			return true, nil
+		if expectedReplicas != status.UpdatedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				expectedReplicas, status.UpdatedReplicas)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("expected %d replicas, updated %d and available %d", expectedReplicas, status.UpdatedReplicas, status.AvailableReplicas)
-		return false, nil
+		if status.AvailableReplicas < expectedReplicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
+				expectedReplicas, status.AvailableReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrap(err, "waiting for Thanos Ruler")
+		return errors.Wrapf(err, "waiting for Thanos Ruler %s/%s", t.GetNamespace(), t.GetName())
 	}
 	return nil
 }
@@ -700,17 +690,27 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 		if err != nil {
 			return false, err
 		}
-		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedReplicas == d.Status.Replicas && d.Status.UnavailableReplicas == 0 {
-			return true, nil
+		if d.Generation > d.Status.ObservedGeneration {
+			lastErr = errors.Errorf("current generation %d, observed generation %d",
+				d.Generation, d.Status.ObservedGeneration)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("deployment %s is not ready. status: (replicas: %d, updated: %d, ready: %d, unavailable: %d)",
-			d.Name, d.Status.Replicas, d.Status.UpdatedReplicas, d.Status.ReadyReplicas, d.Status.UnavailableReplicas)
-		return false, nil
+		if d.Status.UpdatedReplicas != d.Status.Replicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				d.Status.Replicas, d.Status.UpdatedReplicas)
+			return false, nil
+		}
+		if d.Status.UnavailableReplicas != 0 {
+			lastErr = errors.Errorf("got %d unavailable replicas",
+				d.Status.UpdatedReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for DeploymentRollout of %s", dep.GetName())
+		return errors.Wrapf(err, "waiting for DeploymentRollout of %s/%s", dep.GetNamespace(), dep.GetName())
 	}
 	return nil
 }
@@ -718,21 +718,31 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 func (c *Client) WaitForStatefulsetRollout(sts *appsv1.StatefulSet) error {
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		d, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(context.TODO(), sts.GetName(), metav1.GetOptions{})
+		s, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(context.TODO(), sts.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
-		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedReplicas == d.Status.Replicas && d.Status.ReadyReplicas == d.Status.Replicas {
-			return true, nil
+		if s.Generation > s.Status.ObservedGeneration {
+			lastErr = errors.Errorf("expected generation %d, observed generation: %d",
+				s.Generation, s.Status.ObservedGeneration)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("statefulset %s is not ready. status: (replicas: %d, updated: %d, ready: %d)",
-			d.Name, d.Status.Replicas, d.Status.UpdatedReplicas, d.Status.ReadyReplicas)
-		return false, nil
+		if s.Status.UpdatedReplicas != s.Status.Replicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+				s.Status.Replicas, s.Status.UpdatedReplicas)
+			return false, nil
+		}
+		if s.Status.ReadyReplicas != s.Status.Replicas {
+			lastErr = errors.Errorf("expected %d replicas, got %d ready replicas",
+				s.Status.Replicas, s.Status.ReadyReplicas)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for StatefulsetRollout of %s", sts.GetName())
+		return errors.Wrapf(err, "waiting for StatefulsetRollout of %s/%s", sts.GetNamespace(), sts.GetName())
 	}
 	return nil
 }
@@ -765,7 +775,7 @@ func (c *Client) WaitForSecret(s *v1.Secret) (*v1.Secret, error) {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return nil, errors.Wrapf(err, "waiting for secret %s", s.GetName())
+		return nil, errors.Wrapf(err, "waiting for secret %s/%s", s.GetNamespace(), s.GetName())
 	}
 
 	return result, nil
@@ -775,12 +785,12 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 	host := ""
 	var lastErr error
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
-		newRoute, err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Get(r.GetName(), metav1.GetOptions{})
+		newRoute, err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Get(context.TODO(), r.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
 		if len(newRoute.Status.Ingress) == 0 {
-			lastErr = fmt.Errorf("no status available for %s", newRoute.GetName())
+			lastErr = errors.New("no status available")
 			return false, nil
 		}
 		for _, c := range newRoute.Status.Ingress[0].Conditions {
@@ -789,13 +799,13 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 				return true, nil
 			}
 		}
-		lastErr = fmt.Errorf("route %s is not yet Admitted", newRoute.GetName())
+		lastErr = errors.New("route is not yet Admitted")
 		return false, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return host, errors.Wrapf(err, "waiting for RouteReady of %s", r.GetName())
+		return host, errors.Wrapf(err, "waiting for route %s/%s", r.GetNamespace(), r.GetName())
 	}
 	return host, nil
 }
@@ -854,17 +864,27 @@ func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 		if err != nil {
 			return false, err
 		}
-		if d.Generation <= d.Status.ObservedGeneration && d.Status.UpdatedNumberScheduled == d.Status.DesiredNumberScheduled && d.Status.NumberUnavailable == 0 {
-			return true, nil
+		if d.Generation > d.Status.ObservedGeneration {
+			lastErr = errors.Errorf("current generation %d, observed generation: %d",
+				d.Generation, d.Status.ObservedGeneration)
+			return false, nil
 		}
-		lastErr = fmt.Errorf("daemonset %s is not ready. status: (desired: %d, updated: %d, ready: %d, unavailable: %d)",
-			d.Name, d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled, d.Status.NumberReady, d.Status.NumberUnavailable)
-		return false, nil
+		if d.Status.UpdatedNumberScheduled != d.Status.DesiredNumberScheduled {
+			lastErr = errors.Errorf("expected %d desired scheduled nodes, got %d updated scheduled nodes",
+				d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled)
+			return false, nil
+		}
+		if d.Status.NumberUnavailable != 0 {
+			lastErr = errors.Errorf("got %d unavailable nodes",
+				d.Status.NumberUnavailable)
+			return false, nil
+		}
+		return true, nil
 	}); err != nil {
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for DaemonSetRollout of %s", ds.GetName())
+		return errors.Wrapf(err, "waiting for DaemonSetRollout of %s/%s", ds.GetNamespace(), ds.GetName())
 	}
 	return nil
 }
@@ -1116,9 +1136,9 @@ func (c *Client) CreateOrUpdateServiceAccount(sa *v1.ServiceAccount) error {
 
 func (c *Client) CreateOrUpdateServiceMonitor(sm *monv1.ServiceMonitor) error {
 	smClient := c.mclient.MonitoringV1().ServiceMonitors(sm.GetNamespace())
-	oldSm, err := smClient.Get(sm.GetName(), metav1.GetOptions{})
+	oldSm, err := smClient.Get(context.TODO(), sm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := smClient.Create(sm)
+		_, err := smClient.Create(context.TODO(), sm, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ServiceMonitor object failed")
 	}
 	if err != nil {
@@ -1126,7 +1146,7 @@ func (c *Client) CreateOrUpdateServiceMonitor(sm *monv1.ServiceMonitor) error {
 	}
 
 	sm.ResourceVersion = oldSm.ResourceVersion
-	_, err = smClient.Update(sm)
+	_, err = smClient.Update(context.TODO(), sm, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ServiceMonitor object failed")
 }
 
@@ -1186,7 +1206,7 @@ func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, er
 			}
 		case extensionsobj.NamesAccepted:
 			if cond.Status == extensionsobj.ConditionFalse {
-				return false, fmt.Errorf("CRD naming conflict (%s): %v", crd.ObjectMeta.Name, cond.Reason)
+				return false, errors.Errorf("CRD naming conflict (%s): %v", crd.ObjectMeta.Name, cond.Reason)
 			}
 		}
 	}

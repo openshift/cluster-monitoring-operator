@@ -99,11 +99,11 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator Deployment failed")
 	}
 
-	// The CRDs will be registered by the cluster monitoring prometheus operator,
+	// The CRs will be created externally,
 	// but we still have to wait for them here.
-	err = t.client.WaitForPrometheusOperatorCRDsReady()
+	err = t.client.AssurePrometheusOperatorCRsExist()
 	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus CRDs to become available failed")
+		return errors.Wrap(err, "waiting for Prometheus Operator CRs to become available failed")
 	}
 
 	smpo, err := t.factory.PrometheusOperatorUserWorkloadServiceMonitor()
