@@ -15,6 +15,7 @@
 package operator
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -398,7 +399,7 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		}
 
 		err = c.LoadToken(func() (*v1.Secret, error) {
-			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get("pull-secret", metav1.GetOptions{})
+			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(context.TODO(), "pull-secret", metav1.GetOptions{})
 		})
 
 		if err != nil {
