@@ -232,7 +232,7 @@ func deployUserApplication(t *testing.T) {
 		},
 	}, metav1.CreateOptions{})
 
-	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(&monitoringv1.ServiceMonitor{
+	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-monitor",
 			Labels: map[string]string{
@@ -253,12 +253,12 @@ func deployUserApplication(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(&monitoringv1.PrometheusRule{
+	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-rule",
 			Labels: map[string]string{
@@ -283,7 +283,7 @@ func deployUserApplication(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,26 +295,26 @@ func deployUserApplication(t *testing.T) {
 }
 
 func createPrometheusAlertmanagerInUserNamespace(t *testing.T) {
-	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(&monitoringv1.Alertmanager{
+	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
 		},
 		Spec: monitoringv1.AlertmanagerSpec{
 			Replicas: proto.Int32(1),
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.MonitoringClient.Prometheuses(userWorkloadTestNs).Create(&monitoringv1.Prometheus{
+	_, err = f.MonitoringClient.Prometheuses(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			Replicas: proto.Int32(1),
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -88,7 +88,7 @@ func TestNodeMetricsPresence(t *testing.T) {
 		if err != nil {
 			return false, nil
 		}
-		nodeMetrics, err := f.MetricsClient.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+		nodeMetrics, err := f.MetricsClient.MetricsV1beta1().NodeMetricses().List(context.TODO(), metav1.ListOptions{})
 		lastErr = errors.Wrap(err, "getting metrics list failed")
 		if err != nil {
 			return false, nil
@@ -125,7 +125,7 @@ func TestPodMetricsPresence(t *testing.T) {
 		if err != nil {
 			return false, nil
 		}
-		podMetrics, err := f.MetricsClient.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
+		podMetrics, err := f.MetricsClient.MetricsV1beta1().PodMetricses("").List(context.TODO(), metav1.ListOptions{})
 		lastErr = errors.Wrap(err, "getting metrics list failed")
 		if err != nil {
 			return false, nil
