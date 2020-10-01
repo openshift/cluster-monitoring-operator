@@ -165,7 +165,7 @@ func (cg *configGenerator) generateConfig(
 		versionStr = operator.DefaultPrometheusVersion
 	}
 
-	version, err := semver.Parse(strings.TrimLeft(versionStr, "v"))
+	version, err := semver.ParseTolerant(versionStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse version")
 	}
@@ -182,14 +182,19 @@ func (cg *configGenerator) generateConfig(
 		evaluationInterval = p.Spec.EvaluationInterval
 	}
 
-	cfg = append(cfg, yaml.MapItem{
-		Key: "global",
-		Value: yaml.MapSlice{
-			{Key: "evaluation_interval", Value: evaluationInterval},
-			{Key: "scrape_interval", Value: scrapeInterval},
-			{Key: "external_labels", Value: buildExternalLabels(p)},
-		},
-	})
+	globalItems := yaml.MapSlice{
+		{Key: "evaluation_interval", Value: evaluationInterval},
+		{Key: "scrape_interval", Value: scrapeInterval},
+		{Key: "external_labels", Value: buildExternalLabels(p)},
+	}
+
+	if version.GTE(semver.MustParse("2.16.0")) && p.Spec.QueryLogFile != "" {
+		globalItems = append(globalItems, yaml.MapItem{
+			Key: "query_log_file", Value: p.Spec.QueryLogFile,
+		})
+	}
+
+	cfg = append(cfg, yaml.MapItem{Key: "global", Value: globalItems})
 
 	ruleFilePaths := []string{}
 	for _, name := range ruleConfigMapNames {
@@ -1088,6 +1093,10 @@ func (cg *configGenerator) generateRemoteReadConfig(version semver.Version, spec
 			{Key: "remote_timeout", Value: spec.RemoteTimeout},
 		}
 
+		if spec.Name != "" && version.GTE(semver.MustParse("2.15.0")) {
+			cfg = append(cfg, yaml.MapItem{Key: "name", Value: spec.Name})
+		}
+
 		if len(spec.RequiredMatchers) > 0 {
 			cfg = append(cfg, yaml.MapItem{Key: "required_matchers", Value: stringMapToMapSlice(spec.RequiredMatchers)})
 		}
@@ -1146,6 +1155,10 @@ func (cg *configGenerator) generateRemoteWriteConfig(version semver.Version, spe
 		cfg := yaml.MapSlice{
 			{Key: "url", Value: spec.URL},
 			{Key: "remote_timeout", Value: spec.RemoteTimeout},
+		}
+
+		if spec.Name != "" && version.GTE(semver.MustParse("2.15.0")) {
+			cfg = append(cfg, yaml.MapItem{Key: "name", Value: spec.Name})
 		}
 
 		if spec.WriteRelabelConfigs != nil {

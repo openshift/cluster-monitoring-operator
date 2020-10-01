@@ -137,8 +137,7 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 			},
 		})
 	} else {
-		pvcTemplate := storageSpec.VolumeClaimTemplate
-		pvcTemplate.CreationTimestamp = metav1.Time{}
+		pvcTemplate := operator.MakeVolumeClaimTemplate(storageSpec.VolumeClaimTemplate)
 		if pvcTemplate.Name == "" {
 			pvcTemplate.Name = volumeName(am.Name)
 		}
@@ -149,7 +148,7 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 		}
 		pvcTemplate.Spec.Resources = storageSpec.VolumeClaimTemplate.Spec.Resources
 		pvcTemplate.Spec.Selector = storageSpec.VolumeClaimTemplate.Spec.Selector
-		statefulset.Spec.VolumeClaimTemplates = append(statefulset.Spec.VolumeClaimTemplates, pvcTemplate)
+		statefulset.Spec.VolumeClaimTemplates = append(statefulset.Spec.VolumeClaimTemplates, *pvcTemplate)
 	}
 
 	if old != nil {
@@ -234,9 +233,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 		image = *a.Spec.Image
 	}
 
-	versionStr := strings.TrimLeft(a.Spec.Version, "v")
-
-	version, err := semver.Parse(versionStr)
+	version, err := semver.ParseTolerant(a.Spec.Version)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse alertmanager version")
 	}
@@ -272,6 +269,10 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 		if a.Spec.LogFormat != "" && a.Spec.LogFormat != "logfmt" {
 			amArgs = append(amArgs, fmt.Sprintf("--log.format=%s", a.Spec.LogFormat))
 		}
+	}
+
+	if a.Spec.ClusterAdvertiseAddress != "" {
+		amArgs = append(amArgs, fmt.Sprintf("--cluster.advertise-address=%s", a.Spec.ClusterAdvertiseAddress))
 	}
 
 	localReloadURL := &url.URL{
@@ -329,8 +330,15 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 	podLabels["app"] = "alertmanager"
 	podLabels["alertmanager"] = a.Name
 
+	var clusterPeerDomain string
+	if config.ClusterDomain != "" {
+		clusterPeerDomain = fmt.Sprintf("%s.%s.svc.%s.", governingServiceName, a.Namespace, config.ClusterDomain)
+	} else {
+		// The default DNS search path is .svc.<cluster domain>
+		clusterPeerDomain = governingServiceName
+	}
 	for i := int32(0); i < *a.Spec.Replicas; i++ {
-		amArgs = append(amArgs, fmt.Sprintf("--cluster.peer=%s-%d.%s.%s.svc:9094", prefixedName(a.Name), i, governingServiceName, a.Namespace))
+		amArgs = append(amArgs, fmt.Sprintf("--cluster.peer=%s-%d.%s:9094", prefixedName(a.Name), i, clusterPeerDomain))
 	}
 
 	for _, peer := range a.Spec.AdditionalPeers {
@@ -562,6 +570,10 @@ func prefixedName(name string) string {
 
 func subPathForStorage(s *monitoringv1.StorageSpec) string {
 	if s == nil {
+		return ""
+	}
+
+	if s.DisableMountSubPath {
 		return ""
 	}
 
