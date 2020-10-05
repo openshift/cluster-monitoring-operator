@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/url"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/coreos/prometheus-operator/pkg/alertmanager"
@@ -53,6 +54,7 @@ import (
 
 const (
 	deploymentCreateTimeout = 5 * time.Minute
+	metadataPrefix          = "monitoring.openshift.io/"
 )
 
 type Client struct {
@@ -178,6 +180,7 @@ func (c *Client) CreateOrUpdateSecurityContextConstraints(s *secv1.SecurityConte
 
 	// the CRD version of SCC appears to require this.  We can try to chase why later.
 	required := s.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 	required.ResourceVersion = existing.ResourceVersion
 
 	_, err = sccclient.Update(context.TODO(), required, metav1.UpdateOptions{})
@@ -251,7 +254,7 @@ func (c *Client) NamespacesToMonitor() ([]string, error) {
 
 func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
-	oldProm, err := pclient.Get(context.TODO(), p.GetName(), metav1.GetOptions{})
+	existing, err := pclient.Get(context.TODO(), p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pclient.Create(context.TODO(), p, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Prometheus object failed")
@@ -260,14 +263,17 @@ func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 		return errors.Wrap(err, "retrieving Prometheus object failed")
 	}
 
-	p.ResourceVersion = oldProm.ResourceVersion
-	_, err = pclient.Update(context.TODO(), p, metav1.UpdateOptions{})
+	required := p.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	required.ResourceVersion = existing.ResourceVersion
+	_, err = pclient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Prometheus object failed")
 }
 
 func (c *Client) CreateOrUpdatePrometheusRule(p *monv1.PrometheusRule) error {
 	pclient := c.mclient.MonitoringV1().PrometheusRules(p.GetNamespace())
-	oldRule, err := pclient.Get(context.TODO(), p.GetName(), metav1.GetOptions{})
+	existing, err := pclient.Get(context.TODO(), p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pclient.Create(context.TODO(), p, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating PrometheusRule object failed")
@@ -276,15 +282,18 @@ func (c *Client) CreateOrUpdatePrometheusRule(p *monv1.PrometheusRule) error {
 		return errors.Wrap(err, "retrieving PrometheusRule object failed")
 	}
 
-	p.ResourceVersion = oldRule.ResourceVersion
+	required := p.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
-	_, err = pclient.Update(context.TODO(), p, metav1.UpdateOptions{})
+	required.ResourceVersion = existing.ResourceVersion
+
+	_, err = pclient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating PrometheusRule object failed")
 }
 
 func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	aclient := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace())
-	oldAm, err := aclient.Get(context.TODO(), a.GetName(), metav1.GetOptions{})
+	existing, err := aclient.Get(context.TODO(), a.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := aclient.Create(context.TODO(), a, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Alertmanager object failed")
@@ -293,15 +302,18 @@ func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 		return errors.Wrap(err, "retrieving Alertmanager object failed")
 	}
 
-	a.ResourceVersion = oldAm.ResourceVersion
+	required := a.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
-	_, err = aclient.Update(context.TODO(), a, metav1.UpdateOptions{})
+	required.ResourceVersion = existing.ResourceVersion
+
+	_, err = aclient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Alertmanager object failed")
 }
 
 func (c *Client) CreateOrUpdateThanosRuler(t *monv1.ThanosRuler) error {
 	trclient := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace())
-	oldTr, err := trclient.Get(context.TODO(), t.GetName(), metav1.GetOptions{})
+	existing, err := trclient.Get(context.TODO(), t.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := trclient.Create(context.TODO(), t, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Thanos Ruler object failed")
@@ -310,9 +322,11 @@ func (c *Client) CreateOrUpdateThanosRuler(t *monv1.ThanosRuler) error {
 		return errors.Wrap(err, "retrieving Thanos Ruler object failed")
 	}
 
-	t.ResourceVersion = oldTr.ResourceVersion
+	required := t.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+	required.ResourceVersion = existing.ResourceVersion
 
-	_, err = trclient.Update(context.TODO(), t, metav1.UpdateOptions{})
+	_, err = trclient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Thanos Ruler object failed")
 }
 
@@ -632,7 +646,7 @@ func (c *Client) WaitForThanosRuler(t *monv1.ThanosRuler) error {
 }
 
 func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
-	d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(context.TODO(), dep.GetName(), metav1.GetOptions{})
+	existing, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(context.TODO(), dep.GetName(), metav1.GetOptions{})
 
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDeployment(dep)
@@ -641,21 +655,24 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 	if err != nil {
 		return errors.Wrap(err, "retrieving Deployment object failed")
 	}
-	if reflect.DeepEqual(dep.Spec, d.Spec) {
-		// Nothing to do, as the currently existing Telemeter client
-		// deployment is equivalent to the one that would be applied.
+	if reflect.DeepEqual(dep.Spec, existing.Spec) {
+		// Nothing to do, as the currently existing deployment is equivalent to the one that would be applied.
 		return nil
 	}
-	err = c.UpdateDeployment(dep)
+
+	required := dep.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	err = c.UpdateDeployment(required)
 	if err != nil {
 		uErr, ok := err.(*apierrors.StatusError)
 		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
 			// try to delete Deployment
-			err = c.DeleteDeployment(dep)
+			err = c.DeleteDeployment(existing)
 			if err != nil {
 				return errors.Wrap(err, "deleting Deployment object failed")
 			}
-			err = c.CreateDeployment(dep)
+			err = c.CreateDeployment(required)
 			if err != nil {
 				return errors.Wrap(err, "creating Deployment object failed after update failed")
 			}
@@ -811,7 +828,7 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 }
 
 func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
-	_, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(context.TODO(), ds.GetName(), metav1.GetOptions{})
+	existing, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(context.TODO(), ds.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDaemonSet(ds)
 		return errors.Wrap(err, "creating DaemonSet object failed")
@@ -820,16 +837,19 @@ func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
 		return errors.Wrap(err, "retrieving DaemonSet object failed")
 	}
 
-	err = c.UpdateDaemonSet(ds)
+	required := ds.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	err = c.UpdateDaemonSet(required)
 	if err != nil {
 		uErr, ok := err.(*apierrors.StatusError)
 		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
 			// try to delete DaemonSet
-			err = c.DeleteDaemonSet(ds)
+			err = c.DeleteDaemonSet(existing)
 			if err != nil {
 				return errors.Wrap(err, "deleting DaemonSet object failed")
 			}
-			err = c.CreateDaemonSet(ds)
+			err = c.CreateDaemonSet(required)
 			if err != nil {
 				return errors.Wrap(err, "creating DaemonSet object failed after update failed")
 			}
@@ -891,7 +911,7 @@ func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 
 func (c *Client) CreateOrUpdateSecret(s *v1.Secret) error {
 	sClient := c.kclient.CoreV1().Secrets(s.GetNamespace())
-	_, err := sClient.Get(context.TODO(), s.GetName(), metav1.GetOptions{})
+	existing, err := sClient.Get(context.TODO(), s.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := sClient.Create(context.TODO(), s, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Secret object failed")
@@ -900,7 +920,10 @@ func (c *Client) CreateOrUpdateSecret(s *v1.Secret) error {
 		return errors.Wrap(err, "retrieving Secret object failed")
 	}
 
-	_, err = sClient.Update(context.TODO(), s, metav1.UpdateOptions{})
+	required := s.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	_, err = sClient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Secret object failed")
 }
 
@@ -927,7 +950,7 @@ func (c *Client) CreateOrUpdateConfigMapList(cml *v1.ConfigMapList) error {
 
 func (c *Client) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 	cmClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
-	_, err := cmClient.Get(context.TODO(), cm.GetName(), metav1.GetOptions{})
+	existing, err := cmClient.Get(context.TODO(), cm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := cmClient.Create(context.TODO(), cm, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ConfigMap object failed")
@@ -936,7 +959,10 @@ func (c *Client) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 		return errors.Wrap(err, "retrieving ConfigMap object failed")
 	}
 
-	_, err = cmClient.Update(context.TODO(), cm, metav1.UpdateOptions{})
+	required := cm.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	_, err = cmClient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ConfigMap object failed")
 }
 
@@ -973,7 +999,7 @@ func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) (*v1.ConfigMap, err
 
 func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
 	sclient := c.kclient.CoreV1().Services(svc.GetNamespace())
-	s, err := sclient.Get(context.TODO(), svc.GetName(), metav1.GetOptions{})
+	existing, err := sclient.Get(context.TODO(), svc.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err = sclient.Create(context.TODO(), svc, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Service object failed")
@@ -982,16 +1008,19 @@ func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
 		return errors.Wrap(err, "retrieving Service object failed")
 	}
 
-	svc.ResourceVersion = s.ResourceVersion
-	if svc.Spec.Type == v1.ServiceTypeClusterIP {
-		svc.Spec.ClusterIP = s.Spec.ClusterIP
+	required := svc.DeepCopy()
+	required.ResourceVersion = existing.ResourceVersion
+	if required.Spec.Type == v1.ServiceTypeClusterIP {
+		required.Spec.ClusterIP = existing.Spec.ClusterIP
 	}
 
-	if reflect.DeepEqual(svc.Spec, s.Spec) && reflect.DeepEqual(svc.Annotations, s.Annotations) && reflect.DeepEqual(svc.Labels, s.Labels) {
+	if reflect.DeepEqual(required.Spec, existing.Spec) {
 		return nil
 	}
 
-	_, err = sclient.Update(context.TODO(), svc, metav1.UpdateOptions{})
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	_, err = sclient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Service object failed")
 }
 
@@ -1006,22 +1035,21 @@ func (c *Client) CreateOrUpdateRoleBinding(rb *rbacv1.RoleBinding) error {
 		return errors.Wrap(err, "retrieving RoleBinding object failed")
 	}
 
-	// Merge existing annotations with ones defined by operator. Old annotations are preserved.
-	mergo.Merge(&rb.Annotations, existing.Annotations)
-
 	if reflect.DeepEqual(rb.RoleRef, existing.RoleRef) &&
-		reflect.DeepEqual(rb.Subjects, existing.Subjects) &&
-		reflect.DeepEqual(rb.Labels, existing.Labels) {
+		reflect.DeepEqual(rb.Subjects, existing.Subjects) {
 		return nil
 	}
 
-	_, err = rbClient.Update(context.TODO(), rb, metav1.UpdateOptions{})
+	required := rb.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	_, err = rbClient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating RoleBinding object failed")
 }
 
 func (c *Client) CreateOrUpdateRole(r *rbacv1.Role) error {
 	rClient := c.kclient.RbacV1().Roles(r.GetNamespace())
-	_, err := rClient.Get(context.TODO(), r.GetName(), metav1.GetOptions{})
+	existing, err := rClient.Get(context.TODO(), r.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := rClient.Create(context.TODO(), r, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Role object failed")
@@ -1030,13 +1058,16 @@ func (c *Client) CreateOrUpdateRole(r *rbacv1.Role) error {
 		return errors.Wrap(err, "retrieving Role object failed")
 	}
 
-	_, err = rClient.Update(context.TODO(), r, metav1.UpdateOptions{})
+	required := r.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	_, err = rClient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Role object failed")
 }
 
 func (c *Client) CreateOrUpdateClusterRole(cr *rbacv1.ClusterRole) error {
 	crClient := c.kclient.RbacV1().ClusterRoles()
-	_, err := crClient.Get(context.TODO(), cr.GetName(), metav1.GetOptions{})
+	existing, err := crClient.Get(context.TODO(), cr.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := crClient.Create(context.TODO(), cr, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ClusterRole object failed")
@@ -1045,7 +1076,10 @@ func (c *Client) CreateOrUpdateClusterRole(cr *rbacv1.ClusterRole) error {
 		return errors.Wrap(err, "retrieving ClusterRole object failed")
 	}
 
-	_, err = crClient.Update(context.TODO(), cr, metav1.UpdateOptions{})
+	required := cr.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	_, err = crClient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ClusterRole object failed")
 }
 
@@ -1061,20 +1095,19 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding
 	}
 
 	if reflect.DeepEqual(crb.RoleRef, existing.RoleRef) &&
-		reflect.DeepEqual(crb.Subjects, existing.Subjects) &&
-		reflect.DeepEqual(crb.Labels, existing.Labels) {
+		reflect.DeepEqual(crb.Subjects, existing.Subjects) {
 		return nil
 	}
 
-	// Merge existing annotations with ones defined by operator. Old annotations are preserved.
-	mergo.Merge(&crb.Annotations, existing.Annotations)
+	required := crb.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
 	err = crbClient.Delete(context.TODO(), crb.Name, metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrap(err, "deleting ClusterRoleBinding object failed")
 	}
 
-	_, err = crbClient.Create(context.TODO(), crb, metav1.CreateOptions{})
+	_, err = crbClient.Create(context.TODO(), required, metav1.CreateOptions{})
 	return errors.Wrap(err, "updating ClusterRoleBinding object failed")
 }
 
@@ -1107,7 +1140,7 @@ func (c *Client) CreateOrUpdateServiceAccount(sa *v1.ServiceAccount) error {
 
 func (c *Client) CreateOrUpdateServiceMonitor(sm *monv1.ServiceMonitor) error {
 	smClient := c.mclient.MonitoringV1().ServiceMonitors(sm.GetNamespace())
-	oldSm, err := smClient.Get(context.TODO(), sm.GetName(), metav1.GetOptions{})
+	existing, err := smClient.Get(context.TODO(), sm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := smClient.Create(context.TODO(), sm, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ServiceMonitor object failed")
@@ -1116,14 +1149,17 @@ func (c *Client) CreateOrUpdateServiceMonitor(sm *monv1.ServiceMonitor) error {
 		return errors.Wrap(err, "retrieving ServiceMonitor object failed")
 	}
 
-	sm.ResourceVersion = oldSm.ResourceVersion
-	_, err = smClient.Update(context.TODO(), sm, metav1.UpdateOptions{})
+	required := sm.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	required.ResourceVersion = existing.ResourceVersion
+	_, err = smClient.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ServiceMonitor object failed")
 }
 
 func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.APIService) error {
 	apsc := c.aggclient.ApiregistrationV1beta1().APIServices()
-	oldAPIService, err := apsc.Get(context.TODO(), apiService.GetName(), metav1.GetOptions{})
+	existing, err := apsc.Get(context.TODO(), apiService.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err = apsc.Create(context.TODO(), apiService, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating APIService object failed")
@@ -1132,11 +1168,12 @@ func (c *Client) CreateOrUpdateAPIService(apiService *apiregistrationv1beta1.API
 		return errors.Wrap(err, "retrieving APIService object failed")
 	}
 
-	apiService.ResourceVersion = oldAPIService.ResourceVersion
-	if len(oldAPIService.Spec.CABundle) > 0 {
-		apiService.Spec.CABundle = oldAPIService.Spec.CABundle
+	required := apiService.DeepCopy()
+	required.ResourceVersion = existing.ResourceVersion
+	if len(existing.Spec.CABundle) > 0 {
+		required.Spec.CABundle = existing.Spec.CABundle
 	}
-	_, err = apsc.Update(context.TODO(), apiService, metav1.UpdateOptions{})
+	_, err = apsc.Update(context.TODO(), required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating APIService object failed")
 
 }
@@ -1189,4 +1226,25 @@ func (c *Client) DeleteRole(role *rbacv1.Role) error {
 	}
 
 	return err
+}
+
+// mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
+// over `existing` keys and values. Additionally function performs filtering of labels and annotations from `exiting` map
+// where keys starting from string defined in `metadataPrefix` are deleted. This prevents issues with preserving stale
+// metadata defined by the operator
+func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {
+	for k := range existing.Annotations {
+		if strings.HasPrefix(k, metadataPrefix) {
+			delete(existing.Annotations, k)
+		}
+	}
+
+	for k := range existing.Labels {
+		if strings.HasPrefix(k, metadataPrefix) {
+			delete(existing.Labels, k)
+		}
+	}
+
+	mergo.Merge(&required.Annotations, existing.Annotations)
+	mergo.Merge(&required.Labels, existing.Labels)
 }
