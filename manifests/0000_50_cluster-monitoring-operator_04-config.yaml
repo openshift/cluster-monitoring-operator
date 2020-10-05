@@ -141,10 +141,10 @@ data:
     # series associated with the csv will be deleted.
     - '{__name__="csv_abnormal"}'
     # (@openshift/ocs-operator, OCS-storage-management-team) Generic Storage metrics:
-    # cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum gives 
+    # cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum gives
     # the total amount of storage requested by PVCs from a particular storage provisioner in bytes.
     - '{__name__="cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum"}'
-    # cluster:kubelet_volume_stats_used_bytes:provisioner:sum will gives 
+    # cluster:kubelet_volume_stats_used_bytes:provisioner:sum will gives
     # the total amount of storage used by PVCs from a particular storage provisioner in bytes.
     - '{__name__="cluster:kubelet_volume_stats_used_bytes:provisioner:sum"}'
     # OCS specific metrics:
@@ -228,6 +228,8 @@ data:
     - '{__name__="che_workspace_start_time_seconds_sum"}'
     # (codeready workspaces, @ibuziuk) The overall number of attempts for starting all the workspaces.
     - '{__name__="che_workspace_start_time_seconds_count"}'
+    # (cloud credential operator, @openshift/openshift-team-hive) Track current mode the cloud-credentials-operator is functioning under.
+    - '{__name__="cco_credentials_mode"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
