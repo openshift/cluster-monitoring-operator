@@ -199,7 +199,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'instance:etcd_object_counts:sum',
           },
           {
-            expr: 'max(etcd_object_counts{resource=~"builds\\\\.build\\\\.openshift\\\\.io|deploymentconfigs\\\\.apps\\\\.openshift\\\\.io|images\\\\.image\\\\.openshift\\\\.io|statefulsets\\\\.apps|deployments\\\\.apps|cronjobs\\\\.batch|jobs\\\\.batch|pods|persistentvolumeclaims|persistentvolumes|services|namespaces|routes\\\\.route\\\\.openshift\\\\.io|ingresses\\\\.networking\\\\.k8s\\\\.io|horizontalpodautoscalers\\\\.autoscaling|users\\\\.user\\\\.openshift\\\\.io|machinesets\\\\.machine\\\\.openshift\\\\.io|resourcequotas"}) by (resource)',
+            expr: 'max(etcd_object_counts) by (resource)',
             record: 'cluster:usage:resources:sum',
           },
           {
