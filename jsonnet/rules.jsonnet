@@ -110,11 +110,31 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
           {
             expr: |||
               clamp_max(
-                (
-                  label_replace( ( ( sum (node_cpu_info) by (instance, package, core) )  > 1 ), "label_node_hyperthread_enabled", "true", "instance", "(.*)" )
-                  or on (instance, package)
-                  label_replace( ( ( sum (node_cpu_info) by (instance, package, core) ) <= 1 ), "label_node_hyperthread_enabled", "false", "instance", "(.*)" )
-                ), 1
+                label_replace(
+                  sum by(instance, package, core) (
+                    node_cpu_info{core!="",package!=""}
+                    or
+                    # Assume core = cpu and package = 0 for platforms that don't expose core/package labels.
+                    label_replace(label_join(node_cpu_info{core="",package=""}, "core", "", "cpu"), "package", "0", "package", "")
+                  ) > 1,
+                  "label_node_hyperthread_enabled",
+                  "true",
+                  "instance",
+                  "(.*)"
+                ) or on (instance, package)
+                label_replace(
+                  sum by(instance, package, core) (
+                    label_replace(node_cpu_info{core!="",package!=""}
+                    or
+                    # Assume core = cpu and package = 0 for platforms that don't expose core/package labels.
+                    label_join(node_cpu_info{core="",package=""}, "core", "", "cpu"), "package", "0", "package", "")
+                  ) <= 1,
+                  "label_node_hyperthread_enabled",
+                  "false",
+                  "instance",
+                  "(.*)"
+                ),
+                1
               )
             |||,
             record: 'cluster:cpu_core_hyperthreading',
