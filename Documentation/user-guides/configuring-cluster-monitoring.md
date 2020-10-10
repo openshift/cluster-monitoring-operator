@@ -47,6 +47,10 @@ The Config object represents the top level keys of the YAML configuration. Refer
 [ auth: <AuthConfig> ]
 [ nodeExporter: <NodeExporterConfig> ]
 [ kubeStateMetrics: <KubeStateMetricsConfig> ]
+[ grafana: <GrafanaConfig> ]
+[ thanosQuerier: <ThanosQuerierConfig> ]
+[ openshiftStateMetrics: <OpenShiftMetricsConfig> ]
+[ http: <HTTPConfig> ]
 ```
 
 ### PrometheusOperatorConfig
@@ -60,6 +64,14 @@ baseImage: <string>
 prometheusConfigReloaderBaseImage: <string>
 # configReloaderBaseImage references a base container image. Defaults to "quay.io/coreos/configmap-reload".
 configReloaderBaseImage: <string>
+# logLevel defines the verbosity of PrometheusOperator instance
+logLevel: <string>
+# nodeSelector defines the nodes on which PrometheusOperator instances will be scheduled.
+nodeSelector: 
+  [ - <labelname>: <labelvalue> ]
+# tolerations allow PrometheusOperator instances to be scheduled onto nodes with matching taints
+tolerations:
+  - [v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#toleration-v1-core)
 ```
 
 ### PrometheusK8sConfig
@@ -67,6 +79,8 @@ configReloaderBaseImage: <string>
 Use PrometheusK8sConfig to customize the Prometheus instance used for cluster monitoring.
 
 ```yaml
+# logLevel defines the verbosity of PrometheusK8s instance
+logLevel: <string>
 # retention time for samples.
 retention: <string>
 # baseImage references a base container image. Defaults to "quay.io/prometheus/prometheus".
@@ -83,6 +97,11 @@ resources: [v1.ResourceRequirements](https://kubernetes.io/docs/api-reference/v1
 # specified by users
 externalLabels:
   [ - <labelname>: <labelvalue> ]
+# volumeClaimTemplate defines the template to use for persistent storage for Prometheus pods.
+volumeClaimTemplate: [v1.PersistentVolumeClaim](https://kubernetes.io/docs/api-reference/v1.6/#persistentvolumeclaim-v1-core)
+# remoteWrite defines the `remote_write` configuration for prometheus.
+remoteWrite:
+  [ - url: <urlvalue>]
 ```
 
 ### AlertmanagerMainConfig
@@ -100,7 +119,7 @@ tolerations:
   - [v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#toleration-v1-core)
 # resources defines the resource requests and limits for the Alertmanager instances.
 resources: [v1.ResourceRequirements](https://kubernetes.io/docs/api-reference/v1.6/#resourcerequirements-v1-core)
-# volumeClaimTemplate defines the template to use for persistent storage for Alertmanager nodes.
+# volumeClaimTemplate defines the template to use for persistent storage for Alertmanager pods.
 volumeClaimTemplate: [v1.PersistentVolumeClaim](https://kubernetes.io/docs/api-reference/v1.6/#persistentvolumeclaim-v1-core)
 ```
 
@@ -127,7 +146,55 @@ Use KubeStateMetricsConfig to configure parameters for deployment of the `kube-s
 ```yaml
 # baseImage is the container image repository that will be used to deploy the kube-state-metrics pods
 baseImage: <string>
+# nodeSelector defines the nodes on which KubeStateMetrics instances will be scheduled.
+nodeSelector: 
+  [ - <labelname>: <labelvalue> ]
+# tolerations allow KubeStateMetrics instances to be scheduled onto nodes with matching taints
+tolerations:
+  - [v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#toleration-v1-core)
 addonResizerBaseImage: <string>
+```
+
+### GrafanaConfig
+
+Use GrafanaConfig to configure parameters for deployment of the `grafana` components.
+```yaml
+# baseImage is the container image repository that will be used to deploy the grafana pods
+baseImage: <string>
+# nodeSelector defines the nodes on which Grafana instances will be scheduled.
+nodeSelector: 
+  [ - <labelname>: <labelvalue> ]
+# tolerations allow Grafana instances to be scheduled onto nodes with matching taints
+tolerations:
+  - [v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#toleration-v1-core)
+# resources defines the resource requests and limits for the Grafana instances.
+```
+
+### ThanosQuerierConfig
+
+Use ThanosQuerierConfig to configure parameters for deployment of the `thanos-querier` components.
+
+```yaml
+# baseImage is the container image repository that will be used to deploy the thanos-querier pods
+baseImage: <string>
+# nodeSelector defines the nodes on which thanosQuerier instances will be scheduled.
+nodeSelector: 
+  [ - <labelname>: <labelvalue> ]
+# tolerations allow thanosQuerier instances to be scheduled onto nodes with matching taints
+tolerations:
+  - [v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#toleration-v1-core)
+# resources defines the resource requests and limits for the thanosQuerier instances.
+resources: [v1.ResourceRequirements](https://kubernetes.io/docs/api-reference/v1.6/#resourcerequirements-v1-core)
+```
+
+### HTTPConfig
+
+Use HTTPConfig to configure proxy parameter for the cluster monitoring components.
+
+```yaml
+httpProxy: <string>
+httpsProxy: <string>
+noProxy: <string>
 ```
 
 [quay]: https://quay.io/
