@@ -199,7 +199,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'instance:etcd_object_counts:sum',
           },
           {
-            expr: 'max(etcd_object_counts) by (resource)',
+            expr: 'topk(500, max(etcd_object_counts) by (resource))',
             record: 'cluster:usage:resources:sum',
           },
           {

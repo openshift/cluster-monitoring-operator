@@ -927,7 +927,7 @@ spec:
       record: cluster:kubelet_volume_stats_used_bytes:provisioner:sum
     - expr: sum(etcd_object_counts) BY (instance)
       record: instance:etcd_object_counts:sum
-    - expr: max(etcd_object_counts) by (resource)
+    - expr: topk(500, max(etcd_object_counts) by (resource))
       record: cluster:usage:resources:sum
     - expr: count(count (kube_pod_restart_policy{type!="Always",namespace!~"openshift-.+"})
         by (namespace,pod))
