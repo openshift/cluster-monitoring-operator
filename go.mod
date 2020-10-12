@@ -8,6 +8,7 @@ require (
 	github.com/campoy/embedmd v1.0.0
 	github.com/coreos/prometheus-operator v0.39.0
 	github.com/gogo/protobuf v1.3.1
+	github.com/imdario/mergo v0.3.7
 	github.com/jsonnet-bundler/jsonnet-bundler v0.3.1
 	github.com/jteeuwen/go-bindata v3.0.8-0.20151023091102-a0ff2567cfb7+incompatible
 	github.com/kylelemons/godebug v1.1.0 // indirect
