@@ -30,6 +30,7 @@ spec:
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
         - --config-reloader-cpu=0
+        - --config-reloader-memory=0
         image: quay.io/prometheus-operator/prometheus-operator:v0.42.1
         name: prometheus-operator
         ports:
