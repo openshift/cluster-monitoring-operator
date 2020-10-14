@@ -8,8 +8,8 @@
           "subdir": "grafana"
         }
       },
-      "version": "57b4365eacda291b82e0d55ba7eec573a8198dda",
-      "sum": "92DWADwGjnCfpZaL7Q07C0GZayxBziGla/O03qWea34="
+      "version": "d7c1a53462ecd533593c60e5277b92fbf7ea7623",
+      "sum": "8OnIwMhzWtgoWYHNrDlkzUAMr/CPsWKauYEv0vnH1zs="
     },
     {
       "source": {
@@ -28,8 +28,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "f69ff3d63de17f3f52b955c3b7e0d7aff0372873",
-      "sum": "B4Z3zopnw/muu9C1pXd66kbfv4C+w/k0C/EEzLlX1h0="
+      "version": "980e95de011319b88a3b9c0787a81dcdf338a898",
+      "sum": "BxOXyWCSc9KkgWJXDau2Xtsy3aOYZDHz2VqOSLga7VU="
     },
     {
       "source": {
@@ -44,12 +44,22 @@
     {
       "source": {
         "git": {
+          "remote": "https://github.com/etcd-io/etcd.git",
+          "subdir": "Documentation/etcd-mixin"
+        }
+      },
+      "version": "afc5a717c910abcfd75baf8d5f0675db07fc413a",
+      "sum": "L+PGlPK9mykGCJ9TIoEWdhMBjz+9lKuQ4YZ8fOeP9sk="
+    },
+    {
+      "source": {
+        "git": {
           "remote": "https://github.com/grafana/grafonnet-lib.git",
           "subdir": "grafonnet"
         }
       },
-      "version": "005390f0207ffa4a8ae0d1afb253b7585ff7beca",
-      "sum": "CSMZ3dJrpJpwvffie8BqcfrIVVwiKNqdPEN+1XWRBGU="
+      "version": "ff69572caf78c3163980d0d723c85a722eab73d9",
+      "sum": "J5CaYYEP02FleLx34/qgS+ckWUaxUaADlfnV7CriSo8="
     },
     {
       "source": {
@@ -58,7 +68,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "07b7d671c5cab0d6a17e587bc703066353b0268c",
+      "version": "2829b0f8e18ec87c3a451fa01fcd11b6508b25b2",
       "sum": "mD0zEP9FVFXeag7EaeS5OvUr2A9D6DQhGemoNn6+PLc="
     },
     {
@@ -79,8 +89,8 @@
           "subdir": ""
         }
       },
-      "version": "a161500608ac2ca8908f2c318bd929ecd5e20415",
-      "sum": "mCzVPYGcvqge5epnrWZ8013OzXmu84g3j73EYsUcsm0="
+      "version": "aa2adbcf39884fd9c85d7c3e0ff338b1d61ea1ba",
+      "sum": "ttkPUnv/5bqlOFcZ8fvp2wi/S7ZLKiqAZ4ZdTolX77M="
     },
     {
       "source": {
@@ -99,8 +109,8 @@
           "subdir": "jsonnet/kube-state-metrics"
         }
       },
-      "version": "89aaf6c524ee891140c4c8f2a05b1b16f5847309",
-      "sum": "zD/pbQLnQq+5hegEelaheHS8mn1h09GTktFO74iwlBI="
+      "version": "d55f5aced2cbef2ad968b47593e1676dd7005ca0",
+      "sum": "WJGwddC7KJnEN7CWGELiOHKam+vmv9XYkwrMCwmXi2M="
     },
     {
       "source": {
@@ -109,8 +119,8 @@
           "subdir": "jsonnet/kube-state-metrics-mixin"
         }
       },
-      "version": "89aaf6c524ee891140c4c8f2a05b1b16f5847309",
-      "sum": "E1GGavnf9PCWBm4WVrxWnc0FIj72UcbcweqGioWrOdU="
+      "version": "d55f5aced2cbef2ad968b47593e1676dd7005ca0",
+      "sum": "Yf8mNAHrV1YWzrdV8Ry5dJ8YblepTGw3C0Zp10XIYLo="
     },
     {
       "source": {
@@ -119,7 +129,7 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "041528b3321d5b20ac86a337693bc4cce1d36ca1",
+      "version": "fd61440ba0c91743075fce0c885c3266853c8133",
       "sum": "xoF0ibl74QrQ1DWbmoZ3JY83dEVeU0EQCvom96KGEuA=",
       "name": "openshift-state-metrics"
     },
@@ -137,12 +147,32 @@
     {
       "source": {
         "git": {
+          "remote": "https://github.com/prometheus-operator/prometheus-operator.git",
+          "subdir": "jsonnet/mixin"
+        }
+      },
+      "version": "e1bea0934fc3d8efa65f25ee029ba8905c171cd0",
+      "sum": "+Q45oBC7O8g7KQOaiKhGglwndAMWRlLTR94KUI8Q1Ko="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/prometheus-operator/prometheus-operator.git",
+          "subdir": "jsonnet/prometheus-operator"
+        }
+      },
+      "version": "cd331ce9bb58bb926e391c6ae807621cb12cc29e",
+      "sum": "nM1eDP5vftqAeQSmVYzSBAh+lG0SN6zu46QiocQiVhk="
+    },
+    {
+      "source": {
+        "git": {
           "remote": "https://github.com/prometheus/node_exporter.git",
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "9c9c63630572ac706dcd0bd0e79dc03179f6d02c",
-      "sum": "GE8EJdQvnaaj31avW1OaJGY6xP+Vd6MqMu7/GgudRDQ="
+      "version": "f81747e608ea85ae44e76454eb63f9cb6484fb9e",
+      "sum": "VyMzZPxQIjiKQYGjZjXeKNWfLJ9vOl3emp84PWfsrUc="
     },
     {
       "source": {

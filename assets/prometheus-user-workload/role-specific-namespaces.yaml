@@ -16,4 +16,12 @@ items:
     - get
     - list
     - watch
+  - apiGroups:
+    - extensions
+    resources:
+    - ingresses
+    verbs:
+    - get
+    - list
+    - watch
 kind: RoleList

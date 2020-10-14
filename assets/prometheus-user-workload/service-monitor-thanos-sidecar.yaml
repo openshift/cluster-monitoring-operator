@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    k8s-app: prometheus
+  name: thanos-sidecar
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - interval: 30s
+    port: http
+  jobLabel: app
+  selector:
+    matchLabels:
+      app: thanos-sidecar
+      prometheus: k8s

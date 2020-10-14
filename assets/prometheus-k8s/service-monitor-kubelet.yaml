@@ -54,6 +54,7 @@ spec:
       insecureSkipVerify: false
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     honorLabels: true
+    honorTimestamps: false
     interval: 30s
     metricRelabelings:
     - action: drop
