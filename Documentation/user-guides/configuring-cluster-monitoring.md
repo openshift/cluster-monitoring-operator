@@ -28,7 +28,7 @@ The Config object represents the top level keys of the YAML configuration. Refer
 
 ### PrometheusOperatorConfig
 
-Use PrometheusOperatorConfig to customize the base images used by the Prometheus Operator.
+Use PrometheusOperatorConfig to customize the Prometheus Operator.
 
 ```yaml
 logLevel: <string>
