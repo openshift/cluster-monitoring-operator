@@ -15,6 +15,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/strings"
@@ -54,10 +55,10 @@ func newRelatedObjects(namespace string) []v1.ObjectReference {
 }
 
 func (r *StatusReporter) SetDone() error {
-	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
+	co, err := r.client.Get(context.TODO(), r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		co = r.newClusterOperator()
-		co, err = r.client.Create(co)
+		co, err = r.client.Create(context.TODO(), co, metav1.CreateOptions{})
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
@@ -86,7 +87,7 @@ func (r *StatusReporter) SetDone() error {
 		co.Status.Versions = nil
 	}
 
-	_, err = r.client.UpdateStatus(co)
+	_, err = r.client.UpdateStatus(context.TODO(), co, metav1.UpdateOptions{})
 	return err
 }
 
@@ -98,10 +99,10 @@ func (r *StatusReporter) SetDone() error {
 // Once controller operator versions are available, an additional check will be introduced that toggles
 // the OperatorProgressing state in case of version upgrades.
 func (r *StatusReporter) SetInProgress() error {
-	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
+	co, err := r.client.Get(context.TODO(), r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		co = r.newClusterOperator()
-		co, err = r.client.Create(co)
+		co, err = r.client.Create(context.TODO(), co, metav1.CreateOptions{})
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
@@ -119,19 +120,19 @@ func (r *StatusReporter) SetInProgress() error {
 	co.Status.Conditions = conditions.entries()
 	co.Status.RelatedObjects = newRelatedObjects(r.namespace)
 
-	_, err = r.client.UpdateStatus(co)
+	_, err = r.client.UpdateStatus(context.TODO(), co, metav1.UpdateOptions{})
 	return err
 }
 
 func (r *StatusReporter) Get() (*v1.ClusterOperator, error) {
-	return r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
+	return r.client.Get(context.TODO(), r.clusterOperatorName, metav1.GetOptions{})
 }
 
 func (r *StatusReporter) SetFailed(statusErr error, reason string) error {
-	co, err := r.client.Get(r.clusterOperatorName, metav1.GetOptions{})
+	co, err := r.client.Get(context.TODO(), r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		co = r.newClusterOperator()
-		co, err = r.client.Create(co)
+		co, err = r.client.Create(context.TODO(), co, metav1.CreateOptions{})
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
@@ -152,7 +153,7 @@ func (r *StatusReporter) SetFailed(statusErr error, reason string) error {
 	)
 	co.Status.Conditions = conditions.entries()
 
-	_, err = r.client.UpdateStatus(co)
+	_, err = r.client.UpdateStatus(context.TODO(), co, metav1.UpdateOptions{})
 	return err
 }
 

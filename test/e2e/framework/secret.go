@@ -15,7 +15,9 @@
 package framework
 
 import (
+	"context"
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 
@@ -29,7 +31,7 @@ func CreateSecret(kubeClient kubernetes.Interface, namespace string, relativePat
 		return errors.Wrap(err, "parsing secret failed")
 	}
 
-	if _, err := kubeClient.CoreV1().Secrets(namespace).Create(secret); err != nil {
+	if _, err := kubeClient.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{}); err != nil {
 		return errors.Wrap(err, "creating secret failed")
 	}
 

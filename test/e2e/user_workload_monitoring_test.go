@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -73,7 +74,7 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		}
 
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get("prometheus-operator", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(context.TODO(), "prometheus-operator", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -85,7 +86,7 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		}
 
 		err = framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get("prometheus-user-workload", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(context.TODO(), "prometheus-user-workload", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -122,7 +123,7 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 
 func assertThanosRulerDeployment(t *testing.T) {
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get("thanos-ruler-user-workload", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(context.TODO(), "thanos-ruler-user-workload", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -156,17 +157,17 @@ func assertThanosRulerDeployment(t *testing.T) {
 }
 
 func deployUserApplication(t *testing.T) {
-	_, err := f.KubeClient.CoreV1().Namespaces().Create(&v1.Namespace{
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(context.TODO(), &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: userWorkloadTestNs,
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.CoreV1().Namespaces().Get(userWorkloadTestNs, metav1.GetOptions{})
+		_, err := f.KubeClient.CoreV1().Namespaces().Get(context.TODO(), userWorkloadTestNs, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -176,7 +177,7 @@ func deployUserApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(&appsv1.Deployment{
+	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(context.TODO(), &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-app",
 		},
@@ -203,12 +204,12 @@ func deployUserApplication(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.KubeClient.CoreV1().Services(userWorkloadTestNs).Create(&v1.Service{
+	_, err = f.KubeClient.CoreV1().Services(userWorkloadTestNs).Create(context.TODO(), &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-app",
 			Labels: map[string]string{
@@ -229,9 +230,9 @@ func deployUserApplication(t *testing.T) {
 			},
 			Type: v1.ServiceTypeClusterIP,
 		},
-	})
+	}, metav1.CreateOptions{})
 
-	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(&monitoringv1.ServiceMonitor{
+	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-monitor",
 			Labels: map[string]string{
@@ -252,12 +253,12 @@ func deployUserApplication(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(&monitoringv1.PrometheusRule{
+	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-rule",
 			Labels: map[string]string{
@@ -282,7 +283,7 @@ func deployUserApplication(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,26 +295,26 @@ func deployUserApplication(t *testing.T) {
 }
 
 func createPrometheusAlertmanagerInUserNamespace(t *testing.T) {
-	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(&monitoringv1.Alertmanager{
+	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
 		},
 		Spec: monitoringv1.AlertmanagerSpec{
 			Replicas: proto.Int32(1),
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.MonitoringClient.Prometheuses(userWorkloadTestNs).Create(&monitoringv1.Prometheus{
+	_, err = f.MonitoringClient.Prometheuses(userWorkloadTestNs).Create(context.TODO(), &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			Replicas: proto.Int32(1),
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -509,12 +510,12 @@ func assertTenancyForMetrics(t *testing.T) {
 }
 
 func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
-	_, err := f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get("prometheus-not-to-be-reconciled", metav1.GetOptions{})
+	_, err := f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get(context.TODO(), "prometheus-not-to-be-reconciled", metav1.GetOptions{})
 	if err == nil {
 		t.Fatal("expected no Prometheus statefulset to be deployed, but found one")
 	}
 
-	_, err = f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get("alertmanager-not-to-be-reconciled", metav1.GetOptions{})
+	_, err = f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get(context.TODO(), "alertmanager-not-to-be-reconciled", metav1.GetOptions{})
 	if err == nil {
 		t.Fatal("expected no Alertmanager statefulset to be deployed, but found one")
 	}
@@ -522,7 +523,7 @@ func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
 
 func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 	return func(t *testing.T) {
-		err := f.KubeClient.CoreV1().Namespaces().Delete(userWorkloadTestNs, &metav1.DeleteOptions{})
+		err := f.KubeClient.CoreV1().Namespaces().Delete(context.TODO(), userWorkloadTestNs, metav1.DeleteOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -533,7 +534,7 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		}
 
 		err = framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get("prometheus-operator", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(context.TODO(), "prometheus-operator", metav1.GetOptions{})
 			if err == nil {
 				return errors.New("prometheus-operator deployment not deleted")
 			}
@@ -547,7 +548,7 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		}
 
 		err = framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get("prometheus-user-workload", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(context.TODO(), "prometheus-user-workload", metav1.GetOptions{})
 			if err == nil {
 				return errors.New("prometheus statefulset not deleted")
 			}

@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -35,7 +36,7 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 
 	// Wait for the new ConfigMap to be created
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get("thanos-querier-trusted-ca-bundle", metav1.GetOptions{})
+		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(context.TODO(), "thanos-querier-trusted-ca-bundle", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting new trusted CA ConfigMap failed")
 		if err != nil {
 			return false, nil
@@ -58,7 +59,7 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 
 	// Wait for the new hashed trusted CA bundle ConfigMap to be created
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(newCM.Name, metav1.GetOptions{})
+		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(context.TODO(), newCM.Name, metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting new CA ConfigMap failed")
 		if err != nil {
 			return false, nil
@@ -74,7 +75,7 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 
 	// Get Thanos Querier Deployment and make sure it has a volume mounted.
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		ss, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get("thanos-querier", metav1.GetOptions{})
+		ss, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(context.TODO(), "thanos-querier", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting Thanos Querier deployment failed")
 		if err != nil {
 			return false, nil

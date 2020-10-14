@@ -80,30 +80,30 @@ type PrometheusOperatorConfig struct {
 }
 
 type PrometheusK8sConfig struct {
-	Retention           string                    `json:"retention"`
-	NodeSelector        map[string]string         `json:"nodeSelector"`
-	Tolerations         []v1.Toleration           `json:"tolerations"`
-	Resources           *v1.ResourceRequirements  `json:"resources"`
-	ExternalLabels      map[string]string         `json:"externalLabels"`
-	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
-	Hostport            string                    `json:"hostport"`
-	RemoteWrite         []monv1.RemoteWriteSpec   `json:"remoteWrite"`
-	TelemetryMatches    []string                  `json:"-"`
+	Retention           string                               `json:"retention"`
+	NodeSelector        map[string]string                    `json:"nodeSelector"`
+	Tolerations         []v1.Toleration                      `json:"tolerations"`
+	Resources           *v1.ResourceRequirements             `json:"resources"`
+	ExternalLabels      map[string]string                    `json:"externalLabels"`
+	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	Hostport            string                               `json:"hostport"`
+	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
+	TelemetryMatches    []string                             `json:"-"`
 }
 
 type AlertmanagerMainConfig struct {
-	NodeSelector        map[string]string         `json:"nodeSelector"`
-	Tolerations         []v1.Toleration           `json:"tolerations"`
-	Resources           *v1.ResourceRequirements  `json:"resources"`
-	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
-	Hostport            string                    `json:"hostport"`
+	NodeSelector        map[string]string                    `json:"nodeSelector"`
+	Tolerations         []v1.Toleration                      `json:"tolerations"`
+	Resources           *v1.ResourceRequirements             `json:"resources"`
+	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	Hostport            string                               `json:"hostport"`
 }
 
 type ThanosRulerConfig struct {
-	NodeSelector        map[string]string         `json:"nodeSelector"`
-	Tolerations         []v1.Toleration           `json:"tolerations"`
-	Resources           *v1.ResourceRequirements  `json:"resources"`
-	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
+	NodeSelector        map[string]string                    `json:"nodeSelector"`
+	Tolerations         []v1.Toleration                      `json:"tolerations"`
+	Resources           *v1.ResourceRequirements             `json:"resources"`
+	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
 }
 
 type ThanosQuerierConfig struct {
