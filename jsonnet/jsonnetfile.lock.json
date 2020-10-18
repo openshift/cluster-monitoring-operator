@@ -81,11 +81,11 @@
       "name": "kubernetes-mixin",
       "source": {
         "git": {
-          "remote": "https://github.com/kubernetes-monitoring/kubernetes-mixin",
+          "remote": "https://github.com/thpham/kubernetes-mixin",
           "subdir": ""
         }
       },
-      "version": "d445c4d98fdf88fd3c59bb34ca4b0f82536f878c",
+      "version": "fbb7496a99de8a453caf2980c571f43484b4b529",
       "sum": "2YlfyISHck1Od/i1c8Z56vO4JgS48kCJSeJPktqRpyk="
     },
     {
