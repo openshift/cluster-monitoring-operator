@@ -156,6 +156,9 @@ local namespacesRole =
       secret.mixin.metadata.withNamespace($._config.namespace) +
       secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
 
+
+
+
     // This changes the kubelet's certificates to be validated when
     // scraping.
 
@@ -239,6 +242,13 @@ local namespacesRole =
           ],
         },
       },
+
+    // TODO: Adding this to our stack is not as easy
+    // as sidecar listens on 127.0.0.1:10902 and we 
+    // need kube-rbac-proxy in front of it.
+
+    serviceMonitorThanosSidecar:: null,
+    serviceThanosSidecar:: null,
 
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and

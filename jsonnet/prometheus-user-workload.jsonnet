@@ -139,6 +139,13 @@ local alertmanagerRole =
         },
       },
 
+    // TODO: Adding this to our stack is not as easy
+    // as sidecar listens on 127.0.0.1:10902 and we 
+    // need kube-rbac-proxy in front of it.
+
+    serviceMonitorThanosSidecar:: null,
+    serviceThanosSidecar:: null,
+
     prometheus+:
       {
         spec+: {
