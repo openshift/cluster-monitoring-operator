@@ -83,9 +83,7 @@
 // assets/prometheus-k8s/service-account.yaml
 // assets/prometheus-k8s/service-monitor-etcd.yaml
 // assets/prometheus-k8s/service-monitor-kubelet.yaml
-// assets/prometheus-k8s/service-monitor-thanos-sidecar.yaml
 // assets/prometheus-k8s/service-monitor.yaml
-// assets/prometheus-k8s/service-thanos-sidecar.yaml
 // assets/prometheus-k8s/service.yaml
 // assets/prometheus-k8s/serving-certs-ca-bundle.yaml
 // assets/prometheus-k8s/trusted-ca-bundle.yaml
@@ -112,9 +110,7 @@
 // assets/prometheus-user-workload/role-config.yaml
 // assets/prometheus-user-workload/role-specific-namespaces.yaml
 // assets/prometheus-user-workload/service-account.yaml
-// assets/prometheus-user-workload/service-monitor-thanos-sidecar.yaml
 // assets/prometheus-user-workload/service-monitor.yaml
-// assets/prometheus-user-workload/service-thanos-sidecar.yaml
 // assets/prometheus-user-workload/service.yaml
 // assets/prometheus-user-workload/serving-certs-ca-bundle.yaml
 // assets/telemeter-client/cluster-role-binding-view.yaml
@@ -1888,26 +1884,6 @@ func assetsPrometheusK8sServiceMonitorKubeletYaml() (*asset, error) {
 	return a, nil
 }
 
-var _assetsPrometheusK8sServiceMonitorThanosSidecarYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\xcf\x31\x4e\x04\x31\x0c\x05\xd0\x3e\xa7\xf0\x05\x66\x01\xd1\x20\x9f\x61\xa9\x90\xe8\xbd\x19\x43\xcc\x4e\x6c\x2b\x36\x73\x7e\x94\x59\x04\x48\x74\x49\x14\xfd\xff\x3e\xb9\xbc\xf2\x08\x31\x45\xe8\xa6\x92\x36\x44\xdf\x4f\xd5\x06\x5b\x9c\xaa\xf5\xbb\xfd\xa1\x5c\x45\x57\x84\x17\x1e\xbb\x54\x7e\xbe\xfd\x2a\x9d\x93\x56\x4a\xc2\x02\xb0\xd1\x85\xb7\x98\x27\x80\xeb\x53\x2c\xe4\x8e\xe0\xc3\x3a\x67\xe3\xcf\x28\x00\x4a\x9d\x11\xb2\x91\x5a\x2c\x21\x2b\x57\x1a\xdf\xcf\xe1\x54\x19\xc1\x9c\x35\x9a\xbc\xe5\xf2\xeb\x28\xe1\x5c\x67\x2c\xeb\xea\x26\x9a\x47\xc7\x02\xa2\xc9\x63\xa7\x0d\xe1\xf1\x3e\x8e\x56\xb7\x91\x08\x2d\xd3\x0b\xc0\x87\x5d\xce\x53\x84\x40\x3e\xef\xc1\x1b\xd7\xb4\x71\x03\x76\xca\xda\xce\x7f\xc4\x00\x87\xf7\x1f\xee\xc8\xfd\x19\x81\x73\x59\xf9\x0a\x00\x00\xff\xff\xdb\xfe\xb4\xde\x30\x01\x00\x00")
-
-func assetsPrometheusK8sServiceMonitorThanosSidecarYamlBytes() ([]byte, error) {
-	return bindataRead(
-		_assetsPrometheusK8sServiceMonitorThanosSidecarYaml,
-		"assets/prometheus-k8s/service-monitor-thanos-sidecar.yaml",
-	)
-}
-
-func assetsPrometheusK8sServiceMonitorThanosSidecarYaml() (*asset, error) {
-	bytes, err := assetsPrometheusK8sServiceMonitorThanosSidecarYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "assets/prometheus-k8s/service-monitor-thanos-sidecar.yaml", size: 304, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
 var _assetsPrometheusK8sServiceMonitorYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\x91\xb1\x4e\xc4\x30\x0c\x86\xf7\x3e\x85\x5f\x20\x0d\x88\xe5\x94\x15\x89\x09\x58\x40\xec\xae\xeb\xbb\x46\x6d\x9d\xc8\x76\xcb\xeb\xa3\xb6\x87\xee\x84\xd8\x92\x3f\xf6\xff\x7f\x76\xb0\xe6\x2f\x56\xcb\x45\x12\xcc\x45\xb2\x17\xcd\x72\x69\xa9\x28\x17\x6b\xa9\xcc\x71\x7d\x6c\xc6\x2c\x7d\x82\x0f\xd6\x35\x13\xbf\x1d\x55\xcd\xcc\x8e\x3d\x3a\xa6\x06\x60\xc2\x8e\x27\xdb\x4e\x00\xe3\xc9\x02\xd6\x9a\xa0\x6a\x99\xd9\x07\x5e\xac\x01\x10\x9c\xf9\x1f\xc9\x2a\x12\x27\x28\x95\xc5\x86\x7c\xf6\x70\x63\x68\xac\x32\x6d\x96\x2c\x7d\x2d\x59\x7c\xf7\x0f\xd0\x31\x2a\xeb\x67\x19\x59\x5e\xf2\xc4\x09\xe2\x8a\x1a\x75\x91\x68\x4c\xca\x6e\x71\x5c\x3a\x56\x61\x67\x6b\x73\x89\x76\x60\x23\x51\x59\xc4\xa3\x6f\x8d\x3b\x68\x16\x67\x5d\x71\x4a\xf0\xf4\x60\xbb\x52\x8b\x7a\x82\x6f\xee\xf6\x9b\xd1\xc0\x1b\xf4\xe0\x5e\x8f\x77\x9f\xec\xb9\xc8\x39\x5f\x8e\x49\x01\x08\xaf\x08\xec\x14\x6f\xc3\x45\xda\xab\x66\xac\x76\xc4\xcb\x25\x10\xab\x5b\x20\x0c\xdd\x22\xfd\xc4\xbf\x58\x81\xb0\x25\xf5\xab\xdf\x26\xb2\xbe\xff\xd9\x55\x18\x4f\x5b\xbe\xf1\xc4\xe4\x45\x8f\xf0\x19\x9d\x86\xd7\xbb\xbd\xc3\x5d\x47\xda\x7e\xa1\xf9\x09\x00\x00\xff\xff\xcd\x3f\xfd\xf4\xdc\x01\x00\x00")
 
 func assetsPrometheusK8sServiceMonitorYamlBytes() ([]byte, error) {
@@ -1924,26 +1900,6 @@ func assetsPrometheusK8sServiceMonitorYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/prometheus-k8s/service-monitor.yaml", size: 476, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _assetsPrometheusK8sServiceThanosSidecarYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\x90\x41\x4e\xc4\x30\x0c\x45\xf7\x39\x85\x2f\x10\x69\xca\x6a\xf0\x0d\xd8\xa0\x91\x90\xd8\x9b\xd4\xb4\x51\xdb\xd8\xb2\x3d\x73\x7e\x94\x02\x62\x80\xee\x92\xa7\x3c\xfd\x9f\x4f\x5a\x5f\xd9\xbc\x4a\x43\xb8\x0d\x69\xa9\x6d\x44\x78\x61\xbb\xd5\xc2\x69\xe3\xa0\x91\x82\x30\x01\xac\xf4\xc6\xab\xf7\x13\x00\xa9\x22\xc4\x4c\x4d\x3c\x7b\x1d\xb9\x90\xed\x5c\x4d\x36\x8e\x99\xaf\x8e\xb0\x9c\x3d\x01\x34\xda\x18\xef\x78\x5e\xce\x9e\xff\x99\xfd\x95\x2b\x15\x46\x10\xe5\xe6\x73\x7d\x8f\xbc\x49\xab\x21\x56\xdb\x94\x5c\xb9\xf4\xe4\xb2\x5e\x3d\xd8\x9e\x2e\x08\xcf\xd2\x38\x01\xa8\x58\xec\xa5\xf2\x57\xd4\x64\x5a\x3e\xbb\x88\x05\xc2\x70\x7a\x3c\x0d\xfb\x3d\xc8\x26\x8e\xcb\x2f\xfa\x2d\xcd\x11\xfa\x47\x7a\x38\x94\x3a\x75\x5e\xb9\x84\xd8\xdd\x14\x3f\xff\x3b\x9c\xe1\x23\x00\x00\xff\xff\xa2\x52\x26\x28\x64\x01\x00\x00")
-
-func assetsPrometheusK8sServiceThanosSidecarYamlBytes() ([]byte, error) {
-	return bindataRead(
-		_assetsPrometheusK8sServiceThanosSidecarYaml,
-		"assets/prometheus-k8s/service-thanos-sidecar.yaml",
-	)
-}
-
-func assetsPrometheusK8sServiceThanosSidecarYaml() (*asset, error) {
-	bytes, err := assetsPrometheusK8sServiceThanosSidecarYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "assets/prometheus-k8s/service-thanos-sidecar.yaml", size: 356, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2468,26 +2424,6 @@ func assetsPrometheusUserWorkloadServiceAccountYaml() (*asset, error) {
 	return a, nil
 }
 
-var _assetsPrometheusUserWorkloadServiceMonitorThanosSidecarYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\xcf\x31\x4e\x04\x31\x0c\x05\xd0\x3e\xa7\xf0\x05\x66\x01\xd1\x20\x9f\x61\xa9\x90\xe8\xbd\x19\x43\xcc\x4e\x6c\x2b\x36\x73\x7e\x94\x59\x04\x48\x74\x49\x14\xfd\xff\x3e\xb9\xbc\xf2\x08\x31\x45\xe8\xa6\x92\x36\x44\xdf\x4f\xd5\x06\x5b\x9c\xaa\xf5\xbb\xfd\xa1\x5c\x45\x57\x84\x17\x1e\xbb\x54\x7e\xbe\xfd\x2a\x9d\x93\x56\x4a\xc2\x02\xb0\xd1\x85\xb7\x98\x27\x80\xeb\x53\x2c\xe4\x8e\xe0\xc3\x3a\x67\xe3\xcf\x28\x00\x4a\x9d\x11\xb2\x91\x5a\x2c\x21\x2b\x57\x1a\xdf\xcf\xe1\x54\x19\xc1\x9c\x35\x9a\xbc\xe5\xf2\xeb\x28\xe1\x5c\x67\x2c\xeb\xea\x26\x9a\x47\xc7\x02\xa2\xc9\x63\xa7\x0d\xe1\xf1\x3e\x8e\x56\xb7\x91\x08\x2d\xd3\x0b\xc0\x87\x5d\xce\x53\x84\x40\x3e\xef\xc1\x1b\xd7\xb4\x71\x03\x76\xca\xda\xce\x7f\xc4\x00\x87\xf7\x1f\xee\xc8\xfd\x19\x81\x73\x59\xf9\x0a\x00\x00\xff\xff\xdb\xfe\xb4\xde\x30\x01\x00\x00")
-
-func assetsPrometheusUserWorkloadServiceMonitorThanosSidecarYamlBytes() ([]byte, error) {
-	return bindataRead(
-		_assetsPrometheusUserWorkloadServiceMonitorThanosSidecarYaml,
-		"assets/prometheus-user-workload/service-monitor-thanos-sidecar.yaml",
-	)
-}
-
-func assetsPrometheusUserWorkloadServiceMonitorThanosSidecarYaml() (*asset, error) {
-	bytes, err := assetsPrometheusUserWorkloadServiceMonitorThanosSidecarYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "assets/prometheus-user-workload/service-monitor-thanos-sidecar.yaml", size: 304, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
 var _assetsPrometheusUserWorkloadServiceMonitorYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\x91\xc1\x8e\xd6\x30\x0c\x84\xef\x7d\x0a\xbf\x40\xfe\x80\xb8\xa0\x5c\x91\x38\x01\x17\x10\x77\xff\xae\xf7\x6f\xd4\xc4\x8e\x6c\xb7\xbc\x3e\x6a\xbb\x68\x77\xd1\xde\xa2\xd1\x4c\xfc\x8d\x8d\xa3\xfe\x66\xf3\xaa\x52\xa0\xab\xd4\x50\xab\xf2\xb8\x91\x1a\xab\xdf\x48\x7b\xde\x3f\x4e\x6b\x95\xb9\xc0\x4f\xb6\xbd\x12\x7f\xbf\x5c\x53\xe7\xc0\x19\x03\xcb\x04\xd0\xf0\xce\xcd\x8f\x17\xc0\xfa\xd9\x13\x8e\x51\x60\x98\x76\x8e\x85\x37\x9f\x00\x04\x3b\xbf\x23\xf9\x40\xe2\x02\x3a\x58\x7c\xa9\x4f\x91\x36\x67\x4b\x7f\xd4\xd6\xa6\x38\xa7\x17\xa2\xc9\x07\xd3\x31\x80\x65\x1e\x5a\x25\xce\x69\x09\xee\x8c\xc6\xf6\x4b\x57\x96\xaf\xb5\x71\x81\xbc\xa3\x65\xdb\x24\x3b\x93\x71\x78\x5e\xb7\x3b\x9b\x70\xb0\xdf\xaa\x66\xbf\x4a\x20\x91\x6e\x12\x39\x8e\xe0\x89\x5d\x25\xd8\x76\x6c\x05\x3e\x7d\xf0\x53\x19\x6a\x51\xa0\x73\x58\xa5\x4b\x71\x5a\xf8\xa8\xb1\x44\x8c\x4b\x89\xe6\x5f\x54\x9e\xea\xe3\xea\x0e\x40\xf8\x8c\xc1\x41\xf9\xa5\x6e\xa6\xd3\xd5\x71\xf8\x85\x20\x8f\x44\x6c\xe1\x89\x30\xdd\x37\x99\x1b\xff\x43\x4b\x84\x37\xb2\x78\xfe\xef\x10\xd9\x7e\xfc\xb7\xbd\xb7\x6b\x9a\x0e\x5b\x63\x0a\xb5\x0b\xa3\x63\xd0\xf2\xed\xd5\x4d\xe0\x55\xb6\xc0\xdb\xf0\xdf\x00\x00\x00\xff\xff\xb5\x11\x59\x42\x02\x02\x00\x00")
 
 func assetsPrometheusUserWorkloadServiceMonitorYamlBytes() ([]byte, error) {
@@ -2504,26 +2440,6 @@ func assetsPrometheusUserWorkloadServiceMonitorYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "assets/prometheus-user-workload/service-monitor.yaml", size: 514, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _assetsPrometheusUserWorkloadServiceThanosSidecarYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\x90\x41\x4e\xc4\x30\x0c\x45\xf7\x39\x85\x2f\x10\x69\xca\x6a\xf0\x0d\xd8\xa0\x91\x90\xd8\x9b\xd4\xb4\x51\xdb\xd8\xb2\x3d\x73\x7e\x94\x02\x62\x80\xee\x92\xa7\x3c\xfd\x9f\x4f\x5a\x5f\xd9\xbc\x4a\x43\xb8\x0d\x69\xa9\x6d\x44\x78\x61\xbb\xd5\xc2\x69\xe3\xa0\x91\x82\x30\x01\xac\xf4\xc6\xab\xf7\x13\x00\xa9\x22\xc4\x4c\x4d\x3c\x7b\x1d\xb9\x90\xed\x5c\x4d\x36\x8e\x99\xaf\x8e\xb0\x9c\x3d\x01\x34\xda\x18\xef\x78\x5e\xce\x9e\xff\x99\xfd\x95\x2b\x15\x46\x10\xe5\xe6\x73\x7d\x8f\xbc\x49\xab\x21\x56\xdb\x94\x5c\xb9\xf4\xe4\xb2\x5e\x3d\xd8\x9e\x2e\x08\xcf\xd2\x38\x01\xa8\x58\xec\xa5\xf2\x57\xd4\x64\x5a\x3e\xbb\x88\x05\xc2\x70\x7a\x3c\x0d\xfb\x3d\xc8\x26\x8e\xcb\x2f\xfa\x2d\xcd\x11\xfa\x47\x7a\x38\x94\x3a\x75\x5e\xb9\x84\xd8\xdd\x14\x3f\xff\x3b\x9c\xe1\x23\x00\x00\xff\xff\xa2\x52\x26\x28\x64\x01\x00\x00")
-
-func assetsPrometheusUserWorkloadServiceThanosSidecarYamlBytes() ([]byte, error) {
-	return bindataRead(
-		_assetsPrometheusUserWorkloadServiceThanosSidecarYaml,
-		"assets/prometheus-user-workload/service-thanos-sidecar.yaml",
-	)
-}
-
-func assetsPrometheusUserWorkloadServiceThanosSidecarYaml() (*asset, error) {
-	bytes, err := assetsPrometheusUserWorkloadServiceThanosSidecarYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "assets/prometheus-user-workload/service-thanos-sidecar.yaml", size: 356, mode: os.FileMode(420), modTime: time.Unix(1, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3482,9 +3398,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/prometheus-k8s/service-account.yaml":                                 assetsPrometheusK8sServiceAccountYaml,
 	"assets/prometheus-k8s/service-monitor-etcd.yaml":                            assetsPrometheusK8sServiceMonitorEtcdYaml,
 	"assets/prometheus-k8s/service-monitor-kubelet.yaml":                         assetsPrometheusK8sServiceMonitorKubeletYaml,
-	"assets/prometheus-k8s/service-monitor-thanos-sidecar.yaml":                  assetsPrometheusK8sServiceMonitorThanosSidecarYaml,
 	"assets/prometheus-k8s/service-monitor.yaml":                                 assetsPrometheusK8sServiceMonitorYaml,
-	"assets/prometheus-k8s/service-thanos-sidecar.yaml":                          assetsPrometheusK8sServiceThanosSidecarYaml,
 	"assets/prometheus-k8s/service.yaml":                                         assetsPrometheusK8sServiceYaml,
 	"assets/prometheus-k8s/serving-certs-ca-bundle.yaml":                         assetsPrometheusK8sServingCertsCaBundleYaml,
 	"assets/prometheus-k8s/trusted-ca-bundle.yaml":                               assetsPrometheusK8sTrustedCaBundleYaml,
@@ -3511,9 +3425,7 @@ var _bindata = map[string]func() (*asset, error){
 	"assets/prometheus-user-workload/role-config.yaml":                           assetsPrometheusUserWorkloadRoleConfigYaml,
 	"assets/prometheus-user-workload/role-specific-namespaces.yaml":              assetsPrometheusUserWorkloadRoleSpecificNamespacesYaml,
 	"assets/prometheus-user-workload/service-account.yaml":                       assetsPrometheusUserWorkloadServiceAccountYaml,
-	"assets/prometheus-user-workload/service-monitor-thanos-sidecar.yaml":        assetsPrometheusUserWorkloadServiceMonitorThanosSidecarYaml,
 	"assets/prometheus-user-workload/service-monitor.yaml":                       assetsPrometheusUserWorkloadServiceMonitorYaml,
-	"assets/prometheus-user-workload/service-thanos-sidecar.yaml":                assetsPrometheusUserWorkloadServiceThanosSidecarYaml,
 	"assets/prometheus-user-workload/service.yaml":                               assetsPrometheusUserWorkloadServiceYaml,
 	"assets/prometheus-user-workload/serving-certs-ca-bundle.yaml":               assetsPrometheusUserWorkloadServingCertsCaBundleYaml,
 	"assets/telemeter-client/cluster-role-binding-view.yaml":                     assetsTelemeterClientClusterRoleBindingViewYaml,
@@ -3696,9 +3608,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"service-account.yaml":                  &bintree{assetsPrometheusK8sServiceAccountYaml, map[string]*bintree{}},
 			"service-monitor-etcd.yaml":             &bintree{assetsPrometheusK8sServiceMonitorEtcdYaml, map[string]*bintree{}},
 			"service-monitor-kubelet.yaml":          &bintree{assetsPrometheusK8sServiceMonitorKubeletYaml, map[string]*bintree{}},
-			"service-monitor-thanos-sidecar.yaml":   &bintree{assetsPrometheusK8sServiceMonitorThanosSidecarYaml, map[string]*bintree{}},
 			"service-monitor.yaml":                  &bintree{assetsPrometheusK8sServiceMonitorYaml, map[string]*bintree{}},
-			"service-thanos-sidecar.yaml":           &bintree{assetsPrometheusK8sServiceThanosSidecarYaml, map[string]*bintree{}},
 			"service.yaml":                          &bintree{assetsPrometheusK8sServiceYaml, map[string]*bintree{}},
 			"serving-certs-ca-bundle.yaml":          &bintree{assetsPrometheusK8sServingCertsCaBundleYaml, map[string]*bintree{}},
 			"trusted-ca-bundle.yaml":                &bintree{assetsPrometheusK8sTrustedCaBundleYaml, map[string]*bintree{}},
@@ -3731,9 +3641,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"role-config.yaml":                      &bintree{assetsPrometheusUserWorkloadRoleConfigYaml, map[string]*bintree{}},
 			"role-specific-namespaces.yaml":         &bintree{assetsPrometheusUserWorkloadRoleSpecificNamespacesYaml, map[string]*bintree{}},
 			"service-account.yaml":                  &bintree{assetsPrometheusUserWorkloadServiceAccountYaml, map[string]*bintree{}},
-			"service-monitor-thanos-sidecar.yaml":   &bintree{assetsPrometheusUserWorkloadServiceMonitorThanosSidecarYaml, map[string]*bintree{}},
 			"service-monitor.yaml":                  &bintree{assetsPrometheusUserWorkloadServiceMonitorYaml, map[string]*bintree{}},
-			"service-thanos-sidecar.yaml":           &bintree{assetsPrometheusUserWorkloadServiceThanosSidecarYaml, map[string]*bintree{}},
 			"service.yaml":                          &bintree{assetsPrometheusUserWorkloadServiceYaml, map[string]*bintree{}},
 			"serving-certs-ca-bundle.yaml":          &bintree{assetsPrometheusUserWorkloadServingCertsCaBundleYaml, map[string]*bintree{}},
 		}},
