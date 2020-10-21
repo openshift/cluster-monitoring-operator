@@ -151,7 +151,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     [k]: d[k]
     for k in std.objectFields(d)
     // This array must be sorted for `std.setMember` to work.
-    if !std.setMember(k, ['apiserver.json', 'controller-manager.json', 'kubelet.json', 'namespace-by-pod.json', 'namespace-by-workload.json', 'nodes.json', 'persistentvolumesusage.json', 'pod-total.json', 'pods.json', 'prometheus-remote-write.json', 'proxy.json', 'scheduler.json', 'statefulset.json', 'workload-total.json'])
+    if !std.setMember(k, ['apiserver.json', 'controller-manager.json', 'kubelet.json', 'namespace-by-workload.json', 'nodes.json', 'persistentvolumesusage.json', 'pods.json', 'prometheus-remote-write.json', 'proxy.json', 'scheduler.json', 'statefulset.json', 'workload-total.json'])
   },
 } + {
   _config+:: {
