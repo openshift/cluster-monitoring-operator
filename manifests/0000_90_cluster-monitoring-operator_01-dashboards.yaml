@@ -61,6 +61,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -163,6 +164,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -606,6 +608,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 12,
@@ -708,6 +711,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 12,
@@ -840,6 +844,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 24,
@@ -940,6 +945,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 24,
@@ -1051,6 +1057,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1151,6 +1158,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1271,6 +1279,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1371,6 +1380,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1471,6 +1481,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1575,6 +1586,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -15437,6 +15449,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -15537,6 +15550,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -15648,6 +15662,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -15748,6 +15763,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -15868,6 +15884,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -15968,6 +15985,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -18517,6 +18535,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -18617,6 +18636,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -18728,6 +18748,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -18828,6 +18849,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -18948,6 +18970,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -19048,6 +19071,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,

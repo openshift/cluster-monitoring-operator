@@ -18,8 +18,8 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "205a656cc58b32ab701c74297ce440bd517a680f",
-      "sum": "NhOkJWkO7ZO2DSE8Fvipcs7Hh2/GOCS0WjPPZU8OiaQ="
+      "version": "7c6c2c142b915b12bbe6466b6d602239c2c3491e",
+      "sum": "L+PGlPK9mykGCJ9TIoEWdhMBjz+9lKuQ4YZ8fOeP9sk="
     },
     {
       "source": {
@@ -38,7 +38,7 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "a1eb8fd04f3cd2bfb11aee8943e0b3469ff2f199",
+      "version": "cd331ce9bb58bb926e391c6ae807621cb12cc29e",
       "sum": "nM1eDP5vftqAeQSmVYzSBAh+lG0SN6zu46QiocQiVhk="
     },
     {
@@ -48,8 +48,8 @@
           "subdir": "grafonnet"
         }
       },
-      "version": "cc1626a1b4dee45c99b78ddd9714dfd5f5d7816e",
-      "sum": "nkgrtMYPCq/YB4r3mKyToepaLhicwWnxDdGIodPpzz0="
+      "version": "005390f0207ffa4a8ae0d1afb253b7585ff7beca",
+      "sum": "CSMZ3dJrpJpwvffie8BqcfrIVVwiKNqdPEN+1XWRBGU="
     },
     {
       "source": {
@@ -58,7 +58,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "ab0e5d8a62180b52ace18b53bc57c87c2b4f1044",
+      "version": "07b7d671c5cab0d6a17e587bc703066353b0268c",
       "sum": "mD0zEP9FVFXeag7EaeS5OvUr2A9D6DQhGemoNn6+PLc="
     },
     {
@@ -89,7 +89,7 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "5c07e1de2c8ea4f8fdcc1985712daa5e751a327f",
+      "version": "8a98e9c6fab000ef090b8d313292043696a8b3bb",
       "sum": "zv7hXGui6BfHzE9wPatHI/AGZa4A2WKo6pq7ZdqBsps="
     },
     {
@@ -119,7 +119,7 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "ec1f56fe17186214167cb2e66961e274c7ec5fce",
+      "version": "041528b3321d5b20ac86a337693bc4cce1d36ca1",
       "sum": "xoF0ibl74QrQ1DWbmoZ3JY83dEVeU0EQCvom96KGEuA=",
       "name": "openshift-state-metrics"
     },
@@ -141,8 +141,8 @@
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "ff2ff3410f4ea8195e51f5fb8d84151684f91b3f",
-      "sum": "znDrZiHvvascm7Xuj3lTASIOfwX4Vmx7PELmKKw4YiI="
+      "version": "9c9c63630572ac706dcd0bd0e79dc03179f6d02c",
+      "sum": "GE8EJdQvnaaj31avW1OaJGY6xP+Vd6MqMu7/GgudRDQ="
     },
     {
       "source": {
