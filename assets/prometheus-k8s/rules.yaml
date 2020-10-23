@@ -1175,7 +1175,7 @@ spec:
           {{ printf "%.0f" $value }} receive errors in the last two minutes.'
         summary: Network interface is reporting many receive errors.
       expr: |
-        increase(node_network_receive_errs_total[2m]) > 10
+        rate(node_network_receive_errs_total[2m]) / rate(node_network_receive_packets_total[2m]) > 0.01
       for: 1h
       labels:
         severity: warning
@@ -1185,7 +1185,7 @@ spec:
           {{ printf "%.0f" $value }} transmit errors in the last two minutes.'
         summary: Network interface is reporting many transmit errors.
       expr: |
-        increase(node_network_transmit_errs_total[2m]) > 10
+        rate(node_network_transmit_errs_total[2m]) / rate(node_network_transmit_packets_total[2m]) > 0.01
       for: 1h
       labels:
         severity: warning
@@ -1232,6 +1232,8 @@ spec:
         summary: Clock not synchronising.
       expr: |
         min_over_time(node_timex_sync_status[5m]) == 0
+        and
+        node_timex_maxerror_seconds >= 16
       for: 10m
       labels:
         severity: warning
@@ -2104,7 +2106,9 @@ spec:
     rules:
     - alert: etcdMembersDown
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": members are down ({{ $value }}).'
+        description: 'etcd cluster "{{ $labels.job }}": members are down ({{ $value
+          }}).'
+        summary: etcd cluster members are down.
       expr: |
         max without (endpoint) (
           sum without (instance) (up{job=~".*etcd.*"} == bool 0)
@@ -2119,8 +2123,9 @@ spec:
         severity: critical
     - alert: etcdInsufficientMembers
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": insufficient members ({{ $value
+        description: 'etcd cluster "{{ $labels.job }}": insufficient members ({{ $value
           }}).'
+        summary: etcd cluster has insufficient number of members.
       expr: |
         sum(up{job=~".*etcd.*"} == bool 1) without (instance) < ((count(up{job=~".*etcd.*"}) without (instance) + 1) / 2)
       for: 3m
@@ -2128,8 +2133,9 @@ spec:
         severity: critical
     - alert: etcdNoLeader
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": member {{ $labels.instance }}
-          has no leader.'
+        description: 'etcd cluster "{{ $labels.job }}": member {{ $labels.instance
+          }} has no leader.'
+        summary: etcd cluster has no leader.
       expr: |
         etcd_server_has_leader{job=~".*etcd.*"} == 0
       for: 1m
@@ -2137,9 +2143,11 @@ spec:
         severity: critical
     - alert: etcdHighNumberOfLeaderChanges
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": {{ $value }} leader changes within
-          the last 15 minutes. Frequent elections may be a sign of insufficient resources,
-          high network latency, or disruptions by other components and should be investigated.'
+        description: 'etcd cluster "{{ $labels.job }}": {{ $value }} leader changes
+          within the last 15 minutes. Frequent elections may be a sign of insufficient
+          resources, high network latency, or disruptions by other components and
+          should be investigated.'
+        summary: etcd cluster has high number of leader changes.
       expr: |
         increase((max without (instance) (etcd_server_leader_changes_seen_total{job=~".*etcd.*"}) or 0*absent(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}))[15m:1m]) >= 4
       for: 5m
@@ -2147,8 +2155,9 @@ spec:
         severity: warning
     - alert: etcdGRPCRequestsSlow
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method
+        description: 'etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method
           }} are taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        summary: etcd grpc requests are slow
       expr: |
         histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job=~".*etcd.*", grpc_type="unary"}[5m])) without(grpc_type))
         > 0.15
@@ -2157,8 +2166,10 @@ spec:
         severity: critical
     - alert: etcdMemberCommunicationSlow
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To
-          }} is taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        description: 'etcd cluster "{{ $labels.job }}": member communication with
+          {{ $labels.To }} is taking {{ $value }}s on etcd instance {{ $labels.instance
+          }}.'
+        summary: etcd cluster member communication is slow.
       expr: |
         histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.15
@@ -2167,11 +2178,23 @@ spec:
         severity: warning
     - alert: etcdHighNumberOfFailedProposals
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": {{ $value }} proposal failures
+        description: 'etcd cluster "{{ $labels.job }}": {{ $value }} proposal failures
           within the last 30 minutes on etcd instance {{ $labels.instance }}.'
+        summary: etcd cluster has high number of proposal failures.
       expr: |
         rate(etcd_server_proposals_failed_total{job=~".*etcd.*"}[15m]) > 5
       for: 15m
+      labels:
+        severity: warning
+    - alert: etcdHighFsyncDurations
+      annotations:
+        description: 'etcd cluster "{{ $labels.job }}": 99th percentile fsync durations
+          are {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        summary: etcd cluster 99th percentile fsync durations are too high.
+      expr: |
+        histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
+        > 0.5
+      for: 10m
       labels:
         severity: warning
     - alert: etcdHighFsyncDurations
@@ -2180,14 +2203,15 @@ spec:
           are {{ $value }}s on etcd instance {{ $labels.instance }}.'
       expr: |
         histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
-        > 0.5
+        > 1
       for: 10m
       labels:
-        severity: warning
+        severity: critical
     - alert: etcdHighCommitDurations
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": 99th percentile commit durations
+        description: 'etcd cluster "{{ $labels.job }}": 99th percentile commit durations
           {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        summary: etcd cluster 99th percentile commit durations are too high.
       expr: |
         histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.25
@@ -2196,8 +2220,9 @@ spec:
         severity: warning
     - alert: etcdHighNumberOfFailedHTTPRequests
       annotations:
-        message: '{{ $value }}% of requests for {{ $labels.method }} failed on etcd
-          instance {{ $labels.instance }}'
+        description: '{{ $value }}% of requests for {{ $labels.method }} failed on
+          etcd instance {{ $labels.instance }}'
+        summary: etcd has high number of failed HTTP requests.
       expr: |
         sum(rate(etcd_http_failed_total{job=~".*etcd.*", code!="404"}[5m])) without (code) / sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m]))
         without (code) > 0.01
@@ -2206,8 +2231,9 @@ spec:
         severity: warning
     - alert: etcdHighNumberOfFailedHTTPRequests
       annotations:
-        message: '{{ $value }}% of requests for {{ $labels.method }} failed on etcd
-          instance {{ $labels.instance }}.'
+        description: '{{ $value }}% of requests for {{ $labels.method }} failed on
+          etcd instance {{ $labels.instance }}.'
+        summary: etcd has high number of failed HTTP requests.
       expr: |
         sum(rate(etcd_http_failed_total{job=~".*etcd.*", code!="404"}[5m])) without (code) / sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m]))
         without (code) > 0.05
@@ -2216,11 +2242,32 @@ spec:
         severity: critical
     - alert: etcdHTTPRequestsSlow
       annotations:
-        message: etcd instance {{ $labels.instance }} HTTP requests to {{ $labels.method
+        description: etcd instance {{ $labels.instance }} HTTP requests to {{ $labels.method
           }} are slow.
+        summary: etcd instance HTTP requests are slow.
       expr: |
         histogram_quantile(0.99, rate(etcd_http_successful_duration_seconds_bucket[5m]))
         > 0.15
+      for: 10m
+      labels:
+        severity: warning
+    - alert: etcdBackendQuotaLowSpace
+      annotations:
+        message: 'etcd cluster "{{ $labels.job }}": database size exceeds the defined
+          quota on etcd instance {{ $labels.instance }}, please defrag or increase
+          the quota as the writes to etcd will be disabled when it is full.'
+      expr: |
+        (etcd_mvcc_db_total_size_in_bytes/etcd_server_quota_backend_bytes)*100 > 95
+      for: 10m
+      labels:
+        severity: critical
+    - alert: etcdExcessiveDatabaseGrowth
+      annotations:
+        message: 'etcd cluster "{{ $labels.job }}": Observed surge in etcd writes
+          leading to 50% increase in database size over the past four hours on etcd
+          instance {{ $labels.instance }}, please check as it might be disruptive.'
+      expr: |
+        increase(((etcd_mvcc_db_total_size_in_bytes/etcd_server_quota_backend_bytes)*100)[240m:1m]) > 50
       for: 10m
       labels:
         severity: warning

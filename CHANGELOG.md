@@ -2,6 +2,9 @@
 
 ## 4.7
 
+- [#963](https://github.com/openshift/cluster-monitoring-operator/pull/963) bump mixins to include new etcd alerts
+  - Added etcdBackendQuotaLowSpace, etcdExcessiveDatabaseGrowth, and etcdHighFsyncDurations critical alert.
+  - Adjusted NodeClockNotSynchronising, NodeNetworkReceiveErrs, and NodeNetworkTransmitErrs alerts.
 - [#962](https://github.com/openshift/cluster-monitoring-operator/pull/962) Enable namespace by pod and pod total networking Grafana dashboards.
 - [#959](https://github.com/openshift/cluster-monitoring-operator/pull/959) Remove memory limits from prometheus-config-reloader in user workload monitoring
 
