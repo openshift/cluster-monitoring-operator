@@ -61,6 +61,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -163,6 +164,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -606,6 +608,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 12,
@@ -708,6 +711,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 12,
@@ -840,6 +844,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 24,
@@ -940,6 +945,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 24,
@@ -1051,6 +1057,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1151,6 +1158,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1271,6 +1279,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1371,6 +1380,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1471,6 +1481,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -1575,6 +1586,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 9,
                             "w": 24,
@@ -5290,7 +5302,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "sum(irate(container_network_receive_packets_total{cluster=\"$cluster\", namespace=~\".+\"}[$__interval])) by (namespace)",
+                                "expr": "sum(irate(container_network_transmit_packets_total{cluster=\"$cluster\", namespace=~\".+\"}[$__interval])) by (namespace)",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{namespace}}",
@@ -7538,7 +7550,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "sum(irate(container_network_receive_packets_total{cluster=\"$cluster\", namespace=~\"$namespace\"}[$__interval])) by (pod)",
+                                "expr": "sum(irate(container_network_transmit_packets_total{cluster=\"$cluster\", namespace=~\"$namespace\"}[$__interval])) by (pod)",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{pod}}",
@@ -15453,6 +15465,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -15553,6 +15566,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -15664,6 +15678,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -15764,6 +15779,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -15884,6 +15900,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -15984,6 +16001,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -18539,6 +18557,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -18639,6 +18658,7 @@ data:
                 "dashes": false,
                 "datasource": "$datasource",
                 "fill": 2,
+                "fillGradient": 0,
                 "gridPos": {
                     "h": 9,
                     "w": 12,
@@ -18750,6 +18770,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -18850,6 +18871,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -18970,6 +18992,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,
@@ -19070,6 +19093,7 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 2,
+                        "fillGradient": 0,
                         "gridPos": {
                             "h": 10,
                             "w": 12,

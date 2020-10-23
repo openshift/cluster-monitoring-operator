@@ -156,9 +156,6 @@ local namespacesRole =
       secret.mixin.metadata.withNamespace($._config.namespace) +
       secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
 
-
-
-
     // This changes the kubelet's certificates to be validated when
     // scraping.
 
