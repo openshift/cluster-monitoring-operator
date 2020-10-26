@@ -8,7 +8,6 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/imdario/mergo v0.3.7
-	github.com/jteeuwen/go-bindata v3.0.8-0.20151023091102-a0ff2567cfb7+incompatible // indirect
 	github.com/openshift/api v0.0.0-20200722170803-0ba2c3658da6
 	github.com/openshift/client-go v0.0.0-20200722173614-5a1b0aaeff15
 	github.com/openshift/library-go v0.0.0-20200722204747-e3f2c82ff290
@@ -22,7 +21,6 @@ require (
 	k8s.io/apimachinery v0.19.2
 	k8s.io/apiserver v0.19.2
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.2.0
 	k8s.io/kube-aggregator v0.19.2
 	k8s.io/metrics v0.18.4
