@@ -30,7 +30,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
