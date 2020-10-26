@@ -1904,24 +1904,6 @@ spec:
       for: 15m
       labels:
         severity: warning
-    - alert: KubeletClientCertificateExpiration
-      annotations:
-        description: Client certificate for Kubelet on node {{ $labels.node }} expires
-          in {{ $value | humanizeDuration }}.
-        summary: Kubelet client certificate is about to expire.
-      expr: |
-        kubelet_certificate_manager_client_ttl_seconds < 604800
-      labels:
-        severity: warning
-    - alert: KubeletClientCertificateExpiration
-      annotations:
-        description: Client certificate for Kubelet on node {{ $labels.node }} expires
-          in {{ $value | humanizeDuration }}.
-        summary: Kubelet client certificate is about to expire.
-      expr: |
-        kubelet_certificate_manager_client_ttl_seconds < 86400
-      labels:
-        severity: critical
     - alert: KubeletServerCertificateExpiration
       annotations:
         description: Server certificate for Kubelet on node {{ $labels.node }} expires
