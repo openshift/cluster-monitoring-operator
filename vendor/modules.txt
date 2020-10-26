@@ -488,6 +488,7 @@ k8s.io/component-base/cli/flag
 ## explicit
 k8s.io/klog
 # k8s.io/klog/v2 v2.2.0
+## explicit
 k8s.io/klog/v2
 # k8s.io/kube-aggregator v0.19.2
 ## explicit
