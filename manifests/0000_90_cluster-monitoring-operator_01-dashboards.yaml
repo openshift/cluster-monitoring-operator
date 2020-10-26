@@ -1837,6 +1837,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-cluster-total
@@ -3070,6 +3072,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-etcd
@@ -5639,6 +5643,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-cluster
@@ -7912,6 +7918,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-namespace
@@ -8877,6 +8885,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-node
@@ -10636,6 +10646,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-pod
@@ -12657,6 +12669,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-workload
@@ -14839,6 +14853,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-workloads-namespace
@@ -16264,6 +16280,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-namespace-by-pod
@@ -17215,6 +17233,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-cluster-rsrc-use
@@ -18193,6 +18213,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-rsrc-use
@@ -19382,6 +19404,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-pod-total
@@ -20596,6 +20620,8 @@ data:
     }
 kind: ConfigMap
 metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-prometheus

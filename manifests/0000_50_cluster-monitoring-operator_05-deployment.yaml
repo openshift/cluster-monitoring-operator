@@ -5,6 +5,8 @@ metadata:
   namespace: openshift-monitoring
   labels:
     app: cluster-monitoring-operator
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
 spec:
   replicas: 1
   selector:
