@@ -18,7 +18,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type TaskRunner struct {

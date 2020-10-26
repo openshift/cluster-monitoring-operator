@@ -21,7 +21,7 @@ import (
 	"math/big"
 	"time"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"github.com/openshift/library-go/pkg/crypto"
 	"github.com/pkg/errors"

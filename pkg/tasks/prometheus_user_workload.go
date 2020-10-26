@@ -19,7 +19,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 
 	"github.com/pkg/errors"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type PrometheusUserWorkloadTask struct {
