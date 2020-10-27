@@ -221,7 +221,6 @@ var (
 
 var (
 	PrometheusConfigReloaderFlag                         = "--prometheus-config-reloader="
-	ConfigReloaderImageFlag                              = "--config-reloader-image="
 	PrometheusOperatorNamespaceFlag                      = "--namespaces="
 	PrometheusOperatorDenyNamespaceFlag                  = "--deny-namespaces="
 	PrometheusOperatorPrometheusInstanceNamespacesFlag   = "--prometheus-instance-namespaces="
@@ -1882,10 +1881,6 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 					args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
 				}
 
-				if strings.HasPrefix(args[i], ConfigReloaderImageFlag) && f.config.Images.ConfigmapReloader != "" {
-					args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
-				}
-
 				if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) && f.namespace != "" {
 					args[i] = PrometheusOperatorAlertmanagerInstanceNamespacesFlag + f.namespace
 				}
@@ -1945,10 +1940,6 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 
 				if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) {
 					args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
-				}
-
-				if strings.HasPrefix(args[i], ConfigReloaderImageFlag) {
-					args[i] = ConfigReloaderImageFlag + f.config.Images.ConfigmapReloader
 				}
 
 				if strings.HasPrefix(args[i], PrometheusOperatorAlertmanagerInstanceNamespacesFlag) {
@@ -2920,7 +2911,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 			}
 
 		case "reload":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.ConfigmapReloader
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusConfigReloader
 		case "kube-rbac-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		}
