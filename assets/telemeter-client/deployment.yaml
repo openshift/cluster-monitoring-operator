@@ -58,8 +58,8 @@ spec:
           name: secret-telemeter-client
           readOnly: false
       - args:
-        - --webhook-url=http://localhost:8080/-/reload
-        - --volume-dir=/etc/serving-certs-ca-bundle
+        - --reload-url=http://localhost:8080/-/reload
+        - --watched-dir=/etc/serving-certs-ca-bundle
         image: quay.io/openshift/origin-configmap-reload:v3.11
         name: reload
         resources:
