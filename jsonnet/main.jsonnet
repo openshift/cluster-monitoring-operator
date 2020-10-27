@@ -46,7 +46,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                      else if ruleGroup.name == 'kubernetes-resources' then
                        ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'CPUThrottlingHigh'), ruleGroup.rules) }
                      else if ruleGroup.name == 'kubernetes-system-kubelet' then
-                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'KubeletClientCertificateExpiration'), ruleGroup.rules) }
+                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && (rule.alert == 'KubeletClientCertificateExpiration' || rule.alert == 'KubeletServerCertificateExpiration')), ruleGroup.rules) }
                      else if ruleGroup.name == 'prometheus' then
                        ruleGroup {
                          rules:
