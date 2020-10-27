@@ -4,18 +4,19 @@ reviewers:
 - s-urbaniak
 - paulfantom
 - LiliC
-- pgier
 - simonpasquier
+- dgrisonnet
 
 approvers:
 - bparees
 - s-urbaniak
 - paulfantom
 - LiliC
-- pgier
 - simonpasquier
+- dgrisonnet
 
 emeritus_approvers:
 - brancz
 - squat
 - metalmatze
+- pgier
