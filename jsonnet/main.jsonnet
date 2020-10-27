@@ -1,6 +1,7 @@
 local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
 local configmap = k.core.v1.configMap;
 local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
+local addReleaseAnnotation = (import 'add-release-annotation.libsonnet').addReleaseAnnotation;
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-anti-affinity.libsonnet') +
            (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
@@ -169,7 +170,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
   },
 };
 
-removeLimits(
+addReleaseAnnotation(removeLimits(
   { ['prometheus-operator/' + name]: kp.clusterPrometheusOperator[name] for name in std.objectFields(kp.clusterPrometheusOperator) } +
   { ['prometheus-operator-user-workload/' + name]: kp.prometheusOperatorUserWorkload[name] for name in std.objectFields(kp.prometheusOperatorUserWorkload) } +
   { ['node-exporter/' + name]: kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
@@ -187,4 +188,4 @@ removeLimits(
   { ['cluster-monitoring-operator/' + name]: kp.clusterMonitoringOperator[name] for name in std.objectFields(kp.clusterMonitoringOperator) } +
   { ['thanos-querier/' + name]: kp.thanos.querier[name] for name in std.objectFields(kp.thanos.querier) } +
   { ['thanos-ruler/' + name]: kp.thanos.ruler[name] for name in std.objectFields(kp.thanos.ruler) }
-)
+))
