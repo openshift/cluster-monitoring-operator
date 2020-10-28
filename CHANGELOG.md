@@ -9,6 +9,7 @@
 - [#959](https://github.com/openshift/cluster-monitoring-operator/pull/959) Remove memory limits from prometheus-config-reloader in user workload monitoring
 - [#969](https://github.com/openshift/cluster-monitoring-operator/pull/969) Bump Thanos v0.16.0
 - [#970](https://github.com/openshift/cluster-monitoring-operator/pull/970) Bump prometheus-operator v0.43.0.
+- [#971](https://github.com/openshift/cluster-monitoring-operator/pull/971) Enable `hwmon` in node-exporter for hardware sensor data collection
 
 ## 4.6
 
