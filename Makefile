@@ -5,8 +5,6 @@ REPO?=quay.io/openshift/cluster-monitoring-operator
 TAG?=$(shell git rev-parse --short HEAD)
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
 
-GOOS?=$(shell go env GOOS)
-GOARCH?=$(shell go env GOARCH)
 GO111MODULE?=on
 GOPROXY?=http://proxy.golang.org
 export GO111MODULE
@@ -30,7 +28,7 @@ TOOLING=$(EMBEDMD_BIN) $(GOBINDATA_BIN) $(JB_BIN) $(GOJSONTOYAML) $(JSONNET_BIN)
 JSONNET_SRC=$(shell find ./jsonnet -type f -not -path "./jsonnet/vendor*")
 JSONNET_VENDOR=jsonnet/vendor
 
-GO_BUILD_RECIPE=GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build --ldflags="-s -X $(GO_PKG)/pkg/operator.Version=$(VERSION)"
+GO_BUILD_RECIPE=GOOS=linux CGO_ENABLED=0 go build --ldflags="-s -X $(GO_PKG)/pkg/operator.Version=$(VERSION)"
 
 .PHONY: all
 all: clean format generate build test
@@ -81,7 +79,7 @@ generate: pkg/manifests/bindata.go manifests/0000_50_cluster-monitoring-operator
 
 .PHONY: generate-in-docker
 generate-in-docker:
-	echo -e "FROM golang:1.14 \n RUN apt update && apt install jq -y \n RUN mkdir /.cache && chown $(shell id -u):$(shell id -g) /.cache" | docker build -t cmo-tooling -
+	echo -e "FROM golang:1.14 \n RUN apt update && apt install python-yaml jq -y \n RUN mkdir /.cache && chown $(shell id -u):$(shell id -g) /.cache" | docker build -t cmo-tooling -
 	docker run -it --user $(shell id -u):$(shell id -g) \
 		-w /go/src/github.com/openshift/cluster-monitoring-operator \
 		-v ${PWD}:/go/src/github.com/openshift/cluster-monitoring-operator \
@@ -104,10 +102,8 @@ pkg/manifests/bindata.go: $(GOBINDATA_BIN) $(ASSETS)
 	$(GOBINDATA_BIN) -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
 
 # Merge cluster roles
-manifests/0000_50_cluster-monitoring-operator_02-role.yaml: hack/merge_cluster_roles.go hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
-	GOOS=$(GOOS) GOARCH=$(GOARCH) go run -v hack/merge_cluster_roles.go \
-		hack/cluster-monitoring-operator-role.yaml.in \
-		`find assets | grep role | grep -v "role-binding" | sort` > $@
+manifests/0000_50_cluster-monitoring-operator_02-role.yaml: hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
+	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding" | sort` > $@
 
 .PHONY: docs
 docs: $(EMBEDMD_BIN) Documentation/telemeter_query

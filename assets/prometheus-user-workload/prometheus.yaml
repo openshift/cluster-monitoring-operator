@@ -88,6 +88,8 @@ spec:
   podMonitorNamespaceSelector: {}
   podMonitorSelector: {}
   priorityClassName: system-cluster-critical
+  probeNamespaceSelector: {}
+  probeSelector: {}
   replicas: 2
   resources:
     requests:

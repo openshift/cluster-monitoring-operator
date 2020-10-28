@@ -16,6 +16,14 @@ items:
     - get
     - list
     - watch
+  - apiGroups:
+    - extensions
+    resources:
+    - ingresses
+    verbs:
+    - get
+    - list
+    - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
@@ -28,6 +36,14 @@ items:
     - services
     - endpoints
     - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - extensions
+    resources:
+    - ingresses
     verbs:
     - get
     - list
@@ -48,6 +64,14 @@ items:
     - get
     - list
     - watch
+  - apiGroups:
+    - extensions
+    resources:
+    - ingresses
+    verbs:
+    - get
+    - list
+    - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
@@ -64,6 +88,14 @@ items:
     - get
     - list
     - watch
+  - apiGroups:
+    - extensions
+    resources:
+    - ingresses
+    verbs:
+    - get
+    - list
+    - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
@@ -76,6 +108,14 @@ items:
     - services
     - endpoints
     - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - extensions
+    resources:
+    - ingresses
     verbs:
     - get
     - list

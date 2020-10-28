@@ -31,79 +31,32 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   annotations:
-    include.release.openshift.io/self-managed-high-availability: "true"
-  creationTimestamp: null
+    include.release.openshift.io/self-managed-high-availability: 'true'
   name: cluster-monitoring-operator
 rules:
 - apiGroups:
-  - ""
+  - rbac.authorization.k8s.io
   resources:
-  - configmaps
-  - secrets
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
   verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
-  - ""
-  resourceNames:
-  - user-workload-monitoring-config
+  - admissionregistration.k8s.io
   resources:
-  - configmaps
-  verbs:
-  - '*'
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  verbs:
-  - '*'
-- apiGroups:
-  - metrics.k8s.io
-  resources:
-  - '*'
-  verbs:
-  - '*'
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - alertmanagers
-  - alertmanagers/finalizers
-  - prometheuses
-  - prometheuses/finalizers
-  - thanosrulers
-  - thanosrulers/finalizers
-  - servicemonitors
-  - podmonitors
-  - probes
-  - prometheusrules
-  verbs:
-  - '*'
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - prometheusrules
-  verbs:
-  - '*'
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  - podmonitors
-  - prometheusrules
-  verbs:
-  - '*'
-- apiGroups:
-  - ""
-  resources:
-  - services
-  - serviceaccounts
-  - configmaps
+  - validatingwebhookconfigurations
   verbs:
   - create
   - get
   - list
   - watch
-  - update
-  - delete
 - apiGroups:
   - admissionregistration.k8s.io
   resourceNames:
@@ -112,199 +65,69 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - create
+  - delete
   - get
   - list
-  - watch
   - update
-  - delete
+  - watch
 - apiGroups:
-  - apiregistration.k8s.io
+  - ''
   resources:
-  - apiservices
+  - configmaps
+  - serviceaccounts
+  - services
   verbs:
   - create
+  - delete
   - get
   - list
-  - watch
   - update
-  - delete
+  - watch
 - apiGroups:
   - apps
   resources:
-  - deployments
   - daemonsets
+  - deployments
   verbs:
   - create
+  - delete
   - get
   - list
-  - watch
   - update
-  - delete
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - roles
-  - rolebindings
-  - clusterroles
-  - clusterrolebindings
-  verbs:
-  - create
-  - get
-  - list
   - watch
-  - update
-  - delete
 - apiGroups:
   - route.openshift.io
   resources:
   - routes
   verbs:
   - create
+  - delete
   - get
   - list
-  - watch
   - update
-  - delete
+  - watch
 - apiGroups:
   - security.openshift.io
   resources:
   - securitycontextconstraints
   verbs:
   - create
-  - get
-  - list
-  - watch
-  - update
   - delete
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingwebhookconfigurations
-  verbs:
-  - create
   - get
   - list
+  - update
   - watch
 - apiGroups:
-  - apiextensions.k8s.io
+  - apiregistration.k8s.io
   resources:
-  - customresourcedefinitions
+  - apiservices
   verbs:
   - create
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
-- apiGroups:
-  - ""
-  resources:
-  - services
-  - services/finalizers
-  - endpoints
-  verbs:
-  - get
-  - create
-  - update
   - delete
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  - namespaces
-  - pods
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  - endpoints
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - metrics.k8s.io
-  resources:
-  - pods
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - prometheusrules
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - config.openshift.io
-  resources:
-  - clusteroperators
-  - clusteroperators/status
-  verbs:
-  - get
   - update
-  - create
-- apiGroups:
-  - apiextensions.k8s.io
-  resourceNames:
-  - alertmanagers.monitoring.coreos.com
-  - podmonitors.monitoring.coreos.com
-  - prometheuses.monitoring.coreos.com
-  - prometheusrules.monitoring.coreos.com
-  - servicemonitors.monitoring.coreos.com
-  - thanosrulers.monitoring.coreos.com
-  resources:
-  - customresourcedefinitions
-  verbs:
-  - get
-  - update
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - nodes/metrics
-  verbs:
-  - get
+  - watch
 - apiGroups:
   - config.openshift.io
   resources:
@@ -324,40 +147,94 @@ rules:
   verbs:
   - get
 - apiGroups:
-  - monitoring.coreos.com
+  - config.openshift.io
   resources:
-  - alertmanagers
+  - clusteroperators
+  - clusteroperators/status
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
   verbs:
   - get
 - apiGroups:
-  - ""
+  - monitoring.coreos.com
   resources:
-  - pods
+  - podmonitors
+  - prometheusrules
+  - servicemonitors
   verbs:
-  - list
-  - delete
+  - '*'
 - apiGroups:
-  - ""
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  verbs:
+  - '*'
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resourceNames:
+  - user-workload-monitoring-config
   resources:
   - configmaps
-  - secrets
-  - nodes
-  - pods
-  - services
-  - resourcequotas
-  - replicationcontrollers
-  - limitranges
-  - persistentvolumeclaims
-  - persistentvolumes
-  - namespaces
-  - endpoints
+  verbs:
+  - '*'
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
   verbs:
   - list
   - watch
 - apiGroups:
-  - ""
+  - apps
   resources:
-  - nodes
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - daemonsets
+  - deployments
+  - ingresses
+  - replicasets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  - volumeattachments
   verbs:
   - list
   - watch
@@ -366,23 +243,6 @@ rules:
   resources:
   - mutatingwebhookconfigurations
   - validatingwebhookconfigurations
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - apps.openshift.io
-  resources:
-  - deploymentconfigs
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  - daemonsets
-  - deployments
-  - replicasets
   verbs:
   - list
   - watch
@@ -402,10 +262,27 @@ rules:
   - list
   - watch
 - apiGroups:
-  - build.openshift.io
+  - policy
   resources:
-  - buildconfigs
-  - builds
+  - poddisruptionbudgets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  - endpoints
+  - limitranges
+  - namespaces
+  - nodes
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  - replicationcontrollers
+  - resourcequotas
+  - secrets
+  - services
   verbs:
   - list
   - watch
@@ -417,33 +294,25 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
+  - security.openshift.io
+  resourceNames:
+  - node-exporter
   resources:
-  - daemonsets
-  - deployments
-  - replicasets
-  - ingresses
+  - securitycontextconstraints
+  verbs:
+  - use
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
   verbs:
   - list
   - watch
 - apiGroups:
-  - networking.k8s.io
+  - build.openshift.io
   resources:
-  - networkpolicies
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - policy
-  resources:
-  - poddisruptionbudgets
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - quota.openshift.io
-  resources:
-  - clusterresourcequotas
+  - buildconfigs
+  - builds
   verbs:
   - list
   - watch
@@ -455,26 +324,164 @@ rules:
   - list
   - watch
 - apiGroups:
-  - storage.k8s.io
+  - apps.openshift.io
   resources:
-  - storageclasses
-  - volumeattachments
+  - deploymentconfigs
   verbs:
   - list
   - watch
 - apiGroups:
-  - user.openshift.io
+  - quota.openshift.io
   resources:
-  - groups
+  - clusterresourcequotas
   verbs:
   - list
   - watch
 - apiGroups:
-  - security.openshift.io
+  - metrics.k8s.io
+  resources:
+  - nodes
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - metrics.k8s.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  - nodes
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - nodes/metrics
+  verbs:
+  - get
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - get
+- apiGroups:
+  - ''
+  resources:
+  - endpoints
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  - alertmanagers/finalizers
+  - podmonitors
+  - probes
+  - prometheuses
+  - prometheuses/finalizers
+  - prometheusrules
+  - servicemonitors
+  - thanosrulers
+  - thanosrulers/finalizers
+  verbs:
+  - '*'
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
   resourceNames:
-  - node-exporter
+  - alertmanagers.monitoring.coreos.com
+  - podmonitors.monitoring.coreos.com
+  - prometheuses.monitoring.coreos.com
+  - prometheusrules.monitoring.coreos.com
+  - servicemonitors.monitoring.coreos.com
+  - thanosrulers.monitoring.coreos.com
   resources:
-  - securitycontextconstraints
+  - customresourcedefinitions
   verbs:
-  - use
+  - get
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - '*'
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - create
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - delete
+  - list
+- apiGroups:
+  - ''
+  resources:
+  - endpoints
+  - services
+  - services/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  verbs:
+  - get
 

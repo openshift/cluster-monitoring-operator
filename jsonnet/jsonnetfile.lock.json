@@ -8,8 +8,8 @@
           "subdir": "grafana"
         }
       },
-      "version": "57b4365eacda291b82e0d55ba7eec573a8198dda",
-      "sum": "92DWADwGjnCfpZaL7Q07C0GZayxBziGla/O03qWea34="
+      "version": "02ac326459f46d6f30a766ce2f9a45337a745db0",
+      "sum": "r7kj5f5w7aVB7vO++dI9vbHhzoW8PpyVLSA7gOiouZ0="
     },
     {
       "source": {
@@ -18,7 +18,7 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "7c6c2c142b915b12bbe6466b6d602239c2c3491e",
+      "version": "8866d55b9bc8539f5f15db33cc78b9737cad0394",
       "sum": "L+PGlPK9mykGCJ9TIoEWdhMBjz+9lKuQ4YZ8fOeP9sk="
     },
     {
@@ -28,8 +28,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "f69ff3d63de17f3f52b955c3b7e0d7aff0372873",
-      "sum": "B4Z3zopnw/muu9C1pXd66kbfv4C+w/k0C/EEzLlX1h0="
+      "version": "aee7f28bcdaca57a746c2ae96b3649d163bc2307",
+      "sum": "csLffiblzsQhNp5MJTddziQCu6STUeOW9WoP1RRmPd4="
     },
     {
       "source": {
@@ -44,11 +44,21 @@
     {
       "source": {
         "git": {
+          "remote": "https://github.com/etcd-io/etcd.git",
+          "subdir": "Documentation/etcd-mixin"
+        }
+      },
+      "version": "8866d55b9bc8539f5f15db33cc78b9737cad0394",
+      "sum": "L+PGlPK9mykGCJ9TIoEWdhMBjz+9lKuQ4YZ8fOeP9sk="
+    },
+    {
+      "source": {
+        "git": {
           "remote": "https://github.com/grafana/grafonnet-lib.git",
           "subdir": "grafonnet"
         }
       },
-      "version": "005390f0207ffa4a8ae0d1afb253b7585ff7beca",
+      "version": "356bd73e4792ffe107725776ca8946895969c191",
       "sum": "CSMZ3dJrpJpwvffie8BqcfrIVVwiKNqdPEN+1XWRBGU="
     },
     {
@@ -58,7 +68,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "07b7d671c5cab0d6a17e587bc703066353b0268c",
+      "version": "dfa2a427d884da8d169eb356bfb85717aed61b13",
       "sum": "mD0zEP9FVFXeag7EaeS5OvUr2A9D6DQhGemoNn6+PLc="
     },
     {
@@ -79,8 +89,8 @@
           "subdir": ""
         }
       },
-      "version": "a161500608ac2ca8908f2c318bd929ecd5e20415",
-      "sum": "mCzVPYGcvqge5epnrWZ8013OzXmu84g3j73EYsUcsm0="
+      "version": "8a98e9c6fab000ef090b8d313292043696a8b3bb",
+      "sum": "btFPZfE2paWZdvLtFwv4gfDoygj1axt7Q4ACGSdeuJ8="
     },
     {
       "source": {
@@ -109,8 +119,8 @@
           "subdir": "jsonnet/kube-state-metrics-mixin"
         }
       },
-      "version": "89aaf6c524ee891140c4c8f2a05b1b16f5847309",
-      "sum": "E1GGavnf9PCWBm4WVrxWnc0FIj72UcbcweqGioWrOdU="
+      "version": "013d43a2b9c961fe0030a26a2684dd4fdc331d5d",
+      "sum": "Yf8mNAHrV1YWzrdV8Ry5dJ8YblepTGw3C0Zp10XIYLo="
     },
     {
       "source": {
@@ -119,7 +129,7 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "041528b3321d5b20ac86a337693bc4cce1d36ca1",
+      "version": "d8731863a5091b7c96a8bdba2011fec2343571eb",
       "sum": "xoF0ibl74QrQ1DWbmoZ3JY83dEVeU0EQCvom96KGEuA=",
       "name": "openshift-state-metrics"
     },
@@ -137,12 +147,32 @@
     {
       "source": {
         "git": {
+          "remote": "https://github.com/prometheus-operator/prometheus-operator.git",
+          "subdir": "jsonnet/mixin"
+        }
+      },
+      "version": "e32c86ffa4c6e9c582cc76785e711d695b641d46",
+      "sum": "6reUygVmQrLEWQzTKcH8ceDbvM+2ztK3z2VBR2K2l+U="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/prometheus-operator/prometheus-operator.git",
+          "subdir": "jsonnet/prometheus-operator"
+        }
+      },
+      "version": "cd331ce9bb58bb926e391c6ae807621cb12cc29e",
+      "sum": "nM1eDP5vftqAeQSmVYzSBAh+lG0SN6zu46QiocQiVhk="
+    },
+    {
+      "source": {
+        "git": {
           "remote": "https://github.com/prometheus/node_exporter.git",
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "9c9c63630572ac706dcd0bd0e79dc03179f6d02c",
-      "sum": "GE8EJdQvnaaj31avW1OaJGY6xP+Vd6MqMu7/GgudRDQ="
+      "version": "ed104850737ccad9a815277641ac2549cbbde931",
+      "sum": "3b9xJI6cjh58SMfpUBhyrC+IG8D/5lpNyRGJibFi+5g="
     },
     {
       "source": {
@@ -151,8 +181,8 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "983ebb4a513302315a8117932ab832815f85e3d2",
-      "sum": "TBq4SL7YsPInARbJqwz25JaBvvAegcnRCsuz3K9niWc=",
+      "version": "0a7fdd3b76960808c3a91d92267c3d815c1bc354",
+      "sum": "CGxvaHkP7z/gnsLB/8Imvt/AnW+9nJUnTcL+fvIAZUs=",
       "name": "prometheus"
     },
     {
