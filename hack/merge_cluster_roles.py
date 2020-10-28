@@ -28,7 +28,7 @@ def main():
         base = ClusterRole(yaml.load(f, Loader=yaml.SafeLoader))
 
     manifests = sys.argv[2:]
-    for manifest in manifests:
+    for manifest in sorted(manifests):
         with open(manifest, 'r') as f:
             y = yaml.load(f, Loader=yaml.SafeLoader)
             if y['kind'].endswith('RoleList'):
