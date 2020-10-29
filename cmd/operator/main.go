@@ -155,6 +155,11 @@ func Main() int {
 	}
 
 	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, *remoteWrite, images.asMap(), telemetryConfig.Matches)
+
+	// CMO runs many tasks in parallel and the default values for rate limiting are too low.
+	config.QPS = 20
+	config.Burst = 40
+
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
