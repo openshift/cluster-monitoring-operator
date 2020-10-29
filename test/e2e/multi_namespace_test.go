@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"strconv"
 	"testing"
 	"time"
@@ -31,15 +32,15 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 	t.Parallel()
 
 	nsName := "openshift-test-prometheus-rules" + strconv.FormatInt(time.Now().Unix(), 36)
-
-	err := f.OperatorClient.CreateOrUpdateNamespace(&v1.Namespace{
+	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: nsName,
 			Labels: map[string]string{
 				"openshift.io/cluster-monitoring": "true",
 			},
 		},
-	})
+	}
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

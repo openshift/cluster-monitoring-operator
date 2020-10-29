@@ -21,8 +21,10 @@ github.com/coreos/prometheus-operator/pkg/alertmanager
 github.com/coreos/prometheus-operator/pkg/apis/monitoring
 github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1
 github.com/coreos/prometheus-operator/pkg/client/versioned
+github.com/coreos/prometheus-operator/pkg/client/versioned/fake
 github.com/coreos/prometheus-operator/pkg/client/versioned/scheme
 github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1
+github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1/fake
 github.com/coreos/prometheus-operator/pkg/k8sutil
 github.com/coreos/prometheus-operator/pkg/listwatch
 github.com/coreos/prometheus-operator/pkg/namespace-labeler
@@ -135,8 +137,10 @@ github.com/openshift/client-go/route/clientset/versioned
 github.com/openshift/client-go/route/clientset/versioned/scheme
 github.com/openshift/client-go/route/clientset/versioned/typed/route/v1
 github.com/openshift/client-go/security/clientset/versioned
+github.com/openshift/client-go/security/clientset/versioned/fake
 github.com/openshift/client-go/security/clientset/versioned/scheme
 github.com/openshift/client-go/security/clientset/versioned/typed/security/v1
+github.com/openshift/client-go/security/clientset/versioned/typed/security/v1/fake
 # github.com/openshift/library-go v0.0.0-20200421122923-c1de486c7d47
 ## explicit
 github.com/openshift/library-go/pkg/crypto
