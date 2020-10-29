@@ -109,6 +109,30 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                },
              },
              telemeterClient+:: {
+               deployment+: {
+                 spec+: {
+                   template+: {
+                     spec+: {
+                       containers:
+                         std.map(
+                           function(c)
+                             if c.name == 'reload' then
+                               c {
+                                 args: std.map(
+                                   function(a)
+                                     std.strReplace(std.strReplace(a, '--webhook-url=', '--reload-url='), '--volume-dir=', '--watched-dir=')
+                                   ,
+                                   c.args,
+                                 ),
+                               }
+                             else
+                               c,
+                           super.containers,
+                         ),
+                     },
+                   },
+                 },
+               },
                trustedCaBundle:
                  configmap.new('telemeter-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
                  configmap.mixin.metadata.withNamespace($._config.namespace) +

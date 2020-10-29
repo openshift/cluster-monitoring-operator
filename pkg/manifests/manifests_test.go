@@ -739,27 +739,19 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatalf("Configuring the Prometheus Operator image failed, expected: %v, got %v", expectedPromOpImage, resPromOpImage)
 	}
 
-	configReloaderFound := false
 	prometheusReloaderFound := false
 	namespacesFound := false
 	for i := range d.Spec.Template.Spec.Containers[0].Args {
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest") {
 			prometheusReloaderFound = true
 		}
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], ConfigReloaderImageFlag+"docker.io/openshift/origin-configmap-reloader:latest") {
-			configReloaderFound = true
-		}
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorNamespaceFlag+"default,openshift-monitoring") {
 			namespacesFound = true
 		}
 	}
 
-	if !configReloaderFound {
-		t.Fatal("Configuring the Config reloader image failed")
-	}
-
 	if !prometheusReloaderFound {
-		t.Fatal("Configuring the Prometheus Reloader image failed")
+		t.Fatal("Configuring the Prometheus Config reloader image failed")
 	}
 
 	if !namespacesFound {
