@@ -400,6 +400,7 @@ rules:
 - apiGroups:
   - monitoring.coreos.com
   resources:
+  - alertmanagerconfigs
   - alertmanagers
   - alertmanagers/finalizers
   - podmonitors
@@ -454,6 +455,14 @@ rules:
   - customresourcedefinitions
   verbs:
   - create
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:

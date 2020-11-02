@@ -46,16 +46,17 @@ func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, namespace
 
 func (r *StatusReporter) relatedObjects() []v1.ObjectReference {
 	return []v1.ObjectReference{
-		// Gather pods, services, daemonsets, deployments, replocasets, statefulsets, and routes.
+		// Gather pods, services, daemonsets, deployments, replicasets, statefulsets, and routes.
 		{Resource: "namespaces", Name: r.namespace},
 		{Resource: "namespaces", Name: r.userWorkloadNamespace},
-		// Gather all ServiceMonitors, PodMonitors, PrometheusRules, Alertmanagers, ThanosRulers and Prometheus CRs
+		// Gather all ServiceMonitors, PodMonitors, PrometheusRules, Alertmanagers, AlertmanagerConfigs, ThanosRulers and Prometheus CRs
 		{Group: "monitoring.coreos.com", Resource: "servicemonitors"},
 		{Group: "monitoring.coreos.com", Resource: "podmonitors"},
 		{Group: "monitoring.coreos.com", Resource: "prometheusrules"},
 		{Group: "monitoring.coreos.com", Resource: "alertmanagers"},
 		{Group: "monitoring.coreos.com", Resource: "prometheuses"},
 		{Group: "monitoring.coreos.com", Resource: "thanosrulers"},
+		{Group: "monitoring.coreos.com", Resource: "alertmanagerconfigs"},
 	}
 }
 
