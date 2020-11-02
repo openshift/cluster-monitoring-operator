@@ -34,16 +34,6 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/coreos/prometheus-operator.git",
-          "subdir": "jsonnet/prometheus-operator"
-        }
-      },
-      "version": "633ea519b2ce86396f6e006f7fd967c04bc45bda",
-      "sum": "P8EcWO33RCyVTfwMdpy4S4jFZjJVHiu190j8yd/CGfs="
-    },
-    {
-      "source": {
-        "git": {
           "remote": "https://github.com/etcd-io/etcd.git",
           "subdir": "Documentation/etcd-mixin"
         }
@@ -151,7 +141,7 @@
           "subdir": "jsonnet/mixin"
         }
       },
-      "version": "e32c86ffa4c6e9c582cc76785e711d695b641d46",
+      "version": "6c47bd6d6a91203acdd431a074798c7cbb651820",
       "sum": "6reUygVmQrLEWQzTKcH8ceDbvM+2ztK3z2VBR2K2l+U="
     },
     {
@@ -161,8 +151,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "cd331ce9bb58bb926e391c6ae807621cb12cc29e",
-      "sum": "nM1eDP5vftqAeQSmVYzSBAh+lG0SN6zu46QiocQiVhk="
+      "version": "633ea519b2ce86396f6e006f7fd967c04bc45bda",
+      "sum": "P8EcWO33RCyVTfwMdpy4S4jFZjJVHiu190j8yd/CGfs="
     },
     {
       "source": {
