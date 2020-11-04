@@ -10,7 +10,7 @@ metadata:
   name: prometheusrules.openshift.io
 webhooks:
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: prometheus-operator

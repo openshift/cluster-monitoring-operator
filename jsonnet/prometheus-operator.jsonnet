@@ -167,7 +167,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
               path: '/admission-prometheusrules/validate',
             },
           },
-          admissionReviewVersions: ['v1beta1'],
+          admissionReviewVersions: ['v1'],
           sideEffects: 'None',
           timeoutSeconds: 5,
         },
