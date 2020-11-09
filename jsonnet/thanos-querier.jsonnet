@@ -256,13 +256,13 @@ local thanosQuerierRules =
                     livenessProbe: {
                       httpGet:: {},
                       exec: {
-                        command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/healthy; elif [ -x "$(command -v wget)" ]; then wget --quiet --tries=1 --spider http://localhost:9090/-/healthy; else exit 1; fi'],
+                        command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then exec curl http://localhost:9090/-/healthy; elif [ -x "$(command -v wget)" ]; then exec wget --quiet --tries=1 --spider http://localhost:9090/-/healthy; else exit 1; fi'],
                       },
                     },
                     readinessProbe: {
                       httpGet:: {},
                       exec: {
-                        command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/healthy; elif [ -x "$(command -v wget)" ]; then wget --quiet --tries=1 --spider http://localhost:9090/-/healthy; else exit 1; fi'],
+                        command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then exec curl http://localhost:9090/-/ready; elif [ -x "$(command -v wget)" ]; then exec wget --quiet --tries=1 --spider http://localhost:9090/-/ready; else exit 1; fi'],
                       },
                     },
                     args: std.map(
