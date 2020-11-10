@@ -18,7 +18,8 @@ import (
 	"bytes"
 	"io"
 
-	"k8s.io/api/core/v1"
+	v1Prom "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -60,6 +61,7 @@ type PrometheusK8sConfig struct {
 	ExternalLabels      map[string]string         `json:"externalLabels"`
 	VolumeClaimTemplate *v1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	Hostport            string                    `json:"hostport"`
+	RemoteWrite         []v1Prom.RemoteWriteSpec  `json:"remoteWrite"`
 }
 
 type AlertmanagerMainConfig struct {

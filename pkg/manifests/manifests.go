@@ -29,7 +29,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	appsv1 "k8s.io/api/apps/v1beta2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -722,6 +722,10 @@ func (f *Factory) PrometheusK8s(host string) (*monv1.Prometheus, error) {
 
 	if f.config.PrometheusK8sConfig.ExternalLabels != nil {
 		p.Spec.ExternalLabels = f.config.PrometheusK8sConfig.ExternalLabels
+	}
+
+	if f.config.PrometheusK8sConfig.RemoteWrite != nil {
+		p.Spec.RemoteWrite = f.config.PrometheusK8sConfig.RemoteWrite
 	}
 
 	if f.config.PrometheusK8sConfig.VolumeClaimTemplate != nil {
