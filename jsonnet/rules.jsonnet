@@ -211,7 +211,16 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum',
           },
           {
-            expr: 'sum  by (provisioner) (kubelet_volume_stats_used_bytes * on (namespace,persistentvolumeclaim) group_right() (kube_persistentvolumeclaim_info * on (storageclass)  group_left(provisioner) kube_storageclass_info))',
+            expr: |||
+              sum  by (provisioner) (
+                topk by (namespace, persistentvolumeclaim) (
+                  1, kubelet_volume_stats_used_bytes
+                ) * on (namespace,persistentvolumeclaim) group_right()
+                topk by (namespace, persistentvolumeclaim) (
+                  1, kube_persistentvolumeclaim_info * on(storageclass) group_left(provisioner) topk by(storageclass) (1, max by(storageclass, provisioner) (kube_storageclass_info))
+                )
+              )
+            |||,
             record: 'cluster:kubelet_volume_stats_used_bytes:provisioner:sum',
           },
           {
