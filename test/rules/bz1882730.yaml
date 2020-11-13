@@ -64,27 +64,6 @@ tests:
         values: '1+0x5'
 
     promql_expr_test:
-      #      - expr: |
-      #            clamp_max(
-      #              (
-      #                label_replace( ( ( sum ( label_replace(label_join(node_cpu_info{core=",package="}, "core", "", cpu), "package", "0", "package", "") ) by (instance, package, core) )  > 1 ), "label_node_hyperthread_enabled", "true", instance, "(.*)" )
-      #                or on (instance, package)
-      #                label_replace( ( ( sum ( label_replace(label_join(node_cpu_info{core=",package="}, "core", "", cpu), "package", "0", "package", "") ) by (instance, package, core) ) <= 1 ), "label_node_hyperthread_enabled", "false", instance, "(.*)" )
-      #              ), 1
-      #            )
-      #        eval_time: 1m
-      #        exp_samples:
-      #          - labels: '{instance="rdossant-ocp-jknxv-master-0",label_node_hyperthread_enabled="true",package="0",core="0"}'
-      #            value: 1
-      #          - labels: '{instance="rdossant-ocp-jknxv-master-1",label_node_hyperthread_enabled="true",package="0",core="0"}'
-      #            value: 1
-      #          - labels: '{instance="rdossant-ocp-jknxv-master-2",label_node_hyperthread_enabled="true",package="0",core="0"}'
-      #            value: 1
-      #          - labels: '{instance="rdossant-ocp-jknxv-worker-0-mzwpl",label_node_hyperthread_enabled="true",package="0",core="0"}'
-      #            value: 1
-      #          - labels: '{instance="rdossant-ocp-jknxv-worker-0-xzptw",label_node_hyperthread_enabled="true",package="0",core="0"}'
-      #            value: 1
-      #
       - expr: cluster:cpu_core_hyperthreading
         eval_time: 1m
         exp_samples:
