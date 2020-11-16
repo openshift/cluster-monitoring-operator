@@ -21,6 +21,20 @@ local authorizationRole = policyRule.new() +
                           ]) +
                           policyRule.withVerbs(['create']);
 
+// By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
+// This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
+// Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
+// to be immune against UID changes.
+local sccRole = policyRule.new() +
+                policyRule.withApiGroups(['security.openshift.io']) +
+                policyRule.withResources([
+                  'securitycontextconstraints',
+                ]) +
+                policyRule.withResourceNames([
+                  'nonroot',
+                ]) +
+                policyRule.withVerbs(['use']);
+
 {
   alertmanager+:: {
 
@@ -96,7 +110,7 @@ local authorizationRole = policyRule.new() +
     // requires the `create` action on both of these.
 
     clusterRole:
-      local rules = [authenticationRole, authorizationRole];
+      local rules = [authenticationRole, authorizationRole, sccRole];
 
       clusterRole.new() +
       clusterRole.mixin.metadata.withName('alertmanager-main') +
@@ -160,7 +174,11 @@ local authorizationRole = policyRule.new() +
     alertmanager+:
       {
         spec+: {
-          securityContext: {},
+          securityContext: {
+            fsGroup: 65534,
+            runAsNonRoot: true,
+            runAsUser: 65534,
+          },
           priorityClassName: 'system-cluster-critical',
           secrets: [
             'alertmanager-main-tls',

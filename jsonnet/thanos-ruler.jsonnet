@@ -25,6 +25,20 @@ local authorizationRole =
   ]) +
   policyRule.withVerbs(['create']);
 
+// By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
+// This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
+// Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
+// to be immune against UID changes.
+local sccRole = policyRule.new() +
+                policyRule.withApiGroups(['security.openshift.io']) +
+                policyRule.withResources([
+                  'securitycontextconstraints',
+                ]) +
+                policyRule.withResourceNames([
+                  'nonroot',
+                ]) +
+                policyRule.withVerbs(['use']);
+
 local thanosRulerRules =
   (import 'github.com/thanos-io/thanos/mixin/alerts/rule.libsonnet') {
     rule+:: {
@@ -95,7 +109,7 @@ local thanosRulerRules =
       clusterRole:
         clusterRole.new() +
         clusterRole.mixin.metadata.withName('thanos-ruler') +
-        clusterRole.withRules([authenticationRole, authorizationRole]),
+        clusterRole.withRules([authenticationRole, authorizationRole, sccRole]),
 
       clusterRoleBinding:
         local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
@@ -269,6 +283,11 @@ local thanosRulerRules =
           },
         },
         spec: {
+          securityContext: {
+            fsGroup: 65534,
+            runAsNonRoot: true,
+            runAsUser: 65534,
+          },
           replicas: 2,
           image: $._config.imageRepos.openshiftThanos + ':' + $._config.versions.openshiftThanos,
           grpcServerTlsConfig: {
