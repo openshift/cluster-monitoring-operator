@@ -15,3 +15,11 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - nonroot
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use

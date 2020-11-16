@@ -101,7 +101,10 @@ spec:
       openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
   secrets:
   - prometheus-user-workload-tls
-  securityContext: {}
+  securityContext:
+    fsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534
   serviceAccountName: prometheus-user-workload
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
