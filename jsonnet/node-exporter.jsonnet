@@ -123,7 +123,10 @@ local tlsVolumeName = 'node-exporter-tls';
                       }
                     else
                       c {
-                        args+: ['--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory=' + textfileDir],
+		        // Remove the flag to disable hwmon that is set upstream so we
+			// gather that data (especially for bare metal clusters), and
+			// add flags to collect data not included by default.
+                        args: [a for a in c.args if a != '--no-collector.hwmon'] + ['--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory=' + textfileDir],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [
                           containerVolumeMount.new(textfileVolumeName, textfileDir, true),
