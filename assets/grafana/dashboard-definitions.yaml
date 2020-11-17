@@ -1839,6 +1839,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-cluster-total
     namespace: openshift-monitoring
@@ -3071,6 +3072,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-etcd
     namespace: openshift-monitoring
@@ -5639,6 +5641,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-k8s-resources-cluster
     namespace: openshift-monitoring
@@ -7911,6 +7914,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-k8s-resources-namespace
     namespace: openshift-monitoring
@@ -8875,6 +8879,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-k8s-resources-node
     namespace: openshift-monitoring
@@ -10633,6 +10638,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-k8s-resources-pod
     namespace: openshift-monitoring
@@ -12653,6 +12659,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-k8s-resources-workload
     namespace: openshift-monitoring
@@ -14834,6 +14841,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-k8s-resources-workloads-namespace
     namespace: openshift-monitoring
@@ -16258,6 +16266,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-namespace-by-pod
     namespace: openshift-monitoring
@@ -17208,6 +17217,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-node-cluster-rsrc-use
     namespace: openshift-monitoring
@@ -18185,6 +18195,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-node-rsrc-use
     namespace: openshift-monitoring
@@ -19373,6 +19384,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-pod-total
     namespace: openshift-monitoring
@@ -20586,6 +20598,7 @@ items:
   kind: ConfigMap
   metadata:
     annotations:
+      include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
     name: grafana-dashboard-prometheus
     namespace: openshift-monitoring

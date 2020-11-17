@@ -4,6 +4,7 @@ kind: ClusterRole
 metadata:
   name: cluster-monitoring-operator
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
 rules:
 - apiGroups: ["rbac.authorization.k8s.io"]
