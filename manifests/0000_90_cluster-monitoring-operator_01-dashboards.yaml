@@ -1838,6 +1838,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -3073,6 +3074,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -5644,6 +5646,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -7919,6 +7922,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -8886,6 +8890,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -10647,6 +10652,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -12670,6 +12676,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -14854,6 +14861,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -16281,6 +16289,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -17234,6 +17243,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -18214,6 +18224,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -19405,6 +19416,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"
@@ -20621,6 +20633,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
   labels:
     console.openshift.io/dashboard: "true"

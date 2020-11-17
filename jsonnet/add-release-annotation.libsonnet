@@ -3,6 +3,7 @@
     local addAnnotation(o) = o {
       [if (o.kind == 'CustomResourceDefinition') then 'metadata']+: {
         annotations+: {
+          'include.release.openshift.io/ibm-cloud-managed': "true",
           'include.release.openshift.io/self-managed-high-availability': "true"
         },
       },
@@ -10,6 +11,7 @@
         i {
           metadata+: {
             annotations+: {
+              'include.release.openshift.io/ibm-cloud-managed': "true",
               'include.release.openshift.io/self-managed-high-availability': "true"
             }
           },

@@ -243,6 +243,7 @@ metadata:
   name: telemetry-config
   namespace: openshift-monitoring
   annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
 ```
 
