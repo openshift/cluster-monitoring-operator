@@ -11,13 +11,12 @@ export GO111MODULE
 export GOPROXY
 
 PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
-GOLANG_FILES:=$(shell find . -name \*.go -print) pkg/manifests/bindata.go
+GOLANG_FILES:=$(shell find . -name \*.go -print)
 ASSETS=$(shell grep -oh 'assets/.*\.yaml' pkg/manifests/manifests.go)
 
 BIN_DIR ?= $(shell pwd)/tmp/bin
 
 EMBEDMD_BIN=$(BIN_DIR)/embedmd
-GOBINDATA_BIN=$(BIN_DIR)/go-bindata
 JB_BIN=$(BIN_DIR)/jb
 GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
 JSONNET_BIN=$(BIN_DIR)/jsonnet
@@ -75,7 +74,7 @@ vendor:
 	go mod verify
 
 .PHONY: generate
-generate: pkg/manifests/bindata.go manifests/0000_50_cluster-monitoring-operator_02-role.yaml docs
+generate: manifests/0000_50_cluster-monitoring-operator_02-role.yaml docs
 
 .PHONY: generate-in-docker
 generate-in-docker:
@@ -96,10 +95,6 @@ $(ASSETS): build-jsonnet
 .PHONY: build-jsonnet
 build-jsonnet: $(JSONNET_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_SRC) $(JSONNET_VENDOR)
 	./hack/build-jsonnet.sh
-
-pkg/manifests/bindata.go: $(GOBINDATA_BIN) $(ASSETS)
-	# Using "-modtime 1" to make generate target deterministic. It sets all file time stamps to unix timestamp 1
-	$(GOBINDATA_BIN) -mode 420 -modtime 1 -pkg manifests -o $@ assets/...
 
 # Merge cluster roles
 manifests/0000_50_cluster-monitoring-operator_02-role.yaml: hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
