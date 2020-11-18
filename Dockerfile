@@ -16,6 +16,7 @@ LABEL io.k8s.display-name="OpenShift cluster-monitoring-operator" \
 
 COPY --from=builder /go/src/github.com/openshift/cluster-monitoring-operator/operator /usr/bin/
 COPY manifests /manifests
+COPY assets /assets
 USER 1001
 ENTRYPOINT ["/usr/bin/operator"]
 
