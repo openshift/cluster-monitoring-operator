@@ -213,7 +213,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 	key := o.namespace + "/" + o.configMapName
 	_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
 	if !exists {
-		klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %d minutes.", resyncPeriod)
+		klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", resyncPeriod)
 		o.enqueue(key)
 	}
 
@@ -224,7 +224,7 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 		case <-ticker.C:
 			_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
 			if !exists {
-				klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %d minutes.", resyncPeriod)
+				klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", resyncPeriod)
 				o.enqueue(key)
 			}
 		}
