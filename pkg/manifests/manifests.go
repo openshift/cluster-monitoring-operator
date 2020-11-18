@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"bytes"
+	"io/ioutil"
 
 	// #nosec
 	"crypto/sha1"
@@ -43,6 +44,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
@@ -237,8 +239,21 @@ const (
 	IBMCloudPlatformType configv1.PlatformType = "IBMCloud"
 )
 
+func Asset(name string) []byte {
+	dirPrefix := "./"
+	fullPath := dirPrefix + name
+	//fullPath := "/" + name
+
+	klog.V(4).Infof("Reading manifests from %s\n", name)
+	a, err := ioutil.ReadFile(fullPath)
+	if err != nil {
+		panic("manifest: Asset(" + name + "): " + err.Error())
+	}
+	return a
+}
+
 func MustAssetReader(asset string) io.Reader {
-	return bytes.NewReader(MustAsset(asset))
+	return bytes.NewReader(Asset(asset))
 }
 
 type Factory struct {
