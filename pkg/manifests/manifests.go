@@ -17,6 +17,8 @@ package manifests
 import (
 	"bytes"
 	"io/ioutil"
+	"path"
+	"sync"
 
 	// #nosec
 	"crypto/sha1"
@@ -54,171 +56,171 @@ const (
 )
 
 var (
-	AlertmanagerConfig             = "assets/alertmanager/secret.yaml"
-	AlertmanagerService            = "assets/alertmanager/service.yaml"
-	AlertmanagerProxySecret        = "assets/alertmanager/proxy-secret.yaml"
-	AlertmanagerMain               = "assets/alertmanager/alertmanager.yaml"
-	AlertmanagerServiceAccount     = "assets/alertmanager/service-account.yaml"
-	AlertmanagerClusterRoleBinding = "assets/alertmanager/cluster-role-binding.yaml"
-	AlertmanagerClusterRole        = "assets/alertmanager/cluster-role.yaml"
-	AlertmanagerRBACProxySecret    = "assets/alertmanager/kube-rbac-proxy-secret.yaml"
-	AlertmanagerRoute              = "assets/alertmanager/route.yaml"
-	AlertmanagerServiceMonitor     = "assets/alertmanager/service-monitor.yaml"
-	AlertmanagerTrustedCABundle    = "assets/alertmanager/trusted-ca-bundle.yaml"
+	AlertmanagerConfig             = "alertmanager/secret.yaml"
+	AlertmanagerService            = "alertmanager/service.yaml"
+	AlertmanagerProxySecret        = "alertmanager/proxy-secret.yaml"
+	AlertmanagerMain               = "alertmanager/alertmanager.yaml"
+	AlertmanagerServiceAccount     = "alertmanager/service-account.yaml"
+	AlertmanagerClusterRoleBinding = "alertmanager/cluster-role-binding.yaml"
+	AlertmanagerClusterRole        = "alertmanager/cluster-role.yaml"
+	AlertmanagerRBACProxySecret    = "alertmanager/kube-rbac-proxy-secret.yaml"
+	AlertmanagerRoute              = "alertmanager/route.yaml"
+	AlertmanagerServiceMonitor     = "alertmanager/service-monitor.yaml"
+	AlertmanagerTrustedCABundle    = "alertmanager/trusted-ca-bundle.yaml"
 
-	KubeStateMetricsClusterRoleBinding = "assets/kube-state-metrics/cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole        = "assets/kube-state-metrics/cluster-role.yaml"
-	KubeStateMetricsDeployment         = "assets/kube-state-metrics/deployment.yaml"
-	KubeStateMetricsServiceAccount     = "assets/kube-state-metrics/service-account.yaml"
-	KubeStateMetricsService            = "assets/kube-state-metrics/service.yaml"
-	KubeStateMetricsServiceMonitor     = "assets/kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsClusterRoleBinding = "kube-state-metrics/cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole        = "kube-state-metrics/cluster-role.yaml"
+	KubeStateMetricsDeployment         = "kube-state-metrics/deployment.yaml"
+	KubeStateMetricsServiceAccount     = "kube-state-metrics/service-account.yaml"
+	KubeStateMetricsService            = "kube-state-metrics/service.yaml"
+	KubeStateMetricsServiceMonitor     = "kube-state-metrics/service-monitor.yaml"
 
-	OpenShiftStateMetricsClusterRoleBinding = "assets/openshift-state-metrics/cluster-role-binding.yaml"
-	OpenShiftStateMetricsClusterRole        = "assets/openshift-state-metrics/cluster-role.yaml"
-	OpenShiftStateMetricsDeployment         = "assets/openshift-state-metrics/deployment.yaml"
-	OpenShiftStateMetricsServiceAccount     = "assets/openshift-state-metrics/service-account.yaml"
-	OpenShiftStateMetricsService            = "assets/openshift-state-metrics/service.yaml"
-	OpenShiftStateMetricsServiceMonitor     = "assets/openshift-state-metrics/service-monitor.yaml"
+	OpenShiftStateMetricsClusterRoleBinding = "openshift-state-metrics/cluster-role-binding.yaml"
+	OpenShiftStateMetricsClusterRole        = "openshift-state-metrics/cluster-role.yaml"
+	OpenShiftStateMetricsDeployment         = "openshift-state-metrics/deployment.yaml"
+	OpenShiftStateMetricsServiceAccount     = "openshift-state-metrics/service-account.yaml"
+	OpenShiftStateMetricsService            = "openshift-state-metrics/service.yaml"
+	OpenShiftStateMetricsServiceMonitor     = "openshift-state-metrics/service-monitor.yaml"
 
-	NodeExporterDaemonSet                  = "assets/node-exporter/daemonset.yaml"
-	NodeExporterService                    = "assets/node-exporter/service.yaml"
-	NodeExporterServiceAccount             = "assets/node-exporter/service-account.yaml"
-	NodeExporterClusterRole                = "assets/node-exporter/cluster-role.yaml"
-	NodeExporterClusterRoleBinding         = "assets/node-exporter/cluster-role-binding.yaml"
-	NodeExporterSecurityContextConstraints = "assets/node-exporter/security-context-constraints.yaml"
-	NodeExporterServiceMonitor             = "assets/node-exporter/service-monitor.yaml"
+	NodeExporterDaemonSet                  = "node-exporter/daemonset.yaml"
+	NodeExporterService                    = "node-exporter/service.yaml"
+	NodeExporterServiceAccount             = "node-exporter/service-account.yaml"
+	NodeExporterClusterRole                = "node-exporter/cluster-role.yaml"
+	NodeExporterClusterRoleBinding         = "node-exporter/cluster-role-binding.yaml"
+	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
+	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
 
-	PrometheusK8sClusterRoleBinding       = "assets/prometheus-k8s/cluster-role-binding.yaml"
-	PrometheusK8sRoleBindingConfig        = "assets/prometheus-k8s/role-binding-config.yaml"
-	PrometheusK8sRoleBindingList          = "assets/prometheus-k8s/role-binding-specific-namespaces.yaml"
-	PrometheusK8sClusterRole              = "assets/prometheus-k8s/cluster-role.yaml"
-	PrometheusK8sRoleConfig               = "assets/prometheus-k8s/role-config.yaml"
-	PrometheusK8sRoleList                 = "assets/prometheus-k8s/role-specific-namespaces.yaml"
-	PrometheusK8sRules                    = "assets/prometheus-k8s/rules.yaml"
-	PrometheusK8sServiceAccount           = "assets/prometheus-k8s/service-account.yaml"
-	PrometheusK8s                         = "assets/prometheus-k8s/prometheus.yaml"
-	PrometheusK8sKubeletServiceMonitor    = "assets/prometheus-k8s/service-monitor-kubelet.yaml"
-	PrometheusK8sPrometheusServiceMonitor = "assets/prometheus-k8s/service-monitor.yaml"
-	PrometheusK8sService                  = "assets/prometheus-k8s/service.yaml"
-	PrometheusK8sProxySecret              = "assets/prometheus-k8s/proxy-secret.yaml"
-	PrometheusRBACProxySecret             = "assets/prometheus-k8s/kube-rbac-proxy-secret.yaml"
-	PrometheusK8sRoute                    = "assets/prometheus-k8s/route.yaml"
-	PrometheusK8sHtpasswd                 = "assets/prometheus-k8s/htpasswd-secret.yaml"
-	PrometheusK8sEtcdServiceMonitor       = "assets/prometheus-k8s/service-monitor-etcd.yaml"
-	PrometheusK8sServingCertsCABundle     = "assets/prometheus-k8s/serving-certs-ca-bundle.yaml"
-	PrometheusK8sKubeletServingCABundle   = "assets/prometheus-k8s/kubelet-serving-ca-bundle.yaml"
-	PrometheusK8sGrpcTLSSecret            = "assets/prometheus-k8s/grpc-tls-secret.yaml"
-	PrometheusK8sTrustedCABundle          = "assets/prometheus-k8s/trusted-ca-bundle.yaml"
+	PrometheusK8sClusterRoleBinding       = "prometheus-k8s/cluster-role-binding.yaml"
+	PrometheusK8sRoleBindingConfig        = "prometheus-k8s/role-binding-config.yaml"
+	PrometheusK8sRoleBindingList          = "prometheus-k8s/role-binding-specific-namespaces.yaml"
+	PrometheusK8sClusterRole              = "prometheus-k8s/cluster-role.yaml"
+	PrometheusK8sRoleConfig               = "prometheus-k8s/role-config.yaml"
+	PrometheusK8sRoleList                 = "prometheus-k8s/role-specific-namespaces.yaml"
+	PrometheusK8sRules                    = "prometheus-k8s/rules.yaml"
+	PrometheusK8sServiceAccount           = "prometheus-k8s/service-account.yaml"
+	PrometheusK8s                         = "prometheus-k8s/prometheus.yaml"
+	PrometheusK8sKubeletServiceMonitor    = "prometheus-k8s/service-monitor-kubelet.yaml"
+	PrometheusK8sPrometheusServiceMonitor = "prometheus-k8s/service-monitor.yaml"
+	PrometheusK8sService                  = "prometheus-k8s/service.yaml"
+	PrometheusK8sProxySecret              = "prometheus-k8s/proxy-secret.yaml"
+	PrometheusRBACProxySecret             = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
+	PrometheusK8sRoute                    = "prometheus-k8s/route.yaml"
+	PrometheusK8sHtpasswd                 = "prometheus-k8s/htpasswd-secret.yaml"
+	PrometheusK8sEtcdServiceMonitor       = "prometheus-k8s/service-monitor-etcd.yaml"
+	PrometheusK8sServingCertsCABundle     = "prometheus-k8s/serving-certs-ca-bundle.yaml"
+	PrometheusK8sKubeletServingCABundle   = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
+	PrometheusK8sGrpcTLSSecret            = "prometheus-k8s/grpc-tls-secret.yaml"
+	PrometheusK8sTrustedCABundle          = "prometheus-k8s/trusted-ca-bundle.yaml"
 
-	PrometheusUserWorkloadServingCertsCABundle     = "assets/prometheus-user-workload/serving-certs-ca-bundle.yaml"
-	PrometheusUserWorkloadServiceAccount           = "assets/prometheus-user-workload/service-account.yaml"
-	PrometheusUserWorkloadClusterRole              = "assets/prometheus-user-workload/cluster-role.yaml"
-	PrometheusUserWorkloadClusterRoleBinding       = "assets/prometheus-user-workload/cluster-role-binding.yaml"
-	PrometheusUserWorkloadRoleConfig               = "assets/prometheus-user-workload/role-config.yaml"
-	PrometheusUserWorkloadRoleList                 = "assets/prometheus-user-workload/role-specific-namespaces.yaml"
-	PrometheusUserWorkloadRoleBindingList          = "assets/prometheus-user-workload/role-binding-specific-namespaces.yaml"
-	PrometheusUserWorkloadRoleBindingConfig        = "assets/prometheus-user-workload/role-binding-config.yaml"
-	PrometheusUserWorkloadService                  = "assets/prometheus-user-workload/service.yaml"
-	PrometheusUserWorkload                         = "assets/prometheus-user-workload/prometheus.yaml"
-	PrometheusUserWorkloadPrometheusServiceMonitor = "assets/prometheus-user-workload/service-monitor.yaml"
-	PrometheusUserWorkloadGrpcTLSSecret            = "assets/prometheus-user-workload/grpc-tls-secret.yaml"
+	PrometheusUserWorkloadServingCertsCABundle     = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
+	PrometheusUserWorkloadServiceAccount           = "prometheus-user-workload/service-account.yaml"
+	PrometheusUserWorkloadClusterRole              = "prometheus-user-workload/cluster-role.yaml"
+	PrometheusUserWorkloadClusterRoleBinding       = "prometheus-user-workload/cluster-role-binding.yaml"
+	PrometheusUserWorkloadRoleConfig               = "prometheus-user-workload/role-config.yaml"
+	PrometheusUserWorkloadRoleList                 = "prometheus-user-workload/role-specific-namespaces.yaml"
+	PrometheusUserWorkloadRoleBindingList          = "prometheus-user-workload/role-binding-specific-namespaces.yaml"
+	PrometheusUserWorkloadRoleBindingConfig        = "prometheus-user-workload/role-binding-config.yaml"
+	PrometheusUserWorkloadService                  = "prometheus-user-workload/service.yaml"
+	PrometheusUserWorkload                         = "prometheus-user-workload/prometheus.yaml"
+	PrometheusUserWorkloadPrometheusServiceMonitor = "prometheus-user-workload/service-monitor.yaml"
+	PrometheusUserWorkloadGrpcTLSSecret            = "prometheus-user-workload/grpc-tls-secret.yaml"
 
-	PrometheusAdapterAPIService                         = "assets/prometheus-adapter/api-service.yaml"
-	PrometheusAdapterClusterRole                        = "assets/prometheus-adapter/cluster-role.yaml"
-	PrometheusAdapterClusterRoleBinding                 = "assets/prometheus-adapter/cluster-role-binding.yaml"
-	PrometheusAdapterClusterRoleBindingDelegator        = "assets/prometheus-adapter/cluster-role-binding-delegator.yaml"
-	PrometheusAdapterClusterRoleBindingView             = "assets/prometheus-adapter/cluster-role-binding-view.yaml"
-	PrometheusAdapterClusterRoleServerResources         = "assets/prometheus-adapter/cluster-role-server-resources.yaml"
-	PrometheusAdapterClusterRoleAggregatedMetricsReader = "assets/prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml"
-	PrometheusAdapterConfigMap                          = "assets/prometheus-adapter/config-map.yaml"
-	PrometheusAdapterConfigMapPrometheus                = "assets/prometheus-adapter/configmap-prometheus.yaml"
-	PrometheusAdapterDeployment                         = "assets/prometheus-adapter/deployment.yaml"
-	PrometheusAdapterRoleBindingAuthReader              = "assets/prometheus-adapter/role-binding-auth-reader.yaml"
-	PrometheusAdapterService                            = "assets/prometheus-adapter/service.yaml"
-	PrometheusAdapterServiceMonitor                     = "assets/prometheus-adapter/service-monitor.yaml"
-	PrometheusAdapterServiceAccount                     = "assets/prometheus-adapter/service-account.yaml"
+	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
+	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
+	PrometheusAdapterClusterRoleBinding                 = "prometheus-adapter/cluster-role-binding.yaml"
+	PrometheusAdapterClusterRoleBindingDelegator        = "prometheus-adapter/cluster-role-binding-delegator.yaml"
+	PrometheusAdapterClusterRoleBindingView             = "prometheus-adapter/cluster-role-binding-view.yaml"
+	PrometheusAdapterClusterRoleServerResources         = "prometheus-adapter/cluster-role-server-resources.yaml"
+	PrometheusAdapterClusterRoleAggregatedMetricsReader = "prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml"
+	PrometheusAdapterConfigMap                          = "prometheus-adapter/config-map.yaml"
+	PrometheusAdapterConfigMapPrometheus                = "prometheus-adapter/configmap-prometheus.yaml"
+	PrometheusAdapterDeployment                         = "prometheus-adapter/deployment.yaml"
+	PrometheusAdapterRoleBindingAuthReader              = "prometheus-adapter/role-binding-auth-reader.yaml"
+	PrometheusAdapterService                            = "prometheus-adapter/service.yaml"
+	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
+	PrometheusAdapterServiceAccount                     = "prometheus-adapter/service-account.yaml"
 
-	PrometheusOperatorClusterRoleBinding    = "assets/prometheus-operator/cluster-role-binding.yaml"
-	PrometheusOperatorClusterRole           = "assets/prometheus-operator/cluster-role.yaml"
-	PrometheusOperatorServiceAccount        = "assets/prometheus-operator/service-account.yaml"
-	PrometheusOperatorDeployment            = "assets/prometheus-operator/deployment.yaml"
-	PrometheusOperatorService               = "assets/prometheus-operator/service.yaml"
-	PrometheusOperatorServiceMonitor        = "assets/prometheus-operator/service-monitor.yaml"
-	PrometheusOperatorCertsCABundle         = "assets/prometheus-operator/operator-certs-ca-bundle.yaml"
-	PrometheusOperatorRuleValidatingWebhook = "assets/prometheus-operator/prometheus-rule-validating-webhook.yaml"
+	PrometheusOperatorClusterRoleBinding    = "prometheus-operator/cluster-role-binding.yaml"
+	PrometheusOperatorClusterRole           = "prometheus-operator/cluster-role.yaml"
+	PrometheusOperatorServiceAccount        = "prometheus-operator/service-account.yaml"
+	PrometheusOperatorDeployment            = "prometheus-operator/deployment.yaml"
+	PrometheusOperatorService               = "prometheus-operator/service.yaml"
+	PrometheusOperatorServiceMonitor        = "prometheus-operator/service-monitor.yaml"
+	PrometheusOperatorCertsCABundle         = "prometheus-operator/operator-certs-ca-bundle.yaml"
+	PrometheusOperatorRuleValidatingWebhook = "prometheus-operator/prometheus-rule-validating-webhook.yaml"
 
-	PrometheusOperatorUserWorkloadServiceAccount     = "assets/prometheus-operator-user-workload/service-account.yaml"
-	PrometheusOperatorUserWorkloadClusterRole        = "assets/prometheus-operator-user-workload/cluster-role.yaml"
-	PrometheusOperatorUserWorkloadClusterRoleBinding = "assets/prometheus-operator-user-workload/cluster-role-binding.yaml"
-	PrometheusOperatorUserWorkloadService            = "assets/prometheus-operator-user-workload/service.yaml"
-	PrometheusOperatorUserWorkloadDeployment         = "assets/prometheus-operator-user-workload/deployment.yaml"
-	PrometheusOperatorUserWorkloadServiceMonitor     = "assets/prometheus-operator-user-workload/service-monitor.yaml"
+	PrometheusOperatorUserWorkloadServiceAccount     = "prometheus-operator-user-workload/service-account.yaml"
+	PrometheusOperatorUserWorkloadClusterRole        = "prometheus-operator-user-workload/cluster-role.yaml"
+	PrometheusOperatorUserWorkloadClusterRoleBinding = "prometheus-operator-user-workload/cluster-role-binding.yaml"
+	PrometheusOperatorUserWorkloadService            = "prometheus-operator-user-workload/service.yaml"
+	PrometheusOperatorUserWorkloadDeployment         = "prometheus-operator-user-workload/deployment.yaml"
+	PrometheusOperatorUserWorkloadServiceMonitor     = "prometheus-operator-user-workload/service-monitor.yaml"
 
-	GrafanaClusterRoleBinding   = "assets/grafana/cluster-role-binding.yaml"
-	GrafanaClusterRole          = "assets/grafana/cluster-role.yaml"
-	GrafanaConfigSecret         = "assets/grafana/config.yaml"
-	GrafanaDatasourcesSecret    = "assets/grafana/dashboard-datasources.yaml"
-	GrafanaDashboardDefinitions = "assets/grafana/dashboard-definitions.yaml"
-	GrafanaDashboardSources     = "assets/grafana/dashboard-sources.yaml"
-	GrafanaDeployment           = "assets/grafana/deployment.yaml"
-	GrafanaProxySecret          = "assets/grafana/proxy-secret.yaml"
-	GrafanaRoute                = "assets/grafana/route.yaml"
-	GrafanaServiceAccount       = "assets/grafana/service-account.yaml"
-	GrafanaService              = "assets/grafana/service.yaml"
-	GrafanaServiceMonitor       = "assets/grafana/service-monitor.yaml"
-	GrafanaTrustedCABundle      = "assets/grafana/trusted-ca-bundle.yaml"
+	GrafanaClusterRoleBinding   = "grafana/cluster-role-binding.yaml"
+	GrafanaClusterRole          = "grafana/cluster-role.yaml"
+	GrafanaConfigSecret         = "grafana/config.yaml"
+	GrafanaDatasourcesSecret    = "grafana/dashboard-datasources.yaml"
+	GrafanaDashboardDefinitions = "grafana/dashboard-definitions.yaml"
+	GrafanaDashboardSources     = "grafana/dashboard-sources.yaml"
+	GrafanaDeployment           = "grafana/deployment.yaml"
+	GrafanaProxySecret          = "grafana/proxy-secret.yaml"
+	GrafanaRoute                = "grafana/route.yaml"
+	GrafanaServiceAccount       = "grafana/service-account.yaml"
+	GrafanaService              = "grafana/service.yaml"
+	GrafanaServiceMonitor       = "grafana/service-monitor.yaml"
+	GrafanaTrustedCABundle      = "grafana/trusted-ca-bundle.yaml"
 
-	ClusterMonitoringOperatorService            = "assets/cluster-monitoring-operator/service.yaml"
-	ClusterMonitoringOperatorServiceMonitor     = "assets/cluster-monitoring-operator/service-monitor.yaml"
-	ClusterMonitoringClusterRole                = "assets/cluster-monitoring-operator/cluster-role.yaml"
-	ClusterMonitoringRulesEditClusterRole       = "assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
-	ClusterMonitoringRulesViewClusterRole       = "assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
-	ClusterMonitoringEditClusterRole            = "assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
-	ClusterMonitoringEditUserWorkloadConfigRole = "assets/cluster-monitoring-operator/user-workload-config-edit-role.yaml"
-	ClusterMonitoringGrpcTLSSecret              = "assets/cluster-monitoring-operator/grpc-tls-secret.yaml"
+	ClusterMonitoringOperatorService            = "cluster-monitoring-operator/service.yaml"
+	ClusterMonitoringOperatorServiceMonitor     = "cluster-monitoring-operator/service-monitor.yaml"
+	ClusterMonitoringClusterRole                = "cluster-monitoring-operator/cluster-role.yaml"
+	ClusterMonitoringRulesEditClusterRole       = "cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
+	ClusterMonitoringRulesViewClusterRole       = "cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
+	ClusterMonitoringEditClusterRole            = "cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
+	ClusterMonitoringEditUserWorkloadConfigRole = "cluster-monitoring-operator/user-workload-config-edit-role.yaml"
+	ClusterMonitoringGrpcTLSSecret              = "cluster-monitoring-operator/grpc-tls-secret.yaml"
 
-	TelemeterClientClusterRole            = "assets/telemeter-client/cluster-role.yaml"
-	TelemeterClientClusterRoleBinding     = "assets/telemeter-client/cluster-role-binding.yaml"
-	TelemeterClientClusterRoleBindingView = "assets/telemeter-client/cluster-role-binding-view.yaml"
-	TelemeterClientDeployment             = "assets/telemeter-client/deployment.yaml"
-	TelemeterClientSecret                 = "assets/telemeter-client/secret.yaml"
-	TelemeterClientService                = "assets/telemeter-client/service.yaml"
-	TelemeterClientServiceAccount         = "assets/telemeter-client/service-account.yaml"
-	TelemeterClientServiceMonitor         = "assets/telemeter-client/service-monitor.yaml"
-	TelemeterClientServingCertsCABundle   = "assets/telemeter-client/serving-certs-ca-bundle.yaml"
+	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
+	TelemeterClientClusterRoleBinding     = "telemeter-client/cluster-role-binding.yaml"
+	TelemeterClientClusterRoleBindingView = "telemeter-client/cluster-role-binding-view.yaml"
+	TelemeterClientDeployment             = "telemeter-client/deployment.yaml"
+	TelemeterClientSecret                 = "telemeter-client/secret.yaml"
+	TelemeterClientService                = "telemeter-client/service.yaml"
+	TelemeterClientServiceAccount         = "telemeter-client/service-account.yaml"
+	TelemeterClientServiceMonitor         = "telemeter-client/service-monitor.yaml"
+	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
 
-	ThanosQuerierDeployment           = "assets/thanos-querier/deployment.yaml"
-	ThanosQuerierService              = "assets/thanos-querier/service.yaml"
-	ThanosQuerierServiceMonitor       = "assets/thanos-querier/service-monitor.yaml"
-	ThanosQuerierPrometheusRule       = "assets/thanos-querier/prometheus-rule.yaml"
-	ThanosQuerierRoute                = "assets/thanos-querier/route.yaml"
-	ThanosQuerierOauthCookieSecret    = "assets/thanos-querier/oauth-cookie-secret.yaml"
-	ThanosQuerierHtpasswdSecret       = "assets/thanos-querier/oauth-htpasswd-secret.yaml"
-	ThanosQuerierRBACProxySecret      = "assets/thanos-querier/kube-rbac-proxy-secret.yaml"
-	ThanosQuerierRBACProxyRulesSecret = "assets/thanos-querier/kube-rbac-proxy-rules-secret.yaml"
-	ThanosQuerierServiceAccount       = "assets/thanos-querier/service-account.yaml"
-	ThanosQuerierClusterRole          = "assets/thanos-querier/cluster-role.yaml"
-	ThanosQuerierClusterRoleBinding   = "assets/thanos-querier/cluster-role-binding.yaml"
-	ThanosQuerierGrpcTLSSecret        = "assets/thanos-querier/grpc-tls-secret.yaml"
-	ThanosQuerierTrustedCABundle      = "assets/thanos-querier/trusted-ca-bundle.yaml"
+	ThanosQuerierDeployment           = "thanos-querier/deployment.yaml"
+	ThanosQuerierService              = "thanos-querier/service.yaml"
+	ThanosQuerierServiceMonitor       = "thanos-querier/service-monitor.yaml"
+	ThanosQuerierPrometheusRule       = "thanos-querier/prometheus-rule.yaml"
+	ThanosQuerierRoute                = "thanos-querier/route.yaml"
+	ThanosQuerierOauthCookieSecret    = "thanos-querier/oauth-cookie-secret.yaml"
+	ThanosQuerierHtpasswdSecret       = "thanos-querier/oauth-htpasswd-secret.yaml"
+	ThanosQuerierRBACProxySecret      = "thanos-querier/kube-rbac-proxy-secret.yaml"
+	ThanosQuerierRBACProxyRulesSecret = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
+	ThanosQuerierServiceAccount       = "thanos-querier/service-account.yaml"
+	ThanosQuerierClusterRole          = "thanos-querier/cluster-role.yaml"
+	ThanosQuerierClusterRoleBinding   = "thanos-querier/cluster-role-binding.yaml"
+	ThanosQuerierGrpcTLSSecret        = "thanos-querier/grpc-tls-secret.yaml"
+	ThanosQuerierTrustedCABundle      = "thanos-querier/trusted-ca-bundle.yaml"
 
-	ThanosRulerCustomResource               = "assets/thanos-ruler/thanos-ruler.yaml"
-	ThanosRulerService                      = "assets/thanos-ruler/service.yaml"
-	ThanosRulerRoute                        = "assets/thanos-ruler/route.yaml"
-	ThanosRulerOauthCookieSecret            = "assets/thanos-ruler/oauth-cookie-secret.yaml"
-	ThanosRulerHtpasswdSecret               = "assets/thanos-ruler/oauth-htpasswd-secret.yaml"
-	ThanosRulerQueryConfigSecret            = "assets/thanos-ruler/query-config-secret.yaml"
-	ThanosRulerAlertmanagerConfigSecret     = "assets/thanos-ruler/alertmanagers-config-secret.yaml"
-	ThanosRulerServiceAccount               = "assets/thanos-ruler/service-account.yaml"
-	ThanosRulerClusterRole                  = "assets/thanos-ruler/cluster-role.yaml"
-	ThanosRulerClusterRoleBinding           = "assets/thanos-ruler/cluster-role-binding.yaml"
-	ThanosRulerMonitoringClusterRoleBinding = "assets/thanos-ruler/cluster-role-binding-monitoring.yaml"
-	ThanosRulerGrpcTLSSecret                = "assets/thanos-ruler/grpc-tls-secret.yaml"
-	ThanosRulerTrustedCABundle              = "assets/thanos-ruler/trusted-ca-bundle.yaml"
-	ThanosRulerServiceMonitor               = "assets/thanos-ruler/service-monitor.yaml"
-	ThanosRulerPrometheusRule               = "assets/thanos-ruler/thanos-ruler-prometheus-rule.yaml"
+	ThanosRulerCustomResource               = "thanos-ruler/thanos-ruler.yaml"
+	ThanosRulerService                      = "thanos-ruler/service.yaml"
+	ThanosRulerRoute                        = "thanos-ruler/route.yaml"
+	ThanosRulerOauthCookieSecret            = "thanos-ruler/oauth-cookie-secret.yaml"
+	ThanosRulerHtpasswdSecret               = "thanos-ruler/oauth-htpasswd-secret.yaml"
+	ThanosRulerQueryConfigSecret            = "thanos-ruler/query-config-secret.yaml"
+	ThanosRulerAlertmanagerConfigSecret     = "thanos-ruler/alertmanagers-config-secret.yaml"
+	ThanosRulerServiceAccount               = "thanos-ruler/service-account.yaml"
+	ThanosRulerClusterRole                  = "thanos-ruler/cluster-role.yaml"
+	ThanosRulerClusterRoleBinding           = "thanos-ruler/cluster-role-binding.yaml"
+	ThanosRulerMonitoringClusterRoleBinding = "thanos-ruler/cluster-role-binding-monitoring.yaml"
+	ThanosRulerGrpcTLSSecret                = "thanos-ruler/grpc-tls-secret.yaml"
+	ThanosRulerTrustedCABundle              = "thanos-ruler/trusted-ca-bundle.yaml"
+	ThanosRulerServiceMonitor               = "thanos-ruler/service-monitor.yaml"
+	ThanosRulerPrometheusRule               = "thanos-ruler/thanos-ruler-prometheus-rule.yaml"
 
-	TelemeterTrustedCABundle = "assets/telemeter-client/trusted-ca-bundle.yaml"
+	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 )
 
 var (
@@ -233,27 +235,57 @@ var (
 	AuthProxyRedirectURLFlag  = "-redirect-url="
 
 	TrustedCABundleKey = "ca-bundle.crt"
+
+	Manifests Assets
 )
 
 const (
 	IBMCloudPlatformType configv1.PlatformType = "IBMCloud"
 )
 
-func Asset(name string) []byte {
-	dirPrefix := "./"
-	fullPath := dirPrefix + name
-	//fullPath := "/" + name
+type Assets struct {
+	Mutex     sync.Mutex
+	AssetsDir string
+	Data      map[string][]byte
+}
 
-	klog.V(4).Infof("Reading manifests from %s\n", name)
-	a, err := ioutil.ReadFile(fullPath)
+func (f Assets) SetDirectoryPath(path string) {
+	Manifests.AssetsDir = path
+}
+
+func GetAsset(name string) []byte {
+	if Manifests.AssetsDir == "" {
+		Manifests.AssetsDir = "/assets/"
+	}
+	filePath := path.Join(Manifests.AssetsDir, name)
+
+	// load manifest from memory if available
+	if a, ok := Manifests.Data[filePath]; ok {
+		klog.V(4).Infof("Reading manifest from memory: %s\n", name)
+		return a
+	}
+
+	// fallback to loading manifest from disk
+	klog.V(4).Infof("Reading manifest from file: %s\n", filePath)
+
+	defer Manifests.Mutex.Unlock()
+	Manifests.Mutex.Lock()
+
+	a, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		panic("manifest: Asset(" + name + "): " + err.Error())
 	}
+
+	if Manifests.Data == nil {
+		Manifests.Data = make(map[string][]byte)
+	}
+	Manifests.Data[filePath] = a
+
 	return a
 }
 
 func MustAssetReader(asset string) io.Reader {
-	return bytes.NewReader(Asset(asset))
+	return bytes.NewReader(GetAsset(asset))
 }
 
 type Factory struct {
