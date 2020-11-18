@@ -36,8 +36,7 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 			Namespace: f.Ns,
 		},
 		Data: map[string]string{
-			"config.yaml": `techPreviewUserWorkload:
-      enabled: true
+			"config.yaml": `enableUserWorkload: true
 `,
 		},
 	}

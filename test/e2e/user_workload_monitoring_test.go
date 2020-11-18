@@ -49,44 +49,6 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 			Namespace: f.Ns,
 		},
 		Data: map[string]string{
-			"config.yaml": `techPreviewUserWorkload:
-      enabled: true
-`,
-		},
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
-		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
-		{"assert thanos ruler deployment", assertThanosRulerDeployment},
-		{"assert metrics for user workload components", assertMetricsForMonitoringComponents},
-		{"create and assert an user application is deployed", deployUserApplication},
-		{"create prometheus and alertmanager in user namespace", createPrometheusAlertmanagerInUserNamespace},
-		{"assert user workload metrics", assertUserWorkloadMetrics},
-		{"assert user workload rules", assertUserWorkloadRules},
-		{"assert tenancy model is enforced for metrics", assertTenancyForMetrics},
-		{"assert tenancy model is enforced for rules", assertTenancyForRules},
-		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
-		{"assert grpc tls rotation", assertGRPCTLSRotation},
-		{"assert user workload metrics", assertUserWorkloadMetrics},
-		{"assert user workload rules", assertUserWorkloadRules},
-		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
-	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
-	}
-}
-
-func TestUserWorkloadMonitoringNewConfig(t *testing.T) {
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
 			"config.yaml": `enableUserWorkload: true
 `,
 		},
@@ -108,13 +70,26 @@ func TestUserWorkloadMonitoringNewConfig(t *testing.T) {
 `,
 		},
 	}
-
 	for _, scenario := range []struct {
 		name string
 		f    func(*testing.T)
 	}{
 		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
+		{"assert thanos ruler deployment", assertThanosRulerDeployment},
+		{"assert metrics for user workload components", assertMetricsForMonitoringComponents},
+		{"create and assert an user application is deployed", deployUserApplication},
+		{"create prometheus and alertmanager in user namespace", createPrometheusAlertmanagerInUserNamespace},
+		{"assert user workload metrics", assertUserWorkloadMetrics},
+		{"assert user workload rules", assertUserWorkloadRules},
+		{"assert tenancy model is enforced for metrics", assertTenancyForMetrics},
+		{"assert tenancy model is enforced for rules", assertTenancyForRules},
+		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
+		{"assert grpc tls rotation", assertGRPCTLSRotation},
+		{"assert user workload metrics", assertUserWorkloadMetrics},
+		{"assert user workload rules", assertUserWorkloadRules},
+		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
 		{"set VolumeClaimTemplate for prometheus CR, assert that it is created", assertPrometheusVCConfig(uwmCM)},
+		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	} {
 		if ok := t.Run(scenario.name, scenario.f); !ok {
@@ -122,7 +97,6 @@ func TestUserWorkloadMonitoringNewConfig(t *testing.T) {
 		}
 	}
 }
-
 func assertPrometheusVCConfig(cm *v1.ConfigMap) func(*testing.T) {
 	return func(t *testing.T) {
 		if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {

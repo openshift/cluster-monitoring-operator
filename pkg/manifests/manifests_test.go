@@ -682,14 +682,7 @@ func TestSharingConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// TODO: remove in 4.7
-	cm := f.SharingConfigDeprecated(u, u, u, u)
-	if cm.Namespace != "openshift-monitoring" {
-		t.Fatalf("expecting %q namespace, got %q", "openshift-monitoring", cm.Namespace)
-	}
-	// End of remove
-
-	cm = f.SharingConfig(u, u, u, u)
+	cm := f.SharingConfig(u, u, u, u)
 	if cm.Namespace == "openshift-monitoring" {
 		t.Fatalf("expecting namespace other than %q", "openshift-monitoring")
 	}

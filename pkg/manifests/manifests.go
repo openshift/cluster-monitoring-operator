@@ -1176,24 +1176,6 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 	return r, nil
 }
 
-// TODO: remove in 4.7
-func (f *Factory) SharingConfigDeprecated(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
-	return &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "sharing-config",
-			Namespace: f.namespace,
-		},
-		Data: map[string]string{
-			"grafanaURL":      grafanaHost.String(),
-			"prometheusURL":   promHost.String(),
-			"alertmanagerURL": amHost.String(),
-			"thanosURL":       thanosHost.String(),
-		},
-	}
-}
-
-// End of remove
-
 func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1450,40 +1432,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.EnforcedSampleLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit
 	}
 
-	// TODO: remove after 4.7
-
-	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.LogLevel != "" {
-		p.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.LogLevel
-	}
-
-	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != "" && f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention != DefaultRetentionValue {
-		p.Spec.Retention = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention
-	}
-
-	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Resources != nil {
-		p.Spec.Resources = *f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Resources
-	}
-
-	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.NodeSelector != nil {
-		p.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.NodeSelector
-	}
-
-	if len(f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Tolerations) > 0 {
-		p.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Tolerations
-	}
-
-	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.ExternalLabels != nil {
-		p.Spec.ExternalLabels = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.ExternalLabels
-	}
-
-	if f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.VolumeClaimTemplate != nil {
-		p.Spec.Storage = &monv1.StorageSpec{
-			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.VolumeClaimTemplate,
-		}
-	}
-	if len(f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = f.config.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.RemoteWrite
-	}
 	// end removal
 	if f.config.Images.Thanos != "" {
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
@@ -1913,17 +1861,6 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 	if len(f.config.UserWorkloadConfiguration.PrometheusOperator.Tolerations) > 0 {
 		d.Spec.Template.Spec.Tolerations = f.config.UserWorkloadConfiguration.PrometheusOperator.Tolerations
 	}
-
-	// TODO: remove in 4.7
-	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig.NodeSelector) > 0 {
-		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig.NodeSelector
-	}
-
-	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig.Tolerations
-	}
-
-	// end of remove
 
 	for i, container := range d.Spec.Template.Spec.Containers {
 		switch container.Name {
@@ -3113,30 +3050,6 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 	if len(f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations) > 0 {
 		t.Spec.Tolerations = f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations
 	}
-
-	// TODO: remove in 4.7
-	if f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.LogLevel != "" {
-		t.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.LogLevel
-	}
-
-	if f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.Resources != nil {
-		t.Spec.Resources = *f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.Resources
-	}
-
-	if f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.VolumeClaimTemplate != nil {
-		t.Spec.Storage = &monv1.StorageSpec{
-			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.VolumeClaimTemplate,
-		}
-	}
-
-	if f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.NodeSelector != nil {
-		t.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.NodeSelector
-	}
-
-	if len(f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.Tolerations) > 0 {
-		t.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.ThanosRulerConfig.Tolerations
-	}
-	// end of remove
 
 	for i, container := range t.Spec.Containers {
 		switch container.Name {
