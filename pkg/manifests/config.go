@@ -24,6 +24,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -52,11 +53,8 @@ type ClusterMonitoringConfiguration struct {
 	K8sPrometheusAdapter     *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
 	ThanosQuerierConfig      *ThanosQuerierConfig         `json:"thanosQuerier"`
 	UserWorkloadEnabled      *bool                        `json:"enableUserWorkload"`
-	// TODO: Remove in 4.7 release.
-	PrometheusUserWorkloadConfig         *PrometheusK8sConfig      `json:"prometheusUserWorkload"`
-	PrometheusOperatorUserWorkloadConfig *PrometheusOperatorConfig `json:"prometheusOperatorUserWorkload"`
-	ThanosRulerConfig                    *ThanosRulerConfig        `json:"thanosRuler"`
-	UserWorkloadConfig                   *UserWorkloadConfig       `json:"techPreviewUserWorkload"`
+	// TODO: remove in 4.8, this is here to ensure we warn users that their config will not work.
+	UserWorkloadConfig *UserWorkloadConfig `json:"techPreviewUserWorkload"`
 }
 
 type Images struct {
@@ -206,20 +204,11 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.PrometheusOperatorConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
 	}
-	if c.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig == nil {
-		c.ClusterMonitoringConfiguration.PrometheusOperatorUserWorkloadConfig = &PrometheusOperatorConfig{}
-	}
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = DefaultRetentionValue
-	}
-	if c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig == nil {
-		c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig = &PrometheusK8sConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention == "" {
-		c.ClusterMonitoringConfiguration.PrometheusUserWorkloadConfig.Retention = DefaultRetentionValue
 	}
 	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
 		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
@@ -227,9 +216,6 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
 		disable := false
 		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = &disable
-	}
-	if c.ClusterMonitoringConfiguration.ThanosRulerConfig == nil {
-		c.ClusterMonitoringConfiguration.ThanosRulerConfig = &ThanosRulerConfig{}
 	}
 	if c.ClusterMonitoringConfiguration.ThanosQuerierConfig == nil {
 		c.ClusterMonitoringConfiguration.ThanosQuerierConfig = &ThanosQuerierConfig{}
@@ -429,7 +415,7 @@ func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {
 }
 
 // IsUserWorkloadEnabled checks if user workload monitoring is
-// enabled on old or new configuration.
+// enabled. If old techPreview configuration exists, we warn user in logs.
 func (c *Config) IsUserWorkloadEnabled() bool {
 	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled == true {
 		return true
@@ -438,11 +424,10 @@ func (c *Config) IsUserWorkloadEnabled() bool {
 	return c.ClusterMonitoringConfiguration.UserWorkloadConfig.isEnabled()
 }
 
-// isEnabled returns the underlying value of the `Enabled` boolean pointer.
-// It defaults to false if the pointer is nil.
+// return false, as this configuration is techPreview
+// and depracted from 4.7 onwards.
+// Instead warn user in the logs.
 func (c *UserWorkloadConfig) isEnabled() bool {
-	if c.Enabled == nil {
-		return false
-	}
-	return *c.Enabled
+	klog.Warning("DEPRECATED: Migrate to new user workload monitoring configuration, this tech preview was removed.")
+	return false
 }

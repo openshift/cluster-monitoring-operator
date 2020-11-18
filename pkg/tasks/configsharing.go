@@ -73,16 +73,7 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
 	}
 
-	// TODO: remove in 4.7
-	// The sharing-config configmap isn't used anymore by the console in 4.6 and should be deleted if present.
-	cm := t.factory.SharingConfigDeprecated(promURL, amURL, grafanaURL, thanosURL)
-	err = t.client.DeleteConfigMap(cm)
-	if err != nil {
-		return errors.Wrapf(err, "failed to delete %s/%s ConfigMap", cm.Namespace, cm.Name)
-	}
-	// End of remove
-
-	cm = t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
+	cm := t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
 	err = t.client.CreateOrUpdateConfigMap(cm)
 	if err != nil {
 		return errors.Wrapf(err, "reconciling %s/%s Config ConfigMap failed", cm.Namespace, cm.Name)
