@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	schedulingv1client "k8s.io/client-go/kubernetes/typed/scheduling/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
@@ -58,6 +59,7 @@ type Framework struct {
 	APIServicesClient   *apiservicesclient.Clientset
 	AdmissionClient     *admissionclient.AdmissionregistrationV1Client
 	MetricsClient       *metricsclient.Clientset
+	SchedulingClient    *schedulingv1client.SchedulingV1Client
 	kubeConfigPath      string
 
 	MonitoringClient             *monClient.MonitoringV1Client
@@ -108,6 +110,11 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating metrics client failed")
 	}
 
+	schedulingClient, err := schedulingv1client.NewForConfig(config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating scheduling v1 client failed")
+	}
+
 	f := &Framework{
 		OperatorClient:           operatorClient,
 		KubeClient:               kubeClient,
@@ -118,6 +125,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		Ns:                       namespaceName,
 		UserWorkloadMonitoringNs: userWorkloadNamespaceName,
 		kubeConfigPath:           kubeConfigPath,
+		SchedulingClient:         schedulingClient,
 	}
 
 	cleanUp, err := f.setup()
