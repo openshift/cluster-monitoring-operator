@@ -64,20 +64,15 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var lastErr error
 	// Wait for persistent volume claim
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(context.TODO(), "alertmanager-main-db-alertmanager-main-0", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting alertmanager persistent volume claim failed")
 		if err != nil {
-			return false, nil
+			return errors.Wrap(err, "getting alertmanager persistent volume claim failed")
 		}
-		return true, nil
+		return nil
 	})
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
 		t.Fatal(err)
 	}
 

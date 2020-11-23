@@ -34,7 +34,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // The namespace where to deploy the test application.
@@ -129,26 +128,95 @@ func assertPrometheusVCConfig(cm *v1.ConfigMap) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		var lastErr error
 		// Wait for persistent volume claim
-		err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
 			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.UserWorkloadMonitoringNs).Get(context.TODO(), "prometheus-user-workload-db-prometheus-user-workload-0", metav1.GetOptions{})
-			lastErr = errors.Wrap(err, "getting prometheus persistent volume claim failed")
 			if err != nil {
-				return false, nil
+				return errors.Wrap(err, "getting prometheus persistent volume claim failed")
 			}
-			return true, nil
+			return nil
 		})
 		if err != nil {
-			if err == wait.ErrWaitTimeout && lastErr != nil {
-				err = lastErr
-			}
 			t.Fatal(err)
 		}
 
 		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "prometheus-user-workload",
+				Namespace: f.UserWorkloadMonitoringNs,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+}
+
+func TestUserWorkloadMonitoringThanosRulerVolumeClaim(t *testing.T) {
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-monitoring-config",
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": `enableUserWorkload: true
+`,
+		},
+	}
+
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "user-workload-monitoring-config",
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Data: map[string]string{
+			"config.yaml": `thanosRuler:
+  volumeClaimTemplate:
+    spec:
+      storageClassName: gp2
+      resources:
+        requests:
+          storage: 2Gi
+`,
+		},
+	}
+
+	for _, scenario := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
+		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
+		{"set VolumeClaimTemplate for thanosRuler CR, assert that it is created", assertThanosRulerVCConfig(uwmCM)},
+		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
+	} {
+		if ok := t.Run(scenario.name, scenario.f); !ok {
+			t.Fatalf("scenario %q failed", scenario.name)
+		}
+	}
+}
+
+func assertThanosRulerVCConfig(cm *v1.ConfigMap) func(*testing.T) {
+	return func(t *testing.T) {
+		if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+			t.Fatal(err)
+		}
+
+		// Wait for persistent volume claim
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.UserWorkloadMonitoringNs).Get(context.TODO(), "thanos-ruler-user-workload-data-thanos-ruler-user-workload-0", metav1.GetOptions{})
+			if err != nil {
+				return errors.Wrap(err, "getting thanos ruler persistent volume claim failed")
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "thanos-ruler-user-workload",
 				Namespace: f.UserWorkloadMonitoringNs,
 			},
 		})
