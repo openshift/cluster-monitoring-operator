@@ -155,7 +155,10 @@ spec:
   - prometheus-k8s-proxy
   - prometheus-k8s-htpasswd
   - kube-rbac-proxy
-  securityContext: {}
+  securityContext:
+    fsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534
   serviceAccountName: prometheus-k8s
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}

@@ -33,6 +33,21 @@ local namespacesRole =
   ]) +
   policyRule.withVerbs(['get']);
 
+// By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
+// This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
+// Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
+// to be immune against UID changes.
+local sccRole =
+  policyRule.new() +
+  policyRule.withApiGroups(['security.openshift.io']) +
+  policyRule.withResources([
+    'securitycontextconstraints',
+  ]) +
+  policyRule.withResourceNames([
+    'nonroot',
+  ]) +
+  policyRule.withVerbs(['use']);
+
 {
   prometheusK8s+:: {
     trustedCaBundle:
@@ -120,7 +135,7 @@ local namespacesRole =
     // SubjectAccessReview required by the Alertmanager instances.
 
     clusterRole+:
-      clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole]),
+      clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole, sccRole]),
 
     // The proxy secret is there to encrypt session created by the oauth proxy.
 
@@ -241,7 +256,7 @@ local namespacesRole =
       },
 
     // TODO: Adding this to our stack is not as easy
-    // as sidecar listens on 127.0.0.1:10902 and we 
+    // as sidecar listens on 127.0.0.1:10902 and we
     // need kube-rbac-proxy in front of it.
 
     serviceMonitorThanosSidecar:: null,
@@ -287,7 +302,11 @@ local namespacesRole =
               cpu: '70m',
             },
           },
-          securityContext: {},
+          securityContext: {
+            fsGroup: 65534,
+            runAsNonRoot: true,
+            runAsUser: 65534,
+          },
           secrets+: [
             'prometheus-k8s-tls',
             'prometheus-k8s-proxy',

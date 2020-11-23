@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestPrometheusVolumeClaim(t *testing.T) {
@@ -59,20 +59,14 @@ func TestPrometheusVolumeClaim(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var lastErr error
-	// Wait for persistent volume claim
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(context.TODO(), "prometheus-k8s-db-prometheus-k8s-0", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting prometheus persistent volume claim failed")
 		if err != nil {
-			return false, nil
+			return errors.Wrap(err, "getting prometheus persistent volume claim failed")
 		}
-		return true, nil
+		return nil
 	})
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
 		t.Fatal(err)
 	}
 

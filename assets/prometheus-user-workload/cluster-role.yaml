@@ -47,3 +47,11 @@ rules:
   - alertmanagers
   verbs:
   - get
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - nonroot
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
