@@ -328,6 +328,7 @@ local thanosRulerRules =
             volume.fromSecret('secret-thanos-ruler-oauth-htpasswd', 'thanos-ruler-oauth-htpasswd'),
           ],
           serviceAccountName: 'thanos-ruler',
+          priorityClassName: 'openshift-user-critical',
           containers: [
             {
               name: 'thanos-ruler',
