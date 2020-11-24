@@ -49,7 +49,7 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
               },
             ],
             securityContext: {},
-            priorityClassName: 'system-cluster-critical',
+            priorityClassName: 'openshift-user-critical',
             containers:
               std.map(
                 function(c)
