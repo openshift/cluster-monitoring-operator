@@ -84,6 +84,10 @@ spec:
       operator: NotIn
       values:
       - leaf-prometheus
+  securityContext:
+    fsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534
   serviceAccountName: thanos-ruler
   volumes:
   - configmap:

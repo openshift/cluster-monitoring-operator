@@ -112,6 +112,9 @@ spec:
   - alertmanager-main-tls
   - alertmanager-main-proxy
   - alertmanager-kube-rbac-proxy
-  securityContext: {}
+  securityContext:
+    fsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534
   serviceAccountName: alertmanager-main
   version: v0.21.0
