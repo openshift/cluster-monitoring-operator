@@ -54,6 +54,22 @@ local alertmanagerRole =
   ]) +
   policyRule.withVerbs(['get']);
 
+// By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
+// This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
+// Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
+// to be immune against UID changes.
+local sccRole =
+  policyRule.new() +
+  policyRule.withApiGroups(['security.openshift.io']) +
+  policyRule.withResources([
+    'securitycontextconstraints',
+  ]) +
+  policyRule.withResourceNames([
+    'nonroot',
+  ]) +
+  policyRule.withVerbs(['use']);
+
+
 {
   prometheusUserWorkload+:: $.prometheus {
     name:: 'user-workload',
@@ -104,6 +120,7 @@ local alertmanagerRole =
         namespacesRole,
         discoveryRole,
         alertmanagerRole,
+        sccRole,
       ]),
 
     // This avoids creating service monitors which are already managed by the respective operators.
@@ -190,7 +207,11 @@ local alertmanagerRole =
               cpu: '6m',
             },
           },
-          securityContext: {},
+          securityContext: {
+            fsGroup: 65534,
+            runAsNonRoot: true,
+            runAsUser: 65534,
+          },
           secrets: [
             'prometheus-user-workload-tls',
           ],
