@@ -42,7 +42,7 @@ func needsNewCert(notBefore, notAfter time.Time, now func() time.Time) bool {
 }
 
 func (f *Factory) GRPCSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ClusterMonitoringGrpcTLSSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ClusterMonitoringGrpcTLSSecret))
 	if err != nil {
 		return nil, err
 	}

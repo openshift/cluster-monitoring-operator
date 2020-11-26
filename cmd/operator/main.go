@@ -127,7 +127,7 @@ func Main() int {
 		fmt.Fprintf(os.Stderr, "Could not find assets directory: %v", err)
 		return 1
 	}
-	manifests.Manifests.SetDirectoryPath(*assetsPath)
+	assets := manifests.NewAssets(*assetsPath)
 
 	ok := true
 	if *namespace == "" {
@@ -168,7 +168,19 @@ func Main() int {
 	config.Burst = 40
 
 	userWorkloadConfigMapName := "user-workload-monitoring-config"
-	o, err := cmo.New(config, *releaseVersion, *namespace, *namespaceUserWorkload, *namespaceSelector, *configMapName, userWorkloadConfigMapName, *remoteWrite, images.asMap(), telemetryConfig.Matches)
+	o, err := cmo.New(
+		config,
+		*releaseVersion,
+		*namespace,
+		*namespaceUserWorkload,
+		*namespaceSelector,
+		*configMapName,
+		userWorkloadConfigMapName,
+		*remoteWrite,
+		images.asMap(),
+		telemetryConfig.Matches,
+		assets,
+	)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

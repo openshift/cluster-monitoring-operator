@@ -15,10 +15,6 @@
 package manifests
 
 import (
-	"bytes"
-	"io/ioutil"
-	"path"
-	"sync"
 
 	// #nosec
 	"crypto/sha1"
@@ -46,7 +42,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
@@ -235,69 +230,25 @@ var (
 	AuthProxyRedirectURLFlag  = "-redirect-url="
 
 	TrustedCABundleKey = "ca-bundle.crt"
-
-	Manifests Assets
 )
 
 const (
 	IBMCloudPlatformType configv1.PlatformType = "IBMCloud"
 )
 
-type Assets struct {
-	Mutex     sync.Mutex
-	AssetsDir string
-	Data      map[string][]byte
-}
-
-func (f Assets) SetDirectoryPath(path string) {
-	Manifests.AssetsDir = path
-}
-
-func GetAsset(name string) []byte {
-	if Manifests.AssetsDir == "" {
-		Manifests.AssetsDir = "/assets/"
-	}
-	filePath := path.Join(Manifests.AssetsDir, name)
-
-	// load manifest from memory if available
-	if a, ok := Manifests.Data[filePath]; ok {
-		klog.V(4).Infof("Reading manifest from memory: %s\n", name)
-		return a
-	}
-
-	// fallback to loading manifest from disk
-	klog.V(4).Infof("Reading manifest from file: %s\n", filePath)
-
-	defer Manifests.Mutex.Unlock()
-	Manifests.Mutex.Lock()
-
-	a, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		panic("manifest: Asset(" + name + "): " + err.Error())
-	}
-
-	if Manifests.Data == nil {
-		Manifests.Data = make(map[string][]byte)
-	}
-	Manifests.Data[filePath] = a
-
-	return a
-}
-
-func MustAssetReader(asset string) io.Reader {
-	return bytes.NewReader(GetAsset(asset))
-}
-
 type Factory struct {
-	namespace, namespaceUserWorkload string
-	config                           *Config
+	namespace             string
+	namespaceUserWorkload string
+	config                *Config
+	assets                *Assets
 }
 
-func NewFactory(namespace, namespaceUserWorkload string, c *Config) *Factory {
+func NewFactory(namespace, namespaceUserWorkload string, c *Config, a *Assets) *Factory {
 	return &Factory{
 		namespace:             namespace,
 		namespaceUserWorkload: namespaceUserWorkload,
 		config:                c,
+		assets:                a,
 	}
 }
 
@@ -318,7 +269,7 @@ func (f *Factory) AlertmanagerExternalURL(host string) *url.URL {
 }
 
 func (f *Factory) AlertmanagerConfig() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(AlertmanagerConfig))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerConfig))
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +280,7 @@ func (f *Factory) AlertmanagerConfig() (*v1.Secret, error) {
 }
 
 func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(AlertmanagerProxySecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +296,7 @@ func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) AlertmanagerService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(AlertmanagerService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(AlertmanagerService))
 	if err != nil {
 		return nil, err
 	}
@@ -356,7 +307,7 @@ func (f *Factory) AlertmanagerService() (*v1.Service, error) {
 }
 
 func (f *Factory) AlertmanagerServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(AlertmanagerServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(AlertmanagerServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -367,7 +318,7 @@ func (f *Factory) AlertmanagerServiceAccount() (*v1.ServiceAccount, error) {
 }
 
 func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(AlertmanagerClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(AlertmanagerClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -378,11 +329,11 @@ func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, 
 }
 
 func (f *Factory) AlertmanagerClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(AlertmanagerClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(AlertmanagerClusterRole))
 }
 
 func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(AlertmanagerServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(AlertmanagerServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -394,7 +345,7 @@ func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
 }
 
 func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(MustAssetReader(AlertmanagerTrustedCABundle))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(AlertmanagerTrustedCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +363,7 @@ func setContainerEnvironmentVariable(container *v1.Container, name, value string
 }
 
 func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
-	a, err := f.NewAlertmanager(MustAssetReader(AlertmanagerMain))
+	a, err := f.NewAlertmanager(f.assets.MustNewAssetReader(AlertmanagerMain))
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +432,7 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 }
 
 func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(AlertmanagerRBACProxySecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -492,7 +443,7 @@ func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(MustAssetReader(AlertmanagerRoute))
+	r, err := f.NewRoute(f.assets.MustNewAssetReader(AlertmanagerRoute))
 	if err != nil {
 		return nil, err
 	}
@@ -503,7 +454,7 @@ func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
 }
 
 func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(KubeStateMetricsClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(KubeStateMetricsClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -514,11 +465,11 @@ func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBindi
 }
 
 func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(KubeStateMetricsClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(KubeStateMetricsClusterRole))
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(KubeStateMetricsServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -531,7 +482,7 @@ func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error
 }
 
 func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(MustAssetReader(KubeStateMetricsDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(KubeStateMetricsDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +508,7 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 }
 
 func (f *Factory) KubeStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(KubeStateMetricsServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(KubeStateMetricsServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +519,7 @@ func (f *Factory) KubeStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
 }
 
 func (f *Factory) KubeStateMetricsService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(KubeStateMetricsService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(KubeStateMetricsService))
 	if err != nil {
 		return nil, err
 	}
@@ -579,7 +530,7 @@ func (f *Factory) KubeStateMetricsService() (*v1.Service, error) {
 }
 
 func (f *Factory) OpenShiftStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(OpenShiftStateMetricsClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(OpenShiftStateMetricsClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -590,11 +541,11 @@ func (f *Factory) OpenShiftStateMetricsClusterRoleBinding() (*rbacv1.ClusterRole
 }
 
 func (f *Factory) OpenShiftStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(OpenShiftStateMetricsClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(OpenShiftStateMetricsClusterRole))
 }
 
 func (f *Factory) OpenShiftStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(OpenShiftStateMetricsServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(OpenShiftStateMetricsServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -607,7 +558,7 @@ func (f *Factory) OpenShiftStateMetricsServiceMonitor() (*monv1.ServiceMonitor, 
 }
 
 func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(MustAssetReader(OpenShiftStateMetricsDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(OpenShiftStateMetricsDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -636,7 +587,7 @@ func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) 
 }
 
 func (f *Factory) OpenShiftStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(OpenShiftStateMetricsServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(OpenShiftStateMetricsServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -647,7 +598,7 @@ func (f *Factory) OpenShiftStateMetricsServiceAccount() (*v1.ServiceAccount, err
 }
 
 func (f *Factory) OpenShiftStateMetricsService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(OpenShiftStateMetricsService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(OpenShiftStateMetricsService))
 	if err != nil {
 		return nil, err
 	}
@@ -658,7 +609,7 @@ func (f *Factory) OpenShiftStateMetricsService() (*v1.Service, error) {
 }
 
 func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(NodeExporterServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -670,7 +621,7 @@ func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
 }
 
 func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
-	ds, err := f.NewDaemonSet(MustAssetReader(NodeExporterDaemonSet))
+	ds, err := f.NewDaemonSet(f.assets.MustNewAssetReader(NodeExporterDaemonSet))
 	if err != nil {
 		return nil, err
 	}
@@ -697,7 +648,7 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 }
 
 func (f *Factory) NodeExporterService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(NodeExporterService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(NodeExporterService))
 	if err != nil {
 		return nil, err
 	}
@@ -708,7 +659,7 @@ func (f *Factory) NodeExporterService() (*v1.Service, error) {
 }
 
 func (f *Factory) NodeExporterSecurityContextConstraints() (*securityv1.SecurityContextConstraints, error) {
-	scc, err := f.NewSecurityContextConstraints(MustAssetReader(NodeExporterSecurityContextConstraints))
+	scc, err := f.NewSecurityContextConstraints(f.assets.MustNewAssetReader(NodeExporterSecurityContextConstraints))
 	if err != nil {
 		return nil, err
 	}
@@ -717,7 +668,7 @@ func (f *Factory) NodeExporterSecurityContextConstraints() (*securityv1.Security
 }
 
 func (f *Factory) NodeExporterServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(NodeExporterServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(NodeExporterServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -728,7 +679,7 @@ func (f *Factory) NodeExporterServiceAccount() (*v1.ServiceAccount, error) {
 }
 
 func (f *Factory) NodeExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(NodeExporterClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(NodeExporterClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -739,11 +690,11 @@ func (f *Factory) NodeExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, 
 }
 
 func (f *Factory) NodeExporterClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(NodeExporterClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(NodeExporterClusterRole))
 }
 
 func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusK8sClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusK8sClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -754,7 +705,7 @@ func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding,
 }
 
 func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(ThanosQuerierClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(ThanosQuerierClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -765,7 +716,7 @@ func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding,
 }
 
 func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusUserWorkloadClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -776,19 +727,19 @@ func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRol
 }
 
 func (f *Factory) PrometheusK8sClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusK8sClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusK8sClusterRole))
 }
 
 func (f *Factory) ThanosQuerierClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(ThanosQuerierClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(ThanosQuerierClusterRole))
 }
 
 func (f *Factory) PrometheusUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusUserWorkloadClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusUserWorkloadClusterRole))
 }
 
 func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1.Role, error) {
-	r, err := f.NewRole(MustAssetReader(PrometheusK8sRoleConfig))
+	r, err := f.NewRole(f.assets.MustNewAssetReader(PrometheusK8sRoleConfig))
 	if err != nil {
 		return nil, err
 	}
@@ -799,7 +750,7 @@ func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1.Role, error) {
 }
 
 func (f *Factory) PrometheusUserWorkloadRoleConfig() (*rbacv1.Role, error) {
-	r, err := f.NewRole(MustAssetReader(PrometheusUserWorkloadRoleConfig))
+	r, err := f.NewRole(f.assets.MustNewAssetReader(PrometheusUserWorkloadRoleConfig))
 	if err != nil {
 		return nil, err
 	}
@@ -810,7 +761,7 @@ func (f *Factory) PrometheusUserWorkloadRoleConfig() (*rbacv1.Role, error) {
 }
 
 func (f *Factory) PrometheusK8sRoleBindingList() (*rbacv1.RoleBindingList, error) {
-	rbl, err := f.NewRoleBindingList(MustAssetReader(PrometheusK8sRoleBindingList))
+	rbl, err := f.NewRoleBindingList(f.assets.MustNewAssetReader(PrometheusK8sRoleBindingList))
 	if err != nil {
 		return nil, err
 	}
@@ -823,7 +774,7 @@ func (f *Factory) PrometheusK8sRoleBindingList() (*rbacv1.RoleBindingList, error
 }
 
 func (f *Factory) PrometheusUserWorkloadRoleBindingList() (*rbacv1.RoleBindingList, error) {
-	rbl, err := f.NewRoleBindingList(MustAssetReader(PrometheusUserWorkloadRoleBindingList))
+	rbl, err := f.NewRoleBindingList(f.assets.MustNewAssetReader(PrometheusUserWorkloadRoleBindingList))
 	if err != nil {
 		return nil, err
 	}
@@ -836,7 +787,7 @@ func (f *Factory) PrometheusUserWorkloadRoleBindingList() (*rbacv1.RoleBindingLi
 }
 
 func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1.RoleBinding, error) {
-	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusK8sRoleBindingConfig))
+	rb, err := f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusK8sRoleBindingConfig))
 	if err != nil {
 		return nil, err
 	}
@@ -847,7 +798,7 @@ func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1.RoleBinding, error) 
 }
 
 func (f *Factory) PrometheusUserWorkloadRoleBindingConfig() (*rbacv1.RoleBinding, error) {
-	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusUserWorkloadRoleBindingConfig))
+	rb, err := f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadRoleBindingConfig))
 	if err != nil {
 		return nil, err
 	}
@@ -858,7 +809,7 @@ func (f *Factory) PrometheusUserWorkloadRoleBindingConfig() (*rbacv1.RoleBinding
 }
 
 func (f *Factory) PrometheusK8sRoleList() (*rbacv1.RoleList, error) {
-	rl, err := f.NewRoleList(MustAssetReader(PrometheusK8sRoleList))
+	rl, err := f.NewRoleList(f.assets.MustNewAssetReader(PrometheusK8sRoleList))
 	if err != nil {
 		return nil, err
 	}
@@ -871,7 +822,7 @@ func (f *Factory) PrometheusK8sRoleList() (*rbacv1.RoleList, error) {
 }
 
 func (f *Factory) PrometheusUserWorkloadRoleList() (*rbacv1.RoleList, error) {
-	rl, err := f.NewRoleList(MustAssetReader(PrometheusUserWorkloadRoleList))
+	rl, err := f.NewRoleList(f.assets.MustNewAssetReader(PrometheusUserWorkloadRoleList))
 	if err != nil {
 		return nil, err
 	}
@@ -884,7 +835,7 @@ func (f *Factory) PrometheusUserWorkloadRoleList() (*rbacv1.RoleList, error) {
 }
 
 func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
-	r, err := f.NewPrometheusRule(MustAssetReader(PrometheusK8sRules))
+	r, err := f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusK8sRules))
 	if err != nil {
 		return nil, err
 	}
@@ -920,7 +871,7 @@ func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
 }
 
 func (f *Factory) PrometheusK8sServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(PrometheusK8sServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusK8sServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -931,7 +882,7 @@ func (f *Factory) PrometheusK8sServiceAccount() (*v1.ServiceAccount, error) {
 }
 
 func (f *Factory) ThanosQuerierServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(ThanosQuerierServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(ThanosQuerierServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -942,7 +893,7 @@ func (f *Factory) ThanosQuerierServiceAccount() (*v1.ServiceAccount, error) {
 }
 
 func (f *Factory) PrometheusUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(PrometheusUserWorkloadServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusUserWorkloadServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -953,7 +904,7 @@ func (f *Factory) PrometheusUserWorkloadServiceAccount() (*v1.ServiceAccount, er
 }
 
 func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(PrometheusK8sProxySecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -969,7 +920,7 @@ func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) PrometheusK8sGrpcTLSSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(PrometheusK8sGrpcTLSSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sGrpcTLSSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -980,7 +931,7 @@ func (f *Factory) PrometheusK8sGrpcTLSSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) PrometheusUserWorkloadGrpcTLSSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(PrometheusUserWorkloadGrpcTLSSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadGrpcTLSSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -991,7 +942,7 @@ func (f *Factory) PrometheusUserWorkloadGrpcTLSSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosQuerierGrpcTLSSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosQuerierGrpcTLSSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierGrpcTLSSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1002,7 +953,7 @@ func (f *Factory) ThanosQuerierGrpcTLSSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosQuerierOauthCookieSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosQuerierOauthCookieSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierOauthCookieSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1018,7 +969,7 @@ func (f *Factory) ThanosQuerierOauthCookieSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(PrometheusK8sHtpasswd))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sHtpasswd))
 	if err != nil {
 		return nil, err
 	}
@@ -1028,7 +979,7 @@ func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, erro
 }
 
 func (f *Factory) ThanosQuerierHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosQuerierHtpasswdSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierHtpasswdSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1038,7 +989,7 @@ func (f *Factory) ThanosQuerierHtpasswdSecret(password string) (*v1.Secret, erro
 }
 
 func (f *Factory) ThanosRulerHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosRulerHtpasswdSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerHtpasswdSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1058,7 +1009,7 @@ func (f *Factory) generateHtpasswdSecret(s *v1.Secret, password string) {
 }
 
 func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosRulerQueryConfigSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerQueryConfigSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1068,7 +1019,7 @@ func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosRulerAlertmanagerConfigSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerAlertmanagerConfigSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1078,7 +1029,7 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(PrometheusRBACProxySecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusRBACProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1089,7 +1040,7 @@ func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosQuerierRBACProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosQuerierRBACProxySecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1099,7 +1050,7 @@ func (f *Factory) ThanosQuerierRBACProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 func (f *Factory) ThanosQuerierRBACProxyRulesSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosQuerierRBACProxyRulesSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyRulesSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1110,7 +1061,7 @@ func (f *Factory) ThanosQuerierRBACProxyRulesSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(PrometheusK8sServingCertsCABundle))
+	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusK8sServingCertsCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -1121,7 +1072,7 @@ func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
 }
 
 func (f *Factory) PrometheusUserWorkloadServingCertsCABundle() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(PrometheusUserWorkloadServingCertsCABundle))
+	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusUserWorkloadServingCertsCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -1132,7 +1083,7 @@ func (f *Factory) PrometheusUserWorkloadServingCertsCABundle() (*v1.ConfigMap, e
 }
 
 func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(PrometheusK8sKubeletServingCABundle))
+	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusK8sKubeletServingCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -1144,7 +1095,7 @@ func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*
 }
 
 func (f *Factory) PrometheusOperatorCertsCABundle() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(PrometheusOperatorCertsCABundle))
+	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusOperatorCertsCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -1155,7 +1106,7 @@ func (f *Factory) PrometheusOperatorCertsCABundle() (*v1.ConfigMap, error) {
 }
 
 func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sEtcdServiceMonitor))
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sEtcdServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1202,7 +1153,7 @@ func (f *Factory) PrometheusK8sEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap
 }
 
 func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(MustAssetReader(PrometheusK8sRoute))
+	r, err := f.NewRoute(f.assets.MustNewAssetReader(PrometheusK8sRoute))
 	if err != nil {
 		return nil, err
 	}
@@ -1213,7 +1164,7 @@ func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
 }
 
 func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(MustAssetReader(ThanosQuerierRoute))
+	r, err := f.NewRoute(f.assets.MustNewAssetReader(ThanosQuerierRoute))
 	if err != nil {
 		return nil, err
 	}
@@ -1241,7 +1192,7 @@ func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.U
 }
 
 func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(MustAssetReader(PrometheusK8sTrustedCABundle))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusK8sTrustedCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -1250,7 +1201,7 @@ func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
 }
 
 func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
-	p, err := f.NewPrometheus(MustAssetReader(PrometheusK8s))
+	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
 	if err != nil {
 		return nil, err
 	}
@@ -1435,7 +1386,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 }
 
 func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
-	p, err := f.NewPrometheus(MustAssetReader(PrometheusUserWorkload))
+	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusUserWorkload))
 	if err != nil {
 		return nil, err
 	}
@@ -1506,7 +1457,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 }
 
 func (f *Factory) PrometheusK8sKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sKubeletServiceMonitor))
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sKubeletServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1517,7 +1468,7 @@ func (f *Factory) PrometheusK8sKubeletServiceMonitor() (*monv1.ServiceMonitor, e
 }
 
 func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusK8sPrometheusServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sPrometheusServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1529,7 +1480,7 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor
 }
 
 func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusUserWorkloadPrometheusServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusUserWorkloadPrometheusServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1541,19 +1492,19 @@ func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.Servi
 }
 
 func (f *Factory) PrometheusAdapterClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusAdapterClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusAdapterClusterRole))
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleServerResources() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusAdapterClusterRoleServerResources))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleServerResources))
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleAggregatedMetricsReader() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusAdapterClusterRoleAggregatedMetricsReader))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleAggregatedMetricsReader))
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusAdapterClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -1564,7 +1515,7 @@ func (f *Factory) PrometheusAdapterClusterRoleBinding() (*rbacv1.ClusterRoleBind
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleBindingDelegator() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusAdapterClusterRoleBindingDelegator))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleBindingDelegator))
 	if err != nil {
 		return nil, err
 	}
@@ -1575,7 +1526,7 @@ func (f *Factory) PrometheusAdapterClusterRoleBindingDelegator() (*rbacv1.Cluste
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleBindingView() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusAdapterClusterRoleBindingView))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleBindingView))
 	if err != nil {
 		return nil, err
 	}
@@ -1586,7 +1537,7 @@ func (f *Factory) PrometheusAdapterClusterRoleBindingView() (*rbacv1.ClusterRole
 }
 
 func (f *Factory) PrometheusAdapterRoleBindingAuthReader() (*rbacv1.RoleBinding, error) {
-	rb, err := f.NewRoleBinding(MustAssetReader(PrometheusAdapterRoleBindingAuthReader))
+	rb, err := f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterRoleBindingAuthReader))
 	if err != nil {
 		return nil, err
 	}
@@ -1597,7 +1548,7 @@ func (f *Factory) PrometheusAdapterRoleBindingAuthReader() (*rbacv1.RoleBinding,
 }
 
 func (f *Factory) PrometheusAdapterServiceAccount() (*v1.ServiceAccount, error) {
-	sa, err := f.NewServiceAccount(MustAssetReader(PrometheusAdapterServiceAccount))
+	sa, err := f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusAdapterServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -1608,7 +1559,7 @@ func (f *Factory) PrometheusAdapterServiceAccount() (*v1.ServiceAccount, error) 
 }
 
 func (f *Factory) PrometheusAdapterConfigMap() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(MustAssetReader(PrometheusAdapterConfigMap))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMap))
 	if err != nil {
 		return nil, err
 	}
@@ -1619,7 +1570,7 @@ func (f *Factory) PrometheusAdapterConfigMap() (*v1.ConfigMap, error) {
 }
 
 func (f *Factory) PrometheusAdapterConfigMapPrometheus() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(MustAssetReader(PrometheusAdapterConfigMapPrometheus))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMapPrometheus))
 	if err != nil {
 		return nil, err
 	}
@@ -1630,7 +1581,7 @@ func (f *Factory) PrometheusAdapterConfigMapPrometheus() (*v1.ConfigMap, error) 
 }
 
 func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string) (*appsv1.Deployment, error) {
-	dep, err := f.NewDeployment(MustAssetReader(PrometheusAdapterDeployment))
+	dep, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusAdapterDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -1696,7 +1647,7 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 }
 
 func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(PrometheusAdapterService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusAdapterService))
 	if err != nil {
 		return nil, err
 	}
@@ -1707,7 +1658,7 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 }
 
 func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusAdapterServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1765,11 +1716,11 @@ func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap
 }
 
 func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1.APIService, error) {
-	return f.NewAPIService(MustAssetReader(PrometheusAdapterAPIService))
+	return f.NewAPIService(f.assets.MustNewAssetReader(PrometheusAdapterAPIService))
 }
 
 func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusOperatorServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusOperatorServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1781,7 +1732,7 @@ func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, err
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(PrometheusOperatorUserWorkloadServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1793,7 +1744,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.Service
 }
 
 func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusOperatorClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusOperatorClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -1804,7 +1755,7 @@ func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1.ClusterRoleBin
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(PrometheusOperatorUserWorkloadClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -1815,15 +1766,15 @@ func (f *Factory) PrometheusOperatorUserWorkloadClusterRoleBinding() (*rbacv1.Cl
 }
 
 func (f *Factory) PrometheusOperatorClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusOperatorClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusOperatorClusterRole))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(PrometheusOperatorUserWorkloadClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadClusterRole))
 }
 
 func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(PrometheusOperatorServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusOperatorServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -1834,7 +1785,7 @@ func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error)
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(PrometheusOperatorUserWorkloadServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -1845,7 +1796,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAcc
 }
 
 func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(MustAssetReader(PrometheusOperatorDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -1896,7 +1847,7 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []string) (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(MustAssetReader(PrometheusOperatorUserWorkloadDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -1946,7 +1897,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 }
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
-	wc, err := f.NewValidatingWebhook(MustAssetReader(PrometheusOperatorRuleValidatingWebhook))
+	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(PrometheusOperatorRuleValidatingWebhook))
 	if err != nil {
 		return nil, err
 	}
@@ -1954,7 +1905,7 @@ func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebh
 }
 
 func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(PrometheusOperatorService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusOperatorService))
 	if err != nil {
 		return nil, err
 	}
@@ -1965,7 +1916,7 @@ func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(PrometheusOperatorUserWorkloadService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadService))
 	if err != nil {
 		return nil, err
 	}
@@ -1976,7 +1927,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadService() (*v1.Service, error) {
 }
 
 func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(PrometheusK8sService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusK8sService))
 	if err != nil {
 		return nil, err
 	}
@@ -1987,7 +1938,7 @@ func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
 }
 
 func (f *Factory) PrometheusUserWorkloadService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(PrometheusUserWorkloadService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusUserWorkloadService))
 	if err != nil {
 		return nil, err
 	}
@@ -1998,7 +1949,7 @@ func (f *Factory) PrometheusUserWorkloadService() (*v1.Service, error) {
 }
 
 func (f *Factory) GrafanaClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(GrafanaClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(GrafanaClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -2009,11 +1960,11 @@ func (f *Factory) GrafanaClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error
 }
 
 func (f *Factory) GrafanaClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(GrafanaClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(GrafanaClusterRole))
 }
 
 func (f *Factory) GrafanaConfig() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(GrafanaConfigSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaConfigSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -2047,7 +1998,7 @@ type GrafanaJsonData struct {
 }
 
 func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(GrafanaDatasourcesSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaDatasourcesSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -2074,7 +2025,7 @@ func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
 }
 
 func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
-	cl, err := f.NewConfigMapList(MustAssetReader(GrafanaDashboardDefinitions))
+	cl, err := f.NewConfigMapList(f.assets.MustNewAssetReader(GrafanaDashboardDefinitions))
 	if err != nil {
 		return nil, err
 	}
@@ -2096,7 +2047,7 @@ func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
 }
 
 func (f *Factory) GrafanaDashboardSources() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(GrafanaDashboardSources))
+	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(GrafanaDashboardSources))
 	if err != nil {
 		return nil, err
 	}
@@ -2107,7 +2058,7 @@ func (f *Factory) GrafanaDashboardSources() (*v1.ConfigMap, error) {
 }
 
 func (f *Factory) GrafanaTrustedCABundle() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(MustAssetReader(GrafanaTrustedCABundle))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(GrafanaTrustedCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -2119,7 +2070,7 @@ func (f *Factory) GrafanaTrustedCABundle() (*v1.ConfigMap, error) {
 // If the passed ConfigMap is not empty it mounts the Trusted CA Bundle as a VolumeMount to
 // /etc/pki/ca-trust/extracted/pem/ location.
 func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(MustAssetReader(GrafanaDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(GrafanaDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2187,7 +2138,7 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 }
 
 func (f *Factory) GrafanaProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(GrafanaProxySecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -2203,7 +2154,7 @@ func (f *Factory) GrafanaProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) GrafanaRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(MustAssetReader(GrafanaRoute))
+	r, err := f.NewRoute(f.assets.MustNewAssetReader(GrafanaRoute))
 	if err != nil {
 		return nil, err
 	}
@@ -2214,7 +2165,7 @@ func (f *Factory) GrafanaRoute() (*routev1.Route, error) {
 }
 
 func (f *Factory) GrafanaServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(GrafanaServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(GrafanaServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -2225,7 +2176,7 @@ func (f *Factory) GrafanaServiceAccount() (*v1.ServiceAccount, error) {
 }
 
 func (f *Factory) GrafanaService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(GrafanaService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(GrafanaService))
 	if err != nil {
 		return nil, err
 	}
@@ -2236,7 +2187,7 @@ func (f *Factory) GrafanaService() (*v1.Service, error) {
 }
 
 func (f *Factory) GrafanaServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(MustAssetReader(GrafanaServiceMonitor))
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(GrafanaServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -2248,7 +2199,7 @@ func (f *Factory) GrafanaServiceMonitor() (*monv1.ServiceMonitor, error) {
 }
 
 func (f *Factory) ClusterMonitoringClusterRole() (*rbacv1.ClusterRole, error) {
-	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringClusterRole))
+	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringClusterRole))
 	if err != nil {
 		return nil, err
 	}
@@ -2257,7 +2208,7 @@ func (f *Factory) ClusterMonitoringClusterRole() (*rbacv1.ClusterRole, error) {
 }
 
 func (f *Factory) ClusterMonitoringRulesEditClusterRole() (*rbacv1.ClusterRole, error) {
-	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringRulesEditClusterRole))
+	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringRulesEditClusterRole))
 	if err != nil {
 		return nil, err
 	}
@@ -2266,7 +2217,7 @@ func (f *Factory) ClusterMonitoringRulesEditClusterRole() (*rbacv1.ClusterRole, 
 }
 
 func (f *Factory) ClusterMonitoringRulesViewClusterRole() (*rbacv1.ClusterRole, error) {
-	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringRulesViewClusterRole))
+	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringRulesViewClusterRole))
 	if err != nil {
 		return nil, err
 	}
@@ -2275,7 +2226,7 @@ func (f *Factory) ClusterMonitoringRulesViewClusterRole() (*rbacv1.ClusterRole, 
 }
 
 func (f *Factory) ClusterMonitoringEditClusterRole() (*rbacv1.ClusterRole, error) {
-	cr, err := f.NewClusterRole(MustAssetReader(ClusterMonitoringEditClusterRole))
+	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringEditClusterRole))
 	if err != nil {
 		return nil, err
 	}
@@ -2284,7 +2235,7 @@ func (f *Factory) ClusterMonitoringEditClusterRole() (*rbacv1.ClusterRole, error
 }
 
 func (f *Factory) ClusterMonitoringEditUserWorkloadConfigRole() (*rbacv1.Role, error) {
-	cr, err := f.NewRole(MustAssetReader(ClusterMonitoringEditUserWorkloadConfigRole))
+	cr, err := f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringEditUserWorkloadConfigRole))
 	if err != nil {
 		return nil, err
 	}
@@ -2293,7 +2244,7 @@ func (f *Factory) ClusterMonitoringEditUserWorkloadConfigRole() (*rbacv1.Role, e
 }
 
 func (f *Factory) ClusterMonitoringOperatorService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(ClusterMonitoringOperatorService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(ClusterMonitoringOperatorService))
 	if err != nil {
 		return nil, err
 	}
@@ -2304,7 +2255,7 @@ func (f *Factory) ClusterMonitoringOperatorService() (*v1.Service, error) {
 }
 
 func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(ClusterMonitoringOperatorServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ClusterMonitoringOperatorServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -2639,7 +2590,7 @@ func (f *Factory) NewValidatingWebhook(manifest io.Reader) (*admissionv1.Validat
 }
 
 func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool, trustedCA *v1.ConfigMap) (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(MustAssetReader(ThanosQuerierDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(ThanosQuerierDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2728,7 +2679,7 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 }
 
 func (f *Factory) ThanosQuerierTrustedCABundle() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(MustAssetReader(ThanosQuerierTrustedCABundle))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(ThanosQuerierTrustedCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -2737,7 +2688,7 @@ func (f *Factory) ThanosQuerierTrustedCABundle() (*v1.ConfigMap, error) {
 }
 
 func (f *Factory) ThanosQuerierService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(ThanosQuerierService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(ThanosQuerierService))
 	if err != nil {
 		return nil, err
 	}
@@ -2748,11 +2699,11 @@ func (f *Factory) ThanosQuerierService() (*v1.Service, error) {
 }
 
 func (f *Factory) ThanosQuerierPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(MustAssetReader(ThanosQuerierPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(ThanosQuerierPrometheusRule))
 }
 
 func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(ThanosQuerierServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ThanosQuerierServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -2775,7 +2726,7 @@ func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
 }
 
 func (f *Factory) TelemeterTrustedCABundle() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(MustAssetReader(TelemeterTrustedCABundle))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(TelemeterTrustedCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -2785,7 +2736,7 @@ func (f *Factory) TelemeterTrustedCABundle() (*v1.ConfigMap, error) {
 
 // TelemeterClientServingCertsCABundle generates a new servinc certs CA bundle ConfigMap for TelemeterClient.
 func (f *Factory) TelemeterClientServingCertsCABundle() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(MustAssetReader(TelemeterClientServingCertsCABundle))
+	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(TelemeterClientServingCertsCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -2797,7 +2748,7 @@ func (f *Factory) TelemeterClientServingCertsCABundle() (*v1.ConfigMap, error) {
 
 // TelemeterClientClusterRole generates a new ClusterRole for Telemeter client.
 func (f *Factory) TelemeterClientClusterRole() (*rbacv1.ClusterRole, error) {
-	cr, err := f.NewClusterRole(MustAssetReader(TelemeterClientClusterRole))
+	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(TelemeterClientClusterRole))
 	if err != nil {
 		return nil, err
 	}
@@ -2807,7 +2758,7 @@ func (f *Factory) TelemeterClientClusterRole() (*rbacv1.ClusterRole, error) {
 
 // TelemeterClientClusterRoleBinding generates a new ClusterRoleBinding for Telemeter client.
 func (f *Factory) TelemeterClientClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(TelemeterClientClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(TelemeterClientClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -2818,7 +2769,7 @@ func (f *Factory) TelemeterClientClusterRoleBinding() (*rbacv1.ClusterRoleBindin
 // TelemeterClientClusterRoleBindingView generates a new ClusterRoleBinding for Telemeter client
 // for the cluster monitoring view ClusterRole.
 func (f *Factory) TelemeterClientClusterRoleBindingView() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(TelemeterClientClusterRoleBindingView))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(TelemeterClientClusterRoleBindingView))
 	if err != nil {
 		return nil, err
 	}
@@ -2828,7 +2779,7 @@ func (f *Factory) TelemeterClientClusterRoleBindingView() (*rbacv1.ClusterRoleBi
 
 // TelemeterClientServiceMonitor generates a new ServiceMonitor for Telemeter client.
 func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(TelemeterClientServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(TelemeterClientServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -2843,7 +2794,7 @@ func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error)
 // If the passed ConfigMap is not empty it mounts the Trusted CA Bundle as a VolumeMount to
 // /etc/pki/ca-trust/extracted/pem/ location.
 func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(MustAssetReader(TelemeterClientDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(TelemeterClientDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2916,7 +2867,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 
 // TelemeterClientService generates a new Service for Telemeter client.
 func (f *Factory) TelemeterClientService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(TelemeterClientService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(TelemeterClientService))
 	if err != nil {
 		return nil, err
 	}
@@ -2928,7 +2879,7 @@ func (f *Factory) TelemeterClientService() (*v1.Service, error) {
 
 // TelemeterClientServiceAccount generates a new ServiceAccount for Telemeter client.
 func (f *Factory) TelemeterClientServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(TelemeterClientServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(TelemeterClientServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -2940,7 +2891,7 @@ func (f *Factory) TelemeterClientServiceAccount() (*v1.ServiceAccount, error) {
 
 // TelemeterClientSecret generates a new Secret for Telemeter client.
 func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(TelemeterClientSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(TelemeterClientSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -2961,7 +2912,7 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosRulerService() (*v1.Service, error) {
-	s, err := f.NewService(MustAssetReader(ThanosRulerService))
+	s, err := f.NewService(f.assets.MustNewAssetReader(ThanosRulerService))
 	if err != nil {
 		return nil, err
 	}
@@ -2972,7 +2923,7 @@ func (f *Factory) ThanosRulerService() (*v1.Service, error) {
 }
 
 func (f *Factory) ThanosRulerServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(MustAssetReader(ThanosRulerServiceAccount))
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(ThanosRulerServiceAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -2983,7 +2934,7 @@ func (f *Factory) ThanosRulerServiceAccount() (*v1.ServiceAccount, error) {
 }
 
 func (f *Factory) ThanosRulerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(ThanosRulerClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(ThanosRulerClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -2994,7 +2945,7 @@ func (f *Factory) ThanosRulerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, e
 }
 
 func (f *Factory) ThanosRulerMonitoringClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(MustAssetReader(ThanosRulerMonitoringClusterRoleBinding))
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(ThanosRulerMonitoringClusterRoleBinding))
 	if err != nil {
 		return nil, err
 	}
@@ -3005,15 +2956,15 @@ func (f *Factory) ThanosRulerMonitoringClusterRoleBinding() (*rbacv1.ClusterRole
 }
 
 func (f *Factory) ThanosRulerClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(MustAssetReader(ThanosRulerClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetReader(ThanosRulerClusterRole))
 }
 
 func (f *Factory) ThanosRulerPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(MustAssetReader(ThanosRulerPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(ThanosRulerPrometheusRule))
 }
 
 func (f *Factory) ThanosRulerServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(MustAssetReader(ThanosRulerServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ThanosRulerServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -3025,7 +2976,7 @@ func (f *Factory) ThanosRulerServiceMonitor() (*monv1.ServiceMonitor, error) {
 }
 
 func (f *Factory) ThanosRulerRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(MustAssetReader(ThanosRulerRoute))
+	r, err := f.NewRoute(f.assets.MustNewAssetReader(ThanosRulerRoute))
 	if err != nil {
 		return nil, err
 	}
@@ -3036,7 +2987,7 @@ func (f *Factory) ThanosRulerRoute() (*routev1.Route, error) {
 }
 
 func (f *Factory) ThanosRulerTrustedCABundle() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(MustAssetReader(ThanosRulerTrustedCABundle))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(ThanosRulerTrustedCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -3045,7 +2996,7 @@ func (f *Factory) ThanosRulerTrustedCABundle() (*v1.ConfigMap, error) {
 }
 
 func (f *Factory) ThanosRulerGrpcTLSSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosRulerGrpcTLSSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerGrpcTLSSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -3056,7 +3007,7 @@ func (f *Factory) ThanosRulerGrpcTLSSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(MustAssetReader(ThanosRulerOauthCookieSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerOauthCookieSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -3072,7 +3023,7 @@ func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.ConfigMap, grpcTLS *v1.Secret) (*monv1.ThanosRuler, error) {
-	t, err := f.NewThanosRuler(MustAssetReader(ThanosRulerCustomResource))
+	t, err := f.NewThanosRuler(f.assets.MustNewAssetReader(ThanosRulerCustomResource))
 	if err != nil {
 		return nil, err
 	}

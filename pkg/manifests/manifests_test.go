@@ -29,9 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestMain(m *testing.M) {
-	Manifests.SetDirectoryPath("../../assets")
-}
+const assetsPath = "../../assets"
 
 func TestHashSecret(t *testing.T) {
 	for _, tt := range []struct {
@@ -108,7 +106,7 @@ func TestHashSecret(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), NewAssets(assetsPath))
 			s, err := f.HashSecret(tt.given, tt.data...)
 			if got := err != nil; got != tt.errExpected {
 				t.Errorf("expected error %t, got %t, err %v", tt.errExpected, got, err)
@@ -123,7 +121,7 @@ func TestHashSecret(t *testing.T) {
 }
 
 func TestUnconfiguredManifests(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), NewAssets(assetsPath))
 	_, err := f.AlertmanagerConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -680,7 +678,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 }
 
 func TestSharingConfig(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), NewAssets(assetsPath))
 	u, err := url.Parse("http://example.com/")
 	if err != nil {
 		t.Fatal(err)
@@ -716,7 +714,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 	d, err := f.PrometheusOperatorDeployment([]string{"default", "openshift-monitoring"})
 	if err != nil {
 		t.Fatal(err)
@@ -882,7 +880,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c := tc.config()
 
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 			p, err := f.PrometheusK8s(
 				"prometheus-k8s.openshift-monitoring.svc",
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -943,7 +941,7 @@ ingress:
 		"prom-label-proxy": "docker.io/openshift/origin-prom-label-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 	p, err := f.PrometheusK8s(
 		"prometheus-k8s.openshift-monitoring.svc",
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -1034,7 +1032,7 @@ k8sPrometheusAdapter:
 		"k8s-prometheus-adapter": "docker.io/openshift/origin-k8s-prometheus-adapter:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 	d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
 		"requestheader-allowed-names":        "",
 		"requestheader-extra-headers-prefix": "",
@@ -1084,7 +1082,7 @@ ingress:
 		"alertmanager": "docker.io/openshift/origin-prometheus-alertmanager:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 	a, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -1143,7 +1141,7 @@ func TestNodeExporter(t *testing.T) {
 		"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
 	ds, err := f.NodeExporterDaemonSet()
 	if err != nil {
@@ -1167,7 +1165,7 @@ func TestKubeStateMetrics(t *testing.T) {
 		"kube-rbac-proxy":    "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
 	d, err := f.KubeStateMetricsDeployment()
 	if err != nil {
@@ -1198,7 +1196,7 @@ func TestOpenShiftStateMetrics(t *testing.T) {
 		"kube-rbac-proxy":         "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
 	d, err := f.OpenShiftStateMetricsDeployment()
 	if err != nil {
@@ -1251,7 +1249,7 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", tc.config)
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", tc.config, NewAssets(assetsPath))
 		r, err := f.PrometheusK8sRules()
 		if err != nil {
 			t.Fatal(err)
@@ -1277,7 +1275,7 @@ func TestPrometheusEtcdRulesFiltered(t *testing.T) {
 	enabled := false
 	c := NewDefaultConfig()
 	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
 	r, err := f.PrometheusK8sRules()
 	if err != nil {
@@ -1295,7 +1293,7 @@ func TestPrometheusEtcdRules(t *testing.T) {
 	enabled := true
 	c := NewDefaultConfig()
 	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
 	r, err := f.PrometheusK8sRules()
 	if err != nil {
@@ -1317,7 +1315,7 @@ func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
 	enabled := false
 	c := NewDefaultConfig()
 	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
 	cms, err := f.GrafanaDashboardDefinitions()
 	if err != nil {
@@ -1335,7 +1333,7 @@ func TestEtcdGrafanaDashboard(t *testing.T) {
 	enabled := true
 	c := NewDefaultConfig()
 	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
 	cms, err := f.GrafanaDashboardDefinitions()
 	if err != nil {
@@ -1374,7 +1372,7 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 	}
 
 	tls := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 	d, err := f.ThanosQuerierDeployment(tls, false, nil)
 	if err != nil {
 		t.Fatal(err)
