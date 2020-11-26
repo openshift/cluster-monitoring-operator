@@ -39,6 +39,10 @@ const (
 	nsUWM = "openshift-user-workload-monitoring"
 )
 
+func TestMain(m *testing.M) {
+	manifests.Manifests.SetDirectoryPath("../../assets")
+}
+
 func TestMergeMetadata(t *testing.T) {
 	testCases := []struct {
 		name     string

@@ -29,6 +29,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestMain(m *testing.M) {
+	Manifests.SetDirectoryPath("../../assets")
+}
+
 func TestHashSecret(t *testing.T) {
 	for _, tt := range []struct {
 		name            string
