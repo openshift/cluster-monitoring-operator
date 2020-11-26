@@ -14,13 +14,13 @@ local prometheusOperatorUserWorkload = import './prometheus-operator-user-worklo
 local prometheus = import './prometheus.libsonnet';
 local prometheusUserWorkload = import './prometheus-user-workload.libsonnet';
 local clusterMonitoringOperator = import './cluster-monitoring-operator.libsonnet';
+local ibmCloudManagedProfile = import 'ibm-cloud-managed-profile.libsonnet';
 
 local thanosRuler = import './thanos-ruler.libsonnet';
 local thanosQuerier = import './thanos-querier.libsonnet';
 
 local openshiftStateMetrics = import './openshift-state-metrics.libsonnet';
 local telemeterClient = import './telemeter-client.libsonnet';
-
 
 /*
 TODO(paulfantom):
@@ -320,6 +320,7 @@ local inCluster =
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
+  ibmCloudManagedProfile +
   {};
 
 // objects deployed in openshift-user-workload-monitoring namespace
@@ -389,5 +390,6 @@ removeRunbookUrl(excludeRules(addReleaseAnnotation(removeLimits(
   { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
   { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
   { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
+  { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } + 
   {}
 ))))

@@ -24,6 +24,11 @@ JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 TOOLING=$(EMBEDMD_BIN) $(GOBINDATA_BIN) $(JB_BIN) $(GOJSONTOYAML) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN)
 
+MANIFESTS_DIR ?= $(shell pwd)/manifests
+JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
+MANIFESTS ?= $(wildcard $(MANIFESTS_DIR)/*.yaml)
+JSON_MANIFESTS ?= $(patsubst $(MANIFESTS_DIR)%,$(JSON_MANIFESTS_DIR)%,$(patsubst %.yaml,%.json,$(MANIFESTS)))
+
 JSONNET_SRC=$(shell find ./jsonnet -type f -not -path "./jsonnet/vendor*")
 JSONNET_VENDOR=jsonnet/vendor
 
@@ -93,8 +98,14 @@ $(ASSETS): build-jsonnet
 	[ -f "$@" ] || exit 1
 
 .PHONY: build-jsonnet
-build-jsonnet: $(JSONNET_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_SRC) $(JSONNET_VENDOR)
+build-jsonnet: $(JSONNET_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_SRC) $(JSONNET_VENDOR) json-manifests
 	./hack/build-jsonnet.sh
+
+$(JSON_MANIFESTS): $(MANIFESTS)
+	cat $(MANIFESTS_DIR)/$(patsubst %.json,%.yaml,$(@F)) | $(GOJSONTOYAML_BIN) -yamltojson > $@
+
+.PHONY: json-manifests
+json-manifests: $(JSON_MANIFESTS_DIR) $(JSON_MANIFESTS)
 
 # Merge cluster roles
 manifests/0000_50_cluster-monitoring-operator_02-role.yaml: hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
@@ -159,6 +170,9 @@ test-e2e:
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
+
+$(JSON_MANIFESTS_DIR):
+	mkdir -p $(JSON_MANIFESTS_DIR)
 
 $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools.go

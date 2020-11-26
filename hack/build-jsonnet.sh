@@ -14,7 +14,7 @@ mkdir $prefix
 TMP=$(mktemp -d -t tmp.XXXXXXXXXX)
 echo "Created temporary directory at $TMP"
 
-jsonnet -J jsonnet/vendor jsonnet/main.jsonnet > "${TMP}/main.json"
+jsonnet -J jsonnet/vendor -J tmp/json-manifests jsonnet/main.jsonnet > "${TMP}/main.json"
 
 # Replace mapfile with while loop so it works with previous bash versions (Mac included)
 #mapfile -t files < <(jq -r 'keys[]' tmp/main.json)
@@ -40,3 +40,7 @@ rm -f "${prefix}/grafana/console-dashboard-definitions.yaml"
 grep -H 'kind: CustomResourceDefinition' assets/prometheus-operator/* | cut -d: -f1 | while IFS= read -r f; do
   mv "$f" "manifests/0000_50_cluster-monitoring-operator_00_$(basename "$f")"
 done
+
+# Move resulting manifests to the manifests directory
+mv assets/manifests/* manifests/
+rmdir assets/manifests || true
