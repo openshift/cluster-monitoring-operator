@@ -32,6 +32,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
 
@@ -94,6 +95,7 @@ func Main() int {
 	releaseVersion := flagset.String("release-version", "", "Currently targeted release version to be reconciled against.")
 	telemetryConfigFile := flagset.String("telemetry-config", "/etc/cluster-monitoring-operator/telemetry/metrics.yaml", "Path to telemetry-config.")
 	remoteWrite := flagset.Bool("enabled-remote-write", false, "Wether to use legacy telemetry write protocol or Prometheus remote write.")
+	assetsPath := flagset.String("assets", "/assets", "The path to the assets directory.")
 	images := images{}
 	flag.Var(&images, "images", "Images to use for containers managed by the cluster-monitoring-operator.")
 	flag.Parse()
@@ -120,6 +122,12 @@ func Main() int {
 	for _, m := range telemetryConfig.Matches {
 		klog.V(4).Info(m)
 	}
+
+	if _, err := os.Stat(*assetsPath); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Could not find assets directory: %v", err)
+		return 1
+	}
+	manifests.Manifests.SetDirectoryPath(*assetsPath)
 
 	ok := true
 	if *namespace == "" {
