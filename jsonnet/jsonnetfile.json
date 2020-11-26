@@ -13,7 +13,7 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/coreos/kube-prometheus",
+          "remote": "https://github.com/prometheus-operator/kube-prometheus",
           "subdir": "jsonnet/kube-prometheus"
         }
       },

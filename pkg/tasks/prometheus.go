@@ -350,6 +350,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Prometheus ServiceMonitor failed")
 	}
 
+	smt, err := t.factory.PrometheusK8sThanosSidecarServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Thanos sidecar ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smt)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Thanos sidecar ServiceMonitor failed")
+	}
+
 	// Clean up the service monitors previously managed by the cluster monitoring operator.
 	for _, name := range []string{"cluster-version-operator", "kube-apiserver", "kube-controller-manager", "kube-scheduler", "openshift-apiserver"} {
 		err := t.client.DeleteServiceMonitorByNamespaceAndName(t.client.Namespace(), name)

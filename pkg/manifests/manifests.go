@@ -85,40 +85,42 @@ var (
 	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
 	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
 
-	PrometheusK8sClusterRoleBinding       = "prometheus-k8s/cluster-role-binding.yaml"
-	PrometheusK8sRoleBindingConfig        = "prometheus-k8s/role-binding-config.yaml"
-	PrometheusK8sRoleBindingList          = "prometheus-k8s/role-binding-specific-namespaces.yaml"
-	PrometheusK8sClusterRole              = "prometheus-k8s/cluster-role.yaml"
-	PrometheusK8sRoleConfig               = "prometheus-k8s/role-config.yaml"
-	PrometheusK8sRoleList                 = "prometheus-k8s/role-specific-namespaces.yaml"
-	PrometheusK8sRules                    = "prometheus-k8s/rules.yaml"
-	PrometheusK8sServiceAccount           = "prometheus-k8s/service-account.yaml"
-	PrometheusK8s                         = "prometheus-k8s/prometheus.yaml"
-	PrometheusK8sKubeletServiceMonitor    = "prometheus-k8s/service-monitor-kubelet.yaml"
-	PrometheusK8sPrometheusServiceMonitor = "prometheus-k8s/service-monitor.yaml"
-	PrometheusK8sService                  = "prometheus-k8s/service.yaml"
-	PrometheusK8sProxySecret              = "prometheus-k8s/proxy-secret.yaml"
-	PrometheusRBACProxySecret             = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
-	PrometheusK8sRoute                    = "prometheus-k8s/route.yaml"
-	PrometheusK8sHtpasswd                 = "prometheus-k8s/htpasswd-secret.yaml"
-	PrometheusK8sEtcdServiceMonitor       = "prometheus-k8s/service-monitor-etcd.yaml"
-	PrometheusK8sServingCertsCABundle     = "prometheus-k8s/serving-certs-ca-bundle.yaml"
-	PrometheusK8sKubeletServingCABundle   = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
-	PrometheusK8sGrpcTLSSecret            = "prometheus-k8s/grpc-tls-secret.yaml"
-	PrometheusK8sTrustedCABundle          = "prometheus-k8s/trusted-ca-bundle.yaml"
+	PrometheusK8sClusterRoleBinding          = "prometheus-k8s/cluster-role-binding.yaml"
+	PrometheusK8sRoleBindingConfig           = "prometheus-k8s/role-binding-config.yaml"
+	PrometheusK8sRoleBindingList             = "prometheus-k8s/role-binding-specific-namespaces.yaml"
+	PrometheusK8sClusterRole                 = "prometheus-k8s/cluster-role.yaml"
+	PrometheusK8sRoleConfig                  = "prometheus-k8s/role-config.yaml"
+	PrometheusK8sRoleList                    = "prometheus-k8s/role-specific-namespaces.yaml"
+	PrometheusK8sRules                       = "prometheus-k8s/rules.yaml"
+	PrometheusK8sServiceAccount              = "prometheus-k8s/service-account.yaml"
+	PrometheusK8s                            = "prometheus-k8s/prometheus.yaml"
+	PrometheusK8sKubeletServiceMonitor       = "prometheus-k8s/service-monitor-kubelet.yaml"
+	PrometheusK8sPrometheusServiceMonitor    = "prometheus-k8s/service-monitor.yaml"
+	PrometheusK8sService                     = "prometheus-k8s/service.yaml"
+	PrometheusK8sProxySecret                 = "prometheus-k8s/proxy-secret.yaml"
+	PrometheusRBACProxySecret                = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
+	PrometheusK8sRoute                       = "prometheus-k8s/route.yaml"
+	PrometheusK8sHtpasswd                    = "prometheus-k8s/htpasswd-secret.yaml"
+	PrometheusK8sEtcdServiceMonitor          = "prometheus-k8s/service-monitor-etcd.yaml"
+	PrometheusK8sServingCertsCABundle        = "prometheus-k8s/serving-certs-ca-bundle.yaml"
+	PrometheusK8sKubeletServingCABundle      = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
+	PrometheusK8sGrpcTLSSecret               = "prometheus-k8s/grpc-tls-secret.yaml"
+	PrometheusK8sTrustedCABundle             = "prometheus-k8s/trusted-ca-bundle.yaml"
+	PrometheusK8sThanosSidecarServiceMonitor = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
 
-	PrometheusUserWorkloadServingCertsCABundle     = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
-	PrometheusUserWorkloadServiceAccount           = "prometheus-user-workload/service-account.yaml"
-	PrometheusUserWorkloadClusterRole              = "prometheus-user-workload/cluster-role.yaml"
-	PrometheusUserWorkloadClusterRoleBinding       = "prometheus-user-workload/cluster-role-binding.yaml"
-	PrometheusUserWorkloadRoleConfig               = "prometheus-user-workload/role-config.yaml"
-	PrometheusUserWorkloadRoleList                 = "prometheus-user-workload/role-specific-namespaces.yaml"
-	PrometheusUserWorkloadRoleBindingList          = "prometheus-user-workload/role-binding-specific-namespaces.yaml"
-	PrometheusUserWorkloadRoleBindingConfig        = "prometheus-user-workload/role-binding-config.yaml"
-	PrometheusUserWorkloadService                  = "prometheus-user-workload/service.yaml"
-	PrometheusUserWorkload                         = "prometheus-user-workload/prometheus.yaml"
-	PrometheusUserWorkloadPrometheusServiceMonitor = "prometheus-user-workload/service-monitor.yaml"
-	PrometheusUserWorkloadGrpcTLSSecret            = "prometheus-user-workload/grpc-tls-secret.yaml"
+	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
+	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
+	PrometheusUserWorkloadClusterRole                 = "prometheus-user-workload/cluster-role.yaml"
+	PrometheusUserWorkloadClusterRoleBinding          = "prometheus-user-workload/cluster-role-binding.yaml"
+	PrometheusUserWorkloadRoleConfig                  = "prometheus-user-workload/role-config.yaml"
+	PrometheusUserWorkloadRoleList                    = "prometheus-user-workload/role-specific-namespaces.yaml"
+	PrometheusUserWorkloadRoleBindingList             = "prometheus-user-workload/role-binding-specific-namespaces.yaml"
+	PrometheusUserWorkloadRoleBindingConfig           = "prometheus-user-workload/role-binding-config.yaml"
+	PrometheusUserWorkloadService                     = "prometheus-user-workload/service.yaml"
+	PrometheusUserWorkload                            = "prometheus-user-workload/prometheus.yaml"
+	PrometheusUserWorkloadPrometheusServiceMonitor    = "prometheus-user-workload/service-monitor.yaml"
+	PrometheusUserWorkloadGrpcTLSSecret               = "prometheus-user-workload/grpc-tls-secret.yaml"
+	PrometheusUserWorkloadThanosSidecarServiceMonitor = "prometheus-user-workload/service-monitor-thanos-sidecar.yaml"
 
 	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
@@ -1116,6 +1118,18 @@ func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, erro
 	return s, nil
 }
 
+func (f *Factory) PrometheusK8sThanosSidecarServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sThanosSidecarServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-k8s.%s.svc", f.namespace)
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusK8sEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap) (*v1.Secret, error) {
 	data := make(map[string]string)
 
@@ -1347,6 +1361,8 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 			}
 		case "kube-rbac-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "kube-rbac-proxy-thanos":
+			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		case "prom-label-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}
@@ -1436,7 +1452,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	}
 
 	for i, container := range p.Spec.Containers {
-		if container.Name == "kube-rbac-proxy" {
+		if container.Name == "kube-rbac-proxy" || container.Name == "kube-rbac-proxy-thanos" {
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		}
 	}
@@ -1739,6 +1755,18 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.Service
 
 	sm.Namespace = f.namespaceUserWorkload
 	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-operator.%s.svc", f.namespaceUserWorkload)
+
+	return sm, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadThanosSidecarServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusUserWorkloadThanosSidecarServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespaceUserWorkload
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-user-workload.%s.svc", f.namespaceUserWorkload)
 
 	return sm, nil
 }

@@ -7,6 +7,7 @@ local configmap = k.core.v1.configMap;
 local clusterRole = k.rbac.v1.clusterRole;
 local policyRule = clusterRole.rulesType;
 local selector = k.apps.v1beta2.deployment.mixin.spec.selectorType;
+local envVar = k.core.v1.pod.mixin.specType.containersType.envType;
 local metrics = import 'telemeter-client/metrics.jsonnet';
 
 local authenticationRole =
@@ -48,7 +49,15 @@ local sccRole =
   ]) +
   policyRule.withVerbs(['use']);
 
+local podIPEnvVar =
+  envVar.fromFieldPath('POD_IP', 'status.podIP');
+
 {
+  // Configure the correct label selectors for Thanos sidecar alerts.
+  sidecar+:: {
+    selector: $._config.prometheusSelector,
+  },
+
   prometheusK8s+:: {
     trustedCaBundle:
       configmap.new('prometheus-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
@@ -113,6 +122,7 @@ local sccRole =
       service.mixin.spec.withPorts([
         servicePort.newNamed('web', 9091, 'web'),
         servicePort.newNamed('tenancy', 9092, 'tenancy'),
+        servicePort.newNamed('thanos-proxy', 10902, 'thanos-proxy'),
       ]),
 
     servingCertsCaBundle+:
@@ -255,12 +265,33 @@ local sccRole =
         },
       },
 
-    // TODO: Adding this to our stack is not as easy
-    // as sidecar listens on 127.0.0.1:10902 and we
-    // need kube-rbac-proxy in front of it.
-
-    serviceMonitorThanosSidecar:: null,
+    // We don't need a specific service for the Thanos sidecar because the port
+    // is already exposed by the prometheus-k8s service definition which also
+    // ensures that TLS certificate are provisioned.
     serviceThanosSidecar:: null,
+    serviceMonitorThanosSidecar+:
+      {
+        spec+: {
+          jobLabel:: null,
+          selector: {
+            matchLabels: {
+              prometheus: 'k8s',
+            },
+          },
+          endpoints: [
+            {
+              port: 'thanos-proxy',
+              interval: '30s',
+              scheme: 'https',
+              tlsConfig: {
+                caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                serverName: 'prometheus-k8s',
+              },
+              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+            },
+          ],
+        },
+      },
 
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and
@@ -436,6 +467,39 @@ local sccRole =
                 },
               },
               terminationMessagePolicy: 'FallbackToLogsOnError',
+            },
+            {
+              name: 'kube-rbac-proxy-thanos',
+              image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
+              resources: {
+                requests: {
+                  memory: '10Mi',
+                  cpu: '1m',
+                },
+              },
+              env: [podIPEnvVar],
+              ports: [
+                {
+                  containerPort: 10902,
+                  name: 'thanos-proxy',
+                },
+              ],
+              args: [
+                '--secure-listen-address=[$(POD_IP)]:10902',
+                '--upstream=http://127.0.0.1:10902',
+                '--tls-cert-file=/etc/tls/private/tls.crt',
+                '--tls-private-key-file=/etc/tls/private/tls.key',
+                '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                '--allow-paths=/metrics',
+                '--logtostderr=true',
+              ],
+              terminationMessagePolicy: 'FallbackToLogsOnError',
+              volumeMounts: [
+                {
+                  mountPath: '/etc/tls/private',
+                  name: 'secret-prometheus-k8s-tls',
+                },
+              ],
             },
             {
               name: 'thanos-sidecar',
