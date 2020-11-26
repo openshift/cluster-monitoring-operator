@@ -2645,6 +2645,9 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 			if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources != nil {
 				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources
 			}
+			if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.LogLevel != "" {
+				d.Spec.Template.Spec.Containers[i].Args = append(d.Spec.Template.Spec.Containers[i].Args, fmt.Sprintf("--log.level=%s", f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.LogLevel))
+			}
 
 		case "prom-label-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
