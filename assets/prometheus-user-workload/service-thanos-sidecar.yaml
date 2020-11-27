@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: prometheus-user-workload-tls
+  labels:
+    app: thanos-sidecar
+    prometheus: user-workload
+  name: prometheus-user-workload-thanos-sidecar
+  namespace: openshift-user-workload-monitoring
+spec:
+  clusterIP: None
+  ports:
+  - name: thanos-proxy
+    port: 10902
+    targetPort: thanos-proxy
+  selector:
+    app: prometheus
+    prometheus: user-workload

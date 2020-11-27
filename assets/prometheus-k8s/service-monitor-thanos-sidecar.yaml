@@ -16,4 +16,5 @@ spec:
       serverName: prometheus-k8s
   selector:
     matchLabels:
+      app: thanos-sidecar
       prometheus: k8s

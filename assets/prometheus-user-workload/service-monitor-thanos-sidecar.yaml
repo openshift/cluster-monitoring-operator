@@ -16,4 +16,5 @@ spec:
       serverName: prometheus-user-workload-monitoring
   selector:
     matchLabels:
+      app: thanos-sidecar
       prometheus: user-workload

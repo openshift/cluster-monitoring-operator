@@ -4,19 +4,16 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: prometheus-k8s-tls
   labels:
+    app: thanos-sidecar
     prometheus: k8s
-  name: prometheus-k8s
+  name: prometheus-k8s-thanos-sidecar
   namespace: openshift-monitoring
 spec:
+  clusterIP: None
   ports:
-  - name: web
-    port: 9091
-    targetPort: web
-  - name: tenancy
-    port: 9092
-    targetPort: tenancy
+  - name: thanos-proxy
+    port: 10902
+    targetPort: thanos-proxy
   selector:
     app: prometheus
     prometheus: k8s
-  sessionAffinity: ClientIP
-  type: ClusterIP

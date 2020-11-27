@@ -2417,7 +2417,7 @@ spec:
           to Prometheus.
         summary: Thanos Sidecar cannot connect to Prometheus
       expr: |
-        sum by (job, pod) (thanos_sidecar_prometheus_up{job=~"prometheus-k8s|prometheus-user-workload"} == 0)
+        sum by (job, pod) (thanos_sidecar_prometheus_up{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"} == 0)
       for: 5m
       labels:
         severity: critical
@@ -2427,6 +2427,6 @@ spec:
           {{ $value }} seconds.
         summary: Thanos Sidecar is unhealthy.
       expr: |
-        time() - max(thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-k8s|prometheus-user-workload"}) by (job, pod) >= 600
+        time() - max(thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}) by (job, pod) >= 600
       labels:
         severity: critical
