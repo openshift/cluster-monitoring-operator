@@ -97,6 +97,7 @@ var (
 	PrometheusK8sKubeletServiceMonitor       = "prometheus-k8s/service-monitor-kubelet.yaml"
 	PrometheusK8sPrometheusServiceMonitor    = "prometheus-k8s/service-monitor.yaml"
 	PrometheusK8sService                     = "prometheus-k8s/service.yaml"
+	PrometheusK8sServiceThanosSidecar        = "prometheus-k8s/service-thanos-sidecar.yaml"
 	PrometheusK8sProxySecret                 = "prometheus-k8s/proxy-secret.yaml"
 	PrometheusRBACProxySecret                = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
 	PrometheusK8sRoute                       = "prometheus-k8s/route.yaml"
@@ -117,6 +118,7 @@ var (
 	PrometheusUserWorkloadRoleBindingList             = "prometheus-user-workload/role-binding-specific-namespaces.yaml"
 	PrometheusUserWorkloadRoleBindingConfig           = "prometheus-user-workload/role-binding-config.yaml"
 	PrometheusUserWorkloadService                     = "prometheus-user-workload/service.yaml"
+	PrometheusUserWorkloadServiceThanosSidecar        = "prometheus-user-workload/service-thanos-sidecar.yaml"
 	PrometheusUserWorkload                            = "prometheus-user-workload/prometheus.yaml"
 	PrometheusUserWorkloadPrometheusServiceMonitor    = "prometheus-user-workload/service-monitor.yaml"
 	PrometheusUserWorkloadGrpcTLSSecret               = "prometheus-user-workload/grpc-tls-secret.yaml"
@@ -1965,8 +1967,30 @@ func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
 	return s, nil
 }
 
+func (f *Factory) PrometheusK8sServiceThanosSidecar() (*v1.Service, error) {
+	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusK8sServiceThanosSidecar))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusUserWorkloadService() (*v1.Service, error) {
 	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusUserWorkloadService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadServiceThanosSidecar() (*v1.Service, error) {
+	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusUserWorkloadServiceThanosSidecar))
 	if err != nil {
 		return nil, err
 	}

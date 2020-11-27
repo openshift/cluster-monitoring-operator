@@ -139,6 +139,16 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Service failed")
 	}
 
+	svc, err = t.factory.PrometheusUserWorkloadServiceThanosSidecar()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Thanos sidecar Service failed")
+	}
+
+	err = t.client.CreateOrUpdateService(svc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload Thanos sidecar Service failed")
+	}
+
 	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus GRPC secret failed")
@@ -278,6 +288,16 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 	svc, err := t.factory.PrometheusUserWorkloadService()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Service failed")
+	}
+
+	err = t.client.DeleteService(svc)
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload Prometheus Service failed")
+	}
+
+	svc, err = t.factory.PrometheusUserWorkloadServiceThanosSidecar()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Thanos sidecar Service failed")
 	}
 
 	err = t.client.DeleteService(svc)

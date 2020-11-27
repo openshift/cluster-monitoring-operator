@@ -55,7 +55,7 @@ local podIPEnvVar =
 {
   // Configure the correct label selectors for Thanos sidecar alerts.
   sidecar+:: {
-    selector: $._config.prometheusSelector,
+    selector: 'job=~"prometheus-(k8s|user-workload)-thanos-sidecar"',
   },
 
   prometheusK8s+:: {
@@ -122,7 +122,6 @@ local podIPEnvVar =
       service.mixin.spec.withPorts([
         servicePort.newNamed('web', 9091, 'web'),
         servicePort.newNamed('tenancy', 9092, 'tenancy'),
-        servicePort.newNamed('thanos-proxy', 10902, 'thanos-proxy'),
       ]),
 
     servingCertsCaBundle+:
@@ -265,19 +264,18 @@ local podIPEnvVar =
         },
       },
 
-    // We don't need a specific service for the Thanos sidecar because the port
-    // is already exposed by the prometheus-k8s service definition which also
-    // ensures that TLS certificate are provisioned.
-    serviceThanosSidecar:: null,
+    serviceThanosSidecar+:
+      service.mixin.metadata.withAnnotations({
+        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
+      }) +
+      service.mixin.spec.withPorts([
+        servicePort.newNamed('thanos-proxy', 10902, 'thanos-proxy'),
+      ]),
+
     serviceMonitorThanosSidecar+:
       {
         spec+: {
           jobLabel:: null,
-          selector: {
-            matchLabels: {
-              prometheus: 'k8s',
-            },
-          },
           endpoints: [
             {
               port: 'thanos-proxy',

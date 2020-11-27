@@ -218,6 +218,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Service failed")
 	}
 
+	svc, err = t.factory.PrometheusK8sServiceThanosSidecar()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos sidecar Service failed")
+	}
+
+	err = t.client.CreateOrUpdateService(svc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos sidecar Service failed")
+	}
+
 	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		etcdCA, err := t.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
 		if err != nil {

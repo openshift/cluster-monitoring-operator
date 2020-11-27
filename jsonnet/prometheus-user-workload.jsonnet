@@ -160,19 +160,18 @@ local podIPEnvVar =
         },
       },
 
-    // We don't need a specific service for the Thanos sidecar because the port
-    // is already exposed by the prometheus-user-workload service definition
-    // which also ensures that TLS certificate are provisioned.
-    serviceThanosSidecar:: null,
+    serviceThanosSidecar+:
+      service.mixin.metadata.withAnnotations({
+        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-user-workload-tls',
+      }) +
+      service.mixin.spec.withPorts([
+        servicePort.newNamed('thanos-proxy', 10902, 'thanos-proxy'),
+      ]),
+
     serviceMonitorThanosSidecar+:
       {
         spec+: {
           jobLabel:: null,
-          selector: {
-            matchLabels: {
-              prometheus: 'user-workload',
-            },
-          },
           endpoints: [
             {
               port: 'thanos-proxy',
