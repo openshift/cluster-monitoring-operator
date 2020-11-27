@@ -15,6 +15,9 @@ spec:
   - name: tenancy
     port: 9092
     targetPort: tenancy
+  - name: thanos-proxy
+    port: 10902
+    targetPort: thanos-proxy
   selector:
     app: prometheus
     prometheus: k8s

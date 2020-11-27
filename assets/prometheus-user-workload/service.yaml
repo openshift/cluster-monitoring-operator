@@ -12,6 +12,9 @@ spec:
   - name: metrics
     port: 9091
     targetPort: metrics
+  - name: thanos-proxy
+    port: 10902
+    targetPort: thanos-proxy
   selector:
     app: prometheus
     prometheus: user-workload

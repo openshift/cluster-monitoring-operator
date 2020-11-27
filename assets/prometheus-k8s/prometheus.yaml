@@ -112,6 +112,32 @@ spec:
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
   - args:
+    - --secure-listen-address=[$(POD_IP)]:10902
+    - --upstream=http://127.0.0.1:10902
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - --allow-paths=/metrics
+    - --logtostderr=true
+    env:
+    - name: POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
+    image: quay.io/coreos/kube-rbac-proxy:v0.6.0
+    name: kube-rbac-proxy-thanos
+    ports:
+    - containerPort: 10902
+      name: thanos-proxy
+    resources:
+      requests:
+        cpu: 1m
+        memory: 10Mi
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-prometheus-k8s-tls
+  - args:
     - sidecar
     - --prometheus.url=http://localhost:9090/
     - --tsdb.path=/prometheus
