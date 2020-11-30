@@ -265,6 +265,10 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:alertmanager_routing_enabled:max',
           },
           {
+            expr: 'sum by(plugin_name, volume_mode)(pv_collector_total_pv_count)',
+            record: 'cluster:kube_persistentvolume_plugin_type_counts:sum',
+          },
+          {
             expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
             alert: 'ClusterMonitoringOperatorReconciliationErrors',
             'for': '30m',
