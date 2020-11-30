@@ -35,13 +35,10 @@ import (
 )
 
 const (
-	ns    = "openshift-monitoring"
-	nsUWM = "openshift-user-workload-monitoring"
+	ns         = "openshift-monitoring"
+	nsUWM      = "openshift-user-workload-monitoring"
+	assetsPath = "../../assets"
 )
-
-func TestMain(m *testing.M) {
-	manifests.Manifests.SetDirectoryPath("../../assets")
-}
 
 func TestMergeMetadata(t *testing.T) {
 	testCases := []struct {
@@ -152,7 +149,7 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			dep, err := f.KubeStateMetricsDeployment()
 			if err != nil {
 				t.Fatal(err)
@@ -235,7 +232,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			ds, err := f.NodeExporterDaemonSet()
 			// Overriding labels to prevent changing tests with each upgrade of node-exporter version
 			// as our DaemonSet contains "app.kubernetes.io/version" label
@@ -318,7 +315,7 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			s, err := f.PrometheusK8sGrpcTLSSecret()
 			if err != nil {
 				t.Fatal(err)
@@ -398,7 +395,7 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			cm, err := f.AlertmanagerTrustedCABundle() // using CA bundle as this is one of ConfigMaps with labels set
 			if err != nil {
 				t.Fatal(err)
@@ -504,7 +501,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			s, err := f.PrometheusK8sService()
 			if err != nil {
 				t.Fatal(err)
@@ -608,7 +605,7 @@ func TestCreateOrUpdateRole(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			r, err := f.PrometheusK8sRoleConfig()
 			if err != nil {
 				t.Fatal(err)
@@ -745,7 +742,7 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			rb, err := f.PrometheusK8sRoleBindingConfig()
 			if err != nil {
 				t.Fatal(err)
@@ -827,7 +824,7 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			cr, err := f.PrometheusK8sClusterRole()
 			if err != nil {
 				t.Fatal(err)
@@ -963,7 +960,7 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			crb, err := f.PrometheusK8sClusterRoleBinding()
 			if err != nil {
 				t.Fatal(err)
@@ -1051,7 +1048,7 @@ func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			scc, err := f.NodeExporterSecurityContextConstraints()
 			if err != nil {
 				t.Fatal(err)
@@ -1133,7 +1130,7 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			sm, err := f.PrometheusK8sPrometheusServiceMonitor()
 			if err != nil {
 				t.Fatal(err)
@@ -1217,7 +1214,7 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			pr, err := f.PrometheusK8sRules()
 			if err != nil {
 				t.Fatal(err)
@@ -1298,7 +1295,7 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			pr, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -1379,7 +1376,7 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig())
+			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			pr, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc", &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 			if err != nil {
 				t.Fatal(err)
