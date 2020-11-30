@@ -114,6 +114,7 @@ type ThanosRulerConfig struct {
 }
 
 type ThanosQuerierConfig struct {
+	LogLevel     string                   `json:"logLevel"`
 	NodeSelector map[string]string        `json:"nodeSelector"`
 	Tolerations  []v1.Toleration          `json:"tolerations"`
 	Resources    *v1.ResourceRequirements `json:"resources"`
@@ -428,6 +429,8 @@ func (c *Config) IsUserWorkloadEnabled() bool {
 // and depracted from 4.7 onwards.
 // Instead warn user in the logs.
 func (c *UserWorkloadConfig) isEnabled() bool {
-	klog.Warning("DEPRECATED: Migrate to new user workload monitoring configuration, this tech preview was removed.")
+	if c.Enabled != nil {
+		klog.Warning("DEPRECATED: Migrate to new user workload monitoring configuration, this tech preview was removed.")
+	}
 	return false
 }

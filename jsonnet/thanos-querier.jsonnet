@@ -270,7 +270,7 @@ local thanosQuerierRules =
                         if std.startsWith(a, '--grpc-address=') then '--grpc-address=127.0.0.1:10901'
                         else if std.startsWith(a, '--http-address=') then '--http-address=127.0.0.1:9090'
                         else a,
-                      super.args
+                      std.filter(function(a) !std.startsWith(a, "--log.level="), super.args)
                     ) + [
                       '--grpc-client-tls-secure',
                       '--grpc-client-tls-cert=/etc/tls/grpc/client.crt',

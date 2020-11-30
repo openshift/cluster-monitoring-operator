@@ -40,7 +40,6 @@ spec:
       containers:
       - args:
         - query
-        - --log.level=info
         - --grpc-address=127.0.0.1:10901
         - --http-address=127.0.0.1:9090
         - --query.replica-label=prometheus_replica
