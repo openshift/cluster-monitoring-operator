@@ -272,6 +272,7 @@ local thanosQuerierRules =
                         else a,
                       std.filter(function(a) !std.startsWith(a, "--log.level="), super.args)
                     ) + [
+		       '--store.sd-dns-resolver=miekgdns',
                       '--grpc-client-tls-secure',
                       '--grpc-client-tls-cert=/etc/tls/grpc/client.crt',
                       '--grpc-client-tls-key=/etc/tls/grpc/client.key',

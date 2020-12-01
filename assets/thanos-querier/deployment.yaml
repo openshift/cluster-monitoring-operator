@@ -45,6 +45,7 @@ spec:
         - --query.replica-label=prometheus_replica
         - --query.replica-label=thanos_ruler_replica
         - --store=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
+        - --store.sd-dns-resolver=miekgdns
         - --grpc-client-tls-secure
         - --grpc-client-tls-cert=/etc/tls/grpc/client.crt
         - --grpc-client-tls-key=/etc/tls/grpc/client.key
