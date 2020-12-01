@@ -230,6 +230,10 @@ data:
     - '{__name__="che_workspace_start_time_seconds_count"}'
     # (cloud credential operator, @openshift/openshift-team-hive) Track current mode the cloud-credentials-operator is functioning under.
     - '{__name__="cco_credentials_mode"}'
+    # (image-registry-team) :apiserver_v1_image_imports:sum counts the number of image stream
+    # imports made using registry protocol v1, we are deprecating this version of the protocol and will use this metric to identify how
+    # many users are impacted by deprecation and when usage has reached zero
+    - '{__name__=":apiserver_v1_image_imports:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
