@@ -859,6 +859,15 @@ spec:
           )
         )
       record: cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum
+    - expr: (sum(node_role_os_version_machine:cpu_capacity_cores:sum{label_node_role_kubernetes_io_master="",label_node_role_kubernetes_io_infra=""}
+        or absent(__does_not_exist__)*0)) + ((sum(node_role_os_version_machine:cpu_capacity_cores:sum{label_node_role_kubernetes_io_master="true"}
+        or absent(__does_not_exist__)*0) * ((max(cluster_master_schedulable == 1)*0+1)
+        or (absent(cluster_master_schedulable == 1)*0))))
+      record: workload:capacity_physical_cpu_cores:sum
+    - expr: min_over_time(workload:capacity_physical_cpu_cores:sum[5m:15s])
+      record: cluster:usage:workload:capacity_physical_cpu_cores:min:5m
+    - expr: max_over_time(workload:capacity_physical_cpu_cores:sum[5m:15s])
+      record: cluster:usage:workload:capacity_physical_cpu_cores:max:5m
     - expr: |
         sum  by (provisioner) (
           topk by (namespace, persistentvolumeclaim) (
@@ -929,6 +938,13 @@ spec:
       record: cluster:usage:openshift:kube_running_pod_ready:avg
     - expr: avg(kube_running_pod_ready{namespace!~"openshift-.*"})
       record: cluster:usage:workload:kube_running_pod_ready:avg
+  - interval: 30s
+    name: kubernetes-recurring.rules
+    rules:
+    - expr: sum_over_time(workload:capacity_physical_cpu_cores:sum[30s:1s]) + ((cluster:usage:workload:capacity_physical_cpu_core_seconds
+        offset 25s) or (absent(cluster:usage:workload:capacity_physical_cpu_core_seconds
+        offset 25s)*0))
+      record: cluster:usage:workload:capacity_physical_cpu_core_seconds
   - name: openshift-ingress.rules
     rules:
     - expr: sum by (code) (rate(haproxy_server_http_responses_total[5m]) > 0)

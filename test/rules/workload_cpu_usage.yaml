@@ -1,0 +1,131 @@
+# Tests for workload:capacity_physical_cpu_cores:sum
+# Verifying that we have the correct logic for calculating basic usage
+# of billable core seconds.
+
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  # worker capacity is the only series (hypershift-style)
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos"}'
+        values: '3'
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 3
+  # multiple worker capacity buckets
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos"}'
+        values: '3'
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",example="1"}'
+        values: '4'
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 7
+  # infra capacity is ignored
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos"}'
+        values: '3'
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_infra="true"}'
+        values: '4'
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 3
+  # master role capacity ignored unless schedulable
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+        values: '12'
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos"}'
+        values: '3'
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 3
+  # master role capacity ignored unless schedulable == 1
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+        values: '12'
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos"}'
+        values: '3'
+      - series: 'cluster_master_schedulable{endpoint="https",instance="10.128.0.16:8443",job="metrics",namespace="openshift-kube-scheduler-operator",pod="openshift-kube-scheduler-operator-75bf7fd45c-bpqx7",service="metrics"}'
+        values: '0'
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 3
+  # master role capacity considered if schedulable
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+        values: '12'
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos"}'
+        values: '3'
+      - series: 'cluster_master_schedulable{endpoint="https",instance="10.128.0.16:8443",job="metrics",namespace="openshift-kube-scheduler-operator",pod="openshift-kube-scheduler-operator-75bf7fd45c-bpqx7",service="metrics"}'
+        values: '1'
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 15
+  # master role capacity considered if schedulable, even if tagged with infra
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true",label_node_role_kubernetes_io_infra="true"}'
+        values: '12'
+      - series: 'cluster_master_schedulable{endpoint="https",instance="10.128.0.16:8443",job="metrics",namespace="openshift-kube-scheduler-operator",pod="openshift-kube-scheduler-operator-75bf7fd45c-bpqx7",service="metrics"}'
+        values: '1'
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 12
+  # master role capacity considered if schedulable and no workers
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+        values: '12'
+      - series: 'cluster_master_schedulable{endpoint="https",instance="10.128.0.16:8443",job="metrics",namespace="openshift-kube-scheduler-operator",pod="openshift-kube-scheduler-operator-75bf7fd45c-bpqx7",service="metrics"}'
+        values: '1'
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 12
+  # schedulable must have a value of 1
+  - interval: 1m
+    input_series:
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+        values: '12'
+      - series: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos"}'
+        values: '3'
+      - series: 'cluster_master_schedulable{endpoint="https",instance="10.128.0.16:8443",job="metrics",namespace="openshift-kube-scheduler-operator",pod="openshift-kube-scheduler-operator-75bf7fd45c-bpqx7",service="metrics"}'
+        values: '2' # only 1 is considered schedulable
+    promql_expr_test:
+      - expr: workload:capacity_physical_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'workload:capacity_physical_cpu_cores:sum{}'
+            value: 3
