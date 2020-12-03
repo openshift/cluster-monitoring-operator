@@ -148,6 +148,11 @@ data:
     # the total amount of storage used by PVCs from a particular storage provisioner in bytes.
     - '{__name__="cluster:kubelet_volume_stats_used_bytes:provisioner:sum"}'
     # OCS specific metrics:
+    # ocs:node_num_cpu:sum gives the total number of CPU present on the 
+    # nodes which are being used for OCS.
+    - '{__name__="ocs:node_num_cpu:sum"}'
+    # ocs:container_cpu_usage:sum gives the total CPU usage by OCS components.
+    - '{__name__="ocs:container_cpu_usage:sum"}'
     # ceph_cluster_total_bytes gives the size of ceph cluster in bytes.
     - '{__name__="ceph_cluster_total_bytes"}'
     # ceph_cluster_total_used_raw_bytes is the amount of ceph cluster storage used in bytes.
