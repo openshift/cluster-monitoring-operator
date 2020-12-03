@@ -21,7 +21,6 @@ package tools
 import (
 	_ "github.com/brancz/gojsontoyaml"
 	_ "github.com/campoy/embedmd"
-	_ "github.com/go-bindata/go-bindata/v3/go-bindata"
 	_ "github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb"
 	_ "github.com/google/go-jsonnet/cmd/jsonnet"
 	_ "github.com/google/go-jsonnet/cmd/jsonnetfmt"

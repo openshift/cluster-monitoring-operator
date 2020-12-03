@@ -68,9 +68,18 @@ type Operator struct {
 
 	reconcileAttempts prometheus.Counter
 	reconcileErrors   prometheus.Counter
+
+	assets *manifests.Assets
 }
 
-func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespaceSelector, configMapName, userWorkloadConfigMapName string, remoteWrite bool, images map[string]string, telemetryMatches []string) (*Operator, error) {
+func New(
+	config *rest.Config,
+	version, namespace, namespaceUserWorkload, namespaceSelector, configMapName, userWorkloadConfigMapName string,
+	remoteWrite bool,
+	images map[string]string,
+	telemetryMatches []string,
+	a *manifests.Assets,
+) (*Operator, error) {
 	c, err := client.New(config, version, namespace, namespaceUserWorkload, namespaceSelector)
 	if err != nil {
 		return nil, err
@@ -87,6 +96,7 @@ func New(config *rest.Config, version, namespace, namespaceUserWorkload, namespa
 		client:                    c,
 		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
 		informers:                 make([]cache.SharedIndexInformer, 0),
+		assets:                    a,
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -330,7 +340,7 @@ func (o *Operator) sync(key string) error {
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
 
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config)
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.assets)
 
 	tl := tasks.NewTaskRunner(
 		o.client,

@@ -29,6 +29,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+const assetsPath = "../../assets"
+
 var f *framework.Framework
 
 func TestMain(m *testing.M) {

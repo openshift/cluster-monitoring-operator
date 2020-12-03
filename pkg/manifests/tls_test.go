@@ -92,7 +92,7 @@ func TestNeedsNewCert(t *testing.T) {
 }
 
 func TestRotateGrpcTLSSecret(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), NewAssets(assetsPath))
 
 	for _, tc := range []struct {
 		name  string
@@ -204,7 +204,7 @@ func TestRotateGrpcTLSSecret(t *testing.T) {
 }
 
 func TestUnconfiguredGRPCManifests(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig())
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), NewAssets(assetsPath))
 	_, err := f.AlertmanagerConfig()
 	if err != nil {
 		t.Fatal(err)
