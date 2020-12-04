@@ -2,6 +2,8 @@ apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
   name: openshift-user-critical
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
 value: 1000000000
 globalDefault: false
 description: "This priority class should be used for user facing OpenShift workload pods only."
