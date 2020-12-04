@@ -937,13 +937,25 @@ spec:
     - expr: sum(cluster:master_nodes or on(node) kube_node_labels ) BY (label_beta_kubernetes_io_instance_type,
         label_node_role_kubernetes_io, label_kubernetes_io_arch, label_node_openshift_io_os_id)
       record: cluster:node_instance_type_count:sum
-    - expr: sum  by (provisioner) (kube_persistentvolumeclaim_resource_requests_storage_bytes
-        * on (namespace,persistentvolumeclaim) group_right() (kube_persistentvolumeclaim_info
-        * on (storageclass)  group_left(provisioner) kube_storageclass_info))
+    - expr: |
+        sum by(provisioner) (
+          topk by (namespace, persistentvolumeclaim) (
+            1, kube_persistentvolumeclaim_resource_requests_storage_bytes
+          ) * on(namespace, persistentvolumeclaim) group_right()
+          topk by(namespace, persistentvolumeclaim) (
+            1, kube_persistentvolumeclaim_info * on(storageclass) group_left(provisioner) topk by(storageclass) (1, max by(storageclass, provisioner) (kube_storageclass_info))
+          )
+        )
       record: cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum
-    - expr: sum  by (provisioner) (kubelet_volume_stats_used_bytes * on (namespace,persistentvolumeclaim)
-        group_right() (kube_persistentvolumeclaim_info * on (storageclass)  group_left(provisioner)
-        kube_storageclass_info))
+    - expr: |
+        sum  by (provisioner) (
+          topk by (namespace, persistentvolumeclaim) (
+            1, kubelet_volume_stats_used_bytes
+          ) * on (namespace,persistentvolumeclaim) group_right()
+          topk by (namespace, persistentvolumeclaim) (
+            1, kube_persistentvolumeclaim_info * on(storageclass) group_left(provisioner) topk by(storageclass) (1, max by(storageclass, provisioner) (kube_storageclass_info))
+          )
+        )
       record: cluster:kubelet_volume_stats_used_bytes:provisioner:sum
     - expr: sum(etcd_object_counts) BY (instance)
       record: instance:etcd_object_counts:sum
