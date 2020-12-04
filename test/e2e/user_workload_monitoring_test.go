@@ -645,36 +645,7 @@ func assertUserWorkloadRules(t *testing.T) {
 	f.ThanosQuerierClient.WaitForRulesReturn(
 		t, 10*time.Minute,
 		func(body []byte) error {
-			j, err := gabs.ParseJSON([]byte(body))
-			if err != nil {
-				return err
-			}
-
-			groups, err := j.Path("data.groups").Children()
-			if err != nil {
-				return err
-			}
-
-			for i := 0; i < len(groups); i++ {
-				groupName := groups[i].S("name").Data().(string)
-				if groupName != "example" {
-					continue
-				}
-
-				rules, err := groups[i].Path("rules").Children()
-				if err != nil {
-					return err
-				}
-
-				for j := 0; j < len(rules); j++ {
-					ruleName := rules[j].S("name").Data().(string)
-					if ruleName == "VersionAlert" {
-						return nil
-					}
-				}
-			}
-
-			return errors.New("VersionAlert alert not found")
+			return getThanosRules(body, "example", "VersionAlert")
 		},
 	)
 }
