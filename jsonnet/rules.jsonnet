@@ -207,7 +207,16 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:node_instance_type_count:sum',
           },
           {
-            expr: 'sum  by (provisioner) (kube_persistentvolumeclaim_resource_requests_storage_bytes * on (namespace,persistentvolumeclaim) group_right() (kube_persistentvolumeclaim_info * on (storageclass)  group_left(provisioner) kube_storageclass_info))',
+            expr: |||
+              sum by(provisioner) (
+                topk by (namespace, persistentvolumeclaim) (
+                  1, kube_persistentvolumeclaim_resource_requests_storage_bytes
+                ) * on(namespace, persistentvolumeclaim) group_right()
+                topk by(namespace, persistentvolumeclaim) (
+                  1, kube_persistentvolumeclaim_info * on(storageclass) group_left(provisioner) topk by(storageclass) (1, max by(storageclass, provisioner) (kube_storageclass_info))
+                )
+              )
+            |||,
             record: 'cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum',
           },
           {
