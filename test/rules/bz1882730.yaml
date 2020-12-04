@@ -1,0 +1,213 @@
+# Tests for https://bugzilla.redhat.com/show_bug.cgi?id=1882730.
+# On virtualized s390x (Z) architecture, node_exporter reports empty values for
+# the core and package labels. The recording rules aggregating on these labels
+# need to account for this.
+
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  # Test for s390x architecture running on virtualized platform.
+  - interval: 1m
+    input_series:
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="0",endpoint="https",instance="rdossant-ocp-jknxv-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-k2znj",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="0",endpoint="https",instance="rdossant-ocp-jknxv-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-6s5dg",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="0",endpoint="https",instance="rdossant-ocp-jknxv-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-zzsk2",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="0",endpoint="https",instance="rdossant-ocp-jknxv-worker-0-mzwpl",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-662cg",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="0",endpoint="https",instance="rdossant-ocp-jknxv-worker-0-xzptw",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-qbk2x",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="1",endpoint="https",instance="rdossant-ocp-jknxv-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-k2znj",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="1",endpoint="https",instance="rdossant-ocp-jknxv-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-6s5dg",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="1",endpoint="https",instance="rdossant-ocp-jknxv-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-zzsk2",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="1",endpoint="https",instance="rdossant-ocp-jknxv-worker-0-mzwpl",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-662cg",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="1",endpoint="https",instance="rdossant-ocp-jknxv-worker-0-xzptw",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-qbk2x",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="2",endpoint="https",instance="rdossant-ocp-jknxv-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-k2znj",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="2",endpoint="https",instance="rdossant-ocp-jknxv-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-6s5dg",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="2",endpoint="https",instance="rdossant-ocp-jknxv-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-zzsk2",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="2",endpoint="https",instance="rdossant-ocp-jknxv-worker-0-mzwpl",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-662cg",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="2",endpoint="https",instance="rdossant-ocp-jknxv-worker-0-xzptw",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-qbk2x",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="3",endpoint="https",instance="rdossant-ocp-jknxv-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-k2znj",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="3",endpoint="https",instance="rdossant-ocp-jknxv-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-6s5dg",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="3",endpoint="https",instance="rdossant-ocp-jknxv-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-zzsk2",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="3",endpoint="https",instance="rdossant-ocp-jknxv-worker-0-mzwpl",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-662cg",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'node_cpu_info{container="kube-rbac-proxy",cpu="3",endpoint="https",instance="rdossant-ocp-jknxv-worker-0-xzptw",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-qbk2x",service="node-exporter",vendor="IBM/S390"}'
+        values: '1+0x5'
+      - series: 'cluster:nodes_roles{node="rdossant-ocp-jknxv-master-0",label_kubernetes_io_arch="s390x",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+        values: '1+0x5'
+      - series: 'cluster:nodes_roles{node="rdossant-ocp-jknxv-master-1",label_kubernetes_io_arch="s390x",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+        values: '1+0x5'
+      - series: 'cluster:nodes_roles{node="rdossant-ocp-jknxv-master-2",label_kubernetes_io_arch="s390x",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+        values: '1+0x5'
+      - series: 'cluster:nodes_roles{node="rdossant-ocp-jknxv-worker-0-mzwpl",label_kubernetes_io_arch="s390x",label_node_openshift_io_os_id="rhcos"}'
+        values: '1+0x5'
+      - series: 'cluster:nodes_roles{node="rdossant-ocp-jknxv-worker-0-xzptw",label_kubernetes_io_arch="s390x",label_node_openshift_io_os_id="rhcos"}'
+        values: '1+0x5'
+
+    promql_expr_test:
+      #      - expr: |
+      #            clamp_max(
+      #              (
+      #                label_replace( ( ( sum ( label_replace(label_join(node_cpu_info{core=",package="}, "core", "", cpu), "package", "0", "package", "") ) by (instance, package, core) )  > 1 ), "label_node_hyperthread_enabled", "true", instance, "(.*)" )
+      #                or on (instance, package)
+      #                label_replace( ( ( sum ( label_replace(label_join(node_cpu_info{core=",package="}, "core", "", cpu), "package", "0", "package", "") ) by (instance, package, core) ) <= 1 ), "label_node_hyperthread_enabled", "false", instance, "(.*)" )
+      #              ), 1
+      #            )
+      #        eval_time: 1m
+      #        exp_samples:
+      #          - labels: '{instance="rdossant-ocp-jknxv-master-0",label_node_hyperthread_enabled="true",package="0",core="0"}'
+      #            value: 1
+      #          - labels: '{instance="rdossant-ocp-jknxv-master-1",label_node_hyperthread_enabled="true",package="0",core="0"}'
+      #            value: 1
+      #          - labels: '{instance="rdossant-ocp-jknxv-master-2",label_node_hyperthread_enabled="true",package="0",core="0"}'
+      #            value: 1
+      #          - labels: '{instance="rdossant-ocp-jknxv-worker-0-mzwpl",label_node_hyperthread_enabled="true",package="0",core="0"}'
+      #            value: 1
+      #          - labels: '{instance="rdossant-ocp-jknxv-worker-0-xzptw",label_node_hyperthread_enabled="true",package="0",core="0"}'
+      #            value: 1
+      #
+      - expr: cluster:cpu_core_hyperthreading
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-0",label_node_hyperthread_enabled="false",package="0",core="0"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-0",label_node_hyperthread_enabled="false",package="0",core="1"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-0",label_node_hyperthread_enabled="false",package="0",core="2"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-0",label_node_hyperthread_enabled="false",package="0",core="3"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-1",label_node_hyperthread_enabled="false",package="0",core="0"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-1",label_node_hyperthread_enabled="false",package="0",core="1"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-1",label_node_hyperthread_enabled="false",package="0",core="2"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-1",label_node_hyperthread_enabled="false",package="0",core="3"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-2",label_node_hyperthread_enabled="false",package="0",core="0"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-2",label_node_hyperthread_enabled="false",package="0",core="1"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-2",label_node_hyperthread_enabled="false",package="0",core="2"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-master-2",label_node_hyperthread_enabled="false",package="0",core="3"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-worker-0-mzwpl",label_node_hyperthread_enabled="false",package="0",core="0"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-worker-0-mzwpl",label_node_hyperthread_enabled="false",package="0",core="1"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-worker-0-mzwpl",label_node_hyperthread_enabled="false",package="0",core="2"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-worker-0-mzwpl",label_node_hyperthread_enabled="false",package="0",core="3"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-worker-0-xzptw",label_node_hyperthread_enabled="false",package="0",core="0"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-worker-0-xzptw",label_node_hyperthread_enabled="false",package="0",core="1"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-worker-0-xzptw",label_node_hyperthread_enabled="false",package="0",core="2"}'
+            value: 1
+          - labels: 'cluster:cpu_core_hyperthreading{instance="rdossant-ocp-jknxv-worker-0-xzptw",label_node_hyperthread_enabled="false",package="0",core="3"}'
+            value: 1
+
+      - expr: node_role_os_version_machine:cpu_capacity_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_node_hyperthread_enabled="false",label_kubernetes_io_arch="s390x",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+            value: 12
+          - labels: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_node_hyperthread_enabled="false",label_kubernetes_io_arch="s390x",label_node_openshift_io_os_id="rhcos"}'
+            value: 8
+
+  # Test for amd64 architecture.
+  - interval: 1m
+    input_series:
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="0",endpoint="https",family="6",instance="ip-10-0-131-223.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-ms7lt",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="0",endpoint="https",family="6",instance="ip-10-0-138-96.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-5klrq",service="node-exporter",stepping="1",vendor="GenuineIntel"} '
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="0",endpoint="https",family="6",instance="ip-10-0-145-131.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-9q8rq",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="0",endpoint="https",family="6",instance="ip-10-0-155-26.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-vdmrl",service="node-exporter",stepping="1",vendor="GenuineIntel"} '
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="0",endpoint="https",family="6",instance="ip-10-0-165-193.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-jj7sr",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="0",endpoint="https",family="6",instance="ip-10-0-170-51.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-r7z2w",service="node-exporter",stepping="1",vendor="GenuineIntel"} '
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="1",endpoint="https",family="6",instance="ip-10-0-131-223.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-ms7lt",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="1",endpoint="https",family="6",instance="ip-10-0-155-26.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-vdmrl",service="node-exporter",stepping="1",vendor="GenuineIntel"} '
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="1",endpoint="https",family="6",instance="ip-10-0-170-51.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-r7z2w",service="node-exporter",stepping="1",vendor="GenuineIntel"} '
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="2",endpoint="https",family="6",instance="ip-10-0-138-96.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-5klrq",service="node-exporter",stepping="1",vendor="GenuineIntel"} '
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="2",endpoint="https",family="6",instance="ip-10-0-145-131.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-9q8rq",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="0",cpu="2",endpoint="https",family="6",instance="ip-10-0-165-193.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-jj7sr",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="1",cpu="1",endpoint="https",family="6",instance="ip-10-0-138-96.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-5klrq",service="node-exporter",stepping="1",vendor="GenuineIntel"} '
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="1",cpu="1",endpoint="https",family="6",instance="ip-10-0-145-131.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-9q8rq",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="1",cpu="1",endpoint="https",family="6",instance="ip-10-0-165-193.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-jj7sr",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="1",cpu="3",endpoint="https",family="6",instance="ip-10-0-138-96.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-5klrq",service="node-exporter",stepping="1",vendor="GenuineIntel"} '
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="1",cpu="3",endpoint="https",family="6",instance="ip-10-0-145-131.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-9q8rq",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'node_cpu_info{cachesize="46080 KB",container="kube-rbac-proxy",core="1",cpu="3",endpoint="https",family="6",instance="ip-10-0-165-193.ec2.internal",job="node-exporter",microcode="0xb000038",model="79",model_name="Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",namespace="openshift-monitoring",package="0",pod="node-exporter-jj7sr",service="node-exporter",stepping="1",vendor="GenuineIntel"}'
+      values: '1+0x5'
+    - series: 'kube_node_labels{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",label_beta_kubernetes_io_arch="amd64",label_beta_kubernetes_io_instance_type="m4.large",label_beta_kubernetes_io_os="linux",label_failure_domain_beta_kubernetes_io_region="us-east-1",label_failure_domain_beta_kubernetes_io_zone="us-east-1a",label_kubernetes_io_arch="amd64",label_kubernetes_io_hostname="ip-10-0-131-223",label_kubernetes_io_os="linux",label_node_kubernetes_io_instance_type="m4.large",label_node_openshift_io_os_id="rhcos",label_topology_ebs_csi_aws_com_zone="us-east-1a",label_topology_kubernetes_io_region="us-east-1",label_topology_kubernetes_io_zone="us-east-1a",namespace="openshift-monitoring",node="ip-10-0-131-223.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_labels{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",label_beta_kubernetes_io_arch="amd64",label_beta_kubernetes_io_instance_type="m4.large",label_beta_kubernetes_io_os="linux",label_failure_domain_beta_kubernetes_io_region="us-east-1",label_failure_domain_beta_kubernetes_io_zone="us-east-1b",label_kubernetes_io_arch="amd64",label_kubernetes_io_hostname="ip-10-0-155-26",label_kubernetes_io_os="linux",label_node_kubernetes_io_instance_type="m4.large",label_node_openshift_io_os_id="rhcos",label_topology_ebs_csi_aws_com_zone="us-east-1b",label_topology_kubernetes_io_region="us-east-1",label_topology_kubernetes_io_zone="us-east-1b",namespace="openshift-monitoring",node="ip-10-0-155-26.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_labels{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",label_beta_kubernetes_io_arch="amd64",label_beta_kubernetes_io_instance_type="m4.large",label_beta_kubernetes_io_os="linux",label_failure_domain_beta_kubernetes_io_region="us-east-1",label_failure_domain_beta_kubernetes_io_zone="us-east-1c",label_kubernetes_io_arch="amd64",label_kubernetes_io_hostname="ip-10-0-170-51",label_kubernetes_io_os="linux",label_node_kubernetes_io_instance_type="m4.large",label_node_openshift_io_os_id="rhcos",label_topology_ebs_csi_aws_com_zone="us-east-1c",label_topology_kubernetes_io_region="us-east-1",label_topology_kubernetes_io_zone="us-east-1c",namespace="openshift-monitoring",node="ip-10-0-170-51.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_labels{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",label_beta_kubernetes_io_arch="amd64",label_beta_kubernetes_io_instance_type="m4.xlarge",label_beta_kubernetes_io_os="linux",label_failure_domain_beta_kubernetes_io_region="us-east-1",label_failure_domain_beta_kubernetes_io_zone="us-east-1a",label_kubernetes_io_arch="amd64",label_kubernetes_io_hostname="ip-10-0-138-96",label_kubernetes_io_os="linux",label_node_kubernetes_io_instance_type="m4.xlarge",label_node_openshift_io_os_id="rhcos",label_topology_ebs_csi_aws_com_zone="us-east-1a",label_topology_kubernetes_io_region="us-east-1",label_topology_kubernetes_io_zone="us-east-1a",namespace="openshift-monitoring",node="ip-10-0-138-96.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_labels{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",label_beta_kubernetes_io_arch="amd64",label_beta_kubernetes_io_instance_type="m4.xlarge",label_beta_kubernetes_io_os="linux",label_failure_domain_beta_kubernetes_io_region="us-east-1",label_failure_domain_beta_kubernetes_io_zone="us-east-1b",label_kubernetes_io_arch="amd64",label_kubernetes_io_hostname="ip-10-0-145-131",label_kubernetes_io_os="linux",label_node_kubernetes_io_instance_type="m4.xlarge",label_node_openshift_io_os_id="rhcos",label_topology_ebs_csi_aws_com_zone="us-east-1b",label_topology_kubernetes_io_region="us-east-1",label_topology_kubernetes_io_zone="us-east-1b",namespace="openshift-monitoring",node="ip-10-0-145-131.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_labels{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",label_beta_kubernetes_io_arch="amd64",label_beta_kubernetes_io_instance_type="m4.xlarge",label_beta_kubernetes_io_os="linux",label_failure_domain_beta_kubernetes_io_region="us-east-1",label_failure_domain_beta_kubernetes_io_zone="us-east-1c",label_kubernetes_io_arch="amd64",label_kubernetes_io_hostname="ip-10-0-165-193",label_kubernetes_io_os="linux",label_node_kubernetes_io_instance_type="m4.xlarge",label_node_openshift_io_os_id="rhcos",label_topology_ebs_csi_aws_com_zone="us-east-1c",label_topology_kubernetes_io_region="us-east-1",label_topology_kubernetes_io_zone="us-east-1c",namespace="openshift-monitoring",node="ip-10-0-165-193.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_role{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",namespace="openshift-monitoring",node="ip-10-0-131-223.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",role="worker",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_role{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",namespace="openshift-monitoring",node="ip-10-0-138-96.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",role="master",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_role{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",namespace="openshift-monitoring",node="ip-10-0-145-131.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",role="master",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_role{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",namespace="openshift-monitoring",node="ip-10-0-155-26.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",role="worker",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_role{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",namespace="openshift-monitoring",node="ip-10-0-165-193.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",role="master",service="kube-state-metrics"}'
+      values: '1+0x5'
+    - series: 'kube_node_role{container="kube-rbac-proxy-main",endpoint="https-main",instance="10.131.0.16:8443",job="kube-state-metrics",namespace="openshift-monitoring",node="ip-10-0-170-51.ec2.internal",pod="kube-state-metrics-6c6c8f7d67-ms8hf",role="worker",service="kube-state-metrics"}'
+      values: '1+0x5'
+
+    promql_expr_test:
+      - expr: node_role_os_version_machine:cpu_capacity_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true"}'
+            value: 6
+          - labels: 'node_role_os_version_machine:cpu_capacity_cores:sum{label_kubernetes_io_arch="amd64",label_node_hyperthread_enabled="true",label_node_openshift_io_os_id="rhcos"}'
+            value: 3
+
+

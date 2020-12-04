@@ -135,9 +135,17 @@ jsonnet-fmt: $(JSONNETFMT_BIN)
 shellcheck:
 	hack/shellcheck.sh
 
+tmp/rules.yaml: $(GOJSONTOYAML_BIN) assets/prometheus-k8s/rules.yaml
+	cat assets/prometheus-k8s/rules.yaml | $(GOJSONTOYAML_BIN) -yamltojson | jq .spec > "$@"
+
 .PHONY: check-rules
-check-rules: $(PROMTOOL_BIN) $(GOJSONTOYAML_BIN) assets/prometheus-k8s/rules.yaml
-	@$(PROMTOOL_BIN) check rules <(cat assets/prometheus-k8s/rules.yaml | $(GOJSONTOYAML_BIN) -yamltojson | jq .spec) | tee tmp/rules.out
+check-rules: $(PROMTOOL_BIN) tmp/rules.yaml
+	rm -f tmp/"$@".out
+	@$(PROMTOOL_BIN) check rules tmp/rules.yaml | tee "tmp/$@.out"
+
+.PHONY: test-rules
+test-rules: check-rules
+	hack/test-rules.sh | tee "tmp/$@.out"
 
 ###########
 # Testing #
@@ -146,8 +154,9 @@ check-rules: $(PROMTOOL_BIN) $(GOJSONTOYAML_BIN) assets/prometheus-k8s/rules.yam
 .PHONY: test
 test: test-unit test-e2e
 
+# TODO(simonpasquier): we should have a CI job specifically checking Prometheus rules.
 .PHONY: test-unit
-test-unit:
+test-unit: test-rules
 	go test -race -short $(PKGS) -count=1
 
 .PHONY: test-e2e

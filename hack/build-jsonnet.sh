@@ -4,6 +4,7 @@ set -x
 # only exit with zero if all commands of the pipeline exit successfully
 set -o pipefail
 
+# Ensure that we use the binaries from the versions defined in hack/tools/go.mod.
 PATH="$(pwd)/tmp/bin:${PATH}"
 
 prefix="assets"
