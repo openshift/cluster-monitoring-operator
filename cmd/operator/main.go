@@ -163,9 +163,13 @@ func Main() int {
 		return 1
 	}
 
-	// CMO runs many tasks in parallel and the default values for rate limiting are too low.
-	config.QPS = 20
-	config.Burst = 40
+	// CMO runs many tasks in parallel and the default values for rate limiting
+	// are too low. Thus, we need to align the QPS limit with what is set in
+	// upstream prometheus-operator. As for the burst limit, a significant
+	// increase needs to be made as in large environnements with a lot of CRDs,
+	// the limit set upstream is too low.
+	config.QPS = 100
+	config.Burst = 200
 
 	userWorkloadConfigMapName := "user-workload-monitoring-config"
 	o, err := cmo.New(
