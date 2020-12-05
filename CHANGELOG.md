@@ -12,6 +12,7 @@
 - [#971](https://github.com/openshift/cluster-monitoring-operator/pull/971) Enable `hwmon` in node-exporter for hardware sensor data collection
 - [#983](https://github.com/openshift/cluster-monitoring-operator/pull/983) Remove deprecated user workload configuration
 - [#995](https://github.com/openshift/cluster-monitoring-operator/pull/995) Add logLevel config field to Thanos Query. 
+- [#993](https://github.com/openshift/cluster-monitoring-operator/pull/993) Add metrics + alerts for Thanos sidecars.
 
 ## 4.6
 

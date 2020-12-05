@@ -218,6 +218,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Service failed")
 	}
 
+	svc, err = t.factory.PrometheusK8sServiceThanosSidecar()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos sidecar Service failed")
+	}
+
+	err = t.client.CreateOrUpdateService(svc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos sidecar Service failed")
+	}
+
 	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		etcdCA, err := t.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
 		if err != nil {
@@ -348,6 +358,16 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.CreateOrUpdateServiceMonitor(smp)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Prometheus ServiceMonitor failed")
+	}
+
+	smt, err := t.factory.PrometheusK8sThanosSidecarServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Thanos sidecar ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(smt)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Thanos sidecar ServiceMonitor failed")
 	}
 
 	// Clean up the service monitors previously managed by the cluster monitoring operator.

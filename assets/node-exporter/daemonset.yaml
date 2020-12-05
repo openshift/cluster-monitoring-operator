@@ -73,6 +73,10 @@ spec:
           requests:
             cpu: 1m
             memory: 30Mi
+        securityContext:
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
@@ -126,3 +130,4 @@ spec:
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 10%
+    type: RollingUpdate

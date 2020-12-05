@@ -6,6 +6,7 @@ local secret = k.core.v1.secret;
 local configmap = k.core.v1.configMap;
 local clusterRole = k.rbac.v1.clusterRole;
 local policyRule = clusterRole.rulesType;
+local envVar = k.core.v1.pod.mixin.specType.containersType.envType;
 local selector = k.apps.v1beta2.deployment.mixin.spec.selectorType;
 
 local authenticationRole =
@@ -69,6 +70,8 @@ local sccRole =
   ]) +
   policyRule.withVerbs(['use']);
 
+local podIPEnvVar =
+  envVar.fromFieldPath('POD_IP', 'status.podIP');
 
 {
   prometheusUserWorkload+:: $.prometheus {
@@ -100,6 +103,7 @@ local sccRole =
       service.mixin.spec.withPorts([
         // kube-rbac-proxy
         servicePort.newNamed('metrics', 9091, 'metrics'),
+        servicePort.newNamed('thanos-proxy', 10902, 'thanos-proxy'),
       ]),
 
     servingCertsCaBundle+:
@@ -156,12 +160,32 @@ local sccRole =
         },
       },
 
-    // TODO: Adding this to our stack is not as easy
-    // as sidecar listens on 127.0.0.1:10902 and we 
-    // need kube-rbac-proxy in front of it.
+    serviceThanosSidecar+:
+      service.mixin.metadata.withAnnotations({
+        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-user-workload-tls',
+      }) +
+      service.mixin.spec.withPorts([
+        servicePort.newNamed('thanos-proxy', 10902, 'thanos-proxy'),
+      ]),
 
-    serviceMonitorThanosSidecar:: null,
-    serviceThanosSidecar:: null,
+    serviceMonitorThanosSidecar+:
+      {
+        spec+: {
+          jobLabel:: null,
+          endpoints: [
+            {
+              port: 'thanos-proxy',
+              interval: '30s',
+              scheme: 'https',
+              tlsConfig: {
+                caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                serverName: 'prometheus-user-workload-monitoring',
+              },
+              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+            },
+          ],
+        },
+      },
 
     prometheus+:
       {
@@ -250,6 +274,39 @@ local sccRole =
                 '--tls-cert-file=/etc/tls/private/tls.crt',
                 '--tls-private-key-file=/etc/tls/private/tls.key',
                 '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+              ],
+              terminationMessagePolicy: 'FallbackToLogsOnError',
+              volumeMounts: [
+                {
+                  mountPath: '/etc/tls/private',
+                  name: 'secret-prometheus-user-workload-tls',
+                },
+              ],
+            },
+            {
+              name: 'kube-rbac-proxy-thanos',
+              image: $._config.imageRepos.kubeRbacProxy + ':' + $._config.versions.kubeRbacProxy,
+              resources: {
+                requests: {
+                  memory: '10Mi',
+                  cpu: '1m',
+                },
+              },
+              env: [podIPEnvVar],
+              ports: [
+                {
+                  containerPort: 10902,
+                  name: 'thanos-proxy',
+                },
+              ],
+              args: [
+                '--secure-listen-address=[$(POD_IP)]:10902',
+                '--upstream=http://127.0.0.1:10902',
+                '--tls-cert-file=/etc/tls/private/tls.crt',
+                '--tls-private-key-file=/etc/tls/private/tls.key',
+                '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                '--allow-paths=/metrics',
+                '--logtostderr=true',
               ],
               terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [

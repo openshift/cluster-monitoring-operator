@@ -24,16 +24,6 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/coreos/kube-prometheus.git",
-          "subdir": "jsonnet/kube-prometheus"
-        }
-      },
-      "version": "aee7f28bcdaca57a746c2ae96b3649d163bc2307",
-      "sum": "csLffiblzsQhNp5MJTddziQCu6STUeOW9WoP1RRmPd4="
-    },
-    {
-      "source": {
-        "git": {
           "remote": "https://github.com/etcd-io/etcd.git",
           "subdir": "Documentation/etcd-mixin"
         }
@@ -133,6 +123,16 @@
       "version": "895aca154f5ca7f7ddd7602231d9a770d1e9d3c2",
       "sum": "lDFA8FuwSzQLbEzat99DZeixkh191LEnF2jVGD/BPXo=",
       "name": "telemeter-client"
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/prometheus-operator/kube-prometheus.git",
+          "subdir": "jsonnet/kube-prometheus"
+        }
+      },
+      "version": "52827617108b222c3fed65192121b73dab0ffcaf",
+      "sum": "RiQZD6Sa9Aj8s7tetSi1WIGK/nmQA0XB7t8y01ZX27s="
     },
     {
       "source": {

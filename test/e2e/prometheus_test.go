@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +27,34 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestPrometheusMetrics(t *testing.T) {
+	for service, expected := range map[string]int{
+		"prometheus-operator":           1,
+		"prometheus-k8s":                2,
+		"prometheus-k8s-thanos-sidecar": 2,
+		"thanos-querier":                2,
+		"prometheus-adapter":            2,
+		"alertmanager-main":             3,
+		"kube-state-metrics":            2, // one for the kube metrics + one for the metrics of the process itself.
+		"openshift-state-metrics":       2, // ditto.
+		"telemeter-client":              1,
+		"grafana":                       1,
+	} {
+		t.Run(service, func(t *testing.T) {
+			f.ThanosQuerierClient.WaitForQueryReturn(
+				t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-monitoring"})`, service),
+				func(i int) error {
+					if i != expected {
+						return fmt.Errorf("expected %d targets but got %d", expected, i)
+					}
+
+					return nil
+				},
+			)
+		})
+	}
+}
 
 func TestPrometheusVolumeClaim(t *testing.T) {
 	err := f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{

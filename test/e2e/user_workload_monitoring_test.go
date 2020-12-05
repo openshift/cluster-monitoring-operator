@@ -292,20 +292,23 @@ func assertThanosRulerDeployment(t *testing.T) {
 
 func assertMetricsForMonitoringComponents(t *testing.T) {
 	for service, expected := range map[string]int{
-		"prometheus-operator":      1,
-		"prometheus-user-workload": 2,
-		"thanos-ruler":             2,
+		"prometheus-operator":                     1,
+		"prometheus-user-workload":                2,
+		"thanos-ruler":                            2,
+		"prometheus-user-workload-thanos-sidecar": 2,
 	} {
-		f.ThanosQuerierClient.WaitForQueryReturn(
-			t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"})`, service),
-			func(i int) error {
-				if i == expected {
-					return nil
-				}
+		t.Run(service, func(t *testing.T) {
+			f.ThanosQuerierClient.WaitForQueryReturn(
+				t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"})`, service),
+				func(i int) error {
+					if i == expected {
+						return nil
+					}
 
-				return fmt.Errorf("expected %d targets for service %q but got %d", expected, service, i)
-			},
-		)
+					return fmt.Errorf("expected %d targets but got %d", expected, i)
+				},
+			)
+		})
 	}
 }
 
