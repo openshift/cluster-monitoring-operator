@@ -1840,6 +1840,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-cluster-total
@@ -3076,6 +3077,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-etcd
@@ -5648,6 +5650,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-cluster
@@ -7924,6 +7927,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-namespace
@@ -8892,6 +8896,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-node
@@ -10654,6 +10659,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-pod
@@ -12678,6 +12684,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-workload
@@ -14863,6 +14870,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-workloads-namespace
@@ -16291,6 +16299,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-namespace-by-pod
@@ -17245,6 +17254,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-cluster-rsrc-use
@@ -18226,6 +18236,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-rsrc-use
@@ -19418,6 +19429,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-pod-total
@@ -20635,6 +20647,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-production-edge: "true"
   labels:
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-prometheus
