@@ -298,7 +298,7 @@ google.golang.org/protobuf/types/known/timestamppb
 gopkg.in/inf.v0
 # gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
-# k8s.io/api v0.19.2 => k8s.io/api v0.19.2
+# k8s.io/api v0.19.4 => k8s.io/api v0.19.4
 ## explicit
 k8s.io/api/admissionregistration/v1
 k8s.io/api/admissionregistration/v1beta1
@@ -341,7 +341,7 @@ k8s.io/api/settings/v1alpha1
 k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
-# k8s.io/apiextensions-apiserver v0.19.2
+# k8s.io/apiextensions-apiserver v0.19.4
 ## explicit
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
@@ -350,7 +350,7 @@ k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1
-# k8s.io/apimachinery v0.19.2 => k8s.io/apimachinery v0.19.2
+# k8s.io/apimachinery v0.19.4 => k8s.io/apimachinery v0.19.4
 ## explicit
 k8s.io/apimachinery/pkg/api/equality
 k8s.io/apimachinery/pkg/api/errors
@@ -399,10 +399,10 @@ k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/json
 k8s.io/apimachinery/third_party/forked/golang/netutil
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/apiserver v0.19.2
+# k8s.io/apiserver v0.19.4
 ## explicit
 k8s.io/apiserver/pkg/authentication/user
-# k8s.io/client-go v12.0.0+incompatible => k8s.io/client-go v0.19.2
+# k8s.io/client-go v12.0.0+incompatible => k8s.io/client-go v0.19.4
 ## explicit
 k8s.io/client-go/discovery
 k8s.io/client-go/discovery/fake
@@ -613,12 +613,12 @@ k8s.io/client-go/util/flowcontrol
 k8s.io/client-go/util/homedir
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
-# k8s.io/component-base v0.19.2
+# k8s.io/component-base v0.19.4
 k8s.io/component-base/cli/flag
 # k8s.io/klog/v2 v2.3.0
 ## explicit
 k8s.io/klog/v2
-# k8s.io/kube-aggregator v0.19.2
+# k8s.io/kube-aggregator v0.19.4
 ## explicit
 k8s.io/kube-aggregator/pkg/apis/apiregistration
 k8s.io/kube-aggregator/pkg/apis/apiregistration/v1
@@ -629,7 +629,7 @@ k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistr
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 # k8s.io/kube-openapi v0.0.0-20200805222855-6aeccd4b50c6
 k8s.io/kube-openapi/pkg/util/proto
-# k8s.io/metrics v0.18.4
+# k8s.io/metrics v0.19.4
 ## explicit
 k8s.io/metrics/pkg/apis/metrics
 k8s.io/metrics/pkg/apis/metrics/v1alpha1
@@ -647,7 +647,7 @@ k8s.io/utils/trace
 sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# k8s.io/api => k8s.io/api v0.19.2
-# k8s.io/apimachinery => k8s.io/apimachinery v0.19.2
-# k8s.io/client-go => k8s.io/client-go v0.19.2
+# k8s.io/api => k8s.io/api v0.19.4
+# k8s.io/apimachinery => k8s.io/apimachinery v0.19.4
+# k8s.io/client-go => k8s.io/client-go v0.19.4
 # k8s.io/code-generator => k8s.io/code-generator v0.0.0-20190912054826-cd179ad6a269

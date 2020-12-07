@@ -1,6 +1,6 @@
 module github.com/openshift/cluster-monitoring-operator
 
-go 1.15
+go 1.14
 
 require (
 	github.com/Jeffail/gabs v1.4.0
@@ -16,19 +16,19 @@ require (
 	github.com/prometheus/client_golang v1.8.0
 	github.com/prometheus/prometheus v1.8.2-0.20201015110737-0a7fdd3b7696 // v1.8.2 is misleading as Prometheus does not have v2 module. This is pointing to v2.22.0, the same as in prometheus-operator v0.44.0
 	golang.org/x/sync v0.0.0-20201008141435-b3e1573b7520
-	k8s.io/api v0.19.2
-	k8s.io/apiextensions-apiserver v0.19.2
-	k8s.io/apimachinery v0.19.2
-	k8s.io/apiserver v0.19.2
+	k8s.io/api v0.19.4
+	k8s.io/apiextensions-apiserver v0.19.4
+	k8s.io/apimachinery v0.19.4
+	k8s.io/apiserver v0.19.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog/v2 v2.3.0
-	k8s.io/kube-aggregator v0.19.2
-	k8s.io/metrics v0.18.4
+	k8s.io/kube-aggregator v0.19.4
+	k8s.io/metrics v0.19.4
 )
 
 replace (
-	k8s.io/api => k8s.io/api v0.19.2
-	k8s.io/apimachinery => k8s.io/apimachinery v0.19.2
-	k8s.io/client-go => k8s.io/client-go v0.19.2
+	k8s.io/api => k8s.io/api v0.19.4
+	k8s.io/apimachinery => k8s.io/apimachinery v0.19.4
+	k8s.io/client-go => k8s.io/client-go v0.19.4
 	k8s.io/code-generator => k8s.io/code-generator v0.0.0-20190912054826-cd179ad6a269
 )
