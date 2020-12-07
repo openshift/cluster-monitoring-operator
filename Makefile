@@ -77,7 +77,7 @@ vendor:
 	go mod verify
 
 .PHONY: generate
-generate: pkg/manifests/bindata.go manifests/0000_50_cluster-monitoring-operator_02-role.yaml docs
+generate: build-jsonnet pkg/manifests/bindata.go manifests/0000_50_cluster-monitoring-operator_02-role.yaml docs
 
 .PHONY: generate-in-docker
 generate-in-docker:
