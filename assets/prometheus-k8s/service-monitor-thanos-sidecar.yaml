@@ -13,7 +13,7 @@ spec:
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-      serverName: prometheus-k8s
+      serverName: prometheus-k8s-thanos-sidecar
   selector:
     matchLabels:
       app: thanos-sidecar
