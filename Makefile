@@ -12,7 +12,7 @@ export GOPROXY
 
 PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
 GOLANG_FILES:=$(shell find . -name \*.go -print)
-ASSETS=$(shell grep -oh 'assets/.*\.yaml' pkg/manifests/manifests.go)
+ASSETS=$(shell grep -oh '[^"]*/.*\.yaml' pkg/manifests/manifests.go | sed 's/^/assets\//')
 
 BIN_DIR ?= $(shell pwd)/tmp/bin
 
