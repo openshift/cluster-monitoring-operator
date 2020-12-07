@@ -8,6 +8,8 @@ about: Create release checklist
 ## Golang projects and backports
 
 - [ ] update downstream backport of [openshift/node_exporter](https://github.com/openshift/node_exporter)
+  - [ ] bump [openshift/procfs](https://github.com/openshift/procfs) to the version used in the node_exporter's upstream version we want to bump to, including any downstream patch we may have
+  - [ ] bump [openshift/node_exporter](https://github.com/openshift/node_exporter) to the upstream version replacing the procfs dependency by the downstream repo
 - [ ] update downstream backport of [openshift/prometheus](https://github.com/openshift/prometheus)
 - [ ] update downstream backport of [openshift/alertmanager](https://github.com/openshift/alertmanager)
 - [ ] update downstream backport of [openshift/thanos](https://github.com/openshift/thanos)
@@ -29,6 +31,6 @@ about: Create release checklist
 - [ ] update and pin jsonnet dependencies in [jsonnet/jsonnetfile.json](https://github.com/openshift/cluster-monitoring-operator/blob/master/jsonnet/jsonnetfile.json).
   - example: https://github.com/openshift/cluster-monitoring-operator/blob/release-4.3/jsonnet/jsonnetfile.json
   - dependencies should be pinned to branches released in previous paragraph
-- [ ] update golang dependencies by modifying [go.mod](https://github.com/openshift/cluster-monitoring-operator/blob/master/go.mod) file.
+- [ ] update golang dependencies in [go.mod](https://github.com/openshift/cluster-monitoring-operator/blob/master/go.mod) and [hack/tools/go.mod](https://github.com/openshift/cluster-monitoring-operator/blob/master/hack/tools/go.mod) files.
   - most important are dependencies on prometheus-operator and kubernetes components
-
+  - update the tooling prometheus dependency to be in sync with the main one
