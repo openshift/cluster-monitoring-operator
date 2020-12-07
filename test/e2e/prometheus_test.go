@@ -43,10 +43,10 @@ func TestPrometheusMetrics(t *testing.T) {
 	} {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
-				t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-monitoring"})`, service),
+				t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-monitoring"} == 1)`, service),
 				func(i int) error {
 					if i != expected {
-						return fmt.Errorf("expected %d targets but got %d", expected, i)
+						return fmt.Errorf("expected %d targets to be up but got %d", expected, i)
 					}
 
 					return nil
