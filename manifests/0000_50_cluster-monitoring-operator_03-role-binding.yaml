@@ -7,6 +7,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -15,6 +16,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

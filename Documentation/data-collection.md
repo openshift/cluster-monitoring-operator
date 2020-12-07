@@ -249,6 +249,7 @@ metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
 ```
 
 These attributes provide a snapshot of the health, usage, and size of a cluster. From this we can determine the functionality of the framework components. This information helps Red Hat to identify correlations between issues experienced across many OpenShift 4 clusters that have similar environmental characteristics. This enables Red Hat to rapidly develop changes in OpenShift 4 to improve software resilience and customer experience.
