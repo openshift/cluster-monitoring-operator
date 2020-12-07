@@ -243,7 +243,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'node_role_os_version_machine:cpu_capacity_sockets:sum',
           },
           {
-            expr: 'clamp_max(sum(alertmanager_notifications_total),1)',
+            expr: 'clamp_max(sum(alertmanager_integrations),1)',
             record: 'cluster:alertmanager_routing_enabled:max',
           },
           {
