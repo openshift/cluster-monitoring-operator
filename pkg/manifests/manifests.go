@@ -1126,7 +1126,7 @@ func (f *Factory) PrometheusK8sThanosSidecarServiceMonitor() (*monv1.ServiceMoni
 		return nil, err
 	}
 
-	s.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-k8s.%s.svc", f.namespace)
+	s.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-k8s-thanos-sidecar.%s.svc", f.namespace)
 	s.Namespace = f.namespace
 
 	return s, nil
@@ -1768,7 +1768,7 @@ func (f *Factory) PrometheusUserWorkloadThanosSidecarServiceMonitor() (*monv1.Se
 	}
 
 	sm.Namespace = f.namespaceUserWorkload
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-user-workload.%s.svc", f.namespaceUserWorkload)
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-user-workload-thanos-sidecar.%s.svc", f.namespaceUserWorkload)
 
 	return sm, nil
 }
