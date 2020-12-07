@@ -18,8 +18,8 @@ import (
 	"sort"
 	"strings"
 
-	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/pkg/errors"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus/prometheus/pkg/labels"
 	promql "github.com/prometheus/prometheus/promql/parser"
 )

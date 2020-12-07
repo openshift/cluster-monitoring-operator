@@ -22,8 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 
-	poTestFramework "github.com/coreos/prometheus-operator/test/framework"
 	"github.com/pkg/errors"
+	poTestFramework "github.com/prometheus-operator/prometheus-operator/test/framework"
 )
 
 func CreateSecret(kubeClient kubernetes.Interface, namespace string, relativePath string) error {

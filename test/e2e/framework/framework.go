@@ -36,8 +36,8 @@ import (
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 
-	monClient "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"github.com/pkg/errors"
+	monClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	admissionclient "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
 	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
