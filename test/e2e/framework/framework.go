@@ -313,7 +313,8 @@ func (f *Framework) ForwardPort(t *testing.T, svc string, port int) (string, fun
 	t.Helper()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, "oc", "port-forward", fmt.Sprintf("service/%s", svc), fmt.Sprintf(":%d", port), "-n", f.Ns, "--config", f.kubeConfigPath)
+	// Taken from github.com/openshift/origin/test/extended/etcd/etcd_test_runner.go
+	cmd := exec.CommandContext(ctx, "oc", "port-forward", fmt.Sprintf("service/%s", svc), fmt.Sprintf(":%d", port), "-n", f.Ns, "--kubeconfig", f.kubeConfigPath)
 
 	cleanUp := func() {
 		cancel()
