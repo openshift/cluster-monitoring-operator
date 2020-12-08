@@ -266,7 +266,7 @@ local podIPEnvVar =
 
     serviceThanosSidecar+:
       service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
+        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-thanos-sidecar-tls',
       }) +
       service.mixin.spec.withPorts([
         servicePort.newNamed('thanos-proxy', 10902, 'thanos-proxy'),
@@ -283,7 +283,7 @@ local podIPEnvVar =
               scheme: 'https',
               tlsConfig: {
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                serverName: 'prometheus-k8s',
+                serverName: 'prometheus-k8s-thanos-sidecar',
               },
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
             },
@@ -340,6 +340,7 @@ local podIPEnvVar =
             'prometheus-k8s-tls',
             'prometheus-k8s-proxy',
             'prometheus-k8s-htpasswd',
+            'prometheus-k8s-thanos-sidecar-tls',
             'kube-rbac-proxy',
           ],
           configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
@@ -495,7 +496,7 @@ local podIPEnvVar =
               volumeMounts: [
                 {
                   mountPath: '/etc/tls/private',
-                  name: 'secret-prometheus-k8s-tls',
+                  name: 'secret-prometheus-k8s-thanos-sidecar-tls',
                 },
               ],
             },

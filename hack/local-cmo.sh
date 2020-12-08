@@ -25,4 +25,4 @@ kubectl -n openshift-monitoring scale --replicas=0 deployment/cluster-monitoring
 cat manifests/0000_50_cluster-monitoring-operator_04-config.yaml | gojsontoyaml -yamltojson | jq -r '.data["metrics.yaml"]' > /tmp/telemetry-config.yaml
 
 # shellcheck disable=SC2086
-./operator ${IMAGES} -telemetry-config /tmp/telemetry-config.yaml -kubeconfig "${KUBECONFIG}" -namespace=openshift-monitoring -configmap=cluster-monitoring-config -logtostderr=true -v=4 2>&1 | tee operator.log
+./operator ${IMAGES} -assets assets/ -telemetry-config /tmp/telemetry-config.yaml -kubeconfig "${KUBECONFIG}" -namespace=openshift-monitoring -configmap=cluster-monitoring-config -logtostderr=true -v=4 2>&1 | tee operator.log

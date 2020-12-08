@@ -136,7 +136,7 @@ spec:
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
-      name: secret-prometheus-k8s-tls
+      name: secret-prometheus-k8s-thanos-sidecar-tls
   - args:
     - sidecar
     - --prometheus.url=http://localhost:9090/
@@ -180,6 +180,7 @@ spec:
   - prometheus-k8s-tls
   - prometheus-k8s-proxy
   - prometheus-k8s-htpasswd
+  - prometheus-k8s-thanos-sidecar-tls
   - kube-rbac-proxy
   securityContext:
     fsGroup: 65534

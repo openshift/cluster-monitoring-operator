@@ -80,7 +80,7 @@ spec:
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
-      name: secret-prometheus-user-workload-tls
+      name: secret-prometheus-user-workload-thanos-sidecar-tls
   - args:
     - sidecar
     - --prometheus.url=http://localhost:9090/
@@ -127,6 +127,7 @@ spec:
       openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
   secrets:
   - prometheus-user-workload-tls
+  - prometheus-user-workload-thanos-sidecar-tls
   securityContext:
     fsGroup: 65534
     runAsNonRoot: true
