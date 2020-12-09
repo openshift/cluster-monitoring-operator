@@ -61,14 +61,14 @@ class ClusterRole(object):
             warnings.warn('creating a ClusterRole from a {}'.format(self.manifest['kind']))
         self.rules = {}
         if 'rules' in self.manifest:
-            for r in self.manifest['rules']:
+            for r in filter(withoutSCC, self.manifest['rules']):
                 self.rules[rule_to_string(r)] = r
         else:
             self.manifest['rules'] = []
 
     # merge adds the rules of the passed ClusterRole to the list of rules.
     def merge(self, cr):
-        for s, r in cr.rules.items():
+        for s, r in filter(withoutSCC, cr.rules.items()):
             if s not in self.rules:
                 self.rules[s] = r
                 self.manifest['rules'].append(r)
@@ -87,6 +87,10 @@ def rule_to_string(rule):
         s.append('{}:{}'.format(k, v))
     return ','.join(s)
 
+
+def withoutSCC(rule):
+    nonroot = {'apiGroups': ['security.openshift.io'], 'resourceNames': ['nonroot'], 'resources': ['securitycontextconstraints'], 'verbs': ['use']}
+    return not nonroot == rule
 
 if __name__ == "__main__":
     main()
