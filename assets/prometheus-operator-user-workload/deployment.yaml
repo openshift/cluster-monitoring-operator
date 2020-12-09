@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.43.0
+    app.kubernetes.io/version: v0.44.0
   name: prometheus-operator
   namespace: openshift-user-workload-monitoring
 spec:
@@ -18,19 +18,18 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: v0.43.0
+        app.kubernetes.io/version: v0.44.0
     spec:
       containers:
       - args:
-        - --logtostderr=true
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.43.0
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.44.0
         - --deny-namespaces=openshift-monitoring
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
         - --config-reloader-cpu=0
         - --config-reloader-memory=0
-        image: quay.io/prometheus-operator/prometheus-operator:v0.43.0
+        image: quay.io/prometheus-operator/prometheus-operator:v0.44.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
