@@ -26,12 +26,12 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
 
-	monfake "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
 	ossfake "github.com/openshift/client-go/security/clientset/versioned/fake"
+	monfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 )
 
 const (
