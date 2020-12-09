@@ -1,0 +1,39 @@
+# Tests for https://bugzilla.redhat.com/show_bug.cgi?id=1903464
+# Having many instance labels for the same volume can lead to problems 
+# with many-to-many matching. Recording rule need to account for this.
+
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'kube_storageclass_info{endpoint="https-main",instance="10.130.2.7:8443",job="kube-state-metrics",namespace="openshift-monitoring",pod="kube-state-metrics-6674fd6cfd-4crcl",prometheus="openshift-monitoring/k8s",provisioner="kubernetes.io/gce-pd",reclaimPolicy="Delete",service="kube-state-metrics",storageclass="standard",volumeBindingMode="WaitForFirstConsumer"}'
+        values: '1+0x5'
+      - series: 'kube_persistentvolumeclaim_info{endpoint="https-main",instance="10.130.2.7:8443",job="kube-state-metrics",namespace="xiuwang",persistentvolumeclaim="jenkins",pod="kube-state-metrics-6674fd6cfd-4crcl",prometheus="openshift-monitoring/k8s",service="kube-state-metrics",storageclass="standard",volumename="pvc-555e1a2c-326d-42f6-a914-512a720574e0"}'
+        values: '1+0x5'
+      - series: 'kube_persistentvolumeclaim_resource_requests_storage_bytes{endpoint="https-main",instance="10.130.2.7:8443",job="kube-state-metrics",namespace="xiuwang",node="dyan-upg0916-09160342-w-a-l-rhel-0",persistentvolumeclaim="jenkins"}'
+        values: '0.31363677978515625+0x5'
+    promql_expr_test:
+      - expr: cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum{provisioner="kubernetes.io/gce-pd"}'
+            value: 3.1363677978515625E-01
+  - interval: 1m
+    input_series:
+      - series: 'kube_storageclass_info{endpoint="https-main",instance="10.130.2.7:8443",job="kube-state-metrics",namespace="openshift-monitoring",pod="kube-state-metrics-6674fd6cfd-4crcl",prometheus="openshift-monitoring/k8s",provisioner="kubernetes.io/gce-pd",reclaimPolicy="Delete",service="kube-state-metrics",storageclass="standard",volumeBindingMode="WaitForFirstConsumer"}'
+      - series: 'kube_storageclass_info{endpoint="https-main",instance="10.130.2.10:8443",job="kube-state-metrics",namespace="openshift-monitoring",pod="kube-state-metrics-6674fd6cfd-4324",prometheus="openshift-monitoring/k8s",provisioner="kubernetes.io/gce-pd",reclaimPolicy="Delete",service="kube-state-metrics",storageclass="standard",volumeBindingMode="WaitForFirstConsumer"}'
+        values: '1+0x5'
+      - series: 'kube_persistentvolumeclaim_info{endpoint="https-main",instance="10.130.2.7:8443",job="kube-state-metrics",namespace="xiuwang",persistentvolumeclaim="jenkins",pod="kube-state-metrics-6674fd6cfd-4crcl",prometheus="openshift-monitoring/k8s",service="kube-state-metrics",storageclass="standard",volumename="pvc-555e1a2c-326d-42f6-a914-512a720574e0"}'
+        values: '1+0x5'
+      - series: 'kube_persistentvolumeclaim_resource_requests_storage_bytes{endpoint="https-main",instance="10.130.2.7:8443",job="kube-state-metrics",namespace="xiuwang",node="dyan-upg0916-09160342-w-a-l-rhel-0",persistentvolumeclaim="jenkins"}'
+        values: '0.31363677978515625+0x5'
+    promql_expr_test:
+      - expr: cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum{provisioner="kubernetes.io/gce-pd"}'
+            value: 3.1363677978515625E-01
