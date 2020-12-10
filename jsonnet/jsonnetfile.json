@@ -17,7 +17,7 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "master"
+      "version": "release-0.7"
     },
     {
       "source": {
@@ -55,7 +55,7 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "release-0.15"
+      "version": "release-0.17"
     },
     {
       "source": {
@@ -64,7 +64,7 @@
           "subdir": "mixin"
         }
       },
-      "version": "release-0.16"
+      "version": "release-0.17"
     }
   ],
   "legacyImports": true
