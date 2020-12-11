@@ -37,19 +37,18 @@ local thanosQuerierRules =
 
   thanos+:: {
 
-    local tq = (import 'kube-thanos/kube-thanos-query.libsonnet') {
-      config+:: {
-        name: 'thanos-querier',
-        namespace: config.namespace,
-        image: config.imageRepos.openshiftThanos + ':' + config.versions.openshiftThanos,
-        version: '0.12.0',
-        replicas: 2,
-        replicaLabels: ['prometheus_replica', 'thanos_ruler_replica'],
-        stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
-      },
-    },
+    local tq = (import 'kube-thanos/kube-thanos-query.libsonnet')({
+      name: 'thanos-querier',
+      namespace: config.namespace,
+      image: config.imageRepos.openshiftThanos + ':' + config.versions.openshiftThanos,
+      version: '0.12.0',
+      replicas: 2,
+      replicaLabels: ['prometheus_replica', 'thanos_ruler_replica'],
+      stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
+      serviceMonitor: true,
+    }),
 
-    querier+: tq + tq.withServiceMonitor + {
+    querier+: tq + {
 
       trustedCaBundle:
         configmap.new('thanos-querier-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +

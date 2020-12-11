@@ -42,6 +42,7 @@ spec:
         - query
         - --grpc-address=127.0.0.1:10901
         - --http-address=127.0.0.1:9090
+        - --log.format=logfmt
         - --query.replica-label=prometheus_replica
         - --query.replica-label=thanos_ruler_replica
         - --store=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
@@ -52,7 +53,7 @@ spec:
         - --grpc-client-tls-ca=/etc/tls/grpc/ca.crt
         - --grpc-client-server-name=prometheus-grpc
         - --rule=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
-        image: quay.io/openshift/origin-thanos:v0.15.0
+        image: quay.io/openshift/origin-thanos:v0.17.2
         livenessProbe:
           exec:
             command:
@@ -131,7 +132,7 @@ spec:
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --logtostderr=true
         - --allow-paths=/api/v1/query,/api/v1/query_range
-        image: quay.io/coreos/kube-rbac-proxy:v0.6.0
+        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 9092
@@ -150,7 +151,7 @@ spec:
         - --insecure-listen-address=127.0.0.1:9095
         - --upstream=http://127.0.0.1:9090
         - --label=namespace
-        image: quay.io/coreos/prom-label-proxy:v0.1.0
+        image: quay.io/coreos/prom-label-proxy:v0.2.0
         name: prom-label-proxy
         resources:
           requests:
@@ -166,7 +167,7 @@ spec:
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --logtostderr=true
         - --allow-paths=/api/v1/rules
-        image: quay.io/coreos/kube-rbac-proxy:v0.6.0
+        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy-rules
         ports:
         - containerPort: 9093

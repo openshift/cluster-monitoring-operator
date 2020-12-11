@@ -76,7 +76,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                        ruleGroup,
                    super.groups,
                  ),
-             }
+             },
            } +
            (import 'telemeter-client/client.libsonnet') +
            {
@@ -96,13 +96,14 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                  // Because we build OpenShift images separately to upstream,
                  // we have to ensure these versions exist before upgrading.
                  openshiftOauthProxy: 'latest',
-                 prometheus: 'v2.20.0',
+                 prometheus: 'v2.23.0',
                  alertmanager: 'v0.21.0',
                  nodeExporter: 'v1.0.1',
-                 promLabelProxy: 'v0.1.0',
-                 kubeRbacProxy: 'v0.6.0',
-                 prometheusAdapter: 'v0.4.1',
-                 openshiftThanos: 'v0.15.0',
+                 promLabelProxy: 'v0.2.0',
+                 kubeRbacProxy: 'v0.8.0',
+                 prometheusAdapter: 'v0.8.2',
+                 openshiftThanos: 'v0.17.2',
+                 grafana: 'v7.3.5',
                },
                prometheusAdapter+:: {
                  prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',

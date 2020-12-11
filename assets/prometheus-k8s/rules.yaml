@@ -391,11 +391,6 @@ spec:
         verb: write
       record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
     - expr: |
-        sum(rate(apiserver_request_duration_seconds_sum{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, pod)
-        /
-        sum(rate(apiserver_request_duration_seconds_count{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, pod)
-      record: cluster:apiserver_request_duration_seconds:mean5m
-    - expr: |
         histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver",subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, pod))
       labels:
         quantile: "0.99"
@@ -498,9 +493,6 @@ spec:
   - name: k8s.rules
     rules:
     - expr: |
-        sum(rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}[5m])) by (namespace)
-      record: namespace:container_cpu_usage_seconds_total:sum_rate
-    - expr: |
         sum by (cluster, namespace, pod, container) (
           rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}[5m])
         ) * on (cluster, namespace, pod) group_left(node) topk by (cluster, namespace, pod) (
@@ -531,9 +523,6 @@ spec:
           max by(namespace, pod, node) (kube_pod_info{node!=""})
         )
       record: node_namespace_pod_container:container_memory_swap
-    - expr: |
-        sum(container_memory_usage_bytes{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}) by (namespace)
-      record: namespace:container_memory_usage_bytes:sum
     - expr: |
         sum by (namespace) (
             sum by (namespace, pod) (
@@ -642,9 +631,6 @@ spec:
       record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
   - name: node.rules
     rules:
-    - expr: |
-        sum(min(kube_pod_info{node!=""}) by (cluster, node))
-      record: ':kube_pod_info_node_count:'
     - expr: |
         topk by(namespace, pod) (1,
           max by (node, namespace, pod) (
@@ -977,10 +963,9 @@ spec:
     rules:
     - alert: KubeStateMetricsListErrors
       annotations:
-        description: kube-state-metrics is experiencing errors at an elevated rate
-          in list operations. This is likely causing it to not be able to expose metrics
+        message: kube-state-metrics is experiencing errors at an elevated rate in
+          list operations. This is likely causing it to not be able to expose metrics
           about Kubernetes objects correctly or at all.
-        summary: kube-state-metrics is experiencing errors in list operations.
       expr: |
         (sum(rate(kube_state_metrics_list_total{job="kube-state-metrics",result="error"}[5m]))
           /
@@ -991,10 +976,9 @@ spec:
         severity: critical
     - alert: KubeStateMetricsWatchErrors
       annotations:
-        description: kube-state-metrics is experiencing errors at an elevated rate
-          in watch operations. This is likely causing it to not be able to expose
-          metrics about Kubernetes objects correctly or at all.
-        summary: kube-state-metrics is experiencing errors in watch operations.
+        message: kube-state-metrics is experiencing errors at an elevated rate in
+          watch operations. This is likely causing it to not be able to expose metrics
+          about Kubernetes objects correctly or at all.
       expr: |
         (sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics",result="error"}[5m]))
           /
@@ -1217,6 +1201,122 @@ spec:
         node_md_disks{state="fail"} > 0
       labels:
         severity: warning
+  - name: alertmanager.rules
+    rules:
+    - alert: AlertmanagerFailedReload
+      annotations:
+        description: Configuration has failed to load for {{ $labels.namespace }}/{{
+          $labels.pod}}.
+        summary: Reloading an Alertmanager configuration has failed.
+      expr: |
+        # Without max_over_time, failed scrapes could create false negatives, see
+        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+        max_over_time(alertmanager_config_last_reload_successful{job="alertmanager-main",namespace="openshift-monitoring"}[5m]) == 0
+      for: 10m
+      labels:
+        severity: critical
+    - alert: AlertmanagerMembersInconsistent
+      annotations:
+        description: Alertmanager {{ $labels.namespace }}/{{ $labels.pod}} has only
+          found {{ $value }} members of the {{$labels.job}} cluster.
+        summary: A member of an Alertmanager cluster has not found all other cluster
+          members.
+      expr: |
+        # Without max_over_time, failed scrapes could create false negatives, see
+        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+          max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+        < on (namespace,service) group_left
+          count by (namespace,service) (max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m]))
+      for: 10m
+      labels:
+        severity: critical
+    - alert: AlertmanagerFailedToSendAlerts
+      annotations:
+        description: Alertmanager {{ $labels.namespace }}/{{ $labels.pod}} failed
+          to send {{ $value | humanizePercentage }} of notifications to {{ $labels.integration
+          }}.
+        summary: An Alertmanager instance failed to send notifications.
+      expr: |
+        (
+          rate(alertmanager_notifications_failed_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+        /
+          rate(alertmanager_notifications_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+        )
+        > 0.01
+      for: 5m
+      labels:
+        severity: warning
+    - alert: AlertmanagerClusterFailedToSendAlerts
+      annotations:
+        description: The minimum notification failure rate to {{ $labels.integration
+          }} sent from any instance in the {{$labels.job}} cluster is {{ $value |
+          humanizePercentage }}.
+        summary: All Alertmanager instances in a cluster failed to send notifications.
+      expr: |
+        min by (namespace,service) (
+          rate(alertmanager_notifications_failed_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+        /
+          rate(alertmanager_notifications_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+        )
+        > 0.01
+      for: 5m
+      labels:
+        severity: critical
+    - alert: AlertmanagerConfigInconsistent
+      annotations:
+        description: Alertmanager instances within the {{$labels.job}} cluster have
+          different configurations.
+        summary: Alertmanager instances within the same cluster have different configurations.
+      expr: |
+        count by (namespace,service) (
+          count_values by (namespace,service) ("config_hash", alertmanager_config_hash{job="alertmanager-main",namespace="openshift-monitoring"})
+        )
+        != 1
+      for: 20m
+      labels:
+        severity: critical
+    - alert: AlertmanagerClusterDown
+      annotations:
+        description: '{{ $value | humanizePercentage }} of Alertmanager instances
+          within the {{$labels.job}} cluster have been up for less than half of the
+          last 5m.'
+        summary: Half or more of the Alertmanager instances within the same cluster
+          are down.
+      expr: |
+        (
+          count by (namespace,service) (
+            avg_over_time(up{job="alertmanager-main",namespace="openshift-monitoring"}[5m]) < 0.5
+          )
+        /
+          count by (namespace,service) (
+            up{job="alertmanager-main",namespace="openshift-monitoring"}
+          )
+        )
+        >= 0.5
+      for: 5m
+      labels:
+        severity: critical
+    - alert: AlertmanagerClusterCrashlooping
+      annotations:
+        description: '{{ $value | humanizePercentage }} of Alertmanager instances
+          within the {{$labels.job}} cluster have restarted at least 5 times in the
+          last 10m.'
+        summary: Half or more of the Alertmanager instances within the same cluster
+          are crashlooping.
+      expr: |
+        (
+          count by (namespace,service) (
+            changes(process_start_time_seconds{job="alertmanager-main",namespace="openshift-monitoring"}[10m]) > 4
+          )
+        /
+          count by (namespace,service) (
+            up{job="alertmanager-main",namespace="openshift-monitoring"}
+          )
+        )
+        >= 0.5
+      for: 5m
+      labels:
+        severity: critical
   - name: prometheus-operator
     rules:
     - alert: PrometheusOperatorListErrors
@@ -1501,6 +1601,14 @@ spec:
           !=
         kube_hpa_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})
           and
+        (kube_hpa_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          >
+        kube_hpa_spec_min_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})
+          and
+        (kube_hpa_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          <
+        kube_hpa_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})
+          and
         changes(kube_hpa_status_current_replicas[15m]) == 0
       for: 15m
       labels:
@@ -1568,7 +1676,7 @@ spec:
       expr: |
         sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard", resource="memory"})
           /
-        sum(kube_node_status_allocatable_memory_bytes{job="node-exporter"})
+        sum(kube_node_status_allocatable_memory_bytes{job="kube-state-metrics"})
           > 1.5
       for: 5m
       labels:
@@ -1942,22 +2050,6 @@ spec:
       for: 15m
       labels:
         severity: warning
-    - alert: PrometheusErrorSendingAlertsToAnyAlertmanager
-      annotations:
-        description: '{{ printf "%.1f" $value }}% minimum errors while sending alerts
-          from Prometheus {{$labels.namespace}}/{{$labels.pod}} to any Alertmanager.'
-        summary: Prometheus encounters more than 3% errors sending alerts to any Alertmanager.
-      expr: |
-        min without(alertmanager) (
-          rate(prometheus_notifications_errors_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
-        /
-          rate(prometheus_notifications_sent_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
-        )
-        * 100
-        > 3
-      for: 15m
-      labels:
-        severity: critical
     - alert: PrometheusNotConnectedToAlertmanagers
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} is not connected
@@ -1996,7 +2088,15 @@ spec:
           samples.
         summary: Prometheus is not ingesting samples.
       expr: |
-        rate(prometheus_tsdb_head_samples_appended_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) <= 0
+        (
+          rate(prometheus_tsdb_head_samples_appended_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) <= 0
+        and
+          (
+            sum without(scrape_job) (prometheus_target_metadata_cache_entries{job=~"prometheus-k8s|prometheus-user-workload"}) > 0
+          or
+            sum without(rule_group) (prometheus_rule_group_rules{job=~"prometheus-k8s|prometheus-user-workload"}) > 0
+          )
+        )
       for: 10m
       labels:
         severity: warning
@@ -2053,7 +2153,7 @@ spec:
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
         (
           max_over_time(prometheus_remote_storage_highest_timestamp_in_seconds{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
-        - on(job, instance) group_right
+        - ignoring(remote_name, url) group_right
           max_over_time(prometheus_remote_storage_queue_highest_sent_timestamp_seconds{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
         )
         > 120
@@ -2112,37 +2212,20 @@ spec:
       for: 15m
       labels:
         severity: warning
-  - name: alertmanager.rules
-    rules:
-    - alert: AlertmanagerConfigInconsistent
+    - alert: PrometheusErrorSendingAlertsToAnyAlertmanager
       annotations:
-        message: |
-          The configuration of the instances of the Alertmanager cluster `{{ $labels.namespace }}/{{ $labels.service }}` are out of sync.
-          {{ range printf "alertmanager_config_hash{namespace=\"%s\",service=\"%s\"}" $labels.namespace $labels.service | query }}
-          Configuration hash for pod {{ .Labels.pod }} is "{{ printf "%.f" .Value }}"
-          {{ end }}
+        description: '{{ printf "%.1f" $value }}% minimum errors while sending alerts
+          from Prometheus {{$labels.namespace}}/{{$labels.pod}} to any Alertmanager.'
+        summary: Prometheus encounters more than 3% errors sending alerts to any Alertmanager.
       expr: |
-        count by(namespace,service) (count_values by(namespace,service) ("config_hash", alertmanager_config_hash{job="alertmanager-main",namespace="openshift-monitoring"})) != 1
-      for: 5m
-      labels:
-        severity: critical
-    - alert: AlertmanagerFailedReload
-      annotations:
-        message: Reloading Alertmanager's configuration has failed for {{ $labels.namespace
-          }}/{{ $labels.pod}}.
-      expr: |
-        alertmanager_config_last_reload_successful{job="alertmanager-main",namespace="openshift-monitoring"} == 0
-      for: 10m
-      labels:
-        severity: warning
-    - alert: AlertmanagerMembersInconsistent
-      annotations:
-        message: Alertmanager has not found all other members of the cluster.
-      expr: |
-        alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}
-          != on (service) GROUP_LEFT()
-        count by (service) (alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"})
-      for: 5m
+        min without (alertmanager) (
+          rate(prometheus_notifications_errors_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
+        /
+          rate(prometheus_notifications_sent_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
+        )
+        * 100
+        > 3
+      for: 15m
       labels:
         severity: critical
   - name: general.rules
@@ -2275,7 +2358,7 @@ spec:
         severity: warning
     - alert: etcdHighFsyncDurations
       annotations:
-        message: 'etcd cluster "{{ $labels.job }}": 99th percentile fync durations
+        message: 'etcd cluster "{{ $labels.job }}": 99th percentile fsync durations
           are {{ $value }}s on etcd instance {{ $labels.instance }}.'
       expr: |
         histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
