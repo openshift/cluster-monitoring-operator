@@ -15,9 +15,9 @@ spec:
             - key: prometheus
               operator: In
               values:
-              - user-workload
+              - k8s
           namespaces:
-          - openshift-user-workload-monitoring
+          - openshift-monitoring
           topologyKey: kubernetes.io/hostname
         weight: 100
   alerting:
@@ -42,7 +42,7 @@ spec:
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/coreos/kube-rbac-proxy:v0.6.0
+    image: quay.io/coreos/kube-rbac-proxy:v0.8.0
     name: kube-rbac-proxy
     ports:
     - containerPort: 9091
@@ -68,7 +68,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    image: quay.io/coreos/kube-rbac-proxy:v0.6.0
+    image: quay.io/coreos/kube-rbac-proxy:v0.8.0
     name: kube-rbac-proxy-thanos
     ports:
     - containerPort: 10902
@@ -105,7 +105,7 @@ spec:
         memory: 10Mi
   enforcedNamespaceLabel: namespace
   ignoreNamespaceSelectors: true
-  image: openshift/prometheus:v2.20.0
+  image: openshift/prometheus:v2.23.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -136,10 +136,10 @@ spec:
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/openshift/origin-thanos:v0.15.0
+    image: quay.io/openshift/origin-thanos:v0.17.2
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: v0.15.0
-  version: v2.20.0
+    version: v0.17.2
+  version: v2.23.0

@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.44.0
+    app.kubernetes.io/version: v0.44.1
   name: prometheus-operator
   namespace: openshift-monitoring
 spec:
@@ -18,12 +18,12 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: v0.44.0
+        app.kubernetes.io/version: v0.44.1
     spec:
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.44.0
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.44.1
         - --namespaces=openshift-monitoring
         - --prometheus-instance-namespaces=openshift-monitoring
         - --thanos-ruler-instance-namespaces=openshift-monitoring
@@ -33,7 +33,7 @@ spec:
         - --web.enable-tls=true
         - --web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --web.tls-min-version=VersionTLS12
-        image: quay.io/prometheus-operator/prometheus-operator:v0.44.0
+        image: quay.io/prometheus-operator/prometheus-operator:v0.44.1
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -56,7 +56,7 @@ spec:
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt
-        image: quay.io/coreos/kube-rbac-proxy:v0.6.0
+        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
