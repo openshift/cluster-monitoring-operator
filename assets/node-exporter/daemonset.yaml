@@ -104,6 +104,9 @@ spec:
         - mountPath: /var/node_exporter/textfile
           name: node-exporter-textfile
           readOnly: false
+        - mountPath: /var/log/wtmp
+          name: node-exporter-wtmp
+          readOnly: true
         workingDir: /var/node_exporter/textfile
       nodeSelector:
         kubernetes.io/os: linux
@@ -127,6 +130,10 @@ spec:
       - name: node-exporter-tls
         secret:
           secretName: node-exporter-tls
+      - hostPath:
+          path: /var/log/wtmp
+          type: File
+        name: node-exporter-wtmp
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 10%

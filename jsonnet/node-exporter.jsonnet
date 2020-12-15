@@ -9,6 +9,8 @@ local containerVolumeMount = container.volumeMountsType;
 local textfileDir = '/var/node_exporter/textfile';
 local textfileVolumeName = 'node-exporter-textfile';
 local tlsVolumeName = 'node-exporter-tls';
+local wtmpPath = '/var/log/wtmp';
+local wtmpVolumeName = 'node-exporter-wtmp';
 
 {
   nodeExporter+:: {
@@ -97,6 +99,7 @@ local tlsVolumeName = 'node-exporter-tls';
                   terminationMessagePolicy: 'FallbackToLogsOnError',
                   volumeMounts+: [
                     containerVolumeMount.new(textfileVolumeName, textfileDir),
+                    containerVolumeMount.new(wtmpVolumeName, wtmpPath).withReadOnly(true),
                   ],
                   workingDir: textfileDir,
                 },
@@ -143,6 +146,7 @@ local tlsVolumeName = 'node-exporter-tls';
               volumes+: [
                 volume.fromEmptyDir(textfileVolumeName),
                 volume.fromSecret(tlsVolumeName, 'node-exporter-tls'),
+                volume.fromHostPath(wtmpVolumeName, wtmpPath).withType('File'),
               ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
