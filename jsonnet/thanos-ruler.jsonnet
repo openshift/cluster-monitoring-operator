@@ -289,6 +289,12 @@ local thanosRulerRules =
             runAsUser: 65534,
           },
           replicas: 2,
+          resources: {
+            requests: {
+              memory: '21Mi',
+              cpu: '1m',
+            },
+          },
           image: $._config.imageRepos.openshiftThanos + ':' + $._config.versions.openshiftThanos,
           grpcServerTlsConfig: {
             certFile: '/etc/tls/grpc/server.crt',
@@ -331,12 +337,6 @@ local thanosRulerRules =
           containers: [
             {
               name: 'thanos-ruler',
-              resources: {
-                requests: {
-                  memory: '21Mi',
-                  cpu: '1m',
-                },
-              },
               terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [
                 {
