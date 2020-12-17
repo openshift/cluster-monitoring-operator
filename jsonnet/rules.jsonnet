@@ -297,6 +297,21 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
               severity: 'info',
             },
           },
+          {
+            expr: '(max without (condition,container,endpoint,instance,job,service) (((kube_pod_status_ready{condition="false"} == 1)*0 or (kube_pod_status_ready{condition="true"} == 1)) * on(pod,namespace) group_left() group by (pod,namespace) (kube_pod_status_phase{phase=~"Running|Unknown|Pending"} == 1)))',
+            record: 'kube_running_pod_ready',
+            # For all non-terminal pods, report ready pods with 1 and unready pods with 0
+          },
+          {
+            expr: 'avg(kube_running_pod_ready{namespace=~"openshift-.*"})',
+            record: 'cluster:usage:openshift:kube_running_pod_ready:avg',
+            # Report the percentage (0-1) of pending or running openshift pods reporting ready
+          },
+          {
+            expr: 'avg(kube_running_pod_ready{namespace!~"openshift-.*"})',
+            record: 'cluster:usage:workload:kube_running_pod_ready:avg',
+            # Report the percentage (0-1) of pending or running workload (everything outside of openshift-*) pods reporting ready
+          },
         ],
       },
       {
