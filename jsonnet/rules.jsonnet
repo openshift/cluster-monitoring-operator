@@ -220,6 +220,21 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum',
           },
           {
+            // Track the number of physical cores that are considered accessible for general workloads to run on. A physical core is an unshared CPU as seen by the node operating system, ignoring hyperthreading or virtualization. The sum of all non-infrastructure node physical cores plus master node physical cores (if masters are schedulable) is considered available for workload use.
+            expr: '(sum(node_role_os_version_machine:cpu_capacity_cores:sum{label_node_role_kubernetes_io_master="",label_node_role_kubernetes_io_infra=""} or absent(__does_not_exist__)*0)) + ((sum(node_role_os_version_machine:cpu_capacity_cores:sum{label_node_role_kubernetes_io_master="true"} or absent(__does_not_exist__)*0) * ((max(cluster_master_schedulable == 1)*0+1) or (absent(cluster_master_schedulable == 1)*0))))',
+            record: 'workload:capacity_physical_cpu_cores:sum',
+          },
+          {
+            // Record the rolling minimum of workload accessible physical CPU cores over a 5m window.
+            expr: 'min_over_time(workload:capacity_physical_cpu_cores:sum[5m:15s])',
+            record: 'cluster:usage:workload:capacity_physical_cpu_cores:min:5m',
+          },
+          {
+            // Record the rolling maximum of workload accessible physical CPU cores over a 5m window.
+            expr: 'max_over_time(workload:capacity_physical_cpu_cores:sum[5m:15s])',
+            record: 'cluster:usage:workload:capacity_physical_cpu_cores:max:5m',
+          },
+          {
             expr: |||
               sum  by (provisioner) (
                 topk by (namespace, persistentvolumeclaim) (
@@ -311,6 +326,19 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             expr: 'avg(kube_running_pod_ready{namespace!~"openshift-.*"})',
             record: 'cluster:usage:workload:kube_running_pod_ready:avg',
             # Report the percentage (0-1) of pending or running workload (everything outside of openshift-*) pods reporting ready
+          },
+        ],
+      },
+      {
+        name: 'kubernetes-recurring.rules',
+        interval: '30s',
+        rules: [
+          {
+            // Count the number of accumulated workload core/seconds continuously. This makes reading and measuring
+            // consumption more efficient at the cluster and aggregate levels. In general this may underestimate the
+            // actual consumption, but never overestimate consumption.
+            expr: 'sum_over_time(workload:capacity_physical_cpu_cores:sum[30s:1s]) + ((cluster:usage:workload:capacity_physical_cpu_core_seconds offset 25s) or (absent(cluster:usage:workload:capacity_physical_cpu_core_seconds offset 25s)*0))',
+            record: 'cluster:usage:workload:capacity_physical_cpu_core_seconds',
           },
         ],
       },
