@@ -354,16 +354,39 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'code:cluster:ingress_http_request_count:rate5m:sum',
           },
           {
-            expr: 'sum by (frontend) (rate(haproxy_frontend_bytes_in_total[5m]))',
-            record: 'frontend:cluster:ingress_frontend_bytes_in:rate5m:sum',
+            expr: 'sum (rate(haproxy_frontend_bytes_in_total[5m]))',
+            record: 'cluster:usage:ingress_frontend_bytes_in:rate5m:sum',
+            # The rate of bytes in through the ingress frontends
           },
           {
-            expr: 'sum by (frontend) (rate(haproxy_frontend_bytes_out_total[5m]))',
-            record: 'frontend:cluster:ingress_frontend_bytes_out:rate5m:sum',
+            expr: 'sum (rate(haproxy_frontend_bytes_out_total[5m]))',
+            record: 'cluster:usage:ingress_frontend_bytes_out:rate5m:sum',
+            # The rate of bytes out through the ingress frontends
           },
           {
-            expr: 'sum by (frontend) (haproxy_frontend_current_sessions)',
-            record: 'frontend:cluster:ingress_frontend_connections:sum',
+            expr: 'sum (haproxy_frontend_current_sessions)',
+            record: 'cluster:usage:ingress_frontend_connections:sum',
+            # The number of open connections on the ingress frontends
+          },
+          {
+            expr: 'sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace!~"openshift-.*"}[5m]) > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
+            record: 'cluster:usage:workload:ingress_request_error:fraction5m',
+            # The fraction of workload requests that have errored over the last five minutes, measured at the ingress controllers
+          },
+          {
+            expr: 'sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
+            record: 'cluster:usage:workload:ingress_request_total:irate5m',
+            # The instantaneous rate of workload requests per second arriving at the ingress controllers
+          },
+          {
+            expr: 'sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace=~"openshift-.*"}[5m]) > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
+            record: 'cluster:usage:openshift:ingress_request_error:fraction5m',
+            # The fraction of openshift requests that have errored over the last five minutes, measured at the ingress controllers
+          },
+          {
+            expr: 'sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
+            record: 'cluster:usage:openshift:ingress_request_total:irate5m',
+            # The instantaneous rate of openshift requests per second arriving at the ingress controllers
           },
         ],
       },
