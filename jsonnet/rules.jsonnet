@@ -369,7 +369,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             # The number of open connections on the ingress frontends
           },
           {
-            expr: 'sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace!~"openshift-.*"}[5m]) > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
+            expr: 'sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace!~"openshift-.*"}[5m]) > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
             record: 'cluster:usage:workload:ingress_request_error:fraction5m',
             # The fraction of workload requests that have errored over the last five minutes, measured at the ingress controllers
           },
@@ -379,7 +379,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             # The instantaneous rate of workload requests per second arriving at the ingress controllers
           },
           {
-            expr: 'sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace=~"openshift-.*"}[5m]) > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
+            expr: 'sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace=~"openshift-.*"}[5m]) > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
             record: 'cluster:usage:openshift:ingress_request_error:fraction5m',
             # The fraction of openshift requests that have errored over the last five minutes, measured at the ingress controllers
           },
