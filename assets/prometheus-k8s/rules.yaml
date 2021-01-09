@@ -958,14 +958,14 @@ spec:
     - expr: sum (haproxy_frontend_current_sessions)
       record: cluster:usage:ingress_frontend_connections:sum
     - expr: sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace!~"openshift-.*"}[5m])
-        > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m])))
+        > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m])))
         or absent(__does_not_exist__)*0
       record: cluster:usage:workload:ingress_request_error:fraction5m
     - expr: sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m])))
         or absent(__does_not_exist__)*0
       record: cluster:usage:workload:ingress_request_total:irate5m
     - expr: sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace=~"openshift-.*"}[5m])
-        > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m])))
+        > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m])))
         or absent(__does_not_exist__)*0
       record: cluster:usage:openshift:ingress_request_error:fraction5m
     - expr: sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m])))
