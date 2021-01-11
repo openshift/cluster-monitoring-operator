@@ -1115,16 +1115,18 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding
 		return nil
 	}
 
-	required := crb.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
+	// If we get here, the CRB exists but doesn't look like we expect. This means some
+	// other entity (deleted and) created it. Our recourse is to delete and recreate, but
+	// via an error path to ensure proper alerting.
 	err = crbClient.Delete(context.TODO(), crb.Name, metav1.DeleteOptions{})
-	if err != nil {
-		return errors.Wrap(err, "deleting ClusterRoleBinding object failed")
+	if err == nil {
+		err = errors.Errorf("found and deleted invalid %q ClusterRoleBinding", crb.Name)
+	} else {
+		err = errors.Wrapf(err, "deleting existing invalid %q ClusterRoleBinding object failed", crb.Name)
 	}
 
-	_, err = crbClient.Create(context.TODO(), required, metav1.CreateOptions{})
-	return errors.Wrap(err, "updating ClusterRoleBinding object failed")
+	// Allow a subsequent reconcile to (re)create the CRB.
+	return err
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(sa *v1.ServiceAccount) error {
