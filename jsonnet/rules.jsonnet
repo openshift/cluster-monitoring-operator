@@ -317,6 +317,19 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             },
           },
           {
+            expr: 'avg_over_time((((count((max by (node) (up{job="kubelet",metrics_path="/metrics"} == 1) and max by (node) (kube_node_status_condition{condition="Ready",status="true"} == 1) and min by (node) (kube_node_spec_unschedulable == 0))) / scalar(count(min by (node) (kube_node_spec_unschedulable == 0))))))[5m:1s])',
+            record: 'cluster:usage:kube_schedulable_node_ready_reachable:avg5m',
+            # Report a 5m rolling average of the number of schedulable nodes that are ready and reachable to be scraped by metrics. This is
+            # used to estimate the disruption imposed on a cluster during upgrades, excluding any machines administrators may be performing
+            # maintenance on.
+          },
+          {
+            expr: 'avg_over_time((count(max by (node) (kube_node_status_condition{condition="Ready",status="true"} == 1)) / scalar(count(max by (node) (kube_node_status_condition{condition="Ready",status="true"}))))[5m:1s])',
+            record: 'cluster:usage:kube_node_ready:avg5m',
+            # Report a 5m rolling average of the number of ready nodes in a cluster. This provides the user-facing measurement of how often
+            # nodes report unready, but not represent all possible user-impacting outages to nodes.
+          },
+          {
             expr: '(max without (condition,container,endpoint,instance,job,service) (((kube_pod_status_ready{condition="false"} == 1)*0 or (kube_pod_status_ready{condition="true"} == 1)) * on(pod,namespace) group_left() group by (pod,namespace) (kube_pod_status_phase{phase=~"Running|Unknown|Pending"} == 1)))',
             record: 'kube_running_pod_ready',
             # For all non-terminal pods, report ready pods with 1 and unready pods with 0
