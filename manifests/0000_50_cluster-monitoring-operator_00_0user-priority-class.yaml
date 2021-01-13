@@ -4,6 +4,7 @@ metadata:
   name: openshift-user-critical
   annotations:
     include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
 value: 1000000000
 globalDefault: false
 description: "This priority class should be used for user facing OpenShift workload pods only."
