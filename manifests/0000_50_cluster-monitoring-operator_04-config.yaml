@@ -240,6 +240,12 @@ data:
     # (Advanced Cluster Management, @open-cluster-management/squad-kui-admins) visual_web_terminal_sessions_total is the count of Visual Web Terminal sessions created 
     # on the hub cluster.
     - '{__name__="visual_web_terminal_sessions_total"}'
+    # (@openshift/storage, OpenShift Storage team) VMWare vCenter info: version of the vCenter where cluster runs
+    - '{__name__="cluster:vsphere_vcenter_info:sum"}'
+    # (@openshift/storage, OpenShift Storage team) The list of ESXi host versions used as host for OCP nodes.
+    - '{__name__="cluster:vsphere_esxi_version_total:sum"}'
+    # (@openshift/storage, OpenShift Storage team) The list of virtual machine HW versions used for OCP nodes.
+    - '{__name__="cluster:vsphere_node_hw_version_total:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config

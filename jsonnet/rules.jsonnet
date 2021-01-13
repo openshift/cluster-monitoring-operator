@@ -284,6 +284,18 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:kube_persistentvolume_plugin_type_counts:sum',
           },
           {
+            expr: 'sum by(version)(vsphere_vcenter_info)',
+            record: 'cluster:vsphere_vcenter_info:sum',
+          },
+          {
+            expr: 'sum by(version)(vsphere_esxi_version_total)',
+            record: 'cluster:vsphere_esxi_version_total:sum',
+          },
+          {
+            expr: 'sum by(hw_version)(vsphere_node_hw_version_total)',
+            record: 'cluster:vsphere_node_hw_version_total:sum',
+          },
+          {
             expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
             alert: 'ClusterMonitoringOperatorReconciliationErrors',
             'for': '30m',
