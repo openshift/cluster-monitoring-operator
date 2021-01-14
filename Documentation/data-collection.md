@@ -245,7 +245,7 @@ data:
     # (@openshift/storage, OpenShift Storage team) Persistent Volume usage metrics: this is the number of volumes per plugin
     # and per volume type (filesystem/block)
     - '{__name__="cluster:kube_persistentvolume_plugin_type_counts:sum"}'
-    # (Advanced Cluster Management) visual_web_terminal_sessions_total is the count of Visual Web Terminal sessions created 
+    # (Advanced Cluster Management, @open-cluster-management/squad-kui-admins) visual_web_terminal_sessions_total is the count of Visual Web Terminal sessions created 
     # on the hub cluster.
     - '{__name__="visual_web_terminal_sessions_total"}'
 kind: ConfigMap
