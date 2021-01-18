@@ -185,6 +185,9 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     // Certificates are issued for 4h.
     certExpirationWarningSeconds: 90 * 60,  // 1.5h
     certExpirationCriticalSeconds: 60 * 60,  // 1h
+
+    // Remove Ceph block devices: https://bugzilla.redhat.com/show_bug.cgi?id=1914090
+    diskDevices: std.filter(function(diskDevice) diskDevice != 'rbd.+', super.diskDevices)
   },
 } + {
   local d = super.grafanaDashboards,
