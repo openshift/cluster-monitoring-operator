@@ -91,7 +91,12 @@ local wtmpVolumeName = 'node-exporter-wtmp';
                   command: ['/bin/sh', '-c', '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init -perm /111 -type f -exec {} \\;'],
                   env: [{ name: 'TMPDIR', value: '/tmp' }],
                   image: $._config.imageRepos.nodeExporter + ':' + $._config.versions.nodeExporter,
-                  resources: {},
+                  resources: {
+                    requests: {
+                      cpu: '1m',
+                      memory: '1Mi',
+                    },
+                  },
                   securityContext: {
                     privileged: true,
                     runAsUser: 0,
@@ -126,9 +131,9 @@ local wtmpVolumeName = 'node-exporter-wtmp';
                       }
                     else
                       c {
-		        // Remove the flag to disable hwmon that is set upstream so we
-			// gather that data (especially for bare metal clusters), and
-			// add flags to collect data not included by default.
+                        // Remove the flag to disable hwmon that is set upstream so we
+                        // gather that data (especially for bare metal clusters), and
+                        // add flags to collect data not included by default.
                         args: [a for a in c.args if a != '--no-collector.hwmon'] + ['--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory=' + textfileDir],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [
