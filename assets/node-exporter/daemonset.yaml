@@ -95,7 +95,10 @@ spec:
           value: /tmp
         image: openshift/prometheus-node-exporter:v1.0.1
         name: init-textfile
-        resources: {}
+        resources:
+          requests:
+            cpu: 1m
+            memory: 1Mi
         securityContext:
           privileged: true
           runAsUser: 0
