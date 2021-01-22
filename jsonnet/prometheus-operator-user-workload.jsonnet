@@ -1,9 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local service = k.core.v1.service;
-local deployment = k.apps.v1beta2.deployment;
-local container = deployment.mixin.spec.template.spec.containersType;
-local volume = deployment.mixin.spec.template.spec.volumesType;
-local containerVolumeMount = container.volumeMountsType;
 local tlsVolumeName = 'prometheus-operator-user-workload-tls';
 
 {
@@ -18,7 +12,7 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
     '0prometheusruleCustomResourceDefinition':: {},
     '0thanosrulerCustomResourceDefinition':: {},
     '0probeCustomResourceDefinition':: {},
-    
+
     clusterRole+: {
       metadata+: {
         name: 'prometheus-user-workload-operator',
@@ -82,9 +76,11 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
                         '--tls-private-key-file=/etc/tls/private/tls.key',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts: [
-                        containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
-                      ],
+                      volumeMounts: [{
+                        mountPath: '/etc/tls/private',
+                        name: tlsVolumeName,
+                        readOnly: false,
+                      }],
                       securityContext: {},
                       resources: {
                         requests: {
@@ -97,17 +93,23 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
                     c,
                 super.containers,
               ),
-            volumes+: [
-              volume.fromSecret(tlsVolumeName, 'prometheus-operator-user-workload-tls'),
-            ],
+            volumes+: [{
+              name: tlsVolumeName,
+              secret: {
+                secretName: 'prometheus-operator-user-workload-tls',
+              },
+            }],
           },
         },
       },
     },
-    service+:
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-user-workload-tls',
-      }),
+    service+: {
+      metadata+: {
+        annotations+: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-user-workload-tls',
+        },
+      },
+    },
     serviceMonitor+: {
       spec+: {
         endpoints: [

@@ -1,56 +1,4 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local serviceAccount = k.core.v1.serviceAccount;
-local service = k.core.v1.service;
-local servicePort = k.core.v1.service.mixin.spec.portsType;
-local secret = k.core.v1.secret;
-local configmap = k.core.v1.configMap;
-local clusterRole = k.rbac.v1.clusterRole;
-local policyRule = clusterRole.rulesType;
-local selector = k.apps.v1beta2.deployment.mixin.spec.selectorType;
-local envVar = k.core.v1.pod.mixin.specType.containersType.envType;
 local metrics = import 'telemeter-client/metrics.jsonnet';
-
-local authenticationRole =
-  policyRule.new() +
-  policyRule.withApiGroups(['authentication.k8s.io']) +
-  policyRule.withResources([
-    'tokenreviews',
-  ]) +
-  policyRule.withVerbs(['create']);
-
-local authorizationRole =
-  policyRule.new() +
-  policyRule.withApiGroups(['authorization.k8s.io']) +
-  policyRule.withResources([
-    'subjectaccessreviews',
-  ]) +
-  policyRule.withVerbs(['create']);
-
-local namespacesRole =
-  policyRule.new() +
-  policyRule.withApiGroups(['']) +
-  policyRule.withResources([
-    'namespaces',
-  ]) +
-  policyRule.withVerbs(['get']);
-
-// By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
-// This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
-// Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
-// to be immune against UID changes.
-local sccRole =
-  policyRule.new() +
-  policyRule.withApiGroups(['security.openshift.io']) +
-  policyRule.withResources([
-    'securitycontextconstraints',
-  ]) +
-  policyRule.withResourceNames([
-    'nonroot',
-  ]) +
-  policyRule.withVerbs(['use']);
-
-local podIPEnvVar =
-  envVar.fromFieldPath('POD_IP', 'status.podIP');
 
 {
   // Configure the correct label selectors for Thanos sidecar alerts.
@@ -59,15 +7,32 @@ local podIPEnvVar =
   },
 
   prometheusK8s+:: {
-    trustedCaBundle:
-      configmap.new('prometheus-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
-      configmap.mixin.metadata.withNamespace($._config.namespace) +
-      configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+    trustedCaBundle: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: 'prometheus-trusted-ca-bundle',
+        namespace: $._config.namespace,
+        labels: {
+          'config.openshift.io/inject-trusted-cabundle': 'true',
+        },
+      },
+      data: {
+        'ca-bundle.crt': '',
+      },
+    },
 
-    grpcTlsSecret:
-      secret.new('prometheus-k8s-grpc-tls', {}) +
-      secret.mixin.metadata.withNamespace($._config.namespace) +
-      secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
+    grpcTlsSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'prometheus-k8s-grpc-tls',
+        namespace: $._config.namespace,
+        labels: { 'k8s-app': 'prometheus-k8s' },
+      },
+      type: 'Opaque',
+      data: {},
+    },
 
     // OpenShift route to access the Prometheus UI.
 
@@ -98,10 +63,13 @@ local podIPEnvVar =
     // oauth proxy, that it should redirect to the prometheus-k8s route on
     // successful authentication.
 
-    serviceAccount+:
-      serviceAccount.mixin.metadata.withAnnotations({
-        'serviceaccounts.openshift.io/oauth-redirectreference.prometheus-k8s': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"prometheus-k8s"}}',
-      }),
+    serviceAccount+: {
+      metadata+: {
+        annotations+: {
+          'serviceaccounts.openshift.io/oauth-redirectreference.prometheus-k8s': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"prometheus-k8s"}}',
+        },
+      },
+    },
 
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
@@ -114,53 +82,127 @@ local podIPEnvVar =
     // The ports are overridden, as due to the port binding of the oauth proxy
     // the serving port is 9091 instead of the 9090 default.
 
-    service+:
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
-      }) +
-      service.mixin.spec.withType('ClusterIP') +
-      service.mixin.spec.withPorts([
-        servicePort.newNamed('web', 9091, 'web'),
-        servicePort.newNamed('tenancy', 9092, 'tenancy'),
-      ]),
+    service+: {
+      metadata+: {
+        annotations: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
+        },
+      },
+      spec+: {
+        ports: [
+          {
+            name: 'web',
+            port: 9091,
+            targetPort: 'web',
+          },
+          {
+            name: 'tenancy',
+            port: 9092,
+            targetPort: 'tenancy',
+          },
+        ],
+        type: 'ClusterIP',
+      },
+    },
 
-    servingCertsCaBundle+:
-      configmap.new('serving-certs-ca-bundle', { 'service-ca.crt': '' }) +
-      configmap.mixin.metadata.withNamespace($._config.namespace) +
-      configmap.mixin.metadata.withAnnotations({ 'service.alpha.openshift.io/inject-cabundle': 'true' }),
+    servingCertsCaBundle+: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata+: {
+        name: 'serving-certs-ca-bundle',
+        namespace: $._config.namespace,
+        annotations: { 'service.alpha.openshift.io/inject-cabundle': 'true' },
+      },
+      data: { 'service-ca.crt': '' },
+    },
 
     // Even though this bundle will be frequently rotated by the CSR
     // controller, there is no need to add a ConfigMap reloader to
     // the Prometheus Pods because Prometheus automatically reloads
     // its cert pool every 5 seconds.
-    kubeletServingCaBundle+:
-      configmap.new('kubelet-serving-ca-bundle', { 'ca-bundle.crt': '' }) +
-      configmap.mixin.metadata.withNamespace($._config.namespace),
+    kubeletServingCaBundle+: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata+: {
+        name: 'kubelet-serving-ca-bundle',
+        namespace: $._config.namespace,
+      },
+      data: { 'ca-bundle.crt': '' },
+    },
 
     // As Prometheus is protected by the oauth proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.
     // Additionally in order to authenticate with the Alertmanager it
     // requires `get` method on all `namespaces`, which is the
     // SubjectAccessReview required by the Alertmanager instances.
-
-    clusterRole+:
-      clusterRole.withRulesMixin([authenticationRole, authorizationRole, namespacesRole, sccRole]),
+    clusterRole+: {
+      rules+: [
+        {
+          apiGroups: ['authentication.k8s.io'],
+          resources: ['tokenreviews'],
+          verbs: ['create'],
+        },
+        {
+          apiGroups: ['authorization.k8s.io'],
+          resources: ['subjectaccessreviews'],
+          verbs: ['create'],
+        },
+        {
+          apiGroups: [''],
+          resources: ['namespaces'],
+          verbs: ['get'],
+        },
+        {
+          // By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
+          // This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
+          // Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
+          // to be immune against UID changes.
+          apiGroups: ['security.openshift.io'],
+          resources: ['securitycontextconstraints'],
+          resourceNames: ['nonroot'],
+          verbs: ['use'],
+        },
+      ],
+    },
 
     // The proxy secret is there to encrypt session created by the oauth proxy.
 
-    proxySecret:
-      secret.new('prometheus-k8s-proxy', {}) +
-      secret.mixin.metadata.withNamespace($._config.namespace) +
-      secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
+    proxySecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'prometheus-k8s-proxy',
+        namespace: $._config.namespace,
+        labels: { 'k8s-app': 'prometheus-k8s' },
+      },
+      type: 'Opaque',
+      data: {},
+    },
 
-    htpasswdSecret:
-      secret.new('prometheus-k8s-htpasswd', {}) +
-      secret.mixin.metadata.withNamespace($._config.namespace) +
-      secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
+    htpasswdSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'prometheus-k8s-htpasswd',
+        namespace: $._config.namespace,
+        labels: { 'k8s-app': 'prometheus-k8s' },
+      },
+      type: 'Opaque',
+      data: {},
+    },
 
-    kubeRbacProxySecret:
-      local config = {
-        'config.yaml': std.base64(std.manifestYamlDoc({
+    kubeRbacProxySecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'kube-rbac-proxy',
+        namespace: $._config.namespace,
+        labels: { 'k8s-app': 'prometheus-k8s' },
+      },
+      type: 'Opaque',
+      data: {},
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
           authorization: {
             rewrites: {
               byQueryParameter: {
@@ -173,12 +215,9 @@ local podIPEnvVar =
               namespace: '{{ .Value }}',
             },
           },
-        })),
-      };
-
-      secret.new('kube-rbac-proxy', config) +
-      secret.mixin.metadata.withNamespace($._config.namespace) +
-      secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
+        }),
+      },
+    },
 
     // This changes the kubelet's certificates to be validated when
     // scraping.
@@ -264,13 +303,20 @@ local podIPEnvVar =
         },
       },
 
-    serviceThanosSidecar+:
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-thanos-sidecar-tls',
-      }) +
-      service.mixin.spec.withPorts([
-        servicePort.newNamed('thanos-proxy', 10902, 'thanos-proxy'),
-      ]),
+    serviceThanosSidecar+: {
+      metadata+: {
+        annotations+: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-thanos-sidecar-tls',
+        },
+      },
+      spec+: {
+        ports: [{
+          name: 'thanos-proxy',
+          port: 10902,
+          targetPort: 'thanos-proxy',
+        }],
+      },
+    },
 
     serviceMonitorThanosSidecar+:
       {
@@ -476,7 +522,14 @@ local podIPEnvVar =
                   cpu: '1m',
                 },
               },
-              env: [podIPEnvVar],
+              env: [{
+                name: 'POD_IP',
+                valueFrom: {
+                  fieldRef: {
+                    fieldPath: 'status.podIP',
+                  },
+                },
+              }],
               ports: [
                 {
                   containerPort: 10902,

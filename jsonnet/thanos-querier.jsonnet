@@ -1,30 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
-local secret = k.core.v1.secret;
-local service = k.core.v1.service;
-local ports = service.mixin.spec.portsType;
-local deployment = k.apps.v1.deployment;
-local container = deployment.mixin.spec.template.spec.containersType;
-local volume = deployment.mixin.spec.template.spec.volumesType;
-local clusterRole = k.rbac.v1.clusterRole;
-local policyRule = clusterRole.rulesType;
-local configmap = k.core.v1.configMap;
-
-local authenticationRole =
-  policyRule.new() +
-  policyRule.withApiGroups(['authentication.k8s.io']) +
-  policyRule.withResources([
-    'tokenreviews',
-  ]) +
-  policyRule.withVerbs(['create']);
-
-local authorizationRole =
-  policyRule.new() +
-  policyRule.withApiGroups(['authorization.k8s.io']) +
-  policyRule.withResources([
-    'subjectaccessreviews',
-  ]) +
-  policyRule.withVerbs(['create']);
-
 local thanosQuerierRules =
   (import 'github.com/thanos-io/thanos/mixin/alerts/query.libsonnet') {
     query+:: {
@@ -48,12 +21,21 @@ local thanosQuerierRules =
       serviceMonitor: true,
     }),
 
-    querier+: tq + {
-
-      trustedCaBundle:
-        configmap.new('thanos-querier-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
-        configmap.mixin.metadata.withNamespace(tq.config.namespace) +
-        configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+    querier+: tq {
+      trustedCaBundle: {
+        apiVersion: 'v1',
+        kind: 'ConfigMap',
+        metadata: {
+          name: 'thanos-querier-trusted-ca-bundle',
+          namespace: tq.config.namespace,
+          labels: {
+            'config.openshift.io/inject-trusted-cabundle': 'true',
+          },
+        },
+        data: {
+          'ca-bundle.crt': '',
+        },
+      },
 
       route: {
         apiVersion: 'v1',
@@ -78,46 +60,86 @@ local thanosQuerierRules =
         },
       },
 
-      clusterRole:
-        clusterRole.new() +
-        clusterRole.mixin.metadata.withName('thanos-querier') +
-        clusterRole.mixin.metadata.withLabels(tq.config.commonLabels) +
-        clusterRole.withRules([authenticationRole, authorizationRole]),
+      clusterRole: {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'ClusterRole',
+        metadata: {
+          name: 'thanos-querier',
+          labels: tq.config.commonLabels,
+        },
+        rules: [
+          {
+            apiGroups: ['authentication.k8s.io'],
+            resources: ['tokenreviews'],
+            verbs: ['create'],
+          },
+          {
+            apiGroups: ['authorization.k8s.io'],
+            resources: ['subjectaccessreviews'],
+            verbs: ['create'],
+          },
+        ],
+      },
 
-      clusterRoleBinding:
-        local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
-
-        clusterRoleBinding.new() +
-        clusterRoleBinding.mixin.metadata.withName('thanos-querier') +
-        clusterRoleBinding.mixin.metadata.withLabels(tq.config.commonLabels) +
-        clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
-        clusterRoleBinding.mixin.roleRef.withName('thanos-querier') +
-        clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
-        clusterRoleBinding.withSubjects([{
+      clusterRoleBinding: {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'ClusterRoleBinding',
+        metadata: {
+          name: 'thanos-querier',
+          labels: tq.config.commonLabels,
+        },
+        roleRef: {
+          apiGroup: 'rbac.authorization.k8s.io',
+          kind: 'ClusterRole',
+          name: 'thanos-querier',
+        },
+        subjects: [{
           kind: 'ServiceAccount',
           name: 'thanos-querier',
           namespace: tq.config.namespace,
-        }]),
+        }],
+      },
 
-      grpcTlsSecret:
-        secret.new('thanos-querier-grpc-tls', {}) +
-        secret.mixin.metadata.withNamespace(tq.config.namespace) +
-        secret.mixin.metadata.withLabels(tq.config.commonLabels),
+      grpcTlsSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-querier-grpc-tls',
+          namespace: tq.config.namespace,
+          labels: tq.config.commonLabels,
+        },
+        type: 'Opaque',
+        data: {},
+      },
 
       // holds the secret which is used encrypt/decrypt cookies
       // issued by the oauth proxy.
-      oauthCookieSecret:
-        secret.new('thanos-querier-oauth-cookie', {}) +
-        secret.mixin.metadata.withNamespace(tq.config.namespace) +
-        secret.mixin.metadata.withLabels(tq.config.commonLabels),
+      oauthCookieSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-querier-oauth-cookie',
+          namespace: tq.config.namespace,
+          labels: tq.config.commonLabels,
+        },
+        type: 'Opaque',
+        data: {},
+      },
 
       // holds the htpasswd configuration
       // which includes a static secret used to authenticate/authorize
       // requests originating from grafana.
-      oauthHtpasswdSecret:
-        secret.new('thanos-querier-oauth-htpasswd', {}) +
-        secret.mixin.metadata.withNamespace(tq.config.namespace) +
-        secret.mixin.metadata.withLabels(tq.config.commonLabels),
+      oauthHtpasswdSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-querier-oauth-htpasswd',
+          namespace: tq.config.namespace,
+          labels: tq.config.commonLabels,
+        },
+        type: 'Opaque',
+        data: {},
+      },
 
       // holds the kube-rbac-proxy configuration as a secret.
       // It configures to template the request in flight
@@ -126,8 +148,17 @@ local thanosQuerierRules =
       // asserting if the request bearer token in flight has permissions
       // to access the pod.metrics.k8s.io API.
       // The asserted verb (PUT, GET, POST, etc.) is implied from the http request verb in flight.
-      kubeRbacProxySecret:
-        local config = {
+      kubeRbacProxySecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-querier-kube-rbac-proxy',
+          namespace: tq.config.namespace,
+          labels: tq.config.commonLabels,
+        },
+        type: 'Opaque',
+        data: {},
+        stringData: {
           'config.yaml': std.manifestYamlDoc({
             authorization: {
               rewrites: {
@@ -142,17 +173,23 @@ local thanosQuerierRules =
               },
             },
           }),
-        };
-
-        secret.new('thanos-querier-kube-rbac-proxy', {}).withStringData(config) +
-        secret.mixin.metadata.withNamespace(tq.config.namespace) +
-        secret.mixin.metadata.withLabels(tq.config.commonLabels),
+        },
+      },
 
       // Same as kubeRbacProxySecret but performs a SubjectAccessReview
       // asserting if the request bearer token in flight has permissions
       // to access the prometheusrules.monitoring.coreos.com API.
-      kubeRbacProxyRulesSecret:
-        local config = {
+      kubeRbacProxyRulesSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-querier-kube-rbac-proxy-rules',
+          namespace: tq.config.namespace,
+          labels: tq.config.commonLabels,
+        },
+        type: 'Opaque',
+        data: {},
+        stringData: {
           'config.yaml': std.manifestYamlDoc({
             authorization: {
               rewrites: {
@@ -167,44 +204,48 @@ local thanosQuerierRules =
               },
             },
           }),
-        };
+        },
+      },
 
-        secret.new('thanos-querier-kube-rbac-proxy-rules', {}).withStringData(config) +
-        secret.mixin.metadata.withNamespace(tq.config.namespace) +
-        secret.mixin.metadata.withLabels(tq.config.commonLabels),
+      serviceAccount: {
+        apiVersion: 'v1',
+        kind: 'ServiceAccount',
+        metadata: {
+          name: 'thanos-querier',
+          namespace: tq.config.namespace,
+          labels: tq.config.commonLabels,
+          annotations: {
+            'serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier"}}',
+          },
+        },
+      },
 
-      serviceAccount:
-        local serviceAccount = k.core.v1.serviceAccount;
-
-        serviceAccount.new('thanos-querier') +
-        serviceAccount.mixin.metadata.withNamespace(tq.config.namespace) +
-        serviceAccount.mixin.metadata.withLabels(tq.config.commonLabels) +
-
-        // The ServiceAccount needs this annotation, to signify the identity
-        // provider, that when a users it doing the oauth flow through the
-        // oauth proxy, that it should redirect to the thanos-querier route on
-        // successful authentication.
-        serviceAccount.mixin.metadata.withAnnotations({
-          'serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier"}}',
-        }),
-
-      service+:
-        // The following annotation will instruct the serving certs controller
-        // to synthesize the "thanos-querier-tls" secret.
-        // Hence, we don't need to declare that secret explicitly.
-        service.mixin.metadata.withAnnotations({
-          'service.beta.openshift.io/serving-cert-secret-name': 'thanos-querier-tls',
-        }) +
-        service.mixin.metadata.withLabels(tq.config.commonLabels) +
-        // The ClusterIP is explicitly set, as it signifies the
-        // cluster-monitoring-operator, that when reconciling this service the
-        // cluster IP needs to be retained.
-        service.mixin.spec.withType('ClusterIP') +
-        service.mixin.spec.withPorts([
-          ports.newNamed('web', 9091, 'web'),
-          ports.newNamed('tenancy', 9092, 'tenancy'),
-          ports.newNamed('tenancy-rules', 9093, 'tenancy-rules'),
-        ]),
+      service+: {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata+: {
+          annotations: {
+            'service.beta.openshift.io/serving-cert-secret-name': 'thanos-querier-tls',
+          },
+          labels: tq.config.commonLabels,
+        },
+        spec+: {
+          ports: [{
+            name: 'web',
+            port: 9091,
+            targetPort: 'web',
+          }, {
+            name: 'tenancy',
+            port: 9092,
+            targetPort: 'tenancy',
+          }, {
+            name: 'tenancy-rules',
+            port: 9093,
+            targetPort: 'tenancy-rules',
+          }],
+          type: 'ClusterIP',
+        },
+      },
 
       serviceMonitor+:
         {
@@ -242,11 +283,36 @@ local thanosQuerierRules =
             template+: {
               spec+: {
                 volumes+: [
-                  volume.fromSecret('secret-thanos-querier-tls', 'thanos-querier-tls'),
-                  volume.fromSecret('secret-thanos-querier-oauth-cookie', 'thanos-querier-oauth-cookie'),
-                  volume.fromSecret('secret-thanos-querier-oauth-htpasswd', 'thanos-querier-oauth-htpasswd'),
-                  volume.fromSecret('secret-thanos-querier-kube-rbac-proxy', 'thanos-querier-kube-rbac-proxy'),
-                  volume.fromSecret('secret-thanos-querier-kube-rbac-proxy-rules', 'thanos-querier-kube-rbac-proxy-rules'),
+                  {
+                    name: 'secret-thanos-querier-tls',
+                    secret: {
+                      secretName: 'thanos-querier-tls',
+                    },
+                  },
+                  {
+                    name: 'secret-thanos-querier-oauth-cookie',
+                    secret: {
+                      secretName: 'thanos-querier-oauth-cookie',
+                    },
+                  },
+                  {
+                    name: 'secret-thanos-querier-oauth-htpasswd',
+                    secret: {
+                      secretName: 'thanos-querier-oauth-htpasswd',
+                    },
+                  },
+                  {
+                    name: 'secret-thanos-querier-kube-rbac-proxy',
+                    secret: {
+                      secretName: 'thanos-querier-kube-rbac-proxy',
+                    },
+                  },
+                  {
+                    name: 'secret-thanos-querier-kube-rbac-proxy-rules',
+                    secret: {
+                      secretName: 'thanos-querier-kube-rbac-proxy-rules',
+                    },
+                  },
                 ],
                 serviceAccountName: 'thanos-querier',
                 priorityClassName: 'system-cluster-critical',
@@ -269,9 +335,9 @@ local thanosQuerierRules =
                         if std.startsWith(a, '--grpc-address=') then '--grpc-address=127.0.0.1:10901'
                         else if std.startsWith(a, '--http-address=') then '--http-address=127.0.0.1:9090'
                         else a,
-                      std.filter(function(a) !std.startsWith(a, "--log.level="), super.args)
+                      std.filter(function(a) !std.startsWith(a, '--log.level='), super.args)
                     ) + [
-		       '--store.sd-dns-resolver=miekgdns',
+                      '--store.sd-dns-resolver=miekgdns',
                       '--grpc-client-tls-secure',
                       '--grpc-client-tls-cert=/etc/tls/grpc/client.crt',
                       '--grpc-client-tls-key=/etc/tls/grpc/client.key',

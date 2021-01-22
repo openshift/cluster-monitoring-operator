@@ -1,11 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local service = k.core.v1.service;
-local deployment = k.apps.v1beta2.deployment;
-local container = deployment.mixin.spec.template.spec.containersType;
-local volume = deployment.mixin.spec.template.spec.volumesType;
-local configmap = k.core.v1.configMap;
-local containerPort = container.portsType;
-local containerVolumeMount = container.volumeMountsType;
 local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
 
@@ -16,10 +8,13 @@ local tlsVolumeName = 'kube-state-metrics-tls';
     // to generate a valid and signed serving certificate and put it in the
     // specified secret.
 
-    service+:
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'kube-state-metrics-tls',
-      }),
+    service+: {
+      metadata+: {
+        annotations+: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'kube-state-metrics-tls',
+        },
+      },
+    },
 
     // This changes kube-state-metrics to be scraped with validating TLS.
 
@@ -78,9 +73,11 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                           '--tls-private-key-file=/etc/tls/private/tls.key',
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
-                        volumeMounts: [
-                          containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
-                        ],
+                        volumeMounts: [{
+                          mountPath: '/etc/tls/private',
+                          name: tlsVolumeName,
+                          readOnly: false,
+                        }],
                         securityContext: {},
                         resources: {
                           requests: {
@@ -90,8 +87,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                         },
                       }
                     else
-                      c +
-                      container.withVolumeMounts([containerVolumeMount.new(tmpVolumeName, '/tmp')]) +
+                      c
                       {
                         args+: [
                           '--metric-blacklist=kube_secret_labels',
@@ -103,12 +99,25 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                             cpu: '2m',
                           },
                         },
+                        volumeMounts: [{
+                          mountPath: '/tmp',
+                          name: tmpVolumeName,
+                          readOnly: false,
+                        }],
                       },
                   super.containers,
                 ),
               volumes+: [
-                volume.fromEmptyDir(tmpVolumeName),
-                volume.fromSecret(tlsVolumeName, 'kube-state-metrics-tls'),
+                {
+                  emptyDir: {},
+                  name: tmpVolumeName,
+                },
+                {
+                  name: tlsVolumeName,
+                  secret: {
+                    secretName: 'kube-state-metrics-tls',
+                  },
+                },
               ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',

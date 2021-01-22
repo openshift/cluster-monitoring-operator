@@ -1,11 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local service = k.core.v1.service;
-local deployment = k.apps.v1beta2.deployment;
-local container = deployment.mixin.spec.template.spec.containersType;
-local volume = deployment.mixin.spec.template.spec.volumesType;
-local configmap = k.core.v1.configMap;
-local containerPort = container.portsType;
-local containerVolumeMount = container.volumeMountsType;
 local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
 
@@ -94,10 +86,26 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [
-                          containerVolumeMount.new('tmpfs', '/tmp'),
-                          containerVolumeMount.new('config', '/etc/adapter'),
-                          containerVolumeMount.new(prometheusAdapterPrometheusConfig, prometheusAdapterPrometheusConfigPath),
-                          containerVolumeMount.new(servingCertsCABundle, servingCertsCABundleMountPath),
+                          {
+                            mountPath: '/tmp',
+                            name: 'tmpfs',
+                            readOnly: false,
+                          },
+                          {
+                            mountPath: '/etc/adapter',
+                            name: 'config',
+                            readOnly: false,
+                          },
+                          {
+                            mountPath: prometheusAdapterPrometheusConfigPath,
+                            name: prometheusAdapterPrometheusConfig,
+                            readOnly: false,
+                          },
+                          {
+                            mountPath: servingCertsCABundleMountPath,
+                            name: servingCertsCABundle,
+                            readOnly: false,
+                          },
                         ],
                         resources: {
                           requests: {
@@ -112,10 +120,28 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                 ),
 
               volumes: [
-                volume.fromEmptyDir(name='tmpfs'),
-                { name: 'config', configMap: { name: 'adapter-config' } },
-                volume.withName(prometheusAdapterPrometheusConfig) + volume.mixin.configMap.withName(prometheusAdapterPrometheusConfig),
-                volume.withName(servingCertsCABundle) + volume.mixin.configMap.withName('serving-certs-ca-bundle'),
+                {
+                  name: 'tmpfs',
+                  emptyDir: {},
+                },
+                {
+                  name: 'config',
+                  configMap: {
+                    name: 'adapter-config',
+                  },
+                },
+                {
+                  name: prometheusAdapterPrometheusConfig,
+                  configMap: {
+                    name: prometheusAdapterPrometheusConfig,
+                  },
+                },
+                {
+                  name: servingCertsCABundle,
+                  configMap: {
+                    name: 'serving-certs-ca-bundle',
+                  },
+                },
               ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
@@ -124,46 +150,56 @@ local tlsVolumeName = 'kube-state-metrics-tls';
         },
       },
 
-    clusterRoleBindingView:
-      local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
-
-      clusterRoleBinding.new() +
-      clusterRoleBinding.mixin.metadata.withName('prometheus-adapter-view') +
-      clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
-      clusterRoleBinding.mixin.roleRef.withName('cluster-monitoring-view') +
-      clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
-      clusterRoleBinding.withSubjects([{
+    clusterRoleBindingView: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRoleBinding',
+      metadata: {
+        name: 'prometheus-adapter-view',
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'ClusterRole',
+        name: 'cluster-monitoring-view',
+      },
+      subjects: [{
         kind: 'ServiceAccount',
         name: 'prometheus-adapter',
         namespace: $._config.namespace,
-      }]),
+      }],
+    },
 
-    configmapPrometheus:
-      local config = |||
-        apiVersion: v1
-        clusters:
-        - cluster:
-            certificate-authority: %s
-            server: %s
-          name: prometheus-k8s
-        contexts:
-        - context:
-            cluster: prometheus-k8s
-            user: prometheus-k8s
-          name: prometheus-k8s
-        current-context: prometheus-k8s
-        kind: Config
-        preferences: {}
-        users:
-        - name: prometheus-k8s
-          user:
-            tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      ||| % [
-        servingCertsCABundleMountPath + '/' + servingCertsCABundleFileName,
-        $._config.prometheusAdapter.prometheusURL,
-      ];
-
-      configmap.new(prometheusAdapterPrometheusConfig, { 'prometheus-config.yaml': config }) +
-      configmap.mixin.metadata.withNamespace($._config.namespace),
+    configmapPrometheus: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: prometheusAdapterPrometheusConfig,
+        namespace: $._config.namespace,
+      },
+      data: {
+        'prometheus-config.yaml': |||
+          apiVersion: v1
+          clusters:
+          - cluster:
+              certificate-authority: %s
+              server: %s
+            name: prometheus-k8s
+          contexts:
+          - context:
+              cluster: prometheus-k8s
+              user: prometheus-k8s
+            name: prometheus-k8s
+          current-context: prometheus-k8s
+          kind: Config
+          preferences: {}
+          users:
+          - name: prometheus-k8s
+            user:
+              tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+        ||| % [
+          servingCertsCABundleMountPath + '/' + servingCertsCABundleFileName,
+          $._config.prometheusAdapter.prometheusURL,
+        ],
+      },
+    },
   },
 }
