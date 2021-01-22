@@ -100,10 +100,10 @@ func TestMergeMetadata(t *testing.T) {
 			mergeMetadata(&oldMeta, newMeta)
 
 			if !reflect.DeepEqual(oldMeta.Annotations, tc.expected) {
-				t.Errorf("expected old annotations %q, got %q", tc.expected, oldMeta.Annotations)
+				t.Errorf("test '%s' expected old annotations %q, got %q", tc.name, tc.expected, oldMeta.Annotations)
 			}
 			if !reflect.DeepEqual(oldMeta.Labels, tc.expected) {
-				t.Errorf("expected old labels %q, got %q", tc.expected, oldMeta.Labels)
+				t.Errorf("test '%s' expected old labels %q, got %q", tc.name, tc.expected, oldMeta.Labels)
 			}
 		})
 	}
@@ -120,14 +120,16 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 		{
 			name: "no change",
 			expectedLabels: map[string]string{
-				"app.kubernetes.io/name": "kube-state-metrics",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"app.kubernetes.io/name":       "kube-state-metrics",
 			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"app.kubernetes.io/name": "kube-state-metrics",
-				"label":                  "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"app.kubernetes.io/name":       "kube-state-metrics",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -136,7 +138,8 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 		{
 			name: "annotations change",
 			expectedLabels: map[string]string{
-				"app.kubernetes.io/name": "kube-state-metrics",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"app.kubernetes.io/name":       "kube-state-metrics",
 			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
@@ -154,9 +157,10 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// Overriding labels to prevent changing tests with each upgrade of kube-state-metrics version
-			// as our DaemonSet contains "app.kubernetes.io/version" label
-			dep.SetLabels(map[string]string{"app.kubernetes.io/name": "kube-state-metrics"})
+			// Delete "app.kubernetes.io/version" label to prevent changing tests with each upgrade of kube-state-metrics version
+			l := dep.GetLabels()
+			delete(l, "app.kubernetes.io/version")
+			dep.SetLabels(l)
 
 			data := &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -183,10 +187,10 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -203,14 +207,16 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		{
 			name: "no change",
 			expectedLabels: map[string]string{
-				"app.kubernetes.io/name": "node-exporter",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"app.kubernetes.io/name":       "node-exporter",
 			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"app.kubernetes.io/name": "node-exporter",
-				"label":                  "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"app.kubernetes.io/name":       "node-exporter",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -219,7 +225,8 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		{
 			name: "annotations change",
 			expectedLabels: map[string]string{
-				"app.kubernetes.io/name": "node-exporter",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"app.kubernetes.io/name":       "node-exporter",
 			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
@@ -234,12 +241,14 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		t.Run(tc.name, func(st *testing.T) {
 			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			ds, err := f.NodeExporterDaemonSet()
-			// Overriding labels to prevent changing tests with each upgrade of node-exporter version
-			// as our DaemonSet contains "app.kubernetes.io/version" label
-			ds.SetLabels(map[string]string{"app.kubernetes.io/name": "node-exporter"})
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// Delete "app.kubernetes.io/version" label to prevent changing tests with each upgrade of kube-state-metrics version
+			l := ds.GetLabels()
+			delete(l, "app.kubernetes.io/version")
+			ds.SetLabels(l)
 
 			data := &appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
@@ -266,10 +275,10 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -286,14 +295,16 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 		{
 			name: "no change",
 			expectedLabels: map[string]string{
-				"k8s-app": "prometheus-k8s",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"k8s-app":                      "prometheus-k8s",
 			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"k8s-app": "prometheus-k8s",
-				"label":   "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"k8s-app":                      "prometheus-k8s",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -302,7 +313,8 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 		{
 			name: "annotations change",
 			expectedLabels: map[string]string{
-				"k8s-app": "prometheus-k8s",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"k8s-app":                      "prometheus-k8s",
 			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
@@ -346,10 +358,10 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -366,12 +378,14 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 		{
 			name: "no change",
 			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by":                "cluster-monitoring-operator",
 				"config.openshift.io/inject-trusted-cabundle": "true",
 			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by":                "cluster-monitoring-operator",
 				"config.openshift.io/inject-trusted-cabundle": "true",
 				"label": "value",
 			},
@@ -382,6 +396,7 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 		{
 			name: "annotations change",
 			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by":                "cluster-monitoring-operator",
 				"config.openshift.io/inject-trusted-cabundle": "true",
 			},
 			expectedAnnotations: map[string]string{
@@ -426,10 +441,10 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -449,7 +464,8 @@ func TestCreateOrUpdateService(t *testing.T) {
 			name:           "no change",
 			expectedUpdate: false,
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
 			},
 			expectedAnnotations: map[string]string{
 				"service.beta.openshift.io/serving-cert-secret-name": "prometheus-k8s-tls",
@@ -460,7 +476,8 @@ func TestCreateOrUpdateService(t *testing.T) {
 			name:           "spec change",
 			expectedUpdate: true,
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
 			},
 			expectedAnnotations: map[string]string{
 				"service.beta.openshift.io/serving-cert-secret-name": "prometheus-k8s-tls",
@@ -471,8 +488,9 @@ func TestCreateOrUpdateService(t *testing.T) {
 			name:           "labels and spec change",
 			expectedUpdate: true,
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
-				"label":      "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
+				"label":                        "value",
 			},
 			expectedAnnotations: map[string]string{
 				"service.beta.openshift.io/serving-cert-secret-name": "prometheus-k8s-tls",
@@ -486,7 +504,8 @@ func TestCreateOrUpdateService(t *testing.T) {
 			name:           "annotation and spec change",
 			expectedUpdate: true,
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
 			},
 			expectedAnnotations: map[string]string{
 				"service.beta.openshift.io/serving-cert-secret-name": "prometheus-k8s-tls",
@@ -555,14 +574,14 @@ func TestCreateOrUpdateService(t *testing.T) {
 			unchanged := reflect.DeepEqual(before, after)
 
 			if unchanged == tc.expectedUpdate {
-				t.Errorf("expected update %t, got %t", tc.expectedUpdate, unchanged)
+				t.Errorf("test '%s' expected update %t, got %t", tc.name, tc.expectedUpdate, unchanged)
 			}
 
 			if !unchanged && !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !unchanged && !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -580,10 +599,16 @@ func TestCreateOrUpdateRole(t *testing.T) {
 		{
 			name:     "no change",
 			roleName: "prometheus-k8s-config",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
 		},
 		{
 			name:     "annotations change",
 			roleName: "prometheus-k8s-config",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
 			},
@@ -595,7 +620,8 @@ func TestCreateOrUpdateRole(t *testing.T) {
 			name:     "labels change",
 			roleName: "prometheus-k8s-config",
 			expectedLabels: map[string]string{
-				"label": "value",
+				"label":                        "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -636,10 +662,10 @@ func TestCreateOrUpdateRole(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -675,7 +701,10 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 		{
 			name:           "roleref change",
 			expectedUpdate: true,
-			roleref:        rbacv1.RoleRef{},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
+			roleref: rbacv1.RoleRef{},
 			subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
@@ -687,6 +716,9 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 		{
 			name:           "subjects change",
 			expectedUpdate: true,
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
 			roleref: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "Role",
@@ -782,10 +814,10 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -801,11 +833,15 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 	}{
 		{
 			name: "no change",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"label": "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -813,6 +849,9 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 		},
 		{
 			name: "annotations change",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
 			},
@@ -854,10 +893,10 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -893,7 +932,10 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 		{
 			name:           "roleref change",
 			expectedUpdate: true,
-			roleref:        rbacv1.RoleRef{},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
+			roleref: rbacv1.RoleRef{},
 			subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
@@ -905,6 +947,9 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 		{
 			name:           "subjects change",
 			expectedUpdate: true,
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
 			roleref: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
@@ -995,14 +1040,14 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 			unchanged := reflect.DeepEqual(before, after)
 
 			if unchanged == tc.expectedUpdate {
-				t.Errorf("expected update %t, got %t", tc.expectedUpdate, unchanged)
+				t.Errorf("test '%s' expected update %t, got %t", tc.name, tc.expectedUpdate, unchanged)
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -1021,11 +1066,15 @@ func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
 			expectedAnnotations: map[string]string{
 				"kubernetes.io/description": "node-exporter scc is used for the Prometheus node exporter",
 			},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"label": "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -1036,6 +1085,9 @@ func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
 		},
 		{
 			name: "annotations change",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+			},
 			expectedAnnotations: map[string]string{
 				"annotation":                "value",
 				"kubernetes.io/description": "node-exporter scc is used for the Prometheus node exporter",
@@ -1081,10 +1133,10 @@ func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -1101,14 +1153,16 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 		{
 			name: "no change",
 			expectedLabels: map[string]string{
-				"k8s-app": "prometheus",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"k8s-app":                      "prometheus",
 			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"k8s-app": "prometheus",
-				"label":   "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"k8s-app":                      "prometheus",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -1117,7 +1171,8 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 		{
 			name: "annotations change",
 			expectedLabels: map[string]string{
-				"k8s-app": "prometheus",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"k8s-app":                      "prometheus",
 			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
@@ -1162,10 +1217,10 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -1182,16 +1237,18 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 		{
 			name: "no change",
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
-				"role":       "alert-rules",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
+				"role":                         "alert-rules",
 			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
-				"role":       "alert-rules",
-				"label":      "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
+				"role":                         "alert-rules",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -1200,8 +1257,9 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 		{
 			name: "annotations change",
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
-				"role":       "alert-rules",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
+				"role":                         "alert-rules",
 			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
@@ -1246,10 +1304,10 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -1266,14 +1324,16 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 		{
 			name: "no change",
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
 			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
-				"label":      "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -1282,7 +1342,8 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 		{
 			name: "annotations change",
 			expectedLabels: map[string]string{
-				"prometheus": "k8s",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"prometheus":                   "k8s",
 			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
@@ -1327,10 +1388,10 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -1347,14 +1408,16 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 		{
 			name: "no change",
 			expectedLabels: map[string]string{
-				"alertmanager": "main",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"alertmanager":                 "main",
 			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"alertmanager": "main",
-				"label":        "value",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"alertmanager":                 "main",
+				"label":                        "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -1363,7 +1426,8 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 		{
 			name: "annotations change",
 			expectedLabels: map[string]string{
-				"alertmanager": "main",
+				"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+				"alertmanager":                 "main",
 			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
@@ -1408,10 +1472,10 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test '%s' expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test '%s' expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
