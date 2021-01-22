@@ -331,30 +331,30 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
           {
             expr: 'avg_over_time((((count((max by (node) (up{job="kubelet",metrics_path="/metrics"} == 1) and max by (node) (kube_node_status_condition{condition="Ready",status="true"} == 1) and min by (node) (kube_node_spec_unschedulable == 0))) / scalar(count(min by (node) (kube_node_spec_unschedulable == 0))))))[5m:1s])',
             record: 'cluster:usage:kube_schedulable_node_ready_reachable:avg5m',
-            # Report a 5m rolling average of the number of schedulable nodes that are ready and reachable to be scraped by metrics. This is
-            # used to estimate the disruption imposed on a cluster during upgrades, excluding any machines administrators may be performing
-            # maintenance on.
+            // Report a 5m rolling average of the number of schedulable nodes that are ready and reachable to be scraped by metrics. This is
+            // used to estimate the disruption imposed on a cluster during upgrades, excluding any machines administrators may be performing
+            // maintenance on.
           },
           {
             expr: 'avg_over_time((count(max by (node) (kube_node_status_condition{condition="Ready",status="true"} == 1)) / scalar(count(max by (node) (kube_node_status_condition{condition="Ready",status="true"}))))[5m:1s])',
             record: 'cluster:usage:kube_node_ready:avg5m',
-            # Report a 5m rolling average of the number of ready nodes in a cluster. This provides the user-facing measurement of how often
-            # nodes report unready, but not represent all possible user-impacting outages to nodes.
+            // Report a 5m rolling average of the number of ready nodes in a cluster. This provides the user-facing measurement of how often
+            // nodes report unready, but not represent all possible user-impacting outages to nodes.
           },
           {
             expr: '(max without (condition,container,endpoint,instance,job,service) (((kube_pod_status_ready{condition="false"} == 1)*0 or (kube_pod_status_ready{condition="true"} == 1)) * on(pod,namespace) group_left() group by (pod,namespace) (kube_pod_status_phase{phase=~"Running|Unknown|Pending"} == 1)))',
             record: 'kube_running_pod_ready',
-            # For all non-terminal pods, report ready pods with 1 and unready pods with 0
+            // For all non-terminal pods, report ready pods with 1 and unready pods with 0
           },
           {
             expr: 'avg(kube_running_pod_ready{namespace=~"openshift-.*"})',
             record: 'cluster:usage:openshift:kube_running_pod_ready:avg',
-            # Report the percentage (0-1) of pending or running openshift pods reporting ready
+            // Report the percentage (0-1) of pending or running openshift pods reporting ready
           },
           {
             expr: 'avg(kube_running_pod_ready{namespace!~"openshift-.*"})',
             record: 'cluster:usage:workload:kube_running_pod_ready:avg',
-            # Report the percentage (0-1) of pending or running workload (everything outside of openshift-*) pods reporting ready
+            // Report the percentage (0-1) of pending or running workload (everything outside of openshift-*) pods reporting ready
           },
         ],
       },
@@ -381,37 +381,37 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
           {
             expr: 'sum (rate(haproxy_frontend_bytes_in_total[5m]))',
             record: 'cluster:usage:ingress_frontend_bytes_in:rate5m:sum',
-            # The rate of bytes in through the ingress frontends
+            // The rate of bytes in through the ingress frontends
           },
           {
             expr: 'sum (rate(haproxy_frontend_bytes_out_total[5m]))',
             record: 'cluster:usage:ingress_frontend_bytes_out:rate5m:sum',
-            # The rate of bytes out through the ingress frontends
+            // The rate of bytes out through the ingress frontends
           },
           {
             expr: 'sum (haproxy_frontend_current_sessions)',
             record: 'cluster:usage:ingress_frontend_connections:sum',
-            # The number of open connections on the ingress frontends
+            // The number of open connections on the ingress frontends
           },
           {
             expr: 'sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace!~"openshift-.*"}[5m]) > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
             record: 'cluster:usage:workload:ingress_request_error:fraction5m',
-            # The fraction of workload requests that have errored over the last five minutes, measured at the ingress controllers
+            // The fraction of workload requests that have errored over the last five minutes, measured at the ingress controllers
           },
           {
             expr: 'sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace!~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
             record: 'cluster:usage:workload:ingress_request_total:irate5m',
-            # The instantaneous rate of workload requests per second arriving at the ingress controllers
+            // The instantaneous rate of workload requests per second arriving at the ingress controllers
           },
           {
             expr: 'sum(max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{code!~"2xx|1xx|4xx|3xx",exported_namespace=~"openshift-.*"}[5m]) > 0)) / sum (max without(service,endpoint,container,pod,job,namespace) (increase(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
             record: 'cluster:usage:openshift:ingress_request_error:fraction5m',
-            # The fraction of openshift requests that have errored over the last five minutes, measured at the ingress controllers
+            // The fraction of openshift requests that have errored over the last five minutes, measured at the ingress controllers
           },
           {
             expr: 'sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m]))) or absent(__does_not_exist__)*0',
             record: 'cluster:usage:openshift:ingress_request_total:irate5m',
-            # The instantaneous rate of openshift requests per second arriving at the ingress controllers
+            // The instantaneous rate of openshift requests per second arriving at the ingress controllers
           },
         ],
       },

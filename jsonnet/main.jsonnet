@@ -1,5 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local configmap = k.core.v1.configMap;
 local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
 local addReleaseAnnotation = (import 'add-release-annotation.libsonnet').addReleaseAnnotation;
 local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
@@ -147,10 +145,21 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                    },
                  },
                },
-               trustedCaBundle:
-                 configmap.new('telemeter-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
-                 configmap.mixin.metadata.withNamespace($._config.namespace) +
-                 configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+
+               trustedCaBundle: {
+                 apiVersion: 'v1',
+                 kind: 'ConfigMap',
+                 metadata: {
+                   name: 'telemeter-trusted-ca-bundle',
+                   namespace: $._config.namespace,
+                   labels: {
+                     'config.openshift.io/inject-trusted-cabundle': 'true',
+                   },
+                 },
+                 data: {
+                   'ca-bundle.crt': '',
+                 },
+               },
              },
            } +
            (import 'rules.jsonnet') +
@@ -187,7 +196,7 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
     certExpirationCriticalSeconds: 60 * 60,  // 1h
 
     // Remove Ceph block devices: https://bugzilla.redhat.com/show_bug.cgi?id=1914090
-    diskDevices: std.filter(function(diskDevice) diskDevice != 'rbd.+', super.diskDevices)
+    diskDevices: std.filter(function(diskDevice) diskDevice != 'rbd.+', super.diskDevices),
   },
 } + {
   local d = super.grafanaDashboards,

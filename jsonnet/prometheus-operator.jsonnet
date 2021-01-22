@@ -1,9 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local service = k.core.v1.service;
-local deployment = k.apps.v1beta2.deployment;
-local container = deployment.mixin.spec.template.spec.containersType;
-local volume = deployment.mixin.spec.template.spec.volumesType;
-local containerVolumeMount = container.volumeMountsType;
 local tlsVolumeName = 'prometheus-operator-tls';
 local certsCAVolumeName = 'operator-certs-ca-bundle';
 
@@ -49,9 +43,11 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
                         },
                       },
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts+: [
-                        containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
-                      ],
+                      volumeMounts+: [{
+                        mountPath: '/etc/tls/private',
+                        name: tlsVolumeName,
+                        readOnly: false,
+                      }],
                     }
                   else if c.name == 'kube-rbac-proxy' then
                     c {
@@ -66,8 +62,16 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
-                        containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
-                        containerVolumeMount.new(certsCAVolumeName, '/etc/configmaps/operator-cert-ca-bundle'),
+                        {
+                          mountPath: '/etc/tls/private',
+                          name: tlsVolumeName,
+                          readOnly: false,
+                        },
+                        {
+                          mountPath: '/etc/configmaps/operator-cert-ca-bundle',
+                          name: certsCAVolumeName,
+                          readOnly: false,
+                        },
                       ],
                       securityContext: {},
                       resources: {
@@ -82,7 +86,13 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
                 super.containers,
               ),
             volumes+: [
-              volume.fromSecret(tlsVolumeName, 'prometheus-operator-tls'),
+              {
+                name: tlsVolumeName,
+                secret: {
+                  secretName: 'prometheus-operator-tls',
+                },
+
+              },
               {
                 name: certsCAVolumeName,
                 configMap: {
@@ -95,11 +105,16 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
       },
     },
 
-    service+:
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-tls',
-      }) +
-      service.mixin.spec.withPortsMixin([{ name: 'web', port: 8080, targetPort: 8080 }]),
+    service+: {
+      metadata+: {
+        annotations+: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-tls',
+        },
+      },
+      spec+: {
+        ports+: [{ name: 'web', port: 8080, targetPort: 8080 }],
+      },
+    },
 
     serviceMonitor+: {
       spec+: {

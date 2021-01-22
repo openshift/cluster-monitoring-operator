@@ -1,11 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local service = k.core.v1.service;
-local daemonset = k.apps.v1beta2.daemonSet;
-local container = daemonset.mixin.spec.template.spec.containersType;
-local volume = daemonset.mixin.spec.template.spec.volumesType;
-local configmap = k.core.v1.configMap;
-local containerPort = container.portsType;
-local containerVolumeMount = container.volumeMountsType;
 local textfileDir = '/var/node_exporter/textfile';
 local textfileVolumeName = 'node-exporter-textfile';
 local tlsVolumeName = 'node-exporter-tls';
@@ -18,11 +10,13 @@ local wtmpVolumeName = 'node-exporter-wtmp';
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
     // specified secret.
-
-    service+:
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'node-exporter-tls',
-      }),
+    service+: {
+      metadata+: {
+        annotations+: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'node-exporter-tls',
+        },
+      },
+    },
 
     // This changes node-exporter to be scraped with validating TLS.
 
@@ -103,8 +97,16 @@ local wtmpVolumeName = 'node-exporter-wtmp';
                   },
                   terminationMessagePolicy: 'FallbackToLogsOnError',
                   volumeMounts+: [
-                    containerVolumeMount.new(textfileVolumeName, textfileDir),
-                    containerVolumeMount.new(wtmpVolumeName, wtmpPath).withReadOnly(true),
+                    {
+                      mountPath: textfileDir,
+                      name: textfileVolumeName,
+                      readOnly: false,
+                    },
+                    {
+                      mountPath: wtmpPath,
+                      name: wtmpVolumeName,
+                      readOnly: true,
+                    },
                   ],
                   workingDir: textfileDir,
                 },
@@ -119,9 +121,11 @@ local wtmpVolumeName = 'node-exporter-wtmp';
                           '--tls-private-key-file=/etc/tls/private/tls.key',
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
-                        volumeMounts: [
-                          containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
-                        ],
+                        volumeMounts: [{
+                          mountPath: '/etc/tls/private',
+                          name: tlsVolumeName,
+                          readOnly: false,
+                        }],
                         resources: {
                           requests: {
                             memory: '30Mi',
@@ -136,9 +140,11 @@ local wtmpVolumeName = 'node-exporter-wtmp';
                         // add flags to collect data not included by default.
                         args: [a for a in c.args if a != '--no-collector.hwmon'] + ['--collector.mountstats', '--collector.cpu.info', '--collector.textfile.directory=' + textfileDir],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
-                        volumeMounts+: [
-                          containerVolumeMount.new(textfileVolumeName, textfileDir, true),
-                        ],
+                        volumeMounts+: [{
+                          mountPath: textfileDir,
+                          name: textfileVolumeName,
+                          readOnly: true,
+                        }],
                         workingDir: textfileDir,
                         resources+: {
                           requests+: {
@@ -149,9 +155,23 @@ local wtmpVolumeName = 'node-exporter-wtmp';
                   super.containers,
                 ),
               volumes+: [
-                volume.fromEmptyDir(textfileVolumeName),
-                volume.fromSecret(tlsVolumeName, 'node-exporter-tls'),
-                volume.fromHostPath(wtmpVolumeName, wtmpPath).withType('File'),
+                {
+                  name: textfileVolumeName,
+                  emptyDir: {},
+                },
+                {
+                  name: tlsVolumeName,
+                  secret: {
+                    secretName: 'node-exporter-tls',
+                  },
+                },
+                {
+                  name: wtmpVolumeName,
+                  hostPath: {
+                    path: wtmpPath,
+                    type: 'File',
+                  },
+                },
               ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',

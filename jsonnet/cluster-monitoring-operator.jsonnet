@@ -1,5 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
-local secret = k.core.v1.secret;
 local metrics = import 'telemeter-client/metrics.jsonnet';
 
 {
@@ -14,32 +12,43 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
   },
 
   clusterMonitoringOperator:: {
-    grpcTlsSecret:
-      secret.new('grpc-tls', {}).withData(
-        {
-          'ca.crt': '',
-          'ca.key': '',
-          'thanos-querier-client.crt': '',
-          'thanos-querier-client.key': '',
-          'prometheus-server.crt': '',
-          'prometheus-server.key': '',
-        }
-      ) +
-      secret.mixin.metadata.withNamespace($._config.namespace),
+    grpcTlsSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'grpc-tls',
+        namespace: $._config.namespace,
+      },
+      type: 'Opaque',
+      data: {
+        'ca.crt': '',
+        'ca.key': '',
+        'thanos-querier-client.crt': '',
+        'thanos-querier-client.key': '',
+        'prometheus-server.crt': '',
+        'prometheus-server.key': '',
+      },
+    },
 
-    service:
-      local service = k.core.v1.service;
-      local servicePort = k.core.v1.service.mixin.spec.portsType;
-
-      local cmoServicePort = servicePort.newNamed('https', 8443, 'https');
-
-      service.new($._config.clusterMonitoringOperator.name, { app: $._config.clusterMonitoringOperator.name }, [cmoServicePort]) +
-      service.mixin.metadata.withLabels({ app: $._config.clusterMonitoringOperator.name }) +
-      service.mixin.metadata.withNamespace($._config.namespace) +
-      service.mixin.spec.withClusterIp('None') +
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'cluster-monitoring-operator-tls',
-      }),
+    service: {
+      apiVersion: 'v1',
+      kind: 'Service',
+      metadata: {
+        name: $._config.clusterMonitoringOperator.name,
+        namespace: $._config.namespace,
+        labels: { app: $._config.clusterMonitoringOperator.name },
+        annotations: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'cluster-monitoring-operator-tls',
+        },
+      },
+      spec: {
+        ports: [
+          { name: 'https', targetPort: 'https', port: 8443 },
+        ],
+        selector: { app: $._config.clusterMonitoringOperator.name },
+        clusterIP: 'None',
+      },
+    },
 
     serviceMonitor: {
       apiVersion: 'monitoring.coreos.com/v1',
@@ -69,82 +78,71 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
       },
     },
 
-    clusterRole:
-      local clusterRole = k.rbac.v1.clusterRole;
-      local policyRule = clusterRole.rulesType;
+    clusterRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRole',
+      metadata: {
+        name: 'cluster-monitoring-view',
+      },
+      rules: [{
+        apiGroups: [''],
+        resources: ['namespaces'],
+        verbs: ['get'],
+      }],
+    },
 
-      local namespacesRule = policyRule.new() +
-                             policyRule.withApiGroups(['']) +
-                             policyRule.withResources(['namespaces']) +
-                             policyRule.withVerbs(['get']);
+    monitoringEditClusterRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRole',
+      metadata: {
+        name: 'monitoring-edit',
+      },
+      rules: [{
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['servicemonitors', 'podmonitors', 'prometheusrules'],
+        verbs: ['*'],
+      }],
+    },
 
-      local rules = [namespacesRule];
+    monitoringRulesViewClusterRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRole',
+      metadata: {
+        name: 'monitoring-rules-view',
+      },
+      rules: [{
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['prometheusrules'],
+        verbs: ['get', 'list', 'watch'],
+      }],
+    },
 
-      clusterRole.new() +
-      clusterRole.mixin.metadata.withName('cluster-monitoring-view') +
-      clusterRole.withRules(rules),
+    monitoringRulesEditClusterRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRole',
+      metadata: {
+        name: 'monitoring-rules-edit',
+      },
+      rules: [{
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['prometheusrules'],
+        verbs: ['*'],
+      }],
+    },
 
-    monitoringEditClusterRole:
-      local clusterRole = k.rbac.v1.clusterRole;
-      local policyRule = clusterRole.rulesType;
-
-      local editRule = policyRule.new() +
-                       policyRule.withApiGroups(['monitoring.coreos.com']) +
-                       policyRule.withResources(['servicemonitors', 'podmonitors', 'prometheusrules']) +
-                       policyRule.withVerbs(['*']);
-
-      local rules = [editRule];
-
-      clusterRole.new() +
-      clusterRole.mixin.metadata.withName('monitoring-edit') +
-      clusterRole.withRules(rules),
-
-    monitoringRulesViewClusterRole:
-      local clusterRole = k.rbac.v1.clusterRole;
-      local policyRule = clusterRole.rulesType;
-
-      local rulesViewRule = policyRule.new() +
-                            policyRule.withApiGroups(['monitoring.coreos.com']) +
-                            policyRule.withResources(['prometheusrules']) +
-                            policyRule.withVerbs(['get', 'list', 'watch']);
-
-      local rules = [rulesViewRule];
-
-      clusterRole.new() +
-      clusterRole.mixin.metadata.withName('monitoring-rules-view') +
-      clusterRole.withRules(rules),
-
-    monitoringRulesEditClusterRole:
-      local clusterRole = k.rbac.v1.clusterRole;
-      local policyRule = clusterRole.rulesType;
-
-      local rulesEditRule = policyRule.new() +
-                            policyRule.withApiGroups(['monitoring.coreos.com']) +
-                            policyRule.withResources(['prometheusrules']) +
-                            policyRule.withVerbs(['*']);
-
-      local rules = [rulesEditRule];
-
-      clusterRole.new() +
-      clusterRole.mixin.metadata.withName('monitoring-rules-edit') +
-      clusterRole.withRules(rules),
-
-    userWorkloadConfigEditRole:
-      local role = k.rbac.v1.role;
-      local policyRule = role.rulesType;
-
-      local configmapRule = policyRule.new() +
-                            policyRule.withApiGroups(['']) +
-                            policyRule.withResources([
-                              'configmaps',
-                            ]) +
-                            policyRule.withVerbs(['*']) +
-                            policyRule.withResourceNames(['user-workload-monitoring-config']);
-
-      role.new() +
-      role.mixin.metadata.withName('user-workload-monitoring-config-edit') +
-      role.mixin.metadata.withNamespace('openshift-user-workload-monitoring') +
-      role.withRules(configmapRule),
-
+    userWorkloadConfigEditRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'Role',
+      metadata: {
+        name: 'user-workload-monitoring-config-edit',
+        namespace: $._config.namespaceUserWorkload,
+      },
+      rules: [{
+        apiGroups: [''],
+        resourceNames: ['user-workload-monitoring-config'],
+        resources: ['configmaps'],
+        verbs: ['*'],
+      }],
+    },
   },
 }

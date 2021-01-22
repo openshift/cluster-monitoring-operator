@@ -1,47 +1,19 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local serviceAccount = k.core.v1.serviceAccount;
-local service = k.core.v1.service;
-local servicePort = k.core.v1.service.mixin.spec.portsType;
-local secret = k.core.v1.secret;
-local configmap = k.core.v1.configMap;
-local clusterRole = k.rbac.v1.clusterRole;
-local policyRule = clusterRole.rulesType;
-
-local authenticationRole = policyRule.new() +
-                           policyRule.withApiGroups(['authentication.k8s.io']) +
-                           policyRule.withResources([
-                             'tokenreviews',
-                           ]) +
-                           policyRule.withVerbs(['create']);
-
-local authorizationRole = policyRule.new() +
-                          policyRule.withApiGroups(['authorization.k8s.io']) +
-                          policyRule.withResources([
-                            'subjectaccessreviews',
-                          ]) +
-                          policyRule.withVerbs(['create']);
-
-// By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
-// This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
-// Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
-// to be immune against UID changes.
-local sccRole = policyRule.new() +
-                policyRule.withApiGroups(['security.openshift.io']) +
-                policyRule.withResources([
-                  'securitycontextconstraints',
-                ]) +
-                policyRule.withResourceNames([
-                  'nonroot',
-                ]) +
-                policyRule.withVerbs(['use']);
-
 {
   alertmanager+:: {
-
-    trustedCaBundle:
-      configmap.new('alertmanager-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
-      configmap.mixin.metadata.withNamespace($._config.namespace) +
-      configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+    trustedCaBundle: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: 'alertmanager-trusted-ca-bundle',
+        namespace: $._config.namespace,
+        labels: {
+          'config.openshift.io/inject-trusted-cabundle': 'true',
+        },
+      },
+      data: {
+        'ca-bundle.crt': '',
+      },
+    },
 
     // OpenShift route to access the Alertmanager UI.
 
@@ -71,11 +43,13 @@ local sccRole = policyRule.new() +
     // provider, that when a users it doing the oauth flow through the oauth
     // proxy, that it should redirect to the alertmanager-main route on
     // successful authentication.
-
-    serviceAccount+:
-      serviceAccount.mixin.metadata.withAnnotations({
-        'serviceaccounts.openshift.io/oauth-redirectreference.alertmanager-main': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"alertmanager-main"}}',
-      }),
+    serviceAccount+: {
+      metadata+: {
+        annotations+: {
+          'serviceaccounts.openshift.io/oauth-redirectreference.alertmanager-main': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"alertmanager-main"}}',
+        },
+      },
+    },
 
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
@@ -88,45 +62,104 @@ local sccRole = policyRule.new() +
     // The ports are overridden, as due to the port binding of the oauth proxy
     // the serving port is 9094 instead of the 9093 default.
 
-    service+:
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'alertmanager-main-tls',
-      }) +
-      service.mixin.spec.withType('ClusterIP') +
-      service.mixin.spec.withPorts([
-        servicePort.newNamed('web', 9094, 'web'),
-        servicePort.newNamed('tenancy', 9092, 'tenancy'),
-      ]),
+    service+: {
+      metadata+: {
+        annotations: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'alertmanager-main-tls',
+        },
+      },
+      spec+: {
+        ports: [
+          {
+            name: 'web',
+            port: 9094,
+            targetPort: 'web',
+          },
+          {
+            name: 'tenancy',
+            port: 9092,
+            targetPort: 'tenancy',
+          },
+        ],
+        type: 'ClusterIP',
+      },
+    },
 
     // The proxy secret is there to encrypt session created by the oauth proxy.
-
-    proxySecret:
-      secret.new('alertmanager-main-proxy', {}) +
-      secret.mixin.metadata.withNamespace($._config.namespace) +
-      secret.mixin.metadata.withLabels({ 'k8s-app': 'alertmanager-main' }),
+    proxySecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'alertmanager-main-proxy',
+        namespace: $._config.namespace,
+        labels: { 'k8s-app': 'alertmanager-main' },
+      },
+      type: 'Opaque',
+      data: {},
+    },
 
     // In order for the oauth proxy to perform a TokenReview and
     // SubjectAccessReview for authN and authZ the alertmanager ServiceAccount
     // requires the `create` action on both of these.
 
-    clusterRole:
-      local rules = [authenticationRole, authorizationRole, sccRole];
+    clusterRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRole',
+      metadata: {
+        name: 'alertmanager-main',
+      },
+      rules: [
+        {
+          apiGroups: ['authentication.k8s.io'],
+          resources: ['tokenreviews'],
+          verbs: ['create'],
+        },
+        {
+          apiGroups: ['authorization.k8s.io'],
+          resources: ['subjectaccessreviews'],
+          verbs: ['create'],
+        },
+        {
+          // By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
+          // This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
+          // Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
+          // to be immune against UID changes.
+          apiGroups: ['security.openshift.io'],
+          resources: ['securitycontextconstraints'],
+          resourceNames: ['nonroot'],
+          verbs: ['use'],
+        },
+      ],
+    },
 
-      clusterRole.new() +
-      clusterRole.mixin.metadata.withName('alertmanager-main') +
-      clusterRole.withRules(rules),
-    clusterRoleBinding:
-      local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
+    clusterRoleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRoleBinding',
+      metadata: {
+        name: 'alertmanager-main',
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'ClusterRole',
+        name: 'alertmanager-main',
+      },
+      subjects: [{
+        kind: 'ServiceAccount',
+        name: 'alertmanager-main',
+        namespace: $._config.namespace,
+      }],
+    },
 
-      clusterRoleBinding.new() +
-      clusterRoleBinding.mixin.metadata.withName('alertmanager-main') +
-      clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
-      clusterRoleBinding.mixin.roleRef.withName('alertmanager-main') +
-      clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
-      clusterRoleBinding.withSubjects([{ kind: 'ServiceAccount', name: 'alertmanager-main', namespace: $._config.namespace }]),
-
-    kubeRbacProxySecret:
-      local config = {
+    kubeRbacProxySecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'alertmanager-kube-rbac-proxy',
+        namespace: $._config.namespace,
+        labels: { 'k8s-app': 'alertmanager-main' },
+      },
+      type: 'Opaque',
+      stringData: {
         'config.yaml': std.manifestYamlDoc({
           authorization: {
             rewrites: {
@@ -141,11 +174,8 @@ local sccRole = policyRule.new() +
             },
           },
         }),
-      };
-
-      secret.fromString('alertmanager-kube-rbac-proxy', config) +
-      secret.mixin.metadata.withNamespace($._config.namespace) +
-      secret.mixin.metadata.withLabels({ 'k8s-app': 'alertmanager-main' }),
+      },
+    },
 
     // This changes the alertmanager to be scraped with TLS, authN and authZ,
     // which are not present in kube-prometheus.

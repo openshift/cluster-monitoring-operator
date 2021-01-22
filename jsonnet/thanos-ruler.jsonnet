@@ -1,44 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
-local secret = k.core.v1.secret;
-local service = k.core.v1.service;
-local ports = service.mixin.spec.portsType;
-local deployment = k.apps.v1.deployment;
-local container = deployment.mixin.spec.template.spec.containersType;
-local volume = deployment.mixin.spec.template.spec.volumesType;
-local clusterRole = k.rbac.v1.clusterRole;
-local policyRule = clusterRole.rulesType;
-local configmap = k.core.v1.configMap;
-
-local authenticationRole =
-  policyRule.new() +
-  policyRule.withApiGroups(['authentication.k8s.io']) +
-  policyRule.withResources([
-    'tokenreviews',
-  ]) +
-  policyRule.withVerbs(['create']);
-
-local authorizationRole =
-  policyRule.new() +
-  policyRule.withApiGroups(['authorization.k8s.io']) +
-  policyRule.withResources([
-    'subjectaccessreviews',
-  ]) +
-  policyRule.withVerbs(['create']);
-
-// By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
-// This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
-// Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
-// to be immune against UID changes.
-local sccRole = policyRule.new() +
-                policyRule.withApiGroups(['security.openshift.io']) +
-                policyRule.withResources([
-                  'securitycontextconstraints',
-                ]) +
-                policyRule.withResourceNames([
-                  'nonroot',
-                ]) +
-                policyRule.withVerbs(['use']);
-
 local thanosRulerRules =
   (import 'github.com/thanos-io/thanos/mixin/alerts/rule.libsonnet') {
     rule+:: {
@@ -68,7 +27,6 @@ local thanosRulerRules =
     image:: thanosRulerConfig.imageRepos.openshiftThanos + ':' + thanosRulerConfig.versions.openshiftThanos,
 
     ruler+: {
-
       thanosRulerPrometheusRule: {
         apiVersion: 'monitoring.coreos.com/v1',
         kind: 'PrometheusRule',
@@ -79,10 +37,20 @@ local thanosRulerRules =
         spec: thanosRulerRules.prometheusAlerts,
       },
 
-      trustedCaBundle:
-        configmap.new('thanos-ruler-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
-        configmap.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+      trustedCaBundle: {
+        apiVersion: 'v1',
+        kind: 'ConfigMap',
+        metadata: {
+          name: 'thanos-ruler-trusted-ca-bundle',
+          namespace: thanosRulerConfig.namespace,
+          labels: {
+            'config.openshift.io/inject-trusted-cabundle': 'true',
+          },
+        },
+        data: {
+          'ca-bundle.crt': '',
+        },
+      },
 
       route: {
         apiVersion: 'v1',
@@ -106,63 +74,130 @@ local thanosRulerRules =
         },
       },
 
-      clusterRole:
-        clusterRole.new() +
-        clusterRole.mixin.metadata.withName('thanos-ruler') +
-        clusterRole.withRules([authenticationRole, authorizationRole, sccRole]),
+      clusterRole: {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'ClusterRole',
+        metadata: {
+          name: 'thanos-ruler',
+        },
+        rules: [
+          {
+            apiGroups: ['authentication.k8s.io'],
+            resources: ['tokenreviews'],
+            verbs: ['create'],
+          },
+          {
+            apiGroups: ['authorization.k8s.io'],
+            resources: ['subjectaccessreviews'],
+            verbs: ['create'],
+          },
+          {
+            apiGroups: ['security.openshift.io'],
+            resourceNames: ['nonroot'],
+            resources: ['securitycontextconstraints'],
+            verbs: ['use'],
+          },
+        ],
+      },
 
-      clusterRoleBinding:
-        local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
-
-        clusterRoleBinding.new() +
-        clusterRoleBinding.mixin.metadata.withName('thanos-ruler') +
-        clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
-        clusterRoleBinding.mixin.roleRef.withName('thanos-ruler') +
-        clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
-        clusterRoleBinding.withSubjects([{
+      clusterRoleBinding: {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'ClusterRoleBinding',
+        metadata: {
+          name: 'thanos-ruler',
+        },
+        roleRef: {
+          apiGroup: 'rbac.authorization.k8s.io',
+          kind: 'ClusterRole',
+          name: 'thanos-ruler',
+        },
+        subjects: [{
           kind: 'ServiceAccount',
           name: 'thanos-ruler',
           namespace: thanosRulerConfig.namespace,
-        }]),
+        }],
+      },
 
-      clusterRoleBindingMonitoring:
-        local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
-
-        clusterRoleBinding.new() +
-        clusterRoleBinding.mixin.metadata.withName('thanos-ruler-monitoring') +
-        clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
-        clusterRoleBinding.mixin.roleRef.withName('cluster-monitoring-view') +
-        clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
-        clusterRoleBinding.withSubjects([{
+      clusterRoleBindingMonitoring: {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'ClusterRoleBinding',
+        metadata: {
+          name: 'thanos-ruler-monitoring',
+        },
+        roleRef: {
+          apiGroup: 'rbac.authorization.k8s.io',
+          kind: 'ClusterRole',
+          name: 'cluster-monitoring-view',
+        },
+        subjects: [{
           kind: 'ServiceAccount',
           name: 'thanos-ruler',
           namespace: thanosRulerConfig.namespace,
-        }]),
+        }],
+      },
 
-      grpcTlsSecret:
-        secret.new('thanos-ruler-grpc-tls', {}) +
-        secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }),
+      grpcTlsSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-ruler-grpc-tls',
+          namespace: thanosRulerConfig.namespace,
+          labels: {
+            'k8s-app': 'thanos-ruler',
+          },
+        },
+        type: 'Opaque',
+        data: {},
+      },
 
       // holds the secret which is used encrypt/decrypt cookies
       // issued by the oauth proxy.
-      oauthCookieSecret:
-        secret.new('thanos-ruler-oauth-cookie', {}) +
-        secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }),
+      oauthCookieSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-ruler-oauth-cookie',
+          namespace: thanosRulerConfig.namespace,
+          labels: {
+            'k8s-app': 'thanos-ruler',
+          },
+        },
+        type: 'Opaque',
+        data: {},
+      },
 
       // holds the htpasswd configuration
       // which includes a static secret used to authenticate/authorize
       // requests originating from grafana.
-      oauthHtpasswdSecret:
-        secret.new('thanos-ruler-oauth-htpasswd', {}) +
-        secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }),
+      oauthHtpasswdSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-ruler-oauth-htpasswd',
+          namespace: thanosRulerConfig.namespace,
+          labels: {
+            'k8s-app': 'thanos-ruler',
+          },
+        },
+        type: 'Opaque',
+        data: {},
+      },
 
       // alertmanager config holds the http configuration
       // for communication between thanos ruler and alertmanager.
-      alertmanagersConfigSecret:
-        local alertmanagerConfig = {
+      alertmanagersConfigSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-ruler-alertmanagers-config',
+          namespace: thanosRulerConfig.namespace,
+          labels: {
+            'k8s-app': 'thanos-ruler',
+          },
+        },
+        type: 'Opaque',
+        data: {},
+        stringData: {
           'alertmanagers.yaml': std.manifestYamlDoc({
             alertmanagers: [{
               http_config: {
@@ -177,17 +212,24 @@ local thanosRulerRules =
               api_version: 'v2',
             }],
           }),
-        };
-
-        secret.new('thanos-ruler-alertmanagers-config', {}) +
-        secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }) +
-        secret.withStringData(alertmanagerConfig),
+        },
+      },
 
       // query config which holds http configuration
       // for communication between thanos ruler and thanos querier.
-      queryConfigSecret:
-        local queryConfig = {
+      queryConfigSecret: {
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: {
+          name: 'thanos-ruler-query-config',
+          namespace: thanosRulerConfig.namespace,
+          labels: {
+            'k8s-app': 'thanos-ruler',
+          },
+        },
+        type: 'Opaque',
+        data: {},
+        stringData: {
           'query.yaml': std.manifestYamlDoc([{
             http_config: {
               bearer_token_file: '/var/run/secrets/kubernetes.io/serviceaccount/token',
@@ -199,49 +241,47 @@ local thanosRulerRules =
             static_configs: ['thanos-querier.openshift-monitoring.svc:9091'],
             scheme: 'https',
           }]),
-        };
+        },
+      },
 
-        secret.new('thanos-ruler-query-config', {}) +
-        secret.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        secret.mixin.metadata.withLabels({ 'k8s-app': 'thanos-ruler' }) +
-        secret.withStringData(queryConfig),
+      serviceAccount: {
+        apiVersion: 'v1',
+        kind: 'ServiceAccount',
+        metadata: {
+          name: 'thanos-ruler',
+          namespace: thanosRulerConfig.namespace,
+          annotations: {
+            'serviceaccounts.openshift.io/oauth-redirectreference.thanos-ruler': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-ruler"}}',
+          },
+        },
+      },
 
-      serviceAccount:
-        local serviceAccount = k.core.v1.serviceAccount;
-
-        serviceAccount.new('thanos-ruler') +
-        serviceAccount.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-
-        // The ServiceAccount needs this annotation, to signify the identity
-        // provider, that when a users it doing the oauth flow through the
-        // oauth proxy, that it should redirect to the thanos-ruler route on
-        // successful authentication.
-        serviceAccount.mixin.metadata.withAnnotations({
-          'serviceaccounts.openshift.io/oauth-redirectreference.thanos-ruler': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-ruler"}}',
-        }),
-
-      service:
-        service.new(
-          'thanos-ruler',
-          thanosRulerConfig.selectorLabels,
-          [
-            ports.newNamed('web', thanosRulerConfig.ports.web, 'web'),
-            ports.newNamed('grpc', thanosRulerConfig.ports.grpc, 'grpc'),
-          ],
-        ) +
-        // The following annotation will instruct the serving certs controller
-        // to synthesize the "thanos-ruler-tls" secret.
-        // Hence, we don't need to declare that secret explicitly.
-        service.mixin.metadata.withAnnotations({
-          'service.beta.openshift.io/serving-cert-secret-name': 'thanos-ruler-tls',
-        }) +
-        service.mixin.metadata.withLabels(thanosRulerConfig.labels) +
-        service.mixin.metadata.withNamespace(thanosRulerConfig.namespace) +
-        // The ClusterIP is explicitly set, as it signifies the
-        // cluster-monitoring-operator, that when reconciling this service the
-        // cluster IP needs to be retained.
-        service.mixin.spec.withType('ClusterIP') +
-        service.mixin.spec.withSessionAffinity('ClientIP'),
+      service: {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: {
+          name: 'thanos-ruler',
+          namespace: thanosRulerConfig.namespace,
+          annotations: {
+            'service.beta.openshift.io/serving-cert-secret-name': 'thanos-ruler-tls',
+          },
+          labels: thanosRulerConfig.labels,
+        },
+        spec: {
+          ports: [{
+            name: 'web',
+            port: thanosRulerConfig.ports.web,
+            targetPort: 'web',
+          }, {
+            name: 'grpc',
+            port: thanosRulerConfig.ports.grpc,
+            targetPort: 'grpc',
+          }],
+          selector: thanosRulerConfig.selectorLabels,
+          sessionAffinity: 'ClientIP',
+          type: 'ClusterIP',
+        },
+      },
 
       serviceMonitor: {
         apiVersion: 'monitoring.coreos.com/v1',
@@ -324,14 +364,29 @@ local thanosRulerRules =
           ruleNamespaceSelector: {},
           volumes: [
             {
+              name: 'serving-certs-ca-bundle',
               configmap: {
                 name: 'serving-certs-ca-bundle',
               },
-              name: 'serving-certs-ca-bundle',
             },
-            volume.fromSecret('secret-thanos-ruler-tls', 'thanos-ruler-tls'),
-            volume.fromSecret('secret-thanos-ruler-oauth-cookie', 'thanos-ruler-oauth-cookie'),
-            volume.fromSecret('secret-thanos-ruler-oauth-htpasswd', 'thanos-ruler-oauth-htpasswd'),
+            {
+              name: 'secret-thanos-ruler-tls',
+              secret: {
+                secretName: 'thanos-ruler-tls',
+              },
+            },
+            {
+              name: 'secret-thanos-ruler-oauth-cookie',
+              secret: {
+                secretName: 'thanos-ruler-oauth-cookie',
+              },
+            },
+            {
+              name: 'secret-thanos-ruler-oauth-htpasswd',
+              secret: {
+                secretName: 'thanos-ruler-oauth-htpasswd',
+              },
+            },
           ],
           serviceAccountName: 'thanos-ruler',
           priorityClassName: 'openshift-user-critical',

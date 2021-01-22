@@ -1,38 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local serviceAccount = k.core.v1.serviceAccount;
-local service = k.core.v1.service;
-local servicePort = k.core.v1.service.mixin.spec.portsType;
-local secret = k.core.v1.secret;
-local configmap = k.core.v1.configMap;
-local configMapList = k.core.v1.configMapList;
-local clusterRole = k.rbac.v1.clusterRole;
-local policyRule = clusterRole.rulesType;
-
-local deployment = k.apps.v1beta2.deployment;
-local container = deployment.mixin.spec.template.spec.containersType;
-local volume = deployment.mixin.spec.template.spec.volumesType;
-local containerPort = container.portsType;
-local containerVolumeMount = container.volumeMountsType;
-local containerEnv = container.envType;
-
-local httpProxy = containerEnv.new('HTTP_PROXY', '');
-local httpsProxy = containerEnv.new('HTTPS_PROXY', '');
-local noProxy = containerEnv.new('NO_PROXY', '');
-
-local authenticationRole = policyRule.new() +
-                           policyRule.withApiGroups(['authentication.k8s.io']) +
-                           policyRule.withResources([
-                             'tokenreviews',
-                           ]) +
-                           policyRule.withVerbs(['create']);
-
-local authorizationRole = policyRule.new() +
-                          policyRule.withApiGroups(['authorization.k8s.io']) +
-                          policyRule.withResources([
-                            'subjectaccessreviews',
-                          ]) +
-                          policyRule.withVerbs(['create']);
-
 {
   _config+:: {
     grafana+:: {
@@ -84,7 +49,7 @@ local authorizationRole = policyRule.new() +
             header_name: 'X-Forwarded-User',
             auto_sign_up: true,
           },
-          'analytics': {
+          analytics: {
             reporting_enabled: false,
             check_for_updates: false,
           },
@@ -95,18 +60,40 @@ local authorizationRole = policyRule.new() +
 
   grafana+:: {
     local dashboards = super.dashboardDefinitions.items,
-    dashboardDefinitions: configMapList.new(dashboards),
-    consoleDashboardDefinitions: configMapList.new(std.map(
-      function(c)
-        c +
-        configmap.mixin.metadata.withNamespace('openshift-config-managed') +
-        configmap.mixin.metadata.withLabels({ 'console.openshift.io/dashboard': 'true' }),
-      dashboards
-    )),
-    trustedCaBundle:
-      configmap.new('grafana-trusted-ca-bundle', { 'ca-bundle.crt': '' }) +
-      configmap.mixin.metadata.withNamespace($._config.namespace) +
-      configmap.mixin.metadata.withLabels({ 'config.openshift.io/inject-trusted-cabundle': 'true' }),
+    dashboardDefinitions: {
+      apiVersion: 'v1',
+      kind: 'ConfigMapList',
+      items: dashboards,
+    },
+    consoleDashboardDefinitions: {
+      apiVersion: 'v1',
+      kind: 'ConfigMapList',
+      items: std.map(
+        function(c)
+          c {
+            metadata+: {
+              namespace: 'openshift-config-managed',
+              labels+: { 'console.openshift.io/dashboard': 'true' },
+            },
+          },
+        dashboards
+      ),
+    },
+
+    trustedCaBundle: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: 'grafana-trusted-ca-bundle',
+        namespace: $._config.namespace,
+        labels: {
+          'config.openshift.io/inject-trusted-cabundle': 'true',
+        },
+      },
+      data: {
+        'ca-bundle.crt': '',
+      },
+    },
 
     // OpenShift route to access the Grafana UI.
 
@@ -152,13 +139,15 @@ local authorizationRole = policyRule.new() +
 
     // The ServiceAccount needs this annotation, to signify the identity
     // provider, that when a users it doing the oauth flow through the oauth
-    // proxy, that it should redirect to the alertmanager-main route on
+    // proxy, that it should redirect to the grafana route on
     // successful authentication.
-
-    serviceAccount+:
-      serviceAccount.mixin.metadata.withAnnotations({
-        'serviceaccounts.openshift.io/oauth-redirectreference.grafana': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"grafana"}}',
-      }),
+    serviceAccount+: {
+      metadata+: {
+        annotations+: {
+          'serviceaccounts.openshift.io/oauth-redirectreference.grafana': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"grafana"}}',
+        },
+      },
+    },
 
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
@@ -167,40 +156,77 @@ local authorizationRole = policyRule.new() +
     // The ClusterIP is explicitly set, as it signifies the
     // cluster-monitoring-operator, that when reconciling this service the
     // cluster IP needs to be retained.
-
-    service+:
-      service.mixin.metadata.withAnnotations({
-        'service.beta.openshift.io/serving-cert-secret-name': 'grafana-tls',
-      }) +
-      service.mixin.spec.withType('ClusterIP') +
-      service.mixin.spec.withPorts(servicePort.newNamed('https', 3000, 'https')),
+    service+: {
+      metadata+: {
+        annotations: {
+          'service.beta.openshift.io/serving-cert-secret-name': 'grafana-tls',
+        },
+      },
+      spec+: {
+        ports: [{
+          name: 'https',
+          port: 3000,
+          targetPort: 'https',
+        }],
+        type: 'ClusterIP',
+      },
+    },
 
     // The proxy secret is there to encrypt session created by the oauth proxy.
 
-    proxySecret:
-      secret.new('grafana-proxy', {}) +
-      secret.mixin.metadata.withNamespace($._config.namespace) +
-      secret.mixin.metadata.withLabels({ 'k8s-app': 'grafana' }),
+    proxySecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'grafana-proxy',
+        namespace: $._config.namespace,
+        labels: { 'k8s-app': 'grafana' },
+      },
+      type: 'Opaque',
+      data: {},
+    },
 
     // In order for the oauth proxy to perform a TokenReview and
     // SubjectAccessReview for authN and authZ the Grafana ServiceAccount
     // requires the `create` action on both of these.
 
-    clusterRole:
-      local rules = [authenticationRole, authorizationRole];
+    clusterRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRole',
+      metadata: {
+        name: 'grafana',
+      },
+      rules: [
+        {
+          apiGroups: ['authentication.k8s.io'],
+          resources: ['tokenreviews'],
+          verbs: ['create'],
+        },
+        {
+          apiGroups: ['authorization.k8s.io'],
+          resources: ['subjectaccessreviews'],
+          verbs: ['create'],
+        },
+      ],
+    },
 
-      clusterRole.new() +
-      clusterRole.mixin.metadata.withName('grafana') +
-      clusterRole.withRules(rules),
-    clusterRoleBinding:
-      local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
-
-      clusterRoleBinding.new() +
-      clusterRoleBinding.mixin.metadata.withName('grafana') +
-      clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
-      clusterRoleBinding.mixin.roleRef.withName('grafana') +
-      clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
-      clusterRoleBinding.withSubjects([{ kind: 'ServiceAccount', name: 'grafana', namespace: $._config.namespace }]),
+    clusterRoleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRoleBinding',
+      metadata: {
+        name: 'grafana',
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'ClusterRole',
+        name: 'grafana',
+      },
+      subjects: [{
+        kind: 'ServiceAccount',
+        name: 'grafana',
+        namespace: $._config.namespace,
+      }],
+    },
 
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS.
@@ -211,43 +237,79 @@ local authorizationRole = policyRule.new() +
           template+: {
             spec+: {
               containers: [
-                super.containers[0] +
-                container.withPorts(containerPort.newNamed('http', 3001)) +
-                {
+                super.containers[0] {
+                  ports: [{
+                    name: 'http',
+                    containerPort: 3001,
+                  }],
                   readinessProbe:: null,
                 },
-                container.new('grafana-proxy', $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy) +
-                container.mixin.readinessProbe.httpGet.withPort('https') +
-                container.mixin.readinessProbe.httpGet.withScheme('HTTPS') +
-                container.mixin.readinessProbe.httpGet.withPath('/oauth/healthz') +
-                container.mixin.resources.withRequests({ cpu: '1m', memory: '20Mi' }) +
-                container.withArgs([
-                  '-provider=openshift',
-                  '-https-address=:3000',
-                  '-http-address=',
-                  '-email-domain=*',
-                  '-upstream=http://localhost:3001',
-                  '-openshift-sar={"resource": "namespaces", "verb": "get"}',
-                  '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
-                  '-tls-cert=/etc/tls/private/tls.crt',
-                  '-tls-key=/etc/tls/private/tls.key',
-                  '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
-                  '-cookie-secret-file=/etc/proxy/secrets/session_secret',
-                  '-openshift-service-account=grafana',
-                  '-openshift-ca=/etc/pki/tls/cert.pem',
-                  '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-                  '-skip-auth-regex=^/metrics',
-                ]) +
-                container.withPorts(containerPort.newNamed('https', 3000)) +
-                container.withEnv([httpProxy, httpsProxy, noProxy]) +
-                container.withVolumeMounts([
-                  containerVolumeMount.new('secret-grafana-tls', '/etc/tls/private'),
-                  containerVolumeMount.new('secret-grafana-proxy', '/etc/proxy/secrets'),
-                ]),
+                {
+                  args: [
+                    '-provider=openshift',
+                    '-https-address=:3000',
+                    '-http-address=',
+                    '-email-domain=*',
+                    '-upstream=http://localhost:3001',
+                    '-openshift-sar={"resource": "namespaces", "verb": "get"}',
+                    '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
+                    '-tls-cert=/etc/tls/private/tls.crt',
+                    '-tls-key=/etc/tls/private/tls.key',
+                    '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
+                    '-cookie-secret-file=/etc/proxy/secrets/session_secret',
+                    '-openshift-service-account=grafana',
+                    '-openshift-ca=/etc/pki/tls/cert.pem',
+                    '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+                    '-skip-auth-regex=^/metrics',
+                  ],
+                  env: [
+                    { name: 'HTTP_PROXY', value: '' },
+                    { name: 'HTTPS_PROXY', value: '' },
+                    { name: 'NO_PROXY', value: '' },
+                  ],
+                  image: $._config.imageRepos.openshiftOauthProxy + ':' + $._config.versions.openshiftOauthProxy,
+                  name: 'grafana-proxy',
+                  ports: [{
+                    containerPort: 3000,
+                    name: 'https',
+                  }],
+                  readinessProbe: {
+                    httpGet: {
+                      path: '/oauth/healthz',
+                      port: 'https',
+                      scheme: 'HTTPS',
+                    },
+                  },
+                  resources: {
+                    requests: { cpu: '1m', memory: '20Mi' },
+                  },
+                  volumeMounts: [
+                    {
+                      mountPath: '/etc/tls/private',
+                      name: 'secret-grafana-tls',
+                      readOnly: false,
+                    },
+                    {
+                      mountPath: '/etc/proxy/secrets',
+                      name: 'secret-grafana-proxy',
+                      readOnly: false,
+                    },
+                  ],
+                },
               ],
               volumes+: [
-                volume.fromSecret('secret-grafana-tls', 'grafana-tls'),
-                volume.fromSecret('secret-grafana-proxy', 'grafana-proxy'),
+                {
+                  name: 'secret-grafana-tls',
+                  secret: {
+                    secretName: 'grafana-tls',
+                  },
+                },
+                {
+                  name: 'secret-grafana-proxy',
+                  secret: {
+                    secretName: 'grafana-proxy',
+                  },
+                },
               ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',
