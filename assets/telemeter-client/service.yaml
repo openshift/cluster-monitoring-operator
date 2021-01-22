@@ -4,6 +4,7 @@ metadata:
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: telemeter-client-tls
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     k8s-app: telemeter-client
   name: telemeter-client
   namespace: openshift-monitoring

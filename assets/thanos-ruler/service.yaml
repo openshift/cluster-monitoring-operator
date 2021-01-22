@@ -4,6 +4,7 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: thanos-ruler-tls
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: user-workload
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring

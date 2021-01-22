@@ -3,6 +3,7 @@ kind: ServiceMonitor
 metadata:
   labels:
     app.kubernetes.io/component: controller
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/version: v0.44.1
   name: prometheus-operator

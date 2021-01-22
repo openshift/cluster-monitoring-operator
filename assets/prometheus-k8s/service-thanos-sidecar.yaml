@@ -5,6 +5,7 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: prometheus-k8s-thanos-sidecar-tls
   labels:
     app: thanos-sidecar
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     prometheus: k8s
   name: prometheus-k8s-thanos-sidecar
   namespace: openshift-monitoring

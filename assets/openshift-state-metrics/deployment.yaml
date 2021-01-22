@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     k8s-app: openshift-state-metrics
   name: openshift-state-metrics
   namespace: openshift-monitoring

@@ -4,6 +4,7 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: prometheus-k8s-tls
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     prometheus: k8s
   name: prometheus-k8s
   namespace: openshift-monitoring

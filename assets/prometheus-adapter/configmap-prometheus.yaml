@@ -21,5 +21,7 @@ data:
         tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 kind: ConfigMap
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
   name: prometheus-adapter-prometheus-config
   namespace: openshift-monitoring

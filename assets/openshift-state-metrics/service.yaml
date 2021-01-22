@@ -4,6 +4,7 @@ metadata:
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: openshift-state-metrics-tls
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     k8s-app: openshift-state-metrics
   name: openshift-state-metrics
   namespace: openshift-monitoring

@@ -2,6 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/version: v1.9.7
   name: kube-state-metrics

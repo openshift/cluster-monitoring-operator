@@ -1868,6 +1868,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-cluster-total
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -3102,6 +3104,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-etcd
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -5672,6 +5676,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-k8s-resources-cluster
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -7946,6 +7952,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-k8s-resources-namespace
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -8912,6 +8920,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-k8s-resources-node
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -10672,6 +10682,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-k8s-resources-pod
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -12694,6 +12706,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-k8s-resources-workload
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -14877,6 +14891,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-k8s-resources-workloads-namespace
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -16329,6 +16345,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-namespace-by-pod
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -17281,6 +17299,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-node-cluster-rsrc-use
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -18260,6 +18280,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-node-rsrc-use
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -19476,6 +19498,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-pod-total
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -20691,6 +20715,8 @@ items:
       include.release.openshift.io/ibm-cloud-managed: "true"
       include.release.openshift.io/self-managed-high-availability: "true"
       include.release.openshift.io/single-node-developer: "true"
+    labels:
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: grafana-dashboard-prometheus
     namespace: openshift-monitoring
 kind: ConfigMapList

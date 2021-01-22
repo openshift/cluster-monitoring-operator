@@ -17,5 +17,7 @@ data:
     }
 kind: ConfigMap
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
   name: grafana-dashboards
   namespace: openshift-monitoring

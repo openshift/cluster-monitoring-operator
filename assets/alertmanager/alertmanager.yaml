@@ -3,6 +3,7 @@ kind: Alertmanager
 metadata:
   labels:
     alertmanager: main
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
   name: main
   namespace: openshift-monitoring
 spec:

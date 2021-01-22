@@ -2,6 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     name: prometheus-adapter
   name: prometheus-adapter
   namespace: openshift-monitoring

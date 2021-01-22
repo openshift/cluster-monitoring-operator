@@ -14,3 +14,6 @@ items:
     name: prometheus-user-workload
     namespace: openshift-user-workload-monitoring
 kind: RoleBindingList
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator

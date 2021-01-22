@@ -1,6 +1,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring
 spec:

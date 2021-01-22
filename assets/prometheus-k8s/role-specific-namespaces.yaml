@@ -121,3 +121,6 @@ items:
     - list
     - watch
 kind: RoleList
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator

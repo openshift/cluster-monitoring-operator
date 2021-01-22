@@ -2,6 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/version: v1.0.1
   name: node-exporter

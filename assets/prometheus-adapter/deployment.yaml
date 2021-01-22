@@ -1,6 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
   name: prometheus-adapter
   namespace: openshift-monitoring
 spec:

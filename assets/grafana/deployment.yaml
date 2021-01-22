@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app: grafana
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
   name: grafana
   namespace: openshift-monitoring
 spec:

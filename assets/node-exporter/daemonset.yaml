@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/version: v1.0.1
   name: node-exporter

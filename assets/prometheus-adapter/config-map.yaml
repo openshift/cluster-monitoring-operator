@@ -29,5 +29,7 @@ data:
       "window": "5m"
 kind: ConfigMap
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
   name: adapter-config
   namespace: openshift-monitoring

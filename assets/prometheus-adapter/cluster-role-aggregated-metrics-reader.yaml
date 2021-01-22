@@ -2,6 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
     rbac.authorization.k8s.io/aggregate-to-cluster-reader: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
