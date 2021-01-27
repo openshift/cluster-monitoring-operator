@@ -11,10 +11,6 @@ spec:
     name: thanos-ruler-alertmanagers-config
   containers:
   - name: thanos-ruler
-    resources:
-      requests:
-        cpu: 1m
-        memory: 21Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -77,6 +73,10 @@ spec:
     key: query.yaml
     name: thanos-ruler-query-config
   replicas: 2
+  resources:
+    requests:
+      cpu: 1m
+      memory: 21Mi
   ruleNamespaceSelector: {}
   ruleSelector:
     matchExpressions:

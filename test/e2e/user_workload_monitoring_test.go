@@ -153,7 +153,7 @@ func assertPrometheusVCConfig(cm *v1.ConfigMap) func(*testing.T) {
 
 }
 
-func TestUserWorkloadMonitoringThanosRulerVolumeClaim(t *testing.T) {
+func TestUserWorkloadMonitoringThanosRulerConfigurations(t *testing.T) {
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-monitoring-config",
@@ -172,6 +172,10 @@ func TestUserWorkloadMonitoringThanosRulerVolumeClaim(t *testing.T) {
 		},
 		Data: map[string]string{
 			"config.yaml": `thanosRuler:
+  resources:
+    requests:
+      cpu: 12m
+      memory: 13Mi
   volumeClaimTemplate:
     spec:
       storageClassName: gp2
@@ -187,7 +191,8 @@ func TestUserWorkloadMonitoringThanosRulerVolumeClaim(t *testing.T) {
 		f    func(*testing.T)
 	}{
 		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
-		{"set VolumeClaimTemplate for thanosRuler CR, assert that it is created", assertThanosRulerVCConfig(uwmCM)},
+		{"set configurations for thanosRuler CR, assert that PVC is created", assertThanosRulerVCConfig(uwmCM)},
+		{"assert that resource requests are created", assertThanosRulerResourcesConfigured("12m", "13Mi")},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	} {
 		if ok := t.Run(scenario.name, scenario.f); !ok {
@@ -225,6 +230,50 @@ func assertThanosRulerVCConfig(cm *v1.ConfigMap) func(*testing.T) {
 		}
 	}
 
+}
+
+func assertThanosRulerResourcesConfigured(cpu, memory string) func(*testing.T) {
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			pods, err := f.KubeClient.CoreV1().Pods(f.UserWorkloadMonitoringNs).List(context.TODO(), metav1.ListOptions{
+				LabelSelector: "thanos-ruler=user-workload",
+				FieldSelector: "status.phase=Running"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err != nil {
+				return errors.Wrap(err, "getting Thanos Ruler pods failed")
+			}
+			var (
+				podName       = "thanos-ruler-user-workload-0"
+				containerName = "thanos-ruler"
+			)
+
+			for _, p := range pods.Items {
+				if p.Name == podName {
+					for _, container := range p.Spec.Containers {
+						if container.Name == containerName {
+							containerMemory := container.Resources.Requests[v1.ResourceMemory]
+							actualMemory := containerMemory.String()
+							if actualMemory != memory {
+								return fmt.Errorf("memory requests %s does not match actual %s", memory, actualMemory)
+							}
+							containerCPU := container.Resources.Requests[v1.ResourceCPU]
+							actualCPU := containerCPU.String()
+							if actualCPU != cpu {
+								return fmt.Errorf("CPU requests %s does not match actual %s", cpu, actualCPU)
+							}
+						}
+					}
+
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
