@@ -3011,7 +3011,7 @@ items:
           "sharedCrosshair": false,
           "style": "dark",
           "tags": [
-
+              "etcd-mixin"
           ],
           "templating": {
               "list": [
