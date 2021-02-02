@@ -960,7 +960,7 @@ ingress:
 	}
 
 	for _, container := range p.Spec.Containers {
-		if container.Name == "oauth-proxy" && container.Image != "docker.io/openshift/origin-oauth-proxy:latest" {
+		if container.Name == "prometheus-proxy" && container.Image != "docker.io/openshift/origin-oauth-proxy:latest" {
 			t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
 		}
 
@@ -970,6 +970,16 @@ ingress:
 
 		if container.Name == "prom-label-proxy" && container.Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
 			t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
+		}
+
+		volumeName := "prometheus-trusted-ca-bundle"
+		if container.Name == "prometheus-proxy" || container.Name == "prometheus" {
+			if !trustedCABundleVolumeConfigured(p.Spec.Volumes, volumeName) {
+				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
+			}
+			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
+			}
 		}
 	}
 
@@ -1083,7 +1093,10 @@ ingress:
 	})
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
-	a, err := f.AlertmanagerMain("alertmanager-main.openshift-monitoring.svc", nil)
+	a, err := f.AlertmanagerMain(
+		"alertmanager-main.openshift-monitoring.svc",
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1128,6 +1141,18 @@ ingress:
 	storageRequestPtr := &storageRequest
 	if storageRequestPtr.String() != "10Gi" {
 		t.Fatal("Alertmanager volumeClaimTemplate not configured correctly, expected 10Gi storage request, but found", storageRequestPtr.String())
+	}
+
+	for _, container := range a.Spec.Containers {
+		volumeName := "alertmanager-trusted-ca-bundle"
+		if container.Name == "prometheus-proxy" || container.Name == "prometheus" {
+			if !trustedCABundleVolumeConfigured(a.Spec.Volumes, volumeName) {
+				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
+			}
+			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
+			}
+		}
 	}
 }
 
@@ -1371,9 +1396,12 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tls := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
-	d, err := f.ThanosQuerierDeployment(tls, false, nil)
+	d, err := f.ThanosQuerierDeployment(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		false,
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1439,5 +1467,109 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 				})
 			}
 		}
+
+		if c.Name == "oauth-proxy" {
+			volumeName := "thanos-querier-trusted-ca-bundle"
+			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
+				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", c.Name)
+			}
+			if !trustedCABundleVolumeMountsConfigured(c.VolumeMounts, volumeName) {
+				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", c.Name)
+			}
+		}
 	}
+}
+
+func TestGrafanaConfiguration(t *testing.T) {
+	c, err := NewConfigFromString(``)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
+	d, err := f.GrafanaDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "grafana-proxy" {
+			volumeName := "grafana-trusted-ca-bundle"
+			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
+				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
+			}
+			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
+			}
+		}
+	}
+}
+
+func TestTelemeterConfiguration(t *testing.T) {
+	c, err := NewConfigFromString(``)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
+	d, err := f.TelemeterClientDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "telemeter-client" {
+			volumeName := "telemeter-trusted-ca-bundle"
+			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
+				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
+			}
+			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
+			}
+		}
+	}
+}
+
+func TestThanosRulerConfiguration(t *testing.T) {
+	c, err := NewConfigFromString(``)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
+	tr, err := f.ThanosRulerCustomResource(
+		"",
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, container := range tr.Spec.Containers {
+		if container.Name == "thanos-ruler-proxy" {
+			volumeName := "thanos-ruler-trusted-ca-bundle"
+			if !trustedCABundleVolumeConfigured(tr.Spec.Volumes, volumeName) {
+				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
+			}
+			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
+			}
+		}
+	}
+}
+
+func trustedCABundleVolumeConfigured(volumes []v1.Volume, volumeName string) bool {
+	for _, volume := range volumes {
+		if volume.Name == volumeName {
+			return true
+		}
+	}
+	return false
+}
+
+func trustedCABundleVolumeMountsConfigured(volumeMounts []v1.VolumeMount, volumeName string) bool {
+	for _, volumeMount := range volumeMounts {
+		if volumeMount.Name == volumeName {
+			return true
+		}
+	}
+	return false
 }
