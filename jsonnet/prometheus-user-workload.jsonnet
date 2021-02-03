@@ -262,6 +262,7 @@
                 '--tls-cert-file=/etc/tls/private/tls.crt',
                 '--tls-private-key-file=/etc/tls/private/tls.key',
                 '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                '--allow-paths=/metrics',
               ],
               terminationMessagePolicy: 'FallbackToLogsOnError',
               volumeMounts: [
