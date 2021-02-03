@@ -1,236 +1,373 @@
 local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
 local addReleaseAnnotation = (import 'add-release-annotation.libsonnet').addReleaseAnnotation;
-local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
-           (import 'kube-prometheus/kube-prometheus-anti-affinity.libsonnet') +
-           (import 'kube-prometheus/kube-prometheus-static-etcd.libsonnet') +
-           (import 'kube-prometheus/kube-prometheus-thanos-sidecar.libsonnet') +
-           (import 'openshift-state-metrics/openshift-state-metrics.libsonnet') +
-           {
-             prometheusK8s+:: $.prometheus {
-               // Openshift 4.0 clusters already have an etcd service and endpoints.
-               // Additionally, the etcd client certificates secret should not be embedded in the
-               // Cluster Monitoring Operator binary.
-               // Hide these fields so they are not rendered as files.
-               serviceEtcd:: super.serviceEtcd,
-               endpointsEtcd:: super.endpointsEtcd,
-               secretEtcdCerts:: super.secretEtcdCerts,
-               serviceMonitorEtcd+: {
-                 spec+: {
-                   endpoints: [
-                     {
-                       port: 'etcd-metrics',
-                       interval: '30s',
-                       scheme: 'https',
-                       tlsConfig: {
-                         caFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client-ca.crt',
-                         keyFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.key',
-                         certFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.crt',
-                       },
-                     },
-                   ],
-                 },
-               },
-             },
-           } + {
-             prometheusAlerts+:: {
-               groups:
-                 std.map(
-                   function(ruleGroup)
-                     if ruleGroup.name == 'etcd' then
-                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && (rule.alert == 'etcdHighNumberOfFailedGRPCRequests' || rule.alert == 'etcdInsufficientMembers')), ruleGroup.rules) }
-                     else if ruleGroup.name == 'kubernetes-apps' then
-                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'KubeDeploymentReplicasMismatch'), ruleGroup.rules) }
-                     else if ruleGroup.name == 'kubernetes-system' then
-                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'KubeVersionMismatch'), ruleGroup.rules) }
-                     // Removing CPUThrottlingHigh alert as per https://bugzilla.redhat.com/show_bug.cgi?id=1843346
-                     else if ruleGroup.name == 'kubernetes-resources' then
-                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'CPUThrottlingHigh'), ruleGroup.rules) }
-                     else if ruleGroup.name == 'kubernetes-system-kubelet' then
-                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && (rule.alert == 'KubeletClientCertificateExpiration' || rule.alert == 'KubeletServerCertificateExpiration')), ruleGroup.rules) }
-                     else if ruleGroup.name == 'prometheus' then
-                       ruleGroup {
-                         rules:
-                           std.map(
-                             function(rule)
-                               if 'alert' in rule && (rule.alert == 'PrometheusDuplicateTimestamps' || rule.alert == 'PrometheusOutOfOrderTimestamps') then
-                                 rule { 'for': '1h' }
-                               else
-                                 rule,
-                             ruleGroup.rules,
-                           ),
-                       }
-                     else
-                       ruleGroup,
-                   super.groups,
-                 ),
-             },
-             prometheusRules+:: {
-               // Remove apiserver availability recording rules only used by disabled upstream Grafana dashboards.
-               groups: std.filter(function(group) !(group.name == 'kube-apiserver-availability.rules'), super.groups),
-             },
-           } +
-           (import 'telemeter-client/client.libsonnet') +
-           {
+local excludeRules = (import 'exclude-rules.libsonnet').excludeRules;
 
-             _config+:: {
-               imageRepos+:: {
-                 openshiftOauthProxy: 'quay.io/openshift/oauth-proxy',
-                 prometheus: 'openshift/prometheus',
-                 alertmanager: 'openshift/prometheus-alertmanager',
-                 nodeExporter: 'openshift/prometheus-node-exporter',
-                 promLabelProxy: 'quay.io/coreos/prom-label-proxy',
-                 kubeRbacProxy: 'quay.io/coreos/kube-rbac-proxy',
-                 prometheusAdapter: 'quay.io/coreos/k8s-prometheus-adapter-amd64',
-                 openshiftThanos: 'quay.io/openshift/origin-thanos',
-               },
-               versions+:: {
-                 // Because we build OpenShift images separately to upstream,
-                 // we have to ensure these versions exist before upgrading.
-                 openshiftOauthProxy: 'latest',
-                 prometheus: 'v2.23.0',
-                 alertmanager: 'v0.21.0',
-                 nodeExporter: 'v1.0.1',
-                 promLabelProxy: 'v0.2.0',
-                 kubeRbacProxy: 'v0.8.0',
-                 prometheusAdapter: 'v0.8.2',
-                 openshiftThanos: 'v0.17.2',
-                 grafana: 'v7.3.5',
-               },
-               prometheusAdapter+:: {
-                 prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
-               },
-               etcd+:: {
-                 ips: [],
-                 clientCA: '',
-                 clientKey: '',
-                 clientCert: '',
-                 serverName: '',
-               },
-               prometheus+:: {
-                 namespaces+: [
-                   'openshift-etcd',
-                   'openshift-user-workload-monitoring',
-                 ],
-               },
-             },
-             telemeterClient+:: {
-               deployment+: {
-                 spec+: {
-                   template+: {
-                     spec+: {
-                       containers:
-                         std.map(
-                           function(c)
-                             if c.name == 'reload' then
-                               c {
-                                 args: std.map(
-                                   function(a)
-                                     std.strReplace(std.strReplace(a, '--webhook-url=', '--reload-url='), '--volume-dir=', '--watched-dir=')
-                                   ,
-                                   c.args,
-                                 ),
-                               }
-                             else
-                               c,
-                           super.containers,
-                         ),
-                     },
-                   },
-                 },
-               },
+local alertmanager = import './alertmanager.libsonnet';
+local grafana = import './grafana.libsonnet';
+local kubeStateMetrics = import './kube-state-metrics.libsonnet';
+local otherMixins = import './other-mixins.libsonnet';
+local nodeExporter = import './node-exporter.libsonnet';
+local prometheusAdapter = import './prometheus-adapter.libsonnet';
+local prometheusOperator = import './prometheus-operator.libsonnet';
+local prometheusOperatorUserWorkload = import './prometheus-operator-user-workload.libsonnet';
+local prometheus = import './prometheus.libsonnet';
+local prometheusUserWorkload = import './prometheus-user-workload.libsonnet';
+local clusterMonitoringOperator = import './cluster-monitoring-operator.libsonnet';
 
-               trustedCaBundle: {
-                 apiVersion: 'v1',
-                 kind: 'ConfigMap',
-                 metadata: {
-                   name: 'telemeter-trusted-ca-bundle',
-                   namespace: $._config.namespace,
-                   labels: {
-                     'config.openshift.io/inject-trusted-cabundle': 'true',
-                   },
-                 },
-                 data: {
-                   'ca-bundle.crt': '',
-                 },
-               },
-             },
-           } +
-           (import 'rules.jsonnet') +
-           (import 'prometheus-operator.jsonnet') +
-           (import 'prometheus-operator-user-workload.jsonnet') +
-           (import 'node-exporter.jsonnet') +
-           (import 'kube-state-metrics.jsonnet') +
-           (import 'grafana.jsonnet') +
-           (import 'alertmanager.jsonnet') +
-           (import 'prometheus.jsonnet') +
-           (import 'prometheus-user-workload.jsonnet') +
-           (import 'prometheus-adapter.jsonnet') +
-           (import 'cluster-monitoring-operator.jsonnet') +
-           (import 'thanos-querier.jsonnet') +
-           (import 'thanos-ruler.jsonnet') +
-           (import 'remove-runbook.libsonnet') + {
-  _config+:: {
-    namespace: 'openshift-monitoring',
-    namespaceUserWorkload: 'openshift-user-workload-monitoring',
+local thanosRuler = import './thanos-ruler.libsonnet';
+local thanosQuerier = import './thanos-querier.libsonnet';
 
-    hostNetworkInterfaceSelector: 'device!~"veth.+"',
+local openshiftStateMetrics = import './openshift-state-metrics.libsonnet';
+local telemeterClient = import './telemeter-client.libsonnet';
 
-    kubeSchedulerSelector: 'job="scheduler"',
+/*
+TODO(paulfantom):
+- thanos sidecar inclusion - needs https://github.com/prometheus-operator/kube-prometheus/pull/909
+- grafana config - needs https://github.com/prometheus-operator/kube-prometheus/pull/907
+*/
 
-    namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
-    cpuThrottlingSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
-
-    prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
-
-    kubeletPodLimit: 250,
-
-    // Certificates are issued for 4h.
-    certExpirationWarningSeconds: 90 * 60,  // 1.5h
-    certExpirationCriticalSeconds: 60 * 60,  // 1h
-
-    // Remove Ceph block devices: https://bugzilla.redhat.com/show_bug.cgi?id=1914090
-    diskDevices: std.filter(function(diskDevice) diskDevice != 'rbd.+', super.diskDevices),
+// Common configuration
+local commonConfig = {
+  namespace: 'openshift-monitoring',
+  namespaceUserWorkload: 'openshift-user-workload-monitoring',
+  prometheusName: 'k8s',
+  ruleLabels: {
+    role: 'alert-rules',
+    prometheus: $.prometheusName,
   },
-} + {
-  local d = super.grafanaDashboards,
-  grafanaDashboards:: {
-    [k]: d[k]
-    for k in std.objectFields(d)
-    // This array must be sorted for `std.setMember` to work.
-    if !std.setMember(k, ['apiserver.json', 'controller-manager.json', 'kubelet.json', 'namespace-by-workload.json', 'nodes.json', 'persistentvolumesusage.json', 'pods.json', 'prometheus-remote-write.json', 'proxy.json', 'scheduler.json', 'statefulset.json', 'workload-total.json'])
+  // versions are used by some CRs and reflected in labels.
+  versions: {
+    alertmanager: '0.21.0',
+    prometheus: '2.24.0',
+    grafana: '7.3.5',
+    kubeStateMetrics: '1.9.7',
+    nodeExporter: '1.0.1',
+    prometheusAdapter: '0.8.2',
+    prometheusOperator: '0.45.0',
+    promLabelProxy: '0.2.0',
+    thanos: '0.17.2',
   },
-} + {
-  _config+:: {
-    local j = super.jobs,
-    jobs: {
-      [k]: j[k]
-      for k in std.objectFields(j)
-      if !std.setMember(k, ['CoreDNS', 'TelemeterClient'])
-    },
+  // In OSE images are overridden
+  images: {
+    alertmanager: 'quay.io/prometheus/alertmanager:v' + $.versions['alertmanager'],
+    prometheus: 'quay.io/prometheus/prometheus:v' + $.versions['prometheus'],
+    grafana: 'grafana/grafana:v' + $.versions['grafana'],
+    kubeStateMetrics: 'quay.io/coreos/kube-state-metrics:v' + $.versions['kubeStateMetrics'],
+    nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions['nodeExporter'],
+    prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions['prometheusAdapter'],
+    prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions['prometheusOperator'],
+    prometheusOperatorReloader: 'quay.io/prometheus-operator/prometheus-config-reloader:v' + $.versions['prometheusOperator'],
+    promLabelProxy: 'quay.io/prometheuscommunity/prom-label-proxy:v' + $.versions['thanos'],
+    telemeter: '',
+    thanos: 'quay.io/thanos/thanos:v' + $.versions['thanos'],
+
+    openshiftOauthProxy: 'quay.io/openshift/oauth-proxy:latest',
+    //kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v0.8.0',
   },
-} + {
-  _config+:: {
-    openshiftStateMetricsSelector: 'job="openshift-state-metrics"',
-    jobs+:: { OpenShiftStateMetrics: $._config.openshiftStateMetricsSelector },
+  // Labels applied to every object
+  commonLabels: {
+    'app.kubernetes.io/part-of': 'openshift-monitoring',
+    "app.kubernetes.io/managed-by": "cluster-monitoring-operator"
   },
 };
 
-addReleaseAnnotation(removeLimits(
-  { ['prometheus-operator/' + name]: kp.clusterPrometheusOperator[name] for name in std.objectFields(kp.clusterPrometheusOperator) } +
-  { ['prometheus-operator-user-workload/' + name]: kp.prometheusOperatorUserWorkload[name] for name in std.objectFields(kp.prometheusOperatorUserWorkload) } +
-  { ['node-exporter/' + name]: kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
-  { ['kube-state-metrics/' + name]: kp.kubeStateMetrics[name] for name in std.objectFields(kp.kubeStateMetrics) } +
-  { ['openshift-state-metrics/' + name]: kp.openshiftStateMetrics[name] for name in std.objectFields(kp.openshiftStateMetrics) } +
-  { ['alertmanager/' + name]: kp.alertmanager[name] for name in std.objectFields(kp.alertmanager) } +
-  { ['prometheus-k8s/' + name]: kp.prometheusK8s[name] for name in std.objectFields(kp.prometheusK8s) } +
-  { ['prometheus-user-workload/' + name]: kp.prometheusUserWorkload[name] for name in std.objectFields(kp.prometheusUserWorkload) } +
-  { ['prometheus-adapter/' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) } +
-  { ['grafana/' + name]: kp.grafana[name] for name in std.objectFields(kp.grafana) } +
-  // needs to be removed once 4.4 ships, as this is needed for removal of the
-  // manifests, as part of the migration to using remote-write for sending
-  // telemetry.
-  { ['telemeter-client/' + name]: kp.telemeterClient[name] for name in std.objectFields(kp.telemeterClient) } +
-  { ['cluster-monitoring-operator/' + name]: kp.clusterMonitoringOperator[name] for name in std.objectFields(kp.clusterMonitoringOperator) } +
-  { ['thanos-querier/' + name]: kp.thanos.querier[name] for name in std.objectFields(kp.thanos.querier) } +
-  { ['thanos-ruler/' + name]: kp.thanos.ruler[name] for name in std.objectFields(kp.thanos.ruler) }
-))
+// objects deployed in openshift-monitoring namespace
+local inCluster = {
+  values+:: {
+    common: commonConfig,
+
+    // Configuration of all components
+    clusterMonitoringOperator: {
+      namespace: $.values.common.namespace,
+      namespaceUserWorkload: $.values.common.namespaceUserWorkload,
+      commonLabels+: $.values.common.commonLabels,
+    },
+    alertmanager: {
+      name: 'main',
+      namespace: $.values.common.namespace,
+      version: $.values.common.versions['alertmanager'],
+      image: $.values.common.images['alertmanager'],
+      commonLabels+: $.values.common.commonLabels,
+      mixin+: { ruleLabels: $.values.common.ruleLabels, },
+    },
+    grafana: {
+      namespace: $.values.common.namespace,
+      version: $.values.common.versions['grafana'],
+      image: $.values.common.images['grafana'],
+      commonLabels+: $.values.common.commonLabels,
+      prometheusName: $.values.common.prometheusName,
+      local allDashboards = $.nodeExporter.mixin.grafanaDashboards + $.prometheus.mixin.grafanaDashboards + $.otherMixins.grafanaDashboards,
+      // Allow-listing dashboards that are going into the product. List needs to be sorted for std.setMember to work
+      local includeDashboards = [
+        'cluster-total.json',
+        'etcd.json',
+        'k8s-resources-cluster.json',
+        'k8s-resources-namespace.json',
+        'k8s-resources-node.json',
+        'k8s-resources-pod.json',
+        'k8s-resources-workload.json',
+        'k8s-resources-workloads-namespace.json',
+        'namespace-by-pod.json',
+        'node-cluster-rsrc-use.json',
+        'node-rsrc-use.json',
+        'pod-total.json',
+        'prometheus.json',
+      ],
+      dashboards: {
+        [k]: allDashboards[k]
+        for k in std.objectFields(allDashboards)
+        if std.setMember(k, includeDashboards)
+      },
+      datasources: [{
+        name: 'prometheus',
+        type: 'prometheus',
+        access: 'proxy',
+        orgId: 1,
+        url: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
+        version: 1,
+        editable: false,
+        basicAuth: true,
+        basicAuthUser: 'internal',
+        basicAuthPassword: '',
+        jsonData: {
+          tlsSkipVerify: true,
+        },
+      }],
+      config: {
+        sections: {
+          paths: {
+            data: '/var/lib/grafana',
+            logs: '/var/lib/grafana/logs',
+            plugins: '/var/lib/grafana/plugins',
+            provisioning: '/etc/grafana/provisioning',
+          },
+          server: {
+            http_addr: '127.0.0.1',
+            http_port: '3001',
+          },
+          security: {
+            // OpenShift users are limited to 63 characters, with this we are
+            // setting the Grafana user to something that can never be created
+            // in OpenShift. This prevents users from getting proxied with an
+            // identity that has superuser permissions in Grafana.
+            admin_user: 'WHAT_YOU_ARE_DOING_IS_VOIDING_SUPPORT_0000000000000000000000000000000000000000000000000000000000000000',
+            cookie_secure: true,
+          },
+          auth: {
+            disable_login_form: true,
+            disable_signout_menu: true,
+          },
+          'auth.basic': {
+            enabled: false,
+          },
+          'auth.proxy': {
+            enabled: true,
+            header_name: 'X-Forwarded-User',
+            auto_sign_up: true,
+          },
+          analytics: {
+            reporting_enabled: false,
+            check_for_updates: false,
+          },
+        },
+      },
+    },
+    kubeStateMetrics: {
+      namespace: $.values.common.namespace,
+      version: $.values.common.versions['kubeStateMetrics'],
+      image: $.values.common.images['kubeStateMetrics'],
+      commonLabels+: $.values.common.commonLabels,
+      mixin+: { ruleLabels: $.values.common.ruleLabels },
+    },
+    nodeExporter: {
+      namespace: $.values.common.namespace,
+      version: $.values.common.versions['nodeExporter'],
+      image: $.values.common.images['nodeExporter'],
+      commonLabels+: $.values.common.commonLabels,
+      mixin+: { ruleLabels: $.values.common.ruleLabels },
+    },
+    openshiftStateMetrics: {
+      namespace: $.values.common.namespace,
+    },
+    prometheus: {
+      namespace: $.values.common.namespace,
+      version: $.values.common.versions['prometheus'],
+      image: $.values.common.images['prometheus'],
+      commonLabels+: $.values.common.commonLabels,
+      name: 'k8s',
+      alertmanagerName: $.values.alertmanager.name,
+      namespaces+: [
+        'openshift-etcd',
+        $.values.common.namespaceUserWorkload,
+      ],
+      mixin+: {
+        ruleLabels: $.values.common.ruleLabels,
+        _config+: {
+          prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+          thanosSelector: 'job=~"prometheus-(k8s|user-workload)-thanos-sidecar"',
+        },
+      },
+      thanos: $.values.thanosSidecar,
+    },
+    prometheusAdapter: {
+      namespace: $.values.common.namespace,
+      version: $.values.common.versions['prometheusAdapter'],
+      image: $.values.common.images['prometheusAdapter'],
+      prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
+      commonLabels+: $.values.common.commonLabels,
+    },
+    prometheusOperator: {
+      namespace: $.values.common.namespace,
+      version: $.values.common.versions['prometheusOperator'],
+      image: $.values.common.images['prometheusOperator'],
+      configReloaderImage: $.values.common.images['prometheusOperatorReloader'],
+      commonLabels+: $.values.common.commonLabels,
+      mixin+: {
+        ruleLabels: $.values.common.ruleLabels,
+        _config+: {
+          prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+        },
+      },
+    },
+    thanos: {
+      image: $.values.common.images['thanos'],
+      version: $.values.common.versions['thanos'],
+    },
+    thanosSidecar:: $.values.thanos + {
+      resources: {
+        requests: {
+          cpu: '1m',
+          memory: '100Mi',
+        },
+      },
+    },
+    thanosRuler: $.values.thanos + {
+      name: 'user-workload',
+      namespace: $.values.common.namespaceUserWorkload,
+      labels: {
+        'app.kubernetes.io/name': 'user-workload',
+      },
+      selectorLabels: {
+        app: 'thanos-ruler',
+        'thanos-ruler': 'user-workload',
+      },
+      ports: {
+        web: 9091,
+        grpc: 10901,
+      },
+    },
+    thanosQuerier: $.values.thanos + {
+      name: 'thanos-querier',
+      namespace: $.values.common.namespace,
+      replicas: 2,
+      replicaLabels: ['prometheus_replica', 'thanos_ruler_replica'],
+      stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
+      serviceMonitor: true,
+    },
+    telemeterClient: {
+      namespace: $.values.common.namespace,
+    },
+    otherMixins: {
+      namespace: $.values.common.namespace,
+      commonLabels+: $.values.common.commonLabels,
+      mixin+: { 
+        ruleLabels: $.values.common.ruleLabels,
+        _config+: {
+          diskDevices: std.filter(function(diskDevice) diskDevice != 'rbd.+', super.diskDevices),
+          hostNetworkInterfaceSelector: 'device!~"veth.+"',
+          kubeSchedulerSelector: 'job="scheduler"',
+          namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+          cpuThrottlingSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+          kubeletPodLimit: 250,
+        },
+      },
+    },
+  },
+
+  // Objects
+  clusterMonitoringOperator: clusterMonitoringOperator($.values.clusterMonitoringOperator),
+  alertmanager: alertmanager($.values.alertmanager),
+  grafana: grafana($.values.grafana),
+  kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),
+  nodeExporter: nodeExporter($.values.nodeExporter),
+  prometheus: prometheus($.values.prometheus),
+  prometheusAdapter: prometheusAdapter($.values.prometheusAdapter),
+  prometheusOperator: prometheusOperator($.values.prometheusOperator),
+  otherMixins: otherMixins($.values.otherMixins),
+
+  thanosRuler: thanosRuler($.values.thanosRuler),
+  thanosQuerier: thanosQuerier($.values.thanosQuerier),
+
+  telemeterClient: telemeterClient($.values.telemeterClient),
+  openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
+} + 
+(import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
+{};
+
+// objects deployed in openshift-user-workload-monitoring namespace
+local userWorkload = {
+  values:: {
+    common: commonConfig + {
+      namespace: commonConfig.namespaceUserWorkload,
+    },
+    prometheus: {
+      namespace: $.values.common.namespace,
+      version: $.values.common.versions['prometheus'],
+      image: $.values.common.images['prometheus'],
+      name: 'user-workload',
+      alertmanagerName: inCluster.values.alertmanager.name,
+      commonLabels+: $.values.common.commonLabels,
+      resources: {
+        requests: { memory: '30Mi', cpu: '6m' },
+      },
+      namespaces: [$.values.common.namespaceUserWorkload],
+      mixin+: {
+        ruleLabels: $.values.common.ruleLabels,
+        _config+: {
+          prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+        },
+      },
+      thanos: inCluster.values.thanosSidecar,
+    },
+    prometheusOperator: {
+      namespace: $.values.common.namespace,
+      denyNamespace: inCluster.values.common.namespace,
+      version: $.values.common.versions['prometheusOperator'],
+      image: $.values.common.images['prometheusOperator'],
+      configReloaderImage: $.values.common.images['prometheusOperatorReloader'],
+      commonLabels+: $.values.common.commonLabels,
+      mixin+: {
+        ruleLabels: $.values.common.ruleLabels,
+        _config+: {
+          prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+        },
+      },
+    },
+  }, 
+
+  prometheus: prometheusUserWorkload($.values.prometheus),
+  prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
+} + 
+(import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
+{};
+
+// Manifestation
+excludeRules(addReleaseAnnotation(removeLimits(
+  { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
+  { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
+  { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
+  { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
+  { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
+  { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +
+  { ['prometheus-k8s/' + name]: inCluster.prometheus[name] for name in std.objectFields(inCluster.prometheus) } +
+  { ['prometheus-operator/' + name]: inCluster.prometheusOperator[name] for name in std.objectFields(inCluster.prometheusOperator) } +
+  { ['prometheus-operator-user-workload/' + name]: userWorkload.prometheusOperator[name] for name in std.objectFields(userWorkload.prometheusOperator) } +
+  { ['prometheus-user-workload/' + name]: userWorkload.prometheus[name] for name in std.objectFields(userWorkload.prometheus) } +
+  { ['prometheus-adapter/' + name]: inCluster.prometheusAdapter[name] for name in std.objectFields(inCluster.prometheusAdapter) } +
+  // needs to be removed once remote-write is allowed for sending telemetry
+  { ['telemeter-client/' + name]: inCluster.telemeterClient[name] for name in std.objectFields(inCluster.telemeterClient) } +
+  { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
+  { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
+  { ['kube-mixins/' + name]: inCluster.otherMixins[name] for name in std.objectFields(inCluster.otherMixins) } +
+  {}
+)))
