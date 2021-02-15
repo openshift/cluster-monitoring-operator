@@ -55,7 +55,7 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
       storageClassName: gp2
       resources:
         requests:
-          storage: 2Gi
+          storage: 175Gi
 `,
 		},
 	}
