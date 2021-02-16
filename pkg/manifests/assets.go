@@ -39,6 +39,9 @@ func NewAssets(assetsDir string) *Assets {
 }
 
 func (a *Assets) GetAsset(name string) ([]byte, error) {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+
 	filePath := filepath.Join(a.assetsDir, name)
 
 	// load manifest from memory if available
@@ -49,9 +52,6 @@ func (a *Assets) GetAsset(name string) ([]byte, error) {
 
 	// fallback to loading manifest from disk
 	klog.V(4).Infof("Reading manifest from file: %s\n", filePath)
-
-	a.mtx.Lock()
-	defer a.mtx.Unlock()
 
 	f, err := ioutil.ReadFile(filePath)
 	if err != nil {
