@@ -23,7 +23,8 @@ import (
 
 // This makes sure that the priority class we create is
 // present and lower than the system priority classes. Example:
-// openshift-user-critical   1000000000   false            66m
+// openshift-user-critical    999999999   false            66m
+// openshift-system-critical 1000000000   false            66m
 // system-cluster-critical   2000000000   false            114m
 // system-node-critical      2000001000   false            114m
 func TestToEnsureUserPriorityClassIsPresentAndLower(t *testing.T) {
@@ -36,6 +37,10 @@ func TestToEnsureUserPriorityClassIsPresentAndLower(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	openshiftSystemPriorityClass, err := f.SchedulingClient.PriorityClasses().Get(context.TODO(), "openshift-system-critical", v1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Get our user priority class value.
 	userPriorityClass, err := f.SchedulingClient.PriorityClasses().Get(context.TODO(), "openshift-user-critical", v1.GetOptions{})
 	if err != nil {
@@ -44,5 +49,11 @@ func TestToEnsureUserPriorityClassIsPresentAndLower(t *testing.T) {
 	// Ensure our is a lower value than the system class' ones.
 	if userPriorityClass.Value >= systemClusterPriorityClass.Value || userPriorityClass.Value >= systemNodePriorityClass.Value {
 		t.Fatalf("openshift-user-critical was higher priority than existing classes: %d", userPriorityClass.Value)
+	}
+	// Ensure openshift-system-critical is a lower value than the system class' ones, but higher than openshift-user-critical.
+	if openshiftSystemPriorityClass.Value < systemClusterPriorityClass.Value ||
+		openshiftSystemPriorityClass.Value < systemNodePriorityClass.Value ||
+		userPriorityClass.Value < (openshiftSystemPriorityClass.Value-1) {
+		t.Fatalf("openshift-system-critical was wrong priority class: %d", openshiftSystemPriorityClass.Value)
 	}
 }
