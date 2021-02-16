@@ -165,7 +165,7 @@ spec:
     kubernetes.io/os: linux
   podMonitorNamespaceSelector: {}
   podMonitorSelector: {}
-  priorityClassName: system-cluster-critical
+  priorityClassName: openshift-system-critical
   probeNamespaceSelector: {}
   probeSelector: {}
   replicas: 2
