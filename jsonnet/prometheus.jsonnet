@@ -312,7 +312,7 @@ local sccRole =
           ruleSelector: {},
           ruleNamespaceSelector: {},
           listenLocal: true,
-          priorityClassName: 'system-cluster-critical',
+          priorityClassName: 'openshift-user-critical',
           containers: [
             {
               name: 'prometheus-proxy',
