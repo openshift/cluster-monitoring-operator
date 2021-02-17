@@ -395,7 +395,7 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
           ruleSelector: {},
           ruleNamespaceSelector: {},
           listenLocal: true,
-          priorityClassName: 'system-cluster-critical',
+          priorityClassName: 'openshift-user-critical',
           containers: [
             {
               name: 'prometheus-proxy',
