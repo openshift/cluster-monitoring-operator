@@ -296,6 +296,11 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:vsphere_node_hw_version_total:sum',
           },
           {
+            expr: 'absent(count(max by (node) (kube_node_role{role="master"}) and (min by (node) (kube_node_status_condition{condition="Ready",status="true"} == 0))) > 0)',
+            record: 'cluster:control_plane:all_nodes_ready',
+            // Returns 1 if all control plane nodes are ready and is absent otherwise. Should be used to suppress alerts during control plane upgrades or disruption.
+          },
+          {
             expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
             alert: 'ClusterMonitoringOperatorReconciliationErrors',
             'for': '30m',
@@ -312,6 +317,28 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             'for': '10m',
             annotations: {
               message: 'Alerts are not configured to be sent to a notification system, meaning that you may not be notified in a timely fashion when important failures occur. Check the OpenShift documentation to learn how to configure notifications with Alertmanager.',
+            },
+            labels: {
+              severity: 'warning',
+            },
+          },
+          {
+            expr: |||
+              (
+                kube_deployment_spec_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+                  !=
+                kube_deployment_status_replicas_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+              ) and (
+                changes(kube_deployment_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
+                  ==
+                0
+              ) and cluster:control_plane:all_nodes_ready
+            |||,
+            alert: 'KubeDeploymentReplicasMismatch',
+            'for': '15m',
+            annotations: {
+              description: 'Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not matched the expected number of replicas for longer than 15 minutes. This indicates that cluster infrastructure is unable to start or restart the necessary components. This most often occurs when one or more nodes are down or partioned from the cluster, or a fault occurs on the node that prevents the workload from starting. In rare cases this may indicate a new version of a cluster component cannot start due to a bug or configuration error. Assess the pods for this deployment to verify they are running on healthy nodes and then contact support.',
+              summary: 'Deployment has not matched the expected number of replicas',
             },
             labels: {
               severity: 'warning',
