@@ -62,18 +62,9 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                    super.groups,
                  ),
              },
-           } + {
              prometheusRules+:: {
-               groups:
-                 std.map(
-                   function(ruleGroup)
-                     // Removing unused apiserver_request:availability30d recording rule as its evaluation fails. https://bugzilla.redhat.com/show_bug.cgi?id=1872786
-                     if ruleGroup.name == 'kube-apiserver-availability.rules' then
-                       ruleGroup { rules: std.filter(function(rule) !('record' in rule && rule.record == 'apiserver_request:availability30d'), ruleGroup.rules) }
-                     else
-                       ruleGroup,
-                   super.groups,
-                 ),
+               // Remove apiserver availability recording rules only used by disabled upstream Grafana dashboards.
+               groups: std.filter(function(group) !(group.name == 'kube-apiserver-availability.rules'), super.groups),
              },
            } +
            (import 'telemeter-client/client.libsonnet') +
