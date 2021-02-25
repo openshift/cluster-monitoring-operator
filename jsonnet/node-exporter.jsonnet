@@ -55,7 +55,7 @@ local wtmpVolumeName = 'node-exporter-wtmp';
           type: 'RunAsAny',
         },
         seLinuxContext: {
-          type: 'RunAsAny',
+          type: 'MustRunAs',
         },
         users: [],
       },
