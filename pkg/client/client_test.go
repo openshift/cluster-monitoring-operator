@@ -1363,7 +1363,7 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
 			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
-			pr, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
+			pr, err := f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil, true)
 			if err != nil {
 				t.Fatal(err)
 			}

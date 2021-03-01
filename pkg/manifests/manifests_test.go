@@ -342,7 +342,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
+	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -885,6 +885,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 				"prometheus-k8s.openshift-monitoring.svc",
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				true,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -946,6 +947,7 @@ ingress:
 		"prometheus-k8s.openshift-monitoring.svc",
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		true,
 	)
 	if err != nil {
 		t.Fatal(err)

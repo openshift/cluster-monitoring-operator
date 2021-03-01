@@ -286,8 +286,13 @@ func (t *PrometheusTask) Run() error {
 			return errors.Wrap(err, "syncing Prometheus trusted CA bundle ConfigMap failed")
 		}
 
+		ha, err := t.client.IsHighlyAvaliable()
+		if err != nil {
+			return errors.Wrap(err, "could not determinate HA mode")
+		}
+
 		klog.V(4).Info("initializing Prometheus object")
-		p, err := t.factory.PrometheusK8s(host, s, trustedCA)
+		p, err := t.factory.PrometheusK8s(host, s, trustedCA, ha)
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus object failed")
 		}

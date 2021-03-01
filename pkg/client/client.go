@@ -22,13 +22,14 @@ import (
 	"time"
 
 	"github.com/imdario/mergo"
+	"github.com/pkg/errors"
+
 	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
-	"github.com/pkg/errors"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -265,6 +266,20 @@ func (c *Client) NamespacesToMonitor() ([]string, error) {
 	}
 
 	return namespaceNames, nil
+}
+
+func (c *Client) IsHighlyAvaliable() (bool, error) {
+	infra, err := c.GetInfrastructure("cluster")
+	if err != nil {
+		return true, errors.Wrap(err, "could not get Infrastructure 'cluster' instance")
+	}
+	klog.V(6).Infof("control plane topology is: %s", infra.Status.ControlPlaneTopology)
+
+	if infra.Status.ControlPlaneTopology == configv1.SingleReplicaTopologyMode {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
