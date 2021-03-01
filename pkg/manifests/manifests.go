@@ -1216,10 +1216,16 @@ func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
-func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap, ha bool) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
 	if err != nil {
 		return nil, err
+	}
+
+	// If topology is non HA we adjust the number of replicas to 1.
+	if !ha {
+		replicas := int32(1)
+		p.Spec.Replicas = &replicas
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.LogLevel != "" {
