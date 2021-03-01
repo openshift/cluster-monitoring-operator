@@ -28,7 +28,7 @@ function(params)
     metadata: {
       name: 'prometheus-k8s-grpc-tls',
       namespace: cfg.namespace,
-      labels: { 'k8s-app': 'prometheus-k8s' },
+      labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
     },
     type: 'Opaque',
     data: {},
@@ -117,6 +117,7 @@ function(params)
   // controller, there is no need to add a ConfigMap reloader to
   // the Prometheus Pods because Prometheus automatically reloads
   // its cert pool every 5 seconds.
+  // TODO(paulfantom): Should this be moved to control-plane?
   kubeletServingCaBundle+: {
     apiVersion: 'v1',
     kind: 'ConfigMap',
@@ -169,7 +170,7 @@ function(params)
     metadata: {
       name: 'prometheus-k8s-proxy',
       namespace: cfg.namespace,
-      labels: { 'k8s-app': 'prometheus-k8s' },
+      labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
     },
     type: 'Opaque',
     data: {},
@@ -181,7 +182,7 @@ function(params)
     metadata: {
       name: 'prometheus-k8s-htpasswd',
       namespace: cfg.namespace,
-      labels: { 'k8s-app': 'prometheus-k8s' },
+      labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
     },
     type: 'Opaque',
     data: {},
@@ -193,7 +194,7 @@ function(params)
     metadata: {
       name: 'kube-rbac-proxy',
       namespace: cfg.namespace,
-      labels: { 'k8s-app': 'prometheus-k8s' },
+      labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
     },
     type: 'Opaque',
     data: {},
@@ -214,90 +215,6 @@ function(params)
       }),
     },
   },
-
-  // This changes the kubelet's certificates to be validated when
-  // scraping.
-  serviceMonitorKubelet+: {
-    spec+: {
-      endpoints:
-        std.map(
-          function(e)
-            e {
-              tlsConfig+: {
-                caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
-                insecureSkipVerify: false,
-              },
-            },
-          super.endpoints,
-        ) +
-        [{
-          interval: '30s',
-          port: 'https-metrics',
-          relabelings: [
-            {
-              sourceLabels: ['__address__'],
-              action: 'replace',
-              targetLabel: '__address__',
-              regex: '(.+)(?::\\d+)',
-              replacement: '$1:9537',
-            },
-            {
-              sourceLabels: ['endpoint'],
-              action: 'replace',
-              targetLabel: 'endpoint',
-              replacement: 'crio',
-            },
-            {
-              action: 'replace',
-              targetLabel: 'job',
-              replacement: 'crio',
-            },
-          ],
-        }],
-      },
-    },
-
-  serviceMonitorEtcd: {
-    apiVersion: 'monitoring.coreos.com/v1',
-    kind: 'ServiceMonitor',
-    metadata: {
-      name: 'etcd',
-      namespace: cfg.namespace,
-      labels: {
-        'app.kubernetes.io/name': 'etcd',
-      },
-    },
-    spec: {
-      jobLabel: 'app.kubernetes.io/name',
-      endpoints: [
-        {
-          port: 'metrics',
-          interval: '30s',
-          scheme: 'https',
-          // Prometheus Operator (and Prometheus) allow us to specify a tlsConfig. This is required as most likely your etcd metrics end points is secure.
-          tlsConfig: {
-            caFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client-ca.crt',
-            keyFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.key',
-            certFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.crt',
-          },
-        },
-      ],
-      selector: {
-        matchLabels: {
-          'app.kubernetes.io/name': 'etcd',
-        },
-      },
-      namespaceSelector: {
-        matchNames: ['openshift-etcd'],
-      },
-    },
-  },
-
-  // This avoids creating service monitors which are already managed by the respective operators.
-  serviceMonitorApiserver:: {},
-  serviceMonitorKubeScheduler:: {},
-  serviceMonitorKubeControllerManager:: {},
-  serviceMonitorCoreDNS:: {},
 
   // This changes the Prometheuses to be scraped with TLS, authN and
   // authZ, which are not present in kube-prometheus.
@@ -397,7 +314,7 @@ function(params)
       ruleSelector: {},
       ruleNamespaceSelector: {},
       listenLocal: true,
-      priorityClassName: 'system-cluster-critical',
+      priorityClassName: 'openshift-user-critical',
       containers: [
         {
           name: 'prometheus-proxy',

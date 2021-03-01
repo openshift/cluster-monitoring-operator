@@ -1,5 +1,6 @@
 local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/alertmanager.libsonnet';
-//local krp = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
+// TODO: replace current addition of kube-rbac-proxy with upstream lib
+// local krp = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
 
 function(params)
   local cfg = params;
@@ -97,7 +98,7 @@ function(params)
     metadata: {
       name: 'alertmanager-main-proxy',
       namespace: cfg.namespace,
-      labels: { 'k8s-app': 'alertmanager-main' },
+      labels: { 'app.kubernetes.io/name': 'alertmanager-main' },
     },
     type: 'Opaque',
     data: {},
@@ -161,7 +162,7 @@ function(params)
     metadata: {
       name: 'alertmanager-kube-rbac-proxy',
       namespace: cfg.namespace,
-      labels: { 'k8s-app': 'alertmanager-main' },
+      labels: { 'app.kubernetes.io/name': 'alertmanager-main' },
     },
     type: 'Opaque',
     stringData: {

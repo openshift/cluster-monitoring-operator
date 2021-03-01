@@ -5,7 +5,7 @@ local excludeRules = (import 'exclude-rules.libsonnet').excludeRules;
 local alertmanager = import './alertmanager.libsonnet';
 local grafana = import './grafana.libsonnet';
 local kubeStateMetrics = import './kube-state-metrics.libsonnet';
-local otherMixins = import './other-mixins.libsonnet';
+local controlPlane = import './control-plane.libsonnet';
 local nodeExporter = import './node-exporter.libsonnet';
 local prometheusAdapter = import './prometheus-adapter.libsonnet';
 local prometheusOperator = import './prometheus-operator.libsonnet';
@@ -49,17 +49,17 @@ local commonConfig = {
   },
   // In OSE images are overridden
   images: {
-    alertmanager: 'quay.io/prometheus/alertmanager:v' + $.versions['alertmanager'],
-    prometheus: 'quay.io/prometheus/prometheus:v' + $.versions['prometheus'],
-    grafana: 'grafana/grafana:v' + $.versions['grafana'],
-    kubeStateMetrics: 'quay.io/coreos/kube-state-metrics:v' + $.versions['kubeStateMetrics'],
-    nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions['nodeExporter'],
-    prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions['prometheusAdapter'],
-    prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions['prometheusOperator'],
-    prometheusOperatorReloader: 'quay.io/prometheus-operator/prometheus-config-reloader:v' + $.versions['prometheusOperator'],
-    promLabelProxy: 'quay.io/prometheuscommunity/prom-label-proxy:v' + $.versions['thanos'],
+    alertmanager: 'quay.io/prometheus/alertmanager:v' + $.versions.alertmanager,
+    prometheus: 'quay.io/prometheus/prometheus:v' + $.versions.prometheus,
+    grafana: 'grafana/grafana:v' + $.versions.grafana,
+    kubeStateMetrics: 'quay.io/coreos/kube-state-metrics:v' + $.versions.kubeStateMetrics,
+    nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions.nodeExporter,
+    prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions.prometheusAdapter,
+    prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions.prometheusOperator,
+    prometheusOperatorReloader: 'quay.io/prometheus-operator/prometheus-config-reloader:v' + $.versions.prometheusOperator,
+    promLabelProxy: 'quay.io/prometheuscommunity/prom-label-proxy:v' + $.versions.thanos,
     telemeter: '',
-    thanos: 'quay.io/thanos/thanos:v' + $.versions['thanos'],
+    thanos: 'quay.io/thanos/thanos:v' + $.versions.thanos,
 
     openshiftOauthProxy: 'quay.io/openshift/oauth-proxy:latest',
     //kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v0.8.0',
@@ -67,289 +67,306 @@ local commonConfig = {
   // Labels applied to every object
   commonLabels: {
     'app.kubernetes.io/part-of': 'openshift-monitoring',
-    "app.kubernetes.io/managed-by": "cluster-monitoring-operator"
+    'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
   },
 };
 
 // objects deployed in openshift-monitoring namespace
-local inCluster = {
-  values+:: {
-    common: commonConfig,
+local inCluster =
+  {
+    values+:: {
+      common: commonConfig,
 
-    // Configuration of all components
-    clusterMonitoringOperator: {
-      namespace: $.values.common.namespace,
-      namespaceUserWorkload: $.values.common.namespaceUserWorkload,
-      commonLabels+: $.values.common.commonLabels,
-    },
-    alertmanager: {
-      name: 'main',
-      namespace: $.values.common.namespace,
-      version: $.values.common.versions['alertmanager'],
-      image: $.values.common.images['alertmanager'],
-      commonLabels+: $.values.common.commonLabels,
-      mixin+: { ruleLabels: $.values.common.ruleLabels, },
-    },
-    grafana: {
-      namespace: $.values.common.namespace,
-      version: $.values.common.versions['grafana'],
-      image: $.values.common.images['grafana'],
-      commonLabels+: $.values.common.commonLabels,
-      prometheusName: $.values.common.prometheusName,
-      local allDashboards = $.nodeExporter.mixin.grafanaDashboards + $.prometheus.mixin.grafanaDashboards + $.otherMixins.grafanaDashboards,
-      // Allow-listing dashboards that are going into the product. List needs to be sorted for std.setMember to work
-      local includeDashboards = [
-        'cluster-total.json',
-        'etcd.json',
-        'k8s-resources-cluster.json',
-        'k8s-resources-namespace.json',
-        'k8s-resources-node.json',
-        'k8s-resources-pod.json',
-        'k8s-resources-workload.json',
-        'k8s-resources-workloads-namespace.json',
-        'namespace-by-pod.json',
-        'node-cluster-rsrc-use.json',
-        'node-rsrc-use.json',
-        'pod-total.json',
-        'prometheus.json',
-      ],
-      dashboards: {
-        [k]: allDashboards[k]
-        for k in std.objectFields(allDashboards)
-        if std.setMember(k, includeDashboards)
-      },
-      datasources: [{
-        name: 'prometheus',
-        type: 'prometheus',
-        access: 'proxy',
-        orgId: 1,
-        url: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
-        version: 1,
-        editable: false,
-        basicAuth: true,
-        basicAuthUser: 'internal',
-        basicAuthPassword: '',
-        jsonData: {
-          tlsSkipVerify: true,
-        },
-      }],
-      config: {
-        sections: {
-          paths: {
-            data: '/var/lib/grafana',
-            logs: '/var/lib/grafana/logs',
-            plugins: '/var/lib/grafana/plugins',
-            provisioning: '/etc/grafana/provisioning',
-          },
-          server: {
-            http_addr: '127.0.0.1',
-            http_port: '3001',
-          },
-          security: {
-            // OpenShift users are limited to 63 characters, with this we are
-            // setting the Grafana user to something that can never be created
-            // in OpenShift. This prevents users from getting proxied with an
-            // identity that has superuser permissions in Grafana.
-            admin_user: 'WHAT_YOU_ARE_DOING_IS_VOIDING_SUPPORT_0000000000000000000000000000000000000000000000000000000000000000',
-            cookie_secure: true,
-          },
-          auth: {
-            disable_login_form: true,
-            disable_signout_menu: true,
-          },
-          'auth.basic': {
-            enabled: false,
-          },
-          'auth.proxy': {
-            enabled: true,
-            header_name: 'X-Forwarded-User',
-            auto_sign_up: true,
-          },
-          analytics: {
-            reporting_enabled: false,
-            check_for_updates: false,
+      // Configuration of all components
+      clusterMonitoringOperator: {
+        namespace: $.values.common.namespace,
+        namespaceUserWorkload: $.values.common.namespaceUserWorkload,
+        commonLabels+: $.values.common.commonLabels,
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+          _config+: {
+            diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
           },
         },
       },
-    },
-    kubeStateMetrics: {
-      namespace: $.values.common.namespace,
-      version: $.values.common.versions['kubeStateMetrics'],
-      image: $.values.common.images['kubeStateMetrics'],
-      commonLabels+: $.values.common.commonLabels,
-      mixin+: { ruleLabels: $.values.common.ruleLabels },
-    },
-    nodeExporter: {
-      namespace: $.values.common.namespace,
-      version: $.values.common.versions['nodeExporter'],
-      image: $.values.common.images['nodeExporter'],
-      commonLabels+: $.values.common.commonLabels,
-      mixin+: { ruleLabels: $.values.common.ruleLabels },
-    },
-    openshiftStateMetrics: {
-      namespace: $.values.common.namespace,
-    },
-    prometheus: {
-      namespace: $.values.common.namespace,
-      version: $.values.common.versions['prometheus'],
-      image: $.values.common.images['prometheus'],
-      commonLabels+: $.values.common.commonLabels,
-      name: 'k8s',
-      alertmanagerName: $.values.alertmanager.name,
-      namespaces+: [
-        'openshift-etcd',
-        $.values.common.namespaceUserWorkload,
-      ],
-      mixin+: {
-        ruleLabels: $.values.common.ruleLabels,
-        _config+: {
-          prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
-          thanosSelector: 'job=~"prometheus-(k8s|user-workload)-thanos-sidecar"',
+      alertmanager: {
+        name: 'main',
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.alertmanager,
+        image: $.values.common.images.alertmanager,
+        commonLabels+: $.values.common.commonLabels,
+        mixin+: { ruleLabels: $.values.common.ruleLabels },
+      },
+      grafana: {
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.grafana,
+        image: $.values.common.images.grafana,
+        commonLabels+: $.values.common.commonLabels,
+        prometheusName: $.values.common.prometheusName,
+        local allDashboards =
+          $.nodeExporter.mixin.grafanaDashboards +
+          $.prometheus.mixin.grafanaDashboards +
+          $.controlPlane.mixin.grafanaDashboards +
+          $.controlPlane.etcdMixin.grafanaDashboards,
+        // Allow-listing dashboards that are going into the product. List needs to be sorted for std.setMember to work
+        local includeDashboards = [
+          'cluster-total.json',
+          'etcd.json',
+          'k8s-resources-cluster.json',
+          'k8s-resources-namespace.json',
+          'k8s-resources-node.json',
+          'k8s-resources-pod.json',
+          'k8s-resources-workload.json',
+          'k8s-resources-workloads-namespace.json',
+          'namespace-by-pod.json',
+          'node-cluster-rsrc-use.json',
+          'node-rsrc-use.json',
+          'pod-total.json',
+          'prometheus.json',
+        ],
+        dashboards: {
+          [k]: allDashboards[k]
+          for k in std.objectFields(allDashboards)
+          if std.setMember(k, includeDashboards)
+        },
+        datasources: [{
+          name: 'prometheus',
+          type: 'prometheus',
+          access: 'proxy',
+          orgId: 1,
+          url: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
+          version: 1,
+          editable: false,
+          basicAuth: true,
+          basicAuthUser: 'internal',
+          basicAuthPassword: '',
+          jsonData: {
+            tlsSkipVerify: true,
+          },
+        }],
+        config: {
+          sections: {
+            paths: {
+              data: '/var/lib/grafana',
+              logs: '/var/lib/grafana/logs',
+              plugins: '/var/lib/grafana/plugins',
+              provisioning: '/etc/grafana/provisioning',
+            },
+            server: {
+              http_addr: '127.0.0.1',
+              http_port: '3001',
+            },
+            security: {
+              // OpenShift users are limited to 63 characters, with this we are
+              // setting the Grafana user to something that can never be created
+              // in OpenShift. This prevents users from getting proxied with an
+              // identity that has superuser permissions in Grafana.
+              admin_user: 'WHAT_YOU_ARE_DOING_IS_VOIDING_SUPPORT_0000000000000000000000000000000000000000000000000000000000000000',
+              cookie_secure: true,
+            },
+            auth: {
+              disable_login_form: true,
+              disable_signout_menu: true,
+            },
+            'auth.basic': {
+              enabled: false,
+            },
+            'auth.proxy': {
+              enabled: true,
+              header_name: 'X-Forwarded-User',
+              auto_sign_up: true,
+            },
+            analytics: {
+              reporting_enabled: false,
+              check_for_updates: false,
+            },
+          },
         },
       },
-      thanos: $.values.thanosSidecar,
-    },
-    prometheusAdapter: {
-      namespace: $.values.common.namespace,
-      version: $.values.common.versions['prometheusAdapter'],
-      image: $.values.common.images['prometheusAdapter'],
-      prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
-      commonLabels+: $.values.common.commonLabels,
-    },
-    prometheusOperator: {
-      namespace: $.values.common.namespace,
-      version: $.values.common.versions['prometheusOperator'],
-      image: $.values.common.images['prometheusOperator'],
-      configReloaderImage: $.values.common.images['prometheusOperatorReloader'],
-      commonLabels+: $.values.common.commonLabels,
-      mixin+: {
-        ruleLabels: $.values.common.ruleLabels,
-        _config+: {
-          prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+      kubeStateMetrics: {
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.kubeStateMetrics,
+        image: $.values.common.images.kubeStateMetrics,
+        commonLabels+: $.values.common.commonLabels,
+        mixin+: { ruleLabels: $.values.common.ruleLabels },
+      },
+      nodeExporter: {
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.nodeExporter,
+        image: $.values.common.images.nodeExporter,
+        commonLabels+: $.values.common.commonLabels,
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+          _config+: {
+            diskDeviceSelector: 'device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"',
+          },
+        },
+      },
+      openshiftStateMetrics: {
+        namespace: $.values.common.namespace,
+      },
+      prometheus: {
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.prometheus,
+        image: $.values.common.images.prometheus,
+        commonLabels+: $.values.common.commonLabels,
+        name: 'k8s',
+        alertmanagerName: $.values.alertmanager.name,
+        namespaces+: [
+          'openshift-etcd',
+          $.values.common.namespaceUserWorkload,
+        ],
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+          _config+: {
+            prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+            thanosSelector: 'job=~"prometheus-(k8s|user-workload)-thanos-sidecar"',
+          },
+        },
+        thanos: $.values.thanosSidecar,
+      },
+      prometheusAdapter: {
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.prometheusAdapter,
+        image: $.values.common.images.prometheusAdapter,
+        prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
+        commonLabels+: $.values.common.commonLabels,
+      },
+      prometheusOperator: {
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.prometheusOperator,
+        image: $.values.common.images.prometheusOperator,
+        configReloaderImage: $.values.common.images.prometheusOperatorReloader,
+        commonLabels+: $.values.common.commonLabels,
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+          _config+: {
+            prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+          },
+        },
+      },
+      thanos: {
+        image: $.values.common.images.thanos,
+        version: $.values.common.versions.thanos,
+      },
+      thanosSidecar:: $.values.thanos {
+        resources: {
+          requests: {
+            cpu: '1m',
+            memory: '100Mi',
+          },
+        },
+      },
+      thanosRuler: $.values.thanos {
+        name: 'user-workload',
+        namespace: $.values.common.namespaceUserWorkload,
+        labels: {
+          'app.kubernetes.io/name': 'user-workload',
+        },
+        selectorLabels: {
+          app: 'thanos-ruler',
+          'thanos-ruler': 'user-workload',
+        },
+        ports: {
+          web: 9091,
+          grpc: 10901,
+        },
+      },
+      thanosQuerier: $.values.thanos {
+        name: 'thanos-querier',
+        namespace: $.values.common.namespace,
+        replicas: 2,
+        replicaLabels: ['prometheus_replica', 'thanos_ruler_replica'],
+        stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
+        serviceMonitor: true,
+      },
+      telemeterClient: {
+        namespace: $.values.common.namespace,
+      },
+      controlPlane: {
+        namespace: $.values.common.namespace,
+        commonLabels+: $.values.common.commonLabels,
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+          _config+: {
+            diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
+            hostNetworkInterfaceSelector: 'device!~"veth.+"',
+            kubeSchedulerSelector: 'job="scheduler"',
+            namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+            cpuThrottlingSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+            kubeletPodLimit: 250,
+          },
         },
       },
     },
-    thanos: {
-      image: $.values.common.images['thanos'],
-      version: $.values.common.versions['thanos'],
-    },
-    thanosSidecar:: $.values.thanos + {
-      resources: {
-        requests: {
-          cpu: '1m',
-          memory: '100Mi',
-        },
-      },
-    },
-    thanosRuler: $.values.thanos + {
-      name: 'user-workload',
-      namespace: $.values.common.namespaceUserWorkload,
-      labels: {
-        'app.kubernetes.io/name': 'user-workload',
-      },
-      selectorLabels: {
-        app: 'thanos-ruler',
-        'thanos-ruler': 'user-workload',
-      },
-      ports: {
-        web: 9091,
-        grpc: 10901,
-      },
-    },
-    thanosQuerier: $.values.thanos + {
-      name: 'thanos-querier',
-      namespace: $.values.common.namespace,
-      replicas: 2,
-      replicaLabels: ['prometheus_replica', 'thanos_ruler_replica'],
-      stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
-      serviceMonitor: true,
-    },
-    telemeterClient: {
-      namespace: $.values.common.namespace,
-    },
-    otherMixins: {
-      namespace: $.values.common.namespace,
-      commonLabels+: $.values.common.commonLabels,
-      mixin+: { 
-        ruleLabels: $.values.common.ruleLabels,
-        _config+: {
-          diskDevices: std.filter(function(diskDevice) diskDevice != 'rbd.+', super.diskDevices),
-          hostNetworkInterfaceSelector: 'device!~"veth.+"',
-          kubeSchedulerSelector: 'job="scheduler"',
-          namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
-          cpuThrottlingSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
-          kubeletPodLimit: 250,
-        },
-      },
-    },
-  },
 
-  // Objects
-  clusterMonitoringOperator: clusterMonitoringOperator($.values.clusterMonitoringOperator),
-  alertmanager: alertmanager($.values.alertmanager),
-  grafana: grafana($.values.grafana),
-  kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),
-  nodeExporter: nodeExporter($.values.nodeExporter),
-  prometheus: prometheus($.values.prometheus),
-  prometheusAdapter: prometheusAdapter($.values.prometheusAdapter),
-  prometheusOperator: prometheusOperator($.values.prometheusOperator),
-  otherMixins: otherMixins($.values.otherMixins),
+    // Objects
+    clusterMonitoringOperator: clusterMonitoringOperator($.values.clusterMonitoringOperator),
+    alertmanager: alertmanager($.values.alertmanager),
+    grafana: grafana($.values.grafana),
+    kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),
+    nodeExporter: nodeExporter($.values.nodeExporter),
+    prometheus: prometheus($.values.prometheus),
+    prometheusAdapter: prometheusAdapter($.values.prometheusAdapter),
+    prometheusOperator: prometheusOperator($.values.prometheusOperator),
+    controlPlane: controlPlane($.values.controlPlane),
 
-  thanosRuler: thanosRuler($.values.thanosRuler),
-  thanosQuerier: thanosQuerier($.values.thanosQuerier),
+    thanosRuler: thanosRuler($.values.thanosRuler),
+    thanosQuerier: thanosQuerier($.values.thanosQuerier),
 
-  telemeterClient: telemeterClient($.values.telemeterClient),
-  openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
-} + 
-(import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
-{};
+    telemeterClient: telemeterClient($.values.telemeterClient),
+    openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
+  } +
+  (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
+  {};
 
 // objects deployed in openshift-user-workload-monitoring namespace
-local userWorkload = {
-  values:: {
-    common: commonConfig + {
-      namespace: commonConfig.namespaceUserWorkload,
-    },
-    prometheus: {
-      namespace: $.values.common.namespace,
-      version: $.values.common.versions['prometheus'],
-      image: $.values.common.images['prometheus'],
-      name: 'user-workload',
-      alertmanagerName: inCluster.values.alertmanager.name,
-      commonLabels+: $.values.common.commonLabels,
-      resources: {
-        requests: { memory: '30Mi', cpu: '6m' },
+local userWorkload =
+  {
+    values:: {
+      common: commonConfig {
+        namespace: commonConfig.namespaceUserWorkload,
       },
-      namespaces: [$.values.common.namespaceUserWorkload],
-      mixin+: {
-        ruleLabels: $.values.common.ruleLabels,
-        _config+: {
-          prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+      prometheus: {
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.prometheus,
+        image: $.values.common.images.prometheus,
+        name: 'user-workload',
+        alertmanagerName: inCluster.values.alertmanager.name,
+        commonLabels+: $.values.common.commonLabels,
+        resources: {
+          requests: { memory: '30Mi', cpu: '6m' },
+        },
+        namespaces: [$.values.common.namespaceUserWorkload],
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+          _config+: {
+            prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+          },
+        },
+        thanos: inCluster.values.thanosSidecar,
+      },
+      prometheusOperator: {
+        namespace: $.values.common.namespace,
+        denyNamespace: inCluster.values.common.namespace,
+        version: $.values.common.versions.prometheusOperator,
+        image: $.values.common.images.prometheusOperator,
+        configReloaderImage: $.values.common.images.prometheusOperatorReloader,
+        commonLabels+: $.values.common.commonLabels,
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+          _config+: {
+            prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+          },
         },
       },
-      thanos: inCluster.values.thanosSidecar,
     },
-    prometheusOperator: {
-      namespace: $.values.common.namespace,
-      denyNamespace: inCluster.values.common.namespace,
-      version: $.values.common.versions['prometheusOperator'],
-      image: $.values.common.images['prometheusOperator'],
-      configReloaderImage: $.values.common.images['prometheusOperatorReloader'],
-      commonLabels+: $.values.common.commonLabels,
-      mixin+: {
-        ruleLabels: $.values.common.ruleLabels,
-        _config+: {
-          prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
-        },
-      },
-    },
-  }, 
 
-  prometheus: prometheusUserWorkload($.values.prometheus),
-  prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
-} + 
-(import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
-{};
+    prometheus: prometheusUserWorkload($.values.prometheus),
+    prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
+  } +
+  (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
+  {};
 
 // Manifestation
 excludeRules(addReleaseAnnotation(removeLimits(
@@ -368,6 +385,6 @@ excludeRules(addReleaseAnnotation(removeLimits(
   { ['telemeter-client/' + name]: inCluster.telemeterClient[name] for name in std.objectFields(inCluster.telemeterClient) } +
   { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
   { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
-  { ['kube-mixins/' + name]: inCluster.otherMixins[name] for name in std.objectFields(inCluster.otherMixins) } +
+  { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
   {}
 )))

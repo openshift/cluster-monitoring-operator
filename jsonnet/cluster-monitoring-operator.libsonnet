@@ -1,5 +1,8 @@
 local metrics = import 'telemeter-client/metrics.jsonnet';
 
+local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
+local cmoRules = import './rules.libsonnet';
+
 local defaults = {
   local defaults = self,
   name: 'cluster-monitoring-operator',
@@ -16,6 +19,21 @@ local defaults = {
 function(params) {
   local cmo = self,
   local cfg = defaults + params,
+
+  prometheusRule: {
+    apiVersion: 'monitoring.coreos.com/v1',
+    kind: 'PrometheusRule',
+    metadata: {
+      labels: cfg.commonLabels + cfg.mixin.ruleLabels,
+      name: 'cluster-monitoring-operator-prometheus-rules',
+      namespace: cfg.namespace,
+    },
+    // Since kube-prometheus mixin ships just a few rules the same as CMO, it made sense to bundle them together
+    // In the future we might want to move some of rules shipped with CMO to kube-prometheus.
+    spec: cmoRules.prometheusRules + {
+      groups+: kubePrometheus(cfg + {name: 'kube-prometheus'}).prometheusRule.spec.groups,
+    },
+  },
 
   grpcTlsSecret: {
     apiVersion: 'v1',
@@ -62,7 +80,7 @@ function(params) {
       name: cfg.name,
       namespace: cfg.namespace,
       labels: {
-        'k8s-app': cfg.name,
+        'app.kubernetes.io/name': cfg.name,
       },
     },
     spec: {

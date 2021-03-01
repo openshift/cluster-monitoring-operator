@@ -22,7 +22,7 @@ function(params)
     metadata: {
       name: 'prometheus-user-workload-grpc-tls',
       namespace: cfg.namespace,
-      labels: { 'k8s-app': 'prometheus-k8s' },
+      labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
     },
     type: 'Opaque',
     data: {},

@@ -17,7 +17,7 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "master"
+      "version": "main"
     },
     {
       "source": {

@@ -10,9 +10,6 @@ function(params)
   local cfg = params;
 
   nodeExporter(cfg) {
-  /*mixin:: {
-    _config+:: cfg.mixin._config,
-  },*/
 
   // Adding the serving certs annotation causes the serving certs controller
   // to generate a valid and signed serving certificate and put it in the

@@ -8,8 +8,8 @@
           "subdir": "grafana"
         }
       },
-      "version": "014301fd5f71d8305a395b2fb437089a7b1a3999",
-      "sum": "RHtpk2c0CcliWyt6F4DIgwpi4cEfHADK7nAxIw6RTGs="
+      "version": "8ea4e7bc04b1bf5e9bd99918ca28c6271b42be0e",
+      "sum": "muenICtKXABk6MZZHCZD2wCbmtiE96GwWRMGa1Rg+wA="
     },
     {
       "source": {
@@ -25,10 +25,10 @@
       "source": {
         "git": {
           "remote": "https://github.com/etcd-io/etcd.git",
-          "subdir": "Documentation/etcd-mixin"
+          "subdir": "contrib/mixin"
         }
       },
-      "version": "855eeb75c551879fe11b9718bceb8bee9b178905",
+      "version": "d06d93d5b14b7f3aafd96da5703d55f15638c16f",
       "sum": "EgKKzxcW3ttt7gjPMX//DNTqNcn/0o2VAIaWJ/HSLEc="
     },
     {
@@ -131,8 +131,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "2ff04a63a38fd3964c3d10a3a7a12a3d6d78a687",
-      "sum": "hyoV3FMLQa3qjKpYe+6uitiYSud+IhKPyDYBIoI6k1M="
+      "version": "a9961b8f6ee42780ef79a845f007e654402d0b41",
+      "sum": "zyFqKvRkacH+1nX9Fhg1NGC2bco7p91n5f4/lQbL+fw="
     },
     {
       "source": {

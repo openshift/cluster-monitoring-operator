@@ -125,7 +125,7 @@ function(params) {
       name: 'thanos-ruler-grpc-tls',
       namespace: cfg.namespace,
       labels: {
-        'k8s-app': 'thanos-ruler',
+        'app.kubernetes.io/name': 'thanos-ruler',
       },
     },
     type: 'Opaque',
@@ -141,7 +141,7 @@ function(params) {
       name: 'thanos-ruler-oauth-cookie',
       namespace: cfg.namespace,
       labels: {
-        'k8s-app': 'thanos-ruler',
+        'app.kubernetes.io/name': 'thanos-ruler',
       },
     },
     type: 'Opaque',
@@ -158,7 +158,7 @@ function(params) {
       name: 'thanos-ruler-oauth-htpasswd',
       namespace: cfg.namespace,
       labels: {
-        'k8s-app': 'thanos-ruler',
+        'app.kubernetes.io/name': 'thanos-ruler',
       },
     },
     type: 'Opaque',
@@ -174,7 +174,7 @@ function(params) {
       name: 'thanos-ruler-alertmanagers-config',
       namespace: cfg.namespace,
       labels: {
-        'k8s-app': 'thanos-ruler',
+        'app.kubernetes.io/name': 'thanos-ruler',
       },
     },
     type: 'Opaque',
@@ -206,7 +206,7 @@ function(params) {
       name: 'thanos-ruler-query-config',
       namespace: cfg.namespace,
       labels: {
-        'k8s-app': 'thanos-ruler',
+        'app.kubernetes.io/name': 'thanos-ruler',
       },
     },
     type: 'Opaque',
@@ -272,7 +272,7 @@ function(params) {
       name: 'thanos-ruler',
       namespace: cfg.namespace,
       labels: {
-        'k8s-app': 'thanos-ruler',
+        'app.kubernetes.io/name': 'thanos-ruler',
       },
     },
     spec: {

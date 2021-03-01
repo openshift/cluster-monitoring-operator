@@ -118,7 +118,7 @@ function(params)
       metadata: {
         name: 'grafana-proxy',
         namespace: cfg.namespace,
-        labels: { 'k8s-app': 'grafana' },
+        labels: { 'app.kubernetes.io/name': 'grafana' },
       },
       type: 'Opaque',
       data: {},
