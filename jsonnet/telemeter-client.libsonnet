@@ -16,7 +16,7 @@ function(params) {
         'TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
       ],
       versions+: {
-          kubeRbacProxy: 'latest',
+        kubeRbacProxy: 'latest',
       },
     },
   },

@@ -169,7 +169,7 @@ function(params)
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS.
 
-    deployment+:{
+    deployment+: {
       spec+: {
         template+: {
           spec+: {
@@ -212,7 +212,7 @@ function(params)
                   { name: 'HTTPS_PROXY', value: '' },
                   { name: 'NO_PROXY', value: '' },
                 ],
-                image: 'quay.io/openshift/oauth-proxy:latest', //FIXME(paulfantom)
+                image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
                 name: 'grafana-proxy',
                 ports: [{
                   containerPort: 3000,
@@ -261,5 +261,5 @@ function(params)
           },
         },
       },
-    }
-}
+    },
+  }

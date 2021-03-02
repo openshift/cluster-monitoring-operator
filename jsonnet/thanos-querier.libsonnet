@@ -352,7 +352,7 @@ function(params)
               },
               {
                 name: 'oauth-proxy',
-                image: 'quay.io/openshift/oauth-proxy:latest', //FIXME(paulfantom)
+                image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
                 resources: {
                   requests: {
                     memory: '20Mi',
@@ -360,8 +360,8 @@ function(params)
                   },
                 },
                 ports: [{
-                    containerPort: 9091,
-                    name: 'web',
+                  containerPort: 9091,
+                  name: 'web',
                 }],
                 env: [
                   { name: 'HTTP_PROXY', value: '' },
@@ -404,7 +404,7 @@ function(params)
               },
               {
                 name: 'kube-rbac-proxy',
-                image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0', //FIXME(paulfantom)
+                image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0',  //FIXME(paulfantom)
                 resources: {
                   requests: {
                     memory: '20Mi',
@@ -423,7 +423,7 @@ function(params)
                   '--config-file=/etc/kube-rbac-proxy/config.yaml',
                   '--tls-cert-file=/etc/tls/private/tls.crt',
                   '--tls-private-key-file=/etc/tls/private/tls.key',
-                  '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305', //FIXME(paulfantom)
+                  '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',  //FIXME(paulfantom)
                   '--logtostderr=true',
                   '--allow-paths=/api/v1/query,/api/v1/query_range',
                 ],
@@ -441,7 +441,7 @@ function(params)
               },
               {
                 name: 'prom-label-proxy',
-                image: 'quay.io/coreos/prom-label-proxy:v0.2.0', // FIXME(paulfantom)
+                image: 'quay.io/coreos/prom-label-proxy:v0.2.0',  // FIXME(paulfantom)
                 args: [
                   '--insecure-listen-address=127.0.0.1:9095',
                   '--upstream=http://127.0.0.1:9090',
@@ -457,7 +457,7 @@ function(params)
               },
               {
                 name: 'kube-rbac-proxy-rules',
-                image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0', //FIXME(paulfantom)
+                image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0',  //FIXME(paulfantom)
                 resources: {
                   requests: {
                     memory: '20Mi',
@@ -476,7 +476,7 @@ function(params)
                   '--config-file=/etc/kube-rbac-proxy/config.yaml',
                   '--tls-cert-file=/etc/tls/private/tls.crt',
                   '--tls-private-key-file=/etc/tls/private/tls.key',
-                  '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305', //FIXME(paulfantom)
+                  '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',  //FIXME(paulfantom)
                   '--logtostderr=true',
                   '--allow-paths=/api/v1/rules',
                 ],
@@ -497,4 +497,4 @@ function(params)
         },
       },
     },
-}
+  }

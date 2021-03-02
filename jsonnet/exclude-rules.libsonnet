@@ -2,7 +2,8 @@
   excludeRules(o): {
     local filterRule(o) = o {
       [if (o.kind == 'PrometheusRule') then 'spec']+: {
-        groups: std.filter(function(group) !(group.name == 'kube-apiserver-availability.rules'),
+        groups: std.filter(
+          function(group) !(group.name == 'kube-apiserver-availability.rules'),
           std.map(
             function(ruleGroup)
               if ruleGroup.name == 'etcd' then
@@ -16,7 +17,7 @@
                 // KubeClientCertificateExpiration alert isn't
                 // actionable because the cluster admin has no way to
                 // prevent a client from using an expird certificate.
-                ruleGroup { rules: std.filter(function(rule) !('alert' in rule && (rule.alert == 'KubeClientCertificateExpiration')), ruleGroup.rules) }                
+                ruleGroup { rules: std.filter(function(rule) !('alert' in rule && (rule.alert == 'KubeClientCertificateExpiration')), ruleGroup.rules) }
               else if ruleGroup.name == 'kubernetes-system-kubelet' then
                 // Kubelet*CertificateExpiration alerts are based on absolute thresholds which
                 // make them prone to failures (e.g. if the lifetime of the certificate is

@@ -1,7 +1,7 @@
 local metrics = import 'telemeter-client/metrics.jsonnet';
 
-local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
 local cmoRules = import './rules.libsonnet';
+local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
 
 local defaults = {
   local defaults = self,
@@ -30,8 +30,8 @@ function(params) {
     },
     // Since kube-prometheus mixin ships just a few rules the same as CMO, it made sense to bundle them together
     // In the future we might want to move some of rules shipped with CMO to kube-prometheus.
-    spec: cmoRules.prometheusRules + {
-      groups+: kubePrometheus(cfg + {name: 'kube-prometheus'}).prometheusRule.spec.groups,
+    spec: cmoRules.prometheusRules {
+      groups+: kubePrometheus(cfg { name: 'kube-prometheus' }).prometheusRule.spec.groups,
     },
   },
 
