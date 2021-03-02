@@ -148,6 +148,15 @@ func (t *AlertmanagerTask) Run() error {
 			return errors.Wrap(err, "waiting for Alertmanager object changes failed")
 		}
 	}
+	pr, err := t.factory.AlertmanagerPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing alertmanager rules PrometheusRule failed")
+	}
+	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling alertmanager rules PrometheusRule failed")
+	}
+
 	smam, err := t.factory.AlertmanagerServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")

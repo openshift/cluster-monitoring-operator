@@ -113,6 +113,15 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus Rule Validating Webhook failed")
 	}
 
+	pr, err := t.factory.PrometheusOperatorPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing prometheus-operator rules PrometheusRule failed")
+	}
+	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling prometheus-operator rules PrometheusRule failed")
+	}
+
 	smpo, err := t.factory.PrometheusOperatorServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Operator ServiceMonitor failed")

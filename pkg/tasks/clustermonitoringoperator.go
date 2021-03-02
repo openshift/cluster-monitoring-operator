@@ -73,6 +73,15 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit Role failed")
 	}
 
+	pr, err := t.factory.ClusterMonitoringOperatorPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing cluster-monitoring-operator rules PrometheusRule failed")
+	}
+	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling cluster-monitoring-operator rules PrometheusRule failed")
+	}
+
 	smcmo, err := t.factory.ClusterMonitoringOperatorServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Cluster Monitoring Operator ServiceMonitor failed")

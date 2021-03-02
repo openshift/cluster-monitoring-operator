@@ -553,6 +553,18 @@ func (c *Client) DeletePrometheusRule(rule *monv1.PrometheusRule) error {
 	return err
 }
 
+func (c *Client) DeletePrometheusRuleByNamespaceAndName(namespace, name string) error {
+	sclient := c.mclient.MonitoringV1().PrometheusRules(namespace)
+
+	err := sclient.Delete(context.TODO(), name, metav1.DeleteOptions{})
+	// if the object does not exist then everything is good here
+	if err != nil && !apierrors.IsNotFound(err) {
+		return errors.Wrap(err, "deleting PrometheusRule object failed")
+	}
+
+	return nil
+}
+
 func (c *Client) DeleteSecret(s *v1.Secret) error {
 	err := c.kclient.CoreV1().Secrets(s.Namespace).Delete(context.TODO(), s.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
