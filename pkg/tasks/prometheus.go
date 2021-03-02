@@ -197,7 +197,7 @@ func (t *PrometheusTask) Run() error {
 	}
 
 	// TODO(paulfantom): Can be removed after OpenShift 4.7 and earlier are no longer supported
-	err := t.factory.DeletePrometheusRuleByNamespaceAndName(t.client.Namespace(), "prometheus-k8s-rules")
+	err = t.client.DeletePrometheusRuleByNamespaceAndName(t.client.Namespace(), "prometheus-k8s-rules")
 	if err != nil {
 		return errors.Wrap(err, "removing old Prometheus rules PrometheusRule failed")
 	}

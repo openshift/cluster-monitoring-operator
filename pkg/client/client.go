@@ -546,11 +546,7 @@ func (c *Client) DeleteRoute(r *routev1.Route) error {
 }
 
 func (c *Client) DeletePrometheusRule(rule *monv1.PrometheusRule) error {
-	err := c.mclient.MonitoringV1().PrometheusRules(rule.GetNamespace()).Delete(context.TODO(), rule.GetName(), metav1.DeleteOptions{})
-	if apierrors.IsNotFound(err) {
-		return nil
-	}
-	return err
+	return c.DeletePrometheusRuleByNamespaceAndName(rule.Namespace, rule.GetName())
 }
 
 func (c *Client) DeletePrometheusRuleByNamespaceAndName(namespace, name string) error {
