@@ -120,7 +120,7 @@ go-fmt:
 
 .PHONY: jsonnet-fmt
 jsonnet-fmt: $(JSONNETFMT_BIN)
-	find jsonnet/ -name 'vendor' -prune -o -name '*.libsonnet' -o -name '*.jsonnet' -print | xargs -n 1 -- $(JSONNETFMT_BIN) -i
+	find jsonnet/ -name 'vendor' -prune -o -name '*.libsonnet' -print -o -name '*.jsonnet' -print | xargs -n 1 -- $(JSONNETFMT_BIN) -i
 
 .PHONY: shellcheck
 shellcheck:
