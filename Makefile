@@ -126,8 +126,10 @@ jsonnet-fmt: $(JSONNETFMT_BIN)
 shellcheck:
 	hack/shellcheck.sh
 
-tmp/rules.yaml: $(GOJSONTOYAML_BIN) assets/prometheus-k8s/rules.yaml
-	cat assets/prometheus-k8s/rules.yaml | $(GOJSONTOYAML_BIN) -yamltojson | jq .spec > "$@"
+tmp/rules.yaml: $(GOJSONTOYAML_BIN) $(ASSETS)
+	mkdir -p tmp/rules
+	for f in $(shell find assets/ -name '*prometheus-rule.yaml'); do $(GOJSONTOYAML_BIN) -yamltojson < "$$f" | jq .spec > "tmp/rules/$$(echo "$$f" | sed 's/\//-/g').json"; done
+	jq -s '[.[]] | { groups: map(.groups[0]) }' $$(ls -d tmp/rules/*) | $(GOJSONTOYAML_BIN) > tmp/rules.yaml
 
 .PHONY: check-rules
 check-rules: $(PROMTOOL_BIN) tmp/rules.yaml
