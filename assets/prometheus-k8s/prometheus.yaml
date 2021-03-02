@@ -2,6 +2,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
   labels:
+    app.kubernetes.io/component: prometheus
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 2.24.0
     prometheus: k8s
   name: k8s
   namespace: openshift-monitoring
@@ -159,10 +164,17 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
-  image: openshift/prometheus:v2.23.0
+  image: quay.io/prometheus/prometheus:v2.24.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
+  podMetadata:
+    labels:
+      app.kubernetes.io/component: prometheus
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
+      app.kubernetes.io/name: prometheus
+      app.kubernetes.io/part-of: openshift-monitoring
+      app.kubernetes.io/version: 2.24.0
   podMonitorNamespaceSelector: {}
   podMonitorSelector: {}
   priorityClassName: openshift-user-critical
@@ -190,10 +202,10 @@ spec:
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/openshift/origin-thanos:v0.17.2
+    image: quay.io/thanos/thanos:v0.17.2
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: v0.17.2
-  version: v2.23.0
+    version: 0.17.2
+  version: 2.24.0

@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    k8s-app: thanos-ruler
+    app.kubernetes.io/name: thanos-ruler
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring
 spec:

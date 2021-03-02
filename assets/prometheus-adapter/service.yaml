@@ -4,7 +4,11 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: prometheus-adapter-tls
   labels:
-    name: prometheus-adapter
+    app.kubernetes.io/component: metrics-adapter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: prometheus-adapter
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.8.2
   name: prometheus-adapter
   namespace: openshift-monitoring
 spec:
@@ -13,5 +17,8 @@ spec:
     port: 443
     targetPort: 6443
   selector:
-    name: prometheus-adapter
+    app.kubernetes.io/component: metrics-adapter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: prometheus-adapter
+    app.kubernetes.io/part-of: openshift-monitoring
   type: ClusterIP

@@ -3,6 +3,12 @@ data:
   datasources.yaml: ewogICAgImFwaVZlcnNpb24iOiAxLAogICAgImRhdGFzb3VyY2VzIjogWwogICAgICAgIHsKICAgICAgICAgICAgImFjY2VzcyI6ICJwcm94eSIsCiAgICAgICAgICAgICJiYXNpY0F1dGgiOiB0cnVlLAogICAgICAgICAgICAiYmFzaWNBdXRoUGFzc3dvcmQiOiAiIiwKICAgICAgICAgICAgImJhc2ljQXV0aFVzZXIiOiAiaW50ZXJuYWwiLAogICAgICAgICAgICAiZWRpdGFibGUiOiBmYWxzZSwKICAgICAgICAgICAgImpzb25EYXRhIjogewogICAgICAgICAgICAgICAgInRsc1NraXBWZXJpZnkiOiB0cnVlCiAgICAgICAgICAgIH0sCiAgICAgICAgICAgICJuYW1lIjogInByb21ldGhldXMiLAogICAgICAgICAgICAib3JnSWQiOiAxLAogICAgICAgICAgICAidHlwZSI6ICJwcm9tZXRoZXVzIiwKICAgICAgICAgICAgInVybCI6ICJodHRwczovL3Byb21ldGhldXMtazhzLm9wZW5zaGlmdC1tb25pdG9yaW5nLnN2Yzo5MDkxIiwKICAgICAgICAgICAgInZlcnNpb24iOiAxCiAgICAgICAgfQogICAgXQp9
 kind: Secret
 metadata:
+  labels:
+    app.kubernetes.io/component: grafana
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 7.3.5
   name: grafana-datasources
   namespace: openshift-monitoring
 type: Opaque

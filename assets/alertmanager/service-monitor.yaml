@@ -2,7 +2,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    k8s-app: alertmanager
+    app.kubernetes.io/component: alert-router
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.21.0
   name: alertmanager
   namespace: openshift-monitoring
 spec:
@@ -17,3 +21,7 @@ spec:
   selector:
     matchLabels:
       alertmanager: main
+      app.kubernetes.io/component: alert-router
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/part-of: openshift-monitoring

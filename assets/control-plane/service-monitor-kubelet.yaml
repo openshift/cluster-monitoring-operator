@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    k8s-app: kubelet
+    app.kubernetes.io/name: kubelet
   name: kubelet
   namespace: openshift-monitoring
 spec:
@@ -101,10 +101,10 @@ spec:
     - action: replace
       replacement: crio
       targetLabel: job
-  jobLabel: k8s-app
+  jobLabel: app.kubernetes.io/name
   namespaceSelector:
     matchNames:
     - kube-system
   selector:
     matchLabels:
-      k8s-app: kubelet
+      app.kubernetes.io/name: kubelet

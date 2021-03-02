@@ -29,5 +29,11 @@ data:
       "window": "5m"
 kind: ConfigMap
 metadata:
+  labels:
+    app.kubernetes.io/component: metrics-adapter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: prometheus-adapter
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.8.2
   name: adapter-config
   namespace: openshift-monitoring

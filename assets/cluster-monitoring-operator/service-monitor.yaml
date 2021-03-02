@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    k8s-app: cluster-monitoring-operator
+    app.kubernetes.io/name: cluster-monitoring-operator
   name: cluster-monitoring-operator
   namespace: openshift-monitoring
 spec:

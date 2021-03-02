@@ -2,8 +2,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: v1.9.7
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 1.9.7
   name: kube-state-metrics
 roleRef:
   apiGroup: rbac.authorization.k8s.io
