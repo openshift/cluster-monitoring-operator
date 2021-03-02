@@ -8,7 +8,7 @@ metadata:
 spec:
   endpoints:
   - interval: 30s
-    port: metrics
+    port: etcd-metrics
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/secrets/kube-etcd-client-certs/etcd-client-ca.crt
