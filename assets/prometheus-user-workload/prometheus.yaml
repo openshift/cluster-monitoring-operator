@@ -87,7 +87,7 @@ spec:
   overrideHonorTimestamps: true
   podMonitorNamespaceSelector: {}
   podMonitorSelector: {}
-  priorityClassName: system-cluster-critical
+  priorityClassName: openshift-user-critical
   replicas: 2
   resources:
     requests:

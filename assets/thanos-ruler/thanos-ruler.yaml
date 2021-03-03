@@ -69,6 +69,7 @@ spec:
     keyFile: /etc/tls/grpc/server.key
   image: quay.io/openshift/origin-thanos:v0.15.0
   listenLocal: true
+  priorityClassName: openshift-user-critical
   queryConfig:
     key: query.yaml
     name: thanos-ruler-query-config
