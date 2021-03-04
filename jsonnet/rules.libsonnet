@@ -4,6 +4,26 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
   prometheusRules:: {
     groups: [
       {
+        name: 'openshift-general.rules',
+        rules: [
+          {
+            expr: |||
+              100 * (count(up == 0 unless on (node) max by (node) (kube_node_spec_unschedulable == 1)) BY (job, namespace, service) /
+                count(up unless on (node) max by (node) (kube_node_spec_unschedulable == 1)) BY (job, namespace, service)) > 10
+            |||,
+            alert: 'TargetDown',
+            'for': '15m',
+            annotations: {
+              description: '{{ printf "%.4g" $value }}% of the {{ $labels.job }}/{{ $labels.service }} targets in {{ $labels.namespace }} namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support.',
+              summary: 'Some targets were not reachable from the monitoring server for an extended period of time.',
+            },
+            labels: {
+              severity: 'warning',
+            },
+          },
+        ],
+      },
+      {
         name: 'openshift-kubernetes.rules',
         rules: [
           {
