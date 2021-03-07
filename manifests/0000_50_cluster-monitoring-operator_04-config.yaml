@@ -318,6 +318,9 @@ data:
     # (@openshift/storage, OpenShift Storage team) The list of virtual machine HW versions used for OCP nodes.
     - '{__name__="cluster:vsphere_node_hw_version_total:sum"}'
     #
+    # (@red-hat-data-services/odh, Open Data Hub team) The cumulative CPU usage for all ODH managed Jupyterhub user pods
+    - '{__name__="cluster:usage:consumption:rhods:cpu_core_seconds:rate5m"}'
+    #
 kind: ConfigMap
 metadata:
   name: telemetry-config
