@@ -17,7 +17,6 @@ spec:
       annotations:
         description: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
           }}) is restarting {{ printf "%.2f" $value }} times / 10 minutes.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubepodcrashlooping
         summary: Pod is crash looping.
       expr: |
         rate(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[10m]) * 60 * 5 > 0
@@ -28,7 +27,6 @@ spec:
       annotations:
         description: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
           state for longer than 15 minutes.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubepodnotready
         summary: Pod has been in a non-ready state for more than 15 minutes.
       expr: |
         sum by (namespace, pod) (
@@ -46,7 +44,6 @@ spec:
         description: Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment
           }} does not match, this indicates that the Deployment has failed but has
           not been rolled back.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubedeploymentgenerationmismatch
         summary: Deployment generation mismatch due to possible roll-back
       expr: |
         kube_deployment_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
@@ -59,7 +56,6 @@ spec:
       annotations:
         description: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }}
           has not matched the expected number of replicas for longer than 15 minutes.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubestatefulsetreplicasmismatch
         summary: Deployment has not matched the expected number of replicas.
       expr: |
         (
@@ -79,7 +75,6 @@ spec:
         description: StatefulSet generation for {{ $labels.namespace }}/{{ $labels.statefulset
           }} does not match, this indicates that the StatefulSet has failed but has
           not been rolled back.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubestatefulsetgenerationmismatch
         summary: StatefulSet generation mismatch due to possible roll-back
       expr: |
         kube_statefulset_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
@@ -92,7 +87,6 @@ spec:
       annotations:
         description: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }}
           update has not been rolled out.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubestatefulsetupdatenotrolledout
         summary: StatefulSet update has not been rolled out.
       expr: |
         (
@@ -119,7 +113,6 @@ spec:
       annotations:
         description: DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has
           not finished or progressed for at least 15 minutes.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubedaemonsetrolloutstuck
         summary: DaemonSet rollout is stuck.
       expr: |
         (
@@ -152,7 +145,6 @@ spec:
       annotations:
         description: Pod {{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container}}
           has been in waiting state for longer than 1 hour.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubecontainerwaiting
         summary: Pod container waiting longer than 1 hour
       expr: |
         sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}) > 0
@@ -163,7 +155,6 @@ spec:
       annotations:
         description: '{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset
           }} are not scheduled.'
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubedaemonsetnotscheduled
         summary: DaemonSet pods are not scheduled.
       expr: |
         kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
@@ -176,7 +167,6 @@ spec:
       annotations:
         description: '{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset
           }} are running where they are not supposed to run.'
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubedaemonsetmisscheduled
         summary: DaemonSet pods are misscheduled.
       expr: |
         kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
@@ -187,7 +177,6 @@ spec:
       annotations:
         description: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking
           more than 12 hours to complete.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubejobcompletion
         summary: Job did not complete in time
       expr: |
         kube_job_spec_completions{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
@@ -198,7 +187,6 @@ spec:
       annotations:
         description: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to
           complete. Removing failed job after investigation should clear this alert.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubejobfailed
         summary: Job failed to complete.
       expr: |
         kube_job_failed{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
@@ -209,7 +197,6 @@ spec:
       annotations:
         description: HPA {{ $labels.namespace }}/{{ $labels.hpa }} has not matched
           the desired number of replicas for longer than 15 minutes.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubehpareplicasmismatch
         summary: HPA has not matched descired number of replicas.
       expr: |
         (kube_hpa_status_desired_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
@@ -232,7 +219,6 @@ spec:
       annotations:
         description: HPA {{ $labels.namespace }}/{{ $labels.hpa }} has been running
           at max replicas for longer than 15 minutes.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubehpamaxedout
         summary: HPA is running at max replicas
       expr: |
         kube_hpa_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
@@ -247,7 +233,6 @@ spec:
       annotations:
         description: Cluster has overcommitted CPU resource requests for Pods and
           cannot tolerate node failure.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubecpuovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |
         sum(namespace:kube_pod_container_resource_requests_cpu_cores:sum{})
@@ -262,7 +247,6 @@ spec:
       annotations:
         description: Cluster has overcommitted memory resource requests for Pods and
           cannot tolerate node failure.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubememoryovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |
         sum(namespace:kube_pod_container_resource_requests_memory_bytes:sum{})
@@ -278,7 +262,6 @@ spec:
     - alert: KubeCPUQuotaOvercommit
       annotations:
         description: Cluster has overcommitted CPU resource requests for Namespaces.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubecpuquotaovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |
         sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard", resource="cpu"})
@@ -291,7 +274,6 @@ spec:
     - alert: KubeMemoryQuotaOvercommit
       annotations:
         description: Cluster has overcommitted memory resource requests for Namespaces.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubememoryquotaovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |
         sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard", resource="memory"})
@@ -305,7 +287,6 @@ spec:
       annotations:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage
           }} of its {{ $labels.resource }} quota.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubequotaalmostfull
         summary: Namespace quota is going to be full.
       expr: |
         kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
@@ -319,7 +300,6 @@ spec:
       annotations:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage
           }} of its {{ $labels.resource }} quota.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubequotafullyused
         summary: Namespace quota is fully used.
       expr: |
         kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
@@ -333,7 +313,6 @@ spec:
       annotations:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage
           }} of its {{ $labels.resource }} quota.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubequotaexceeded
         summary: Namespace quota has exceeded the limits.
       expr: |
         kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
@@ -350,7 +329,6 @@ spec:
         description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim
           }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage
           }} free.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubepersistentvolumefillingup
         summary: PersistentVolume is filling up.
       expr: |
         kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
@@ -366,7 +344,6 @@ spec:
           $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is
           expected to fill up within four days. Currently {{ $value | humanizePercentage
           }} is available.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubepersistentvolumefillingup
         summary: PersistentVolume is filling up.
       expr: |
         (
@@ -383,7 +360,6 @@ spec:
       annotations:
         description: The persistent volume {{ $labels.persistentvolume }} has status
           {{ $labels.phase }}.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubepersistentvolumeerrors
         summary: PersistentVolume is having issues with provisioning.
       expr: |
         kube_persistentvolume_status_phase{phase=~"Failed|Pending",namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
@@ -396,7 +372,6 @@ spec:
       annotations:
         description: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
           }}' is experiencing {{ $value | humanizePercentage }} errors.'
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeclienterrors
         summary: Kubernetes API server client is experiencing errors.
       expr: |
         (sum(rate(rest_client_requests_total{code=~"5.."}[5m])) by (instance, job)
@@ -411,7 +386,6 @@ spec:
     - alert: KubeAPIErrorBudgetBurn
       annotations:
         description: The API server is burning too much error budget.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeapierrorbudgetburn
         summary: The API server is burning too much error budget.
       expr: |
         sum(apiserver_request:burnrate1h) > (14.40 * 0.01000)
@@ -425,7 +399,6 @@ spec:
     - alert: KubeAPIErrorBudgetBurn
       annotations:
         description: The API server is burning too much error budget.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeapierrorbudgetburn
         summary: The API server is burning too much error budget.
       expr: |
         sum(apiserver_request:burnrate6h) > (6.00 * 0.01000)
@@ -439,7 +412,6 @@ spec:
     - alert: KubeAPIErrorBudgetBurn
       annotations:
         description: The API server is burning too much error budget.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeapierrorbudgetburn
         summary: The API server is burning too much error budget.
       expr: |
         sum(apiserver_request:burnrate1d) > (3.00 * 0.01000)
@@ -453,7 +425,6 @@ spec:
     - alert: KubeAPIErrorBudgetBurn
       annotations:
         description: The API server is burning too much error budget.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeapierrorbudgetburn
         summary: The API server is burning too much error budget.
       expr: |
         sum(apiserver_request:burnrate3d) > (1.00 * 0.01000)
@@ -471,7 +442,6 @@ spec:
         description: An aggregated API {{ $labels.name }}/{{ $labels.namespace }}
           has reported errors. It has appeared unavailable {{ $value | humanize }}
           times averaged over the past 10m.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/aggregatedapierrors
         summary: An aggregated API has reported errors.
       expr: |
         sum by(name, namespace)(increase(aggregator_unavailable_apiservice_count[10m])) > 4
@@ -481,7 +451,6 @@ spec:
       annotations:
         description: An aggregated API {{ $labels.name }}/{{ $labels.namespace }}
           has been only {{ $value | humanize }}% available over the last 10m.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/aggregatedapidown
         summary: An aggregated API is down.
       expr: |
         (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice[10m]))) * 100 < 85
@@ -491,7 +460,6 @@ spec:
     - alert: KubeAPIDown
       annotations:
         description: KubeAPI has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeapidown
         summary: Target disappeared from Prometheus target discovery.
       expr: |
         absent(up{job="apiserver"} == 1)
@@ -502,7 +470,6 @@ spec:
       annotations:
         description: The apiserver has terminated {{ $value | humanizePercentage }}
           of its incoming requests.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeapiterminatedrequests
         summary: The apiserver has terminated {{ $value | humanizePercentage }} of
           its incoming requests.
       expr: |
@@ -515,7 +482,6 @@ spec:
     - alert: KubeNodeNotReady
       annotations:
         description: '{{ $labels.node }} has been unready for more than 15 minutes.'
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubenodenotready
         summary: Node is not ready.
       expr: |
         kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
@@ -526,7 +492,6 @@ spec:
       annotations:
         description: '{{ $labels.node }} is unreachable and some workloads may be
           rescheduled.'
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubenodeunreachable
         summary: Node is unreachable.
       expr: |
         (kube_node_spec_taint{job="kube-state-metrics",key="node.kubernetes.io/unreachable",effect="NoSchedule"} unless ignoring(key,value) kube_node_spec_taint{job="kube-state-metrics",key=~"ToBeDeletedByClusterAutoscaler|cloud.google.com/impending-node-termination|aws-node-termination-handler/spot-itn"}) == 1
@@ -537,7 +502,6 @@ spec:
       annotations:
         description: Kubelet '{{ $labels.node }}' is running at {{ $value | humanizePercentage
           }} of its Pod capacity.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubelettoomanypods
         summary: Kubelet is running at capacity.
       expr: |
         count by(node) (
@@ -554,7 +518,6 @@ spec:
       annotations:
         description: The readiness status of node {{ $labels.node }} has changed {{
           $value }} times in the last 15 minutes.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubenodereadinessflapping
         summary: Node readiness status is flapping.
       expr: |
         sum(changes(kube_node_status_condition{status="true",condition="Ready"}[15m])) by (node) > 2
@@ -565,7 +528,6 @@ spec:
       annotations:
         description: The Kubelet Pod Lifecycle Event Generator has a 99th percentile
           duration of {{ $value }} seconds on node {{ $labels.node }}.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeletplegdurationhigh
         summary: Kubelet Pod Lifecycle Event Generator is taking too long to relist.
       expr: |
         node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile{quantile="0.99"} >= 10
@@ -576,7 +538,6 @@ spec:
       annotations:
         description: Kubelet Pod startup 99th percentile latency is {{ $value }} seconds
           on node {{ $labels.node }}.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeletpodstartuplatencyhigh
         summary: Kubelet Pod startup latency is too high.
       expr: |
         histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (instance, le)) * on(instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"} > 60
@@ -587,7 +548,6 @@ spec:
       annotations:
         description: Kubelet on node {{ $labels.node }} has failed to renew its client
           certificate ({{ $value | humanize }} errors in the last 5 minutes).
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeletclientcertificaterenewalerrors
         summary: Kubelet has failed to renew its client certificate.
       expr: |
         increase(kubelet_certificate_manager_client_expiration_renew_errors[5m]) > 0
@@ -598,7 +558,6 @@ spec:
       annotations:
         description: Kubelet on node {{ $labels.node }} has failed to renew its server
           certificate ({{ $value | humanize }} errors in the last 5 minutes).
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeletservercertificaterenewalerrors
         summary: Kubelet has failed to renew its server certificate.
       expr: |
         increase(kubelet_server_expiration_renew_errors[5m]) > 0
@@ -608,7 +567,6 @@ spec:
     - alert: KubeletDown
       annotations:
         description: Kubelet has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeletdown
         summary: Target disappeared from Prometheus target discovery.
       expr: |
         absent(up{job="kubelet", metrics_path="/metrics"} == 1)
@@ -620,7 +578,6 @@ spec:
     - alert: KubeSchedulerDown
       annotations:
         description: KubeScheduler has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubeschedulerdown
         summary: Target disappeared from Prometheus target discovery.
       expr: |
         absent(up{job="scheduler"} == 1)
@@ -633,7 +590,6 @@ spec:
       annotations:
         description: KubeControllerManager has disappeared from Prometheus target
           discovery.
-        runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/kubecontrollermanagerdown
         summary: Target disappeared from Prometheus target discovery.
       expr: |
         absent(up{job="kube-controller-manager"} == 1)
