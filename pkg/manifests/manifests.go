@@ -28,7 +28,6 @@ import (
 	"strconv"
 	"strings"
 
-	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
@@ -242,10 +241,6 @@ var (
 	AuthProxyRedirectURLFlag  = "-redirect-url="
 
 	TrustedCABundleKey = "ca-bundle.crt"
-)
-
-const (
-	IBMCloudPlatformType configv1.PlatformType = "IBMCloud"
 )
 
 type Factory struct {
@@ -1157,16 +1152,10 @@ func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
-func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap, ha bool) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
 	if err != nil {
 		return nil, err
-	}
-
-	// If topology is non HA we adjust the number of replicas to 1.
-	if !ha {
-		replicas := int32(1)
-		p.Spec.Replicas = &replicas
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.LogLevel != "" {
@@ -2277,7 +2266,7 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
-	if f.config.Platform == IBMCloudPlatformType {
+	if f.config.IBMCloudPlatform() {
 		groups := []monv1.RuleGroup{}
 		for _, g := range r.Spec.Groups {
 			switch g.Name {
@@ -2559,6 +2548,10 @@ func (f *Factory) NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 		p.SetNamespace(f.namespace)
 	}
 
+	if !f.config.HighlyAvailableInfrastructure() {
+		p.Spec.Replicas = func(i int32) *int32 { return &i }(1)
+	}
+
 	return p, nil
 }
 
@@ -2612,6 +2605,10 @@ func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, erro
 		a.SetNamespace(f.namespace)
 	}
 
+	if !f.config.HighlyAvailableInfrastructure() {
+		a.Spec.Replicas = func(i int32) *int32 { return &i }(1)
+	}
+
 	return a, nil
 }
 
@@ -2623,6 +2620,10 @@ func (f *Factory) NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error)
 
 	if t.GetNamespace() == "" {
 		t.SetNamespace(f.namespaceUserWorkload)
+	}
+
+	if !f.config.HighlyAvailableInfrastructure() {
+		t.Spec.Replicas = func(i int32) *int32 { return &i }(1)
 	}
 
 	return t, nil
@@ -2649,6 +2650,10 @@ func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) 
 
 	if d.GetNamespace() == "" {
 		d.SetNamespace(f.namespace)
+	}
+
+	if !f.config.HighlyAvailableInfrastructure() {
+		d.Spec.Replicas = func(i int32) *int32 { return &i }(1)
 	}
 
 	return d, nil

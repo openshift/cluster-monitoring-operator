@@ -268,20 +268,6 @@ func (c *Client) NamespacesToMonitor() ([]string, error) {
 	return namespaceNames, nil
 }
 
-func (c *Client) IsHighlyAvaliable() (bool, error) {
-	infra, err := c.GetInfrastructure("cluster")
-	if err != nil {
-		return true, errors.Wrap(err, "could not get Infrastructure 'cluster' instance")
-	}
-	klog.V(6).Infof("control plane topology is: %s", infra.Status.ControlPlaneTopology)
-
-	if infra.Status.ControlPlaneTopology == configv1.SingleReplicaTopologyMode {
-		return false, nil
-	}
-
-	return true, nil
-}
-
 func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
 	existing, err := pclient.Get(context.TODO(), p.GetName(), metav1.GetOptions{})

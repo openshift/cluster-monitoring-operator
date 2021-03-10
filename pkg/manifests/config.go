@@ -32,9 +32,13 @@ const (
 )
 
 type Config struct {
-	Images      *Images               `json:"-"`
-	RemoteWrite bool                  `json:"-"`
-	Platform    configv1.PlatformType `json:"-"`
+	Images      *Images `json:"-"`
+	RemoteWrite bool    `json:"-"`
+
+	// Fields retrieved from infrastructure.config.openshift.io/cluster
+	Platform               configv1.PlatformType `json:"-"`
+	ControlPlaneTopology   configv1.TopologyMode `json:"-"`
+	InfrastructureTopology configv1.TopologyMode `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
@@ -344,7 +348,23 @@ func (c *Config) LoadPlatform(load func() (*configv1.Infrastructure, error)) err
 		return fmt.Errorf("error loading platform: %v", err)
 	}
 	c.Platform = i.Status.Platform
+	c.ControlPlaneTopology = i.Status.ControlPlaneTopology
+	c.InfrastructureTopology = i.Status.InfrastructureTopology
+
+	klog.V(4).Infof("Plaform=%s ControlPlaneTopology=%s InfrastructureTopology=%s", c.Platform, c.ControlPlaneTopology, c.InfrastructureTopology)
+
 	return nil
+}
+
+func (c *Config) HighlyAvailableInfrastructure() bool {
+	if c.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
+		return false
+	}
+	return true
+}
+
+func (c *Config) IBMCloudPlatform() bool {
+	return c.Platform == configv1.IBMCloudPlatformType
 }
 
 func NewConfigFromString(content string) (*Config, error) {
