@@ -1,10 +1,10 @@
 local droppedKsmLabels = 'endpoint, instance, job, pod, service';
 
 {
-  prometheusRules+:: {
-    groups+: [
+  prometheusRules:: {
+    groups: [
       {
-        name: 'kubernetes.rules',
+        name: 'openshift-kubernetes.rules',
         rules: [
           {
             expr: 'sum(container_memory_usage_bytes{container="",pod!=""}) BY (pod, namespace)',

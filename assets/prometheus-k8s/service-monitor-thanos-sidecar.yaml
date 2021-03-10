@@ -2,7 +2,12 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    k8s-app: prometheus
+    app.kubernetes.io/component: thanos-sidecar
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 2.24.0
+    prometheus: k8s
   name: thanos-sidecar
   namespace: openshift-monitoring
 spec:
@@ -16,5 +21,5 @@ spec:
       serverName: prometheus-k8s-thanos-sidecar
   selector:
     matchLabels:
-      app: thanos-sidecar
+      app.kubernetes.io/component: thanos-sidecar
       prometheus: k8s

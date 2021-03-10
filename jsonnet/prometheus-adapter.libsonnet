@@ -1,18 +1,22 @@
 local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
 
-{
-  prometheusAdapter+:: {
-    local tlsVolumeName = 'prometheus-adapter-tls',
+local tlsVolumeName = 'prometheus-adapter-tls';
 
-    local prometheusAdapterPrometheusConfig = 'prometheus-adapter-prometheus-config',
-    local prometheusAdapterPrometheusConfigPath = '/etc/prometheus-config',
+local prometheusAdapterPrometheusConfig = 'prometheus-adapter-prometheus-config';
+local prometheusAdapterPrometheusConfigPath = '/etc/prometheus-config';
 
-    local servingCertsCABundle = 'serving-certs-ca-bundle',
-    local servingCertsCABundleDirectory = 'ssl/certs',
-    local servingCertsCABundleFileName = 'service-ca.crt',
-    local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory,
+local servingCertsCABundle = 'serving-certs-ca-bundle';
+local servingCertsCABundleDirectory = 'ssl/certs';
+local servingCertsCABundleFileName = 'service-ca.crt';
+local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory;
 
+local prometheusAdapter = (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet');
+
+function(params)
+  local cfg = params;
+
+  prometheusAdapter(cfg) + {
     clusterRoleAggregatedMetricsReader+:
       {
         metadata+: {
@@ -81,7 +85,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                           '--config=/etc/adapter/config.yaml',
                           '--logtostderr=true',
                           '--metrics-relist-interval=1m',
-                          '--prometheus-url=' + $._config.prometheusAdapter.prometheusURL,
+                          '--prometheus-url=' + cfg.prometheusURL,
                           '--secure-port=6443',
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -164,7 +168,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
       subjects: [{
         kind: 'ServiceAccount',
         name: 'prometheus-adapter',
-        namespace: $._config.namespace,
+        namespace: cfg.namespace,
       }],
     },
 
@@ -173,7 +177,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
       kind: 'ConfigMap',
       metadata: {
         name: prometheusAdapterPrometheusConfig,
-        namespace: $._config.namespace,
+        namespace: cfg.namespace,
       },
       data: {
         'prometheus-config.yaml': |||
@@ -197,9 +201,8 @@ local tlsVolumeName = 'kube-state-metrics-tls';
               tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
         ||| % [
           servingCertsCABundleMountPath + '/' + servingCertsCABundleFileName,
-          $._config.prometheusAdapter.prometheusURL,
+          cfg.prometheusURL,
         ],
       },
     },
-  },
-}
+  }

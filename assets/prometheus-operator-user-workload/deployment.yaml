@@ -3,8 +3,10 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: controller
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.44.1
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.45.0
   name: prometheus-operator
   namespace: openshift-user-workload-monitoring
 spec:
@@ -12,24 +14,28 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: controller
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus-operator
+      app.kubernetes.io/part-of: openshift-monitoring
   template:
     metadata:
       labels:
         app.kubernetes.io/component: controller
+        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: v0.44.1
+        app.kubernetes.io/part-of: openshift-monitoring
+        app.kubernetes.io/version: 0.45.0
     spec:
       containers:
       - args:
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.44.1
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.45.0
         - --deny-namespaces=openshift-monitoring
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
         - --config-reloader-cpu=0
         - --config-reloader-memory=0
-        image: quay.io/prometheus-operator/prometheus-operator:v0.44.1
+        image: quay.io/prometheus-operator/prometheus-operator:v0.45.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -47,7 +53,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
@@ -63,7 +69,7 @@ spec:
           name: prometheus-operator-user-workload-tls
           readOnly: false
       nodeSelector:
-        beta.kubernetes.io/os: linux
+        kubernetes.io/os: linux
         node-role.kubernetes.io/master: ""
       priorityClassName: openshift-user-critical
       securityContext: {}

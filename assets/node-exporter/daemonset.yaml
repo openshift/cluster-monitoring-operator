@@ -2,32 +2,42 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
-    app.kubernetes.io/version: v1.0.1
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 1.0.1
   name: node-exporter
   namespace: openshift-monitoring
 spec:
   selector:
     matchLabels:
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: node-exporter
+      app.kubernetes.io/part-of: openshift-monitoring
   template:
     metadata:
       labels:
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: node-exporter
-        app.kubernetes.io/version: v1.0.1
+        app.kubernetes.io/part-of: openshift-monitoring
+        app.kubernetes.io/version: 1.0.1
     spec:
       containers:
       - args:
         - --web.listen-address=127.0.0.1:9100
-        - --path.procfs=/host/proc
         - --path.sysfs=/host/sys
         - --path.rootfs=/host/root
         - --no-collector.wifi
         - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
+        - --collector.netclass.ignored-devices=^(veth.*)$
+        - --collector.netdev.device-exclude=^(veth.*)$
         - --collector.mountstats
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
-        image: openshift/prometheus-node-exporter:v1.0.1
+        image: quay.io/prometheus/node-exporter:v1.0.1
         name: node-exporter
         resources:
           requests:
@@ -35,10 +45,6 @@ spec:
             memory: 180Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
-        - mountPath: /host/proc
-          mountPropagation: HostToContainer
-          name: proc
-          readOnly: true
         - mountPath: /host/sys
           mountPropagation: HostToContainer
           name: sys
@@ -63,7 +69,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 9100
@@ -93,7 +99,7 @@ spec:
         env:
         - name: TMPDIR
           value: /tmp
-        image: openshift/prometheus-node-exporter:v1.0.1
+        image: quay.io/prometheus/node-exporter:v1.0.1
         name: init-textfile
         resources:
           requests:
@@ -119,9 +125,6 @@ spec:
       tolerations:
       - operator: Exists
       volumes:
-      - hostPath:
-          path: /proc
-        name: proc
       - hostPath:
           path: /sys
         name: sys

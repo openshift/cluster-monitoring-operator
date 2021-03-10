@@ -1,8 +1,12 @@
 local tlsVolumeName = 'prometheus-operator-tls';
 local certsCAVolumeName = 'operator-certs-ca-bundle';
 
-{
-  clusterPrometheusOperator+:: $.prometheusOperator {
+local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
+
+function(params)
+  local cfg = params;
+  operator(cfg) + {
+
     deployment+: {
       spec+: {
         template+: {
@@ -10,13 +14,11 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
             nodeSelector+: {
               'node-role.kubernetes.io/master': '',
             },
-            tolerations: [
-              {
-                key: 'node-role.kubernetes.io/master',
-                operator: 'Exists',
-                effect: 'NoSchedule',
-              },
-            ],
+            tolerations: [{
+              key: 'node-role.kubernetes.io/master',
+              operator: 'Exists',
+              effect: 'NoSchedule',
+            }],
             securityContext: {},
             priorityClassName: 'system-cluster-critical',
             containers:
@@ -25,14 +27,14 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
                   if c.name == 'prometheus-operator' then
                     c {
                       args+: [
-                        '--namespaces=' + $._config.namespace,
-                        '--prometheus-instance-namespaces=' + $._config.namespace,
-                        '--thanos-ruler-instance-namespaces=' + $._config.namespace,
-                        '--alertmanager-instance-namespaces=' + $._config.namespace,
+                        '--namespaces=' + cfg.namespace,
+                        '--prometheus-instance-namespaces=' + cfg.namespace,
+                        '--thanos-ruler-instance-namespaces=' + cfg.namespace,
+                        '--alertmanager-instance-namespaces=' + cfg.namespace,
                         '--config-reloader-cpu=0',
                         '--config-reloader-memory=0',
                         '--web.enable-tls=true',
-                        '--web.tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                        '--web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',  //FIXME(paulfantom)
                         '--web.tls-min-version=VersionTLS12',
                       ],
                       securityContext: {},
@@ -54,7 +56,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
                       args: [
                         '--logtostderr',
                         '--secure-listen-address=:8443',
-                        '--tls-cipher-suites=' + std.join(',', $._config.tlsCipherSuites),
+                        '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',  //FIXME(paulfantom)
                         '--upstream=https://prometheus-operator.openshift-monitoring.svc:8080/',
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
@@ -141,7 +143,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
           'service.alpha.openshift.io/inject-cabundle': 'true',
         },
         name: certsCAVolumeName,
-        namespace: $._config.namespace,
+        namespace: cfg.namespace,
       },
       data: {
         'service-ca.crt': '',
@@ -156,7 +158,7 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
         labels: {
           'app.kubernetes.io/component': 'controller',
           'app.kubernetes.io/name': 'prometheus-operator',
-          'app.kubernetes.io/version': $._config.versions.prometheusOperator,
+          //'app.kubernetes.io/version': $._config.versions.prometheusOperator, //FIXME(paulfantom)
         },
         annotations: {
           'service.beta.openshift.io/inject-cabundle': true,
@@ -188,5 +190,4 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
         },
       ],
     },
-  },
-}
+  }

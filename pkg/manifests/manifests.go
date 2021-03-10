@@ -62,6 +62,7 @@ var (
 	AlertmanagerRoute              = "alertmanager/route.yaml"
 	AlertmanagerServiceMonitor     = "alertmanager/service-monitor.yaml"
 	AlertmanagerTrustedCABundle    = "alertmanager/trusted-ca-bundle.yaml"
+	AlertmanagerPrometheusRule     = "alertmanager/prometheus-rule.yaml"
 
 	KubeStateMetricsClusterRoleBinding = "kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole        = "kube-state-metrics/cluster-role.yaml"
@@ -69,6 +70,7 @@ var (
 	KubeStateMetricsServiceAccount     = "kube-state-metrics/service-account.yaml"
 	KubeStateMetricsService            = "kube-state-metrics/service.yaml"
 	KubeStateMetricsServiceMonitor     = "kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsPrometheusRule     = "kube-state-metrics/prometheus-rule.yaml"
 
 	OpenShiftStateMetricsClusterRoleBinding = "openshift-state-metrics/cluster-role-binding.yaml"
 	OpenShiftStateMetricsClusterRole        = "openshift-state-metrics/cluster-role.yaml"
@@ -84,6 +86,7 @@ var (
 	NodeExporterClusterRoleBinding         = "node-exporter/cluster-role-binding.yaml"
 	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
 	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
+	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 
 	PrometheusK8sClusterRoleBinding          = "prometheus-k8s/cluster-role-binding.yaml"
 	PrometheusK8sRoleBindingConfig           = "prometheus-k8s/role-binding-config.yaml"
@@ -91,10 +94,9 @@ var (
 	PrometheusK8sClusterRole                 = "prometheus-k8s/cluster-role.yaml"
 	PrometheusK8sRoleConfig                  = "prometheus-k8s/role-config.yaml"
 	PrometheusK8sRoleList                    = "prometheus-k8s/role-specific-namespaces.yaml"
-	PrometheusK8sRules                       = "prometheus-k8s/rules.yaml"
+	PrometheusK8sPrometheusRule              = "prometheus-k8s/prometheus-rule.yaml"
 	PrometheusK8sServiceAccount              = "prometheus-k8s/service-account.yaml"
 	PrometheusK8s                            = "prometheus-k8s/prometheus.yaml"
-	PrometheusK8sKubeletServiceMonitor       = "prometheus-k8s/service-monitor-kubelet.yaml"
 	PrometheusK8sPrometheusServiceMonitor    = "prometheus-k8s/service-monitor.yaml"
 	PrometheusK8sService                     = "prometheus-k8s/service.yaml"
 	PrometheusK8sServiceThanosSidecar        = "prometheus-k8s/service-thanos-sidecar.yaml"
@@ -102,7 +104,6 @@ var (
 	PrometheusRBACProxySecret                = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
 	PrometheusK8sRoute                       = "prometheus-k8s/route.yaml"
 	PrometheusK8sHtpasswd                    = "prometheus-k8s/htpasswd-secret.yaml"
-	PrometheusK8sEtcdServiceMonitor          = "prometheus-k8s/service-monitor-etcd.yaml"
 	PrometheusK8sServingCertsCABundle        = "prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle      = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 	PrometheusK8sGrpcTLSSecret               = "prometheus-k8s/grpc-tls-secret.yaml"
@@ -147,6 +148,7 @@ var (
 	PrometheusOperatorServiceMonitor        = "prometheus-operator/service-monitor.yaml"
 	PrometheusOperatorCertsCABundle         = "prometheus-operator/operator-certs-ca-bundle.yaml"
 	PrometheusOperatorRuleValidatingWebhook = "prometheus-operator/prometheus-rule-validating-webhook.yaml"
+	PrometheusOperatorPrometheusRule        = "prometheus-operator/prometheus-rule.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount     = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole        = "prometheus-operator-user-workload/cluster-role.yaml"
@@ -177,6 +179,7 @@ var (
 	ClusterMonitoringEditClusterRole            = "cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
 	ClusterMonitoringEditUserWorkloadConfigRole = "cluster-monitoring-operator/user-workload-config-edit-role.yaml"
 	ClusterMonitoringGrpcTLSSecret              = "cluster-monitoring-operator/grpc-tls-secret.yaml"
+	ClusterMonitoringOperatorPrometheusRule     = "cluster-monitoring-operator/prometheus-rule.yaml"
 
 	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
 	TelemeterClientClusterRoleBinding     = "telemeter-client/cluster-role-binding.yaml"
@@ -220,6 +223,11 @@ var (
 	ThanosRulerPrometheusRule               = "thanos-ruler/thanos-ruler-prometheus-rule.yaml"
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
+
+	ControlPlanePrometheusRule        = "control-plane/prometheus-rule.yaml"
+	ControlPlaneEtcdPrometheusRule    = "control-plane/etcd-prometheus-rule.yaml"
+	ControlPlaneKubeletServiceMonitor = "control-plane/service-monitor-kubelet.yaml"
+	ControlPlaneEtcdServiceMonitor    = "control-plane/service-monitor-etcd.yaml"
 )
 
 var (
@@ -457,6 +465,10 @@ func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
 	return r, nil
 }
 
+func (f *Factory) AlertmanagerPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(AlertmanagerPrometheusRule))
+}
+
 func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(KubeStateMetricsClusterRoleBinding))
 	if err != nil {
@@ -531,6 +543,10 @@ func (f *Factory) KubeStateMetricsService() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) KubeStateMetricsPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(KubeStateMetricsPrometheusRule))
 }
 
 func (f *Factory) OpenShiftStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
@@ -697,6 +713,10 @@ func (f *Factory) NodeExporterClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetReader(NodeExporterClusterRole))
 }
 
+func (f *Factory) NodeExporterPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(NodeExporterPrometheusRule))
+}
+
 func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusK8sClusterRoleBinding))
 	if err != nil {
@@ -838,40 +858,8 @@ func (f *Factory) PrometheusUserWorkloadRoleList() (*rbacv1.RoleList, error) {
 	return rl, nil
 }
 
-func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
-	r, err := f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusK8sRules))
-	if err != nil {
-		return nil, err
-	}
-
-	r.Namespace = f.namespace
-
-	if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		groups := []monv1.RuleGroup{}
-		for _, g := range r.Spec.Groups {
-			if g.Name != "etcd" {
-				groups = append(groups, g)
-			}
-		}
-		r.Spec.Groups = groups
-	}
-
-	if f.config.Platform == IBMCloudPlatformType {
-		groups := []monv1.RuleGroup{}
-		for _, g := range r.Spec.Groups {
-			switch g.Name {
-			case "kubernetes-system-apiserver",
-				"kubernetes-system-controller-manager",
-				"kubernetes-system-scheduler":
-				// skip
-			default:
-				groups = append(groups, g)
-			}
-		}
-		r.Spec.Groups = groups
-	}
-
-	return r, nil
+func (f *Factory) PrometheusK8sPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusK8sPrometheusRule))
 }
 
 func (f *Factory) PrometheusK8sServiceAccount() (*v1.ServiceAccount, error) {
@@ -1109,17 +1097,6 @@ func (f *Factory) PrometheusOperatorCertsCABundle() (*v1.ConfigMap, error) {
 	return c, nil
 }
 
-func (f *Factory) PrometheusK8sEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sEtcdServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
 func (f *Factory) PrometheusK8sThanosSidecarServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sThanosSidecarServiceMonitor))
 	if err != nil {
@@ -1130,42 +1107,6 @@ func (f *Factory) PrometheusK8sThanosSidecarServiceMonitor() (*monv1.ServiceMoni
 	s.Namespace = f.namespace
 
 	return s, nil
-}
-
-func (f *Factory) PrometheusK8sEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap) (*v1.Secret, error) {
-	data := make(map[string]string)
-
-	for k, v := range tlsClient.Data {
-		data[k] = string(v)
-	}
-
-	for k, v := range ca.Data {
-		data[k] = v
-	}
-
-	r := newErrMapReader(data)
-
-	var (
-		clientCA   = r.value(TrustedCABundleKey)
-		clientCert = r.value("tls.crt")
-		clientKey  = r.value("tls.key")
-	)
-
-	if r.Error() != nil {
-		return nil, errors.Wrap(r.err, "couldn't find etcd certificate data")
-	}
-
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: f.namespace,
-			Name:      "kube-etcd-client-certs",
-		},
-		StringData: map[string]string{
-			"etcd-client-ca.crt": clientCA,
-			"etcd-client.key":    clientKey,
-			"etcd-client.crt":    clientCert,
-		},
-	}, nil
 }
 
 func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
@@ -1474,17 +1415,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	return p, nil
 }
 
-func (f *Factory) PrometheusK8sKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sKubeletServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
 func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
 	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sPrometheusServiceMonitor))
 	if err != nil {
@@ -1747,6 +1677,10 @@ func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, err
 	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-operator.%s.svc", f.namespace)
 
 	return sm, nil
+}
+
+func (f *Factory) PrometheusOperatorPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusOperatorPrometheusRule))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -2316,6 +2250,112 @@ func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonit
 	sm.Namespace = f.namespace
 
 	return sm, nil
+}
+
+func (f *Factory) ClusterMonitoringOperatorPrometheusRule() (*monv1.PrometheusRule, error) {
+	r, err := f.NewPrometheusRule(f.assets.MustNewAssetReader(ClusterMonitoringOperatorPrometheusRule))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespace
+
+	return r, nil
+}
+
+func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
+	r, err := f.NewPrometheusRule(f.assets.MustNewAssetReader(ControlPlanePrometheusRule))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespace
+
+	if f.config.Platform == IBMCloudPlatformType {
+		groups := []monv1.RuleGroup{}
+		for _, g := range r.Spec.Groups {
+			switch g.Name {
+			case "kubernetes-system-apiserver",
+				"kubernetes-system-controller-manager",
+				"kubernetes-system-scheduler":
+				// skip
+			default:
+				groups = append(groups, g)
+			}
+		}
+		r.Spec.Groups = groups
+	}
+
+	return r, nil
+}
+
+func (f *Factory) ControlPlaneEtcdPrometheusRule() (*monv1.PrometheusRule, error) {
+	r, err := f.NewPrometheusRule(f.assets.MustNewAssetReader(ControlPlaneEtcdPrometheusRule))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespace
+
+	return r, nil
+}
+
+func (f *Factory) ControlPlaneEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap) (*v1.Secret, error) {
+	data := make(map[string]string)
+
+	for k, v := range tlsClient.Data {
+		data[k] = string(v)
+	}
+
+	for k, v := range ca.Data {
+		data[k] = v
+	}
+
+	r := newErrMapReader(data)
+
+	var (
+		clientCA   = r.value(TrustedCABundleKey)
+		clientCert = r.value("tls.crt")
+		clientKey  = r.value("tls.key")
+	)
+
+	if r.Error() != nil {
+		return nil, errors.Wrap(r.err, "couldn't find etcd certificate data")
+	}
+
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: f.namespace,
+			Name:      "kube-etcd-client-certs",
+		},
+		StringData: map[string]string{
+			"etcd-client-ca.crt": clientCA,
+			"etcd-client.key":    clientKey,
+			"etcd-client.crt":    clientCert,
+		},
+	}, nil
+}
+
+func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func hostFromBaseAddress(baseAddress string) (string, error) {

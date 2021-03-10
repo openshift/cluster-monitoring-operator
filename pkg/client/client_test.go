@@ -234,12 +234,13 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		t.Run(tc.name, func(st *testing.T) {
 			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
 			ds, err := f.NodeExporterDaemonSet()
-			// Overriding labels to prevent changing tests with each upgrade of node-exporter version
-			// as our DaemonSet contains "app.kubernetes.io/version" label
-			ds.SetLabels(map[string]string{"app.kubernetes.io/name": "node-exporter"})
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// Overriding labels to prevent changing tests with each upgrade of node-exporter version
+			// as our DaemonSet contains "app.kubernetes.io/version" label
+			ds.SetLabels(map[string]string{"app.kubernetes.io/name": "node-exporter"})
 
 			data := &appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
@@ -321,6 +322,10 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			s.SetLabels(map[string]string{"k8s-app": "prometheus-k8s"})
+
 			data := &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s-grpc-tls",
@@ -400,6 +405,10 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			cm.SetLabels(map[string]string{"config.openshift.io/inject-trusted-cabundle": "true"})
 
 			data := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -507,6 +516,10 @@ func TestCreateOrUpdateService(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			s.SetLabels(map[string]string{"prometheus": "k8s"})
+
 			data := &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s",
@@ -528,8 +541,12 @@ func TestCreateOrUpdateService(t *testing.T) {
 						},
 					},
 					Selector: map[string]string{
-						"app":        "prometheus",
-						"prometheus": "k8s",
+						"app":                          "prometheus",
+						"prometheus":                   "k8s",
+						"app.kubernetes.io/component":  "prometheus",
+						"app.kubernetes.io/managed-by": "cluster-monitoring-operator",
+						"app.kubernetes.io/name":       "prometheus",
+						"app.kubernetes.io/part-of":    "openshift-monitoring",
 					},
 					SessionAffinity: tc.sessionAffinity,
 					Type:            v1.ServiceTypeClusterIP,
@@ -555,14 +572,14 @@ func TestCreateOrUpdateService(t *testing.T) {
 			unchanged := reflect.DeepEqual(before, after)
 
 			if unchanged == tc.expectedUpdate {
-				t.Errorf("expected update %t, got %t", tc.expectedUpdate, unchanged)
+				t.Errorf("test %s for expected update %t, got %t", tc.name, tc.expectedUpdate, !unchanged)
 			}
 
 			if !unchanged && !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test %s for expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !unchanged && !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test %s for expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -580,10 +597,16 @@ func TestCreateOrUpdateRole(t *testing.T) {
 		{
 			name:     "no change",
 			roleName: "prometheus-k8s-config",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/component": "prometheus",
+			},
 		},
 		{
 			name:     "annotations change",
 			roleName: "prometheus-k8s-config",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/component": "prometheus",
+			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
 			},
@@ -595,7 +618,8 @@ func TestCreateOrUpdateRole(t *testing.T) {
 			name:     "labels change",
 			roleName: "prometheus-k8s-config",
 			expectedLabels: map[string]string{
-				"label": "value",
+				"label":                       "value",
+				"app.kubernetes.io/component": "prometheus",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -610,6 +634,10 @@ func TestCreateOrUpdateRole(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			r.SetLabels(map[string]string{"app.kubernetes.io/component": "prometheus"})
 
 			data := &rbacv1.Role{
 				ObjectMeta: metav1.ObjectMeta{
@@ -675,7 +703,10 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 		{
 			name:           "roleref change",
 			expectedUpdate: true,
-			roleref:        rbacv1.RoleRef{},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/component": "prometheus",
+			},
+			roleref: rbacv1.RoleRef{},
 			subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
@@ -687,6 +718,9 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 		{
 			name:           "subjects change",
 			expectedUpdate: true,
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/component": "prometheus",
+			},
 			roleref: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "Role",
@@ -748,6 +782,10 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			rb.SetLabels(map[string]string{"app.kubernetes.io/component": "prometheus"})
+
 			data := &rbacv1.RoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s-config",
@@ -782,10 +820,10 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test %s for expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test %s for expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -801,11 +839,15 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 	}{
 		{
 			name: "no change",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/component": "prometheus",
+			},
 		},
 		{
 			name: "labels change",
 			expectedLabels: map[string]string{
-				"label": "value",
+				"app.kubernetes.io/component": "prometheus",
+				"label":                       "value",
 			},
 			addedLabels: map[string]string{
 				"label": "value",
@@ -813,6 +855,9 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 		},
 		{
 			name: "annotations change",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/component": "prometheus",
+			},
 			expectedAnnotations: map[string]string{
 				"annotation": "value",
 			},
@@ -829,6 +874,10 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			cr.SetLabels(map[string]string{"app.kubernetes.io/component": "prometheus"})
 
 			data := &rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{
@@ -854,10 +903,10 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test %s for expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test %s for expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -893,7 +942,10 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 		{
 			name:           "roleref change",
 			expectedUpdate: true,
-			roleref:        rbacv1.RoleRef{},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/component": "prometheus",
+			},
+			roleref: rbacv1.RoleRef{},
 			subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
@@ -905,6 +957,9 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 		{
 			name:           "subjects change",
 			expectedUpdate: true,
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/component": "prometheus",
+			},
 			roleref: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
@@ -966,6 +1021,10 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			crb.SetLabels(map[string]string{"app.kubernetes.io/component": "prometheus"})
+
 			data := &rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s",
@@ -995,14 +1054,14 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 			unchanged := reflect.DeepEqual(before, after)
 
 			if unchanged == tc.expectedUpdate {
-				t.Errorf("expected update %t, got %t", tc.expectedUpdate, unchanged)
+				t.Errorf("test %s for expected update %t, got %t", tc.name, tc.expectedUpdate, unchanged)
 			}
 
 			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+				t.Errorf("test %s for expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+				t.Errorf("test %s for expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
 			}
 		})
 	}
@@ -1136,6 +1195,10 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			sm.SetLabels(map[string]string{"k8s-app": "prometheus"})
+
 			data := &monv1.ServiceMonitor{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        sm.GetName(),
@@ -1215,10 +1278,14 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
 			f := manifests.NewFactory(ns, nsUWM, manifests.NewDefaultConfig(), manifests.NewAssets(assetsPath))
-			pr, err := f.PrometheusK8sRules()
+			pr, err := f.PrometheusK8sPrometheusRule()
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			pr.SetLabels(map[string]string{"prometheus": "k8s", "role": "alert-rules"})
 
 			data := &monv1.PrometheusRule{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1301,6 +1368,10 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			pr.SetLabels(map[string]string{"prometheus": "k8s"})
+
 			data := &monv1.Prometheus{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        pr.GetName(),
@@ -1381,6 +1452,10 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// Overriding labels to prevent changing tests with each upgrade of component version
+			// as our Secret contains "app.kubernetes.io/version" label
+			pr.SetLabels(map[string]string{"alertmanager": "main"})
 
 			data := &monv1.Alertmanager{
 				ObjectMeta: metav1.ObjectMeta{

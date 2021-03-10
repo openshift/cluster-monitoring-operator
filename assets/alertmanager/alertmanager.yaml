@@ -3,6 +3,11 @@ kind: Alertmanager
 metadata:
   labels:
     alertmanager: main
+    app.kubernetes.io/component: alert-router
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.21.0
   name: main
   namespace: openshift-monitoring
 spec:
@@ -99,10 +104,17 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
-  image: openshift/prometheus-alertmanager:v0.21.0
+  image: quay.io/prometheus/alertmanager:v0.21.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
+  podMetadata:
+    labels:
+      app.kubernetes.io/component: alert-router
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/part-of: openshift-monitoring
+      app.kubernetes.io/version: 0.21.0
   priorityClassName: system-cluster-critical
   replicas: 3
   resources:
@@ -117,4 +129,4 @@ spec:
     runAsNonRoot: true
     runAsUser: 65534
   serviceAccountName: alertmanager-main
-  version: v0.21.0
+  version: 0.21.0

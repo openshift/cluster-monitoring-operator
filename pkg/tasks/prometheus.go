@@ -26,14 +26,12 @@ import (
 type PrometheusTask struct {
 	client  *client.Client
 	factory *manifests.Factory
-	config  *manifests.Config
 }
 
-func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *PrometheusTask {
+func NewPrometheusTask(client *client.Client, factory *manifests.Factory) *PrometheusTask {
 	return &PrometheusTask{
 		client:  client,
 		factory: factory,
-		config:  config,
 	}
 }
 
@@ -198,7 +196,13 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus config RoleBinding failed")
 	}
 
-	pm, err := t.factory.PrometheusK8sRules()
+	// TODO(paulfantom): Can be removed after OpenShift 4.7 and earlier are no longer supported
+	err = t.client.DeletePrometheusRuleByNamespaceAndName(t.client.Namespace(), "prometheus-k8s-rules")
+	if err != nil {
+		return errors.Wrap(err, "removing old Prometheus rules PrometheusRule failed")
+	}
+
+	pm, err := t.factory.PrometheusK8sPrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus rules PrometheusRule failed")
 	}
@@ -226,28 +230,6 @@ func (t *PrometheusTask) Run() error {
 	err = t.client.CreateOrUpdateService(svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos sidecar Service failed")
-	}
-
-	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		etcdCA, err := t.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
-		if err != nil {
-			return errors.Wrap(err, "failed to load etcd client CA")
-		}
-
-		etcdClientSecret, err := t.client.GetSecret("openshift-config", "etcd-metric-client")
-		if err != nil {
-			return errors.Wrap(err, "failed to load etcd client secret")
-		}
-
-		promEtcdSecret, err := t.factory.PrometheusK8sEtcdSecret(etcdClientSecret, etcdCA)
-		if err != nil {
-			return errors.Wrap(err, "initializing prometheus etcd service monitor secret failed")
-		}
-
-		err = t.client.CreateOrUpdateSecret(promEtcdSecret)
-		if err != nil {
-			return errors.Wrap(err, "reconciling prometheus etcd service monitor secret")
-		}
 	}
 
 	grpcTLS, err := t.factory.GRPCSecret()
@@ -320,33 +302,6 @@ func (t *PrometheusTask) Run() error {
 		err = t.client.WaitForPrometheus(p)
 		if err != nil {
 			return errors.Wrap(err, "waiting for Prometheus object changes failed")
-		}
-	}
-
-	smk, err := t.factory.PrometheusK8sKubeletServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus kubelet ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(smk)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus kubelet ServiceMonitor failed")
-	}
-
-	sme, err := t.factory.PrometheusK8sEtcdServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus etcd ServiceMonitor failed")
-	}
-
-	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		err = t.client.CreateOrUpdateServiceMonitor(sme)
-		if err != nil {
-			return errors.Wrap(err, "reconciling Prometheus etcd ServiceMonitor failed")
-		}
-	} else {
-		err = t.client.DeleteServiceMonitor(sme)
-		if err != nil {
-			return errors.Wrap(err, "deleting Prometheus etcd ServiceMonitor failed")
 		}
 	}
 

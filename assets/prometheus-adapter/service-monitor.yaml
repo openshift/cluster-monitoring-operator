@@ -2,7 +2,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    name: prometheus-adapter
+    app.kubernetes.io/component: metrics-adapter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: prometheus-adapter
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.8.2
   name: prometheus-adapter
   namespace: openshift-monitoring
 spec:
@@ -17,4 +21,7 @@ spec:
       serverName: server-name-replaced-at-runtime
   selector:
     matchLabels:
-      name: prometheus-adapter
+      app.kubernetes.io/component: metrics-adapter
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
+      app.kubernetes.io/name: prometheus-adapter
+      app.kubernetes.io/part-of: openshift-monitoring

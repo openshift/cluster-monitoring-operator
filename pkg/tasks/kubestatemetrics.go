@@ -83,6 +83,15 @@ func (t *KubeStateMetricsTask) Run() error {
 		return errors.Wrap(err, "reconciling kube-state-metrics Deployment failed")
 	}
 
+	pr, err := t.factory.KubeStateMetricsPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing kube-state-metrics rules PrometheusRule failed")
+	}
+	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling kube-state-metrics rules PrometheusRule failed")
+	}
+
 	sm, err := t.factory.KubeStateMetricsServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")

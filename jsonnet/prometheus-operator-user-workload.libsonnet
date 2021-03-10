@@ -1,9 +1,13 @@
 local tlsVolumeName = 'prometheus-operator-user-workload-tls';
 
-{
-  prometheusOperatorUserWorkload:: $.prometheusOperator {
-    namespace:: $._config.namespaceUserWorkload,
+local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 
+function(params)
+  local cfg = params;
+  operator(cfg) + {
+
+    mixin:: null,
+    prometheusRule:: null,
     '0alertmanagerCustomResourceDefinition':: {},
     '0alertmanagerConfigCustomResourceDefinition':: {},
     '0prometheusCustomResourceDefinition':: {},
@@ -53,10 +57,10 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
                         function(arg) !std.startsWith(arg, '--kubelet-service'),
                         super.args,
                       ) + [
-                        '--deny-namespaces=' + $._config.namespace,
-                        '--prometheus-instance-namespaces=' + $._config.namespaceUserWorkload,
-                        '--alertmanager-instance-namespaces=' + $._config.namespaceUserWorkload,
-                        '--thanos-ruler-instance-namespaces=' + $._config.namespaceUserWorkload,
+                        '--deny-namespaces=' + cfg.denyNamespace,
+                        '--prometheus-instance-namespaces=' + cfg.namespace,
+                        '--alertmanager-instance-namespaces=' + cfg.namespace,
+                        '--thanos-ruler-instance-namespaces=' + cfg.namespace,
                         '--config-reloader-cpu=0',
                         '--config-reloader-memory=0',
                       ],
@@ -126,5 +130,4 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
         ],
       },
     },
-  },
-}
+  }

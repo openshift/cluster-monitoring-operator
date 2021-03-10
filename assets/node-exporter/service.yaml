@@ -4,8 +4,11 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: node-exporter-tls
   labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
-    app.kubernetes.io/version: v1.0.1
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 1.0.1
   name: node-exporter
   namespace: openshift-monitoring
 spec:
@@ -15,4 +18,7 @@ spec:
     port: 9100
     targetPort: https
   selector:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/part-of: openshift-monitoring

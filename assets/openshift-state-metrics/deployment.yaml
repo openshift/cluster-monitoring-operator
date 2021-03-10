@@ -23,7 +23,7 @@ spec:
         - --upstream=http://127.0.0.1:8081/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
+        image: quay.io/openshift/origin-kube-rbac-proxy:latest
         name: kube-rbac-proxy-main
         ports:
         - containerPort: 8443
@@ -43,7 +43,7 @@ spec:
         - --upstream=http://127.0.0.1:8082/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
+        image: quay.io/openshift/origin-kube-rbac-proxy:latest
         name: kube-rbac-proxy-self
         ports:
         - containerPort: 9443
@@ -61,7 +61,7 @@ spec:
         - --port=8081
         - --telemetry-host=127.0.0.1
         - --telemetry-port=8082
-        image: quay.io/openshift/origin-openshift-state-metrics:4.2
+        image: quay.io/openshift/origin-openshift-state-metrics:latest
         name: openshift-state-metrics
         resources:
           requests:

@@ -5,6 +5,11 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: alertmanager-main-tls
   labels:
     alertmanager: main
+    app.kubernetes.io/component: alert-router
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.21.0
   name: alertmanager-main
   namespace: openshift-monitoring
 spec:
@@ -18,5 +23,9 @@ spec:
   selector:
     alertmanager: main
     app: alertmanager
+    app.kubernetes.io/component: alert-router
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: openshift-monitoring
   sessionAffinity: ClientIP
   type: ClusterIP

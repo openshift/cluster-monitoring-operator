@@ -2,20 +2,29 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: v1.9.7
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 1.9.7
   name: kube-state-metrics
   namespace: openshift-monitoring
 spec:
   replicas: 1
   selector:
     matchLabels:
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: kube-state-metrics
+      app.kubernetes.io/part-of: openshift-monitoring
   template:
     metadata:
       labels:
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: kube-state-metrics
-        app.kubernetes.io/version: v1.9.7
+        app.kubernetes.io/part-of: openshift-monitoring
+        app.kubernetes.io/version: 1.9.7
     spec:
       containers:
       - args:
@@ -42,7 +51,7 @@ spec:
         - --upstream=http://127.0.0.1:8081/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy-main
         ports:
         - containerPort: 8443
@@ -64,7 +73,7 @@ spec:
         - --upstream=http://127.0.0.1:8082/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/coreos/kube-rbac-proxy:v0.8.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy-self
         ports:
         - containerPort: 9443

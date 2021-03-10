@@ -93,6 +93,15 @@ func (t *NodeExporterTask) Run() error {
 		return errors.Wrap(err, "reconciling node-exporter DaemonSet failed")
 	}
 
+	pr, err := t.factory.NodeExporterPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing node-exporter rules PrometheusRule failed")
+	}
+	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling node-exporter rules PrometheusRule failed")
+	}
+
 	smn, err := t.factory.NodeExporterServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")

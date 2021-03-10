@@ -327,12 +327,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sRules()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sEtcdServiceMonitor()
+	_, err = f.PrometheusK8sPrometheusRule()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,11 +343,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.PrometheusK8s("prometheus-k8s.openshift-monitoring.svc", &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusK8sKubeletServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -657,6 +647,16 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.ClusterMonitoringOperatorServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ControlPlaneEtcdServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ControlPlaneKubeletServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1275,7 +1275,7 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 
 	for _, tc := range tests {
 		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", tc.config, NewAssets(assetsPath))
-		r, err := f.PrometheusK8sRules()
+		r, err := f.ControlPlanePrometheusRule()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1302,7 +1302,7 @@ func TestPrometheusEtcdRulesFiltered(t *testing.T) {
 	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
-	r, err := f.PrometheusK8sRules()
+	r, err := f.PrometheusK8sPrometheusRule()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1320,7 +1320,7 @@ func TestPrometheusEtcdRules(t *testing.T) {
 	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
 
-	r, err := f.PrometheusK8sRules()
+	r, err := f.ControlPlaneEtcdPrometheusRule()
 	if err != nil {
 		t.Fatal(err)
 	}

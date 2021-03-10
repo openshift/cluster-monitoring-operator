@@ -2,6 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
+    app.kubernetes.io/name: etcd
     k8s-app: etcd
   name: etcd
   namespace: openshift-monitoring
