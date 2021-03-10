@@ -489,7 +489,7 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		klog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
 	}
 
-	err = c.LoadPlatform(func() (*configv1.Infrastructure, error) {
+	err = c.LoadInfrastructure(func() (*configv1.Infrastructure, error) {
 		return o.client.GetInfrastructure("cluster")
 	})
 	if err != nil {

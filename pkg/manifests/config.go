@@ -342,7 +342,7 @@ func (c *Config) LoadProxy(load func() (*configv1.Proxy, error)) error {
 	return nil
 }
 
-func (c *Config) LoadPlatform(load func() (*configv1.Infrastructure, error)) error {
+func (c *Config) LoadInfrastructure(load func() (*configv1.Infrastructure, error)) error {
 	i, err := load()
 	if err != nil {
 		return fmt.Errorf("error loading platform: %v", err)
