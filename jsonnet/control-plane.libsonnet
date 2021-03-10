@@ -32,10 +32,11 @@ function(params)
         namespace: cfg.namespace,
         labels: {
           'app.kubernetes.io/name': 'etcd',
+          'k8s-app': 'etcd',
         },
       },
       spec: {
-        jobLabel: 'app.kubernetes.io/name',
+        jobLabel: 'k8s-app',
         endpoints: [
           {
             port: 'etcd-metrics',
@@ -51,7 +52,7 @@ function(params)
         ],
         selector: {
           matchLabels: {
-            'app.kubernetes.io/name': 'etcd',
+            'k8s-app': 'etcd',
           },
         },
         namespaceSelector: {
@@ -63,7 +64,18 @@ function(params)
     // This changes the kubelet's certificates to be validated when
     // scraping.
     serviceMonitorKubelet+: {
+      metadata+: {
+        labels+: {
+          'k8s-app': 'kubelet'
+        },
+      },
       spec+: {
+        jobLabel: 'k8s-app',
+        selector: {
+          matchLabels: {
+            'k8s-app': 'kubelet'
+          },
+        },
         endpoints:
           std.map(
             function(e)

@@ -3,6 +3,7 @@ kind: ServiceMonitor
 metadata:
   labels:
     app.kubernetes.io/name: kubelet
+    k8s-app: kubelet
   name: kubelet
   namespace: openshift-monitoring
 spec:
@@ -101,10 +102,10 @@ spec:
     - action: replace
       replacement: crio
       targetLabel: job
-  jobLabel: app.kubernetes.io/name
+  jobLabel: k8s-app
   namespaceSelector:
     matchNames:
     - kube-system
   selector:
     matchLabels:
-      app.kubernetes.io/name: kubelet
+      k8s-app: kubelet
