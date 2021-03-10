@@ -3,7 +3,9 @@
     local filterRule(o) = o {
       [if (o.kind == 'PrometheusRule') then 'spec']+: {
         groups: std.filter(
-          function(group) !(group.name == 'kube-apiserver-availability.rules'),
+          function(group)
+            !(group.name == 'kube-apiserver-availability.rules') &&
+            !(group.name == 'kube-apiserver-slos'),
           std.map(
             function(ruleGroup)
               if ruleGroup.name == 'etcd' then
@@ -41,6 +43,8 @@
                       ruleGroup.rules,
                     ),
                 }
+              else if ruleGroup.name == 'kube-apiserver.rules' then
+                ruleGroup { rules: std.filter(function(rule) !('record' in rule && std.startsWith(rule.record, 'apiserver_request:burnrate')), ruleGroup.rules) }
               else
                 ruleGroup,
             super.groups,
