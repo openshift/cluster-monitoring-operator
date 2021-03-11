@@ -1,6 +1,6 @@
 local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
 local addReleaseAnnotation = (import 'add-release-annotation.libsonnet').addReleaseAnnotation;
-local excludeRules = (import 'exclude-rules.libsonnet').excludeRules;
+local excludeRules = (import 'patch-rules.libsonnet').excludeRules;
 local patchRules = (import 'patch-rules.libsonnet').patchRules;
 local removeRunbookUrl = (import 'remove-runbook-urls.libsonnet').removeRunbookUrl;
 
