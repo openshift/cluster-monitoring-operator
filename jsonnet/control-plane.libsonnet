@@ -66,14 +66,14 @@ function(params)
     serviceMonitorKubelet+: {
       metadata+: {
         labels+: {
-          'k8s-app': 'kubelet'
+          'k8s-app': 'kubelet',
         },
       },
       spec+: {
         jobLabel: 'k8s-app',
         selector: {
           matchLabels: {
-            'k8s-app': 'kubelet'
+            'k8s-app': 'kubelet',
           },
         },
         endpoints:
