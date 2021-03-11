@@ -71,7 +71,7 @@ type Operator struct {
 	queue workqueue.RateLimitingInterface
 
 	reconcileAttempts prometheus.Counter
-	reconcileErrors   prometheus.Counter
+	reconcileStatus   prometheus.Gauge
 
 	assets *manifests.Assets
 }
@@ -178,14 +178,14 @@ func (o *Operator) RegisterMetrics(r prometheus.Registerer) {
 		Help: "Number of attempts to reconcile the operator configuration",
 	})
 
-	o.reconcileErrors = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "cluster_monitoring_operator_reconcile_errors_total",
-		Help: "Number of errors that occurred while reconciling the operator configuration",
+	o.reconcileStatus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "cluster_monitoring_operator_last_reconciliation_successful",
+		Help: "Latest reconciliation state. Set to 1 if last reconciliation succeeded, else 0.",
 	})
 
 	r.MustRegister(
 		o.reconcileAttempts,
-		o.reconcileErrors,
+		o.reconcileStatus,
 	)
 }
 
@@ -318,11 +318,12 @@ func (o *Operator) processNextWorkItem() bool {
 	o.reconcileAttempts.Inc()
 	err := o.sync(key.(string))
 	if err == nil {
+		o.reconcileStatus.Set(1)
 		o.queue.Forget(key)
 		return true
 	}
 
-	o.reconcileErrors.Inc()
+	o.reconcileStatus.Set(0)
 	klog.Errorf("Syncing %q failed", key)
 	utilruntime.HandleError(errors.Wrapf(err, "sync %q failed", key))
 	o.queue.AddRateLimited(key)
