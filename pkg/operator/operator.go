@@ -329,7 +329,7 @@ func (o *Operator) enqueue(obj interface{}) {
 func (o *Operator) sync(key string) error {
 	config, err := o.Config(key)
 	if err != nil {
-		klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
+		klog.Infof("Updating ClusterOperator status to failed: %v", err)
 		reportErr := o.client.StatusReporter().SetFailed(err, "InvalidConfiguration")
 		if reportErr != nil {
 			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
@@ -340,7 +340,20 @@ func (o *Operator) sync(key string) error {
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
 
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.assets)
+	infrastructure, err := o.client.GetInfrastructure("cluster")
+	if err != nil {
+		err = errors.Wrap(err, "error getting cluster infrastructure")
+		klog.Info(err)
+		reportErr := o.client.StatusReporter().SetFailed(err, "FailedInfrastructureConfig")
+		if reportErr != nil {
+			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
+		}
+		return err
+	}
+	klog.V(4).Infof("Cluster infrastructure: plaform=%s controlPlaneTopology=%s infrastructureTopology=%s", infrastructure.Status.Platform, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
+	infrastructureConfig := manifests.NewInfrastructureConfig(infrastructure)
+
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, infrastructureConfig, o.assets)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
@@ -487,13 +500,6 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 	})
 	if err != nil {
 		klog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
-	}
-
-	err = c.LoadInfrastructure(func() (*configv1.Infrastructure, error) {
-		return o.client.GetInfrastructure("cluster")
-	})
-	if err != nil {
-		klog.Warningf("Could not load platform from infrastructure resource: %v. This may result in alerts that are not appropriate for the platform.", err)
 	}
 
 	cm, err := o.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")

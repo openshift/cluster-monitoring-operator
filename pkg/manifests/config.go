@@ -35,13 +35,42 @@ type Config struct {
 	Images      *Images `json:"-"`
 	RemoteWrite bool    `json:"-"`
 
-	// Fields retrieved from infrastructure.config.openshift.io/cluster
-	Platform               configv1.PlatformType `json:"-"`
-	ControlPlaneTopology   configv1.TopologyMode `json:"-"`
-	InfrastructureTopology configv1.TopologyMode `json:"-"`
-
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
+}
+
+// InfrastructureConfig stores information about the cluster infrastructure
+// which is useful for the operator.
+type InfrastructureConfig struct {
+	highlyAvailableInfrastructure bool
+	hostedControlPlane            bool
+}
+
+// NewInfrastructureConfig returns a new InfrastructureConfig from the given config.openshift.io/Infrastructure resource.
+func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
+	ic := &InfrastructureConfig{
+		highlyAvailableInfrastructure: true,
+		hostedControlPlane:            false,
+	}
+
+	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
+		ic.highlyAvailableInfrastructure = false
+	}
+	if i.Status.Platform == configv1.IBMCloudPlatformType {
+		ic.hostedControlPlane = true
+	}
+
+	return ic
+}
+
+// HighlyAvailableInfrastructure implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HighlyAvailableInfrastructure() bool {
+	return ic.highlyAvailableInfrastructure
+}
+
+// HostedControlPlane implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HostedControlPlane() bool {
+	return ic.hostedControlPlane
 }
 
 type ClusterMonitoringConfiguration struct {
@@ -340,31 +369,6 @@ func (c *Config) LoadProxy(load func() (*configv1.Proxy, error)) error {
 	c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy = p.Status.NoProxy
 
 	return nil
-}
-
-func (c *Config) LoadInfrastructure(load func() (*configv1.Infrastructure, error)) error {
-	i, err := load()
-	if err != nil {
-		return fmt.Errorf("error loading platform: %v", err)
-	}
-	c.Platform = i.Status.Platform
-	c.ControlPlaneTopology = i.Status.ControlPlaneTopology
-	c.InfrastructureTopology = i.Status.InfrastructureTopology
-
-	klog.V(4).Infof("Plaform=%s ControlPlaneTopology=%s InfrastructureTopology=%s", c.Platform, c.ControlPlaneTopology, c.InfrastructureTopology)
-
-	return nil
-}
-
-func (c *Config) HighlyAvailableInfrastructure() bool {
-	if c.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
-		return false
-	}
-	return true
-}
-
-func (c *Config) IBMCloudPlatform() bool {
-	return c.Platform == configv1.IBMCloudPlatformType
 }
 
 func NewConfigFromString(content string) (*Config, error) {

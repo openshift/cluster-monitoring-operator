@@ -247,14 +247,22 @@ type Factory struct {
 	namespace             string
 	namespaceUserWorkload string
 	config                *Config
+	infrastructure        InfrastructureReader
 	assets                *Assets
 }
 
-func NewFactory(namespace, namespaceUserWorkload string, c *Config, a *Assets) *Factory {
+// InfrastructureReader has methods to describe the cluster infrastructure.
+type InfrastructureReader interface {
+	HighlyAvailableInfrastructure() bool
+	HostedControlPlane() bool
+}
+
+func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructure InfrastructureReader, a *Assets) *Factory {
 	return &Factory{
 		namespace:             namespace,
 		namespaceUserWorkload: namespaceUserWorkload,
 		config:                c,
+		infrastructure:        infrastructure,
 		assets:                a,
 	}
 }
@@ -2266,7 +2274,7 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
-	if f.config.IBMCloudPlatform() {
+	if f.infrastructure.HostedControlPlane() {
 		groups := []monv1.RuleGroup{}
 		for _, g := range r.Spec.Groups {
 			switch g.Name {
@@ -2548,7 +2556,7 @@ func (f *Factory) NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 		p.SetNamespace(f.namespace)
 	}
 
-	if !f.config.HighlyAvailableInfrastructure() {
+	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		p.Spec.Replicas = func(i int32) *int32 { return &i }(1)
 	}
 
@@ -2605,7 +2613,7 @@ func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, erro
 		a.SetNamespace(f.namespace)
 	}
 
-	if !f.config.HighlyAvailableInfrastructure() {
+	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		a.Spec.Replicas = func(i int32) *int32 { return &i }(1)
 	}
 
@@ -2622,7 +2630,7 @@ func (f *Factory) NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error)
 		t.SetNamespace(f.namespaceUserWorkload)
 	}
 
-	if !f.config.HighlyAvailableInfrastructure() {
+	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		t.Spec.Replicas = func(i int32) *int32 { return &i }(1)
 	}
 
@@ -2652,7 +2660,7 @@ func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) 
 		d.SetNamespace(f.namespace)
 	}
 
-	if !f.config.HighlyAvailableInfrastructure() {
+	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		d.Spec.Replicas = func(i int32) *int32 { return &i }(1)
 	}
 
