@@ -128,8 +128,7 @@ shellcheck:
 
 tmp/rules.yaml: $(GOJSONTOYAML_BIN) $(ASSETS)
 	mkdir -p tmp/rules
-	for f in $(shell find assets/ -name '*prometheus-rule.yaml'); do $(GOJSONTOYAML_BIN) -yamltojson < "$$f" | jq .spec > "tmp/rules/$$(echo "$$f" | sed 's/\//-/g').json"; done
-	jq -s '[.[]] | { groups: map(.groups[]) }' $$(ls -d tmp/rules/*) | $(GOJSONTOYAML_BIN) > tmp/rules.yaml
+	hack/find-rules.sh | $(GOJSONTOYAML_BIN) > tmp/rules.yaml
 
 .PHONY: check-rules
 check-rules: $(PROMTOOL_BIN) tmp/rules.yaml
