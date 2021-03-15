@@ -45,7 +45,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -143,6 +145,29 @@ func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 
 func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "secrets", ns, fields.Everything())
+}
+
+func (c *Client) InfrastructureListWatchForResource(ctx context.Context, resource string) *cache.ListWatch {
+	infrastructure := c.oscclient.ConfigV1().Infrastructures()
+
+	return &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			return infrastructure.List(
+				ctx,
+				metav1.ListOptions{
+					FieldSelector: fields.OneTermEqualSelector("metadata.name", resource).String(),
+				},
+			)
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return infrastructure.Watch(
+				ctx,
+				metav1.ListOptions{
+					FieldSelector: fields.OneTermEqualSelector("metadata.name", resource).String(),
+				},
+			)
+		},
+	}
 }
 
 func (c *Client) AssurePrometheusOperatorCRsExist() error {

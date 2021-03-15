@@ -46,12 +46,17 @@ type InfrastructureConfig struct {
 	hostedControlPlane            bool
 }
 
-// NewInfrastructureConfig returns a new InfrastructureConfig from the given config.openshift.io/Infrastructure resource.
-func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
-	ic := &InfrastructureConfig{
+// NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
+func NewDefaultInfrastructureConfig() *InfrastructureConfig {
+	return &InfrastructureConfig{
 		highlyAvailableInfrastructure: true,
 		hostedControlPlane:            false,
 	}
+}
+
+// NewInfrastructureConfig returns a new InfrastructureConfig from the given config.openshift.io/Infrastructure resource.
+func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
+	ic := NewDefaultInfrastructureConfig()
 
 	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
 		ic.highlyAvailableInfrastructure = false

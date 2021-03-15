@@ -38,7 +38,7 @@ rules:
   verbs: ["get"]
 - apiGroups: ["config.openshift.io"]
   resources: ["infrastructures"]
-  verbs: ["get"]
+  verbs: ["get", "list", "watch"]
 - apiGroups: ["config.openshift.io"]
   resources: ["proxies"]
   verbs: ["get"]
