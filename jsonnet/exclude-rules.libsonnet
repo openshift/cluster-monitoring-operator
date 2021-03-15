@@ -41,6 +41,8 @@
                       ruleGroup.rules,
                     ),
                 }
+              else if ruleGroup.name == 'general.rules' then
+                ruleGroup { rules: std.filter(function(rule) !('alert' in rule && (rule.alert == 'TargetDown')), ruleGroup.rules) }
               else
                 ruleGroup,
             super.groups,
