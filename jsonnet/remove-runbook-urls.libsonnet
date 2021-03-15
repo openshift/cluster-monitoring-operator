@@ -9,7 +9,7 @@ local removeRunbookUrl(rule) = rule {
 {
   removeRunbookUrl(o): {
     local filterRule(o) = o {
-      [if (o.kind == 'PrometheusRule') then 'spec']+: k8sMixinUtils.mapRuleGroups(removeRunbookUrl)
+      [if (o.kind == 'PrometheusRule') then 'spec']+: k8sMixinUtils.mapRuleGroups(removeRunbookUrl),
     },
     [k]: filterRule(o[k])
     for k in std.objectFields(o)
