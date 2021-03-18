@@ -1394,7 +1394,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		// 1. Prometheus, because users might want to configure external remote write.
 		// 2. In OAuth proxy, as that communicates externally when executing the OAuth handshake.
 		for i, container := range p.Spec.Containers {
-			if container.Name == "prometeus-proxy" || container.Name == "prometheus" {
+			if container.Name == "prometheus-proxy" || container.Name == "prometheus" {
 				p.Spec.Containers[i].VolumeMounts = append(
 					p.Spec.Containers[i].VolumeMounts,
 					trustedCABundleVolumeMount(volumeName),
