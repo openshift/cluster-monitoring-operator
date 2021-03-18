@@ -220,7 +220,7 @@ local sccRole =
           serviceMonitorNamespaceSelector: {},
           ruleNamespaceSelector: {},
           listenLocal: true,
-          priorityClassName: 'system-cluster-critical',
+          priorityClassName: 'openshift-user-critical',
           containers: [
             {
               name: 'kube-rbac-proxy',
