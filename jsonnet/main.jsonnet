@@ -1,6 +1,7 @@
 local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
 local addReleaseAnnotation = (import 'add-release-annotation.libsonnet').addReleaseAnnotation;
-local excludeRules = (import 'exclude-rules.libsonnet').excludeRules;
+local excludeRules = (import 'patch-rules.libsonnet').excludeRules;
+local patchRules = (import 'patch-rules.libsonnet').patchRules;
 local removeRunbookUrl = (import 'remove-runbook-urls.libsonnet').removeRunbookUrl;
 
 local alertmanager = import './alertmanager.libsonnet';
@@ -371,8 +372,8 @@ local userWorkload =
   {};
 
 // Manifestation
-// TODO(paulfantom): removeRunbookUrl, excludeRules, and future patchRules should be converted into sanitizeRules() function
-removeRunbookUrl(excludeRules(addReleaseAnnotation(removeLimits(
+// TODO(paulfantom): removeRunbookUrl, excludeRules, and patchRules should be converted into sanitizeRules() function
+removeRunbookUrl(patchRules(excludeRules(addReleaseAnnotation(removeLimits(
   { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
   { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
   { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
@@ -390,4 +391,4 @@ removeRunbookUrl(excludeRules(addReleaseAnnotation(removeLimits(
   { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
   { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
   {}
-))))
+)))))
