@@ -15,10 +15,10 @@
       "source": {
         "git": {
           "remote": "https://github.com/coreos/etcd.git",
-          "subdir": "Documentation/etcd-mixin"
+          "subdir": "contrib/mixin"
         }
       },
-      "version": "855eeb75c551879fe11b9718bceb8bee9b178905",
+      "version": "0a02a107eabb97e3a5ebbace155bd6b2ffba247a",
       "sum": "EgKKzxcW3ttt7gjPMX//DNTqNcn/0o2VAIaWJ/HSLEc="
     },
     {
