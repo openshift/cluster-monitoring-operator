@@ -424,11 +424,6 @@ func (o *Operator) sync(key string) error {
 func (o *Operator) loadInfrastructureConfig() (*manifests.InfrastructureConfig, error) {
 	infrastructure, err := o.client.GetInfrastructure(clusterInfrastructure)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			klog.Warningf("Failed to get cluster infrastructure: %v, applying default infrastructure configuration", err)
-			return manifests.NewDefaultInfrastructureConfig(), nil
-		}
-
 		err = errors.Wrap(err, "error getting cluster infrastructure")
 		klog.Info(err)
 		reportErr := o.client.StatusReporter().SetFailed(err, "FailedInfrastructureConfig")
