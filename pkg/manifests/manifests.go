@@ -225,7 +225,6 @@ var (
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
 	ControlPlanePrometheusRule        = "control-plane/prometheus-rule.yaml"
-	ControlPlaneEtcdPrometheusRule    = "control-plane/etcd-prometheus-rule.yaml"
 	ControlPlaneKubeletServiceMonitor = "control-plane/service-monitor-kubelet.yaml"
 	ControlPlaneEtcdServiceMonitor    = "control-plane/service-monitor-etcd.yaml"
 )
@@ -2285,17 +2284,6 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 		}
 		r.Spec.Groups = groups
 	}
-
-	return r, nil
-}
-
-func (f *Factory) ControlPlaneEtcdPrometheusRule() (*monv1.PrometheusRule, error) {
-	r, err := f.NewPrometheusRule(f.assets.MustNewAssetReader(ControlPlaneEtcdPrometheusRule))
-	if err != nil {
-		return nil, err
-	}
-
-	r.Namespace = f.namespace
 
 	return r, nil
 }

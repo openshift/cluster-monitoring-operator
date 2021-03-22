@@ -1314,28 +1314,6 @@ func TestPrometheusEtcdRulesFiltered(t *testing.T) {
 	}
 }
 
-func TestPrometheusEtcdRules(t *testing.T) {
-	enabled := true
-	c := NewDefaultConfig()
-	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, NewAssets(assetsPath))
-
-	r, err := f.ControlPlaneEtcdPrometheusRule()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	found := false
-	for _, g := range r.Spec.Groups {
-		if g.Name == "etcd" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatal("etcd rules not found, even if etcd is enabled")
-	}
-}
-
 func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
 	enabled := false
 	c := NewDefaultConfig()

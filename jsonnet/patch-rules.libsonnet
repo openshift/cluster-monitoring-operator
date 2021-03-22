@@ -4,13 +4,6 @@ local excludedRuleGroups = [
 
 local excludedRules = [
   {
-    name: 'etcd',
-    rules: [
-      { alert: 'etcdHighNumberOfFailedGRPCRequests' },
-      { alert: 'etcdInsufficientMembers' },
-    ],
-  },
-  {
     name: 'general.rules',
     rules: [
       { alert: 'TargetDown' },
@@ -112,7 +105,7 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
         ),
       },
     },
-    [k]: exclude(o[k])
+    [k]: if std.isObject(o[k]) then exclude(o[k]) else o[k]
     for k in std.objectFields(o)
   },
 
@@ -130,7 +123,7 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
         ),
       },
     },
-    [k]: patch(o[k])
+    [k]: if std.isObject(o[k]) then patch(o[k]) else o[k]
     for k in std.objectFields(o)
   },
 }

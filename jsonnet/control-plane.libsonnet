@@ -5,24 +5,14 @@ function(params)
 
   controlPlane(cfg) + {
 
+    // etcMixin is required to generate the etcd dashboards.
     etcdMixin:: (import 'github.com/etcd-io/etcd/contrib/mixin/mixin.libsonnet') + {
       _config+:: cfg.mixin._config,
     },
 
-    etcdPrometheusRule: {
-      apiVersion: 'monitoring.coreos.com/v1',
-      kind: 'PrometheusRule',
-      metadata: {
-        labels: cfg.commonLabels + cfg.mixin.ruleLabels,
-        name: 'etcd-prometheus-rules',
-        namespace: cfg.namespace,
-      },
-      spec: {
-        local r = if std.objectHasAll($.etcdMixin, 'prometheusRules') then $.etcdMixin.prometheusRules.groups else [],
-        local a = if std.objectHasAll($.etcdMixin, 'prometheusAlerts') then $.etcdMixin.prometheusAlerts.groups else [],
-        groups: a + r,
-      },
-    },
+    // Hide etcd alerting and recording rules because they are handled by the
+    // etcd operator.
+    etcdPrometheusRule:: null,
 
     serviceMonitorEtcd: {
       apiVersion: 'monitoring.coreos.com/v1',

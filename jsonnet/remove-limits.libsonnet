@@ -16,7 +16,7 @@
         },
       },
     },
-    [k]: removeLimit(o[k])
+    [k]: if std.isObject(o[k]) then removeLimit(o[k]) else o[k]
     for k in std.objectFields(o)
   },
 }

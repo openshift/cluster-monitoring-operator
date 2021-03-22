@@ -21,7 +21,7 @@
         for i in super.items
       ],
     },
-    [k]: addAnnotation(o[k])
+    [k]: if std.isObject(o[k]) then addAnnotation(o[k]) else o[k]
     for k in std.objectFields(o)
   },
 }

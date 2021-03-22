@@ -35,16 +35,14 @@ func NewControlPlaneTask(client *client.Client, factory *manifests.Factory, conf
 }
 
 func (t *ControlPlaneTask) Run() error {
-	pr, err := t.factory.ControlPlaneEtcdPrometheusRule()
+	// TODO(simonpasquier): remove the following block after 4.8 is released.
+	// See https://github.com/openshift/cluster-monitoring-operator/pull/1085
+	err := t.client.DeletePrometheusRuleByNamespaceAndName("openshift-monitoring", "etcd-prometheus-rules")
 	if err != nil {
-		return errors.Wrap(err, "initializing etcd rules PrometheusRule failed")
-	}
-	err = t.client.CreateOrUpdatePrometheusRule(pr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling etcd rules PrometheusRule failed")
+		return errors.Wrap(err, "deleting etcd rules PrometheusRule failed")
 	}
 
-	pr, err = t.factory.ControlPlanePrometheusRule()
+	pr, err := t.factory.ControlPlanePrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing kubernetes mixin rules PrometheusRule failed")
 	}
