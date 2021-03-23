@@ -1,5 +1,13 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.8
+
+- [#1087](https://github.com/openshift/cluster-monitoring-operator/pull/1087) Decrease alert severity to "warning" for ThanosQueryHttpRequestQueryErrorRateHigh and ThanosQueryHttpRequestQueryRangeErrorRateHigh alerts.
+- [#1087](https://github.com/openshift/cluster-monitoring-operator/pull/1087) Increase "for" duration to 1 hour for all Thanos query alerts.
+- [#1087](https://github.com/openshift/cluster-monitoring-operator/pull/1087) Remove ThanosQueryInstantLatencyHigh and ThanosQueryRangeLatencyHigh alerts.
+- [#1090](https://github.com/openshift/cluster-monitoring-operator/pull/1090) Decrease alert severity to "warning" for all Thanos sidecar alerts.
+- [#1090](https://github.com/openshift/cluster-monitoring-operator/pull/1090) Increase "for" duration to 1 hour for all Thanos sidecar alerts.
+
 ## 4.7
 
 - [#963](https://github.com/openshift/cluster-monitoring-operator/pull/963) bump mixins to include new etcd alerts
