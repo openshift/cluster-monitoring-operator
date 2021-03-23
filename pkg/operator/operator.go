@@ -56,11 +56,12 @@ const (
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName             string
-	userWorkloadConfigMapName string
-	images                    map[string]string
-	telemetryMatches          []string
-	remoteWrite               bool
+	configMapName                string
+	userWorkloadConfigMapName    string
+	images                       map[string]string
+	telemetryMatches             []string
+	remoteWrite                  bool
+	lastKnowInfrastructureConfig *manifests.InfrastructureConfig
 
 	client *client.Client
 
@@ -361,14 +362,15 @@ func (o *Operator) sync(key string) error {
 
 	infrastructureConfig, err := o.loadInfrastructureConfig()
 	if err != nil {
-		err = errors.Wrap(err, "error getting cluster infrastructure")
-		klog.Infof("Updating ClusterOperator status to failed: %v", err)
-		reportErr := o.client.StatusReporter().SetFailed(err, "InfrastructureConfigError")
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
+		klog.Errorf("Error getting cluster infrastructure: %v", err)
+		infrastructureConfig = manifests.NewDefaultInfrastructureConfig()
+		if o.lastKnowInfrastructureConfig != nil {
+			infrastructureConfig = o.lastKnowInfrastructureConfig
 		}
-		return err
+	} else {
+		o.lastKnowInfrastructureConfig = infrastructureConfig
 	}
+
 	klog.V(4).Infof("Cluster infrastructure configuration: HighlyAvailable=%t HostedControlPlane=%t", infrastructureConfig.HighlyAvailableInfrastructure(), infrastructureConfig.HostedControlPlane())
 
 	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, infrastructureConfig, o.assets)
