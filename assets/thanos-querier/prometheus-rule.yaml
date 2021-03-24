@@ -10,7 +10,7 @@ metadata:
   namespace: openshift-monitoring
 spec:
   groups:
-  - name: thanos-query.rules
+  - name: thanos-query
     rules:
     - alert: ThanosQueryHttpRequestQueryErrorRateHigh
       annotations:
