@@ -74,6 +74,32 @@ local patchedRules = [
       },
     ],
   },
+  {
+    name: 'thanos-sidecar',
+    rules: [
+      {
+        alert: 'ThanosSidecarPrometheusDown',
+        'for': '1h',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'ThanosSidecarBucketOperationsFailed',
+        'for': '1h',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'ThanosSidecarUnhealthy',
+        'for': '1h',
+        labels: {
+          severity: 'warning',
+        },
+      },
+    ],
+  },
 ];
 
 local patchOrExcludeRule(rule, ruleSet, operation) =

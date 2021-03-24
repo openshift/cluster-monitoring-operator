@@ -248,9 +248,9 @@ spec:
         summary: Thanos Sidecar cannot connect to Prometheus
       expr: |
         sum by (job, instance) (thanos_sidecar_prometheus_up{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"} == 0)
-      for: 5m
+      for: 1h
       labels:
-        severity: critical
+        severity: warning
     - alert: ThanosSidecarBucketOperationsFailed
       annotations:
         description: Thanos Sidecar {{$labels.job}} {{$labels.instance}} bucket operations
@@ -258,9 +258,9 @@ spec:
         summary: Thanos Sidecar bucket operations are failing
       expr: |
         rate(thanos_objstore_bucket_operation_failures_total{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}[5m]) > 0
-      for: 5m
+      for: 1h
       labels:
-        severity: critical
+        severity: warning
     - alert: ThanosSidecarUnhealthy
       annotations:
         description: Thanos Sidecar {{$labels.job}} {{$labels.pod}} is unhealthy for
@@ -268,5 +268,6 @@ spec:
         summary: Thanos Sidecar is unhealthy.
       expr: |
         time() - max(timestamp(thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"})) by (job,pod) >= 240
+      for: 1h
       labels:
-        severity: critical
+        severity: warning
