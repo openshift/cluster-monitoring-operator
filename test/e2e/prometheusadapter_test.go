@@ -245,7 +245,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	factory := manifests.NewFactory("openshift-monitoring", "", nil, manifests.NewAssets(assetsPath))
+	factory := manifests.NewFactory("openshift-monitoring", "", nil, nil, manifests.NewAssets(assetsPath))
 	adapterSecret, err := factory.PrometheusAdapterSecret(tls, apiAuth)
 	if err != nil {
 		t.Fatal(err)

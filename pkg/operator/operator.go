@@ -48,16 +48,20 @@ const (
 	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
+
+	// Canonical name of the cluster-wide infrastrucure resource.
+	clusterInfrastructure = "cluster"
 )
 
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName             string
-	userWorkloadConfigMapName string
-	images                    map[string]string
-	telemetryMatches          []string
-	remoteWrite               bool
+	configMapName                string
+	userWorkloadConfigMapName    string
+	images                       map[string]string
+	telemetryMatches             []string
+	remoteWrite                  bool
+	lastKnowInfrastructureConfig *manifests.InfrastructureConfig
 
 	client *client.Client
 
@@ -149,6 +153,15 @@ func New(
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
+	)
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+	})
+	o.informers = append(o.informers, informer)
+
+	informer = cache.NewSharedIndexInformer(
+		o.client.InfrastructureListWatchForResource(context.TODO(), clusterInfrastructure),
+		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
@@ -251,6 +264,14 @@ func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 }
 
 func (o *Operator) handleEvent(obj interface{}) {
+	cmoConfigMap := o.namespace + "/" + o.configMapName
+
+	if _, ok := obj.(*configv1.Infrastructure); ok {
+		klog.Infof("Triggering update due to an infrastructure update")
+		o.enqueue(cmoConfigMap)
+		return
+	}
+
 	key, ok := o.keyFunc(obj)
 	if !ok {
 		return
@@ -258,7 +279,6 @@ func (o *Operator) handleEvent(obj interface{}) {
 
 	klog.V(5).Infof("ConfigMap or Secret updated: %s", key)
 
-	cmoConfigMap := o.namespace + "/" + o.configMapName
 	uwmConfigMap := o.namespaceUserWorkload + "/" + o.userWorkloadConfigMapName
 
 	switch key {
@@ -329,7 +349,7 @@ func (o *Operator) enqueue(obj interface{}) {
 func (o *Operator) sync(key string) error {
 	config, err := o.Config(key)
 	if err != nil {
-		klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
+		klog.Infof("Updating ClusterOperator status to failed: %v", err)
 		reportErr := o.client.StatusReporter().SetFailed(err, "InvalidConfiguration")
 		if reportErr != nil {
 			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
@@ -340,7 +360,20 @@ func (o *Operator) sync(key string) error {
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
 
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.assets)
+	infrastructureConfig, err := o.loadInfrastructureConfig()
+	if err != nil {
+		klog.Errorf("Error getting cluster infrastructure: %v", err)
+		infrastructureConfig = manifests.NewDefaultInfrastructureConfig()
+		if o.lastKnowInfrastructureConfig != nil {
+			infrastructureConfig = o.lastKnowInfrastructureConfig
+		}
+	} else {
+		o.lastKnowInfrastructureConfig = infrastructureConfig
+	}
+
+	klog.V(4).Infof("Cluster infrastructure configuration: HighlyAvailable=%t HostedControlPlane=%t", infrastructureConfig.HighlyAvailableInfrastructure(), infrastructureConfig.HostedControlPlane())
+
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, infrastructureConfig, o.assets)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
@@ -388,6 +421,22 @@ func (o *Operator) sync(key string) error {
 	}
 
 	return nil
+}
+
+func (o *Operator) loadInfrastructureConfig() (*manifests.InfrastructureConfig, error) {
+	infrastructure, err := o.client.GetInfrastructure(clusterInfrastructure)
+	if err != nil {
+		err = errors.Wrap(err, "error getting cluster infrastructure")
+		klog.Info(err)
+		reportErr := o.client.StatusReporter().SetFailed(err, "FailedInfrastructureConfig")
+		if reportErr != nil {
+			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
+		}
+		return nil, err
+	}
+
+	klog.V(5).Infof("Cluster infrastructure: plaform=%s controlPlaneTopology=%s infrastructureTopology=%s", infrastructure.Status.Platform, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
+	return manifests.NewInfrastructureConfig(infrastructure), nil
 }
 
 func (o *Operator) loadUserWorkloadConfig() (*manifests.UserWorkloadConfiguration, error) {
@@ -487,13 +536,6 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 	})
 	if err != nil {
 		klog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
-	}
-
-	err = c.LoadPlatform(func() (*configv1.Infrastructure, error) {
-		return o.client.GetInfrastructure("cluster")
-	})
-	if err != nil {
-		klog.Warningf("Could not load platform from infrastructure resource: %v. This may result in alerts that are not appropriate for the platform.", err)
 	}
 
 	cm, err := o.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")

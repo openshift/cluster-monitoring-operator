@@ -32,12 +32,50 @@ const (
 )
 
 type Config struct {
-	Images      *Images               `json:"-"`
-	RemoteWrite bool                  `json:"-"`
-	Platform    configv1.PlatformType `json:"-"`
+	Images      *Images `json:"-"`
+	RemoteWrite bool    `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
+}
+
+// InfrastructureConfig stores information about the cluster infrastructure
+// which is useful for the operator.
+type InfrastructureConfig struct {
+	highlyAvailableInfrastructure bool
+	hostedControlPlane            bool
+}
+
+// NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
+func NewDefaultInfrastructureConfig() *InfrastructureConfig {
+	return &InfrastructureConfig{
+		highlyAvailableInfrastructure: true,
+		hostedControlPlane:            false,
+	}
+}
+
+// NewInfrastructureConfig returns a new InfrastructureConfig from the given config.openshift.io/Infrastructure resource.
+func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
+	ic := NewDefaultInfrastructureConfig()
+
+	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
+		ic.highlyAvailableInfrastructure = false
+	}
+	if i.Status.Platform == configv1.IBMCloudPlatformType {
+		ic.hostedControlPlane = true
+	}
+
+	return ic
+}
+
+// HighlyAvailableInfrastructure implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HighlyAvailableInfrastructure() bool {
+	return ic.highlyAvailableInfrastructure
+}
+
+// HostedControlPlane implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HostedControlPlane() bool {
+	return ic.hostedControlPlane
 }
 
 type ClusterMonitoringConfiguration struct {
@@ -335,15 +373,6 @@ func (c *Config) LoadProxy(load func() (*configv1.Proxy, error)) error {
 	c.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy = p.Status.HTTPSProxy
 	c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy = p.Status.NoProxy
 
-	return nil
-}
-
-func (c *Config) LoadPlatform(load func() (*configv1.Infrastructure, error)) error {
-	i, err := load()
-	if err != nil {
-		return fmt.Errorf("error loading platform: %v", err)
-	}
-	c.Platform = i.Status.Platform
 	return nil
 }
 
