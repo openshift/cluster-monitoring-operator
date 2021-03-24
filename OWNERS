@@ -6,6 +6,7 @@ reviewers:
 - LiliC
 - simonpasquier
 - dgrisonnet
+- jan--f
 
 approvers:
 - bparees
@@ -14,6 +15,7 @@ approvers:
 - LiliC
 - simonpasquier
 - dgrisonnet
+- jan--f
 
 emeritus_approvers:
 - brancz
