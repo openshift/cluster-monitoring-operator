@@ -57,6 +57,23 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                              ruleGroup.rules,
                            ),
                        }
+                     else if ruleGroup.name == 'thanos-sidecar.rules' then
+                       ruleGroup {
+                         rules:
+                           std.map(
+                             function(rule)
+                               // Backport of https://github.com/thanos-io/thanos/pull/3204 to fix CI failures.
+                               if 'alert' in rule && rule.alert == 'ThanosSidecarUnhealthy' then
+                                 rule {
+                                   expr: |||
+                                     time() - max(timestamp(thanos_sidecar_last_heartbeat_success_time_seconds{%(selector)s})) by (job,pod) >= 240
+                                   ||| % $.sidecar.selector,
+                                 }
+                               else
+                                 rule,
+                             ruleGroup.rules,
+                           ),
+                       }
                      else
                        ruleGroup,
                    super.groups,
