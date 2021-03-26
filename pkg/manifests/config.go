@@ -39,45 +39,6 @@ type Config struct {
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
 }
 
-// InfrastructureConfig stores information about the cluster infrastructure
-// which is useful for the operator.
-type InfrastructureConfig struct {
-	highlyAvailableInfrastructure bool
-	hostedControlPlane            bool
-}
-
-// NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
-func NewDefaultInfrastructureConfig() *InfrastructureConfig {
-	return &InfrastructureConfig{
-		highlyAvailableInfrastructure: true,
-		hostedControlPlane:            false,
-	}
-}
-
-// NewInfrastructureConfig returns a new InfrastructureConfig from the given config.openshift.io/Infrastructure resource.
-func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
-	ic := NewDefaultInfrastructureConfig()
-
-	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
-		ic.highlyAvailableInfrastructure = false
-	}
-	if i.Status.Platform == configv1.IBMCloudPlatformType {
-		ic.hostedControlPlane = true
-	}
-
-	return ic
-}
-
-// HighlyAvailableInfrastructure implements the InfrastructureReader interface.
-func (ic *InfrastructureConfig) HighlyAvailableInfrastructure() bool {
-	return ic.highlyAvailableInfrastructure
-}
-
-// HostedControlPlane implements the InfrastructureReader interface.
-func (ic *InfrastructureConfig) HostedControlPlane() bool {
-	return ic.hostedControlPlane
-}
-
 type ClusterMonitoringConfiguration struct {
 	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
 	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`

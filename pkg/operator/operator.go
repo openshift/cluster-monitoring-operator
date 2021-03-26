@@ -37,6 +37,45 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
 )
 
+// InfrastructureConfig stores information about the cluster infrastructure
+// which is useful for the operator.
+type InfrastructureConfig struct {
+	highlyAvailableInfrastructure bool
+	hostedControlPlane            bool
+}
+
+// NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
+func NewDefaultInfrastructureConfig() *InfrastructureConfig {
+	return &InfrastructureConfig{
+		highlyAvailableInfrastructure: true,
+		hostedControlPlane:            false,
+	}
+}
+
+// NewInfrastructureConfig returns a new InfrastructureConfig from the given config.openshift.io/Infrastructure resource.
+func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
+	ic := NewDefaultInfrastructureConfig()
+
+	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
+		ic.highlyAvailableInfrastructure = false
+	}
+	if i.Status.Platform == configv1.IBMCloudPlatformType {
+		ic.hostedControlPlane = true
+	}
+
+	return ic
+}
+
+// HighlyAvailableInfrastructure implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HighlyAvailableInfrastructure() bool {
+	return ic.highlyAvailableInfrastructure
+}
+
+// HostedControlPlane implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HostedControlPlane() bool {
+	return ic.hostedControlPlane
+}
+
 const (
 	resyncPeriod = 15 * time.Minute
 
@@ -61,7 +100,7 @@ type Operator struct {
 	images                       map[string]string
 	telemetryMatches             []string
 	remoteWrite                  bool
-	lastKnowInfrastructureConfig *manifests.InfrastructureConfig
+	lastKnowInfrastructureConfig *InfrastructureConfig
 
 	client *client.Client
 
@@ -361,20 +400,7 @@ func (o *Operator) sync(key string) error {
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
 
-	infrastructureConfig, err := o.loadInfrastructureConfig()
-	if err != nil {
-		klog.Errorf("Error getting cluster infrastructure: %v", err)
-		infrastructureConfig = manifests.NewDefaultInfrastructureConfig()
-		if o.lastKnowInfrastructureConfig != nil {
-			infrastructureConfig = o.lastKnowInfrastructureConfig
-		}
-	} else {
-		o.lastKnowInfrastructureConfig = infrastructureConfig
-	}
-
-	klog.V(4).Infof("Cluster infrastructure configuration: HighlyAvailable=%t HostedControlPlane=%t", infrastructureConfig.HighlyAvailableInfrastructure(), infrastructureConfig.HostedControlPlane())
-
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, infrastructureConfig, o.assets)
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(), o.assets)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
@@ -424,20 +450,27 @@ func (o *Operator) sync(key string) error {
 	return nil
 }
 
-func (o *Operator) loadInfrastructureConfig() (*manifests.InfrastructureConfig, error) {
+func (o *Operator) loadInfrastructureConfig() *InfrastructureConfig {
+	var infrastructureConfig *InfrastructureConfig
 	infrastructure, err := o.client.GetInfrastructure(clusterInfrastructure)
 	if err != nil {
-		err = errors.Wrap(err, "error getting cluster infrastructure")
-		klog.Info(err)
-		reportErr := o.client.StatusReporter().SetFailed(err, "FailedInfrastructureConfig")
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
+		klog.Warningf("Error getting cluster infrastructure: %v", err)
+
+		if o.lastKnowInfrastructureConfig == nil {
+			klog.Warning("No last known infrastructure config, assuming default config")
+			return NewDefaultInfrastructureConfig()
 		}
-		return nil, err
+
+		klog.Info("Using last known infrastructure config")
+		return o.lastKnowInfrastructureConfig
 	}
 
 	klog.V(5).Infof("Cluster infrastructure: plaform=%s controlPlaneTopology=%s infrastructureTopology=%s", infrastructure.Status.Platform, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
-	return manifests.NewInfrastructureConfig(infrastructure), nil
+
+	infrastructureConfig = NewInfrastructureConfig(infrastructure)
+	o.lastKnowInfrastructureConfig = infrastructureConfig
+
+	return o.lastKnowInfrastructureConfig
 }
 
 func (o *Operator) loadUserWorkloadConfig() (*manifests.UserWorkloadConfiguration, error) {
