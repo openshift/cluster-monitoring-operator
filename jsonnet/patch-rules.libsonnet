@@ -58,6 +58,13 @@ local excludedRules = [
       { alert: 'KubeDeploymentReplicasMismatch' },
     ],
   },
+  {
+    name: 'thanos-query',
+    rules: [
+      { alert: 'ThanosQueryInstantLatencyHigh' },
+      { alert: 'ThanosQueryRangeLatencyHigh' },
+    ],
+  },
 ];
 
 local patchedRules = [
@@ -78,21 +85,19 @@ local patchedRules = [
     name: 'thanos-sidecar',
     rules: [
       {
-        alert: 'ThanosSidecarPrometheusDown',
+        alert: '',
         'for': '1h',
         labels: {
           severity: 'warning',
         },
       },
+    ],
+  },
+  {
+    name: 'thanos-query',
+    rules: [
       {
-        alert: 'ThanosSidecarBucketOperationsFailed',
-        'for': '1h',
-        labels: {
-          severity: 'warning',
-        },
-      },
-      {
-        alert: 'ThanosSidecarUnhealthy',
+        alert: '',
         'for': '1h',
         labels: {
           severity: 'warning',
@@ -108,7 +113,12 @@ local patchOrExcludeRule(rule, ruleSet, operation) =
   else if (('alert' in rule && 'alert' in ruleSet[0]) && std.startsWith(rule.alert, ruleSet[0].alert)) ||
           (('record' in rule && 'record' in ruleSet[0]) && std.startsWith(rule.record, ruleSet[0].record)) then
     if operation == 'patch' then
-      [std.mergePatch(rule, ruleSet[0])]
+      local patch = {
+        [k]: ruleSet[0][k]
+        for k in std.objectFields(ruleSet[0])
+        if k != 'alert' && k != 'record'
+      };
+      [std.mergePatch(rule, patch)]
     else
       []
   else
@@ -123,6 +133,9 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
     [] + patchOrExcludeRuleGroup(group, groupSet[1:], operation);
 
 {
+  // excludedRules removes upstream rules that we don't want to carry in CMO.
+  // It can remove specific rules from a rules group (see excludedRules) or a
+  // whole rules group (see excludedRuleGroups).
   excludeRules(o): {
     local exclude(o) = o {
       [if (o.kind == 'PrometheusRule') then 'spec']+: {
@@ -142,6 +155,12 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
     for k in std.objectFields(o)
   },
 
+  // patchRules adapts upstream rules to comply with OpenShift requirements
+  // (such as extending the for duration, changing alert severity, and so on).
+  // The patches are defined in the patchedRules array where each item contains
+  // the name of the affected group and the list of patches keyed by their
+  // 'alert' or 'record' identifier. The function will apply the patch to every
+  // alerting/recording rule in the group whose name starts by the identifier.
   patchRules(o): {
     local patch(o) = o {
       [if (o.kind == 'PrometheusRule') then 'spec']+: {
