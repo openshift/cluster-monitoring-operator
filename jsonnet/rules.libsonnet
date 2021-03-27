@@ -321,11 +321,10 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             // Returns 1 if all control plane nodes are ready and is absent otherwise. Should be used to suppress alerts during control plane upgrades or disruption.
           },
           {
-            expr: 'rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 / rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10',
+            expr: 'max(max_over_time(cluster_monitoring_operator_last_reconciliation_successful[1h])) == 0',
             alert: 'ClusterMonitoringOperatorReconciliationErrors',
-            'for': '30m',
             annotations: {
-              message: 'Cluster Monitoring Operator is experiencing reconciliation error rate of {{ printf "%0.0f" $value }}%.',
+              message: 'Cluster Monitoring Operator is experiencing unexpected reconciliation errors. Inspect the cluster-monitoring-operator log for potential root causes.',
             },
             labels: {
               severity: 'warning',

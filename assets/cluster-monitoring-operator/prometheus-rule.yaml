@@ -247,11 +247,10 @@ spec:
       record: cluster:control_plane:all_nodes_ready
     - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
-        message: Cluster Monitoring Operator is experiencing reconciliation error
-          rate of {{ printf "%0.0f" $value }}%.
-      expr: rate(cluster_monitoring_operator_reconcile_errors_total[15m]) * 100 /
-        rate(cluster_monitoring_operator_reconcile_attempts_total[15m]) > 10
-      for: 30m
+        message: Cluster Monitoring Operator is experiencing unexpected reconciliation
+          errors. Inspect the cluster-monitoring-operator log for potential root causes.
+      expr: max(max_over_time(cluster_monitoring_operator_last_reconciliation_successful[1h]))
+        == 0
       labels:
         severity: warning
     - alert: AlertmanagerReceiversNotConfigured
