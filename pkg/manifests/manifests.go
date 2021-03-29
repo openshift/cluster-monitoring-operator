@@ -248,6 +248,7 @@ type Factory struct {
 	namespaceUserWorkload string
 	config                *Config
 	infrastructure        InfrastructureReader
+	proxy                 ProxyReader
 	assets                *Assets
 }
 
@@ -257,12 +258,20 @@ type InfrastructureReader interface {
 	HostedControlPlane() bool
 }
 
-func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructure InfrastructureReader, a *Assets) *Factory {
+// ProxyReader has methods to describe the proxy configuration.
+type ProxyReader interface {
+	HTTPProxy() string
+	HTTPSProxy() string
+	NoProxy() string
+}
+
+func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructure InfrastructureReader, proxy ProxyReader, a *Assets) *Factory {
 	return &Factory{
 		namespace:             namespace,
 		namespaceUserWorkload: namespaceUserWorkload,
 		config:                c,
 		infrastructure:        infrastructure,
+		proxy:                 proxy,
 		assets:                a,
 	}
 }
@@ -377,6 +386,18 @@ func setContainerEnvironmentVariable(container *v1.Container, name, value string
 	}
 }
 
+func (f *Factory) injectProxyVariables(container *v1.Container) {
+	if f.proxy.HTTPProxy() != "" {
+		setContainerEnvironmentVariable(container, "HTTP_PROXY", f.proxy.HTTPProxy())
+	}
+	if f.proxy.HTTPSProxy() != "" {
+		setContainerEnvironmentVariable(container, "HTTPS_PROXY", f.proxy.HTTPSProxy())
+	}
+	if f.proxy.NoProxy() != "" {
+		setContainerEnvironmentVariable(container, "NO_PROXY", f.proxy.NoProxy())
+	}
+}
+
 func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(f.assets.MustNewAssetReader(AlertmanagerMain))
 	if err != nil {
@@ -410,15 +431,7 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		case "alertmanager-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-				setContainerEnvironmentVariable(&a.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-				setContainerEnvironmentVariable(&a.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-				setContainerEnvironmentVariable(&a.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-			}
+			f.injectProxyVariables(&a.Spec.Containers[i])
 
 			if trustedCABundleCM != nil {
 				volumeName := "alertmanager-trusted-ca-bundle"
@@ -1265,11 +1278,11 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	}
 
 	for _, rw := range p.Spec.RemoteWrite {
-		if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-			rw.ProxyURL = f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy
+		if f.proxy.HTTPProxy() != "" {
+			rw.ProxyURL = f.proxy.HTTPProxy()
 		}
-		if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-			rw.ProxyURL = f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy
+		if f.proxy.HTTPSProxy() != "" {
+			rw.ProxyURL = f.proxy.HTTPSProxy()
 		}
 	}
 
@@ -1296,15 +1309,9 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		switch container.Name {
 		case "prometheus-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.OauthProxy
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-				setContainerEnvironmentVariable(&p.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-				setContainerEnvironmentVariable(&p.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-				setContainerEnvironmentVariable(&p.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-			}
+
+			f.injectProxyVariables(&p.Spec.Containers[i])
+
 		case "kube-rbac-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		case "kube-rbac-proxy-thanos":
@@ -2090,15 +2097,7 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 		case "grafana-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-			}
+			f.injectProxyVariables(&d.Spec.Template.Spec.Containers[i])
 
 			if proxyCABundleCM != nil {
 				volumeName := "grafana-trusted-ca-bundle"
@@ -2713,15 +2712,7 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		case "oauth-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-			}
+			f.injectProxyVariables(&d.Spec.Template.Spec.Containers[i])
 
 			if trustedCA != nil {
 				volumeName := "thanos-querier-trusted-ca-bundle"
@@ -2922,15 +2913,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "TO", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL)
 			}
 
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-			}
+			f.injectProxyVariables(&d.Spec.Template.Spec.Containers[i])
 
 			cmd := []string{}
 			// Note: matchers are read only during CMO bootstrap. This mechanism was chosen as CMO image will be reloaded during upgrades
@@ -3167,15 +3150,8 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 		switch container.Name {
 		case "thanos-ruler-proxy":
 			t.Spec.Containers[i].Image = f.config.Images.OauthProxy
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" {
-				setContainerEnvironmentVariable(&t.Spec.Containers[i], "HTTP_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" {
-				setContainerEnvironmentVariable(&t.Spec.Containers[i], "HTTPS_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
-			}
-			if f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-				setContainerEnvironmentVariable(&t.Spec.Containers[i], "NO_PROXY", f.config.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
-			}
+
+			f.injectProxyVariables(&t.Spec.Containers[i])
 
 			if trustedCA != nil {
 				volumeName := "thanos-ruler-trusted-ca-bundle"

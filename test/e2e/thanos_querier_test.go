@@ -29,7 +29,7 @@ import (
 
 func TestThanosQuerierTrustedCA(t *testing.T) {
 	var (
-		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, manifests.NewAssets(assetsPath))
+		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath))
 		newCM   *v1.ConfigMap
 		lastErr error
 	)
