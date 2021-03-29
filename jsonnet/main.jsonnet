@@ -43,7 +43,7 @@ local commonConfig = {
     alertmanager: '0.21.0',
     prometheus: '2.24.0',
     grafana: '7.3.5',
-    kubeStateMetrics: '1.9.7',
+    kubeStateMetrics: '2.0.0-rc.1',
     nodeExporter: '1.0.1',
     prometheusAdapter: '0.8.2',
     prometheusOperator: '0.45.0',
