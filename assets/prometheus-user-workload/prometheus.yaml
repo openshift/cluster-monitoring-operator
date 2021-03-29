@@ -110,6 +110,7 @@ spec:
         cpu: 1m
         memory: 10Mi
   enforcedNamespaceLabel: namespace
+  externalLabels: {}
   ignoreNamespaceSelectors: true
   image: quay.io/prometheus/prometheus:v2.24.0
   listenLocal: true
