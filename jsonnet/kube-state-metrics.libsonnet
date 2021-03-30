@@ -108,9 +108,6 @@ function(params)
                     }
                   else
                     c {
-                      args+: [
-                        '--metric-blacklist=kube_secret_labels',
-                      ],
                       securityContext: {},
                       resources: {
                         requests: {
