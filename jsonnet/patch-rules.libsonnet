@@ -74,6 +74,9 @@ local patchedRules = [
       // Stop-gap fix for https://bugzilla.redhat.com/show_bug.cgi?id=1943667
       {
         alert: 'KubeDaemonSetRolloutStuck',
+        annotations: {
+          description: 'DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has not finished or progressed for at least 30 minutes.',
+        },
         'for': '30m',
       },
     ],
