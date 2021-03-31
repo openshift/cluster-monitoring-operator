@@ -141,4 +141,17 @@ function(params)
         },
       },
     },
+  } + {
+    // TODO(simonpasquier): remove this patch after https://github.com/openshift/kube-state-metrics/pull/47 merges.
+    clusterRole+: {
+      rules+: [
+        {
+          apiGroups: ['extensions'],
+          resources: [
+            'ingresses',
+          ],
+          verbs: ['list', 'watch'],
+        },
+      ],
+    },
   }
