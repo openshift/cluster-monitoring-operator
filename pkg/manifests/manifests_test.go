@@ -1242,13 +1242,13 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 	tests := []struct {
 		name           string
 		infrastructure InfrastructureReader
-		verify         func(bool, bool, bool)
+		verify         func(bool)
 	}{
 		{
 			name:           "default config",
 			infrastructure: NewDefaultInfrastructureConfig(),
-			verify: func(api, cm, sched bool) {
-				if !api || !cm || !sched {
+			verify: func(api bool) {
+				if !api {
 					t.Fatal("did not get all expected kubernetes control plane rules")
 				}
 			},
@@ -1256,8 +1256,8 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 		{
 			name:           "hosted control plane",
 			infrastructure: &InfrastructureConfig{highlyAvailableInfrastructure: true, hostedControlPlane: true},
-			verify: func(api, cm, sched bool) {
-				if api || cm || sched {
+			verify: func(api bool) {
+				if api {
 					t.Fatalf("kubernetes control plane rules found, none expected")
 				}
 			},
@@ -1271,19 +1271,13 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 			t.Fatal(err)
 		}
 		apiServerRulesFound := false
-		controllerManagerRulesFound := false
-		schedulerRulesFound := false
 		for _, g := range r.Spec.Groups {
 			switch g.Name {
 			case "kubernetes-system-apiserver":
 				apiServerRulesFound = true
-			case "kubernetes-system-controller-manager":
-				controllerManagerRulesFound = true
-			case "kubernetes-system-scheduler":
-				schedulerRulesFound = true
 			}
 		}
-		tc.verify(apiServerRulesFound, controllerManagerRulesFound, schedulerRulesFound)
+		tc.verify(apiServerRulesFound)
 	}
 }
 
