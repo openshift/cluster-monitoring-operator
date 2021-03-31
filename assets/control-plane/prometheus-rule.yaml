@@ -138,7 +138,7 @@ spec:
             ==
           0
         )
-      for: 15m
+      for: 30m
       labels:
         severity: warning
     - alert: KubeContainerWaiting

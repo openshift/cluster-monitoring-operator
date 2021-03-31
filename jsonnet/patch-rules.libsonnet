@@ -69,6 +69,16 @@ local excludedRules = [
 
 local patchedRules = [
   {
+    name: 'kubernetes-apps',
+    rules: [
+      // Stop-gap fix for https://bugzilla.redhat.com/show_bug.cgi?id=1943667
+      {
+        alert: 'KubeDaemonSetRolloutStuck',
+        'for': '30m',
+      },
+    ],
+  },
+  {
     name: 'prometheus',
     rules: [
       {
