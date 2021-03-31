@@ -7,6 +7,7 @@
 - [#1087](https://github.com/openshift/cluster-monitoring-operator/pull/1087) Remove ThanosQueryInstantLatencyHigh and ThanosQueryRangeLatencyHigh alerts.
 - [#1090](https://github.com/openshift/cluster-monitoring-operator/pull/1090) Decrease alert severity to "warning" for all Thanos sidecar alerts.
 - [#1090](https://github.com/openshift/cluster-monitoring-operator/pull/1090) Increase "for" duration to 1 hour for all Thanos sidecar alerts.
+- [#1097](https://github.com/openshift/cluster-monitoring-operator/pull/1097) Change the default variable refresh behavior from "On Dashboard Reload" to "On Time Range Change" on Grafana dashboards.
 
 ## 4.7
 
