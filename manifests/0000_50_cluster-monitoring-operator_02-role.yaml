@@ -216,9 +216,9 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - networking.k8s.io
+  - extensions
   resources:
-  - networkpolicies
+  - ingresses
   verbs:
   - list
   - watch
@@ -233,20 +233,18 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
-  resources:
-  - daemonsets
-  - deployments
-  - ingresses
-  - replicasets
-  verbs:
-  - list
-  - watch
-- apiGroups:
   - storage.k8s.io
   resources:
   - storageclasses
   - volumeattachments
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  - networkpolicies
   verbs:
   - list
   - watch
@@ -295,6 +293,13 @@ rules:
   - resourcequotas
   - secrets
   - services
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
   verbs:
   - list
   - watch
@@ -410,6 +415,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - alertmanagerconfigs
@@ -443,14 +456,6 @@ rules:
   - ''
   resources:
   - namespaces
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingresses
   verbs:
   - get
   - list

@@ -69,8 +69,8 @@
           "subdir": ""
         }
       },
-      "version": "3d4f68cead695d2717d606f80246ffcfd7b1f08b",
-      "sum": "u3MNX6g4bWVXQ32c6FFR+tLb9+gu6EZnaf8sxpV13rA="
+      "version": "0e9fc466b492e45cfd1a59a09ab10162bf8b1baa",
+      "sum": "1GkBTf5DP+tYDimZZUrdoDkx0Cr5yeil3odK7Ilbfuc="
     },
     {
       "source": {
@@ -89,8 +89,8 @@
           "subdir": "jsonnet/kube-state-metrics"
         }
       },
-      "version": "89aaf6c524ee891140c4c8f2a05b1b16f5847309",
-      "sum": "zD/pbQLnQq+5hegEelaheHS8mn1h09GTktFO74iwlBI="
+      "version": "aafecf305bbb5c13fcec0ba3e749d1ffcb0d93e1",
+      "sum": "S5qI+PJUdNeYOv76jH5nxwYS9N6U7CRxvyuB1wI4cTE="
     },
     {
       "source": {
@@ -99,7 +99,7 @@
           "subdir": "jsonnet/kube-state-metrics-mixin"
         }
       },
-      "version": "e974d90c2a39489a5b961a8ec22deb8b4f05a718",
+      "version": "aafecf305bbb5c13fcec0ba3e749d1ffcb0d93e1",
       "sum": "Yf8mNAHrV1YWzrdV8Ry5dJ8YblepTGw3C0Zp10XIYLo="
     },
     {
@@ -131,8 +131,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "a9961b8f6ee42780ef79a845f007e654402d0b41",
-      "sum": "zyFqKvRkacH+1nX9Fhg1NGC2bco7p91n5f4/lQbL+fw="
+      "version": "dafa0f8edd3c9c6cad5a8c1a686d4470655fc744",
+      "sum": "G2DPCOf58W6nCFwwbrVI0IsTyy2Q1cZz9CJkHrXEtIM="
     },
     {
       "source": {

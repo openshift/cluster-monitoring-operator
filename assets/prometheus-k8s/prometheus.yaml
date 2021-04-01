@@ -164,6 +164,7 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
+  externalLabels: {}
   image: quay.io/prometheus/prometheus:v2.24.0
   listenLocal: true
   nodeSelector:
