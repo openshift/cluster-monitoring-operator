@@ -317,7 +317,7 @@ data:
     # on the hub cluster.
     - '{__name__="visual_web_terminal_sessions_total"}'
     #
-    # (Advanced Cluster Management, @open-cluster-management/squad-clusterlifecycle-admins) acm_managed_cluster_info provides Subscription watch and other information for the managed clusters for an ACM Hub cluster.
+    # (Advanced Cluster Management, @open-cluster-management/cluster-lifecycle-admin) acm_managed_cluster_info provides Subscription watch and other information for the managed clusters for an ACM Hub cluster.
     - '{__name__="acm_managed_cluster_info"}'
     #
     # (@openshift/storage, OpenShift Storage team) VMWare vCenter info: version of the vCenter where cluster runs
