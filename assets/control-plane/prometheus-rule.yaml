@@ -112,7 +112,7 @@ spec:
     - alert: KubeDaemonSetRolloutStuck
       annotations:
         description: DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has
-          not finished or progressed for at least 15 minutes.
+          not finished or progressed for at least 30 minutes.
         summary: DaemonSet rollout is stuck.
       expr: |
         (
