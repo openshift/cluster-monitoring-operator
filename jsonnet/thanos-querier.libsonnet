@@ -334,7 +334,7 @@ function(params)
                 resources: {
                   requests: {
                     memory: '12Mi',
-                    cpu: '5m',
+                    cpu: '10m',
                   },
                 },
                 ports: [
