@@ -76,7 +76,7 @@ spec:
               http://localhost:9090/-/ready; else exit 1; fi
         resources:
           requests:
-            cpu: 5m
+            cpu: 10m
             memory: 12Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
