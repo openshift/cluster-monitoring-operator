@@ -23,6 +23,8 @@ spec:
       maxUnavailable: 0
   template:
     metadata:
+      annotations:
+        workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: metrics-adapter
         app.kubernetes.io/managed-by: cluster-monitoring-operator

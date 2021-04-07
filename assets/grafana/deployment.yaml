@@ -22,6 +22,7 @@ spec:
       annotations:
         checksum/grafana-config: 4edd2a7c41f827b93497c2d118a926e7
         checksum/grafana-datasources: 0fc2251d80a7fdcb28e58d9944addd91
+        workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: grafana
         app.kubernetes.io/managed-by: cluster-monitoring-operator

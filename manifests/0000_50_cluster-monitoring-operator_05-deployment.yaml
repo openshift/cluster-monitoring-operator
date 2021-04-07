@@ -17,6 +17,8 @@ spec:
     metadata:
       labels:
         app: cluster-monitoring-operator
+      annotations:
+        workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
     spec:
       serviceAccountName: cluster-monitoring-operator
       nodeSelector:
