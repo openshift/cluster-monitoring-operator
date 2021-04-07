@@ -110,6 +110,8 @@ function(params)
                     c {
                       args+: [
                         '--metric-denylist=kube_secret_labels',
+                        // Explictly allow the node labels that are required by Telemetry rules.
+                        '--metric-labels-allowlist=nodes=[label_beta_kubernetes_io_instance_type,label_node_role_kubernetes_io,label_kubernetes_io_arch,label_node_openshift_io_os_id]',
                       ],
                       securityContext: {},
                       resources: {
