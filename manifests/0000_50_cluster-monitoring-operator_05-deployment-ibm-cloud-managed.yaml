@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+  labels:
+    app: cluster-monitoring-operator
+  name: cluster-monitoring-operator
+  namespace: openshift-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-monitoring-operator
+  template:
+    metadata:
+      labels:
+        app: cluster-monitoring-operator
+    spec:
+      containers:
+      - args:
+        - --logtostderr
+        - --secure-listen-address=:8443
+        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - --upstream=http://127.0.0.1:8080/
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        image: quay.io/openshift/origin-kube-rbac-proxy:latest
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+        resources:
+          requests:
+            cpu: 1m
+            memory: 20Mi
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: cluster-monitoring-operator-tls
+          readOnly: false
+      - args:
+        - -namespace=openshift-monitoring
+        - -namespace-user-workload=openshift-user-workload-monitoring
+        - -configmap=cluster-monitoring-config
+        - -release-version=$(RELEASE_VERSION)
+        - -logtostderr=true
+        - -v=2
+        - -images=prometheus-operator=quay.io/openshift/origin-prometheus-operator:latest
+        - -images=prometheus-config-reloader=quay.io/openshift/origin-prometheus-config-reloader:latest
+        - -images=configmap-reloader=quay.io/openshift/origin-configmap-reloader:latest
+        - -images=prometheus=quay.io/openshift/origin-prometheus:latest
+        - -images=alertmanager=quay.io/openshift/origin-prometheus-alertmanager:latest
+        - -images=grafana=quay.io/openshift/origin-grafana:latest
+        - -images=oauth-proxy=quay.io/openshift/origin-oauth-proxy:latest
+        - -images=node-exporter=quay.io/openshift/origin-prometheus-node-exporter:latest
+        - -images=kube-state-metrics=quay.io/openshift/origin-kube-state-metrics:latest
+        - -images=openshift-state-metrics=quay.io/openshift/origin-openshift-state-metrics:latest
+        - -images=kube-rbac-proxy=quay.io/openshift/origin-kube-rbac-proxy:latest
+        - -images=telemeter-client=quay.io/openshift/origin-telemeter:latest
+        - -images=prom-label-proxy=quay.io/openshift/origin-prom-label-proxy:latest
+        - -images=k8s-prometheus-adapter=quay.io/openshift/origin-k8s-prometheus-adapter:latest
+        - -images=thanos=quay.io/openshift/origin-thanos:latest
+        env:
+        - name: RELEASE_VERSION
+          value: 0.0.1-snapshot
+        image: quay.io/openshift/origin-cluster-monitoring-operator:latest
+        name: cluster-monitoring-operator
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/cluster-monitoring-operator/telemetry
+          name: telemetry-config
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+      serviceAccountName: cluster-monitoring-operator
+      tolerations:
+      - effect: NoSchedule
+        key: node.kubernetes.io/memory-pressure
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 120
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 120
+      volumes:
+      - configMap:
+          name: telemetry-config
+        name: telemetry-config
+      - name: cluster-monitoring-operator-tls
+        secret:
+          optional: true
+          secretName: cluster-monitoring-operator-tls
