@@ -314,7 +314,7 @@ function(params)
         ruleSelector: {},
         ruleNamespaceSelector: {},
         listenLocal: true,
-        priorityClassName: 'openshift-user-critical',
+        priorityClassName: 'system-cluster-critical',
         containers: [
           {
             name: 'prometheus-proxy',
