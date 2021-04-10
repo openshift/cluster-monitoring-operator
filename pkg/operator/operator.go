@@ -37,6 +37,76 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
 )
 
+// InfrastructureConfig stores information about the cluster infrastructure
+// which is useful for the operator.
+type InfrastructureConfig struct {
+	highlyAvailableInfrastructure bool
+	hostedControlPlane            bool
+}
+
+// NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
+func NewDefaultInfrastructureConfig() *InfrastructureConfig {
+	return &InfrastructureConfig{
+		highlyAvailableInfrastructure: true,
+		hostedControlPlane:            false,
+	}
+}
+
+// NewInfrastructureConfig returns a new InfrastructureConfig from the given config.openshift.io/Infrastructure resource.
+func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
+	ic := NewDefaultInfrastructureConfig()
+
+	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
+		ic.highlyAvailableInfrastructure = false
+	}
+	if i.Status.Platform == configv1.IBMCloudPlatformType {
+		ic.hostedControlPlane = true
+	}
+
+	return ic
+}
+
+// HighlyAvailableInfrastructure implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HighlyAvailableInfrastructure() bool {
+	return ic.highlyAvailableInfrastructure
+}
+
+// HostedControlPlane implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HostedControlPlane() bool {
+	return ic.hostedControlPlane
+}
+
+// ProxyConfig stores information about the proxy configuration.
+type ProxyConfig struct {
+	httpProxy  string
+	httpsProxy string
+	noProxy    string
+}
+
+// NewProxyConfig returns a new ProxyConfig from the given config.openshift.io/Proxy resource.
+func NewProxyConfig(p *configv1.Proxy) *ProxyConfig {
+	return &ProxyConfig{
+		httpProxy:  p.Status.HTTPProxy,
+		httpsProxy: p.Status.HTTPSProxy,
+		noProxy:    p.Status.NoProxy,
+	}
+}
+
+// HTTPProxy implements the ProxyReader interface.
+func (pc *ProxyConfig) HTTPProxy() string {
+	return pc.httpProxy
+}
+
+// HTTPSProxy implements the ProxyReader interface.
+func (pc *ProxyConfig) HTTPSProxy() string {
+	return pc.httpsProxy
+}
+
+// NoProxy implements the ProxyReader interface.
+func (pc *ProxyConfig) NoProxy() string {
+	return pc.noProxy
+}
+
 const (
 	resyncPeriod = 15 * time.Minute
 
@@ -50,18 +120,20 @@ const (
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
 
 	// Canonical name of the cluster-wide infrastrucure resource.
-	clusterInfrastructure = "cluster"
+	clusterResourceName = "cluster"
 )
 
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName                string
-	userWorkloadConfigMapName    string
-	images                       map[string]string
-	telemetryMatches             []string
-	remoteWrite                  bool
-	lastKnowInfrastructureConfig *manifests.InfrastructureConfig
+	configMapName             string
+	userWorkloadConfigMapName string
+	images                    map[string]string
+	telemetryMatches          []string
+	remoteWrite               bool
+
+	lastKnowInfrastructureConfig *InfrastructureConfig
+	lastKnowProxyConfig          *ProxyConfig
 
 	client *client.Client
 
@@ -160,7 +232,7 @@ func New(
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
-		o.client.InfrastructureListWatchForResource(context.TODO(), clusterInfrastructure),
+		o.client.InfrastructureListWatchForResource(context.TODO(), clusterResourceName),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -361,20 +433,13 @@ func (o *Operator) sync(key string) error {
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
 
-	infrastructureConfig, err := o.loadInfrastructureConfig()
+	var proxyConfig manifests.ProxyReader
+	proxyConfig, err = o.loadProxyConfig()
 	if err != nil {
-		klog.Errorf("Error getting cluster infrastructure: %v", err)
-		infrastructureConfig = manifests.NewDefaultInfrastructureConfig()
-		if o.lastKnowInfrastructureConfig != nil {
-			infrastructureConfig = o.lastKnowInfrastructureConfig
-		}
-	} else {
-		o.lastKnowInfrastructureConfig = infrastructureConfig
+		klog.Warningf("using proxy config from CMO configmap: %v", err)
+		proxyConfig = config
 	}
-
-	klog.V(4).Infof("Cluster infrastructure configuration: HighlyAvailable=%t HostedControlPlane=%t", infrastructureConfig.HighlyAvailableInfrastructure(), infrastructureConfig.HostedControlPlane())
-
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, infrastructureConfig, o.assets)
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(), proxyConfig, o.assets)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
@@ -424,20 +489,47 @@ func (o *Operator) sync(key string) error {
 	return nil
 }
 
-func (o *Operator) loadInfrastructureConfig() (*manifests.InfrastructureConfig, error) {
-	infrastructure, err := o.client.GetInfrastructure(clusterInfrastructure)
+func (o *Operator) loadInfrastructureConfig() *InfrastructureConfig {
+	var infrastructureConfig *InfrastructureConfig
+
+	infrastructure, err := o.client.GetInfrastructure(clusterResourceName)
 	if err != nil {
-		err = errors.Wrap(err, "error getting cluster infrastructure")
-		klog.Info(err)
-		reportErr := o.client.StatusReporter().SetFailed(err, "FailedInfrastructureConfig")
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
+		klog.Warningf("Error getting cluster infrastructure: %v", err)
+
+		if o.lastKnowInfrastructureConfig == nil {
+			klog.Warning("No last known infrastructure configuration, assuming default configuration")
+			return NewDefaultInfrastructureConfig()
 		}
-		return nil, err
+
+		klog.Info("Using last known infrastructure configuration")
+	} else {
+		klog.V(5).Infof("Cluster infrastructure: plaform=%s controlPlaneTopology=%s infrastructureTopology=%s", infrastructure.Status.Platform, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
+
+		infrastructureConfig = NewInfrastructureConfig(infrastructure)
+		o.lastKnowInfrastructureConfig = infrastructureConfig
 	}
 
-	klog.V(5).Infof("Cluster infrastructure: plaform=%s controlPlaneTopology=%s infrastructureTopology=%s", infrastructure.Status.Platform, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
-	return manifests.NewInfrastructureConfig(infrastructure), nil
+	return o.lastKnowInfrastructureConfig
+}
+
+func (o *Operator) loadProxyConfig() (*ProxyConfig, error) {
+	var proxyConfig *ProxyConfig
+
+	proxy, err := o.client.GetProxy(clusterResourceName)
+	if err != nil {
+		klog.Warningf("Error getting cluster proxy configuration: %v", err)
+
+		if o.lastKnowProxyConfig == nil {
+			return nil, errors.Errorf("no last known cluster proxy configuration")
+		}
+
+		klog.Info("Using last known proxy configuration")
+	} else {
+		proxyConfig = NewProxyConfig(proxy)
+		o.lastKnowProxyConfig = proxyConfig
+	}
+
+	return o.lastKnowProxyConfig, nil
 }
 
 func (o *Operator) loadUserWorkloadConfig() (*manifests.UserWorkloadConfiguration, error) {
@@ -530,13 +622,6 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		if err != nil {
 			klog.Warningf("Error loading token from API. Proceeding without it: %v", err)
 		}
-	}
-
-	err = c.LoadProxy(func() (*configv1.Proxy, error) {
-		return o.client.GetProxy("cluster")
-	})
-	if err != nil {
-		klog.Warningf("Could not load proxy configuration from API. This is expected and message can be ignored when proxy configuration doesn't exist. Proceeding without it: %v", err)
 	}
 
 	cm, err := o.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")

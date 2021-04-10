@@ -39,45 +39,6 @@ type Config struct {
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
 }
 
-// InfrastructureConfig stores information about the cluster infrastructure
-// which is useful for the operator.
-type InfrastructureConfig struct {
-	highlyAvailableInfrastructure bool
-	hostedControlPlane            bool
-}
-
-// NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
-func NewDefaultInfrastructureConfig() *InfrastructureConfig {
-	return &InfrastructureConfig{
-		highlyAvailableInfrastructure: true,
-		hostedControlPlane:            false,
-	}
-}
-
-// NewInfrastructureConfig returns a new InfrastructureConfig from the given config.openshift.io/Infrastructure resource.
-func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
-	ic := NewDefaultInfrastructureConfig()
-
-	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
-		ic.highlyAvailableInfrastructure = false
-	}
-	if i.Status.Platform == configv1.IBMCloudPlatformType {
-		ic.hostedControlPlane = true
-	}
-
-	return ic
-}
-
-// HighlyAvailableInfrastructure implements the InfrastructureReader interface.
-func (ic *InfrastructureConfig) HighlyAvailableInfrastructure() bool {
-	return ic.highlyAvailableInfrastructure
-}
-
-// HostedControlPlane implements the InfrastructureReader interface.
-func (ic *InfrastructureConfig) HostedControlPlane() bool {
-	return ic.hostedControlPlane
-}
-
 type ClusterMonitoringConfiguration struct {
 	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
 	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`
@@ -359,21 +320,19 @@ func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 	return nil
 }
 
-func (c *Config) LoadProxy(load func() (*configv1.Proxy, error)) error {
-	if c.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy != "" || c.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy != "" || c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy != "" {
-		return nil
-	}
+// HTTPProxy implements the ProxyReader interface.
+func (c *Config) HTTPProxy() string {
+	return c.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy
+}
 
-	p, err := load()
-	if err != nil {
-		return fmt.Errorf("error loading proxy: %v", err)
-	}
+// HTTPSProxy implements the ProxyReader interface.
+func (c *Config) HTTPSProxy() string {
+	return c.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy
+}
 
-	c.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy = p.Status.HTTPProxy
-	c.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy = p.Status.HTTPSProxy
-	c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy = p.Status.NoProxy
-
-	return nil
+// NoProxy implements the ProxyReader interface.
+func (c *Config) NoProxy() string {
+	return c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy
 }
 
 func NewConfigFromString(content string) (*Config, error) {
