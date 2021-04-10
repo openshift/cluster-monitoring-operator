@@ -216,13 +216,6 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - extensions
-  resources:
-  - ingresses
-  verbs:
-  - list
-  - watch
-- apiGroups:
   - apps
   resources:
   - daemonsets

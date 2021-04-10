@@ -109,10 +109,3 @@ rules:
   verbs:
   - list
   - watch
-- apiGroups:
-  - extensions
-  resources:
-  - ingresses
-  verbs:
-  - list
-  - watch
