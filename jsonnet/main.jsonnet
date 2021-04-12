@@ -45,7 +45,7 @@ local commonConfig = {
     grafana: '7.3.5',
     kubeStateMetrics: '2.0.0-rc.1',
     nodeExporter: '1.0.1',
-    prometheusAdapter: '0.8.2',
+    prometheusAdapter: '0.8.4',
     prometheusOperator: '0.45.0',
     promLabelProxy: '0.2.0',
     thanos: '0.17.2',
