@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-adapter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.8.2
+    app.kubernetes.io/version: 0.8.4
   name: v1beta1.metrics.k8s.io
 spec:
   group: metrics.k8s.io

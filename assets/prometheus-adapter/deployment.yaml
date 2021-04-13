@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-adapter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.8.2
+    app.kubernetes.io/version: 0.8.4
   name: prometheus-adapter
   namespace: openshift-monitoring
 spec:
@@ -28,7 +28,7 @@ spec:
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: prometheus-adapter
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 0.8.2
+        app.kubernetes.io/version: 0.8.4
     spec:
       containers:
       - args:
@@ -38,7 +38,7 @@ spec:
         - --metrics-relist-interval=1m
         - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
         - --secure-port=6443
-        image: directxman12/k8s-prometheus-adapter:v0.8.2
+        image: directxman12/k8s-prometheus-adapter:v0.8.4
         name: prometheus-adapter
         ports:
         - containerPort: 6443
