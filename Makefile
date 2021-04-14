@@ -88,7 +88,8 @@ $(JB_BIN):
 	chmod +x $(GOPATH)/bin/jb
 
 $(JSONNET_BIN):
-	go get -u github.com/google/go-jsonnet/cmd/jsonnet
+	wget -qO- "https://github.com/google/jsonnet/releases/download/v0.16.0/jsonnet-bin-v0.16.0-linux.tar.gz" | tar xvz -C $(GOPATH)/bin
+	chmod +x $(GOPATH)/bin/jsonnet
 
 test-unit:
 	go test $(PKGS)
