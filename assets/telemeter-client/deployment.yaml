@@ -12,6 +12,8 @@ spec:
       k8s-app: telemeter-client
   template:
     metadata:
+      annotations:
+        workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         k8s-app: telemeter-client
     spec:

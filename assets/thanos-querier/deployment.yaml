@@ -17,6 +17,8 @@ spec:
       app.kubernetes.io/name: thanos-query
   template:
     metadata:
+      annotations:
+        workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: query-layer
         app.kubernetes.io/instance: thanos-querier
