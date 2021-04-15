@@ -251,6 +251,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 					"Progressing", "False",
 					"Upgradeable", "True",
 				),
+				hasUnavailableMessage(),
 			},
 		},
 		{
@@ -278,6 +279,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 					"Progressing", "False",
 					"Upgradeable", "True",
 				),
+				hasUnavailableMessage(),
 			},
 		},
 	} {
@@ -355,6 +357,18 @@ func hasUpdatedStatusConditions(want ...string) checkFunc {
 		}
 		if !reflect.DeepEqual(got, want) {
 			return fmt.Errorf("want conditions to be equal, but they aren't: want %q got %q", want, got)
+		}
+		return nil
+	}
+}
+
+func hasUnavailableMessage() checkFunc {
+	return func(mock *clusterOperatorMock, _ error) error {
+		sort.Sort(byType(mock.statusUpdated.Status.Conditions))
+		for _, c := range mock.statusUpdated.Status.Conditions {
+			if c.Type == v1.OperatorAvailable && c.Status == v1.ConditionFalse && c.Message == "" {
+				return fmt.Errorf("want a message if available status is false, got %q", c.Message)
+			}
 		}
 		return nil
 	}
