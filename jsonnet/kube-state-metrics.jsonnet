@@ -38,6 +38,26 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                 serverName: 'server-name-replaced-at-runtime',
               },
+              // Drop the "instance" and "pod" labels since we're runinng only
+              // one instance of kube-state-metrics. The "instance" label must be
+              // dropped at the metrics relabeling stage (instead of the service
+              // discovery stage) because otherwise Prometheus will default its
+              // value to the address being scraped.
+              // The net result is to avoid excessive series churn when
+              // kube-state-metrics is redeployed because of node reboot, pod
+              // rescheduling or cluster upgrade.
+              metricRelabelings: [
+                {
+                  action: 'labeldrop',
+                  regex: 'instance',
+                },
+              ],
+              relabelings: [
+                {
+                  action: 'labeldrop',
+                  regex: 'pod',
+                },
+              ],
             },
             {
               bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
