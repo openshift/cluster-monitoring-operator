@@ -15,8 +15,9 @@ local prometheusAdapter = (import 'github.com/prometheus-operator/kube-prometheu
 
 function(params)
   local cfg = params;
+  local pa = prometheusAdapter(cfg);
 
-  prometheusAdapter(cfg) + {
+  pa {
     clusterRoleAggregatedMetricsReader+:
       {
         metadata+: {
@@ -69,8 +70,27 @@ function(params)
       {
         spec+: {
           replicas: 2,
+          strategy+: {
+            // Apply HA conventions
+            rollingUpdate: {
+              maxUnavailable: '25%',
+            },
+          },
           template+: {
             spec+: {
+              affinity+: {
+                podAntiAffinity: {
+                  // Apply HA conventons
+                  requiredDuringSchedulingIgnoredDuringExecution: [
+                    {
+                      labelSelector: {
+                        matchLabels: pa.config.selectorLabels,
+                      },
+                      topologyKey: 'kubernetes.io/hostname',
+                    },
+                  ],
+                },
+              },
               containers:
                 std.map(
                   function(c)
