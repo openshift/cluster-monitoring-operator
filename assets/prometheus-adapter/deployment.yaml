@@ -33,14 +33,16 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/component: metrics-adapter
-                app.kubernetes.io/managed-by: cluster-monitoring-operator
-                app.kubernetes.io/name: prometheus-adapter
-                app.kubernetes.io/part-of: openshift-monitoring
-            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: metrics-adapter
+                  app.kubernetes.io/managed-by: cluster-monitoring-operator
+                  app.kubernetes.io/name: prometheus-adapter
+                  app.kubernetes.io/part-of: openshift-monitoring
+              topologyKey: kubernetes.io/hostname
+            weight: 1
       containers:
       - args:
         - --prometheus-auth-config=/etc/prometheus-config/prometheus-config.yaml

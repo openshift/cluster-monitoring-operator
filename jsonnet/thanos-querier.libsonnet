@@ -277,12 +277,15 @@ function(params)
             affinity+: {
               podAntiAffinity: {
                 // Apply HA conventons
-                requiredDuringSchedulingIgnoredDuringExecution: [
+                preferredDuringSchedulingIgnoredDuringExecution: [
                   {
-                    labelSelector: {
-                      matchLabels: tq.config.podLabelSelector,
-                    },
-                    topologyKey: 'kubernetes.io/hostname',
+                    weight: 1,
+                    podAffinityTerm: {
+                      labelSelector: {
+                        matchLabels: tq.config.podLabelSelector,
+                      },
+                      topologyKey: 'kubernetes.io/hostname',
+                    }
                   },
                 ],
               },
