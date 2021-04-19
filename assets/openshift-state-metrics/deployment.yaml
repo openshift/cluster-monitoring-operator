@@ -13,7 +13,7 @@ spec:
   template:
     metadata:
       annotations:
-        workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         k8s-app: openshift-state-metrics
     spec:

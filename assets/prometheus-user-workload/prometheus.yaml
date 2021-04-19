@@ -120,7 +120,7 @@ spec:
   overrideHonorTimestamps: true
   podMetadata:
     annotations:
-      workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
     labels:
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/managed-by: cluster-monitoring-operator
