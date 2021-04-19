@@ -266,27 +266,8 @@ function(params)
 
     deployment+: {
       spec+: {
-        strategy+: {
-          // Apply HA conventions
-          rollingUpdate: {
-            maxUnavailable: '25%',
-          },
-        },
         template+: {
           spec+: {
-            affinity+: {
-              podAntiAffinity: {
-                // Apply HA conventons
-                requiredDuringSchedulingIgnoredDuringExecution: [
-                  {
-                    labelSelector: {
-                      matchLabels: tq.config.podLabelSelector,
-                    },
-                    topologyKey: 'kubernetes.io/hostname',
-                  },
-                ],
-              },
-            },
             volumes+: [
               {
                 name: 'secret-thanos-querier-tls',

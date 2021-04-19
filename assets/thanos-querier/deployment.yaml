@@ -15,9 +15,6 @@ spec:
       app.kubernetes.io/component: query-layer
       app.kubernetes.io/instance: thanos-querier
       app.kubernetes.io/name: thanos-query
-  strategy:
-    rollingUpdate:
-      maxUnavailable: 25%
   template:
     metadata:
       annotations:
@@ -30,13 +27,18 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/component: query-layer
-                app.kubernetes.io/instance: thanos-querier
-                app.kubernetes.io/name: thanos-query
-            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - thanos-query
+              namespaces:
+              - openshift-monitoring
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - query
