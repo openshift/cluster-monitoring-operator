@@ -35,7 +35,7 @@ func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Fa
 }
 
 func (t *ThanosRulerUserWorkloadTask) Run() error {
-	if t.config.IsUserWorkloadEnabled() {
+	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		return t.create()
 	}
 

@@ -37,7 +37,7 @@ func NewPrometheusUserWorkloadTask(client *client.Client, factory *manifests.Fac
 }
 
 func (t *PrometheusUserWorkloadTask) Run() error {
-	if t.config.IsUserWorkloadEnabled() {
+	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		return t.create()
 	}
 

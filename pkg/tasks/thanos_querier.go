@@ -203,7 +203,7 @@ func (t *ThanosQuerierTask) Run() error {
 			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
 		}
 
-		dep, err := t.factory.ThanosQuerierDeployment(s, t.config.IsUserWorkloadEnabled(), trustedCA)
+		dep, err := t.factory.ThanosQuerierDeployment(s, *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled, trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "initializing Thanos Querier Deployment failed")
 		}
