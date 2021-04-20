@@ -87,6 +87,7 @@ function(params)
               },
             super.endpoints,
           ) +
+          // Collect metrics from CRI-O.
           [{
             interval: '30s',
             port: 'https-metrics',
@@ -108,6 +109,14 @@ function(params)
                 action: 'replace',
                 targetLabel: 'job',
                 replacement: 'crio',
+              },
+            ],
+            // Drop metrics with excessive label cardinality.
+            metricRelabelings: [
+              {
+                sourceLabels: ['endpoint'],
+                regex: 'container_runtime_crio_image_pulls_by_digest|container_runtime_crio_image_layer_reuse|container_runtime_crio_image_pulls_by_name|container_runtime_crio_image_pulls_successes',
+                action: 'drop',
               },
             ],
           }],
