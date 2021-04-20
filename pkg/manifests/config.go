@@ -24,7 +24,6 @@ import (
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -52,8 +51,6 @@ type ClusterMonitoringConfiguration struct {
 	K8sPrometheusAdapter     *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
 	ThanosQuerierConfig      *ThanosQuerierConfig         `json:"thanosQuerier"`
 	UserWorkloadEnabled      *bool                        `json:"enableUserWorkload"`
-	// TODO: remove in 4.8, this is here to ensure we warn users that their config will not work.
-	UserWorkloadConfig *UserWorkloadConfig `json:"techPreviewUserWorkload"`
 }
 
 type Images struct {
@@ -152,10 +149,6 @@ func (e *EtcdConfig) IsEnabled() bool {
 	return *e.Enabled
 }
 
-type UserWorkloadConfig struct {
-	Enabled *bool `json:"enabled"`
-}
-
 type TelemeterClientConfig struct {
 	ClusterID          string            `json:"clusterID"`
 	Enabled            *bool             `json:"enabled"`
@@ -242,9 +235,6 @@ func (c *Config) applyDefaults() {
 	}
 	if c.ClusterMonitoringConfiguration.EtcdConfig == nil {
 		c.ClusterMonitoringConfiguration.EtcdConfig = &EtcdConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.UserWorkloadConfig == nil {
-		c.ClusterMonitoringConfiguration.UserWorkloadConfig = &UserWorkloadConfig{}
 	}
 }
 
@@ -401,24 +391,4 @@ func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {
 	u := &UserWorkloadConfiguration{}
 	u.applyDefaults()
 	return u
-}
-
-// IsUserWorkloadEnabled checks if user workload monitoring is
-// enabled. If old techPreview configuration exists, we warn user in logs.
-func (c *Config) IsUserWorkloadEnabled() bool {
-	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled == true {
-		return true
-	}
-
-	return c.ClusterMonitoringConfiguration.UserWorkloadConfig.isEnabled()
-}
-
-// return false, as this configuration is techPreview
-// and depracted from 4.7 onwards.
-// Instead warn user in the logs.
-func (c *UserWorkloadConfig) isEnabled() bool {
-	if c.Enabled != nil {
-		klog.Warning("DEPRECATED: Migrate to new user workload monitoring configuration, this tech preview was removed.")
-	}
-	return false
 }

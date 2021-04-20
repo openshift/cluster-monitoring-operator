@@ -601,8 +601,6 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-	} else if c.ClusterMonitoringConfiguration.UserWorkloadConfig != nil && c.ClusterMonitoringConfiguration.UserWorkloadConfig.Enabled != nil && *c.ClusterMonitoringConfiguration.UserWorkloadConfig.Enabled {
-		klog.Warningf("User Workload Monitoring enabled via the deprecated 'techPreviewUserWorkload' setting in %q configmap. Use the 'enableUserWorkload' setting instead.", key)
 	}
 
 	// Only fetch the token and cluster ID if they have not been specified in the config.
