@@ -86,6 +86,11 @@ spec:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
       insecureSkipVerify: false
   - interval: 30s
+    metricRelabelings:
+    - action: drop
+      regex: container_runtime_crio_image_pulls_by_digest|container_runtime_crio_image_layer_reuse|container_runtime_crio_image_pulls_by_name|container_runtime_crio_image_pulls_successes
+      sourceLabels:
+      - endpoint
     port: https-metrics
     relabelings:
     - action: replace
