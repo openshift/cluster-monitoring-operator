@@ -1567,80 +1567,85 @@ func TestThanosRulerConfiguration(t *testing.T) {
 }
 
 func TestNonHighlyAvailableInfrastructure(t *testing.T) {
+	type spec struct {
+		replicas int32
+		affinity *v1.Affinity
+	}
+
 	tests := []struct {
-		name        string
-		getReplicas func(f *Factory) (int32, error)
+		name    string
+		getSpec func(f *Factory) (spec, error)
 	}{
 		{
 			name: "Prometheus",
-			getReplicas: func(f *Factory) (int32, error) {
+			getSpec: func(f *Factory) (spec, error) {
 				p, err := f.PrometheusK8s(
 					"prometheus-k8s.openshift-monitoring.svc",
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				)
 				if err != nil {
-					return 0, err
+					return spec{}, err
 				}
-				return *p.Spec.Replicas, nil
+				return spec{*p.Spec.Replicas, p.Spec.Affinity}, nil
 			},
 		},
 		{
 			name: "Alertmanager",
-			getReplicas: func(f *Factory) (int32, error) {
+			getSpec: func(f *Factory) (spec, error) {
 				a, err := f.AlertmanagerMain(
 					"alertmanager-main.openshift-monitoring.svc",
 					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				)
 				if err != nil {
-					return 0, err
+					return spec{}, err
 				}
-				return *a.Spec.Replicas, nil
+				return spec{*a.Spec.Replicas, a.Spec.Affinity}, nil
 			},
 		},
 		{
 			name: "Thanos querier",
-			getReplicas: func(f *Factory) (int32, error) {
+			getSpec: func(f *Factory) (spec, error) {
 				q, err := f.ThanosQuerierDeployment(
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					true,
 					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				)
 				if err != nil {
-					return 0, err
+					return spec{}, err
 				}
-				return *q.Spec.Replicas, nil
+				return spec{*q.Spec.Replicas, q.Spec.Template.Spec.Affinity}, nil
 			},
 		},
 		{
 			name: "Prometheus (user-workload)",
-			getReplicas: func(f *Factory) (int32, error) {
+			getSpec: func(f *Factory) (spec, error) {
 				p, err := f.PrometheusUserWorkload(
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				)
 				if err != nil {
-					return 0, err
+					return spec{}, err
 				}
-				return *p.Spec.Replicas, nil
+				return spec{*p.Spec.Replicas, p.Spec.Affinity}, nil
 			},
 		},
 		{
 			name: "Thanos ruler",
-			getReplicas: func(f *Factory) (int32, error) {
+			getSpec: func(f *Factory) (spec, error) {
 				t, err := f.ThanosRulerCustomResource(
 					"",
 					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				)
 				if err != nil {
-					return 0, err
+					return spec{}, err
 				}
-				return *t.Spec.Replicas, nil
+				return spec{*t.Spec.Replicas, t.Spec.Affinity}, nil
 			},
 		},
 		{
 			name: "Prometheus adapter",
-			getReplicas: func(f *Factory) (int32, error) {
+			getSpec: func(f *Factory) (spec, error) {
 				p, err := f.PrometheusAdapterDeployment(
 					"foo",
 					map[string]string{
@@ -1650,22 +1655,26 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 						"requestheader-username-headers":     "",
 					})
 				if err != nil {
-					return 0, err
+					return spec{}, err
 				}
-				return *p.Spec.Replicas, nil
+				return spec{*p.Spec.Replicas, p.Spec.Template.Spec.Affinity}, nil
 			},
 		},
 	}
 
 	for _, tc := range tests {
 		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: false}, &fakeProxyReader{}, NewAssets(assetsPath))
-		replicas, err := tc.getReplicas(f)
+		spec, err := tc.getSpec(f)
 		if err != nil {
 			t.Error(err)
 		}
 
-		if replicas != 1 {
-			t.Errorf("expecting 1 replica, got %d", replicas)
+		if spec.replicas != 1 {
+			t.Errorf("expecting 1 replica, got %d", spec.replicas)
+		}
+
+		if spec.affinity != nil {
+			t.Errorf("expected no affinity constraints with 1 replica, got %v", spec.affinity)
 		}
 	}
 }

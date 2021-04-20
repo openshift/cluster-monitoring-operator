@@ -2557,6 +2557,7 @@ func (f *Factory) NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		p.Spec.Replicas = func(i int32) *int32 { return &i }(1)
+		p.Spec.Affinity = nil
 	}
 
 	return p, nil
@@ -2614,6 +2615,7 @@ func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, erro
 
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		a.Spec.Replicas = func(i int32) *int32 { return &i }(1)
+		a.Spec.Affinity = nil
 	}
 
 	return a, nil
@@ -2631,6 +2633,7 @@ func (f *Factory) NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error)
 
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		t.Spec.Replicas = func(i int32) *int32 { return &i }(1)
+		t.Spec.Affinity = nil
 	}
 
 	return t, nil
@@ -2661,6 +2664,7 @@ func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) 
 
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		d.Spec.Replicas = func(i int32) *int32 { return &i }(1)
+		d.Spec.Template.Spec.Affinity = nil
 	}
 
 	return d, nil
