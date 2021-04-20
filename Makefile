@@ -130,8 +130,9 @@ go-fmt:
 	go fmt $(PKGS)
 
 .PHONY: jsonnet-fmt
+export JSONNETFMT_BIN
 jsonnet-fmt: $(JSONNETFMT_BIN)
-	find jsonnet/ -name 'vendor' -prune -o -name '*.libsonnet' -print -o -name '*.jsonnet' -print | xargs -n 1 -- $(JSONNETFMT_BIN) -i
+	hack/format-jsonnet.sh
 
 .PHONY: shellcheck
 shellcheck:
