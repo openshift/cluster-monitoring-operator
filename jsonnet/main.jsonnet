@@ -392,6 +392,6 @@ removeRunbookUrl(patchRules(excludeRules(addWorkloadAnnotation(addReleaseAnnotat
   { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
   { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
   { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
-  { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } + 
+  { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
   {}
 ))))))
