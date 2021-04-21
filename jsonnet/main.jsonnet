@@ -96,6 +96,16 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                },
                prometheusAdapter+:: {
                  prometheusURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
+                 config+: {
+                   resourceRules+: {
+                     cpu+: {
+                       nodeQuery: 'sum(1 - irate(node_cpu_seconds_total{mode="idle"}[5m]) * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{<<.LabelMatchers>>}) by (<<.GroupBy>>) or sum(1- irate(windows_cpu_time_total{mode=\"idle\", job=\"windows-exporter\",<<.LabelMatchers>>}[5m])) by (<<.GroupBy>>)',
+                     },
+                     memory+: {
+                       nodeQuery: 'sum(node_memory_MemTotal_bytes{job="node-exporter",<<.LabelMatchers>>} - node_memory_MemAvailable_bytes{job="node-exporter",<<.LabelMatchers>>}) by (<<.GroupBy>>) or sum(windows_cs_physical_memory_bytes{job=\"windows-exporter\",<<.LabelMatchers>>} - windows_memory_available_bytes{job=\"windows-exporter\",<<.LabelMatchers>>}) by (<<.GroupBy>>)',
+                     },
+                   },
+                 },
                },
                etcd+:: {
                  ips: [],
