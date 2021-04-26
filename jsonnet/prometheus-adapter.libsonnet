@@ -86,7 +86,7 @@ function(params)
                   requiredDuringSchedulingIgnoredDuringExecution: [
                     {
                       labelSelector: {
-                        matchLabels: pa.config.selectorLabels,
+                        matchLabels: pa._config.selectorLabels,
                       },
                       topologyKey: 'kubernetes.io/hostname',
                     },
