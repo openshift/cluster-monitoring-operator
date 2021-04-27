@@ -485,6 +485,10 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             expr: 'sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))',
             record: 'build_error_rate',
           },
+          {
+            expr: 'sum by (strategy) (openshift_build_status_phase_total)',
+            record: 'openshift:build_by_strategy:sum',
+          },
         ],
       },
       {
