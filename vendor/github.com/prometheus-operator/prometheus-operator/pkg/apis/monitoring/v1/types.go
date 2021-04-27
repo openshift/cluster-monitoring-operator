@@ -373,6 +373,8 @@ type PrometheusSpec struct {
 	// the desired limit.
 	// Note that if TargetLimit is higher that value will be taken instead.
 	EnforcedTargetLimit *uint64 `json:"enforcedTargetLimit,omitempty"`
+	// AlertmanagerEndpoints specifies a list of endpoints that Prometheus should fire against.
+	AlertmanagerEndpoints []AlertmanagerEndpoints `json:"alertmanagerEndpoints"`
 }
 
 // PrometheusRuleExcludeConfig enables users to configure excluded PrometheusRule names and their namespaces

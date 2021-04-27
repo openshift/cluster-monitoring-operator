@@ -83,15 +83,16 @@ type PrometheusOperatorConfig struct {
 }
 
 type PrometheusK8sConfig struct {
-	LogLevel            string                               `json:"logLevel"`
-	Retention           string                               `json:"retention"`
-	NodeSelector        map[string]string                    `json:"nodeSelector"`
-	Tolerations         []v1.Toleration                      `json:"tolerations"`
-	Resources           *v1.ResourceRequirements             `json:"resources"`
-	ExternalLabels      map[string]string                    `json:"externalLabels"`
-	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
-	TelemetryMatches    []string                             `json:"-"`
+	LogLevel              string                               `json:"logLevel"`
+	Retention             string                               `json:"retention"`
+	NodeSelector          map[string]string                    `json:"nodeSelector"`
+	Tolerations           []v1.Toleration                      `json:"tolerations"`
+	Resources             *v1.ResourceRequirements             `json:"resources"`
+	ExternalLabels        map[string]string                    `json:"externalLabels"`
+	VolumeClaimTemplate   *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	RemoteWrite           []monv1.RemoteWriteSpec              `json:"remoteWrite"`
+	TelemetryMatches      []string                             `json:"-"`
+	AlertmanagerEndpoints []monv1.AlertmanagerEndpoints        `json:"alertmanagerEndpoints"`
 }
 
 type AlertmanagerMainConfig struct {
