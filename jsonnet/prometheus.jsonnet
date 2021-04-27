@@ -236,6 +236,7 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
                 },
               super.endpoints,
             ) +
+            // Collect metrics from CRI-O.
             [{
               interval: '30s',
               port: 'https-metrics',
@@ -259,6 +260,15 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
                   replacement: 'crio',
                 },
               ],
+              // Drop metrics with excessive label cardinality.
+              metricRelabelings: [
+                {
+                  sourceLabels: ['__name__'],
+                  regex: 'container_runtime_crio_image_layer_reuse|container_runtime_crio_image_pulls_.+',
+                  action: 'drop',
+                },
+              ],
+
             }],
         },
       },
