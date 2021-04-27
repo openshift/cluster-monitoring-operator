@@ -321,7 +321,7 @@ local inCluster =
     telemeterClient: telemeterClient($.values.telemeterClient),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
-  (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
+  (import './anti-affinity.libsonnet') +
   ibmCloudManagedProfile +
   {};
 
@@ -370,7 +370,7 @@ local userWorkload =
     prometheus: prometheusUserWorkload($.values.prometheus),
     prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
   } +
-  (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet') +
+  (import './anti-affinity.libsonnet') +
   {};
 
 // Manifestation

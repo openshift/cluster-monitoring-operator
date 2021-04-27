@@ -274,6 +274,8 @@ function(params)
         },
         template+: {
           spec+: {
+            // TODO(dgrisonnet): remove once the upstream anti-affinity addon
+            // can be extended.
             affinity+: {
               podAntiAffinity: {
                 // Apply HA conventions
