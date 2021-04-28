@@ -603,7 +603,7 @@ func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Prometheus object failed")
 		}
-		status, _, err := prometheusoperator.PrometheusStatus(context.TODO(), c.kclient.(*kubernetes.Clientset), p)
+		status, _, err := prometheusoperator.Status(context.TODO(), c.kclient.(*kubernetes.Clientset), p)
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Prometheus status failed")
 		}
@@ -636,7 +636,7 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Alertmanager object failed")
 		}
-		status, _, err := alertmanager.AlertmanagerStatus(context.TODO(), c.kclient.(*kubernetes.Clientset), a)
+		status, _, err := alertmanager.Status(context.TODO(), c.kclient.(*kubernetes.Clientset), a)
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Alertmanager status failed")
 		}
@@ -669,7 +669,7 @@ func (c *Client) WaitForThanosRuler(t *monv1.ThanosRuler) error {
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Thanos Ruler object failed")
 		}
-		status, _, err := thanos.ThanosRulerStatus(context.TODO(), c.kclient.(*kubernetes.Clientset), tr)
+		status, _, err := thanos.RulerStatus(context.TODO(), c.kclient.(*kubernetes.Clientset), tr)
 		if err != nil {
 			return false, errors.Wrap(err, "retrieving Thanos Ruler status failed")
 		}
