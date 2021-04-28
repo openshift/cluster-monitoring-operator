@@ -5,7 +5,6 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: prometheus-operator-tls
   labels:
     app.kubernetes.io/component: controller
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.45.0
@@ -22,6 +21,5 @@ spec:
     targetPort: 8080
   selector:
     app.kubernetes.io/component: controller
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring

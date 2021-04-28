@@ -1869,7 +1869,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -3111,7 +3110,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -5641,7 +5639,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -7891,7 +7888,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -8865,7 +8861,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -10597,7 +10592,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -12579,7 +12573,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -14726,7 +14719,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -16186,7 +16178,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -17146,7 +17137,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -18133,7 +18123,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -19357,7 +19346,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
@@ -20580,7 +20568,6 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.3.5
