@@ -302,6 +302,7 @@ func (cg *configGenerator) generateConfig(
 				probes[identifier],
 				apiserverConfig,
 				basicAuthSecrets,
+				bearerTokens,
 				p.Spec.OverrideHonorLabels,
 				p.Spec.OverrideHonorTimestamps,
 				p.Spec.IgnoreNamespaceSelectors,
@@ -378,11 +379,11 @@ func (cg *configGenerator) generateConfig(
 		},
 	})
 
-	if len(p.Spec.RemoteWrite) > 0 && version.Major >= 2 {
+	if len(p.Spec.RemoteWrite) > 0 {
 		cfg = append(cfg, cg.generateRemoteWriteConfig(version, p, basicAuthSecrets))
 	}
 
-	if len(p.Spec.RemoteRead) > 0 && version.Major >= 2 {
+	if len(p.Spec.RemoteRead) > 0 {
 		cfg = append(cfg, cg.generateRemoteReadConfig(version, p, basicAuthSecrets))
 	}
 
@@ -417,6 +418,16 @@ func honorTimestamps(cfg yaml.MapSlice, userHonorTimestamps *bool, overrideHonor
 	return append(cfg, yaml.MapItem{Key: "honor_timestamps", Value: honor && !overrideHonorTimestamps})
 }
 
+func initRelabelings() []yaml.MapSlice {
+	// Relabel prometheus job name into a meta label
+	return []yaml.MapSlice{
+		{
+			{Key: "source_labels", Value: []string{"job"}},
+			{Key: "target_label", Value: "__tmp_prometheus_job_name"},
+		},
+	}
+}
+
 func (cg *configGenerator) generatePodMonitorConfig(
 	version semver.Version,
 	m *v1.PodMonitor,
@@ -436,7 +447,7 @@ func (cg *configGenerator) generatePodMonitorConfig(
 	cfg := yaml.MapSlice{
 		{
 			Key:   "job_name",
-			Value: fmt.Sprintf("%s/%s/%d", m.Namespace, m.Name, i),
+			Value: fmt.Sprintf("podMonitor/%s/%s/%d", m.Namespace, m.Name, i),
 		},
 		{
 			Key:   "honor_labels",
@@ -447,15 +458,8 @@ func (cg *configGenerator) generatePodMonitorConfig(
 		cfg = honorTimestamps(cfg, ep.HonorTimestamps, overrideHonorTimestamps)
 	}
 
-	if version.Major == 1 && version.Minor < 7 {
-		if apiserverConfig != nil {
-			level.Info(cg.logger).Log("msg", "custom apiserver config is set but it will not take effect because prometheus version is < 1.7")
-		}
-		cfg = append(cfg, cg.generateK8SSDConfig(nil, nil, nil, kubernetesSDRolePod))
-	} else {
-		selectedNamespaces := getNamespacesFromNamespaceSelector(&m.Spec.NamespaceSelector, m.Namespace, ignoreNamespaceSelectors)
-		cfg = append(cfg, cg.generateK8SSDConfig(selectedNamespaces, apiserverConfig, basicAuthSecrets, kubernetesSDRolePod))
-	}
+	selectedNamespaces := getNamespacesFromNamespaceSelector(&m.Spec.NamespaceSelector, m.Namespace, ignoreNamespaceSelectors)
+	cfg = append(cfg, cg.generateK8SSDConfig(selectedNamespaces, apiserverConfig, basicAuthSecrets, kubernetesSDRolePod))
 
 	if ep.Interval != "" {
 		cfg = append(cfg, yaml.MapItem{Key: "scrape_interval", Value: ep.Interval})
@@ -497,10 +501,9 @@ func (cg *configGenerator) generatePodMonitorConfig(
 		}
 	}
 
-	var (
-		relabelings []yaml.MapSlice
-		labelKeys   []string
-	)
+	relabelings := initRelabelings()
+
+	var labelKeys []string
 	// Filter targets by pods selected by the monitor.
 	// Exact label matches.
 	for k := range m.Spec.Selector.MatchLabels {
@@ -546,10 +549,6 @@ func (cg *configGenerator) generatePodMonitorConfig(
 		}
 	}
 
-	if version.Major == 1 && version.Minor < 7 {
-		relabelings = appendPre17RelabelConfig(relabelings, m.Namespace, m.Spec.NamespaceSelector, ignoreNamespaceSelectors)
-	}
-
 	// Filter targets based on correct port for the endpoint.
 	if ep.Port != "" {
 		relabelings = append(relabelings, yaml.MapSlice{
@@ -557,16 +556,17 @@ func (cg *configGenerator) generatePodMonitorConfig(
 			{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_container_port_name"}},
 			{Key: "regex", Value: ep.Port},
 		})
-	} else if ep.TargetPort != nil {
+	} else if ep.TargetPort != nil { //nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
 		level.Warn(cg.logger).Log("msg", "PodMonitor 'targetPort' is deprecated, use 'port' instead.",
 			"podMonitor", m.Name)
+		//nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
 		if ep.TargetPort.StrVal != "" {
 			relabelings = append(relabelings, yaml.MapSlice{
 				{Key: "action", Value: "keep"},
 				{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_container_port_name"}},
 				{Key: "regex", Value: ep.TargetPort.String()},
 			})
-		} else if ep.TargetPort.IntVal != 0 {
+		} else if ep.TargetPort.IntVal != 0 { //nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
 			relabelings = append(relabelings, yaml.MapSlice{
 				{Key: "action", Value: "keep"},
 				{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_container_port_number"}},
@@ -625,10 +625,10 @@ func (cg *configGenerator) generatePodMonitorConfig(
 			{Key: "target_label", Value: "endpoint"},
 			{Key: "replacement", Value: ep.Port},
 		})
-	} else if ep.TargetPort != nil && ep.TargetPort.String() != "" {
+	} else if ep.TargetPort != nil && ep.TargetPort.String() != "" { //nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
 		relabelings = append(relabelings, yaml.MapSlice{
 			{Key: "target_label", Value: "endpoint"},
-			{Key: "replacement", Value: ep.TargetPort.String()},
+			{Key: "replacement", Value: ep.TargetPort.String()}, //nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
 		})
 	}
 
@@ -674,12 +674,13 @@ func (cg *configGenerator) generateProbeConfig(
 	m *v1.Probe,
 	apiserverConfig *v1.APIServerConfig,
 	basicAuthSecrets map[string]assets.BasicAuthCredentials,
+	bearerTokens map[string]assets.BearerToken,
 	ignoreHonorLabels bool,
 	overrideHonorTimestamps bool,
 	ignoreNamespaceSelectors bool,
 	enforcedNamespaceLabel string) yaml.MapSlice {
 
-	jobName := fmt.Sprintf("%s/%s", m.Namespace, m.Name)
+	jobName := fmt.Sprintf("probe/%s/%s", m.Namespace, m.Name)
 	cfg := yaml.MapSlice{
 		{
 			Key:   "job_name",
@@ -710,7 +711,8 @@ func (cg *configGenerator) generateProbeConfig(
 		{Key: "module", Value: []string{m.Spec.Module}},
 	}})
 
-	var relabelings []yaml.MapSlice
+	relabelings := initRelabelings()
+
 	if m.Spec.JobName != "" {
 		relabelings = append(relabelings, []yaml.MapSlice{
 			{
@@ -726,10 +728,16 @@ func (cg *configGenerator) generateProbeConfig(
 		}
 
 		if m.Spec.Targets.StaticConfig.Labels != nil {
-			staticConfig = append(staticConfig, yaml.MapSlice{
-				{Key: "labels", Value: m.Spec.Targets.StaticConfig.Labels},
-			}...)
+			if _, ok := m.Spec.Targets.StaticConfig.Labels["namespace"]; !ok {
+				m.Spec.Targets.StaticConfig.Labels["namespace"] = m.Namespace
+			}
+		} else {
+			m.Spec.Targets.StaticConfig.Labels = map[string]string{"namespace": m.Namespace}
 		}
+
+		staticConfig = append(staticConfig, yaml.MapSlice{
+			{Key: "labels", Value: m.Spec.Targets.StaticConfig.Labels},
+		}...)
 
 		cfg = append(cfg, yaml.MapItem{
 			Key:   "static_configs",
@@ -751,6 +759,13 @@ func (cg *configGenerator) generateProbeConfig(
 				{Key: "replacement", Value: m.Spec.ProberSpec.URL},
 			},
 		}...)
+
+		// Add configured relabelings.
+		if m.Spec.Targets.StaticConfig.RelabelConfigs != nil {
+			for _, r := range m.Spec.Targets.StaticConfig.RelabelConfigs {
+				relabelings = append(relabelings, generateRelabelConfig(r))
+			}
+		}
 
 		cfg = append(cfg, yaml.MapItem{Key: "relabel_configs", Value: enforceNamespaceLabel(relabelings, m.Namespace, enforcedNamespaceLabel)})
 	}
@@ -805,15 +820,8 @@ func (cg *configGenerator) generateProbeConfig(
 			}
 		}
 
-		if version.Major == 1 && version.Minor < 7 {
-			if apiserverConfig != nil {
-				level.Info(cg.logger).Log("msg", "custom apiserver config is set but it will not take effect because prometheus version is < 1.7")
-			}
-			cfg = append(cfg, cg.generateK8SSDConfig(nil, nil, nil, kubernetesSDRoleIngress))
-		} else {
-			selectedNamespaces := getNamespacesFromNamespaceSelector(&m.Spec.Targets.Ingress.NamespaceSelector, m.Namespace, ignoreNamespaceSelectors)
-			cfg = append(cfg, cg.generateK8SSDConfig(selectedNamespaces, apiserverConfig, basicAuthSecrets, kubernetesSDRoleIngress))
-		}
+		selectedNamespaces := getNamespacesFromNamespaceSelector(&m.Spec.Targets.Ingress.NamespaceSelector, m.Namespace, ignoreNamespaceSelectors)
+		cfg = append(cfg, cg.generateK8SSDConfig(selectedNamespaces, apiserverConfig, basicAuthSecrets, kubernetesSDRoleIngress))
 
 		// Relabelings for ingress SD.
 		relabelings = append(relabelings, []yaml.MapSlice{
@@ -859,6 +867,28 @@ func (cg *configGenerator) generateProbeConfig(
 
 	}
 
+	if m.Spec.TLSConfig != nil {
+		cfg = addSafeTLStoYaml(cfg, m.Namespace, m.Spec.TLSConfig.SafeTLSConfig)
+	}
+
+	if m.Spec.BearerTokenSecret.Name != "" {
+		pnKey := fmt.Sprintf("probe/%s/%s", m.GetNamespace(), m.GetName())
+		if s, ok := bearerTokens[pnKey]; ok {
+			cfg = append(cfg, yaml.MapItem{Key: "bearer_token", Value: s})
+		}
+	}
+
+	if m.Spec.BasicAuth != nil {
+		if s, ok := basicAuthSecrets[fmt.Sprintf("probe/%s/%s", m.Namespace, m.Name)]; ok {
+			cfg = append(cfg, yaml.MapItem{
+				Key: "basic_auth", Value: yaml.MapSlice{
+					{Key: "username", Value: s.Username},
+					{Key: "password", Value: s.Password},
+				},
+			})
+		}
+	}
+
 	return cfg
 }
 
@@ -882,7 +912,7 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 	cfg := yaml.MapSlice{
 		{
 			Key:   "job_name",
-			Value: fmt.Sprintf("%s/%s/%d", m.Namespace, m.Name, i),
+			Value: fmt.Sprintf("serviceMonitor/%s/%s/%d", m.Namespace, m.Name, i),
 		},
 		{
 			Key:   "honor_labels",
@@ -893,15 +923,8 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 		cfg = honorTimestamps(cfg, ep.HonorTimestamps, overrideHonorTimestamps)
 	}
 
-	if version.Major == 1 && version.Minor < 7 {
-		if apiserverConfig != nil {
-			level.Info(cg.logger).Log("msg", "custom apiserver config is set but it will not take effect because prometheus version is < 1.7")
-		}
-		cfg = append(cfg, cg.generateK8SSDConfig(nil, nil, nil, kubernetesSDRoleEndpoint))
-	} else {
-		selectedNamespaces := getNamespacesFromNamespaceSelector(&m.Spec.NamespaceSelector, m.Namespace, ignoreNamespaceSelectors)
-		cfg = append(cfg, cg.generateK8SSDConfig(selectedNamespaces, apiserverConfig, basicAuthSecrets, kubernetesSDRoleEndpoint))
-	}
+	selectedNamespaces := getNamespacesFromNamespaceSelector(&m.Spec.NamespaceSelector, m.Namespace, ignoreNamespaceSelectors)
+	cfg = append(cfg, cg.generateK8SSDConfig(selectedNamespaces, apiserverConfig, basicAuthSecrets, kubernetesSDRoleEndpoint))
 
 	if ep.Interval != "" {
 		cfg = append(cfg, yaml.MapItem{Key: "scrape_interval", Value: ep.Interval})
@@ -945,7 +968,7 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 		}
 	}
 
-	var relabelings []yaml.MapSlice
+	relabelings := initRelabelings()
 
 	// Filter targets by services selected by the monitor.
 
@@ -992,10 +1015,6 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 				{Key: "regex", Value: "true"},
 			})
 		}
-	}
-
-	if version.Major == 1 && version.Minor < 7 {
-		relabelings = appendPre17RelabelConfig(relabelings, m.Namespace, m.Spec.NamespaceSelector, ignoreNamespaceSelectors)
 	}
 
 	// Filter targets based on correct port for the endpoint.
@@ -1166,41 +1185,6 @@ func generateAddressShardingRelabelingRules(relabelings []yaml.MapSlice, shards 
 	})
 }
 
-// appendPre17RelabelConfig appends relabel config to pre-1.7 prometheus versions
-// for filtering targets based on the namespace selection configuration.
-// By default we only discover services within the current namespace.
-// Selections allow extending this to all namespaces or to a subset
-// of them specified by label or name matching.
-//
-// Label selections are not supported yet as they require either support
-// in the upstream SD integration or require out-of-band implementation
-// in the operator with configuration reload.
-//
-// There's no explicit nil for the selector, we decide for the default
-// case if it's all zero values.
-func appendPre17RelabelConfig(
-	relabelings []yaml.MapSlice,
-	namespace string,
-	nsel v1.NamespaceSelector,
-	ignoreNamespaceSelectors bool,
-) []yaml.MapSlice {
-
-	nsRegex := namespace
-	if ignoreNamespaceSelectors {
-		// namespace regex is the default/current namespace
-	} else if len(nsel.MatchNames) > 0 {
-		nsRegex = strings.Join(nsel.MatchNames, "|")
-	} else if nsel.Any {
-		// no additional relabelings necessary, just keep everything
-		return relabelings
-	}
-	return append(relabelings, yaml.MapSlice{
-		{Key: "action", Value: "keep"},
-		{Key: "source_labels", Value: []string{"__meta_kubernetes_namespace"}},
-		{Key: "regex", Value: nsRegex},
-	})
-}
-
 func enforceNamespaceLabel(relabelings []yaml.MapSlice, namespace, enforcedNamespaceLabel string) []yaml.MapSlice {
 	if enforcedNamespaceLabel == "" {
 		return relabelings
@@ -1336,19 +1320,7 @@ func (cg *configGenerator) generateAlertmanagerConfig(version semver.Version, am
 	// config as well, make sure to path the right namespace here.
 	cfg = addTLStoYaml(cfg, "", am.TLSConfig)
 
-	switch version.Major {
-	case 1:
-		if version.Minor < 7 {
-			if apiserverConfig != nil {
-				level.Info(cg.logger).Log("msg", "custom apiserver config is set but it will not take effect because prometheus version is < 1.7")
-			}
-			cfg = append(cfg, cg.generateK8SSDConfig(nil, nil, nil, kubernetesSDRoleEndpoint))
-		} else {
-			cfg = append(cfg, cg.generateK8SSDConfig([]string{am.Namespace}, apiserverConfig, basicAuthSecrets, kubernetesSDRoleEndpoint))
-		}
-	case 2:
-		cfg = append(cfg, cg.generateK8SSDConfig([]string{am.Namespace}, apiserverConfig, basicAuthSecrets, kubernetesSDRoleEndpoint))
-	}
+	cfg = append(cfg, cg.generateK8SSDConfig([]string{am.Namespace}, apiserverConfig, basicAuthSecrets, kubernetesSDRoleEndpoint))
 
 	if am.BearerTokenFile != "" {
 		cfg = append(cfg, yaml.MapItem{Key: "bearer_token_file", Value: am.BearerTokenFile})
@@ -1379,14 +1351,6 @@ func (cg *configGenerator) generateAlertmanagerConfig(version semver.Version, am
 			{Key: "action", Value: "keep"},
 			{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_container_port_number"}},
 			{Key: "regex", Value: am.Port.String()},
-		})
-	}
-
-	if version.Major == 1 && version.Minor < 7 {
-		relabelings = append(relabelings, yaml.MapSlice{
-			{Key: "action", Value: "keep"},
-			{Key: "source_labels", Value: []string{"__meta_kubernetes_namespace"}},
-			{Key: "regex", Value: am.Namespace},
 		})
 	}
 
@@ -1470,6 +1434,10 @@ func (cg *configGenerator) generateRemoteWriteConfig(version semver.Version, p *
 		cfg := yaml.MapSlice{
 			{Key: "url", Value: spec.URL},
 			{Key: "remote_timeout", Value: spec.RemoteTimeout},
+		}
+
+		if len(spec.Headers) > 0 && version.GTE(semver.MustParse("2.25.0")) {
+			cfg = append(cfg, yaml.MapItem{Key: "headers", Value: stringMapToMapSlice(spec.Headers)})
 		}
 
 		if spec.Name != "" && version.GTE(semver.MustParse("2.15.0")) {
@@ -1578,6 +1546,15 @@ func (cg *configGenerator) generateRemoteWriteConfig(version semver.Version, p *
 			}
 
 			cfg = append(cfg, yaml.MapItem{Key: "queue_config", Value: queueConfig})
+		}
+
+		if spec.MetadataConfig != nil && version.GTE(semver.MustParse("2.23.0")) {
+			metadataConfig := yaml.MapSlice{}
+			metadataConfig = append(metadataConfig, yaml.MapItem{Key: "send", Value: spec.MetadataConfig.Send})
+			if spec.MetadataConfig.SendInterval != "" {
+				metadataConfig = append(metadataConfig, yaml.MapItem{Key: "send_interval", Value: spec.MetadataConfig.SendInterval})
+			}
+			cfg = append(cfg, yaml.MapItem{Key: "metadata_config", Value: metadataConfig})
 		}
 
 		cfgs = append(cfgs, cfg)

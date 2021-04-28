@@ -141,6 +141,10 @@ func New(ctx context.Context, c operator.Config, logger log.Logger, r prometheus
 func (c *Operator) bootstrap(ctx context.Context) error {
 	var err error
 
+	if _, err := labels.Parse(c.config.AlertManagerSelector); err != nil {
+		return errors.Wrap(err, "can not parse alertmanager selector value")
+	}
+
 	c.alrtInfs, err = informers.NewInformersForResource(
 		informers.NewMonitoringInformerFactories(
 			c.config.Namespaces.AlertmanagerAllowList,
@@ -157,15 +161,19 @@ func (c *Operator) bootstrap(ctx context.Context) error {
 		return errors.Wrap(err, "error creating alertmanager informers")
 	}
 
+	var alertmanagerStores []cache.Store
+	for _, informer := range c.alrtInfs.GetInformers() {
+		alertmanagerStores = append(alertmanagerStores, informer.Informer().GetStore())
+	}
+	c.metrics.MustRegister(newAlertmanagerCollectorForStores(alertmanagerStores...))
+
 	c.alrtCfgInfs, err = informers.NewInformersForResource(
 		informers.NewMonitoringInformerFactories(
 			c.config.Namespaces.AllowList,
 			c.config.Namespaces.DenyList,
 			c.mclient,
 			resyncPeriod,
-			func(options *metav1.ListOptions) {
-				options.LabelSelector = c.config.AlertManagerSelector
-			},
+			nil,
 		),
 		monitoringv1alpha1.SchemeGroupVersion.WithResource(monitoringv1alpha1.AlertmanagerConfigName),
 	)
@@ -596,6 +604,10 @@ func (c *Operator) handleAlertmanagerDelete(obj interface{}) {
 }
 
 func (c *Operator) handleAlertmanagerUpdate(old, cur interface{}) {
+	if old.(*monitoringv1.Alertmanager).ResourceVersion == cur.(*monitoringv1.Alertmanager).ResourceVersion {
+		return
+	}
+
 	key, ok := c.keyFunc(cur)
 	if !ok {
 		return
@@ -702,7 +714,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	}
 
 	operator.SanitizeSTS(sset)
-	_, err = ssetClient.Update(ctx, sset, metav1.UpdateOptions{})
+	err = k8sutil.UpdateStatefulSet(ctx, ssetClient, sset)
 	sErr, ok := err.(*apierrors.StatusError)
 
 	if ok && sErr.ErrStatus.Code == 422 && sErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
@@ -776,7 +788,7 @@ receivers:
 		return nil
 	}
 
-	amConfigs, err := c.selectAlertManagerConfigs(ctx, am, store)
+	amConfigs, err := c.selectAlertmanagerConfigs(ctx, am, store)
 	if err != nil {
 		return errors.Wrap(err, "selecting AlertmanagerConfigs failed")
 	}
@@ -835,7 +847,7 @@ func (c *Operator) createOrUpdateGeneratedConfigSecret(ctx context.Context, am *
 		_, err = sClient.Create(ctx, generatedConfigSecret, metav1.CreateOptions{})
 		level.Debug(c.logger).Log("msg", "created generated config secret", "secretname", generatedConfigSecret.Name)
 	} else {
-		_, err = sClient.Update(ctx, generatedConfigSecret, metav1.UpdateOptions{})
+		err = k8sutil.UpdateSecret(ctx, sClient, generatedConfigSecret)
 		level.Debug(c.logger).Log("msg", "updated generated config secret", "secretname", generatedConfigSecret.Name)
 	}
 
@@ -846,8 +858,30 @@ func (c *Operator) createOrUpdateGeneratedConfigSecret(ctx context.Context, am *
 	return nil
 }
 
-func (c *Operator) selectAlertManagerConfigs(ctx context.Context, am *monitoringv1.Alertmanager, store *assets.Store) (map[string]*monitoringv1alpha1.AlertmanagerConfig, error) {
+func (c *Operator) selectAlertmanagerConfigs(ctx context.Context, am *monitoringv1.Alertmanager, store *assets.Store) (map[string]*monitoringv1alpha1.AlertmanagerConfig, error) {
 	namespaces := []string{}
+
+	// If 'AlertmanagerConfigNamespaceSelector' is nil, only check own namespace.
+	if am.Spec.AlertmanagerConfigNamespaceSelector == nil {
+		namespaces = append(namespaces, am.Namespace)
+
+		level.Debug(c.logger).Log("msg", "selecting AlertmanagerConfigs from alertmanager's namespace", "namespace", am.Namespace, "alertmanager", am.Name)
+	} else {
+		amConfigNSSelector, err := metav1.LabelSelectorAsSelector(am.Spec.AlertmanagerConfigNamespaceSelector)
+		if err != nil {
+			return nil, err
+		}
+
+		err = cache.ListAll(c.nsAlrtCfgInf.GetStore(), amConfigNSSelector, func(obj interface{}) {
+			namespaces = append(namespaces, obj.(*v1.Namespace).Name)
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to list namespaces")
+		}
+
+		level.Debug(c.logger).Log("msg", "filtering namespaces to select AlertmanagerConfigs from", "namespaces", strings.Join(namespaces, ","), "namespace", am.Namespace, "alertmanager", am.Name)
+	}
+
 	// Selectors (<namespace>/<name>) might overlap. Deduplicate them along the keyFunc.
 	amConfigs := make(map[string]*monitoringv1alpha1.AlertmanagerConfig)
 
@@ -856,30 +890,16 @@ func (c *Operator) selectAlertManagerConfigs(ctx context.Context, am *monitoring
 		return nil, err
 	}
 
-	// If 'AlertmanagerConfigNamespaceSelector' is nil, only check own namespace.
-	if am.Spec.AlertmanagerConfigNamespaceSelector == nil {
-		namespaces = append(namespaces, am.Namespace)
-	} else {
-		amConfigNSSelector, err := metav1.LabelSelectorAsSelector(am.Spec.AlertmanagerConfigNamespaceSelector)
-		if err != nil {
-			return nil, err
-		}
-
-		namespaces, err = c.listMatchingNamespaces(amConfigNSSelector)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	level.Debug(c.logger).Log("msg", "filtering namespaces to select AlertmanagerConfigs from", "namespaces", strings.Join(namespaces, ","), "namespace", am.Namespace, "alertmanager", am.Name)
-
 	for _, ns := range namespaces {
-		c.alrtCfgInfs.ListAllByNamespace(ns, amConfigSelector, func(obj interface{}) {
+		err := c.alrtCfgInfs.ListAllByNamespace(ns, amConfigSelector, func(obj interface{}) {
 			k, ok := c.keyFunc(obj)
 			if ok {
 				amConfigs[k] = obj.(*monitoringv1alpha1.AlertmanagerConfig)
 			}
 		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to list alertmanager configs in namespace %s", ns)
+		}
 	}
 
 	var rejected int
@@ -904,7 +924,7 @@ func (c *Operator) selectAlertManagerConfigs(ctx context.Context, am *monitoring
 	for k := range res {
 		amcKeys = append(amcKeys, k)
 	}
-	level.Debug(c.logger).Log("msg", "selected AlertmanagerConfigs", "aletmanagerconfigs", strings.Join(amcKeys, ","), "namespace", am.Namespace, "prometheus", am.Name)
+	level.Debug(c.logger).Log("msg", "selected AlertmanagerConfigs", "alertmanagerconfigs", strings.Join(amcKeys, ","), "namespace", am.Namespace, "prometheus", am.Name)
 
 	if amKey, ok := c.keyFunc(am); ok {
 		c.metrics.SetSelectedResources(amKey, monitoringv1alpha1.AlertmanagerConfigKind, len(res))
@@ -922,7 +942,7 @@ func checkAlertmanagerConfig(ctx context.Context, amc *monitoringv1alpha1.Alertm
 		return err
 	}
 
-	return checkAlertmanagerRoutes(amc.Spec.Route, receiverNames)
+	return checkAlertmanagerRoutes(amc.Spec.Route, receiverNames, true)
 }
 
 func checkReceivers(ctx context.Context, amc *monitoringv1alpha1.AlertmanagerConfig, store *assets.Store) (map[string]struct{}, error) {
@@ -1074,10 +1094,10 @@ func checkWechatConfigs(ctx context.Context, configs []monitoringv1alpha1.WeChat
 	for i, config := range configs {
 		wechatConfigKey := fmt.Sprintf("%s/wechat/%d", key, i)
 
-		if config.APIURL != nil {
-			_, err := url.Parse(*config.APIURL)
+		if len(config.APIURL) > 0 {
+			_, err := url.Parse(config.APIURL)
 			if err != nil {
-				return errors.New("api url not valid")
+				return errors.New("API URL not valid")
 			}
 		}
 
@@ -1098,12 +1118,12 @@ func checkWechatConfigs(ctx context.Context, configs []monitoringv1alpha1.WeChat
 func checkEmailConfigs(ctx context.Context, configs []monitoringv1alpha1.EmailConfig, namespace string, key string, store *assets.Store) error {
 	for _, config := range configs {
 
-		if config.To == nil || *config.To == "" {
+		if config.To == "" {
 			return errors.New("missing to address in email config")
 		}
 
-		if config.Smarthost != nil {
-			_, _, err := net.SplitHostPort(*config.Smarthost)
+		if config.Smarthost != "" {
+			_, _, err := net.SplitHostPort(config.Smarthost)
 			if err != nil {
 				return errors.New("invalid email field SMARTHOST")
 			}
@@ -1167,7 +1187,7 @@ func checkVictorOpsConfigs(ctx context.Context, configs []monitoringv1alpha1.Vic
 			}
 		}
 
-		if config.RoutingKey == nil || *config.RoutingKey == "" {
+		if config.RoutingKey == "" {
 			return errors.New("missing Routing key in VictorOps config")
 		}
 
@@ -1205,14 +1225,14 @@ func checkPushoverConfigs(ctx context.Context, configs []monitoringv1alpha1.Push
 			return err
 		}
 
-		if config.Retry != nil {
-			_, err := time.ParseDuration(*config.Retry)
+		if config.Retry != "" {
+			_, err := time.ParseDuration(config.Retry)
 			if err != nil {
 				return errors.New("invalid retry duration")
 			}
 		}
-		if config.Expire != nil {
-			_, err := time.ParseDuration(*config.Expire)
+		if config.Expire != "" {
+			_, err := time.ParseDuration(config.Expire)
 			if err != nil {
 				return errors.New("invalid expire duration")
 			}
@@ -1228,12 +1248,12 @@ func checkPushoverConfigs(ctx context.Context, configs []monitoringv1alpha1.Push
 }
 
 // checkAlertmanagerRoutes verifies that the given route and all its children are semantically valid.
-func checkAlertmanagerRoutes(r *monitoringv1alpha1.Route, receivers map[string]struct{}) error {
+func checkAlertmanagerRoutes(r *monitoringv1alpha1.Route, receivers map[string]struct{}, topLevelRoute bool) error {
 	if r == nil {
 		return nil
 	}
 
-	if _, found := receivers[r.Receiver]; !found {
+	if _, found := receivers[r.Receiver]; !found && (r.Receiver != "" || topLevelRoute) {
 		return errors.Errorf("receiver %q not found", r.Receiver)
 	}
 
@@ -1243,7 +1263,7 @@ func checkAlertmanagerRoutes(r *monitoringv1alpha1.Route, receivers map[string]s
 	}
 
 	for i := range children {
-		if err := checkAlertmanagerRoutes(&children[i], receivers); err != nil {
+		if err := checkAlertmanagerRoutes(&children[i], receivers, false); err != nil {
 			return errors.Wrapf(err, "route[%d]", i)
 		}
 	}
@@ -1272,19 +1292,6 @@ func configureHTTPConfigInStore(ctx context.Context, httpConfig *monitoringv1alp
 		return err
 	}
 	return nil
-}
-
-// listMatchingNamespaces lists all the namespaces that match the provided
-// selector.
-func (c *Operator) listMatchingNamespaces(selector labels.Selector) ([]string, error) {
-	var ns []string
-	err := cache.ListAll(c.nsAlrtInf.GetStore(), selector, func(obj interface{}) {
-		ns = append(ns, obj.(*v1.Namespace).Name)
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list namespaces")
-	}
-	return ns, nil
 }
 
 func (c *Operator) createOrUpdateTLSAssetSecret(ctx context.Context, am *monitoringv1.Alertmanager, store *assets.Store) error {
@@ -1327,7 +1334,7 @@ func (c *Operator) createOrUpdateTLSAssetSecret(ctx context.Context, am *monitor
 		level.Debug(c.logger).Log("msg", "created tlsAssetsSecret", "secretname", tlsAssetsSecret.Name)
 
 	} else {
-		_, err = sClient.Update(ctx, tlsAssetsSecret, metav1.UpdateOptions{})
+		err = k8sutil.UpdateSecret(ctx, sClient, tlsAssetsSecret)
 		level.Debug(c.logger).Log("msg", "updated tlsAssetsSecret", "secretname", tlsAssetsSecret.Name)
 	}
 
@@ -1361,7 +1368,7 @@ func ListOptions(name string) metav1.ListOptions {
 	}
 }
 
-func AlertmanagerStatus(ctx context.Context, kclient kubernetes.Interface, a *monitoringv1.Alertmanager) (*monitoringv1.AlertmanagerStatus, []v1.Pod, error) {
+func Status(ctx context.Context, kclient kubernetes.Interface, a *monitoringv1.Alertmanager) (*monitoringv1.AlertmanagerStatus, []v1.Pod, error) {
 	res := &monitoringv1.AlertmanagerStatus{Paused: a.Spec.Paused}
 
 	pods, err := kclient.CoreV1().Pods(a.Namespace).List(ctx, ListOptions(a.Name))

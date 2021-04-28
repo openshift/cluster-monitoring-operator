@@ -136,9 +136,7 @@ func makeStatefulSet(tr *monitoringv1.ThanosRuler, config Config, ruleConfigMapN
 		statefulset.Spec.VolumeClaimTemplates = append(statefulset.Spec.VolumeClaimTemplates, *pvcTemplate)
 	}
 
-	for _, volume := range tr.Spec.Volumes {
-		statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, volume)
-	}
+	statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, tr.Spec.Volumes...)
 
 	return statefulset, nil
 }
@@ -354,6 +352,9 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 		}
 	}
 	podLabels["app"] = thanosRulerLabel
+	podLabels["app.kubernetes.io/name"] = thanosRulerLabel
+	podLabels["app.kubernetes.io/managed-by"] = "prometheus-operator"
+	podLabels["app.kubernetes.io/instance"] = tr.Name
 	podLabels[thanosRulerLabel] = tr.Name
 	finalLabels := config.Labels.Merge(podLabels)
 
