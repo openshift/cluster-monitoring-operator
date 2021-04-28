@@ -71,7 +71,7 @@ spec:
   listenLocal: true
   podMetadata:
     annotations:
-      workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
   priorityClassName: openshift-user-critical
   queryConfig:
     key: query.yaml
