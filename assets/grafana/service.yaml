@@ -5,7 +5,6 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: grafana-tls
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.5.4
@@ -18,7 +17,6 @@ spec:
     targetPort: https
   selector:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
   type: ClusterIP

@@ -3,7 +3,6 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.5.4
@@ -14,18 +13,16 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: grafana
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
   template:
     metadata:
       annotations:
-        checksum/grafana-config: 705d4c1dcb7c109c75ff0cd0c3c01f57
-        checksum/grafana-datasources: f52aced66bec4c115f263b169a35c080
+        checksum/grafana-config: 440c001c3245e195b95a75871ea3fe0b
+        checksum/grafana-datasources: 0195bd1ad46537bd9f70d31a09fae335
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: grafana
-        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: grafana
         app.kubernetes.io/part-of: openshift-monitoring
         app.kubernetes.io/version: 7.5.4

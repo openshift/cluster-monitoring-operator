@@ -3,7 +3,6 @@ kind: PrometheusRule
 metadata:
   labels:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
     prometheus: k8s

@@ -71,7 +71,6 @@ local commonConfig = {
   // Labels applied to every object
   commonLabels: {
     'app.kubernetes.io/part-of': 'openshift-monitoring',
-    'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
   },
 };
 

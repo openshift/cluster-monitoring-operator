@@ -3,7 +3,6 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: metrics-adapter
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-adapter
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.8.4
@@ -14,7 +13,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: metrics-adapter
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus-adapter
       app.kubernetes.io/part-of: openshift-monitoring
   strategy:
@@ -26,7 +24,6 @@ spec:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: metrics-adapter
-        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: prometheus-adapter
         app.kubernetes.io/part-of: openshift-monitoring
         app.kubernetes.io/version: 0.8.4
@@ -37,7 +34,6 @@ spec:
           - labelSelector:
               matchLabels:
                 app.kubernetes.io/component: metrics-adapter
-                app.kubernetes.io/managed-by: cluster-monitoring-operator
                 app.kubernetes.io/name: prometheus-adapter
                 app.kubernetes.io/part-of: openshift-monitoring
             namespaces:
