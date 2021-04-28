@@ -40,6 +40,8 @@ spec:
                 app.kubernetes.io/managed-by: cluster-monitoring-operator
                 app.kubernetes.io/name: prometheus-adapter
                 app.kubernetes.io/part-of: openshift-monitoring
+            namespaces:
+            - openshift-monitoring
             topologyKey: kubernetes.io/hostname
       containers:
       - args:

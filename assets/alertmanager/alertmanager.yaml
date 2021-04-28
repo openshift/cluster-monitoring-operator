@@ -16,11 +16,11 @@ spec:
       preferredDuringSchedulingIgnoredDuringExecution:
       - podAffinityTerm:
           labelSelector:
-            matchExpressions:
-            - key: alertmanager
-              operator: In
-              values:
-              - main
+            matchLabels:
+              app.kubernetes.io/component: alert-router
+              app.kubernetes.io/managed-by: cluster-monitoring-operator
+              app.kubernetes.io/name: alertmanager
+              app.kubernetes.io/part-of: openshift-monitoring
           namespaces:
           - openshift-monitoring
           topologyKey: kubernetes.io/hostname

@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.0.0-rc.1
+    app.kubernetes.io/version: 2.0.0
   name: kube-state-metrics
   namespace: openshift-monitoring
 spec:
@@ -20,13 +20,14 @@ spec:
   template:
     metadata:
       annotations:
+        kubectl.kubernetes.io/default-container: kube-state-metrics
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: exporter
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 2.0.0-rc.1
+        app.kubernetes.io/version: 2.0.0
     spec:
       containers:
       - args:
@@ -35,7 +36,7 @@ spec:
         - --telemetry-host=127.0.0.1
         - --telemetry-port=8082
         - --metric-denylist=kube_secret_labels
-        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0-rc.1
+        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0
         name: kube-state-metrics
         resources:
           requests:

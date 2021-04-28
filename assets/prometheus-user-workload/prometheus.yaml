@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.24.0
+    app.kubernetes.io/version: 2.26.0
     prometheus: user-workload
   name: user-workload
   namespace: openshift-user-workload-monitoring
@@ -15,11 +15,12 @@ spec:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
       - labelSelector:
-          matchExpressions:
-          - key: prometheus
-            operator: In
-            values:
-            - user-workload
+          matchLabels:
+            app.kubernetes.io/component: prometheus
+            app.kubernetes.io/managed-by: cluster-monitoring-operator
+            app.kubernetes.io/name: prometheus
+            app.kubernetes.io/part-of: openshift-monitoring
+            prometheus: user-workload
         namespaces:
         - openshift-user-workload-monitoring
         topologyKey: kubernetes.io/hostname
@@ -110,7 +111,7 @@ spec:
   enforcedNamespaceLabel: namespace
   externalLabels: {}
   ignoreNamespaceSelectors: true
-  image: quay.io/prometheus/prometheus:v2.24.0
+  image: quay.io/prometheus/prometheus:v2.26.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -124,7 +125,7 @@ spec:
       app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.24.0
+      app.kubernetes.io/version: 2.26.0
   podMonitorNamespaceSelector: {}
   podMonitorSelector: {}
   priorityClassName: openshift-user-critical
@@ -150,10 +151,10 @@ spec:
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/thanos/thanos:v0.17.2
+    image: quay.io/thanos/thanos:v0.19.0
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: 0.17.2
-  version: 2.24.0
+    version: 0.19.0
+  version: 2.26.0
