@@ -1219,8 +1219,8 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		}
 	}
 
-	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerEndpoints) > 0 {
-		p.Spec.AlertmanagerEndpoints = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerEndpoints
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AdditionalAlertManagerConfigs != nil {
+		p.Spec.AdditionalAlertManagerConfigs = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AdditionalAlertManagerConfigs
 	}
 
 	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
@@ -1402,8 +1402,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		}
 	}
 
-	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerEndpoints) > 0 {
-		p.Spec.AlertmanagerEndpoints = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerEndpoints
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AdditionalAlertManagerConfigs != nil {
+		p.Spec.AdditionalAlertManagerConfigs = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AdditionalAlertManagerConfigs
 	}
 
 	if len(f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite) > 0 {
