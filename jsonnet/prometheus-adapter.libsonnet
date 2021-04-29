@@ -78,6 +78,8 @@ function(params)
           },
           template+: {
             spec+: {
+              // TODO(dgrisonnet): remove with kube-prometheus release-0.8
+              // sync.
               affinity+: {
                 podAntiAffinity: {
                   // Apply HA conventions
