@@ -62,6 +62,10 @@ spec:
       regex: container_(network_tcp_usage_total|network_udp_usage_total|tasks_state|cpu_load_average_10s)
       sourceLabels:
       - __name__
+    - action: drop
+      regex: container_memory_failures_total
+      sourceLabels:
+      - __name__
     path: /metrics/cadvisor
     port: https-metrics
     relabelings:
