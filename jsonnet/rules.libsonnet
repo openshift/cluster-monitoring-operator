@@ -111,7 +111,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
                   cluster:master_nodes
                   * on(node) group_left() max by(node)
                   (
-                    kube_node_status_capacity_cpu_cores
+                    kube_node_status_capacity{resource="cpu",unit="core"}
                   )
                 )
                 or on(node) (
@@ -120,7 +120,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
                     kube_node_labels
                   ) * on(node) group_left() max by(node)
                   (
-                    kube_node_status_capacity_cpu_cores
+                    kube_node_status_capacity{resource="cpu",unit="core"}
                   )
                 )
               )
@@ -180,7 +180,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
                   cluster:master_nodes
                   * on(node) group_left() max by(node)
                   (
-                    kube_node_status_capacity_memory_bytes
+                    kube_node_status_capacity{resource="memory",unit="byte"}
                   )
                 )
                 or on(node)
@@ -191,7 +191,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
                   )
                   * on(node) group_left() max by(node)
                   (
-                    kube_node_status_capacity_memory_bytes
+                    kube_node_status_capacity{resource="memory",unit="byte"}
                   )
                 )
               )
