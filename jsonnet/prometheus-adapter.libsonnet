@@ -78,21 +78,6 @@ function(params)
           },
           template+: {
             spec+: {
-              // TODO(dgrisonnet): remove with kube-prometheus release-0.8
-              // sync.
-              affinity+: {
-                podAntiAffinity: {
-                  // Apply HA conventions
-                  requiredDuringSchedulingIgnoredDuringExecution: [
-                    {
-                      labelSelector: {
-                        matchLabels: pa._config.selectorLabels,
-                      },
-                      topologyKey: 'kubernetes.io/hostname',
-                    },
-                  ],
-                },
-              },
               containers:
                 std.map(
                   function(c)

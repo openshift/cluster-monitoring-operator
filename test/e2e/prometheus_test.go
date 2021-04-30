@@ -128,15 +128,15 @@ func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
 	              - main`
 
 	var k8s = `affinity:
-	   podAntiAffinity:
-	      preferredDuringSchedulingIgnoredDuringExecution:
-	      - podAffinityTerm:
-	          labelSelector:
-	            matchExpressions:
-	            - key: prometheus
-	              operator: In
-	              values:
-	              - k8s`
+           podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/component: prometheus
+                      app.kubernetes.io/name: prometheus
+                      app.kubernetes.io/part-of: openshift-monitoring
+                      prometheus: k8s`
 
 	var (
 		testPod1      = "alertmanager-main"
