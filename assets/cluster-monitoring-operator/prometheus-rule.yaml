@@ -91,7 +91,7 @@ spec:
             cluster:master_nodes
             * on(node) group_left() max by(node)
             (
-              kube_node_status_capacity_cpu_cores
+              kube_node_status_capacity{resource="cpu",unit="core"}
             )
           )
           or on(node) (
@@ -100,7 +100,7 @@ spec:
               kube_node_labels
             ) * on(node) group_left() max by(node)
             (
-              kube_node_status_capacity_cpu_cores
+              kube_node_status_capacity{resource="cpu",unit="core"}
             )
           )
         )
@@ -150,7 +150,7 @@ spec:
             cluster:master_nodes
             * on(node) group_left() max by(node)
             (
-              kube_node_status_capacity_memory_bytes
+              kube_node_status_capacity{resource="memory",unit="byte"}
             )
           )
           or on(node)
@@ -161,7 +161,7 @@ spec:
             )
             * on(node) group_left() max by(node)
             (
-              kube_node_status_capacity_memory_bytes
+              kube_node_status_capacity{resource="memory",unit="byte"}
             )
           )
         )
