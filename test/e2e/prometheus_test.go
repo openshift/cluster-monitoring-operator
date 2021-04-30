@@ -116,42 +116,10 @@ func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var alm = `affinity:
-	   podAntiAffinity:
-	      preferredDuringSchedulingIgnoredDuringExecution:
-	      - podAffinityTerm:
-	          labelSelector:
-	            matchExpressions:
-	            - key: alertmanager
-	              operator: In
-	              values:
-	              - main`
-
-	var k8s = `affinity:
-           podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-              - podAffinityTerm:
-                  labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/component: prometheus
-                      app.kubernetes.io/name: prometheus
-                      app.kubernetes.io/part-of: openshift-monitoring
-                      prometheus: k8s`
-
 	var (
 		testPod1      = "alertmanager-main"
 		testPod2      = "prometheus-k8s"
 		testNameSpace = "openshift-monitoring"
-
-		podA  = strings.ToLower(alm[14:28])
-		prefA = strings.ToLower(alm[38:85])
-		keyA  = strings.ToLower(alm[190:202])
-		valA  = strings.ToLower(alm[271:275])
-
-		podB  = strings.ToLower(k8s[14:28])
-		prefB = strings.ToLower(k8s[38:85])
-		keyB  = strings.ToLower(k8s[190:200])
-		valB  = strings.ToLower(k8s[269:272])
 
 		almOk = false
 		k8sOk = false
@@ -160,29 +128,19 @@ func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
 	for _, p := range pods.Items {
 		if strings.Contains(p.Namespace, testNameSpace) &&
 			strings.Contains(p.Name, testPod1) {
-			outputPodAntiAffinity := strings.ToLower(
-				p.Spec.Affinity.PodAntiAffinity.String())
-			if strings.Contains(outputPodAntiAffinity, podA) &&
-				strings.Contains(outputPodAntiAffinity, prefA) &&
-				strings.Contains(outputPodAntiAffinity, keyA) &&
-				strings.Contains(outputPodAntiAffinity, valA) {
+			if p.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution != nil {
 				almOk = true
 			} else {
-				t.Fatal("Can not find podAntiAffinity config line or wrong order (1).")
+				t.Fatal("Failed to find preferredDuringSchedulingIgnoredDuringExecution in alertmanager pod spec")
 			}
 		}
 
 		if strings.Contains(p.Namespace, testNameSpace) &&
 			strings.Contains(p.Name, testPod2) {
-			outputPodAntiAffinity := strings.ToLower(
-				p.Spec.Affinity.PodAntiAffinity.String())
-			if strings.Contains(outputPodAntiAffinity, podB) &&
-				strings.Contains(outputPodAntiAffinity, prefB) &&
-				strings.Contains(outputPodAntiAffinity, keyB) &&
-				strings.Contains(outputPodAntiAffinity, valB) {
+			if p.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
 				k8sOk = true
 			} else {
-				t.Fatal("Can not find podAntiAffinity config line or wrong order (2).")
+				t.Fatal("Failed to find requiredDuringSchedulingIgnoredDuringExecution in prometheus pod spec")
 			}
 		}
 	}
