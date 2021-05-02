@@ -129,7 +129,7 @@ function(params)
             // Drop metrics with excessive label cardinality.
             metricRelabelings: [
               {
-                sourceLabels: ['endpoint'],
+                sourceLabels: ['__name__'],
                 regex: 'container_runtime_crio_image_pulls_by_digest|container_runtime_crio_image_layer_reuse|container_runtime_crio_image_pulls_by_name|container_runtime_crio_image_pulls_successes',
                 action: 'drop',
               },
