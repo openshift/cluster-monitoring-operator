@@ -52,7 +52,6 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
 			"config.yaml": `alertmanagerMain:
   volumeClaimTemplate:
     spec:
-      storageClassName: gp2
       resources:
         requests:
           storage: 2Gi
