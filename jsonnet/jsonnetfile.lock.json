@@ -69,8 +69,8 @@
           "subdir": ""
         }
       },
-      "version": "0e9fc466b492e45cfd1a59a09ab10162bf8b1baa",
-      "sum": "1GkBTf5DP+tYDimZZUrdoDkx0Cr5yeil3odK7Ilbfuc="
+      "version": "c67c0f19e869f1da34d79b6507c1fa37c23a6e4e",
+      "sum": "F+RxcI26zeoeI81uot39Jv6IpQ6BOz+xlSHlElJYsz8="
     },
     {
       "source": {
@@ -79,7 +79,7 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "ead45674dba3c8712e422d99223453177aac6bf4",
+      "version": "39a9cda705b5201c35105bd1f24c83923fa839ef",
       "sum": "zv7hXGui6BfHzE9wPatHI/AGZa4A2WKo6pq7ZdqBsps="
     },
     {
@@ -131,8 +131,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "dafa0f8edd3c9c6cad5a8c1a686d4470655fc744",
-      "sum": "G2DPCOf58W6nCFwwbrVI0IsTyy2Q1cZz9CJkHrXEtIM="
+      "version": "ba330fcd6a9eaacce5a85e3ec64f75d5eca75ea8",
+      "sum": "7/GK6yN2On+94UqhsixmDtuXCol6O12lBB/fz1D1ZdI="
     },
     {
       "source": {
@@ -141,8 +141,9 @@
           "subdir": "jsonnet/mixin"
         }
       },
-      "version": "788d4456425eaf8c1d613582995bdf7de02154b0",
-      "sum": "6reUygVmQrLEWQzTKcH8ceDbvM+2ztK3z2VBR2K2l+U="
+      "version": "64d466d7730165c0d260f187e2e9742bc0295bf2",
+      "sum": "6reUygVmQrLEWQzTKcH8ceDbvM+2ztK3z2VBR2K2l+U=",
+      "name": "prometheus-operator-mixin"
     },
     {
       "source": {

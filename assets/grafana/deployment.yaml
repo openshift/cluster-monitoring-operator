@@ -3,10 +3,9 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: grafana
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.3.5
+    app.kubernetes.io/version: 7.5.4
   name: grafana
   namespace: openshift-monitoring
 spec:
@@ -14,27 +13,25 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: grafana
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
   template:
     metadata:
       annotations:
-        checksum/grafana-config: 4edd2a7c41f827b93497c2d118a926e7
-        checksum/grafana-datasources: 0fc2251d80a7fdcb28e58d9944addd91
+        checksum/grafana-config: 440c001c3245e195b95a75871ea3fe0b
+        checksum/grafana-datasources: 0195bd1ad46537bd9f70d31a09fae335
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: grafana
-        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: grafana
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 7.3.5
+        app.kubernetes.io/version: 7.5.4
     spec:
       containers:
       - args:
         - -config=/etc/grafana/grafana.ini
         env: []
-        image: grafana/grafana:7.3.5
+        image: grafana/grafana:7.5.4
         name: grafana
         ports:
         - containerPort: 3001

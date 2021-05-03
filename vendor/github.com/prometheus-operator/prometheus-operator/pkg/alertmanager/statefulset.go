@@ -147,9 +147,7 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 		statefulset.Annotations = old.Annotations
 	}
 
-	for _, volume := range am.Spec.Volumes {
-		statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, volume)
-	}
+	statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, am.Spec.Volumes...)
 
 	return statefulset, nil
 }
@@ -316,8 +314,12 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 	podAnnotations := map[string]string{}
 	podLabels := map[string]string{}
 	podSelectorLabels := map[string]string{
-		"app":          "alertmanager",
-		"alertmanager": a.Name,
+		"app":                          "alertmanager",
+		"app.kubernetes.io/name":       "alertmanager",
+		"app.kubernetes.io/version":    amVersion,
+		"app.kubernetes.io/managed-by": "prometheus-operator",
+		"app.kubernetes.io/instance":   a.Name,
+		"alertmanager":                 a.Name,
 	}
 	if a.Spec.PodMetadata != nil {
 		if a.Spec.PodMetadata.Labels != nil {
@@ -616,6 +618,7 @@ func subPathForStorage(s *monitoringv1.StorageSpec) string {
 		return ""
 	}
 
+	//nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
 	if s.DisableMountSubPath {
 		return ""
 	}

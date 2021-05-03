@@ -17,7 +17,7 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "main"
+      "version": "release-0.8"
     },
     {
       "source": {
@@ -26,7 +26,7 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "release-0.45"
+      "version": "release-0.47"
     },
     {
       "source": {
@@ -64,7 +64,7 @@
           "subdir": "mixin"
         }
       },
-      "version": "80e0257e25b59ff8113b9d21a155c785f69a4b95"
+      "version": "release-0.19"
     }
   ],
   "legacyImports": true

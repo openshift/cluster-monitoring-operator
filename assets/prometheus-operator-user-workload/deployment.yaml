@@ -3,10 +3,9 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: controller
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.45.0
+    app.kubernetes.io/version: 0.47.0
   name: prometheus-operator
   namespace: openshift-user-workload-monitoring
 spec:
@@ -14,7 +13,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: controller
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus-operator
       app.kubernetes.io/part-of: openshift-monitoring
   template:
@@ -23,21 +21,20 @@ spec:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: controller
-        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: prometheus-operator
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 0.45.0
+        app.kubernetes.io/version: 0.47.0
     spec:
       containers:
       - args:
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.45.0
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.47.0
         - --deny-namespaces=openshift-monitoring
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
         - --config-reloader-cpu=0
         - --config-reloader-memory=0
-        image: quay.io/prometheus-operator/prometheus-operator:v0.45.0
+        image: quay.io/prometheus-operator/prometheus-operator:v0.47.0
         name: prometheus-operator
         ports:
         - containerPort: 8080

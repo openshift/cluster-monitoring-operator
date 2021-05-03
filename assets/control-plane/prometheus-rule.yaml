@@ -2,7 +2,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   labels:
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-prometheus
     app.kubernetes.io/part-of: openshift-monitoring
     prometheus: k8s
@@ -211,7 +210,7 @@ spec:
           <
         kube_hpa_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})
           and
-        changes(kube_hpa_status_current_replicas[15m]) == 0
+        changes(kube_hpa_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[15m]) == 0
       for: 15m
       labels:
         severity: warning
@@ -239,7 +238,7 @@ spec:
           /
         sum(kube_node_status_allocatable{resource="cpu"})
           >
-        (count(kube_node_status_allocatable{resource="cpu"}) -1) / count(kube_node_status_allocatable{resource="cpu"})
+        ((count(kube_node_status_allocatable{resource="cpu"}) > 1) - 1) / count(kube_node_status_allocatable{resource="cpu"})
       for: 5m
       labels:
         severity: warning
@@ -249,11 +248,11 @@ spec:
           cannot tolerate node failure.
         summary: Cluster has overcommitted memory resource requests.
       expr: |
-        sum(namespace_memory:kube_pod_container_resource_requests_bytes:sum{})
+        sum(namespace_memory:kube_pod_container_resource_requests:sum{})
           /
         sum(kube_node_status_allocatable{resource="memory"})
           >
-        (count(kube_node_status_allocatable{resource="memory"})-1)
+        ((count(kube_node_status_allocatable{resource="memory"}) > 1) - 1)
           /
         count(kube_node_status_allocatable{resource="memory"})
       for: 5m
@@ -263,9 +262,11 @@ spec:
       annotations:
         description: Cluster has overcommitted CPU resource requests for Namespaces.
         summary: Cluster has overcommitted CPU resource requests.
-      expr: "sum(kube_resourcequota{namespace=~\"(openshift-.*|kube-.*|default|logging)\",job=\"kube-state-metrics\",
-        type=\"hard\", resource=\"cpu\"})\n  /\nsum(kube_node_status_allocatable{resource=\"cpu\"})
-        \n  > 1.5\n"
+      expr: |
+        sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard", resource="cpu"})
+          /
+        sum(kube_node_status_allocatable{resource="cpu"})
+          > 1.5
       for: 5m
       labels:
         severity: warning
@@ -442,7 +443,7 @@ spec:
           times averaged over the past 10m.
         summary: An aggregated API has reported errors.
       expr: |
-        sum by(name, namespace)(increase(aggregator_unavailable_apiservice_count[10m])) > 4
+        sum by(name, namespace)(increase(aggregator_unavailable_apiservice_total[10m])) > 4
       labels:
         severity: warning
     - alert: AggregatedAPIDown

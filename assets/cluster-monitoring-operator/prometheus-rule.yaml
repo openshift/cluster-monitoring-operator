@@ -3,7 +3,6 @@ kind: PrometheusRule
 metadata:
   labels:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
     prometheus: k8s
@@ -397,12 +396,14 @@ spec:
     rules:
     - alert: Watchdog
       annotations:
-        message: |
+        description: |
           This is an alert meant to ensure that the entire alerting pipeline is functional.
           This alert is always firing, therefore it should always be firing in Alertmanager
           and always fire against a receiver. There are integrations with various notification
           mechanisms that send a notification when this alert is not firing. For example the
           "DeadMansSnitch" integration in PagerDuty.
+        summary: An alert that should always be firing to certify that Alertmanager
+          is working properly.
       expr: vector(1)
       labels:
         severity: none

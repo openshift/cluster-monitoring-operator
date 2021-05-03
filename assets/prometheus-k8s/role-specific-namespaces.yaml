@@ -5,10 +5,9 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.24.0
+      app.kubernetes.io/version: 2.26.0
     name: prometheus-k8s
     namespace: default
   rules:
@@ -43,10 +42,9 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.24.0
+      app.kubernetes.io/version: 2.26.0
     name: prometheus-k8s
     namespace: kube-system
   rules:
@@ -81,10 +79,9 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.24.0
+      app.kubernetes.io/version: 2.26.0
     name: prometheus-k8s
     namespace: openshift-monitoring
   rules:
@@ -119,10 +116,9 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.24.0
+      app.kubernetes.io/version: 2.26.0
     name: prometheus-k8s
     namespace: openshift-etcd
   rules:
@@ -157,10 +153,9 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.24.0
+      app.kubernetes.io/version: 2.26.0
     name: prometheus-k8s
     namespace: openshift-user-workload-monitoring
   rules:

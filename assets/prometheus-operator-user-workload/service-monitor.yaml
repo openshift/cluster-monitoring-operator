@@ -3,10 +3,9 @@ kind: ServiceMonitor
 metadata:
   labels:
     app.kubernetes.io/component: controller
-    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.45.0
+    app.kubernetes.io/version: 0.47.0
   name: prometheus-operator
   namespace: openshift-user-workload-monitoring
 spec:
@@ -21,7 +20,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: controller
-      app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: prometheus-operator
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 0.45.0
+      app.kubernetes.io/version: 0.47.0
