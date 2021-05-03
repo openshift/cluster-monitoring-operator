@@ -76,7 +76,6 @@ func TestPrometheusVolumeClaim(t *testing.T) {
 			"config.yaml": `prometheusK8s:
   volumeClaimTemplate:
     spec:
-      storageClassName: gp2
       resources:
         requests:
           storage: 2Gi
