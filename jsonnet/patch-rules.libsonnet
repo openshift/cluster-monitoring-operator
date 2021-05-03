@@ -86,21 +86,6 @@ local patchedRules = [
     ],
   },
   {
-    name: 'kubernetes-system-apiserver',
-    rules: [
-      {
-        // Make the alert more resilient to OCP upgrades: https://bugzilla.redhat.com/show_bug.cgi?id=1940933
-        // According to what we've seen in CI, it might take more time for the
-        // apiservice to claim the aggregated API during upgrades than what has
-        // been set in the upstream alert. It might take up to 15 minutes for
-        // the aggregated API to be claimed during upgrades. Thus, we need to
-        // increase the `for` clause to 15m to reflect that.
-        alert: 'AggregatedAPIDown',
-        'for': '15m',
-      },
-    ],
-  },
-  {
     name: 'prometheus',
     rules: [
       {

@@ -453,7 +453,7 @@ spec:
         summary: An aggregated API is down.
       expr: |
         (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice[10m]))) * 100 < 85
-      for: 15m
+      for: 5m
       labels:
         severity: warning
     - alert: KubeAPIDown
