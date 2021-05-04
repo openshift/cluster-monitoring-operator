@@ -326,7 +326,17 @@ func (t *PrometheusTask) Run() error {
 	}
 
 	// Clean up the service monitors previously managed by the cluster monitoring operator.
-	for _, name := range []string{"cluster-version-operator", "kube-apiserver", "kube-controller-manager", "kube-scheduler", "openshift-apiserver"} {
+	// TODO(bison): Verify these are no longer needed and remove them after 4.8 release.
+	deprecatedServiceMonitors := []string{
+		"cluster-version-operator",
+		"kube-apiserver",
+		"kube-controller-manager",
+		"kube-scheduler",
+		"openshift-apiserver",
+		"prometheus", // Bug 1952744: Renamed to "prometheus-k8s" in #1044.
+	}
+
+	for _, name := range deprecatedServiceMonitors {
 		err := t.client.DeleteServiceMonitorByNamespaceAndName(t.client.Namespace(), name)
 		if err != nil {
 			return errors.Wrapf(err, "deleting Prometheus %s ServiceMonitor failed", name)
