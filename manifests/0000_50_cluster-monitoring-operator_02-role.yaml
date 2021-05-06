@@ -160,6 +160,14 @@ rules:
   - get
   - update
 - apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
