@@ -171,6 +171,24 @@ local sccRole =
           arbitraryFSAccessThroughSMs+: {
             deny: true,
           },
+          affinity+: {
+            podAntiAffinity: {
+              // Apply HA conventions
+              requiredDuringSchedulingIgnoredDuringExecution: [
+                {
+                  namespaces: [$._config.namespaceUserWorkload],
+                  labelSelector: {
+                    matchExpressions: [{
+                      key: 'prometheus',
+                      operator: 'In',
+                      values: ['user-workload'],
+                    }]
+                  },
+                  topologyKey: 'kubernetes.io/hostname',
+                },
+              ],
+            },
+          },
           thanos+: {
             image: $._config.imageRepos.openshiftThanos + ':' + $._config.versions.openshiftThanos,
             version: $._config.versions.openshiftThanos,
