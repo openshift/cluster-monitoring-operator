@@ -344,6 +344,24 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
     prometheus+:
       {
         spec+: {
+          affinity+: {
+            podAntiAffinity: {
+              // Apply HA conventions
+              requiredDuringSchedulingIgnoredDuringExecution: [
+                {
+                  namespaces: [$._config.namespace],
+                  labelSelector: {
+                    matchExpressions: [{
+                      key: 'prometheus',
+                      operator: 'In',
+                      values: [$._config.prometheus.name],
+                    }]
+                  },
+                  topologyKey: 'kubernetes.io/hostname',
+                },
+              ],
+            },
+          },
           thanos+: {
             image: $._config.imageRepos.openshiftThanos + ':' + $._config.versions.openshiftThanos,
             version: $._config.versions.openshiftThanos,
