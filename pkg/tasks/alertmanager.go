@@ -117,6 +117,20 @@ func (t *AlertmanagerTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "reconciling Alertmanager Service failed")
 	}
+
+	{
+		pdb, err := t.factory.PrometheusUserWorkloadPodDisruptionBudget()
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager PodDisruptionBudget object failed")
+		}
+
+		if pdb != nil {
+			err = t.client.CreateOrUpdatePodDisruptionBudget(pdb)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Alertmanager PodDisruptionBudget object failed")
+			}
+		}
+	}
 	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
