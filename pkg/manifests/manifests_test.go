@@ -24,6 +24,7 @@ import (
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
 	v1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -1677,6 +1678,44 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 			t.Errorf("expected no affinity constraints with 1 replica, got %v", spec.affinity)
 		}
 	}
+}
+
+func TestPodDisruptionBudget(t *testing.T) {
+	tests := []struct {
+		name   string
+		getPDB func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error)
+		ha     bool
+	}{
+		{
+			name: "PrometheusAdapter HA",
+			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+				return f.PrometheusAdapterPodDisruptionBudget()
+			},
+			ha: true,
+		},
+		{
+			name: "PrometheusAdapter non-HA",
+			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+				return f.PrometheusAdapterPodDisruptionBudget()
+			},
+			ha: false,
+		},
+	}
+
+	for _, tc := range tests {
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: tc.ha}, &fakeProxyReader{}, NewAssets(assetsPath))
+		pdb, err := tc.getPDB(f)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if tc.ha && pdb == nil {
+			t.Error("expected PodDisruptionBudget in HA infrastructure")
+		} else if !tc.ha && pdb != nil {
+			t.Error("unexpected PodDisruptionBudget in non-HA infrastructure")
+		}
+	}
+
 }
 
 func trustedCABundleVolumeConfigured(volumes []v1.Volume, volumeName string) bool {

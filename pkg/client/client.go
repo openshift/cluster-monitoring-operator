@@ -39,6 +39,7 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -1045,6 +1046,30 @@ func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) (*v1.ConfigMap, err
 		return nil, errors.Wrap(err, "retrieving ConfigMap object failed")
 	}
 	return res, nil
+}
+
+func (c *Client) CreateOrUpdatePodDisruptionBudget(pdb *policyv1beta1.PodDisruptionBudget) error {
+	pdbClient := c.kclient.PolicyV1beta1().PodDisruptionBudgets(pdb.Namespace)
+	existing, err := pdbClient.Get(context.TODO(), pdb.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := pdbClient.Create(context.TODO(), pdb, metav1.CreateOptions{})
+		return errors.Wrap(err, "creating PodDisruptionBudget object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving PodDisruptionBudget object failed")
+	}
+
+	required := pdb.DeepCopy()
+	required.ResourceVersion = existing.ResourceVersion
+
+	if reflect.DeepEqual(&required.ObjectMeta, &existing.ObjectMeta) {
+		return nil
+	}
+
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	_, err = pdbClient.Update(context.TODO(), required, metav1.UpdateOptions{})
+	return errors.Wrap(err, "updating PodDisruptionBudget object failed")
 }
 
 func (c *Client) CreateOrUpdateService(svc *v1.Service) error {
