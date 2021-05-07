@@ -62,7 +62,6 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 			"config.yaml": `prometheus:
   volumeClaimTemplate:
     spec:
-      storageClassName: gp2
       resources:
         requests:
           storage: 2Gi
@@ -154,7 +153,6 @@ func TestUserWorkloadMonitoringThanosRulerConfigurations(t *testing.T) {
       memory: 13Mi
   volumeClaimTemplate:
     spec:
-      storageClassName: gp2
       resources:
         requests:
           storage: 2Gi
