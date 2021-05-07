@@ -31,8 +31,8 @@ function(params)
                         '--prometheus-instance-namespaces=' + cfg.namespace,
                         '--thanos-ruler-instance-namespaces=' + cfg.namespace,
                         '--alertmanager-instance-namespaces=' + cfg.namespace,
-                        '--config-reloader-cpu=0',
-                        '--config-reloader-memory=0',
+                        '--config-reloader-cpu-limit=0',
+                        '--config-reloader-memory-limit=0',
                         '--web.enable-tls=true',
                         '--web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',  //FIXME(paulfantom)
                         '--web.tls-min-version=VersionTLS12',
