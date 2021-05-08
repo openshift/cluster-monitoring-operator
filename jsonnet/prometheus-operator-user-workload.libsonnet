@@ -61,8 +61,8 @@ function(params)
                         '--prometheus-instance-namespaces=' + cfg.namespace,
                         '--alertmanager-instance-namespaces=' + cfg.namespace,
                         '--thanos-ruler-instance-namespaces=' + cfg.namespace,
-                        '--config-reloader-cpu=0',
-                        '--config-reloader-memory=0',
+                        '--config-reloader-cpu-limit=0',
+                        '--config-reloader-memory-limit=0',
                       ],
                       securityContext: {},
                       resources: {
