@@ -37,6 +37,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -134,6 +135,7 @@ var (
 	PrometheusAdapterConfigMap                          = "prometheus-adapter/config-map.yaml"
 	PrometheusAdapterConfigMapPrometheus                = "prometheus-adapter/configmap-prometheus.yaml"
 	PrometheusAdapterDeployment                         = "prometheus-adapter/deployment.yaml"
+	PrometheusAdapterPodDisruptionBudget                = "prometheus-adapter/pod-disruption-budget.yaml"
 	PrometheusAdapterRoleBindingAuthReader              = "prometheus-adapter/role-binding-auth-reader.yaml"
 	PrometheusAdapterService                            = "prometheus-adapter/service.yaml"
 	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
@@ -1604,6 +1606,19 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	return dep, nil
 }
 
+func (f *Factory) PrometheusAdapterPodDisruptionBudget() (*policyv1beta1.PodDisruptionBudget, error) {
+	pdb, err := f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusAdapterPodDisruptionBudget))
+	if err != nil {
+		return nil, err
+	}
+
+	if pdb != nil {
+		pdb.Namespace = f.namespace
+	}
+
+	return pdb, nil
+}
+
 func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 	s, err := f.NewService(f.assets.MustNewAssetReader(PrometheusAdapterService))
 	if err != nil {
@@ -2394,6 +2409,23 @@ func (f *Factory) NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
 	}
 
 	return ds, nil
+}
+
+func (f *Factory) NewPodDisruptionBudget(manifest io.Reader) (*policyv1beta1.PodDisruptionBudget, error) {
+	if !f.infrastructure.HighlyAvailableInfrastructure() {
+		return nil, nil
+	}
+
+	pdb, err := NewPodDisruptionBudget(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	if pdb.GetNamespace() == "" {
+		pdb.SetNamespace(f.namespace)
+	}
+
+	return pdb, nil
 }
 
 func (f *Factory) NewService(manifest io.Reader) (*v1.Service, error) {
@@ -3206,6 +3238,16 @@ func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
 	}
 
 	return &ds, nil
+}
+
+func NewPodDisruptionBudget(manifest io.Reader) (*policyv1beta1.PodDisruptionBudget, error) {
+	pdb := policyv1beta1.PodDisruptionBudget{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&pdb)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pdb, nil
 }
 
 func NewService(manifest io.Reader) (*v1.Service, error) {

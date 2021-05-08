@@ -182,6 +182,19 @@ func (t *PrometheusAdapterTask) Run() error {
 		}
 	}
 	{
+		pdb, err := t.factory.PrometheusAdapterPodDisruptionBudget()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter PodDisruptionBudget failed")
+		}
+
+		if pdb != nil {
+			err = t.client.CreateOrUpdatePodDisruptionBudget(pdb)
+			if err != nil {
+				return errors.Wrap(err, "reconciling PrometheusAdapter PodDisruptionBudget failed")
+			}
+		}
+	}
+	{
 		sm, err := t.factory.PrometheusAdapterServiceMonitor()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter ServiceMonitor failed")
