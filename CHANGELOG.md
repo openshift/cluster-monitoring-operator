@@ -9,6 +9,7 @@
 - [#1090](https://github.com/openshift/cluster-monitoring-operator/pull/1090) Increase "for" duration to 1 hour for all Thanos sidecar alerts.
 - [#1093](https://github.com/openshift/cluster-monitoring-operator/pull/1093) Bump kube-state-metrics to major new release v2.0.0-rc.1. This changes a lot of metrics and flags, see kube-state-metrics CHANGELOG for full changes. 
 - [#1126](https://github.com/openshift/cluster-monitoring-operator/pull/1126) Remove deprecated techPreviewUserWorkload field from CMO's configmap.
+- [#1132](https://github.com/openshift/cluster-monitoring-operator/pull/1132) Modified PrometheusK8sConfig and PrometheusRestrictedConfig to allow a list AdditionalAlertManagerConfigs
 - [#1136](https://github.com/openshift/cluster-monitoring-operator/pull/1136) Add recording rule for builds by strategy
 
 ## 4.7
@@ -22,7 +23,7 @@
 - [#970](https://github.com/openshift/cluster-monitoring-operator/pull/970) Bump prometheus-operator v0.43.0.
 - [#971](https://github.com/openshift/cluster-monitoring-operator/pull/971) Enable `hwmon` in node-exporter for hardware sensor data collection
 - [#983](https://github.com/openshift/cluster-monitoring-operator/pull/983) Remove deprecated user workload configuration
-- [#995](https://github.com/openshift/cluster-monitoring-operator/pull/995) Add logLevel config field to Thanos Query. 
+- [#995](https://github.com/openshift/cluster-monitoring-operator/pull/995) Add logLevel config field to Thanos Query.
 - [#993](https://github.com/openshift/cluster-monitoring-operator/pull/993) Add metrics + alerts for Thanos sidecars.
 - [#1013](https://github.com/openshift/cluster-monitoring-operator/pull/1013) [#1018](https://github.com/openshift/cluster-monitoring-operator/pull/1018) Bump and pin jsonnet dependencies:
   - prometheus-operator v0.44.1
