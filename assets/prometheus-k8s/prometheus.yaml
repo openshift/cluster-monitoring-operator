@@ -36,7 +36,6 @@ spec:
   configMaps:
   - serving-certs-ca-bundle
   - kubelet-serving-ca-bundle
-  - hub-router-ca
   containers:
   - args:
     - -provider=openshift
