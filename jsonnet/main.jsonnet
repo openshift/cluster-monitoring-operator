@@ -34,6 +34,20 @@ TODO(paulfantom):
 local commonConfig = {
   namespace: 'openshift-monitoring',
   namespaceUserWorkload: 'openshift-user-workload-monitoring',
+  clusterMonitoringNamespaceSelector: {
+    matchLabels: {
+      'openshift.io/cluster-monitoring': 'true',
+    },
+  },
+  userWorkloadMonitoringNamespaceSelector: {
+    matchExpressions: [
+      {
+        key: 'openshift.io/cluster-monitoring',
+        operator: 'NotIn',
+        values: ['true'],
+      },
+    ],
+  },
   prometheusName: 'k8s',
   ruleLabels: {
     role: 'alert-rules',
@@ -219,6 +233,7 @@ local inCluster =
           'openshift-etcd',
           $.values.common.namespaceUserWorkload,
         ],
+        namespaceSelector: $.values.common.clusterMonitoringNamespaceSelector,
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
@@ -274,6 +289,7 @@ local inCluster =
           web: 9091,
           grpc: 10901,
         },
+        namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
       },
       thanosQuerier: $.values.thanos {
         name: 'thanos-querier',
@@ -343,6 +359,7 @@ local userWorkload =
           requests: { memory: '30Mi', cpu: '6m' },
         },
         namespaces: [$.values.common.namespaceUserWorkload],
+        namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {

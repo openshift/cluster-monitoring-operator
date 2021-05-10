@@ -343,7 +343,7 @@ function(params) {
             },
           ],
       },
-      ruleNamespaceSelector: {},
+      ruleNamespaceSelector: cfg.namespaceSelector,
       volumes: [
         {
           name: 'serving-certs-ca-bundle',

@@ -236,8 +236,6 @@ var (
 
 var (
 	PrometheusConfigReloaderFlag                         = "--prometheus-config-reloader="
-	PrometheusOperatorNamespaceFlag                      = "--namespaces="
-	PrometheusOperatorDenyNamespaceFlag                  = "--deny-namespaces="
 	PrometheusOperatorPrometheusInstanceNamespacesFlag   = "--prometheus-instance-namespaces="
 	PrometheusOperatorAlertmanagerInstanceNamespacesFlag = "--alertmanager-instance-namespaces="
 
@@ -1799,7 +1797,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAcc
 	return s, nil
 }
 
-func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorDeployment))
 	if err != nil {
 		return nil, err
@@ -1823,10 +1821,6 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 
 			args := d.Spec.Template.Spec.Containers[i].Args
 			for i := range args {
-				if strings.HasPrefix(args[i], PrometheusOperatorNamespaceFlag) && len(namespaces) > 0 {
-					args[i] = PrometheusOperatorNamespaceFlag + strings.Join(namespaces, ",")
-				}
-
 				if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.Images.PrometheusConfigReloader != "" {
 					args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
 				}
@@ -1850,7 +1844,7 @@ func (f *Factory) PrometheusOperatorDeployment(namespaces []string) (*appsv1.Dep
 	return d, nil
 }
 
-func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []string) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadDeployment))
 	if err != nil {
 		return nil, err
@@ -1873,10 +1867,6 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(denyNamespaces []stri
 
 			args := d.Spec.Template.Spec.Containers[i].Args
 			for i := range args {
-				if strings.HasPrefix(args[i], PrometheusOperatorDenyNamespaceFlag) {
-					args[i] = PrometheusOperatorDenyNamespaceFlag + strings.Join(denyNamespaces, ",")
-				}
-
 				if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) {
 					args[i] = PrometheusConfigReloaderFlag + f.config.Images.PrometheusConfigReloader
 				}

@@ -566,7 +566,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusOperatorDeployment([]string{"default", "openshift-monitoring"})
+	_, err = f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -740,7 +740,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
-	d, err := f.PrometheusOperatorDeployment([]string{"default", "openshift-monitoring"})
+	d, err := f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -760,22 +760,14 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 
 	prometheusReloaderFound := false
-	namespacesFound := false
 	for i := range d.Spec.Template.Spec.Containers[0].Args {
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest") {
 			prometheusReloaderFound = true
-		}
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorNamespaceFlag+"default,openshift-monitoring") {
-			namespacesFound = true
 		}
 	}
 
 	if !prometheusReloaderFound {
 		t.Fatal("Configuring the Prometheus Config reloader image failed")
-	}
-
-	if !namespacesFound {
-		t.Fatal("Configuring the namespaces to watch failed")
 	}
 }
 

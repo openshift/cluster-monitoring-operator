@@ -84,12 +84,7 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator Service failed")
 	}
 
-	denyNamespaces, err := t.client.NamespacesToMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload denied namespaces list failed")
-	}
-
-	d, err := t.factory.PrometheusOperatorUserWorkloadDeployment(denyNamespaces)
+	d, err := t.factory.PrometheusOperatorUserWorkloadDeployment()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Deployment failed")
 	}
@@ -116,7 +111,7 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 }
 
 func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
-	dep, err := t.factory.PrometheusOperatorUserWorkloadDeployment(nil)
+	dep, err := t.factory.PrometheusOperatorUserWorkloadDeployment()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Deployment failed")
 	}

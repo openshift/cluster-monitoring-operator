@@ -66,7 +66,6 @@ type Client struct {
 	version               string
 	namespace             string
 	userWorkloadNamespace string
-	namespaceSelector     string
 	kclient               kubernetes.Interface
 	oscclient             openshiftconfigclientset.Interface
 	ossclient             openshiftsecurityclientset.Interface
@@ -76,7 +75,7 @@ type Client struct {
 	aggclient             aggregatorclient.Interface
 }
 
-func New(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, namespaceSelector string) (*Client, error) {
+func New(cfg *rest.Config, version string, namespace, userWorkloadNamespace string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -121,7 +120,6 @@ func New(cfg *rest.Config, version string, namespace, userWorkloadNamespace stri
 		version:               version,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
-		namespaceSelector:     namespaceSelector,
 		kclient:               kclient,
 		oscclient:             oscclient,
 		ossclient:             ossclient,
@@ -280,22 +278,6 @@ func (c *Client) GetConfigmap(namespace, name string) (*v1.ConfigMap, error) {
 
 func (c *Client) GetSecret(namespace, name string) (*v1.Secret, error) {
 	return c.kclient.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-}
-
-func (c *Client) NamespacesToMonitor() ([]string, error) {
-	namespaces, err := c.kclient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
-		LabelSelector: c.namespaceSelector,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing namespaces failed")
-	}
-
-	namespaceNames := make([]string, len(namespaces.Items))
-	for i, namespace := range namespaces.Items {
-		namespaceNames[i] = namespace.Name
-	}
-
-	return namespaceNames, nil
 }
 
 func (c *Client) CreateOrUpdatePrometheus(p *monv1.Prometheus) error {

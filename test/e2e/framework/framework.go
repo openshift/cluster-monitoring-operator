@@ -90,7 +90,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating monitoring client failed")
 	}
 
-	operatorClient, err := client.New(config, "", namespaceName, userWorkloadNamespaceName, "")
+	operatorClient, err := client.New(config, "", namespaceName, userWorkloadNamespaceName)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating operator client failed")
 	}
