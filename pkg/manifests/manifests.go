@@ -1402,8 +1402,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		}
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AdditionalAlertManagerConfigs != nil {
-		p.Spec.AdditionalAlertManagerConfigs = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AdditionalAlertManagerConfigs
+	if f.config.UserWorkloadConfiguration.Prometheus.AdditionalAlertManagerConfigs != nil {
+		p.Spec.AdditionalAlertManagerConfigs = f.config.UserWorkloadConfiguration.Prometheus.AdditionalAlertManagerConfigs
 	}
 
 	if len(f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite) > 0 {

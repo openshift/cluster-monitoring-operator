@@ -945,6 +945,9 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
     datacenter: eu-west
   remoteWrite:
   - url: "https://test.remotewrite.com/api/write"
+  additionalAlertManagerConfigs:
+    name: prometheus-ocm-am-config
+	key: additional-alertmanager-configs.yaml
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
 `)
@@ -1035,6 +1038,15 @@ ingress:
 	if p.Spec.ExternalLabels["datacenter"] != "eu-west" {
 		t.Fatal("Prometheus external labels are not configured correctly")
 	}
+
+	if p.Spec.AdditionalAlertManagerConfigs.Name != "prometheus-ocm-am-config" {
+		t.Fatal("Prometheus additional alertmanager not configured correctly")
+	}
+
+	if p.Spec.AdditionalAlertManagerConfigs.Key != "additional-alertmanager-configs.yaml" {
+		t.Fatal("Prometheus additional alertmanager not configured correctly")
+	}
+
 	storageRequest := p.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
 	storageRequestPtr := &storageRequest
 	if storageRequestPtr.String() != "15Gi" {
