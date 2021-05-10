@@ -947,7 +947,7 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   - url: "https://test.remotewrite.com/api/write"
   additionalAlertManagerConfigs:
     name: prometheus-ocm-am-config
-	key: additional-alertmanager-configs.yaml
+    key: additional-alertmanager-configs.yaml
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
 `)
