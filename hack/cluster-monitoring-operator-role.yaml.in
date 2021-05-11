@@ -47,4 +47,4 @@ rules:
   verbs: ["get", "update", "create"]
 - apiGroups: ["policy"]
   resources: ["poddisruptionbudgets"]
-  verbs: ["create", "get", "update"]
+  verbs: ["create", "get", "update", "delete"]
