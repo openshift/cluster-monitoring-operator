@@ -7,6 +7,9 @@ function(params) {
         openshiftStateMetrics: 'latest',
         kubeRbacProxy: 'latest',
       },
+      openshiftStateMetrics+:: {
+        baseMemory: '32Mi',
+      },
     },
   },
 

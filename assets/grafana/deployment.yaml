@@ -39,7 +39,7 @@ spec:
         resources:
           requests:
             cpu: 4m
-            memory: 100Mi
+            memory: 64Mi
         volumeMounts:
         - mountPath: /var/lib/grafana
           name: grafana-storage
