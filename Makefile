@@ -82,13 +82,19 @@ $(GOBINDATA_BIN):
 
 $(GOJSONTOYAML_BIN):
 	go get -u github.com/brancz/gojsontoyaml
+	# pin gojsontoyaml to prevent indentation changes caused by yaml.v2 conflicts
+	cd $(GOPATH)/src/github.com/brancz/gojsontoyaml && \
+		git reset --hard 3697ded27e8cfea8e547eb082ebfbde36f1b5ee6 && \
+		go build && \
+		mv gojsontoyaml $(GOJSONTOYAML_BIN)
 
 $(JB_BIN):
 	wget -O $(GOPATH)/bin/jb "https://github.com/jsonnet-bundler/jsonnet-bundler/releases/download/v0.1.0/jb-linux-amd64"
 	chmod +x $(GOPATH)/bin/jb
 
 $(JSONNET_BIN):
-	go get -u github.com/google/go-jsonnet/cmd/jsonnet
+	wget -qO- "https://github.com/google/go-jsonnet/releases/download/v0.17.0/go-jsonnet_0.17.0_Linux_x86_64.tar.gz" | tar xvz -C $(GOPATH)/bin
+	chmod +x $(GOPATH)/bin/jsonnet
 
 test-unit:
 	go test $(PKGS)
