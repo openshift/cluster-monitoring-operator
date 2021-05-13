@@ -28,11 +28,14 @@ import (
 	"strconv"
 	"strings"
 
+	gyaml "github.com/ghodss/yaml"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	promconfig "github.com/prometheus/prometheus/config"
+	promdiscovery "github.com/prometheus/prometheus/discovery"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -244,6 +247,9 @@ var (
 	AuthProxyRedirectURLFlag  = "-redirect-url="
 
 	TrustedCABundleKey = "ca-bundle.crt"
+
+	AdditionalAlertmanagerConfigKey  = "alertmanager-configs.yaml"
+	AdditionalAlertmanagerConfigName = "additional-alertmanager-configs"
 )
 
 type Factory struct {
@@ -1219,8 +1225,14 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		}
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AdditionalAlertManagerConfigs != nil {
-		p.Spec.AdditionalAlertManagerConfigs = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AdditionalAlertManagerConfigs
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs != nil {
+		p.Spec.AdditionalAlertManagerConfigs = &v1.SecretKeySelector{
+			Key: AdditionalAlertmanagerConfigKey,
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: AdditionalAlertmanagerConfigName,
+			},
+		}
+		p.Spec.ConfigMaps = append(p.Spec.ConfigMaps, getConfigMapName(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs)...)
 	}
 
 	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
@@ -1365,6 +1377,43 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	return p, nil
 }
 
+func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
+	alertmanagerConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
+	if alertmanagerConfigs == nil {
+		return nil, nil
+	}
+	amConfigList := []promconfig.AlertmanagerConfig{}
+	for _, alertmanagerConfig := range alertmanagerConfigs {
+		amConfig := promconfig.AlertmanagerConfig{
+			APIVersion:              alertmanagerConfig.APIVersion,
+			HTTPClientConfig:        alertmanagerConfig.HTTPClientConfig,
+			Scheme:                  alertmanagerConfig.Scheme,
+			PathPrefix:              alertmanagerConfig.PathPrefix,
+			Timeout:                 alertmanagerConfig.Timeout,
+			RelabelConfigs:          alertmanagerConfig.RelabelConfigs,
+			ServiceDiscoveryConfigs: promdiscovery.Configs{alertmanagerConfig.StaticConfigs},
+		}
+		amConfigList = append(amConfigList, amConfig)
+	}
+	amConfigs := &promconfig.AlertmanagerConfigs{}
+	amConfigYaml, err := gyaml.Marshal(amConfigs)
+	if err != nil {
+		return nil, err
+	}
+	amConfigYamlMap := map[string][]byte{}
+	amConfigYamlMap[AdditionalAlertmanagerConfigKey] = amConfigYaml
+
+	additionalPromToAmConfigSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      AdditionalAlertmanagerConfigName,
+			Namespace: f.namespace,
+		},
+		Data: amConfigYamlMap,
+	}
+
+	return additionalPromToAmConfigSecret, nil
+}
+
 func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusUserWorkload))
 	if err != nil {
@@ -1400,10 +1449,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Storage = &monv1.StorageSpec{
 			VolumeClaimTemplate: *f.config.UserWorkloadConfiguration.Prometheus.VolumeClaimTemplate,
 		}
-	}
-
-	if f.config.UserWorkloadConfiguration.Prometheus.AdditionalAlertManagerConfigs != nil {
-		p.Spec.AdditionalAlertManagerConfigs = f.config.UserWorkloadConfiguration.Prometheus.AdditionalAlertManagerConfigs
 	}
 
 	if len(f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite) > 0 {
@@ -3593,4 +3638,17 @@ func trustedCABundleVolume(configMapName, volumeName string) v1.Volume {
 			},
 		},
 	}
+}
+
+func getConfigMapName(alertmanagerConfigs []AdditionalAlertmanagerConfig) []string {
+
+	caConfigmap := []string{}
+	for _, alertmanagerConfig := range alertmanagerConfigs {
+		if alertmanagerConfig.HTTPClientConfig.TLSConfig.CAFile != "" {
+			caFile := alertmanagerConfig.HTTPClientConfig.TLSConfig.CAFile
+			caPathSlice := strings.Split(caFile, "/")
+			caConfigmap = append(caConfigmap, caPathSlice[len(caPathSlice)-1])
+		}
+	}
+	return caConfigmap
 }

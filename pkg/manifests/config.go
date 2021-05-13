@@ -22,6 +22,11 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	promcmconfig "github.com/prometheus/common/config"
+	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
+	promdiscovery "github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/prometheus/pkg/relabel"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -83,16 +88,33 @@ type PrometheusOperatorConfig struct {
 }
 
 type PrometheusK8sConfig struct {
-	LogLevel                      string                               `json:"logLevel"`
-	Retention                     string                               `json:"retention"`
-	NodeSelector                  map[string]string                    `json:"nodeSelector"`
-	Tolerations                   []v1.Toleration                      `json:"tolerations"`
-	Resources                     *v1.ResourceRequirements             `json:"resources"`
-	ExternalLabels                map[string]string                    `json:"externalLabels"`
-	VolumeClaimTemplate           *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite                   []monv1.RemoteWriteSpec              `json:"remoteWrite"`
-	TelemetryMatches              []string                             `json:"-"`
-	AdditionalAlertManagerConfigs *v1.SecretKeySelector                `json:"additionalAlertManagerConfigs"`
+	LogLevel            string                               `json:"logLevel"`
+	Retention           string                               `json:"retention"`
+	NodeSelector        map[string]string                    `json:"nodeSelector"`
+	Tolerations         []v1.Toleration                      `json:"tolerations"`
+	Resources           *v1.ResourceRequirements             `json:"resources"`
+	ExternalLabels      map[string]string                    `json:"externalLabels"`
+	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
+	TelemetryMatches    []string                             `json:"-"`
+	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertManagerConfigs"`
+}
+
+type AdditionalAlertmanagerConfig struct {
+	// The URL scheme to use when talking to Alertmanagers.
+	Scheme string `yaml:"scheme,omitempty"`
+	// Path prefix to add in front of the push endpoint path.
+	PathPrefix string `yaml:"path_prefix,omitempty"`
+	// The timeout used when sending alerts.
+	Timeout model.Duration `yaml:"timeout,omitempty"`
+	// The api version of Alertmanager.
+	APIVersion promconfig.AlertmanagerAPIVersion `yaml:"api_version"`
+	// List of Alertmanager relabel configurations.
+	RelabelConfigs []*relabel.Config `yaml:"relabel_configs,omitempty"`
+	// HTTPClientConfig configures an HTTP client
+	HTTPClientConfig promcmconfig.HTTPClientConfig `yaml:",inline"`
+	// List of labeled statically configured Alertmanagers.
+	StaticConfigs promdiscovery.StaticConfig `yaml:"static_configs,omitempty"`
 }
 
 type AlertmanagerMainConfig struct {

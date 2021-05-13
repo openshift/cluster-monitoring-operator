@@ -299,6 +299,18 @@ func (t *PrometheusTask) Run() error {
 			return errors.Wrap(err, "syncing Prometheus trusted CA bundle ConfigMap failed")
 		}
 
+		secret, err := t.factory.AdditionalAlertManagerConfigs()
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus additionalAlertManagerConfigs secret failed")
+		}
+		if err != nil && secret != nil {
+			klog.V(4).Info("initializing Prometheus additionalAlertManagerConfigs secret")
+			err = t.client.CreateOrUpdateSecret(secret)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Prometheus additionalAlertManagerConfigs secret failed")
+			}
+		}
+
 		klog.V(4).Info("initializing Prometheus object")
 		p, err := t.factory.PrometheusK8s(host, s, trustedCA)
 		if err != nil {

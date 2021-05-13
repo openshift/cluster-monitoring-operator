@@ -946,8 +946,16 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   remoteWrite:
   - url: "https://test.remotewrite.com/api/write"
   additionalAlertManagerConfigs:
-    name: prometheus-ocm-am-config
-    key: additional-alertmanager-configs.yaml
+  - api_version: v2
+    bearer_token: xxx
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/router-ca/service-ca.crt
+      insecure_skip_verify: false
+    path_prefix: /
+    static_configs:
+    - targets:
+      - alertmanager-remote.com
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
 `)
@@ -1039,11 +1047,7 @@ ingress:
 		t.Fatal("Prometheus external labels are not configured correctly")
 	}
 
-	if p.Spec.AdditionalAlertManagerConfigs.Name != "prometheus-ocm-am-config" {
-		t.Fatal("Prometheus additional alertmanager not configured correctly")
-	}
-
-	if p.Spec.AdditionalAlertManagerConfigs.Key != "additional-alertmanager-configs.yaml" {
+	if p.Spec.AdditionalAlertManagerConfigs.Name != AdditionalAlertmanagerConfigName {
 		t.Fatal("Prometheus additional alertmanager not configured correctly")
 	}
 

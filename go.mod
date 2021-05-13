@@ -16,6 +16,8 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.47.1
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/prometheus v1.8.2-0.20210215121130-6f488061dfb4 // v1.8.2 is misleading as Prometheus does not have v2 module. This is pointing to v2.26.0, the same as in prometheus-operator v0.47.1
+	github.com/prometheus/common v0.20.0
+	github.com/prometheus/prometheus v1.8.2-0.20210215121130-6f488061dfb4 // v1.8.2 is misleading as Prometheus does not have v2 module. This is pointing to v2.26.0, the same as in prometheus-operator v0.47.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	k8s.io/api v0.21.0
 	k8s.io/apiextensions-apiserver v0.21.0
