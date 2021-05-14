@@ -185,7 +185,22 @@ local sccRole =
                     caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
                     insecureSkipVerify: false,
                   },
-                },
+                }
+                +
+                if 'path' in e && e.path == '/metrics/cadvisor' then
+                // Drop cAdvisor metrics with excessive cardinality.
+                {
+                  metricRelabelings+: [
+                    {
+                      sourceLabels: ['__name__'],
+                      action: 'drop',
+                      regex: 'container_memory_failures_total',
+                    },
+                  ],
+                }
+              else
+                {}
+            ,
               super.endpoints,
             ) +
             [{
