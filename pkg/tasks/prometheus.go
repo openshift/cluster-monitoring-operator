@@ -303,7 +303,7 @@ func (t *PrometheusTask) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus additionalAlertManagerConfigs secret failed")
 		}
-		if err != nil && secret != nil {
+		if secret != nil {
 			klog.V(4).Info("initializing Prometheus additionalAlertManagerConfigs secret")
 			err = t.client.CreateOrUpdateSecret(secret)
 			if err != nil {

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"gopkg.in/yaml.v2"
 
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -1059,6 +1060,49 @@ ingress:
 
 	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
 		t.Fatal("Prometheus remote-write is not configured correctly")
+	}
+}
+
+func TestAdditionalAlertManagerConfigs(t *testing.T) {
+	c, err := NewConfigFromString(`prometheusK8s:
+  additionalAlertManagerConfigs:
+  - apiVersion: v2
+    bearerToken: xxx
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/router-ca/service-ca.crt
+    pathPrefix: /
+    staticConfigs:
+    - static:
+      - alertmanager-remote.com
+    - static:
+      - alertmanager-remotex.com
+  - apiVersion: v2
+    bearerToken: xxx
+    scheme: https
+    timeout: 60s
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/router-ca/service-ca.crt
+    pathPrefix: /
+    staticConfigs:
+    - static:
+      - alertmanager-remote.com
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+
+	s, err := f.AdditionalAlertManagerConfigs()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	d := []AdditionalAlertmanagerConfig{}
+	err = yaml.Unmarshal(s.Data[AdditionalAlertmanagerConfigKey], &d)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 

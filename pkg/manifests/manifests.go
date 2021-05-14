@@ -28,14 +28,12 @@ import (
 	"strconv"
 	"strings"
 
-	gyaml "github.com/ghodss/yaml"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	promconfig "github.com/prometheus/prometheus/config"
-	promdiscovery "github.com/prometheus/prometheus/discovery"
+	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -249,7 +247,7 @@ var (
 	TrustedCABundleKey = "ca-bundle.crt"
 
 	AdditionalAlertmanagerConfigKey  = "alertmanager-configs.yaml"
-	AdditionalAlertmanagerConfigName = "additional-alertmanager-configs"
+	AdditionalAlertmanagerConfigName = "prometheus-k8s-additional-alertmanager-configs"
 )
 
 type Factory struct {
@@ -1379,24 +1377,66 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 
 func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 	alertmanagerConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
-	if alertmanagerConfigs == nil {
+	if len(alertmanagerConfigs) == 0 {
 		return nil, nil
 	}
-	amConfigList := []promconfig.AlertmanagerConfig{}
+
+	cfgs := []yaml2.MapSlice{}
 	for _, alertmanagerConfig := range alertmanagerConfigs {
-		amConfig := promconfig.AlertmanagerConfig{
-			APIVersion:              alertmanagerConfig.APIVersion,
-			HTTPClientConfig:        alertmanagerConfig.HTTPClientConfig,
-			Scheme:                  alertmanagerConfig.Scheme,
-			PathPrefix:              alertmanagerConfig.PathPrefix,
-			Timeout:                 alertmanagerConfig.Timeout,
-			RelabelConfigs:          alertmanagerConfig.RelabelConfigs,
-			ServiceDiscoveryConfigs: promdiscovery.Configs{alertmanagerConfig.StaticConfigs},
+		cfg := yaml2.MapSlice{}
+		cfg = append(cfg, yaml2.MapSlice{
+			{Key: "scheme", Value: alertmanagerConfig.Scheme},
+			{Key: "path_prefix", Value: alertmanagerConfig.PathPrefix},
+			{Key: "api_version", Value: alertmanagerConfig.APIVersion},
+			{Key: "bearer_token", Value: alertmanagerConfig.BearerToken},
+		}...)
+
+		if alertmanagerConfig.Timeout != nil {
+			cfg = append(cfg, yaml2.MapItem{
+				Key: "timeout", Value: alertmanagerConfig.Timeout,
+			})
 		}
-		amConfigList = append(amConfigList, amConfig)
+
+		cfg = append(cfg, yaml2.MapItem{
+			Key: "tls_config",
+			Value: yaml2.MapSlice{
+				{Key: "ca_file", Value: alertmanagerConfig.TLSConfig.CAFile},
+				{Key: "cert_file", Value: alertmanagerConfig.TLSConfig.CertFile},
+				{Key: "key_file", Value: alertmanagerConfig.TLSConfig.KeyFile},
+				{Key: "insecure_skip_verify", Value: alertmanagerConfig.TLSConfig.InsecureSkipVerify},
+			},
+		})
+
+		for _, staticConfig := range alertmanagerConfig.StaticConfigs {
+			sc := yaml2.MapSlice{
+				{Key: "targets", Value: staticConfig.Targets},
+			}
+
+			sc = append(sc, yaml2.MapSlice{
+				{Key: "labels", Value: staticConfig.Labels},
+			}...)
+
+			cfg = append(cfg, yaml2.MapItem{
+				Key:   "static_configs",
+				Value: []yaml2.MapSlice{sc},
+			})
+
+			relabelings := yaml2.MapSlice{}
+			// Add configured relabelings.
+			if staticConfig.RelabelConfigs != nil {
+				for _, r := range staticConfig.RelabelConfigs {
+					relabelings = append(relabelings, generateRelabelConfig(r)...)
+				}
+			}
+			cfg = append(cfg, yaml2.MapItem{
+				Key:   "relabel_configs",
+				Value: []yaml2.MapSlice{relabelings},
+			})
+		}
+		cfgs = append(cfgs, cfg)
 	}
-	amConfigs := &promconfig.AlertmanagerConfigs{}
-	amConfigYaml, err := gyaml.Marshal(amConfigs)
+
+	amConfigYaml, err := yaml2.Marshal(cfgs)
 	if err != nil {
 		return nil, err
 	}
@@ -1412,6 +1452,40 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 	}
 
 	return additionalPromToAmConfigSecret, nil
+}
+
+func generateRelabelConfig(c *monv1.RelabelConfig) yaml2.MapSlice {
+	relabeling := yaml2.MapSlice{}
+
+	if len(c.SourceLabels) > 0 {
+		relabeling = append(relabeling, yaml2.MapItem{Key: "source_labels", Value: c.SourceLabels})
+	}
+
+	if c.Separator != "" {
+		relabeling = append(relabeling, yaml2.MapItem{Key: "separator", Value: c.Separator})
+	}
+
+	if c.TargetLabel != "" {
+		relabeling = append(relabeling, yaml2.MapItem{Key: "target_label", Value: c.TargetLabel})
+	}
+
+	if c.Regex != "" {
+		relabeling = append(relabeling, yaml2.MapItem{Key: "regex", Value: c.Regex})
+	}
+
+	if c.Modulus != uint64(0) {
+		relabeling = append(relabeling, yaml2.MapItem{Key: "modulus", Value: c.Modulus})
+	}
+
+	if c.Replacement != "" {
+		relabeling = append(relabeling, yaml2.MapItem{Key: "replacement", Value: c.Replacement})
+	}
+
+	if c.Action != "" {
+		relabeling = append(relabeling, yaml2.MapItem{Key: "action", Value: c.Action})
+	}
+
+	return relabeling
 }
 
 func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
@@ -3644,10 +3718,12 @@ func getConfigMapName(alertmanagerConfigs []AdditionalAlertmanagerConfig) []stri
 
 	caConfigmap := []string{}
 	for _, alertmanagerConfig := range alertmanagerConfigs {
-		if alertmanagerConfig.HTTPClientConfig.TLSConfig.CAFile != "" {
-			caFile := alertmanagerConfig.HTTPClientConfig.TLSConfig.CAFile
+		if alertmanagerConfig.TLSConfig.CAFile != "" {
+			caFile := alertmanagerConfig.TLSConfig.CAFile
 			caPathSlice := strings.Split(caFile, "/")
-			caConfigmap = append(caConfigmap, caPathSlice[len(caPathSlice)-1])
+			if len(caPathSlice) > 1 {
+				caConfigmap = append(caConfigmap, caPathSlice[len(caPathSlice)-2])
+			}
 		}
 	}
 	return caConfigmap

@@ -22,11 +22,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	promcmconfig "github.com/prometheus/common/config"
-	"github.com/prometheus/common/model"
-	promconfig "github.com/prometheus/prometheus/config"
-	promdiscovery "github.com/prometheus/prometheus/discovery"
-	"github.com/prometheus/prometheus/pkg/relabel"
+	prommcconfig "github.com/prometheus/common/config"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -102,19 +98,32 @@ type PrometheusK8sConfig struct {
 
 type AdditionalAlertmanagerConfig struct {
 	// The URL scheme to use when talking to Alertmanagers.
-	Scheme string `yaml:"scheme,omitempty"`
+	Scheme string `json:"scheme,omitempty"`
 	// Path prefix to add in front of the push endpoint path.
-	PathPrefix string `yaml:"path_prefix,omitempty"`
+	PathPrefix string `json:"pathPrefix,omitempty"`
 	// The timeout used when sending alerts.
-	Timeout model.Duration `yaml:"timeout,omitempty"`
+	Timeout *string `json:"timeout,omitempty"`
 	// The api version of Alertmanager.
-	APIVersion promconfig.AlertmanagerAPIVersion `yaml:"api_version"`
-	// List of Alertmanager relabel configurations.
-	RelabelConfigs []*relabel.Config `yaml:"relabel_configs,omitempty"`
-	// HTTPClientConfig configures an HTTP client
-	HTTPClientConfig promcmconfig.HTTPClientConfig `yaml:",inline"`
+	APIVersion string `json:"apiVersion"`
+	// TLS Config to use for alertmanager connection.
+	TLSConfig TLSConfig `json:"tlsConfig,omitempty"`
+	// BearerTokenFile to read from filesystem to use when authenticating to
+	// Alertmanager.
+	BearerToken prommcconfig.Secret `json:"bearerToken,omitempty"`
 	// List of labeled statically configured Alertmanagers.
-	StaticConfigs promdiscovery.StaticConfig `yaml:"static_configs,omitempty"`
+	StaticConfigs []*monv1.ProbeTargetStaticConfig `json:"staticConfigs,omitempty"`
+}
+
+// TLSConfig configures the options for TLS connections.
+type TLSConfig struct {
+	// Path to the CA cert in the Prometheus container to use for the targets.
+	CAFile string `json:"caFile,omitempty"`
+	// Path to the client cert file in the Prometheus container for the targets.
+	CertFile string `json:"certFile,omitempty"`
+	// Path to the client key file in the Prometheus container for the targets.
+	KeyFile string `json:"keyFile,omitempty"`
+	// Disable target certificate validation.
+	InsecureSkipVerify bool `json:"insecureSkipVerify"`
 }
 
 type AlertmanagerMainConfig struct {
