@@ -188,19 +188,19 @@ local sccRole =
                 }
                 +
                 if 'path' in e && e.path == '/metrics/cadvisor' then
-                // Drop cAdvisor metrics with excessive cardinality.
-                {
-                  metricRelabelings+: [
-                    {
-                      sourceLabels: ['__name__'],
-                      action: 'drop',
-                      regex: 'container_memory_failures_total',
-                    },
-                  ],
-                }
-              else
-                {}
-            ,
+                  // Drop cAdvisor metrics with excessive cardinality.
+                  {
+                    metricRelabelings+: [
+                      {
+                        sourceLabels: ['__name__'],
+                        action: 'drop',
+                        regex: 'container_memory_failures_total',
+                      },
+                    ],
+                  }
+                else
+                  {}
+              ,
               super.endpoints,
             ) +
             [{
