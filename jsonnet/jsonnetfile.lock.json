@@ -54,16 +54,6 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/etcd-io/etcd.git",
-          "subdir": "Documentation/etcd-mixin"
-        }
-      },
-      "version": "d19fbe541bf9c81e2d69d71d1068bd40c04de200",
-      "sum": "bkp18AxkOUYnVC15Gh9EoIi+mMAn0IT3hMzb8mlzpSw="
-    },
-    {
-      "source": {
-        "git": {
           "remote": "https://github.com/grafana/grafonnet-lib.git",
           "subdir": "grafonnet"
         }
