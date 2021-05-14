@@ -18,8 +18,18 @@
           "subdir": "Documentation/etcd-mixin"
         }
       },
-      "version": "205a656cc58b32ab701c74297ce440bd517a680f",
-      "sum": "NhOkJWkO7ZO2DSE8Fvipcs7Hh2/GOCS0WjPPZU8OiaQ="
+      "version": "e8ba375032e8e48d009759dfb285f7812e7bcb8c",
+      "sum": "EgKKzxcW3ttt7gjPMX//DNTqNcn/0o2VAIaWJ/HSLEc="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/coreos/etcd.git",
+          "subdir": "contrib/mixin"
+        }
+      },
+      "version": "eae7a845a7e606b54caadbb18309bf6c4ca020a0",
+      "sum": "W/Azptf1PoqjyMwJON96UY69MFugDA4IAYiKURscryc="
     },
     {
       "source": {
@@ -28,8 +38,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "f69ff3d63de17f3f52b955c3b7e0d7aff0372873",
-      "sum": "B4Z3zopnw/muu9C1pXd66kbfv4C+w/k0C/EEzLlX1h0="
+      "version": "95ba62c1074c9e11bdb93423742552d5c816dfd1",
+      "sum": "cPtGmaq44Q0HfB7narSIjkCvYHkbwvllRH8zJV5YAt8="
     },
     {
       "source": {
@@ -38,8 +48,18 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "a1eb8fd04f3cd2bfb11aee8943e0b3469ff2f199",
+      "version": "cd331ce9bb58bb926e391c6ae807621cb12cc29e",
       "sum": "nM1eDP5vftqAeQSmVYzSBAh+lG0SN6zu46QiocQiVhk="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/etcd-io/etcd.git",
+          "subdir": "Documentation/etcd-mixin"
+        }
+      },
+      "version": "d19fbe541bf9c81e2d69d71d1068bd40c04de200",
+      "sum": "bkp18AxkOUYnVC15Gh9EoIi+mMAn0IT3hMzb8mlzpSw="
     },
     {
       "source": {
@@ -48,8 +68,8 @@
           "subdir": "grafonnet"
         }
       },
-      "version": "cc1626a1b4dee45c99b78ddd9714dfd5f5d7816e",
-      "sum": "nkgrtMYPCq/YB4r3mKyToepaLhicwWnxDdGIodPpzz0="
+      "version": "55cf4ee53ced2b6d3ce96ecce9fb813b4465be98",
+      "sum": "4/sUV0Kk+o8I+wlYxL9R6EPhL/NiLfYHk+NXlU64RUk="
     },
     {
       "source": {
@@ -58,8 +78,8 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "ab0e5d8a62180b52ace18b53bc57c87c2b4f1044",
-      "sum": "mD0zEP9FVFXeag7EaeS5OvUr2A9D6DQhGemoNn6+PLc="
+      "version": "188bf1e03f0c7dcaaa53b916459a8afdc24a2c83",
+      "sum": "GRf2GvwEU4jhXV+JOonXSZ4wdDv8mnHBPCQ6TUVd+g8="
     },
     {
       "source": {
@@ -89,7 +109,7 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "5c07e1de2c8ea4f8fdcc1985712daa5e751a327f",
+      "version": "4df28df7670c88baed9ec12b0e889e15d0691d6f",
       "sum": "zv7hXGui6BfHzE9wPatHI/AGZa4A2WKo6pq7ZdqBsps="
     },
     {
@@ -99,7 +119,7 @@
           "subdir": "jsonnet/kube-state-metrics"
         }
       },
-      "version": "89aaf6c524ee891140c4c8f2a05b1b16f5847309",
+      "version": "e72315512a38653b19dcfe4429f93eadedc0ea96",
       "sum": "zD/pbQLnQq+5hegEelaheHS8mn1h09GTktFO74iwlBI="
     },
     {
@@ -109,7 +129,7 @@
           "subdir": "jsonnet/kube-state-metrics-mixin"
         }
       },
-      "version": "89aaf6c524ee891140c4c8f2a05b1b16f5847309",
+      "version": "e72315512a38653b19dcfe4429f93eadedc0ea96",
       "sum": "E1GGavnf9PCWBm4WVrxWnc0FIj72UcbcweqGioWrOdU="
     },
     {
@@ -119,7 +139,7 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "ec1f56fe17186214167cb2e66961e274c7ec5fce",
+      "version": "24b34520a3a110dfc9884100d4f242da878dee35",
       "sum": "xoF0ibl74QrQ1DWbmoZ3JY83dEVeU0EQCvom96KGEuA=",
       "name": "openshift-state-metrics"
     },
@@ -130,7 +150,7 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "895aca154f5ca7f7ddd7602231d9a770d1e9d3c2",
+      "version": "d7cd4df1ba5ff2b4d51015cfcfee916365dc5192",
       "sum": "lDFA8FuwSzQLbEzat99DZeixkh191LEnF2jVGD/BPXo=",
       "name": "telemeter-client"
     },
