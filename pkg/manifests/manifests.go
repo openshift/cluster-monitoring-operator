@@ -1423,15 +1423,17 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 
 			relabelings := yaml2.MapSlice{}
 			// Add configured relabelings.
-			if staticConfig.RelabelConfigs != nil {
+			if len(staticConfig.RelabelConfigs) > 0 {
 				for _, r := range staticConfig.RelabelConfigs {
 					relabelings = append(relabelings, generateRelabelConfig(r)...)
 				}
 			}
-			cfg = append(cfg, yaml2.MapItem{
-				Key:   "relabel_configs",
-				Value: []yaml2.MapSlice{relabelings},
-			})
+			if len(relabelings) > 0 {
+				cfg = append(cfg, yaml2.MapItem{
+					Key:   "relabel_configs",
+					Value: []yaml2.MapSlice{relabelings},
+				})
+			}
 		}
 		cfgs = append(cfgs, cfg)
 	}
