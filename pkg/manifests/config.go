@@ -22,7 +22,6 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	prommcconfig "github.com/prometheus/common/config"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -107,9 +106,8 @@ type AdditionalAlertmanagerConfig struct {
 	APIVersion string `json:"apiVersion"`
 	// TLS Config to use for alertmanager connection.
 	TLSConfig TLSConfig `json:"tlsConfig,omitempty"`
-	// BearerTokenFile to read from filesystem to use when authenticating to
-	// Alertmanager.
-	BearerToken prommcconfig.Secret `json:"bearerToken,omitempty"`
+	// Bearer token to use when authenticating to Alertmanager.
+	BearerToken string `json:"bearerToken,omitempty"`
 	// List of labeled statically configured Alertmanagers.
 	StaticConfigs []*monv1.ProbeTargetStaticConfig `json:"staticConfigs,omitempty"`
 }
