@@ -4,6 +4,9 @@ local excludedRuleGroups = [
   'kubernetes-system-controller-manager',
   // rules managed by openshift/cluster-kube-scheduler-operator.
   'kubernetes-system-scheduler',
+  // rules managed by openshift/cluster-kube-apiserver-operator.
+  'kube-apiserver-slos',
+  'kube-apiserver.rules',
 ];
 
 local excludedRules = [

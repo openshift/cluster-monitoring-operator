@@ -2294,7 +2294,9 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 			switch g.Name {
 			case "kubernetes-system-apiserver",
 				"kubernetes-system-controller-manager",
-				"kubernetes-system-scheduler":
+				"kubernetes-system-scheduler",
+				"kubernetes-apiserver-slos",
+				"kubernetes-apiserver.rules":
 				// skip
 			default:
 				groups = append(groups, g)
