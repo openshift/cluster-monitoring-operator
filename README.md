@@ -27,3 +27,4 @@ Please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) document for informatio
 ## Release
 
 Release checklist is available when creating new ["Release Checklist" issue](https://github.com/openshift/cluster-monitoring-operator/issues/new?template=release.md).
+
