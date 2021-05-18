@@ -205,7 +205,6 @@ function(params)
                   '-openshift-service-account=grafana',
                   '-openshift-ca=/etc/pki/tls/cert.pem',
                   '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-                  '-skip-auth-regex=^/metrics',
                 ],
                 env: [
                   { name: 'HTTP_PROXY', value: '' },
