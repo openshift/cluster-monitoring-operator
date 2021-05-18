@@ -29,7 +29,6 @@ spec:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.47.1
-        - --namespaces=openshift-monitoring
         - --prometheus-instance-namespaces=openshift-monitoring
         - --thanos-ruler-instance-namespaces=openshift-monitoring
         - --alertmanager-instance-namespaces=openshift-monitoring

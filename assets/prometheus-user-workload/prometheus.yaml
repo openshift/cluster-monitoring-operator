@@ -123,17 +123,32 @@ spec:
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.26.0
-  podMonitorNamespaceSelector: {}
+  podMonitorNamespaceSelector:
+    matchExpressions:
+    - key: openshift.io/cluster-monitoring
+      operator: NotIn
+      values:
+      - "true"
   podMonitorSelector: {}
   priorityClassName: openshift-user-critical
-  probeNamespaceSelector: {}
+  probeNamespaceSelector:
+    matchExpressions:
+    - key: openshift.io/cluster-monitoring
+      operator: NotIn
+      values:
+      - "true"
   probeSelector: {}
   replicas: 2
   resources:
     requests:
       cpu: 6m
       memory: 30Mi
-  ruleNamespaceSelector: {}
+  ruleNamespaceSelector:
+    matchExpressions:
+    - key: openshift.io/cluster-monitoring
+      operator: NotIn
+      values:
+      - "true"
   ruleSelector:
     matchLabels:
       openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
@@ -145,7 +160,12 @@ spec:
     runAsNonRoot: true
     runAsUser: 65534
   serviceAccountName: prometheus-user-workload
-  serviceMonitorNamespaceSelector: {}
+  serviceMonitorNamespaceSelector:
+    matchExpressions:
+    - key: openshift.io/cluster-monitoring
+      operator: NotIn
+      values:
+      - "true"
   serviceMonitorSelector: {}
   thanos:
     image: quay.io/thanos/thanos:v0.19.0
