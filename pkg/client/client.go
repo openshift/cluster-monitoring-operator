@@ -140,6 +140,10 @@ func (c *Client) Namespace() string {
 	return c.namespace
 }
 
+func (c *Client) UserWorkloadNamespace() string {
+	return c.userWorkloadNamespace
+}
+
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
