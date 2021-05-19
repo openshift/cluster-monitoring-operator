@@ -45,8 +45,8 @@ push: container
 
 clean:
 	rm -f $(BIN)
-	go clean -r $(MAIN_PKG)
-	docker images -q $(REPO) | xargs --no-run-if-empty docker rmi --force
+	-go clean -r $(MAIN_PKG)
+	-docker images -q $(REPO) | xargs --no-run-if-empty docker rmi --force
 	rm -rf jsonnet/vendor
 
 docs:
