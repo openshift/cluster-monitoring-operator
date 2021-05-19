@@ -212,16 +212,16 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                   {
                     record: "cluster:apiserver_request_latencies_sum:mean5m",
                     expr: |||
-                      sum(rate(apiserver_request_latencies_sum{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s)
+                      sum(rate(apiserver_request_latencies_sum{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s)
                       /
-                      sum(rate(apiserver_request_latencies_count{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s)
+                      sum(rate(apiserver_request_latencies_count{subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s)
                   ||| % ($._config),
                   },
                 ] + [
                   {
                     record: 'cluster_quantile:apiserver_request_latencies:histogram_quantile',
                     expr: |||
-                      histogram_quantile(%(quantile)s, sum(rate(apiserver_request_latencies_bucket{%(kubeApiserverSelector)s,subresource!="log",verb!~"LIST|WATCH|WATCHLIST|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s))
+                      histogram_quantile(%(quantile)s, sum(rate(apiserver_request_latencies_bucket{%(kubeApiserverSelector)s,subresource!="log",verb!~"LIST|WATCH|WATCHLIST|DELETECOLLECTION|PROXY|CONNECT"}[5m])) without(instance, %(podLabel)s))
                     ||| % ({ quantile: quantile } + $._config),
                     labels: {
                       quantile: quantile,
