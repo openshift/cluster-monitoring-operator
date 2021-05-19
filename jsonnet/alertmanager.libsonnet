@@ -221,6 +221,7 @@ function(params)
         resources: {
           requests: {
             cpu: '4m',
+            memory: '48Mi',
           },
         },
         containers: [

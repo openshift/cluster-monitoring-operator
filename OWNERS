@@ -1,26 +1,26 @@
 component: "Monitoring"
 
 reviewers:
-- s-urbaniak
 - paulfantom
-- LiliC
 - simonpasquier
 - dgrisonnet
 - jan--f
 - bison
+- fpetkovski
 
 approvers:
 - bparees
-- s-urbaniak
 - paulfantom
-- LiliC
 - simonpasquier
 - dgrisonnet
 - jan--f
 - bison
+- fpetkovski
 
 emeritus_approvers:
 - brancz
 - squat
 - metalmatze
 - pgier
+- s-urbaniak
+- LiliC

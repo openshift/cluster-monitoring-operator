@@ -68,7 +68,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 150Mi
+            memory: 32Mi
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical

@@ -40,7 +40,7 @@ spec:
         resources:
           requests:
             cpu: 8m
-            memory: 180Mi
+            memory: 32Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /host/sys

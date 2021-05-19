@@ -1,12 +1,14 @@
 function(params) {
   local cfg = params,
-  //local osm = import 'github.com/openshift/openshift-state-metrics/jsonnet/openshift-state-metrics.libsonnet';
   local osm = (import 'openshift-state-metrics/openshift-state-metrics.libsonnet') + {
     _config+:: {
       namespace: cfg.namespace,
       versions: {
         openshiftStateMetrics: 'latest',
         kubeRbacProxy: 'latest',
+      },
+      openshiftStateMetrics+:: {
+        baseMemory: '32Mi',
       },
     },
   },

@@ -119,6 +119,7 @@ spec:
   resources:
     requests:
       cpu: 4m
+      memory: 48Mi
   secrets:
   - alertmanager-main-tls
   - alertmanager-main-proxy

@@ -149,6 +149,7 @@ function(params)
                       resources+: {
                         requests+: {
                           cpu: '8m',
+                          memory: '32Mi',
                         },
                       },
                     },
