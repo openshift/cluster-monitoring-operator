@@ -1823,24 +1823,6 @@ spec:
         short: 6h
   - name: kubernetes-system-apiserver
     rules:
-    - alert: KubeClientCertificateExpiration
-      annotations:
-        description: A client certificate used to authenticate to the apiserver is
-          expiring in less than 1.5 hours.
-        summary: Client certificate is about to expire.
-      expr: |
-        apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and on(job) histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 5400
-      labels:
-        severity: warning
-    - alert: KubeClientCertificateExpiration
-      annotations:
-        description: A client certificate used to authenticate to the apiserver is
-          expiring in less than 1.0 hours.
-        summary: Client certificate is about to expire.
-      expr: |
-        apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and on(job) histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 3600
-      labels:
-        severity: critical
     - alert: AggregatedAPIErrors
       annotations:
         description: An aggregated API {{ $labels.name }}/{{ $labels.namespace }}
