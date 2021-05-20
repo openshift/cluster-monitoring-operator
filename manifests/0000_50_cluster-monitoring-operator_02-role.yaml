@@ -165,6 +165,7 @@ rules:
   - poddisruptionbudgets
   verbs:
   - create
+  - delete
   - get
   - update
 - apiGroups:
