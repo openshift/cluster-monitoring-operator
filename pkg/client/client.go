@@ -446,6 +446,16 @@ func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 	return err
 }
 
+func (c *Client) DeletePodDisruptionBudget(pdb *policyv1beta1.PodDisruptionBudget) error {
+	p := metav1.DeletePropagationForeground
+	err := c.kclient.PolicyV1beta1().PodDisruptionBudgets(pdb.GetNamespace()).Delete(context.TODO(), pdb.GetName(), metav1.DeleteOptions{PropagationPolicy: &p})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
 func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
 

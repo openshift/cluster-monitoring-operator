@@ -51,18 +51,19 @@ const (
 )
 
 var (
-	AlertmanagerConfig             = "alertmanager/secret.yaml"
-	AlertmanagerService            = "alertmanager/service.yaml"
-	AlertmanagerProxySecret        = "alertmanager/proxy-secret.yaml"
-	AlertmanagerMain               = "alertmanager/alertmanager.yaml"
-	AlertmanagerServiceAccount     = "alertmanager/service-account.yaml"
-	AlertmanagerClusterRoleBinding = "alertmanager/cluster-role-binding.yaml"
-	AlertmanagerClusterRole        = "alertmanager/cluster-role.yaml"
-	AlertmanagerRBACProxySecret    = "alertmanager/kube-rbac-proxy-secret.yaml"
-	AlertmanagerRoute              = "alertmanager/route.yaml"
-	AlertmanagerServiceMonitor     = "alertmanager/service-monitor.yaml"
-	AlertmanagerTrustedCABundle    = "alertmanager/trusted-ca-bundle.yaml"
-	AlertmanagerPrometheusRule     = "alertmanager/prometheus-rule.yaml"
+	AlertmanagerConfig              = "alertmanager/secret.yaml"
+	AlertmanagerService             = "alertmanager/service.yaml"
+	AlertmanagerProxySecret         = "alertmanager/proxy-secret.yaml"
+	AlertmanagerMain                = "alertmanager/alertmanager.yaml"
+	AlertmanagerServiceAccount      = "alertmanager/service-account.yaml"
+	AlertmanagerClusterRoleBinding  = "alertmanager/cluster-role-binding.yaml"
+	AlertmanagerClusterRole         = "alertmanager/cluster-role.yaml"
+	AlertmanagerRBACProxySecret     = "alertmanager/kube-rbac-proxy-secret.yaml"
+	AlertmanagerRoute               = "alertmanager/route.yaml"
+	AlertmanagerServiceMonitor      = "alertmanager/service-monitor.yaml"
+	AlertmanagerTrustedCABundle     = "alertmanager/trusted-ca-bundle.yaml"
+	AlertmanagerPrometheusRule      = "alertmanager/prometheus-rule.yaml"
+	AlertmanagerPodDisruptionBudget = "alertmanager/pod-disruption-budget.yaml"
 
 	KubeStateMetricsClusterRoleBinding = "kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole        = "kube-state-metrics/cluster-role.yaml"
@@ -109,6 +110,7 @@ var (
 	PrometheusK8sGrpcTLSSecret               = "prometheus-k8s/grpc-tls-secret.yaml"
 	PrometheusK8sTrustedCABundle             = "prometheus-k8s/trusted-ca-bundle.yaml"
 	PrometheusK8sThanosSidecarServiceMonitor = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
+	PrometheusK8sPodDisruptionBudget         = "prometheus-k8s/pod-disruption-budget.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
@@ -124,6 +126,7 @@ var (
 	PrometheusUserWorkloadPrometheusServiceMonitor    = "prometheus-user-workload/service-monitor.yaml"
 	PrometheusUserWorkloadGrpcTLSSecret               = "prometheus-user-workload/grpc-tls-secret.yaml"
 	PrometheusUserWorkloadThanosSidecarServiceMonitor = "prometheus-user-workload/service-monitor-thanos-sidecar.yaml"
+	PrometheusUserWorkloadPodDisruptionBudget         = "prometheus-user-workload/pod-disruption-budget.yaml"
 
 	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
@@ -485,6 +488,10 @@ func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
 
 func (f *Factory) AlertmanagerPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetReader(AlertmanagerPrometheusRule))
+}
+
+func (f *Factory) AlertmanagerPodDisruptionBudget() (*policyv1beta1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AlertmanagerPodDisruptionBudget))
 }
 
 func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
@@ -1449,6 +1456,14 @@ func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.Servi
 	sm.Namespace = f.namespaceUserWorkload
 
 	return sm, nil
+}
+
+func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1beta1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusK8sPodDisruptionBudget))
+}
+
+func (f *Factory) PrometheusUserWorkloadPodDisruptionBudget() (*policyv1beta1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusUserWorkloadPodDisruptionBudget))
 }
 
 func (f *Factory) PrometheusAdapterClusterRole() (*rbacv1.ClusterRole, error) {

@@ -79,7 +79,7 @@ vendor:
 	go mod verify
 
 .PHONY: generate
-generate: build-jsonnet manifests/0000_50_cluster-monitoring-operator_02-role.yaml docs
+generate: build-jsonnet manifests/0000_50_cluster-monitoring-operator_02-role.yaml docs check-assets
 
 .PHONY: generate-in-docker
 generate-in-docker:
@@ -149,6 +149,10 @@ check-rules: $(PROMTOOL_BIN) tmp/rules.yaml
 .PHONY: test-rules
 test-rules: check-rules
 	hack/test-rules.sh | tee "tmp/$@.out"
+
+.PHONY: check-assets
+check-assets:
+	hack/check-assets.sh
 
 ###########
 # Testing #
