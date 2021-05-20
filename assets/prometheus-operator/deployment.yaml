@@ -46,7 +46,7 @@ spec:
         resources:
           requests:
             cpu: 5m
-            memory: 60Mi
+            memory: 150Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -69,7 +69,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 40Mi
+            memory: 15Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:

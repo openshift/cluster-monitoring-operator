@@ -428,7 +428,7 @@ function(params)
                 image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0',  //FIXME(paulfantom)
                 resources: {
                   requests: {
-                    memory: '20Mi',
+                    memory: '15Mi',
                     cpu: '1m',
                   },
                 },
@@ -470,7 +470,7 @@ function(params)
                 ],
                 resources: {
                   requests: {
-                    memory: '20Mi',
+                    memory: '15Mi',
                     cpu: '1m',
                   },
                 },
@@ -481,7 +481,7 @@ function(params)
                 image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0',  //FIXME(paulfantom)
                 resources: {
                   requests: {
-                    memory: '20Mi',
+                    memory: '15Mi',
                     cpu: '1m',
                   },
                 },

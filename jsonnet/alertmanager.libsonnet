@@ -221,7 +221,7 @@ function(params)
         resources: {
           requests: {
             cpu: '4m',
-            memory: '48Mi',
+            memory: '40Mi',
           },
         },
         containers: [
@@ -289,7 +289,7 @@ function(params)
             resources: {
               requests: {
                 cpu: '1m',
-                memory: '20Mi',
+                memory: '15Mi',
               },
             },
             ports: [

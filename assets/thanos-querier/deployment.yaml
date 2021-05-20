@@ -140,7 +140,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 20Mi
+            memory: 15Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
@@ -156,7 +156,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 20Mi
+            memory: 15Mi
         terminationMessagePolicy: FallbackToLogsOnError
       - args:
         - --secure-listen-address=0.0.0.0:9093
@@ -175,7 +175,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 20Mi
+            memory: 15Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private

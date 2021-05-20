@@ -101,7 +101,7 @@ function(params)
                       securityContext: {},
                       resources: {
                         requests: {
-                          memory: '40Mi',
+                          memory: '15Mi',
                           cpu: '1m',
                         },
                       },
@@ -115,7 +115,7 @@ function(params)
                       securityContext: {},
                       resources: {
                         requests: {
-                          memory: '40Mi',
+                          memory: '80Mi',
                           cpu: '2m',
                         },
                       },
