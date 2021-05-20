@@ -1420,20 +1420,6 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 				Key:   "static_configs",
 				Value: []yaml2.MapSlice{sc},
 			})
-
-			relabelings := yaml2.MapSlice{}
-			// Add configured relabelings.
-			if len(staticConfig.RelabelConfigs) > 0 {
-				for _, r := range staticConfig.RelabelConfigs {
-					relabelings = append(relabelings, generateRelabelConfig(r)...)
-				}
-			}
-			if len(relabelings) > 0 {
-				cfg = append(cfg, yaml2.MapItem{
-					Key:   "relabel_configs",
-					Value: []yaml2.MapSlice{relabelings},
-				})
-			}
 		}
 		cfgs = append(cfgs, cfg)
 	}
@@ -1454,40 +1440,6 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 	}
 
 	return additionalPromToAmConfigSecret, nil
-}
-
-func generateRelabelConfig(c *monv1.RelabelConfig) yaml2.MapSlice {
-	relabeling := yaml2.MapSlice{}
-
-	if len(c.SourceLabels) > 0 {
-		relabeling = append(relabeling, yaml2.MapItem{Key: "source_labels", Value: c.SourceLabels})
-	}
-
-	if c.Separator != "" {
-		relabeling = append(relabeling, yaml2.MapItem{Key: "separator", Value: c.Separator})
-	}
-
-	if c.TargetLabel != "" {
-		relabeling = append(relabeling, yaml2.MapItem{Key: "target_label", Value: c.TargetLabel})
-	}
-
-	if c.Regex != "" {
-		relabeling = append(relabeling, yaml2.MapItem{Key: "regex", Value: c.Regex})
-	}
-
-	if c.Modulus != uint64(0) {
-		relabeling = append(relabeling, yaml2.MapItem{Key: "modulus", Value: c.Modulus})
-	}
-
-	if c.Replacement != "" {
-		relabeling = append(relabeling, yaml2.MapItem{Key: "replacement", Value: c.Replacement})
-	}
-
-	if c.Action != "" {
-		relabeling = append(relabeling, yaml2.MapItem{Key: "action", Value: c.Action})
-	}
-
-	return relabeling
 }
 
 func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
