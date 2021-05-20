@@ -97,6 +97,10 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
             )
           ||| % $._config,
         }
+      else if ('record' in rule) && (rule.record == 'instance:node_filesystem_usage:sum') then
+        rule {
+          expr: 'sum((node_filesystem_size{mountpoint="/host/root"} - node_filesystem_free{mountpoint="/host/root"})) BY (instance)',
+        }
       else
         rule
     );
