@@ -40,7 +40,7 @@ function(params)
                       securityContext: {},
                       resources: {
                         requests: {
-                          memory: '60Mi',
+                          memory: '150Mi',
                           cpu: '5m',
                         },
                       },
@@ -78,7 +78,7 @@ function(params)
                       securityContext: {},
                       resources: {
                         requests: {
-                          memory: '40Mi',
+                          memory: '15Mi',
                           cpu: '1m',
                         },
                       },

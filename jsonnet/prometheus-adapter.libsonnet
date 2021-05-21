@@ -120,7 +120,7 @@ function(params)
                         ],
                         resources: {
                           requests: {
-                            memory: '25Mi',
+                            memory: '40Mi',
                             cpu: '1m',
                           },
                         },

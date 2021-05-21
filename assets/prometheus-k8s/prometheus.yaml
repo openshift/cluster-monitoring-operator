@@ -95,7 +95,7 @@ spec:
     resources:
       requests:
         cpu: 1m
-        memory: 20Mi
+        memory: 15Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -111,7 +111,7 @@ spec:
     resources:
       requests:
         cpu: 1m
-        memory: 20Mi
+        memory: 15Mi
     terminationMessagePolicy: FallbackToLogsOnError
   - args:
     - --secure-listen-address=[$(POD_IP)]:10902
@@ -152,6 +152,7 @@ spec:
     resources:
       requests:
         cpu: 1m
+        memory: 25Mi
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls

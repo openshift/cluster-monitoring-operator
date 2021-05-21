@@ -52,7 +52,7 @@ spec:
         resources:
           requests:
             cpu: 2m
-            memory: 40Mi
+            memory: 80Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /tmp
@@ -73,7 +73,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 40Mi
+            memory: 15Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -95,7 +95,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 40Mi
+            memory: 15Mi
         securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:

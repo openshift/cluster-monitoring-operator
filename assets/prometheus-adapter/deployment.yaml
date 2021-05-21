@@ -54,7 +54,7 @@ spec:
         resources:
           requests:
             cpu: 1m
-            memory: 25Mi
+            memory: 40Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp

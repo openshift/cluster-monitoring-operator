@@ -79,7 +79,7 @@ spec:
     resources:
       requests:
         cpu: 1m
-        memory: 20Mi
+        memory: 15Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/kube-rbac-proxy
@@ -119,7 +119,7 @@ spec:
   resources:
     requests:
       cpu: 4m
-      memory: 48Mi
+      memory: 40Mi
   secrets:
   - alertmanager-main-tls
   - alertmanager-main-proxy

@@ -127,7 +127,7 @@ function(params)
                       }],
                       resources: {
                         requests: {
-                          memory: '30Mi',
+                          memory: '15Mi',
                           cpu: '1m',
                         },
                       },
