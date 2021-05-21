@@ -25,7 +25,6 @@ spec:
         - --no-collector.wifi
         - --no-collector.hwmon
         - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
-        - --collector.mountstats
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
         image: openshift/prometheus-node-exporter:v1.0.1
