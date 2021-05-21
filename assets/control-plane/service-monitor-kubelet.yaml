@@ -50,6 +50,7 @@ spec:
       - __metrics_path__
       targetLabel: metrics_path
     scheme: https
+    scrapeTimeout: 1m
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
       insecureSkipVerify: false
