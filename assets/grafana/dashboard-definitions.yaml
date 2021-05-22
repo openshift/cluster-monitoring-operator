@@ -62,6 +62,7 @@ items:
                   "dashes": false,
                   "datasource": "$datasource",
                   "fill": 2,
+                  "fillGradient": 0,
                   "gridPos": {
                       "h": 9,
                       "w": 12,
@@ -164,6 +165,7 @@ items:
                   "dashes": false,
                   "datasource": "$datasource",
                   "fill": 2,
+                  "fillGradient": 0,
                   "gridPos": {
                       "h": 9,
                       "w": 12,
@@ -607,6 +609,7 @@ items:
                           "dashes": false,
                           "datasource": "$datasource",
                           "fill": 2,
+                          "fillGradient": 0,
                           "gridPos": {
                               "h": 9,
                               "w": 12,
@@ -709,6 +712,7 @@ items:
                           "dashes": false,
                           "datasource": "$datasource",
                           "fill": 2,
+                          "fillGradient": 0,
                           "gridPos": {
                               "h": 9,
                               "w": 12,
@@ -841,6 +845,7 @@ items:
                   "dashes": false,
                   "datasource": "$datasource",
                   "fill": 2,
+                  "fillGradient": 0,
                   "gridPos": {
                       "h": 9,
                       "w": 24,
@@ -941,6 +946,7 @@ items:
                   "dashes": false,
                   "datasource": "$datasource",
                   "fill": 2,
+                  "fillGradient": 0,
                   "gridPos": {
                       "h": 9,
                       "w": 24,
@@ -1052,6 +1058,7 @@ items:
                           "dashes": false,
                           "datasource": "$datasource",
                           "fill": 2,
+                          "fillGradient": 0,
                           "gridPos": {
                               "h": 9,
                               "w": 24,
@@ -1152,6 +1159,7 @@ items:
                           "dashes": false,
                           "datasource": "$datasource",
                           "fill": 2,
+                          "fillGradient": 0,
                           "gridPos": {
                               "h": 9,
                               "w": 24,
@@ -1272,6 +1280,7 @@ items:
                           "dashes": false,
                           "datasource": "$datasource",
                           "fill": 2,
+                          "fillGradient": 0,
                           "gridPos": {
                               "h": 9,
                               "w": 24,
@@ -1372,6 +1381,7 @@ items:
                           "dashes": false,
                           "datasource": "$datasource",
                           "fill": 2,
+                          "fillGradient": 0,
                           "gridPos": {
                               "h": 9,
                               "w": 24,
@@ -1472,6 +1482,7 @@ items:
                           "dashes": false,
                           "datasource": "$datasource",
                           "fill": 2,
+                          "fillGradient": 0,
                           "gridPos": {
                               "h": 9,
                               "w": 24,
@@ -1576,6 +1587,7 @@ items:
                           "dashes": false,
                           "datasource": "$datasource",
                           "fill": 2,
+                          "fillGradient": 0,
                           "gridPos": {
                               "h": 9,
                               "w": 24,
@@ -2970,7 +2982,7 @@ items:
           "sharedCrosshair": false,
           "style": "dark",
           "tags": [
-
+              "etcd-mixin"
           ],
           "templating": {
               "list": [
@@ -16935,7 +16947,7 @@ items:
                           "timeShift": null,
                           "title": "Prometheus Stats",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17034,7 +17046,7 @@ items:
                           "timeShift": null,
                           "title": "Target Sync",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17120,7 +17132,7 @@ items:
                           "timeShift": null,
                           "title": "Targets",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17218,7 +17230,7 @@ items:
                           "timeShift": null,
                           "title": "Average Scrape Interval Duration",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17328,7 +17340,7 @@ items:
                           "timeShift": null,
                           "title": "Scrape failures",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17414,7 +17426,7 @@ items:
                           "timeShift": null,
                           "title": "Appended Samples",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17512,7 +17524,7 @@ items:
                           "timeShift": null,
                           "title": "Head Series",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17598,7 +17610,7 @@ items:
                           "timeShift": null,
                           "title": "Head Chunks",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17696,7 +17708,7 @@ items:
                           "timeShift": null,
                           "title": "Query Rate",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17782,7 +17794,7 @@ items:
                           "timeShift": null,
                           "title": "Stage Duration",
                           "tooltip": {
-                              "shared": true,
+                              "shared": false,
                               "sort": 0,
                               "value_type": "individual"
                           },
@@ -17848,7 +17860,7 @@ items:
                       "type": "datasource"
                   },
                   {
-                      "allValue": null,
+                      "allValue": ".+",
                       "current": {
                           "selected": true,
                           "text": "All",
@@ -17876,7 +17888,7 @@ items:
                       "useTags": false
                   },
                   {
-                      "allValue": null,
+                      "allValue": ".+",
                       "current": {
                           "selected": true,
                           "text": "All",
