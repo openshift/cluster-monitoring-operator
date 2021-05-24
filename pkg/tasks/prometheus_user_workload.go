@@ -308,9 +308,11 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus PodDisruptionBudget object failed")
 	}
 
-	err = t.client.DeletePodDisruptionBudget(pdb)
-	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Prometheus PodDisruptionBudget object failed")
+	if pdb != nil {
+		err = t.client.DeletePodDisruptionBudget(pdb)
+		if err != nil {
+			return errors.Wrap(err, "deleting UserWorkload Prometheus PodDisruptionBudget object failed")
+		}
 	}
 
 	err = t.client.DeleteSecret(s)
