@@ -246,8 +246,8 @@ var (
 
 	TrustedCABundleKey = "ca-bundle.crt"
 
-	AdditionalAlertmanagerConfigKey  = "alertmanager-configs.yaml"
-	AdditionalAlertmanagerConfigName = "prometheus-k8s-additional-alertmanager-configs"
+	AdditionalAlertmanagerConfigSecretKey  = "alertmanager-configs.yaml"
+	AdditionalAlertmanagerConfigSecretName = "prometheus-k8s-additional-alertmanager-configs"
 )
 
 type Factory struct {
@@ -1223,16 +1223,6 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		}
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs != nil {
-		p.Spec.AdditionalAlertManagerConfigs = &v1.SecretKeySelector{
-			Key: AdditionalAlertmanagerConfigKey,
-			LocalObjectReference: v1.LocalObjectReference{
-				Name: AdditionalAlertmanagerConfigName,
-			},
-		}
-		p.Spec.ConfigMaps = append(p.Spec.ConfigMaps, getConfigMapName(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs)...)
-	}
-
 	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
 	if telemetryEnabled && f.config.RemoteWrite {
 
@@ -1372,6 +1362,16 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		}
 	}
 
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs != nil {
+		p.Spec.AdditionalAlertManagerConfigs = &v1.SecretKeySelector{
+			Key: AdditionalAlertmanagerConfigSecretKey,
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: AdditionalAlertmanagerConfigSecretName,
+			},
+		}
+		p.Spec.Secrets = append(p.Spec.Secrets, getAlertmanagerTLSSecretsName(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs)...)
+	}
+
 	return p, nil
 }
 
@@ -1397,30 +1397,64 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 			})
 		}
 
-		cfg = append(cfg, yaml2.MapItem{
-			Key: "tls_config",
-			Value: yaml2.MapSlice{
-				{Key: "ca_file", Value: alertmanagerConfig.TLSConfig.CAFile},
-				{Key: "cert_file", Value: alertmanagerConfig.TLSConfig.CertFile},
-				{Key: "key_file", Value: alertmanagerConfig.TLSConfig.KeyFile},
-				{Key: "insecure_skip_verify", Value: alertmanagerConfig.TLSConfig.InsecureSkipVerify},
-			},
-		})
-
-		for _, staticConfig := range alertmanagerConfig.StaticConfigs {
-			sc := yaml2.MapSlice{
-				{Key: "targets", Value: staticConfig.Targets},
+		tlsConfig := yaml2.MapSlice{}
+		if alertmanagerConfig.TLSConfig.CA != nil {
+			if alertmanagerConfig.TLSConfig.CA.Name == "" {
+				return nil, errors.Errorf("ca secret name not found")
 			}
-
-			sc = append(sc, yaml2.MapSlice{
-				{Key: "labels", Value: staticConfig.Labels},
-			}...)
-
-			cfg = append(cfg, yaml2.MapItem{
-				Key:   "static_configs",
-				Value: []yaml2.MapSlice{sc},
+			if alertmanagerConfig.TLSConfig.CA.Key == "" {
+				return nil, errors.Errorf("ca secret key not found")
+			}
+			tlsConfig = append(tlsConfig, yaml2.MapItem{
+				Key: "ca_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+					alertmanagerConfig.TLSConfig.CA.Name, alertmanagerConfig.TLSConfig.CA.Key),
 			})
 		}
+		if alertmanagerConfig.TLSConfig.Cert != nil {
+			if alertmanagerConfig.TLSConfig.Cert.Name == "" {
+				return nil, errors.Errorf("cert secret name not found")
+			}
+			if alertmanagerConfig.TLSConfig.Cert.Key == "" {
+				return nil, errors.Errorf("cert secret key not found")
+			}
+			tlsConfig = append(tlsConfig, yaml2.MapItem{
+				Key: "cert_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+					alertmanagerConfig.TLSConfig.Cert.Name, alertmanagerConfig.TLSConfig.Cert.Key),
+			})
+		}
+		if alertmanagerConfig.TLSConfig.Key != nil {
+			if alertmanagerConfig.TLSConfig.Key.Name == "" {
+				return nil, errors.Errorf("key secret name not found")
+			}
+			if alertmanagerConfig.TLSConfig.Key.Key == "" {
+				return nil, errors.Errorf("key secret key not found")
+			}
+			tlsConfig = append(tlsConfig, yaml2.MapItem{
+				Key: "key_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+					alertmanagerConfig.TLSConfig.Key.Name, alertmanagerConfig.TLSConfig.Key.Key),
+			})
+		}
+		if alertmanagerConfig.TLSConfig.ServerName != "" {
+			tlsConfig = append(tlsConfig, yaml2.MapItem{
+				Key: "server_name", Value: alertmanagerConfig.TLSConfig.ServerName,
+			})
+		}
+		tlsConfig = append(tlsConfig, yaml2.MapSlice{
+			{Key: "insecure_skip_verify", Value: alertmanagerConfig.TLSConfig.InsecureSkipVerify},
+		}...)
+
+		cfg = append(cfg, yaml2.MapItem{
+			Key:   "tls_config",
+			Value: []yaml2.MapSlice{tlsConfig},
+		})
+
+		sc := yaml2.MapSlice{
+			{Key: "targets", Value: alertmanagerConfig.StaticConfigs},
+		}
+		cfg = append(cfg, yaml2.MapItem{
+			Key:   "static_configs",
+			Value: []yaml2.MapSlice{sc},
+		})
 		cfgs = append(cfgs, cfg)
 	}
 
@@ -1429,11 +1463,11 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 		return nil, err
 	}
 	amConfigYamlMap := map[string][]byte{}
-	amConfigYamlMap[AdditionalAlertmanagerConfigKey] = amConfigYaml
+	amConfigYamlMap[AdditionalAlertmanagerConfigSecretKey] = amConfigYaml
 
 	additionalPromToAmConfigSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      AdditionalAlertmanagerConfigName,
+			Name:      AdditionalAlertmanagerConfigSecretName,
 			Namespace: f.namespace,
 		},
 		Data: amConfigYamlMap,
@@ -3668,17 +3702,19 @@ func trustedCABundleVolume(configMapName, volumeName string) v1.Volume {
 	}
 }
 
-func getConfigMapName(alertmanagerConfigs []AdditionalAlertmanagerConfig) []string {
+func getAlertmanagerTLSSecretsName(alertmanagerConfigs []AdditionalAlertmanagerConfig) []string {
 
-	caConfigmap := []string{}
+	secretsName := []string{}
 	for _, alertmanagerConfig := range alertmanagerConfigs {
-		if alertmanagerConfig.TLSConfig.CAFile != "" {
-			caFile := alertmanagerConfig.TLSConfig.CAFile
-			caPathSlice := strings.Split(caFile, "/")
-			if len(caPathSlice) > 1 {
-				caConfigmap = append(caConfigmap, caPathSlice[len(caPathSlice)-2])
-			}
+		if alertmanagerConfig.TLSConfig.CA != nil {
+			secretsName = append(secretsName, alertmanagerConfig.TLSConfig.CA.Name)
+		}
+		if alertmanagerConfig.TLSConfig.Cert != nil {
+			secretsName = append(secretsName, alertmanagerConfig.TLSConfig.Cert.Name)
+		}
+		if alertmanagerConfig.TLSConfig.Key != nil {
+			secretsName = append(secretsName, alertmanagerConfig.TLSConfig.Cert.Name)
 		}
 	}
-	return caConfigmap
+	return secretsName
 }

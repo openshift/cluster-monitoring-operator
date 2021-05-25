@@ -109,17 +109,19 @@ type AdditionalAlertmanagerConfig struct {
 	// Bearer token to use when authenticating to Alertmanager.
 	BearerToken string `json:"bearerToken,omitempty"`
 	// List of labeled statically configured Alertmanagers.
-	StaticConfigs []*monv1.ProbeTargetStaticConfig `json:"staticConfigs,omitempty"`
+	StaticConfigs []string `json:"staticConfigs,omitempty"`
 }
 
 // TLSConfig configures the options for TLS connections.
 type TLSConfig struct {
-	// Path to the CA cert in the Prometheus container to use for the targets.
-	CAFile string `json:"caFile,omitempty"`
-	// Path to the client cert file in the Prometheus container for the targets.
-	CertFile string `json:"certFile,omitempty"`
-	// Path to the client key file in the Prometheus container for the targets.
-	KeyFile string `json:"keyFile,omitempty"`
+	// The CA cert in the Prometheus container to use for the targets.
+	CA *v1.SecretKeySelector `json:"ca,omitempty"`
+	// The client cert in the Prometheus container to use for the targets.
+	Cert *v1.SecretKeySelector `json:"cert,omitempty"`
+	// The client key in the Prometheus container to use for the targets.
+	Key *v1.SecretKeySelector `json:"key,omitempty"`
+	// Used to verify the hostname for the targets.
+	ServerName string `yaml:"server_name,omitempty"`
 	// Disable target certificate validation.
 	InsecureSkipVerify bool `json:"insecureSkipVerify"`
 }

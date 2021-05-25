@@ -947,19 +947,20 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   remoteWrite:
   - url: "https://test.remotewrite.com/api/write"
   additionalAlertManagerConfigs:
-  - api_version: v2
-    bearer_token: xxx
+  - apiVersion: v2
+    bearerToken: xxx
     scheme: https
-    tls_config:
-      ca_file: /etc/prometheus/configmaps/router-ca/service-ca.crt
-      insecure_skip_verify: false
-    path_prefix: /
-    static_configs:
-    - targets:
-      - alertmanager-remote.com
+    tlsConfig:
+      ca: 
+        name: ca
+        key: root-ca.crt
+    pathPrefix: /
+    staticConfigs:
+    - alertmanager-remote.com
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
 `)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1048,8 +1049,18 @@ ingress:
 		t.Fatal("Prometheus external labels are not configured correctly")
 	}
 
-	if p.Spec.AdditionalAlertManagerConfigs.Name != AdditionalAlertmanagerConfigName {
+	if p.Spec.AdditionalAlertManagerConfigs.Name != AdditionalAlertmanagerConfigSecretName {
 		t.Fatal("Prometheus additional alertmanager not configured correctly")
+	}
+
+	exists := false
+	for _, secret := range p.Spec.Secrets {
+		if secret == "ca" {
+			exists = true
+		}
+	}
+	if !exists {
+		t.Fatal("Prometheus secrets are not configured correctly, expected to have ca secret, but found", p.Spec.Secrets)
 	}
 
 	storageRequest := p.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
@@ -1070,23 +1081,27 @@ func TestAdditionalAlertManagerConfigs(t *testing.T) {
     bearerToken: xxx
     scheme: https
     tlsConfig:
-      caFile: /etc/prometheus/configmaps/router-ca/service-ca.crt
+      ca: 
+        name: ca
+        key: root-ca.crt
     pathPrefix: /
     staticConfigs:
-    - static:
-      - alertmanager-remote.com
-    - static:
-      - alertmanager-remotex.com
+    - alertmanager-remote.com
+    - alertmanager-remotex.com
   - apiVersion: v2
     bearerToken: xxx
     scheme: https
     timeout: 60s
     tlsConfig:
-      caFile: /etc/prometheus/configmaps/router-ca/service-ca.crt
+      ca: 
+        name: ca
+        key: root-ca.crt
+      cert:
+        name: cert
+        key: cert.crt
     pathPrefix: /
     staticConfigs:
-    - static:
-      - alertmanager-remote.com
+    - alertmanager-remote.com
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1100,7 +1115,7 @@ func TestAdditionalAlertManagerConfigs(t *testing.T) {
 	}
 
 	d := []AdditionalAlertmanagerConfig{}
-	err = yaml.Unmarshal(s.Data[AdditionalAlertmanagerConfigKey], &d)
+	err = yaml.Unmarshal(s.Data[AdditionalAlertmanagerConfigSecretKey], &d)
 	if err != nil {
 		t.Fatal(err)
 	}
