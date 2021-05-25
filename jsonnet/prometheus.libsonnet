@@ -512,4 +512,8 @@ function(params)
         ],
       },
     },
+    // TODO: remove podDisruptionBudget once https://github.com/prometheus-operator/kube-prometheus/pull/1156 is merged
+    podDisruptionBudget+: {
+      apiVersion: 'policy/v1',
+    },
   }
