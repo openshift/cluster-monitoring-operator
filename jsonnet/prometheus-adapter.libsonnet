@@ -212,4 +212,7 @@ function(params)
         ],
       },
     },
+    podDisruptionBudget+: {
+      apiVersion: 'policy/v1',
+    },
   }
