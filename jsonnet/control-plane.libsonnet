@@ -84,6 +84,12 @@ function(params)
                   caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
                   insecureSkipVerify: false,
                 },
+              } +
+              {
+                // Increase the scrape timeout to match the scrape interval
+                // because the kubelet metric endpoints might take more than the default
+                // 10 seconds to reply.
+                scrapeTimeout: '30s',
               }
               +
               if 'path' in e && e.path == '/metrics/cadvisor' then
