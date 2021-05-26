@@ -113,8 +113,8 @@ local tlsVolumeName = 'kube-state-metrics-tls';
                           '--metric-blacklist=' +
                           std.join(',', [
                             'kube_secret_labels',
-                            'kube_*_created',
-                            'kube_*_metadata_resource_version',
+                            'kube_.+_created',
+                            'kube_.+_metadata_resource_version',
                             'kube_replicaset_metadata_generation',
                             'kube_replicaset_status_observed_generation',
                             'kube_pod_restart_policy',
