@@ -948,12 +948,20 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   - url: "https://test.remotewrite.com/api/write"
   additionalAlertManagerConfigs:
   - apiVersion: v2
-    bearerToken: xxx
+    bearerToken:
+      name: alertmanager-bearer-token
+      key: token
     scheme: https
     tlsConfig:
       ca: 
-        name: ca
+        name: cert
         key: root-ca.crt
+      cert: 
+        name: cert
+        key: cert.crt
+      file: 
+        name: key
+        key: cert.crt
     pathPrefix: /
     staticConfigs:
     - alertmanager-remote.com
@@ -1055,12 +1063,12 @@ ingress:
 
 	exists := false
 	for _, secret := range p.Spec.Secrets {
-		if secret == "ca" {
+		if secret == "cert" {
 			exists = true
 		}
 	}
 	if !exists {
-		t.Fatal("Prometheus secrets are not configured correctly, expected to have ca secret, but found", p.Spec.Secrets)
+		t.Fatal("Prometheus secrets are not configured correctly, expected to have cert secret, but found", p.Spec.Secrets)
 	}
 
 	storageRequest := p.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
@@ -1078,7 +1086,9 @@ func TestAdditionalAlertManagerConfigs(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusK8s:
   additionalAlertManagerConfigs:
   - apiVersion: v2
-    bearerToken: xxx
+    bearerToken:
+      name: alertmanager-bearer-token
+      key: token
     scheme: https
     tlsConfig:
       ca: 
@@ -1089,7 +1099,9 @@ func TestAdditionalAlertManagerConfigs(t *testing.T) {
     - alertmanager-remote.com
     - alertmanager-remotex.com
   - apiVersion: v2
-    bearerToken: xxx
+    bearerToken:
+      name: alertmanager-bearer-token
+      key: token
     scheme: https
     timeout: 60s
     tlsConfig:

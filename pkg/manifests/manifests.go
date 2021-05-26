@@ -1388,7 +1388,6 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 			{Key: "scheme", Value: alertmanagerConfig.Scheme},
 			{Key: "path_prefix", Value: alertmanagerConfig.PathPrefix},
 			{Key: "api_version", Value: alertmanagerConfig.APIVersion},
-			{Key: "bearer_token", Value: alertmanagerConfig.BearerToken},
 		}...)
 
 		if alertmanagerConfig.Timeout != nil {
@@ -1396,6 +1395,24 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 				Key: "timeout", Value: alertmanagerConfig.Timeout,
 			})
 		}
+
+		auth := yaml2.MapSlice{}
+		if alertmanagerConfig.BearerToken != nil {
+			if alertmanagerConfig.BearerToken.Name == "" {
+				return nil, errors.Errorf("bearer token secret name not found")
+			}
+			if alertmanagerConfig.BearerToken.Key == "" {
+				return nil, errors.Errorf("bearer token secret key not found")
+			}
+			auth = append(auth, yaml2.MapItem{
+				Key: "credentials_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+					alertmanagerConfig.BearerToken.Name, alertmanagerConfig.BearerToken.Key),
+			})
+		}
+		cfg = append(cfg, yaml2.MapItem{
+			Key:   "authorization",
+			Value: auth,
+		})
 
 		tlsConfig := yaml2.MapSlice{}
 		if alertmanagerConfig.TLSConfig.CA != nil {
@@ -1445,7 +1462,7 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 
 		cfg = append(cfg, yaml2.MapItem{
 			Key:   "tls_config",
-			Value: []yaml2.MapSlice{tlsConfig},
+			Value: tlsConfig,
 		})
 
 		sc := yaml2.MapSlice{
@@ -3715,6 +3732,30 @@ func getAlertmanagerTLSSecretsName(alertmanagerConfigs []AdditionalAlertmanagerC
 		if alertmanagerConfig.TLSConfig.Key != nil {
 			secretsName = append(secretsName, alertmanagerConfig.TLSConfig.Cert.Name)
 		}
+		if alertmanagerConfig.BearerToken != nil {
+			secretsName = append(secretsName, alertmanagerConfig.BearerToken.Name)
+		}
 	}
-	return secretsName
+	return removeEmptyDuplicates(secretsName)
+}
+
+func removeEmptyDuplicates(elements []string) []string {
+	// Use map to record duplicates as we find them.
+	encountered := map[string]bool{}
+	result := []string{}
+
+	for v := range elements {
+		if encountered[elements[v]] == true {
+			// Do not add duplicate.
+		} else {
+			// Record this element as an encountered element.
+			encountered[elements[v]] = true
+			if elements[v] != "" {
+				// Append to result slice if it is not empty
+				result = append(result, elements[v])
+			}
+		}
+	}
+	// Return the new slice.
+	return result
 }

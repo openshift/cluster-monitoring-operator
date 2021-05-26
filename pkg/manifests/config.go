@@ -107,7 +107,7 @@ type AdditionalAlertmanagerConfig struct {
 	// TLS Config to use for alertmanager connection.
 	TLSConfig TLSConfig `json:"tlsConfig,omitempty"`
 	// Bearer token to use when authenticating to Alertmanager.
-	BearerToken string `json:"bearerToken,omitempty"`
+	BearerToken *v1.SecretKeySelector `json:"bearerToken,omitempty"`
 	// List of labeled statically configured Alertmanagers.
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
 }
