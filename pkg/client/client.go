@@ -39,7 +39,7 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -446,9 +446,9 @@ func (c *Client) DeleteDeployment(d *appsv1.Deployment) error {
 	return err
 }
 
-func (c *Client) DeletePodDisruptionBudget(pdb *policyv1beta1.PodDisruptionBudget) error {
+func (c *Client) DeletePodDisruptionBudget(pdb *policyv1.PodDisruptionBudget) error {
 	p := metav1.DeletePropagationForeground
-	err := c.kclient.PolicyV1beta1().PodDisruptionBudgets(pdb.GetNamespace()).Delete(context.TODO(), pdb.GetName(), metav1.DeleteOptions{PropagationPolicy: &p})
+	err := c.kclient.PolicyV1().PodDisruptionBudgets(pdb.GetNamespace()).Delete(context.TODO(), pdb.GetName(), metav1.DeleteOptions{PropagationPolicy: &p})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1062,8 +1062,8 @@ func (c *Client) CreateIfNotExistConfigMap(cm *v1.ConfigMap) (*v1.ConfigMap, err
 	return res, nil
 }
 
-func (c *Client) CreateOrUpdatePodDisruptionBudget(pdb *policyv1beta1.PodDisruptionBudget) error {
-	pdbClient := c.kclient.PolicyV1beta1().PodDisruptionBudgets(pdb.Namespace)
+func (c *Client) CreateOrUpdatePodDisruptionBudget(pdb *policyv1.PodDisruptionBudget) error {
+	pdbClient := c.kclient.PolicyV1().PodDisruptionBudgets(pdb.Namespace)
 	existing, err := pdbClient.Get(context.TODO(), pdb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pdbClient.Create(context.TODO(), pdb, metav1.CreateOptions{})

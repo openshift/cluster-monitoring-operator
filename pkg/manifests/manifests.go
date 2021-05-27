@@ -37,7 +37,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -490,7 +490,7 @@ func (f *Factory) AlertmanagerPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetReader(AlertmanagerPrometheusRule))
 }
 
-func (f *Factory) AlertmanagerPodDisruptionBudget() (*policyv1beta1.PodDisruptionBudget, error) {
+func (f *Factory) AlertmanagerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AlertmanagerPodDisruptionBudget))
 }
 
@@ -1458,11 +1458,11 @@ func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.Servi
 	return sm, nil
 }
 
-func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1beta1.PodDisruptionBudget, error) {
+func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusK8sPodDisruptionBudget))
 }
 
-func (f *Factory) PrometheusUserWorkloadPodDisruptionBudget() (*policyv1beta1.PodDisruptionBudget, error) {
+func (f *Factory) PrometheusUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusUserWorkloadPodDisruptionBudget))
 }
 
@@ -1621,7 +1621,7 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	return dep, nil
 }
 
-func (f *Factory) PrometheusAdapterPodDisruptionBudget() (*policyv1beta1.PodDisruptionBudget, error) {
+func (f *Factory) PrometheusAdapterPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	pdb, err := f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusAdapterPodDisruptionBudget))
 	if err != nil {
 		return nil, err
@@ -2426,7 +2426,7 @@ func (f *Factory) NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
 	return ds, nil
 }
 
-func (f *Factory) NewPodDisruptionBudget(manifest io.Reader) (*policyv1beta1.PodDisruptionBudget, error) {
+func (f *Factory) NewPodDisruptionBudget(manifest io.Reader) (*policyv1.PodDisruptionBudget, error) {
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		return nil, nil
 	}
@@ -3255,8 +3255,8 @@ func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
 	return &ds, nil
 }
 
-func NewPodDisruptionBudget(manifest io.Reader) (*policyv1beta1.PodDisruptionBudget, error) {
-	pdb := policyv1beta1.PodDisruptionBudget{}
+func NewPodDisruptionBudget(manifest io.Reader) (*policyv1.PodDisruptionBudget, error) {
+	pdb := policyv1.PodDisruptionBudget{}
 	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&pdb)
 	if err != nil {
 		return nil, err

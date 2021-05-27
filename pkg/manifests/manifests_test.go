@@ -24,7 +24,7 @@ import (
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
 	v1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -1683,61 +1683,61 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 func TestPodDisruptionBudget(t *testing.T) {
 	tests := []struct {
 		name   string
-		getPDB func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error)
+		getPDB func(f *Factory) (*policyv1.PodDisruptionBudget, error)
 		ha     bool
 	}{
 		{
 			name: "PrometheusAdapter HA",
-			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.PrometheusAdapterPodDisruptionBudget()
 			},
 			ha: true,
 		},
 		{
 			name: "PrometheusAdapter non-HA",
-			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.PrometheusAdapterPodDisruptionBudget()
 			},
 			ha: false,
 		},
 		{
 			name: "Prometheus HA",
-			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.PrometheusK8sPodDisruptionBudget()
 			},
 			ha: true,
 		},
 		{
 			name: "Prometheus non-HA",
-			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.PrometheusK8sPodDisruptionBudget()
 			},
 			ha: false,
 		},
 		{
 			name: "PrometheusUWM HA",
-			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.PrometheusUserWorkloadPodDisruptionBudget()
 			},
 			ha: true,
 		},
 		{
 			name: "PrometheusUWM non-HA",
-			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.PrometheusUserWorkloadPodDisruptionBudget()
 			},
 			ha: false,
 		},
 		{
 			name: "Alertmanager HA",
-			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.AlertmanagerPodDisruptionBudget()
 			},
 			ha: true,
 		},
 		{
 			name: "Alertmanager non-HA",
-			getPDB: func(f *Factory) (*policyv1beta1.PodDisruptionBudget, error) {
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.AlertmanagerPodDisruptionBudget()
 			},
 			ha: false,
