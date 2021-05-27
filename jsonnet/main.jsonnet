@@ -43,6 +43,11 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                      // Removing CPUThrottlingHigh alert as per https://bugzilla.redhat.com/show_bug.cgi?id=1843346
                      else if ruleGroup.name == 'kubernetes-resources' then
                        ruleGroup { rules: std.filter(function(rule) !('alert' in rule && rule.alert == 'CPUThrottlingHigh'), ruleGroup.rules) }
+                     else if ruleGroup.name == 'kubernetes-system-apiserver' then
+                       // KubeClientCertificateExpiration alert isn't
+                       // actionable because the cluster admin has no way to
+                       // prevent a client from using an expird certificate.
+                       ruleGroup { rules: std.filter(function(rule) !('alert' in rule && (rule.alert == 'KubeClientCertificateExpiration')), ruleGroup.rules) }
                      else if ruleGroup.name == 'kubernetes-system-kubelet' then
                        ruleGroup { rules: std.filter(function(rule) !('alert' in rule && (rule.alert == 'KubeletClientCertificateExpiration' || rule.alert == 'KubeletServerCertificateExpiration')), ruleGroup.rules) }
                      else if ruleGroup.name == 'prometheus' then
