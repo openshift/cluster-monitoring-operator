@@ -144,7 +144,7 @@ github.com/openshift/library-go/pkg/crypto
 github.com/pkg/errors
 # github.com/prometheus-community/prom-label-proxy v0.2.0
 github.com/prometheus-community/prom-label-proxy/injectproxy
-# github.com/prometheus-operator/prometheus-operator v0.47.0
+# github.com/prometheus-operator/prometheus-operator v0.47.1
 ## explicit
 github.com/prometheus-operator/prometheus-operator/pkg/alertmanager
 github.com/prometheus-operator/prometheus-operator/pkg/assets
@@ -156,12 +156,12 @@ github.com/prometheus-operator/prometheus-operator/pkg/operator
 github.com/prometheus-operator/prometheus-operator/pkg/prometheus
 github.com/prometheus-operator/prometheus-operator/pkg/thanos
 github.com/prometheus-operator/prometheus-operator/test/framework
-# github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.47.0
+# github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.47.1
 ## explicit
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1
-# github.com/prometheus-operator/prometheus-operator/pkg/client v0.47.0
+# github.com/prometheus-operator/prometheus-operator/pkg/client v0.47.1
 ## explicit
 github.com/prometheus-operator/prometheus-operator/pkg/client/informers/externalversions
 github.com/prometheus-operator/prometheus-operator/pkg/client/informers/externalversions/internalinterfaces
