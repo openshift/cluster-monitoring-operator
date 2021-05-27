@@ -405,7 +405,6 @@ function(params)
                   '-cookie-secret-file=/etc/proxy/secrets/session_secret',
                   '-openshift-ca=/etc/pki/tls/cert.pem',
                   '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-                  '-skip-auth-regex=^/metrics',
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
