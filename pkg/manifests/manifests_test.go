@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"gopkg.in/yaml.v2"
 
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -946,25 +945,6 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
     datacenter: eu-west
   remoteWrite:
   - url: "https://test.remotewrite.com/api/write"
-  additionalAlertManagerConfigs:
-  - apiVersion: v2
-    bearerToken:
-      name: alertmanager-bearer-token
-      key: token
-    scheme: https
-    tlsConfig:
-      ca: 
-        name: cert
-        key: root-ca.crt
-      cert: 
-        name: cert
-        key: cert.crt
-      file: 
-        name: key
-        key: cert.crt
-    pathPrefix: /
-    staticConfigs:
-    - alertmanager-remote.com
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
 `)
@@ -1057,18 +1037,8 @@ ingress:
 		t.Fatal("Prometheus external labels are not configured correctly")
 	}
 
-	if p.Spec.AdditionalAlertManagerConfigs.Name != AdditionalAlertmanagerConfigSecretName {
-		t.Fatal("Prometheus additional alertmanager not configured correctly")
-	}
-
-	exists := false
-	for _, secret := range p.Spec.Secrets {
-		if secret == "cert" {
-			exists = true
-		}
-	}
-	if !exists {
-		t.Fatal("Prometheus secrets are not configured correctly, expected to have cert secret, but found", p.Spec.Secrets)
+	if p.Spec.AdditionalAlertManagerConfigs != nil {
+		t.Fatal("additionalAlertManagerConfigs should not be set")
 	}
 
 	storageRequest := p.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
@@ -1082,54 +1052,89 @@ ingress:
 	}
 }
 
-func TestAdditionalAlertManagerConfigs(t *testing.T) {
+func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusK8s:
   additionalAlertManagerConfigs:
   - apiVersion: v2
     bearerToken:
-      name: alertmanager-bearer-token
+      name: alertmanager1-bearer-token
       key: token
     scheme: https
     tlsConfig:
       ca: 
-        name: ca
+        name: alertmanager1-ca
         key: root-ca.crt
     pathPrefix: /
     staticConfigs:
-    - alertmanager-remote.com
-    - alertmanager-remotex.com
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
   - apiVersion: v2
-    bearerToken:
-      name: alertmanager-bearer-token
-      key: token
     scheme: https
     timeout: 60s
     tlsConfig:
       ca: 
-        name: ca
+        name: alertmanager2-cert
         key: root-ca.crt
       cert:
-        name: cert
+        name: alertmanager2-cert
         key: cert.crt
+      key:
+        name: alertmanager2-cert
+        key: key.crt
     pathPrefix: /
     staticConfigs:
-    - alertmanager-remote.com
+    - alertmanager2-remote.com
 `)
+	expected := `- scheme: https
+  path_prefix: /
+  api_version: v2
+  authorization:
+    credentials_file: /etc/prometheus/secrets/alertmanager1-bearer-token/token
+  tls_config:
+    ca_file: /etc/prometheus/secrets/alertmanager1-ca/root-ca.crt
+    insecure_skip_verify: false
+  static_configs:
+  - targets:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+- scheme: https
+  path_prefix: /
+  api_version: v2
+  timeout: 60s
+  tls_config:
+    ca_file: /etc/prometheus/secrets/alertmanager2-cert/root-ca.crt
+    cert_file: /etc/prometheus/secrets/alertmanager2-cert/cert.crt
+    key_file: /etc/prometheus/secrets/alertmanager2-cert/key.crt
+    insecure_skip_verify: false
+  static_configs:
+  - targets:
+    - alertmanager2-remote.com
+`
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
 
-	s, err := f.AdditionalAlertManagerConfigs()
+	p, err := f.PrometheusK8s(
+		"prometheus-k8s.openshift-monitoring.svc",
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
+
+	if !strings.Contains(strings.Join(p.Spec.Secrets, ","), "alertmanager2-cert") ||
+		!strings.Contains(strings.Join(p.Spec.Secrets, ","), "alertmanager1-ca") ||
+		!strings.Contains(strings.Join(p.Spec.Secrets, ","), "alertmanager1-bearer-token") {
+		t.Fatal("Prometheus secrets are not generated correctly, expected to have alertmanager2-cert/alertmanager1-ca/alertmanager1-bearer-token secret, but found", p.Spec.Secrets)
+	}
+
+	s, err := f.AdditionalAlertManagerConfigsSecret()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	d := []AdditionalAlertmanagerConfig{}
-	err = yaml.Unmarshal(s.Data[AdditionalAlertmanagerConfigSecretKey], &d)
-	if err != nil {
-		t.Fatal(err)
+	if !reflect.DeepEqual(string(s.Data[AdditionalAlertmanagerConfigSecretKey]), expected) {
+		t.Fatalf("additionalAlertManagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", string(s.Data[AdditionalAlertmanagerConfigSecretKey]), expected)
 	}
 }
 

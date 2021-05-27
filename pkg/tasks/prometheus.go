@@ -299,7 +299,7 @@ func (t *PrometheusTask) Run() error {
 			return errors.Wrap(err, "syncing Prometheus trusted CA bundle ConfigMap failed")
 		}
 
-		secret, err := t.factory.AdditionalAlertManagerConfigs()
+		secret, err := t.factory.AdditionalAlertManagerConfigsSecret()
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus additionalAlertManagerConfigs secret failed")
 		}

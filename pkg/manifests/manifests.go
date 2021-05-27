@@ -1375,7 +1375,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	return p, nil
 }
 
-func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
+func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	alertmanagerConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
 	if len(alertmanagerConfigs) == 0 {
 		return nil, nil
@@ -1409,10 +1409,12 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 					alertmanagerConfig.BearerToken.Name, alertmanagerConfig.BearerToken.Key),
 			})
 		}
-		cfg = append(cfg, yaml2.MapItem{
-			Key:   "authorization",
-			Value: auth,
-		})
+		if len(auth) != 0 {
+			cfg = append(cfg, yaml2.MapItem{
+				Key:   "authorization",
+				Value: auth,
+			})
+		}
 
 		tlsConfig := yaml2.MapSlice{}
 		if alertmanagerConfig.TLSConfig.CA != nil {
@@ -1473,6 +1475,10 @@ func (f *Factory) AdditionalAlertManagerConfigs() (*v1.Secret, error) {
 			Value: []yaml2.MapSlice{sc},
 		})
 		cfgs = append(cfgs, cfg)
+	}
+
+	if len(cfgs) == 0 {
+		return nil, nil
 	}
 
 	amConfigYaml, err := yaml2.Marshal(cfgs)
@@ -3741,19 +3747,17 @@ func getAlertmanagerTLSSecretsName(alertmanagerConfigs []AdditionalAlertmanagerC
 
 func removeEmptyDuplicates(elements []string) []string {
 	// Use map to record duplicates as we find them.
-	encountered := map[string]bool{}
+	encountered := map[string]struct{}{}
 	result := []string{}
 
-	for v := range elements {
-		if encountered[elements[v]] == true {
-			// Do not add duplicate.
-		} else {
-			// Record this element as an encountered element.
-			encountered[elements[v]] = true
-			if elements[v] != "" {
-				// Append to result slice if it is not empty
-				result = append(result, elements[v])
-			}
+	for _, v := range elements {
+		if _, found := encountered[v]; found {
+			continue
+		}
+		encountered[v] = struct{}{}
+		if v != "" {
+			// Append to result slice if it is not empty
+			result = append(result, v)
 		}
 	}
 	// Return the new slice.
