@@ -114,7 +114,7 @@ const (
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
 	kubeletServingCAConfigMap     = "openshift-config-managed/kubelet-serving-ca"
 	prometheusAdapterTLSSecret    = "openshift-monitoring/prometheus-adapter-tls"
-	etcdClientCAConfigMap         = "openshift-config/etcd-metrics-serving-ca"
+	etcdClientCAConfigMap         = "openshift-config/etcd-metric-serving-ca"
 	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
