@@ -1,28 +1,112 @@
 #!/usr/bin/env bash
+set -eu -o pipefail
+
 # Script will:
 # 1. Patch CVO to exclude CMO from being managed
 # 2. Scale in-cluster CMO to 0
 # 3. Try to run CMO locally (CMO needs to be built before starting)
 
-set -eu
 
-# Go to the root of the repo
-cd "$(git rev-parse --show-cdup)"
+validate() {
+  local ret=0
 
-if [ ! -f "operator" ]; then
-	echo "Cannot find local operator binary. Try running 'make build' first."
-	exit 1
-fi
+  [[ -z ${KUBECONFIG+xxx}  ]] && {
+    echo "ERROR: KUBECONFIG is not defined"
+    ret=1
+  }
 
-IMAGES=$(kubectl -n openshift-monitoring get deployment cluster-monitoring-operator -o yaml | grep -o "\-images.*" | tr '\n' ' ')
+  [[ -x operator ]] || {
+    echo "ERROR: Failed to find 'operator' binary."
+    echo "       Did you run 'make run-local' or 'make build' ?"
+    ret=1
+  }
 
-OVERRIDE='[{"group": "extensions/v1beta1", "kind": "Deployment", "name": "cluster-monitoring-operator", "namespace": "openshift-monitoring", "unmanaged": true}]'
-kubectl patch clusterversion/version --type=json -p="[{\"op\": \"add\", \"path\": \"/spec/overrides\", \"value\": $OVERRIDE }]"
+  gojsontoyaml  --help 2>/dev/null || {
+    echo "ERROR: gojsontoyaml not found. See: https://github.com/brancz/gojsontoyaml#install"
+    ret=1
+  }
 
-kubectl -n openshift-monitoring scale --replicas=0 deployment/cluster-monitoring-operator
+  jq --version >/dev/null || {
+    echo "ERROR: jq not found. See: https://stedolan.github.io/jq/download/"
+    ret=1
+  }
 
-# shellcheck disable=SC2002
-cat manifests/0000_50_cluster-monitoring-operator_04-config.yaml | gojsontoyaml -yamltojson | jq -r '.data["metrics.yaml"]' > /tmp/telemetry-config.yaml
+  return $ret
+}
 
-# shellcheck disable=SC2086
-./operator ${IMAGES} -assets assets/ -telemetry-config /tmp/telemetry-config.yaml -kubeconfig "${KUBECONFIG}" -namespace=openshift-monitoring -configmap=cluster-monitoring-config -logtostderr=true -v=4 2>&1 | tee operator.log
+kc() {
+  kubectl -n openshift-monitoring "$@"
+}
+
+disable_managed_cmo(){
+  # NOTE: we can't kubectl patch the spec.overrides since 'overrides'
+  # does not define the patch strategy.
+  # See: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/#notes-on-the-strategic-merge-patch
+  #
+  # So, as a workaround, we get the entire contents of the `spec.overrides` and
+  # use jq to merge the override that puts "cluster-monitoring-operator" in
+  # unmanaged state.
+
+  local merge
+  merge=$(cat <<-__EOF
+    {
+      "spec": {
+        "overrides": [
+          [ .spec | .? | .overrides[] | .? | select(.name != "cluster-monitoring-operator")] +
+          [{
+            "group": "apps/v1",
+            "kind": "Deployment",
+            "name": "cluster-monitoring-operator",
+            "namespace": "openshift-monitoring",
+            "unmanaged": true
+          }]
+        ] | flatten
+      }
+    }
+__EOF
+  )
+
+  local overrides
+  overrides=$(kubectl get clusterversion version -o json | jq "$merge" | gojsontoyaml)
+  kubectl patch clusterversion/version --type=merge  -p="$overrides"
+
+  echo "Disabling incluster operator "
+  kc scale --replicas=0 deployment/cluster-monitoring-operator
+}
+
+images_from_deployment() {
+  kc get deployment cluster-monitoring-operator -o yaml | grep -o '\-images.*'
+}
+
+run() {
+  echo "Running: $*"
+  "$@"
+}
+
+main(){
+  # go to project root
+  cd "$(git rev-parse --show-cdup)"
+
+  validate || exit 1
+  disable_managed_cmo
+
+  local operator_config=manifests/0000_50_cluster-monitoring-operator_04-config.yaml
+  local telemetry_conf=/tmp/telemetry-config.yaml
+
+  gojsontoyaml -yamltojson  < $operator_config |
+      jq -r '.data["metrics.yaml"]' > $telemetry_conf
+
+  # NOTE: can't use readarray as it is missing in OSX
+  local -a images
+  while read -r img; do images+=( "$img" ); done < <(images_from_deployment)
+
+  run ./operator "${images[@]}" \
+    -assets assets/ \
+    -telemetry-config $telemetry_conf \
+    -kubeconfig "${KUBECONFIG}" \
+    -namespace=openshift-monitoring \
+    -configmap=cluster-monitoring-config \
+    -logtostderr=true -v=4 2>&1 | tee operator.log
+}
+
+main "$@"
