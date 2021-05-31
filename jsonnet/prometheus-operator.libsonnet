@@ -27,7 +27,6 @@ function(params)
                   if c.name == 'prometheus-operator' then
                     c {
                       args+: [
-                        '--namespaces=' + cfg.namespace,
                         '--prometheus-instance-namespaces=' + cfg.namespace,
                         '--thanos-ruler-instance-namespaces=' + cfg.namespace,
                         '--alertmanager-instance-namespaces=' + cfg.namespace,

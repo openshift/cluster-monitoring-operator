@@ -6,7 +6,6 @@ function(params)
   local cfg = params;
 
   prometheus(cfg) + {
-
     trustedCaBundle: {
       apiVersion: 'v1',
       kind: 'ConfigMap',
@@ -56,6 +55,7 @@ function(params)
         },
       },
     },
+
 
     // The ServiceAccount needs this annotation, to signify the identity
     // provider, that when a users it doing the oauth flow through the
@@ -309,10 +309,12 @@ function(params)
           'kube-rbac-proxy',
         ],
         configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
+        probeNamespaceSelector: cfg.namespaceSelector,
+        podMonitorNamespaceSelector: cfg.namespaceSelector,
         serviceMonitorSelector: {},
-        serviceMonitorNamespaceSelector: {},
+        serviceMonitorNamespaceSelector: cfg.namespaceSelector,
         ruleSelector: {},
-        ruleNamespaceSelector: {},
+        ruleNamespaceSelector: cfg.namespaceSelector,
         listenLocal: true,
         priorityClassName: 'system-cluster-critical',
         containers: [

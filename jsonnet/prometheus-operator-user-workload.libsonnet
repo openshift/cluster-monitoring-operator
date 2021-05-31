@@ -57,7 +57,6 @@ function(params)
                         function(arg) !std.startsWith(arg, '--kubelet-service'),
                         super.args,
                       ) + [
-                        '--deny-namespaces=' + cfg.denyNamespace,
                         '--prometheus-instance-namespaces=' + cfg.namespace,
                         '--alertmanager-instance-namespaces=' + cfg.namespace,
                         '--thanos-ruler-instance-namespaces=' + cfg.namespace,

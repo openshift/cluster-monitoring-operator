@@ -150,13 +150,13 @@ type Operator struct {
 
 func New(
 	config *rest.Config,
-	version, namespace, namespaceUserWorkload, namespaceSelector, configMapName, userWorkloadConfigMapName string,
+	version, namespace, namespaceUserWorkload, configMapName, userWorkloadConfigMapName string,
 	remoteWrite bool,
 	images map[string]string,
 	telemetryMatches []string,
 	a *manifests.Assets,
 ) (*Operator, error) {
-	c, err := client.New(config, version, namespace, namespaceUserWorkload, namespaceSelector)
+	c, err := client.New(config, version, namespace, namespaceUserWorkload)
 	if err != nil {
 		return nil, err
 	}

@@ -81,7 +81,12 @@ spec:
     requests:
       cpu: 1m
       memory: 21Mi
-  ruleNamespaceSelector: {}
+  ruleNamespaceSelector:
+    matchExpressions:
+    - key: openshift.io/cluster-monitoring
+      operator: NotIn
+      values:
+      - "true"
   ruleSelector:
     matchExpressions:
     - key: openshift.io/prometheus-rule-evaluation-scope

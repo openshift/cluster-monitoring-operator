@@ -175,17 +175,23 @@ spec:
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.26.0
-  podMonitorNamespaceSelector: {}
+  podMonitorNamespaceSelector:
+    matchLabels:
+      openshift.io/cluster-monitoring: "true"
   podMonitorSelector: {}
   priorityClassName: system-cluster-critical
-  probeNamespaceSelector: {}
+  probeNamespaceSelector:
+    matchLabels:
+      openshift.io/cluster-monitoring: "true"
   probeSelector: {}
   replicas: 2
   resources:
     requests:
       cpu: 70m
       memory: 1Gi
-  ruleNamespaceSelector: {}
+  ruleNamespaceSelector:
+    matchLabels:
+      openshift.io/cluster-monitoring: "true"
   ruleSelector: {}
   secrets:
   - kube-etcd-client-certs
@@ -199,7 +205,9 @@ spec:
     runAsNonRoot: true
     runAsUser: 65534
   serviceAccountName: prometheus-k8s
-  serviceMonitorNamespaceSelector: {}
+  serviceMonitorNamespaceSelector:
+    matchLabels:
+      openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
   thanos:
     image: quay.io/thanos/thanos:v0.19.0

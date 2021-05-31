@@ -219,9 +219,11 @@ function(params)
           'prometheus-user-workload-thanos-sidecar-tls',
         ],
         configMaps: ['serving-certs-ca-bundle'],
+        probeNamespaceSelector: cfg.namespaceSelector,
+        podMonitorNamespaceSelector: cfg.namespaceSelector,
         serviceMonitorSelector: {},
-        serviceMonitorNamespaceSelector: {},
-        ruleNamespaceSelector: {},
+        serviceMonitorNamespaceSelector: cfg.namespaceSelector,
+        ruleNamespaceSelector: cfg.namespaceSelector,
         listenLocal: true,
         priorityClassName: 'openshift-user-critical',
         containers: [
