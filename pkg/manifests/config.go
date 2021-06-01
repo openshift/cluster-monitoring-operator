@@ -381,16 +381,15 @@ type UserWorkloadConfiguration struct {
 }
 
 type PrometheusRestrictedConfig struct {
-	LogLevel                      string                               `json:"logLevel"`
-	Retention                     string                               `json:"retention"`
-	NodeSelector                  map[string]string                    `json:"nodeSelector"`
-	Tolerations                   []v1.Toleration                      `json:"tolerations"`
-	Resources                     *v1.ResourceRequirements             `json:"resources"`
-	ExternalLabels                map[string]string                    `json:"externalLabels"`
-	VolumeClaimTemplate           *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite                   []monv1.RemoteWriteSpec              `json:"remoteWrite"`
-	EnforcedSampleLimit           *uint64                              `json:"enforcedSampleLimit"`
-	AdditionalAlertManagerConfigs *v1.SecretKeySelector                `json:"additionalAlertManagerConfigs"`
+	LogLevel            string                               `json:"logLevel"`
+	Retention           string                               `json:"retention"`
+	NodeSelector        map[string]string                    `json:"nodeSelector"`
+	Tolerations         []v1.Toleration                      `json:"tolerations"`
+	Resources           *v1.ResourceRequirements             `json:"resources"`
+	ExternalLabels      map[string]string                    `json:"externalLabels"`
+	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
+	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {

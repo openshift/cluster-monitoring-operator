@@ -1384,12 +1384,22 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	cfgs := []yaml2.MapSlice{}
 	for _, alertmanagerConfig := range alertmanagerConfigs {
 		cfg := yaml2.MapSlice{}
-		cfg = append(cfg, yaml2.MapSlice{
-			{Key: "scheme", Value: alertmanagerConfig.Scheme},
-			{Key: "path_prefix", Value: alertmanagerConfig.PathPrefix},
-			{Key: "api_version", Value: alertmanagerConfig.APIVersion},
-		}...)
 
+		if alertmanagerConfig.Scheme != "" {
+			cfg = append(cfg, yaml2.MapItem{
+				Key: "scheme", Value: alertmanagerConfig.Scheme,
+			})
+		}
+		if alertmanagerConfig.PathPrefix != "" {
+			cfg = append(cfg, yaml2.MapItem{
+				Key: "path_prefix", Value: alertmanagerConfig.PathPrefix,
+			})
+		}
+		if alertmanagerConfig.APIVersion != "" {
+			cfg = append(cfg, yaml2.MapItem{
+				Key: "api_version", Value: alertmanagerConfig.APIVersion,
+			})
+		}
 		if alertmanagerConfig.Timeout != nil {
 			cfg = append(cfg, yaml2.MapItem{
 				Key: "timeout", Value: alertmanagerConfig.Timeout,
@@ -1467,13 +1477,16 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 			Value: tlsConfig,
 		})
 
-		sc := yaml2.MapSlice{
-			{Key: "targets", Value: alertmanagerConfig.StaticConfigs},
+		if len(alertmanagerConfig.StaticConfigs) > 0 {
+			sc := yaml2.MapSlice{
+				{Key: "targets", Value: alertmanagerConfig.StaticConfigs},
+			}
+			cfg = append(cfg, yaml2.MapItem{
+				Key:   "static_configs",
+				Value: []yaml2.MapSlice{sc},
+			})
 		}
-		cfg = append(cfg, yaml2.MapItem{
-			Key:   "static_configs",
-			Value: []yaml2.MapSlice{sc},
-		})
+
 		cfgs = append(cfgs, cfg)
 	}
 
