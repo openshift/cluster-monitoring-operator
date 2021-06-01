@@ -329,6 +329,9 @@ data:
     # (@openshift/storage, OpenShift Storage team) The list of virtual machine HW versions used for OCP nodes.
     - '{__name__="cluster:vsphere_node_hw_version_total:sum"}'
     #
+    # (@openshift/team-build-api, OpenShift Build API Team) openshift:build_by_strategy:sum measures total number of builds on a cluster, aggregated by build strategy.
+    - '{__name__="openshift:build_by_strategy:sum"}'
+    #
 kind: ConfigMap
 metadata:
   name: telemetry-config
