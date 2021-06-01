@@ -290,6 +290,19 @@ function(params)
           runAsUser: 65534,
         },
         replicas: 2,
+        affinity+: {
+          podAntiAffinity: {
+            // Apply HA conventions
+            requiredDuringSchedulingIgnoredDuringExecution: [
+              {
+                labelSelector: {
+                  matchLabels: cfg.podLabelSelector,
+                },
+                topologyKey: 'kubernetes.io/hostname',
+              },
+            ],
+          },
+        },
         resources: {
           requests: {
             memory: '21Mi',
