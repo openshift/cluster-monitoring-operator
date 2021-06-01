@@ -119,7 +119,7 @@ func (t *AlertmanagerTask) Run() error {
 	}
 
 	{
-		pdb, err := t.factory.PrometheusUserWorkloadPodDisruptionBudget()
+		pdb, err := t.factory.AlertmanagerPodDisruptionBudget()
 		if err != nil {
 			return errors.Wrap(err, "initializing Alertmanager PodDisruptionBudget object failed")
 		}
