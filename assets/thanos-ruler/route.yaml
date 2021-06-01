@@ -1,6 +1,11 @@
 apiVersion: v1
 kind: Route
 metadata:
+  labels:
+    app.kubernetes.io/component: rule-evaluation-engine
+    app.kubernetes.io/instance: user-workload
+    app.kubernetes.io/name: thanos-rule
+    app.kubernetes.io/version: 0.19.0
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring
 spec:

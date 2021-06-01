@@ -4,19 +4,24 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: thanos-ruler-tls
   labels:
-    app.kubernetes.io/name: user-workload
+    app.kubernetes.io/component: rule-evaluation-engine
+    app.kubernetes.io/instance: user-workload
+    app.kubernetes.io/name: thanos-rule
+    app.kubernetes.io/version: 0.19.0
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring
 spec:
+  clusterIP: None
   ports:
-  - name: web
-    port: 9091
-    targetPort: web
   - name: grpc
     port: 10901
-    targetPort: grpc
+    targetPort: 10901
+  - name: web
+    port: 9091
+    targetPort: 9091
   selector:
-    app: thanos-ruler
-    thanos-ruler: user-workload
+    app.kubernetes.io/component: rule-evaluation-engine
+    app.kubernetes.io/instance: user-workload
+    app.kubernetes.io/name: thanos-rule
   sessionAffinity: ClientIP
   type: ClusterIP

@@ -1,6 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    app.kubernetes.io/component: rule-evaluation-engine
+    app.kubernetes.io/instance: user-workload
+    app.kubernetes.io/name: thanos-rule
+    app.kubernetes.io/version: 0.19.0
   name: thanos-ruler-monitoring
 roleRef:
   apiGroup: rbac.authorization.k8s.io

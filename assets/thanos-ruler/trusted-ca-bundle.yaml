@@ -4,6 +4,10 @@ data:
 kind: ConfigMap
 metadata:
   labels:
+    app.kubernetes.io/component: rule-evaluation-engine
+    app.kubernetes.io/instance: user-workload
+    app.kubernetes.io/name: thanos-rule
+    app.kubernetes.io/version: 0.19.0
     config.openshift.io/inject-trusted-cabundle: "true"
   name: thanos-ruler-trusted-ca-bundle
   namespace: openshift-user-workload-monitoring
