@@ -418,7 +418,6 @@ function(params) {
             '-openshift-service-account=thanos-ruler',
             '-openshift-ca=/etc/pki/tls/cert.pem',
             '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-            '-skip-auth-regex=^/metrics',
           ],
           terminationMessagePolicy: 'FallbackToLogsOnError',
           resources: {
