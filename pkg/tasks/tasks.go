@@ -21,35 +21,57 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// TaskRunner manages lists of task groups. Through the RunAll method task groups are
+// executed, the groups sequentially, each group of tasks concurrently.
 type TaskRunner struct {
-	client *client.Client
-	tasks  []*TaskSpec
+	client     *client.Client
+	taskGroups []*TaskGroup
 }
 
-func NewTaskRunner(client *client.Client, tasks []*TaskSpec) *TaskRunner {
+// NewTaskRunner returns a task runner. tasks is the first task group that will
+// be executed, before any list added via AppendTaskGroup.
+func NewTaskRunner(client *client.Client, taskGroups ...*TaskGroup) *TaskRunner {
 	return &TaskRunner{
-		client: client,
-		tasks:  tasks,
+		client:     client,
+		taskGroups: append([]*TaskGroup{}, taskGroups...),
 	}
 }
 
+// RunAll executes all registered task groups sequentially. For each group the
+// taskGroup.RunConcurrently function is called.
 func (tl *TaskRunner) RunAll() (string, error) {
+	for i, tGroup := range tl.taskGroups {
+		klog.V(2).Infof("processing task group %d of %d", i+1, len(tl.taskGroups))
+
+		if name, err := tGroup.RunConcurrently(); err != nil {
+			return name, err
+		}
+
+	}
+	return "", nil
+}
+
+// RunConcurrently dispatches all tasks in a task group. The tasks are scheduled
+// concurrently. Returns the first error if any are encountered.
+func (tg *TaskGroup) RunConcurrently() (string, error) {
 	var g errgroup.Group
-	for i, ts := range tl.tasks {
+	tgLength := len(tg.tasks)
+	for i, ts := range tg.tasks {
 		// shadow vars due to concurrency
 		ts := ts
 		i := i
 
 		g.Go(func() error {
-			klog.V(2).Infof("running task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
-			err := tl.ExecuteTask(ts)
-			klog.V(2).Infof("ran task %d of %d: %v", i+1, len(tl.tasks), ts.Name)
+			klog.V(2).Infof("running task %d of %d: %v", i+1, tgLength, ts.Name)
+			err := ts.Task.Run()
+			klog.V(2).Infof("ran task %d of %d: %v", i+1, tgLength, ts.Name)
 			if err != nil {
 				return taskErr{error: errors.Wrapf(err, "running task %v failed", ts.Name), name: ts.Name}
 			}
 			return nil
 		})
 	}
+
 	if err := g.Wait(); err != nil {
 		taskName := ""
 		if tErr, ok := err.(taskErr); ok {
@@ -62,8 +84,14 @@ func (tl *TaskRunner) RunAll() (string, error) {
 	return "", nil
 }
 
-func (tl *TaskRunner) ExecuteTask(ts *TaskSpec) error {
-	return ts.Task.Run()
+func NewTaskGroup(tasks []*TaskSpec) *TaskGroup {
+	return &TaskGroup{
+		tasks: tasks,
+	}
+}
+
+type TaskGroup struct {
+	tasks []*TaskSpec
 }
 
 func NewTaskSpec(name string, task Task) *TaskSpec {
