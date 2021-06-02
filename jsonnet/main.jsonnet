@@ -63,7 +63,7 @@ local commonConfig = {
     prometheusAdapter: '0.8.4',
     prometheusOperator: '0.47.1',
     promLabelProxy: '0.2.0',
-    thanos: '0.19.0',
+    thanos: '0.20.2',
   },
   // In OSE images are overridden
   images: {
