@@ -344,23 +344,28 @@ func (o *Operator) sync(key string) error {
 
 	tl := tasks.NewTaskRunner(
 		o.client,
-		[]*tasks.TaskSpec{
-			tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTaks(o.namespace, o.client, factory)),
-			tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
-		},
+		// update prometheus-operator before anything else because it is responsible for managing many other resources (e.g. Prometheus, Alertmanager, Thanos Ruler, ...).
+		tasks.NewTaskGroup(
+			[]*tasks.TaskSpec{
+				tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
+			}),
+		tasks.NewTaskGroup(
+			[]*tasks.TaskSpec{
+				tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTaks(o.namespace, o.client, factory)),
+				tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
+			}),
 	)
 
 	klog.Info("Updating ClusterOperator status to in progress.")
@@ -371,9 +376,7 @@ func (o *Operator) sync(key string) error {
 
 	taskName, err := tl.RunAll()
 	if err != nil {
-		klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
-		failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
-		reportErr := o.client.StatusReporter().SetFailed(err, failedTaskReason)
+		reportErr := o.reportError(err, taskName)
 		if reportErr != nil {
 			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
 		}
@@ -387,6 +390,12 @@ func (o *Operator) sync(key string) error {
 	}
 
 	return nil
+}
+
+func (o *Operator) reportError(err error, taskName string) error {
+	klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
+	failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
+	return o.client.StatusReporter().SetFailed(err, failedTaskReason)
 }
 
 func (o *Operator) loadUserWorkloadConfig() (*manifests.UserWorkloadConfiguration, error) {
