@@ -381,6 +381,15 @@ spec:
     - expr: sum by(exported_service) (rate(haproxy_server_http_responses_total{exported_namespace="openshift-monitoring",
         exported_service=~"alertmanager-main|grafana|prometheus-k8s"}[5m]))
       record: monitoring:haproxy_server_http_responses_total:sum
+    - expr: max by (cluster, namespace, workload, pod) (label_replace(label_replace(kube_pod_owner{job="kube-state-metrics",
+        owner_kind="ReplicationController"},"replicationcontroller", "$1", "owner_name",
+        "(.*)") * on(replicationcontroller, namespace) group_left(owner_name) topk
+        by(replicationcontroller, namespace) (1, max by (replicationcontroller, namespace,
+        owner_name) (kube_replicationcontroller_owner{job="kube-state-metrics"})),"workload",
+        "$1", "owner_name", "(.*)"))
+      labels:
+        workload_type: deploymentconfig
+      record: namespace_workload_pod:kube_pod_owner:relabel
   - name: openshift-sre.rules
     rules:
     - expr: sum(rate(apiserver_request_total{job="apiserver"}[10m])) BY (code)
