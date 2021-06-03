@@ -1084,6 +1084,22 @@ func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
     pathPrefix: /
     staticConfigs:
     - alertmanager2-remote.com
+  - apiVersion: v2
+    scheme: https
+    timeout: 60s
+    tlsConfig:
+      ca:
+        name: alertmanager3-ca
+        key: root-ca.crt
+      cert:
+        name: alertmanager3-cert
+        key: cert.crt
+      key:
+        name: alertmanager3-key
+        key: key.crt
+    pathPrefix: /
+    staticConfigs:
+    - alertmanager3-remote.com
 `)
 	expected := `- scheme: https
   path_prefix: /
@@ -1109,6 +1125,18 @@ func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
   static_configs:
   - targets:
     - alertmanager2-remote.com
+- scheme: https
+  path_prefix: /
+  api_version: v2
+  timeout: 60s
+  tls_config:
+    ca_file: /etc/prometheus/secrets/alertmanager3-ca/root-ca.crt
+    cert_file: /etc/prometheus/secrets/alertmanager3-cert/cert.crt
+    key_file: /etc/prometheus/secrets/alertmanager3-key/key.crt
+    insecure_skip_verify: false
+  static_configs:
+  - targets:
+    - alertmanager3-remote.com
 `
 	if err != nil {
 		t.Fatal(err)
@@ -1122,10 +1150,15 @@ func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 	)
 
-	if !strings.Contains(strings.Join(p.Spec.Secrets, ","), "alertmanager2-cert") ||
-		!strings.Contains(strings.Join(p.Spec.Secrets, ","), "alertmanager1-ca") ||
-		!strings.Contains(strings.Join(p.Spec.Secrets, ","), "alertmanager1-bearer-token") {
-		t.Fatal("Prometheus secrets are not generated correctly, expected to have alertmanager2-cert/alertmanager1-ca/alertmanager1-bearer-token secret, but found", p.Spec.Secrets)
+	secrets := make(map[string]struct{})
+	for _, s := range p.Spec.Secrets {
+		secrets[s] = struct{}{}
+	}
+	for _, exp := range []string{"alertmanager2-cert", "alertmanager1-ca", "alertmanager1-bearer-token", "alertmanager3-ca", "alertmanager3-cert", "alertmanager3-key"} {
+		if _, found := secrets[exp]; found {
+			continue
+		}
+		t.Fatalf("Prometheus secrets are not generated correctly, expected to have %s but got none", exp)
 	}
 
 	s, err := f.AdditionalAlertManagerConfigsSecret()

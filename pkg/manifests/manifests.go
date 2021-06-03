@@ -1369,7 +1369,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 				Name: AdditionalAlertmanagerConfigSecretName,
 			},
 		}
-		p.Spec.Secrets = append(p.Spec.Secrets, getAlertmanagerTLSSecretsName(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs)...)
+		p.Spec.Secrets = append(p.Spec.Secrets, getAdditionalAlertmanagerSecrets(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs)...)
 	}
 
 	return p, nil
@@ -1409,10 +1409,10 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 		auth := yaml2.MapSlice{}
 		if alertmanagerConfig.BearerToken != nil {
 			if alertmanagerConfig.BearerToken.Name == "" {
-				return nil, errors.Errorf("bearer token secret name not found")
+				return nil, errors.Errorf("secret %q for bearer token not found", alertmanagerConfig.BearerToken.Name)
 			}
 			if alertmanagerConfig.BearerToken.Key == "" {
-				return nil, errors.Errorf("bearer token secret key not found")
+				return nil, errors.Errorf("secret key %q for bearer token not found", alertmanagerConfig.BearerToken.Key)
 			}
 			auth = append(auth, yaml2.MapItem{
 				Key: "credentials_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
@@ -1425,14 +1425,13 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 				Value: auth,
 			})
 		}
-
 		tlsConfig := yaml2.MapSlice{}
 		if alertmanagerConfig.TLSConfig.CA != nil {
 			if alertmanagerConfig.TLSConfig.CA.Name == "" {
-				return nil, errors.Errorf("ca secret name not found")
+				return nil, errors.Errorf("secret %q for ca not found", alertmanagerConfig.TLSConfig.CA.Name)
 			}
 			if alertmanagerConfig.TLSConfig.CA.Key == "" {
-				return nil, errors.Errorf("ca secret key not found")
+				return nil, errors.Errorf("secret key %q for ca not found", alertmanagerConfig.TLSConfig.CA.Key)
 			}
 			tlsConfig = append(tlsConfig, yaml2.MapItem{
 				Key: "ca_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
@@ -1441,10 +1440,10 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 		}
 		if alertmanagerConfig.TLSConfig.Cert != nil {
 			if alertmanagerConfig.TLSConfig.Cert.Name == "" {
-				return nil, errors.Errorf("cert secret name not found")
+				return nil, errors.Errorf("secret %q for cert not found", alertmanagerConfig.TLSConfig.Cert.Name)
 			}
 			if alertmanagerConfig.TLSConfig.Cert.Key == "" {
-				return nil, errors.Errorf("cert secret key not found")
+				return nil, errors.Errorf("secret key %q for cert not found", alertmanagerConfig.TLSConfig.Cert.Key)
 			}
 			tlsConfig = append(tlsConfig, yaml2.MapItem{
 				Key: "cert_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
@@ -1453,10 +1452,10 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 		}
 		if alertmanagerConfig.TLSConfig.Key != nil {
 			if alertmanagerConfig.TLSConfig.Key.Name == "" {
-				return nil, errors.Errorf("key secret name not found")
+				return nil, errors.Errorf("secret %q for cert key not found", alertmanagerConfig.TLSConfig.Key.Name)
 			}
 			if alertmanagerConfig.TLSConfig.Key.Key == "" {
-				return nil, errors.Errorf("key secret key not found")
+				return nil, errors.Errorf("secret key %q for cert key not found", alertmanagerConfig.TLSConfig.Key.Key)
 			}
 			tlsConfig = append(tlsConfig, yaml2.MapItem{
 				Key: "key_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
@@ -1485,28 +1484,23 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 				Key:   "static_configs",
 				Value: []yaml2.MapSlice{sc},
 			})
+			cfgs = append(cfgs, cfg)
 		}
-
-		cfgs = append(cfgs, cfg)
-	}
-
-	if len(cfgs) == 0 {
-		return nil, nil
 	}
 
 	amConfigYaml, err := yaml2.Marshal(cfgs)
 	if err != nil {
 		return nil, err
 	}
-	amConfigYamlMap := map[string][]byte{}
-	amConfigYamlMap[AdditionalAlertmanagerConfigSecretKey] = amConfigYaml
 
 	additionalPromToAmConfigSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AdditionalAlertmanagerConfigSecretName,
 			Namespace: f.namespace,
 		},
-		Data: amConfigYamlMap,
+		Data: map[string][]byte{
+			AdditionalAlertmanagerConfigSecretKey: amConfigYaml,
+		},
 	}
 
 	return additionalPromToAmConfigSecret, nil
@@ -3738,7 +3732,7 @@ func trustedCABundleVolume(configMapName, volumeName string) v1.Volume {
 	}
 }
 
-func getAlertmanagerTLSSecretsName(alertmanagerConfigs []AdditionalAlertmanagerConfig) []string {
+func getAdditionalAlertmanagerSecrets(alertmanagerConfigs []AdditionalAlertmanagerConfig) []string {
 
 	secretsName := []string{}
 	for _, alertmanagerConfig := range alertmanagerConfigs {
@@ -3749,7 +3743,7 @@ func getAlertmanagerTLSSecretsName(alertmanagerConfigs []AdditionalAlertmanagerC
 			secretsName = append(secretsName, alertmanagerConfig.TLSConfig.Cert.Name)
 		}
 		if alertmanagerConfig.TLSConfig.Key != nil {
-			secretsName = append(secretsName, alertmanagerConfig.TLSConfig.Cert.Name)
+			secretsName = append(secretsName, alertmanagerConfig.TLSConfig.Key.Name)
 		}
 		if alertmanagerConfig.BearerToken != nil {
 			secretsName = append(secretsName, alertmanagerConfig.BearerToken.Name)
