@@ -145,6 +145,8 @@ type Operator struct {
 	reconcileAttempts prometheus.Counter
 	reconcileStatus   prometheus.Gauge
 
+	failedReconcileAttempts int
+
 	assets *manifests.Assets
 }
 
@@ -422,11 +424,7 @@ func (o *Operator) enqueue(obj interface{}) {
 func (o *Operator) sync(key string) error {
 	config, err := o.Config(key)
 	if err != nil {
-		klog.Infof("Updating ClusterOperator status to failed: %v", err)
-		reportErr := o.client.StatusReporter().SetFailed(err, "InvalidConfiguration")
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
-		}
+		o.reportError(err, "InvalidConfiguration")
 		return err
 	}
 	config.SetImages(o.images)
@@ -476,14 +474,12 @@ func (o *Operator) sync(key string) error {
 
 	taskName, err := tl.RunAll()
 	if err != nil {
-		reportErr := o.reportError(err, taskName)
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
-		}
+		o.reportError(err, taskName)
 		return err
 	}
 
 	klog.Info("Updating ClusterOperator status to done.")
+	o.failedReconcileAttempts = 0
 	err = o.client.StatusReporter().SetDone()
 	if err != nil {
 		klog.Errorf("error occurred while setting status to done: %v", err)
@@ -492,10 +488,18 @@ func (o *Operator) sync(key string) error {
 	return nil
 }
 
-func (o *Operator) reportError(err error, taskName string) error {
-	klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
-	failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
-	return o.client.StatusReporter().SetFailed(err, failedTaskReason)
+func (o *Operator) reportError(err error, taskName string) {
+	klog.Infof("ClusterOperator reconciliation failed (attempt %d), retrying. Err: %v", o.failedReconcileAttempts+1, err)
+	if o.failedReconcileAttempts == 2 {
+		// Only update the ClusterOperator status after 3 retries have been attempted to avoid flapping status.
+		klog.Infof("Updating ClusterOperator status to failed after %d attempts. Err: %v", o.failedReconcileAttempts+1, err)
+		failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
+		reportErr := o.client.StatusReporter().SetFailed(err, failedTaskReason)
+		if reportErr != nil {
+			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
+		}
+	}
+	o.failedReconcileAttempts++
 }
 
 func (o *Operator) loadInfrastructureConfig() *InfrastructureConfig {
