@@ -61,7 +61,7 @@ local commonConfig = {
     kubeStateMetrics: '2.0.0',
     nodeExporter: '1.1.2',
     prometheusAdapter: '0.8.4',
-    prometheusOperator: '0.47.1',
+    prometheusOperator: '0.48.1',
     promLabelProxy: '0.2.0',
     thanos: '0.20.2',
   },
