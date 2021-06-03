@@ -34,6 +34,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // The namespace where to deploy the test application.
@@ -565,8 +566,18 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	)
 
 	{
+		var body []byte
+
 		// assert that the same metric is not scraped by the cluster monitoring stack
-		body, err := f.PrometheusK8sClient.PrometheusQuery(fmt.Sprintf(`version{namespace="%s"}`, userWorkloadTestNs))
+		err := wait.PollImmediate(time.Second, time.Minute, func() (done bool, err error) {
+			body, err = f.PrometheusK8sClient.PrometheusQuery(fmt.Sprintf(`version{namespace="%s"}`, userWorkloadTestNs))
+			if err != nil {
+				t.Logf("PrometheusQuery failed: %v", err)
+				return false, nil
+			}
+
+			return true, nil
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
