@@ -382,7 +382,7 @@ local metrics = import 'telemeter-client/metrics.jsonnet';
                       values: [$._config.prometheus.name],
                     }]
                   },
-                  topologyKey: 'kubernetes.io/hostname',
+                  topologyKey: 'topology.kubernetes.io/zone',
                 },
               ],
             },
