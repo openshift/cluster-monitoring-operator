@@ -170,7 +170,7 @@ func New(
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
-		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
+		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(time.Second, 5*time.Minute), "cluster-monitoring"),
 		informers:                 make([]cache.SharedIndexInformer, 0),
 		assets:                    a,
 	}
