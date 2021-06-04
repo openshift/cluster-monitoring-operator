@@ -202,7 +202,7 @@
                       values: ['user-workload'],
                     }]
                   },
-                  topologyKey: 'kubernetes.io/hostname',
+                  topologyKey: 'topology.kubernetes.io/zone',
                 },
               ],
             },

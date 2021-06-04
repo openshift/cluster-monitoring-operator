@@ -17,7 +17,7 @@ spec:
             - k8s
         namespaces:
         - openshift-monitoring
-        topologyKey: kubernetes.io/hostname
+        topologyKey: topology.kubernetes.io/zone
   alerting:
     alertmanagers:
     - apiVersion: v2
