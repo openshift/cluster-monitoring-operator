@@ -417,6 +417,7 @@ func (o *Operator) enqueue(obj interface{}) {
 	}
 
 	o.queue.Add(key)
+	klog.Infof("add key %v, now have %v items in the queue", key, o.queue.Len())
 }
 
 func (o *Operator) sync(key string) error {
