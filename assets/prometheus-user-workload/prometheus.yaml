@@ -8,16 +8,18 @@ metadata:
 spec:
   affinity:
     podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-          - key: prometheus
-            operator: In
-            values:
-            - user-workload
-        namespaces:
-        - openshift-user-workload-monitoring
-        topologyKey: kubernetes.io/hostname
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: prometheus
+              operator: In
+              values:
+              - k8s
+          namespaces:
+          - openshift-monitoring
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   alerting:
     alertmanagers:
     - apiVersion: v2
