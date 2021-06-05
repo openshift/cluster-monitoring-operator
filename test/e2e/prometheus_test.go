@@ -136,10 +136,10 @@ func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
 
 		if strings.Contains(p.Namespace, testNameSpace) &&
 			strings.Contains(p.Name, testPod2) {
-			if p.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+			if p.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution != nil {
 				k8sOk = true
 			} else {
-				t.Fatal("Failed to find requiredDuringSchedulingIgnoredDuringExecution in prometheus pod spec")
+				t.Fatal("Failed to find preferredDuringSchedulingIgnoredDuringExecution in prometheus pod spec")
 			}
 		}
 	}
