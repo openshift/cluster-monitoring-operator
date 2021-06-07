@@ -517,4 +517,21 @@ function(params)
         },
       },
     },
+
+    podDisruptionBudget: {
+      apiVersion: 'policy/v1',
+      kind: 'PodDisruptionBudget',
+      metadata: {
+        name: 'thanos-querier-pdb',
+        namespace: cfg.namespace,
+        labels: tq.config.commonLabels,
+      },
+      spec: {
+        minAvailable: 1,
+        selector: {
+          matchLabels: tq.config.podLabelSelector,
+        },
+
+      },
+    },
   }

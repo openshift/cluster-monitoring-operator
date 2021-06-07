@@ -214,6 +214,20 @@ func (t *ThanosQuerierTask) Run() error {
 		}
 	}
 
+	{
+		pdb, err := t.factory.ThanosQuerierPodDisruptionBudget()
+		if err != nil {
+			return errors.Wrap(err, "initializing ThanosQuerier PodDisruptionBudget failed")
+		}
+
+		if pdb != nil {
+			err = t.client.CreateOrUpdatePodDisruptionBudget(pdb)
+			if err != nil {
+				return errors.Wrap(err, "reconciling ThanosQuerier PodDisruptionBudget failed")
+			}
+		}
+	}
+
 	tqsm, err := t.factory.ThanosQuerierServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier ServiceMonitor failed")

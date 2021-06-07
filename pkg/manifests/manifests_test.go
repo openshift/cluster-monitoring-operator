@@ -1692,6 +1692,20 @@ func TestPodDisruptionBudget(t *testing.T) {
 			},
 			ha: false,
 		},
+		{
+			name: "ThanosQuerier HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.ThanosQuerierPodDisruptionBudget()
+			},
+			ha: true,
+		},
+		{
+			name: "ThanosQuerier non-HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.ThanosQuerierPodDisruptionBudget()
+			},
+			ha: false,
+		},
 	}
 
 	for _, tc := range tests {
