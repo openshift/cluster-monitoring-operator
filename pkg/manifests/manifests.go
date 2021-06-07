@@ -3770,3 +3770,7 @@ func removeEmptyDuplicates(elements []string) []string {
 	// Return the new slice.
 	return result
 }
+
+func (f *Factory) GetAdditionalAlertmanagerConfigSecretName() string {
+	return AdditionalAlertmanagerConfigSecretName
+}
