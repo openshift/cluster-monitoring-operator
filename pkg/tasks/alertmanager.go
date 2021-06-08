@@ -119,19 +119,6 @@ func (t *AlertmanagerTask) Run() error {
 	}
 
 	{
-		pdb, err := t.factory.AlertmanagerPodDisruptionBudget()
-		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager PodDisruptionBudget object failed")
-		}
-
-		if pdb != nil {
-			err = t.client.CreateOrUpdatePodDisruptionBudget(pdb)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Alertmanager PodDisruptionBudget object failed")
-			}
-		}
-	}
-	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
 		if err != nil {
