@@ -1692,48 +1692,6 @@ func TestPodDisruptionBudget(t *testing.T) {
 			},
 			ha: false,
 		},
-		{
-			name: "Prometheus HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.PrometheusK8sPodDisruptionBudget()
-			},
-			ha: true,
-		},
-		{
-			name: "Prometheus non-HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.PrometheusK8sPodDisruptionBudget()
-			},
-			ha: false,
-		},
-		{
-			name: "PrometheusUWM HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.PrometheusUserWorkloadPodDisruptionBudget()
-			},
-			ha: true,
-		},
-		{
-			name: "PrometheusUWM non-HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.PrometheusUserWorkloadPodDisruptionBudget()
-			},
-			ha: false,
-		},
-		{
-			name: "Alertmanager HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.AlertmanagerPodDisruptionBudget()
-			},
-			ha: true,
-		},
-		{
-			name: "Alertmanager non-HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.AlertmanagerPodDisruptionBudget()
-			},
-			ha: false,
-		},
 	}
 
 	for _, tc := range tests {

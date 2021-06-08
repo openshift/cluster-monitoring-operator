@@ -347,8 +347,7 @@ function(params)
         ],
       },
     },
-    // TODO: remove podDisruptionBudget once https://github.com/prometheus-operator/kube-prometheus/pull/1156 is merged
-    podDisruptionBudget+: {
-      apiVersion: 'policy/v1',
-    },
+    // Removing PDB since it doesn't allow cluster upgrade when hard pod anti affinity is not set https://github.com/openshift/cluster-monitoring-operator/pull/1198
+    // Review hard anti-affinity changes and then we can add back PDB
+    podDisruptionBudget:: {},
   }
