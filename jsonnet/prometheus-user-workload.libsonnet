@@ -337,5 +337,5 @@ function(params)
     },
     // Removing PDB since it doesn't allow cluster upgrade when hard pod anti affinity is not set https://github.com/openshift/cluster-monitoring-operator/pull/1198
     // Review hard anti-affinity changes and then we can add back PDB
-    podDisruptionBudget:: {}
+    podDisruptionBudget:: {},
   }
