@@ -25,3 +25,4 @@
   - Adjusts severity levels of many alerts from critical to warning as they were cause based alerts
   - Adjusts KubeStatefulSetUpdateNotRolledOut, KubeDaemonSetRolloutStuck
   - Removes KubeAPILatencyHigh and KubeAPIErrorsHigh
+- [#1207](https://github.com/openshift/cluster-monitoring-operator/pull/1207) Recording rule for builds by strategy
