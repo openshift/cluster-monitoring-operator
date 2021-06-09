@@ -7,7 +7,7 @@ items:
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.26.0
+      app.kubernetes.io/version: 2.26.1
     name: prometheus-k8s
     namespace: default
   rules:
@@ -44,7 +44,7 @@ items:
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.26.0
+      app.kubernetes.io/version: 2.26.1
     name: prometheus-k8s
     namespace: kube-system
   rules:
@@ -81,7 +81,7 @@ items:
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.26.0
+      app.kubernetes.io/version: 2.26.1
     name: prometheus-k8s
     namespace: openshift-monitoring
   rules:
@@ -118,7 +118,7 @@ items:
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.26.0
+      app.kubernetes.io/version: 2.26.1
     name: prometheus-k8s
     namespace: openshift-etcd
   rules:
@@ -155,7 +155,7 @@ items:
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.26.0
+      app.kubernetes.io/version: 2.26.1
     name: prometheus-k8s
     namespace: openshift-user-workload-monitoring
   rules:
