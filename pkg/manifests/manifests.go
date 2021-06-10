@@ -193,6 +193,7 @@ var (
 	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
 
 	ThanosQuerierDeployment           = "thanos-querier/deployment.yaml"
+	ThanosQuerierPodDisruptionBudget  = "thanos-querier/pod-disruption-budget.yaml"
 	ThanosQuerierService              = "thanos-querier/service.yaml"
 	ThanosQuerierServiceMonitor       = "thanos-querier/service-monitor.yaml"
 	ThanosQuerierPrometheusRule       = "thanos-querier/prometheus-rule.yaml"
@@ -2723,6 +2724,19 @@ func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error
 
 func (f *Factory) NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookConfiguration, error) {
 	return NewValidatingWebhook(manifest)
+}
+
+func (f *Factory) ThanosQuerierPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	pdb, err := f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(ThanosQuerierPodDisruptionBudget))
+	if err != nil {
+		return nil, err
+	}
+
+	if pdb != nil {
+		pdb.Namespace = f.namespace
+	}
+
+	return pdb, nil
 }
 
 func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool, trustedCA *v1.ConfigMap) (*appsv1.Deployment, error) {
