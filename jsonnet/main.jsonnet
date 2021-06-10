@@ -56,7 +56,7 @@ local commonConfig = {
   // versions are used by some CRs and reflected in labels.
   versions: {
     alertmanager: '0.21.0',
-    prometheus: '2.26.0',
+    prometheus: '2.26.1',
     grafana: '7.5.4',
     kubeStateMetrics: '2.0.0',
     nodeExporter: '1.1.2',
