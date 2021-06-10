@@ -9,7 +9,6 @@
 - [#1090](https://github.com/openshift/cluster-monitoring-operator/pull/1090) Increase "for" duration to 1 hour for all Thanos sidecar alerts.
 - [#1093](https://github.com/openshift/cluster-monitoring-operator/pull/1093) Bump kube-state-metrics to major new release v2.0.0-rc.1. This changes a lot of metrics and flags, see kube-state-metrics CHANGELOG for full changes. 
 - [#1126](https://github.com/openshift/cluster-monitoring-operator/pull/1126) Remove deprecated techPreviewUserWorkload field from CMO's configmap.
-- [#1132](https://github.com/openshift/cluster-monitoring-operator/pull/1132) Extended PrometheusK8sConfig to support AdditionalAlertManagerConfigs field.
 - [#1136](https://github.com/openshift/cluster-monitoring-operator/pull/1136) Add recording rule for builds by strategy
 
 ## 4.7
