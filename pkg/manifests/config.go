@@ -92,6 +92,7 @@ type PrometheusK8sConfig struct {
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
 	TelemetryMatches    []string                             `json:"-"`
+	// EXPERIMENTAL: this configuration field may change in future releases.
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertManagerConfigs"`
 }
 
