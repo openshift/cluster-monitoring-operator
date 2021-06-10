@@ -5,23 +5,25 @@ metadata:
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.26.0
+    app.kubernetes.io/version: 2.26.1
     prometheus: k8s
   name: k8s
   namespace: openshift-monitoring
 spec:
   affinity:
     podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchLabels:
-            app.kubernetes.io/component: prometheus
-            app.kubernetes.io/name: prometheus
-            app.kubernetes.io/part-of: openshift-monitoring
-            prometheus: k8s
-        namespaces:
-        - openshift-monitoring
-        topologyKey: kubernetes.io/hostname
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: prometheus
+              app.kubernetes.io/name: prometheus
+              app.kubernetes.io/part-of: openshift-monitoring
+              prometheus: k8s
+          namespaces:
+          - openshift-monitoring
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   alerting:
     alertmanagers:
     - apiVersion: v2
@@ -162,7 +164,7 @@ spec:
         cpu: 1m
         memory: 10Mi
   externalLabels: {}
-  image: quay.io/prometheus/prometheus:v2.26.0
+  image: quay.io/prometheus/prometheus:v2.26.1
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -173,7 +175,7 @@ spec:
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.26.0
+      app.kubernetes.io/version: 2.26.1
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
@@ -209,10 +211,10 @@ spec:
       openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/thanos/thanos:v0.19.0
+    image: quay.io/thanos/thanos:v0.20.2
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: 0.19.0
-  version: 2.26.0
+    version: 0.20.2
+  version: 2.26.1

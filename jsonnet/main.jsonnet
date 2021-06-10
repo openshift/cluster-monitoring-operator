@@ -56,14 +56,14 @@ local commonConfig = {
   // versions are used by some CRs and reflected in labels.
   versions: {
     alertmanager: '0.21.0',
-    prometheus: '2.26.0',
+    prometheus: '2.26.1',
     grafana: '7.5.4',
     kubeStateMetrics: '2.0.0',
     nodeExporter: '1.1.2',
     prometheusAdapter: '0.8.4',
-    prometheusOperator: '0.47.1',
+    prometheusOperator: '0.48.1',
     promLabelProxy: '0.2.0',
-    thanos: '0.19.0',
+    thanos: '0.20.2',
   },
   // In OSE images are overridden
   images: {

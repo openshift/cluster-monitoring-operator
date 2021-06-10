@@ -186,19 +186,6 @@ func (t *PrometheusUserWorkloadTask) create() error {
 	if err != nil {
 		return errors.Wrap(err, "error creating UserWorkload Prometheus Client GRPC TLS secret")
 	}
-	{
-		pdb, err := t.factory.PrometheusUserWorkloadPodDisruptionBudget()
-		if err != nil {
-			return errors.Wrap(err, "initializing UserWorkload Prometheus PodDisruptionBudget object failed")
-		}
-
-		if pdb != nil {
-			err = t.client.CreateOrUpdatePodDisruptionBudget(pdb)
-			if err != nil {
-				return errors.Wrap(err, "reconciling UserWorkload Prometheus PodDisruptionBudget object failed")
-			}
-		}
-	}
 
 	klog.V(4).Info("initializing UserWorkload Prometheus object")
 	p, err := t.factory.PrometheusUserWorkload(s)
@@ -301,18 +288,6 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 	err = t.client.DeletePrometheus(p)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus object failed")
-	}
-
-	pdb, err := t.factory.PrometheusUserWorkloadPodDisruptionBudget()
-	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus PodDisruptionBudget object failed")
-	}
-
-	if pdb != nil {
-		err = t.client.DeletePodDisruptionBudget(pdb)
-		if err != nil {
-			return errors.Wrap(err, "deleting UserWorkload Prometheus PodDisruptionBudget object failed")
-		}
 	}
 
 	err = t.client.DeleteSecret(s)

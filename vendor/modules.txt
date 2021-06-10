@@ -156,7 +156,7 @@ github.com/prometheus-operator/prometheus-operator/pkg/operator
 github.com/prometheus-operator/prometheus-operator/pkg/prometheus
 github.com/prometheus-operator/prometheus-operator/pkg/thanos
 github.com/prometheus-operator/prometheus-operator/test/framework
-# github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.47.1
+# github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.48.1
 ## explicit
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1
@@ -204,7 +204,7 @@ github.com/prometheus/common/version
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/prometheus/prometheus v1.8.2-0.20210215121130-6f488061dfb4
+# github.com/prometheus/prometheus v1.8.2-0.20210518124745-6eeded0fdf76
 ## explicit
 github.com/prometheus/prometheus/pkg/exemplar
 github.com/prometheus/prometheus/pkg/labels
@@ -231,7 +231,7 @@ go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
 # go.uber.org/atomic v1.7.0
 go.uber.org/atomic
-# golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
+# golang.org/x/net v0.0.0-20210324051636-2c4c8ecb7826
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/http/httpguts
@@ -240,13 +240,13 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd
+# golang.org/x/oauth2 v0.0.0-20210323180902-22b0adad7558
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 ## explicit
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20210309074719-68d13333faf2
+# golang.org/x/sys v0.0.0-20210324051608-47abb6519492
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
 golang.org/x/sys/unix

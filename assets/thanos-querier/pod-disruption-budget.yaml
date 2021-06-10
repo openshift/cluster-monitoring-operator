@@ -1,22 +1,15 @@
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+apiVersion: policy/v1
+kind: PodDisruptionBudget
 metadata:
   labels:
     app.kubernetes.io/component: query-layer
     app.kubernetes.io/instance: thanos-querier
     app.kubernetes.io/name: thanos-query
     app.kubernetes.io/version: 0.20.2
-  name: thanos-querier
+  name: thanos-querier-pdb
   namespace: openshift-monitoring
 spec:
-  endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    interval: 30s
-    port: web
-    scheme: https
-    tlsConfig:
-      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-      serverName: server-name-replaced-at-runtime
+  minAvailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/component: query-layer

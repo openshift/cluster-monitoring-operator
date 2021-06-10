@@ -271,19 +271,7 @@ func (t *PrometheusTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "error creating Prometheus Client GRPC TLS secret")
 	}
-	{
-		pdb, err := t.factory.PrometheusK8sPodDisruptionBudget()
-		if err != nil {
-			return errors.Wrap(err, "initializing Prometheus PodDisruptionBudget object failed")
-		}
 
-		if pdb != nil {
-			err = t.client.CreateOrUpdatePodDisruptionBudget(pdb)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Prometheus PodDisruptionBudget object failed")
-			}
-		}
-	}
 	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.PrometheusK8sTrustedCABundle()
