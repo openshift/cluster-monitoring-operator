@@ -16,6 +16,7 @@ webhooks:
       namespace: openshift-monitoring
       path: /admission-prometheusrules/validate
       port: 8080
+  failurePolicy: Ignore
   name: prometheusrules.openshift.io
   rules:
   - apiGroups:

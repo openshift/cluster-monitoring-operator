@@ -186,6 +186,7 @@ function(params)
           admissionReviewVersions: ['v1'],
           sideEffects: 'None',
           timeoutSeconds: 5,
+          failurePolicy: 'Ignore',
         },
       ],
     },
