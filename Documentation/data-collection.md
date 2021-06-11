@@ -332,6 +332,9 @@ data:
     # (@openshift/team-build-api, OpenShift Build API Team) openshift:build_by_strategy:sum measures total number of builds on a cluster, aggregated by build strategy.
     - '{__name__="openshift:build_by_strategy:sum"}'
     #
+    # (partners metrics) The number of the cores used by the partner operator.
+    - '{__name__="partners:restricted_use_cores:sum"}'
+    #
 kind: ConfigMap
 metadata:
   name: telemetry-config
