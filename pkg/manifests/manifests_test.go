@@ -948,6 +948,7 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
 `)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1035,6 +1036,11 @@ ingress:
 	if p.Spec.ExternalLabels["datacenter"] != "eu-west" {
 		t.Fatal("Prometheus external labels are not configured correctly")
 	}
+
+	if p.Spec.AdditionalAlertManagerConfigs != nil {
+		t.Fatal("additionalAlertManagerConfigs should not be set")
+	}
+
 	storageRequest := p.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
 	storageRequestPtr := &storageRequest
 	if storageRequestPtr.String() != "15Gi" {
@@ -1043,6 +1049,125 @@ ingress:
 
 	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
 		t.Fatal("Prometheus remote-write is not configured correctly")
+	}
+}
+
+func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
+	c, err := NewConfigFromString(`prometheusK8s:
+  additionalAlertManagerConfigs:
+  - apiVersion: v2
+    bearerToken:
+      name: alertmanager1-bearer-token
+      key: token
+    scheme: https
+    tlsConfig:
+      ca: 
+        name: alertmanager1-ca
+        key: root-ca.crt
+    pathPrefix: /
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+  - apiVersion: v2
+    scheme: https
+    timeout: 60s
+    tlsConfig:
+      ca: 
+        name: alertmanager2-cert
+        key: root-ca.crt
+      cert:
+        name: alertmanager2-cert
+        key: cert.crt
+      key:
+        name: alertmanager2-cert
+        key: key.crt
+    pathPrefix: /
+    staticConfigs:
+    - alertmanager2-remote.com
+  - apiVersion: v2
+    scheme: https
+    timeout: 60s
+    tlsConfig:
+      ca:
+        name: alertmanager3-ca
+        key: root-ca.crt
+      cert:
+        name: alertmanager3-cert
+        key: cert.crt
+      key:
+        name: alertmanager3-key
+        key: key.crt
+    pathPrefix: /
+    staticConfigs:
+    - alertmanager3-remote.com
+`)
+	expected := `- scheme: https
+  path_prefix: /
+  api_version: v2
+  authorization:
+    credentials_file: /etc/prometheus/secrets/alertmanager1-bearer-token/token
+  tls_config:
+    ca_file: /etc/prometheus/secrets/alertmanager1-ca/root-ca.crt
+    insecure_skip_verify: false
+  static_configs:
+  - targets:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+- scheme: https
+  path_prefix: /
+  api_version: v2
+  timeout: 60s
+  tls_config:
+    ca_file: /etc/prometheus/secrets/alertmanager2-cert/root-ca.crt
+    cert_file: /etc/prometheus/secrets/alertmanager2-cert/cert.crt
+    key_file: /etc/prometheus/secrets/alertmanager2-cert/key.crt
+    insecure_skip_verify: false
+  static_configs:
+  - targets:
+    - alertmanager2-remote.com
+- scheme: https
+  path_prefix: /
+  api_version: v2
+  timeout: 60s
+  tls_config:
+    ca_file: /etc/prometheus/secrets/alertmanager3-ca/root-ca.crt
+    cert_file: /etc/prometheus/secrets/alertmanager3-cert/cert.crt
+    key_file: /etc/prometheus/secrets/alertmanager3-key/key.crt
+    insecure_skip_verify: false
+  static_configs:
+  - targets:
+    - alertmanager3-remote.com
+`
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+
+	p, err := f.PrometheusK8s(
+		"prometheus-k8s.openshift-monitoring.svc",
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
+
+	secrets := make(map[string]struct{})
+	for _, s := range p.Spec.Secrets {
+		secrets[s] = struct{}{}
+	}
+	for _, exp := range []string{"alertmanager2-cert", "alertmanager1-ca", "alertmanager1-bearer-token", "alertmanager3-ca", "alertmanager3-cert", "alertmanager3-key"} {
+		if _, found := secrets[exp]; found {
+			continue
+		}
+		t.Fatalf("Prometheus secrets are not generated correctly, expected to have %s but got none", exp)
+	}
+
+	s, err := f.AdditionalAlertManagerConfigsSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(string(s.Data[AdditionalAlertmanagerConfigSecretKey]), expected) {
+		t.Fatalf("additionalAlertManagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", string(s.Data[AdditionalAlertmanagerConfigSecretKey]), expected)
 	}
 }
 

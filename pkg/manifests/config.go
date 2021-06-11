@@ -92,6 +92,39 @@ type PrometheusK8sConfig struct {
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
 	TelemetryMatches    []string                             `json:"-"`
+	// EXPERIMENTAL: this configuration field may change in future releases.
+	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertManagerConfigs"`
+}
+
+type AdditionalAlertmanagerConfig struct {
+	// The URL scheme to use when talking to Alertmanagers.
+	Scheme string `json:"scheme,omitempty"`
+	// Path prefix to add in front of the push endpoint path.
+	PathPrefix string `json:"pathPrefix,omitempty"`
+	// The timeout used when sending alerts.
+	Timeout *string `json:"timeout,omitempty"`
+	// The api version of Alertmanager.
+	APIVersion string `json:"apiVersion"`
+	// TLS Config to use for alertmanager connection.
+	TLSConfig TLSConfig `json:"tlsConfig,omitempty"`
+	// Bearer token to use when authenticating to Alertmanager.
+	BearerToken *v1.SecretKeySelector `json:"bearerToken,omitempty"`
+	// List of statically configured Alertmanagers.
+	StaticConfigs []string `json:"staticConfigs,omitempty"`
+}
+
+// TLSConfig configures the options for TLS connections.
+type TLSConfig struct {
+	// The CA cert in the Prometheus container to use for the targets.
+	CA *v1.SecretKeySelector `json:"ca,omitempty"`
+	// The client cert in the Prometheus container to use for the targets.
+	Cert *v1.SecretKeySelector `json:"cert,omitempty"`
+	// The client key in the Prometheus container to use for the targets.
+	Key *v1.SecretKeySelector `json:"key,omitempty"`
+	// Used to verify the hostname for the targets.
+	ServerName string `yaml:"server_name,omitempty"`
+	// Disable target certificate validation.
+	InsecureSkipVerify bool `json:"insecureSkipVerify"`
 }
 
 type AlertmanagerMainConfig struct {

@@ -20,6 +20,8 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 )
 
@@ -285,6 +287,28 @@ func (t *PrometheusTask) Run() error {
 		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "syncing Prometheus trusted CA bundle ConfigMap failed")
+		}
+
+		secret, err := t.factory.AdditionalAlertManagerConfigsSecret()
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus additionalAlertManagerConfigs secret failed")
+		}
+		if secret != nil {
+			klog.V(4).Info("initializing Prometheus additionalAlertManagerConfigs secret")
+			err = t.client.CreateOrUpdateSecret(secret)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Prometheus additionalAlertManagerConfigs secret failed")
+			}
+		} else {
+			err = t.client.DeleteSecret(&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      t.factory.GetAdditionalAlertmanagerConfigSecretName(),
+					Namespace: t.client.Namespace(),
+				},
+			})
+			if err != nil {
+				return errors.Wrap(err, "deleting Prometheus additionalAlertManagerConfigs Secret failed")
+			}
 		}
 
 		klog.V(4).Info("initializing Prometheus object")

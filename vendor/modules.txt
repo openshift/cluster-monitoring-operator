@@ -303,6 +303,7 @@ google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/inf.v0 v0.9.1
 gopkg.in/inf.v0
 # gopkg.in/yaml.v2 v2.4.0
+## explicit
 gopkg.in/yaml.v2
 # k8s.io/api v0.21.0 => k8s.io/api v0.21.0
 ## explicit
