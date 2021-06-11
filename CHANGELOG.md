@@ -10,6 +10,7 @@
 - [#1093](https://github.com/openshift/cluster-monitoring-operator/pull/1093) Bump kube-state-metrics to major new release v2.0.0-rc.1. This changes a lot of metrics and flags, see kube-state-metrics CHANGELOG for full changes. 
 - [#1126](https://github.com/openshift/cluster-monitoring-operator/pull/1126) Remove deprecated techPreviewUserWorkload field from CMO's configmap.
 - [#1136](https://github.com/openshift/cluster-monitoring-operator/pull/1136) Add recording rule for builds by strategy
+- [#1210](https://github.com/openshift/cluster-monitoring-operator/pull/1210) Bump Grafana version to 7.5.5
 
 ## 4.7
 
