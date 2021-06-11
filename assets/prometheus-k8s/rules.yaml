@@ -922,6 +922,8 @@ spec:
     rules:
     - expr: sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))
       record: build_error_rate
+    - expr: sum by (strategy) (openshift_build_status_phase_total)
+      record: openshift:build_by_strategy:sum
   - name: openshift-monitoring.rules
     rules:
     - expr: sum by (job,namespace) (prometheus_tsdb_head_series{namespace=~"openshift-monitoring|openshift-user-workload-monitoring"})

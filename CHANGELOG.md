@@ -17,6 +17,7 @@
   - prometheus-operator v0.44.1
   - Thanos: v0.17.2
   - kube-prometheus: release-0.7
+- [#1206](https://github.com/openshift/cluster-monitoring-operator/pull/1206) Recording rule for builds by strategy
 
 ## 4.6
 
