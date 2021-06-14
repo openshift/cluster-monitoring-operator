@@ -25,65 +25,10 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
-
-func TestAlertmanagerVolumeClaim(t *testing.T) {
-	err := f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alertmanager-main",
-			Namespace: f.Ns,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `alertmanagerMain:
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-		},
-	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
-		t.Fatal(err)
-	}
-
-	// Wait for persistent volume claim
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(f.Ctx, "alertmanager-main-db-alertmanager-main-0", metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrap(err, "getting alertmanager persistent volume claim failed")
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alertmanager-main",
-			Namespace: f.Ns,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-}
 
 func TestAlertmanagerTrustedCA(t *testing.T) {
 	var (
