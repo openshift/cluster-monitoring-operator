@@ -5,6 +5,8 @@ REPO?=quay.io/openshift/cluster-monitoring-operator
 TAG?=$(shell git rev-parse --short HEAD)
 VERSION=$(shell cat VERSION | tr -d " \t\n\r")
 
+GOOS?=$(shell go env GOOS)
+GOARCH?=$(shell go env GOARCH)
 GO111MODULE?=on
 GOPROXY?=http://proxy.golang.org
 export GO111MODULE
@@ -32,7 +34,7 @@ JSON_MANIFESTS ?= $(patsubst $(MANIFESTS_DIR)%,$(JSON_MANIFESTS_DIR)%,$(patsubst
 JSONNET_SRC=$(shell find ./jsonnet -type f -not -path "./jsonnet/vendor*")
 JSONNET_VENDOR=jsonnet/vendor
 
-GO_BUILD_RECIPE=GOOS=linux CGO_ENABLED=0 go build --ldflags="-s -X $(GO_PKG)/pkg/operator.Version=$(VERSION)"
+GO_BUILD_RECIPE=GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build --ldflags="-s -X $(GO_PKG)/pkg/operator.Version=$(VERSION)"
 
 .PHONY: all
 all: clean format generate build test
@@ -44,6 +46,10 @@ clean:
 ############
 # Building #
 ############
+
+.PHONY: run-local
+run-local: build
+	KUBECONFIG=$(KUBECONFIG) ./hack/local-cmo.sh
 
 .PHONY: build
 build: operator
