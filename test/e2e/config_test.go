@@ -176,6 +176,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		podName         = "prometheus-k8s-0"
 		containerName   = "prometheus"
 		labelSelector   = "app.kubernetes.io/component=prometheus"
+		crName          = "k8s"
 	)
 
 	data := fmt.Sprintf(`prometheusK8s:
@@ -233,11 +234,11 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		},
 		{
 			name: "assert external labels are present on the CR",
-			f:    assertExternalLabelExists("datacenter", "eu-west"),
+			f:    assertExternalLabelExists(f.Ns, crName, "datacenter", "eu-west"),
 		},
 		{
 			name: "assert remote write url value in set in CR",
-			f:    assertRemoteWriteWasSet("https://test.remotewrite.com/api/write"),
+			f:    assertRemoteWriteWasSet(f.Ns, crName, "https://test.remotewrite.com/api/write"),
 		},
 	} {
 		if ok := t.Run(scenario.name, scenario.f); !ok {
@@ -590,6 +591,263 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 	}
 }
 
+func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
+	const (
+		component     = "prom-operator"
+		containerName = "prometheus-operator"
+	)
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-monitoring-config",
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": `enableUserWorkload: true
+`,
+		},
+	}
+
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "user-workload-monitoring-config",
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Data: map[string]string{
+			"config.yaml": `prometheusOperator:
+  logLevel: debug
+  tolerations:
+    - operator: "Exists"
+`,
+		},
+	}
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, scenario := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
+		{
+			name: "assert pod configuration is as expected",
+			f: assertPodConfiguration(
+				podConfigParams{
+					component:     component,
+					namespace:     f.UserWorkloadMonitoringNs,
+					labelSelector: "app.kubernetes.io/name=prometheus-operator",
+				},
+				[]podAssertionCB{
+					expectCatchAllToleration(),
+					expectContainerArg("--log-level=debug", containerName),
+				},
+			),
+		},
+	} {
+		if ok := t.Run(scenario.name, scenario.f); !ok {
+			t.Fatalf("scenario %q failed", scenario.name)
+		}
+	}
+}
+
+func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
+	const (
+		component       = "prom-k8s"
+		pvcClaimName    = "prometheus-user-workload-db-prometheus-user-workload-0"
+		statefulsetName = "prometheus-user-workload"
+		cpu             = "1m"
+		mem             = "3Mi"
+		storage         = "2Gi"
+		podName         = "prometheus-user-workload-0"
+		containerName   = "prometheus"
+		labelSelector   = "app.kubernetes.io/component=prometheus"
+		crName          = "user-workload"
+	)
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-monitoring-config",
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": `enableUserWorkload: true
+`,
+		},
+	}
+
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "user-workload-monitoring-config",
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Data: map[string]string{
+			"config.yaml": fmt.Sprintf(`prometheus:
+  logLevel: debug
+  retention: 10h
+  tolerations:
+    - operator: "Exists"
+  externalLabels:
+    datacenter: eu-west
+  remoteWrite:
+  - url: "https://test.remotewrite.com/api/write"
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: %s
+  resources:
+    requests:
+      cpu: %s
+      memory: %s
+`, storage, cpu, mem),
+		},
+	}
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, scenario := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
+		{
+			name: "set configurations for prom CR, assert that PVC is created",
+			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
+				component:       component,
+				namespace:       f.UserWorkloadMonitoringNs,
+				claimName:       pvcClaimName,
+				statefulSetName: statefulsetName,
+			}),
+		},
+		{
+			name: "assert that resource requests are created",
+			f: assertPodConfiguration(
+				podConfigParams{
+					component:     component,
+					namespace:     f.UserWorkloadMonitoringNs,
+					labelSelector: labelSelector,
+				},
+				[]podAssertionCB{
+					expectCatchAllToleration(),
+					expectMatchingRequests(podName, containerName, mem, cpu),
+					expectContainerArg("--log.level=debug", containerName),
+					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
+				},
+			),
+		},
+		{
+			name: "assert external labels are present on the CR",
+			f:    assertExternalLabelExists(f.UserWorkloadMonitoringNs, crName, "datacenter", "eu-west"),
+		},
+		{
+			name: "assert remote write url value in set in CR",
+			f:    assertRemoteWriteWasSet(f.UserWorkloadMonitoringNs, crName, "https://test.remotewrite.com/api/write"),
+		},
+	} {
+		if ok := t.Run(scenario.name, scenario.f); !ok {
+			t.Fatalf("scenario %q failed", scenario.name)
+		}
+	}
+}
+
+func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
+	const (
+		component       = "thanos-ruler"
+		pvcClaimName    = "thanos-ruler-user-workload-data-thanos-ruler-user-workload-0"
+		statefulsetName = "thanos-ruler-user-workload"
+		cpu             = "1m"
+		mem             = "3Mi"
+		storage         = "2Gi"
+	)
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-monitoring-config",
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": `enableUserWorkload: true
+`,
+		},
+	}
+
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "user-workload-monitoring-config",
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Data: map[string]string{
+			"config.yaml": fmt.Sprintf(`thanosRuler:
+  logLevel: debug
+  tolerations:
+    - operator: "Exists"
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: %s
+  resources:
+    requests:
+      cpu: %s
+      memory: %s
+`, storage, cpu, mem),
+		},
+	}
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+		t.Fatal(err)
+	}
+	for _, scenario := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
+		{
+			name: "assert that PVC is created and ss rolled out",
+			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
+				component:       component,
+				namespace:       f.UserWorkloadMonitoringNs,
+				claimName:       pvcClaimName,
+				statefulSetName: statefulsetName,
+			}),
+		},
+		{
+			name: "assert that pod config is correct",
+			f: assertPodConfiguration(
+				podConfigParams{
+					component:     component,
+					namespace:     f.UserWorkloadMonitoringNs,
+					labelSelector: "app.kubernetes.io/name=thanos-ruler",
+				},
+				[]podAssertionCB{
+					expectCatchAllToleration(),
+					expectMatchingRequests("*", component, mem, cpu),
+				},
+			),
+		},
+		{
+			name: "assert assets are deleted when user workload monitoring is disabled",
+			f:    assertDeletedUserWorkloadAssets(cm),
+		},
+	} {
+		if ok := t.Run(scenario.name, scenario.f); !ok {
+			t.Fatalf("scenario %q failed", scenario.name)
+		}
+	}
+}
+
 type deploymentRolloutParams struct {
 	namespace, name string
 }
@@ -616,9 +874,10 @@ func assertVolumeClaimsConfigAndRollout(params rolloutParams) func(*testing.T) {
 	return func(t *testing.T) {
 		// Wait for persistent volume claim
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(context.TODO(), params.claimName, metav1.GetOptions{})
+			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(params.namespace).Get(context.TODO(), params.claimName, metav1.GetOptions{})
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("getting %s persistent volume claim failed", params.component))
+
 			}
 			return nil
 		})
@@ -809,10 +1068,10 @@ func expectContainerArg(arg string, containerName string) podAssertionCB {
 	}
 }
 
-func assertExternalLabelExists(expectKey, expectValue string) func(t *testing.T) {
+func assertExternalLabelExists(namespace, crName, expectKey, expectValue string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, time.Minute*5, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(f.Ns).Get(context.Background(), "k8s", metav1.GetOptions{})
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(context.Background(), crName, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal("failed to get required prometheus cr", err)
 			}
@@ -837,10 +1096,10 @@ func assertExternalLabelExists(expectKey, expectValue string) func(t *testing.T)
 	}
 }
 
-func assertRemoteWriteWasSet(urlValue string) func(t *testing.T) {
+func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, time.Minute*5, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(f.Ns).Get(context.Background(), "k8s", metav1.GetOptions{})
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(context.Background(), crName, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal("failed to get required prometheus cr", err)
 			}
