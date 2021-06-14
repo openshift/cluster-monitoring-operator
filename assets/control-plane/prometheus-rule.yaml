@@ -18,7 +18,7 @@ spec:
           }}) is restarting {{ printf "%.2f" $value }} times / 10 minutes.
         summary: Pod is crash looping.
       expr: |
-        rate(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[10m]) * 60 * 5 > 0
+        increase(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[10m]) > 0
       for: 15m
       labels:
         severity: warning
@@ -522,11 +522,11 @@ spec:
     rules:
     - expr: |
         sum by (cluster, namespace, pod, container) (
-          rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}[5m])
+          irate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}[5m])
         ) * on (cluster, namespace, pod) group_left(node) topk by (cluster, namespace, pod) (
           1, max by(cluster, namespace, pod, node) (kube_pod_info{node!=""})
         )
-      record: node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
+      record: node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate
     - expr: |
         container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}
         * on (namespace, pod) group_left(node) topk by(namespace, pod) (1,

@@ -65,7 +65,7 @@ spec:
         - --upstream=http://127.0.0.1:8081/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/brancz/kube-rbac-proxy:v0.8.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.10.0
         name: kube-rbac-proxy-main
         ports:
         - containerPort: 8443
@@ -87,7 +87,7 @@ spec:
         - --upstream=http://127.0.0.1:8082/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/brancz/kube-rbac-proxy:v0.8.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.10.0
         name: kube-rbac-proxy-self
         ports:
         - containerPort: 9443

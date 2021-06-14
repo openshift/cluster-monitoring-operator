@@ -139,12 +139,12 @@ spec:
         summary: Prometheus fails to send samples to remote storage.
       expr: |
         (
-          rate(prometheus_remote_storage_failed_samples_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
+          (rate(prometheus_remote_storage_failed_samples_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) or rate(prometheus_remote_storage_samples_failed_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]))
         /
           (
-            rate(prometheus_remote_storage_failed_samples_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
+            (rate(prometheus_remote_storage_failed_samples_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) or rate(prometheus_remote_storage_samples_failed_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]))
           +
-            rate(prometheus_remote_storage_succeeded_samples_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
+            (rate(prometheus_remote_storage_succeeded_samples_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) or rate(prometheus_remote_storage_samples_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]))
           )
         )
         * 100
@@ -222,6 +222,28 @@ spec:
       for: 15m
       labels:
         severity: warning
+    - alert: PrometheusLabelLimitHit
+      annotations:
+        description: Prometheus {{$labels.namespace}}/{{$labels.pod}} has dropped
+          {{ printf "%.0f" $value }} targets because some samples exceeded the configured
+          label_limit, label_name_length_limit or label_value_length_limit.
+        summary: Prometheus has dropped targets because some scrape configs have exceeded
+          the labels limit.
+      expr: |
+        increase(prometheus_target_scrape_pool_exceeded_label_limits_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) > 0
+      for: 15m
+      labels:
+        severity: warning
+    - alert: PrometheusTargetSyncFailure
+      annotations:
+        description: '{{ printf "%.0f" $value }} targets in Prometheus {{$labels.namespace}}/{{$labels.pod}}
+          have failed to sync because invalid configuration was supplied.'
+        summary: Prometheus has failed to sync targets.
+      expr: |
+        increase(prometheus_target_sync_failed_total{job=~"prometheus-k8s|prometheus-user-workload"}[30m]) > 0
+      for: 5m
+      labels:
+        severity: critical
     - alert: PrometheusErrorSendingAlertsToAnyAlertmanager
       annotations:
         description: '{{ printf "%.1f" $value }}% minimum errors while sending alerts
@@ -242,31 +264,29 @@ spec:
     rules:
     - alert: ThanosSidecarPrometheusDown
       annotations:
-        description: Thanos Sidecar {{$labels.job}} {{$labels.instance}} cannot connect
-          to Prometheus.
+        description: Thanos Sidecar {{$labels.instance}} cannot connect to Prometheus.
         summary: Thanos Sidecar cannot connect to Prometheus
       expr: |
-        sum by (job, instance) (thanos_sidecar_prometheus_up{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"} == 0)
+        thanos_sidecar_prometheus_up{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"} == 0
       for: 1h
       labels:
         severity: warning
     - alert: ThanosSidecarBucketOperationsFailed
       annotations:
-        description: Thanos Sidecar {{$labels.job}} {{$labels.instance}} bucket operations
-          are failing
+        description: Thanos Sidecar {{$labels.instance}} bucket operations are failing
         summary: Thanos Sidecar bucket operations are failing
       expr: |
-        rate(thanos_objstore_bucket_operation_failures_total{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}[5m]) > 0
+        sum by (job, instance) (rate(thanos_objstore_bucket_operation_failures_total{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}[5m])) > 0
       for: 1h
       labels:
         severity: warning
     - alert: ThanosSidecarUnhealthy
       annotations:
-        description: Thanos Sidecar {{$labels.job}} {{$labels.pod}} is unhealthy for
-          more than {{ $value }} seconds.
+        description: Thanos Sidecar {{$labels.instance}} is unhealthy for more than
+          {{$value}} seconds.
         summary: Thanos Sidecar is unhealthy.
       expr: |
-        time() - max(timestamp(thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"})) by (job,pod) >= 240
+        time() - max by (job, instance) (timestamp(thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"})) >= 240
       for: 1h
       labels:
         severity: warning
