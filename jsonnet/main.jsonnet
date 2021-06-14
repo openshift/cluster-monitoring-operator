@@ -64,6 +64,7 @@ local commonConfig = {
     prometheusOperator: '0.48.1',
     promLabelProxy: '0.2.0',
     thanos: '0.20.2',
+    kubeRbacProxy: '0.10.0',
   },
   // In OSE images are overridden
   images: {
@@ -78,6 +79,7 @@ local commonConfig = {
     promLabelProxy: 'quay.io/prometheuscommunity/prom-label-proxy:v' + $.versions.thanos,
     telemeter: '',
     thanos: 'quay.io/thanos/thanos:v' + $.versions.thanos,
+    kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v' + $.versions.kubeRbacProxy,
 
     openshiftOauthProxy: 'quay.io/openshift/oauth-proxy:latest',
     //kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v0.8.0',
@@ -204,6 +206,7 @@ local inCluster =
         namespace: $.values.common.namespace,
         version: $.values.common.versions.kubeStateMetrics,
         image: $.values.common.images.kubeStateMetrics,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         commonLabels+: $.values.common.commonLabels,
         mixin+: { ruleLabels: $.values.common.ruleLabels },
       },
@@ -211,6 +214,7 @@ local inCluster =
         namespace: $.values.common.namespace,
         version: $.values.common.versions.nodeExporter,
         image: $.values.common.images.nodeExporter,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         commonLabels+: $.values.common.commonLabels,
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
@@ -254,6 +258,7 @@ local inCluster =
         namespace: $.values.common.namespace,
         version: $.values.common.versions.prometheusOperator,
         image: $.values.common.images.prometheusOperator,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         configReloaderImage: $.values.common.images.prometheusOperatorReloader,
         commonLabels+: $.values.common.commonLabels,
         mixin+: {
@@ -373,6 +378,7 @@ local userWorkload =
         denyNamespace: inCluster.values.common.namespace,
         version: $.values.common.versions.prometheusOperator,
         image: $.values.common.images.prometheusOperator,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         configReloaderImage: $.values.common.images.prometheusOperatorReloader,
         commonLabels+: $.values.common.commonLabels,
         mixin+: {
