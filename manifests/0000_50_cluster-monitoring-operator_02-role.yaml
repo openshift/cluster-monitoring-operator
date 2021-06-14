@@ -4,7 +4,7 @@
 # Sources: 
 # 	hack/cluster-monitoring-operator-role.yaml.in
 # 	assets/alertmanager/cluster-role.yaml
-# 	assets/cluster-monitoring-operator/cluster-role.yaml
+# 	assets/cluster-monitoring-operator/cluster-role-view.yaml
 # 	assets/cluster-monitoring-operator/monitoring-edit-cluster-role.yaml
 # 	assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml
 # 	assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml
