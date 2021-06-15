@@ -84,11 +84,8 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"assert tenancy model is enforced for rules", assertTenancyForRules},
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
 		{"assert grpc tls rotation", assertGRPCTLSRotation},
-		{"assert user workload metrics", assertUserWorkloadMetrics},
-		{"assert user workload rules", assertUserWorkloadRules},
 		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
 		{"set VolumeClaimTemplate for prometheus CR, assert that it is created", assertPrometheusVCConfig(uwmCM)},
-		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	} {
 		if ok := t.Run(scenario.name, scenario.f); !ok {
