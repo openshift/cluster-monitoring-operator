@@ -398,7 +398,7 @@ func deployUserApplication(t *testing.T) {
 					Containers: []v1.Container{
 						{
 							Name:  "prometheus-example-app",
-							Image: "quay.io/brancz/prometheus-example-app:v0.2.0",
+							Image: "ghcr.io/rhobs/prometheus-example-app:0.3.0",
 						},
 					},
 				},
