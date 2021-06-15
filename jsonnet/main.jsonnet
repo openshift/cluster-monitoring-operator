@@ -23,6 +23,7 @@ local thanosQuerier = import './thanos-querier.libsonnet';
 
 local openshiftStateMetrics = import './openshift-state-metrics.libsonnet';
 local telemeterClient = import './telemeter-client.libsonnet';
+local crio = import './cri-o.libsonnet';
 
 /*
 TODO(paulfantom):
@@ -317,6 +318,9 @@ local inCluster =
           },
         },
       },
+      crio: {
+        namespace: $.values.common.namespace,
+      },
     },
 
     // Objects
@@ -335,6 +339,7 @@ local inCluster =
 
     telemeterClient: telemeterClient($.values.telemeterClient),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
+    crio: crio($.values.crio),
   } +
   (import './anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
@@ -410,5 +415,6 @@ removeRunbookUrl(patchRules(excludeRules(addWorkloadAnnotation(addReleaseAnnotat
   { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
   { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
   { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
+  { ['cri-o/' + name]: inCluster.crio[name] for name in std.objectFields(inCluster.crio) } +
   {}
 ))))))

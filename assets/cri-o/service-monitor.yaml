@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: crio-metrics
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 10s
+    path: /metrics
+    port: https
+    scheme: https
+    tlsConfig:
+      ca:
+        secret:
+          key: crio-metrics-server.crt
+          name: crio-metrics
+      serverName: crio-metrics
+  selector:
+    matchLabels:
+      name: crio-metrics

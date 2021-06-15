@@ -9,6 +9,7 @@
 # 	assets/cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml
 # 	assets/cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml
 # 	assets/cluster-monitoring-operator/user-workload-config-edit-role.yaml
+# 	assets/cri-o/cluster-role.yaml
 # 	assets/grafana/cluster-role.yaml
 # 	assets/kube-state-metrics/cluster-role.yaml
 # 	assets/node-exporter/cluster-role.yaml
@@ -224,6 +225,14 @@ rules:
   - configmaps
   verbs:
   - '*'
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - crio-metrics
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
 - apiGroups:
   - apps
   resources:

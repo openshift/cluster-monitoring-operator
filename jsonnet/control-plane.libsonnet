@@ -107,40 +107,7 @@ function(params)
                 {}
             ,
             super.endpoints,
-          ) +
-          // Collect metrics from CRI-O.
-          [{
-            interval: '30s',
-            port: 'https-metrics',
-            relabelings: [
-              {
-                sourceLabels: ['__address__'],
-                action: 'replace',
-                targetLabel: '__address__',
-                regex: '(.+)(?::\\d+)',
-                replacement: '$1:9537',
-              },
-              {
-                sourceLabels: ['endpoint'],
-                action: 'replace',
-                targetLabel: 'endpoint',
-                replacement: 'crio',
-              },
-              {
-                action: 'replace',
-                targetLabel: 'job',
-                replacement: 'crio',
-              },
-            ],
-            // Drop metrics with excessive label cardinality.
-            metricRelabelings: [
-              {
-                sourceLabels: ['__name__'],
-                regex: 'container_runtime_crio_image_layer_reuse|container_runtime_crio_image_pulls_.+',
-                action: 'drop',
-              },
-            ],
-          }],
+          ),
       },
     },
 

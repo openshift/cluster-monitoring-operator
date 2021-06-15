@@ -70,6 +70,32 @@ func (f *Factory) GRPCSecret() (*v1.Secret, error) {
 // 3. The CA's private key is left out of the thread model as it is not mounted in any pod.
 //    This implementation assumes it can stay immutable and does not need rotation.
 func RotateGRPCSecret(s *v1.Secret) error {
+	return RotateSecret(
+		s, "grpc", "prometheus", "thanos-querier",
+		sets.NewString("prometheus-grpc"),
+	)
+}
+
+// RotateCrioSecret rotates key material for CRI-O TLS connections.
+func RotateCrioSecret(s *v1.Secret) error {
+	return RotateSecret(
+		s, "crio", "crio-metrics", "crio-metrics",
+		sets.NewString(
+			"crio-metrics",
+			"crio-metrics."+s.GetNamespace(),
+			"crio-metrics."+s.GetNamespace()+".svc",
+			"crio-metrics."+s.GetNamespace()+".svc.cluster.local",
+		),
+	)
+}
+
+func RotateSecret(
+	s *v1.Secret,
+	annotationPrefix string,
+	serverName string,
+	clientName string,
+	hostnames sets.String,
+) error {
 	var (
 		curCA, newCA              *crypto.CA
 		curCABytes, crtPresent    = s.Data["ca.crt"]
@@ -88,9 +114,10 @@ func RotateGRPCSecret(s *v1.Secret) error {
 		}
 	}
 
-	if _, ok := s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"]; ok {
+	annotation := fmt.Sprintf("monitoring.openshift.io/%s-tls-forced-rotate", annotationPrefix)
+	if _, ok := s.Annotations[annotation]; ok {
 		rotate = true
-		delete(s.Annotations, "monitoring.openshift.io/grpc-tls-forced-rotate")
+		delete(s.Annotations, annotation)
 	}
 
 	if !rotate {
@@ -142,7 +169,7 @@ func RotateGRPCSecret(s *v1.Secret) error {
 	{
 		cfg, err := newCA.MakeClientCertificateForDuration(
 			&user.DefaultInfo{
-				Name: "thanos-querier",
+				Name: clientName,
 			},
 			time.Duration(crypto.DefaultCertificateLifetimeInDays)*24*time.Hour,
 		)
@@ -152,15 +179,15 @@ func RotateGRPCSecret(s *v1.Secret) error {
 
 		crt, key, err := cfg.GetPEMBytes()
 		if err != nil {
-			return errors.Wrap(err, "error getting PEM bytes for thanos querier client certificate")
+			return errors.Wrap(err, "error getting PEM bytes for client certificate")
 		}
-		s.Data["thanos-querier-client.crt"] = crt
-		s.Data["thanos-querier-client.key"] = key
+		s.Data[clientName+"-client.crt"] = crt
+		s.Data[clientName+"-client.key"] = key
 	}
 
 	{
 		cfg, err := newCA.MakeServerCert(
-			sets.NewString("prometheus-grpc"),
+			hostnames,
 			crypto.DefaultCertificateLifetimeInDays,
 		)
 		if err != nil {
@@ -169,10 +196,10 @@ func RotateGRPCSecret(s *v1.Secret) error {
 
 		crt, key, err := cfg.GetPEMBytes()
 		if err != nil {
-			return errors.Wrap(err, "error getting PEM bytes for prometheus-k8s server certificate")
+			return errors.Wrap(err, "error getting PEM bytes for server certificate")
 		}
-		s.Data["prometheus-server.crt"] = crt
-		s.Data["prometheus-server.key"] = key
+		s.Data[serverName+"-server.crt"] = crt
+		s.Data[serverName+"-server.key"] = key
 	}
 
 	return nil

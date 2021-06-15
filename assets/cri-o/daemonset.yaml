@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: crio-metrics-proxy
+  namespace: openshift-monitoring
+spec:
+  selector:
+    matchLabels:
+      name: crio-metrics-proxy
+  template:
+    metadata:
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        name: crio-metrics-proxy
+    spec:
+      containers:
+      - args:
+        - --upstream=http://127.0.0.1:9537
+        - --secure-listen-address=0.0.0.0:9538
+        - --v=10
+        - --tls-cert-file=/tls/crio-metrics-server.crt
+        - --tls-private-key-file=/tls/crio-metrics-server.key
+        image: quay.io/brancz/kube-rbac-proxy:v0.9.0
+        name: proxy
+        ports:
+        - containerPort: 9538
+          name: https
+        volumeMounts:
+        - mountPath: /tls
+          name: crio-metrics
+      - args:
+        - bash
+        - -c
+        - while true; do echo "Copying certs" && cp /tls/* /crio && sleep 86400; done
+        image: registry.fedoraproject.org/fedora-minimal:34
+        name: sidecar
+        volumeMounts:
+        - mountPath: /tls
+          name: crio-metrics
+        - mountPath: /crio
+          name: etc-crio-certs
+      hostNetwork: true
+      serviceAccountName: crio-metrics
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+      volumes:
+      - name: crio-metrics
+        secret:
+          secretName: crio-metrics
+      - hostPath:
+          path: /etc/crio/certs
+          type: DirectoryOrCreate
+        name: etc-crio-certs

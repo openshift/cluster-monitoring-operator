@@ -92,28 +92,6 @@ spec:
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
       insecureSkipVerify: false
-  - interval: 30s
-    metricRelabelings:
-    - action: drop
-      regex: container_runtime_crio_image_layer_reuse|container_runtime_crio_image_pulls_.+
-      sourceLabels:
-      - __name__
-    port: https-metrics
-    relabelings:
-    - action: replace
-      regex: (.+)(?::\d+)
-      replacement: $1:9537
-      sourceLabels:
-      - __address__
-      targetLabel: __address__
-    - action: replace
-      replacement: crio
-      sourceLabels:
-      - endpoint
-      targetLabel: endpoint
-    - action: replace
-      replacement: crio
-      targetLabel: job
   jobLabel: k8s-app
   namespaceSelector:
     matchNames:

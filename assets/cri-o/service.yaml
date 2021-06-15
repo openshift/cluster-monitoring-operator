@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: crio-metrics
+  name: crio-metrics
+  namespace: openshift-monitoring
+spec:
+  clusterIP: None
+  ports:
+  - name: https
+    port: 443
+    targetPort: https
+  selector:
+    name: crio-metrics-proxy

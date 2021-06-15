@@ -231,6 +231,15 @@ var (
 	ControlPlaneEtcdPrometheusRule    = "control-plane/etcd-prometheus-rule.yaml"
 	ControlPlaneKubeletServiceMonitor = "control-plane/service-monitor-kubelet.yaml"
 	ControlPlaneEtcdServiceMonitor    = "control-plane/service-monitor-etcd.yaml"
+
+	CrioClusterRole                = "cri-o/cluster-role.yaml"
+	CrioClusterRoleBinding         = "cri-o/cluster-role-binding.yaml"
+	CrioDaemonSet                  = "cri-o/daemonset.yaml"
+	CrioSecret                     = "cri-o/secret.yaml"
+	CrioSecurityContextConstraints = "cri-o/security-context-constraints.yaml"
+	CrioService                    = "cri-o/service.yaml"
+	CrioServiceAccount             = "cri-o/service-account.yaml"
+	CrioServiceMonitor             = "cri-o/service-monitor.yaml"
 )
 
 var (
@@ -3772,4 +3781,72 @@ func removeEmptyDuplicates(elements []string) []string {
 
 func (f *Factory) GetAdditionalAlertmanagerConfigSecretName() string {
 	return AdditionalAlertmanagerConfigSecretName
+}
+
+func (f *Factory) CrioSecurityContextConstraints() (*securityv1.SecurityContextConstraints, error) {
+	scc, err := f.NewSecurityContextConstraints(f.assets.MustNewAssetReader(CrioSecurityContextConstraints))
+	if err != nil {
+		return nil, err
+	}
+	return scc, nil
+}
+
+func (f *Factory) CrioServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(CrioServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+	s.Namespace = f.namespace
+	return s, nil
+}
+
+func (f *Factory) CrioClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(f.assets.MustNewAssetReader(CrioClusterRole))
+}
+
+func (f *Factory) CrioClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(CrioClusterRoleBinding))
+	if err != nil {
+		return nil, err
+	}
+	crb.Subjects[0].Namespace = f.namespace
+	return crb, nil
+}
+
+func (f *Factory) CrioSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(CrioSecret))
+	if err != nil {
+		return nil, err
+	}
+	s.Namespace = f.namespace
+	s.Data = make(map[string][]byte)
+	s.Annotations = make(map[string]string)
+	return s, nil
+}
+
+func (f *Factory) CrioService() (*v1.Service, error) {
+	s, err := f.NewService(f.assets.MustNewAssetReader(CrioService))
+	if err != nil {
+		return nil, err
+	}
+	s.Namespace = f.namespace
+	return s, nil
+}
+
+func (f *Factory) CrioServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(CrioServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+	sm.Namespace = f.namespace
+	return sm, nil
+}
+
+func (f *Factory) CrioDaemonSet() (*appsv1.DaemonSet, error) {
+	ds, err := f.NewDaemonSet(f.assets.MustNewAssetReader(CrioDaemonSet))
+	if err != nil {
+		return nil, err
+	}
+	ds.Namespace = f.namespace
+	return ds, nil
 }
