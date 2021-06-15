@@ -478,15 +478,21 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
         name: 'openshift-monitoring.rules',
         rules: [
           {
-            expr: 'sum by (job,namespace) (prometheus_tsdb_head_series{namespace=~"openshift-monitoring|openshift-user-workload-monitoring"})',
+            // We use "... (max without(instance) ...)" to avoid double
+            // accounting when the Prometheus pods are restarted and persistent
+            // storage is used. Because of staleness handling, series for the
+            // old pods will continue to exist for 5 minutes.
+            expr: 'sum by (job,namespace) (max without(instance) (prometheus_tsdb_head_series{namespace=~"openshift-monitoring|openshift-user-workload-monitoring"}))',
             record: 'openshift:prometheus_tsdb_head_series:sum',
           },
           {
-            expr: 'sum by(job,namespace) (rate(prometheus_tsdb_head_samples_appended_total{namespace=~"openshift-monitoring|openshift-user-workload-monitoring"}[2m]))',
+            // See comment above for the explanation about using "... (max without(instance) ...)".
+            expr: 'sum by(job,namespace) (max without(instance) (rate(prometheus_tsdb_head_samples_appended_total{namespace=~"openshift-monitoring|openshift-user-workload-monitoring"}[2m])))',
             record: 'openshift:prometheus_tsdb_head_samples_appended_total:sum',
           },
           {
-            expr: 'sum by (namespace) (container_memory_working_set_bytes{namespace=~"openshift-monitoring|openshift-user-workload-monitoring", container=""})',
+            // See comment above for the explanation about using "... (max without(instance) ...)".
+            expr: 'sum by (namespace) (max without(instance) (container_memory_working_set_bytes{namespace=~"openshift-monitoring|openshift-user-workload-monitoring", container=""}))',
             record: 'monitoring:container_memory_working_set_bytes:sum',
           },
           {
