@@ -885,12 +885,25 @@ func assertVolumeClaimsConfigAndRollout(params rolloutParams) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		err = framework.Poll(time.Second, 5*time.Minute, func() error {
+			_, err := f.KubeClient.AppsV1().StatefulSets(params.namespace).Get(context.TODO(), params.statefulSetName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      params.statefulSetName,
 				Namespace: params.namespace,
 			},
 		})
+
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -929,58 +942,6 @@ func assertPodConfiguration(params podConfigParams, asserts []podAssertionCB) fu
 		if err != nil {
 			t.Fatal(err)
 		}
-	}
-}
-
-const (
-	nodeLabelKey   = "some-key"
-	nodeLabelValue = "some-value"
-)
-
-func getConfigMapWithNodeSelectorSnippet(t *testing.T, cm *v1.ConfigMap) *v1.ConfigMap {
-	t.Helper()
-	withNodeSelector := cm.DeepCopy()
-	before := withNodeSelector.Data["config.yaml"]
-	withNodeSelector.Data["config.yaml"] = before + fmt.Sprintf("  nodeSelector:\n    %s: %s", nodeLabelKey, nodeLabelValue)
-	return withNodeSelector
-}
-
-type nodeSelectorAssertionParams struct {
-	component, namespace, labelSelector string
-}
-
-// assertNodeSelectorWasSet ensures that the nodeSelector has been pushed to at least one Pod Spec in the group.
-// we don't check all Pods because it won't roll out the full statefulset if one fails to schedule, which is the case
-// here since the label will cause it to never schedule, so we wait for a Pod in pending state
-func assertNodeSelectorWasSet(t *testing.T, params nodeSelectorAssertionParams) {
-	var nodeSelectorSet bool
-	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		pods, err := f.KubeClient.CoreV1().Pods(params.namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: params.labelSelector,
-			FieldSelector: "status.phase=Pending",
-		})
-
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("getting %s pods failed", params.component))
-		}
-
-		if len(pods.Items) == 0 {
-			return fmt.Errorf("waititng for change to be rolled out")
-		}
-
-		for _, p := range pods.Items {
-			if p.Spec.NodeSelector[nodeLabelKey] == nodeLabelValue {
-				nodeSelectorSet = true
-				break
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !nodeSelectorSet {
-		t.Fatal("expected node selector to be set on at least one Pod")
 	}
 }
 

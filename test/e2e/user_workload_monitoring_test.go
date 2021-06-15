@@ -69,6 +69,14 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		},
 	}
 
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+		t.Fatal(err)
+	}
+
 	for _, scenario := range []struct {
 		name string
 		f    func(*testing.T)
@@ -85,44 +93,18 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
 		{"assert grpc tls rotation", assertGRPCTLSRotation},
 		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
-		{"set VolumeClaimTemplate for prometheus CR, assert that it is created", assertPrometheusVCConfig(uwmCM)},
+		{"set VolumeClaimTemplate for prometheus CR, assert that it is created", assertVolumeClaimsConfigAndRollout(rolloutParams{
+			component:       "prometheus-uwm",
+			namespace:       f.UserWorkloadMonitoringNs,
+			claimName:       "prometheus-user-workload-db-prometheus-user-workload-0",
+			statefulSetName: "prometheus-user-workload",
+		})},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	} {
 		if ok := t.Run(scenario.name, scenario.f); !ok {
 			t.Fatalf("scenario %q failed", scenario.name)
 		}
 	}
-}
-
-func assertPrometheusVCConfig(cm *v1.ConfigMap) func(*testing.T) {
-	return func(t *testing.T) {
-		if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
-			t.Fatal(err)
-		}
-
-		// Wait for persistent volume claim
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload-db-prometheus-user-workload-0", metav1.GetOptions{})
-			if err != nil {
-				return errors.Wrap(err, "getting prometheus persistent volume claim failed")
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "prometheus-user-workload",
-				Namespace: f.UserWorkloadMonitoringNs,
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
 }
 
 func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
