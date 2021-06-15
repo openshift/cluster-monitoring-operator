@@ -73,6 +73,16 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit Role failed")
 	}
 
+	amwr, err := t.factory.ClusterMonitoringAlertManagerEditRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing AlertmanagerWrite Role failed")
+	}
+
+	err = t.client.CreateOrUpdateRole(amwr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Alertmanager Role failed")
+	}
+
 	pr, err := t.factory.ClusterMonitoringOperatorPrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing cluster-monitoring-operator rules PrometheusRule failed")

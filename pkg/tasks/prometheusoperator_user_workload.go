@@ -94,6 +94,16 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator Deployment failed")
 	}
 
+	arb, err := t.factory.PrometheusUserWorkloadAlertManagerRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Alertmanager Role Binding failed")
+	}
+
+	err = t.client.CreateOrUpdateRoleBinding(arb)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload Alertmanager Role Binding failed")
+	}
+
 	// The CRs will be created externally,
 	// but we still have to wait for them here.
 	err = t.client.AssurePrometheusOperatorCRsExist()
@@ -149,6 +159,16 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
 	err = t.client.DeleteClusterRoleBinding(crb)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator ClusterRoleBinding failed")
+	}
+
+	arb, err := t.factory.PrometheusUserWorkloadAlertManagerRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Alertmanager Role Binding failed")
+	}
+
+	err = t.client.DeleteRoleBinding(arb)
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload Alertmanager Role Binding failed")
 	}
 
 	cr, err := t.factory.PrometheusOperatorUserWorkloadClusterRole()

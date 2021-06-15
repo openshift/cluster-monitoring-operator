@@ -235,10 +235,19 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler PrometheusRule failed")
 	}
-
 	err = t.client.CreateOrUpdatePrometheusRule(pm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler PrometheusRule failed")
+	}
+
+	tramrb, err := t.factory.ThanosRulerAlertManagerRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager Role Binding failed")
+	}
+
+	err = t.client.CreateOrUpdateRoleBinding(tramrb)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos Ruler Alertmanager Role Binding failed")
 	}
 	return nil
 }
@@ -302,6 +311,16 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 	err = t.client.DeleteServiceAccount(sa)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler ServiceAccount failed")
+	}
+
+	tramrb, err := t.factory.ThanosRulerAlertManagerRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager Role Binding failed")
+	}
+
+	err = t.client.DeleteRoleBinding(tramrb)
+	if err != nil {
+		return errors.Wrap(err, "deleting Thanos Ruler Alertmanager Role Binding failed")
 	}
 
 	oauthSecret, err := t.factory.ThanosRulerOauthCookieSecret()

@@ -194,6 +194,13 @@ func (f *Framework) setup() (cleanUpFunc, error) {
 
 	cleanUpFuncs = append(cleanUpFuncs, cf)
 
+	cf, err = f.CreateRoleBindingFromRole(f.Ns, e2eServiceAccount, "monitoring-alertmanager-edit")
+	if err != nil {
+		return nil, err
+	}
+
+	cleanUpFuncs = append(cleanUpFuncs, cf)
+	
 	return func() error {
 		var errs []error
 		for _, f := range cleanUpFuncs {
@@ -300,6 +307,35 @@ func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, 
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
 			Name:     clusterRole,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+
+	roleBinding, err := f.KubeClient.RbacV1().RoleBindings(namespace).Create(f.Ctx, roleBinding, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return func() error {
+		return f.KubeClient.RbacV1().RoleBindings(namespace).Delete(f.Ctx, roleBinding.Name, metav1.DeleteOptions{})
+	}, nil
+}
+
+func (f *Framework) CreateRoleBindingFromRole(namespace, serviceAccount, role string) (cleanUpFunc, error) {
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", serviceAccount, role),
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      serviceAccount,
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "Role",
+			Name:    role,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}

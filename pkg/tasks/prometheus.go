@@ -161,6 +161,16 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Prometheus ClusterRoleBinding failed")
 	}
 
+	amrb, err := t.factory.PrometheusK8sAlertmanagerRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Alertmanager RoleBinding failed")
+	}
+
+	err = t.client.CreateOrUpdateRoleBinding(amrb)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Alertmanager RoleBinding failed")
+	}
+
 	rc, err := t.factory.PrometheusK8sRoleConfig()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Role config failed")

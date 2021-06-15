@@ -112,6 +112,7 @@ var (
 	PrometheusK8sGrpcTLSSecret               = "prometheus-k8s/grpc-tls-secret.yaml"
 	PrometheusK8sTrustedCABundle             = "prometheus-k8s/trusted-ca-bundle.yaml"
 	PrometheusK8sThanosSidecarServiceMonitor = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
+	PrometheusK8sTAlertmanagerRoleBinding    = "prometheus-k8s/alertmanager-role-binding.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
@@ -127,6 +128,7 @@ var (
 	PrometheusUserWorkloadPrometheusServiceMonitor    = "prometheus-user-workload/service-monitor.yaml"
 	PrometheusUserWorkloadGrpcTLSSecret               = "prometheus-user-workload/grpc-tls-secret.yaml"
 	PrometheusUserWorkloadThanosSidecarServiceMonitor = "prometheus-user-workload/service-monitor-thanos-sidecar.yaml"
+	PrometheusUserWorkloadAlertmanagerRoleBinding     = "prometheus-user-workload/alertmanager-role-binding.yaml"
 
 	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
@@ -178,6 +180,7 @@ var (
 	ClusterMonitoringOperatorService            = "cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor     = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView            = "cluster-monitoring-operator/cluster-role-view.yaml"
+	ClusterMonitoringAlertmanagerEditRole       = "cluster-monitoring-operator/monitoring-alertmanager-edit-role.yaml"
 	ClusterMonitoringRulesEditClusterRole       = "cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
 	ClusterMonitoringRulesViewClusterRole       = "cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
 	ClusterMonitoringEditClusterRole            = "cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
@@ -226,6 +229,7 @@ var (
 	ThanosRulerTrustedCABundle              = "thanos-ruler/trusted-ca-bundle.yaml"
 	ThanosRulerServiceMonitor               = "thanos-ruler/service-monitor.yaml"
 	ThanosRulerPrometheusRule               = "thanos-ruler/thanos-ruler-prometheus-rule.yaml"
+	ThanosRulerAlertmanagerRoleBinding      = "thanos-ruler/alertmanager-role-binding.yaml"
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
@@ -752,6 +756,10 @@ func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding,
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
+}
+
+func (f *Factory) PrometheusK8sAlertmanagerRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusK8sTAlertmanagerRoleBinding))
 }
 
 func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
@@ -1915,6 +1923,10 @@ func (f *Factory) PrometheusUserWorkloadThanosSidecarServiceMonitor() (*monv1.Se
 	return sm, nil
 }
 
+func (f *Factory) PrometheusUserWorkloadAlertManagerRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadAlertmanagerRoleBinding))
+}
+
 func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusOperatorClusterRoleBinding))
 	if err != nil {
@@ -2414,6 +2426,15 @@ func (f *Factory) ClusterMonitoringEditClusterRole() (*rbacv1.ClusterRole, error
 
 func (f *Factory) ClusterMonitoringEditUserWorkloadConfigRole() (*rbacv1.Role, error) {
 	cr, err := f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringEditUserWorkloadConfigRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringAlertManagerEditRole() (*rbacv1.Role, error) {
+	cr, err := f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringAlertmanagerEditRole))
 	if err != nil {
 		return nil, err
 	}
@@ -3289,6 +3310,10 @@ func (f *Factory) ThanosRulerClusterRole() (*rbacv1.ClusterRole, error) {
 
 func (f *Factory) ThanosRulerPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetReader(ThanosRulerPrometheusRule))
+}
+
+func (f *Factory) ThanosRulerAlertManagerRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetReader(ThanosRulerAlertmanagerRoleBinding))
 }
 
 func (f *Factory) ThanosRulerServiceMonitor() (*monv1.ServiceMonitor, error) {

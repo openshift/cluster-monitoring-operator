@@ -119,6 +119,25 @@ function(params) {
     }],
   },
 
+  alertmanagerRoleBinding: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'RoleBinding',
+    metadata: {
+      name: 'alertmanager-thanos-ruler',
+      namespace: 'openshift-monitoring',
+    },
+    roleRef: {
+      apiGroup: 'rbac.authorization.k8s.io',
+      kind: 'Role',
+      name: 'monitoring-alertmanager-edit',
+    },
+    subjects: [{
+      kind: 'ServiceAccount',
+      name: 'thanos-ruler',
+      namespace: cfg.namespace,
+    }],
+  },
+
   grpcTlsSecret: {
     apiVersion: 'v1',
     kind: 'Secret',
