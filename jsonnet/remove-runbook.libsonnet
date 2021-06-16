@@ -1,4 +1,4 @@
-local utils = import 'kubernetes-mixin/lib/utils.libsonnet';
+local utils = import 'github.com/kubernetes-monitoring/kubernetes-mixin/lib/utils.libsonnet';
 
 {
   prometheusAlerts+::
