@@ -1081,6 +1081,7 @@ func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
       key:
         name: alertmanager2-cert
         key: key.crt
+      serverName: alertmanager2-remote.com
     pathPrefix: /
     staticConfigs:
     - alertmanager2-remote.com
@@ -1097,6 +1098,7 @@ func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
       key:
         name: alertmanager3-key
         key: key.crt
+      serverName: alertmanager3-remote.com
     pathPrefix: /
     staticConfigs:
     - alertmanager3-remote.com
@@ -1121,6 +1123,7 @@ func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
     ca_file: /etc/prometheus/secrets/alertmanager2-cert/root-ca.crt
     cert_file: /etc/prometheus/secrets/alertmanager2-cert/cert.crt
     key_file: /etc/prometheus/secrets/alertmanager2-cert/key.crt
+    server_name: alertmanager2-remote.com
     insecure_skip_verify: false
   static_configs:
   - targets:
@@ -1133,6 +1136,7 @@ func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
     ca_file: /etc/prometheus/secrets/alertmanager3-ca/root-ca.crt
     cert_file: /etc/prometheus/secrets/alertmanager3-cert/cert.crt
     key_file: /etc/prometheus/secrets/alertmanager3-key/key.crt
+    server_name: alertmanager3-remote.com
     insecure_skip_verify: false
   static_configs:
   - targets:
