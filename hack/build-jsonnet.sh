@@ -41,6 +41,10 @@ grep -H 'kind: CustomResourceDefinition' assets/prometheus-operator/* | cut -d: 
   mv "$f" "manifests/0000_50_cluster-monitoring-operator_00_$(basename "$f")"
 done
 
+# Move jsonnet generated ClusterRole to manifests directory.
+mv "${prefix}/cluster-monitoring-operator/cluster-role.yaml" \
+   "${prefix}/manifests/0000_50_cluster-monitoring-operator_02-role.yaml"
+
 # Move resulting manifests to the manifests directory
 mv assets/manifests/* manifests/
 rmdir assets/manifests || true

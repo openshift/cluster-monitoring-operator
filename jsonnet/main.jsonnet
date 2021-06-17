@@ -320,7 +320,31 @@ local inCluster =
     },
 
     // Objects
-    clusterMonitoringOperator: clusterMonitoringOperator($.values.clusterMonitoringOperator),
+    clusterMonitoringOperator: clusterMonitoringOperator($.values.clusterMonitoringOperator) {
+      // The cluster-monitoring-operator ClusterRole needs the combined set of
+      // permissions from all its operand ClusterRoles.  This extends the base
+      // ClusterRole by just appending the rules from the others.
+      clusterRole+: {
+        rules+: inCluster.alertmanager.clusterRole.rules +
+                inCluster.clusterMonitoringOperator.clusterRoleView.rules +
+                inCluster.clusterMonitoringOperator.userWorkloadConfigEditRole.rules +
+                inCluster.grafana.clusterRole.rules +
+                inCluster.kubeStateMetrics.clusterRole.rules +
+                inCluster.nodeExporter.clusterRole.rules +
+                inCluster.openshiftStateMetrics.clusterRole.rules +
+                inCluster.prometheusAdapter.clusterRole.rules +
+                inCluster.prometheusAdapter.clusterRoleAggregatedMetricsReader.rules +
+                inCluster.prometheusAdapter.clusterRoleServerResources.rules +
+                inCluster.prometheus.clusterRole.rules +
+                std.flatMap(function(role) role.rules,
+                            inCluster.prometheus.roleSpecificNamespaces.items) +
+                inCluster.prometheus.roleConfig.rules +
+                inCluster.prometheusOperator.clusterRole.rules +
+                inCluster.telemeterClient.clusterRole.rules +
+                inCluster.thanosQuerier.clusterRole.rules +
+                inCluster.thanosRuler.clusterRole.rules,
+      },
+    },
     alertmanager: alertmanager($.values.alertmanager),
     grafana: grafana($.values.grafana),
     kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),

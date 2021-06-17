@@ -85,7 +85,7 @@ vendor:
 	go mod verify
 
 .PHONY: generate
-generate: build-jsonnet manifests/0000_50_cluster-monitoring-operator_02-role.yaml docs check-assets
+generate: build-jsonnet docs check-assets
 
 .PHONY: generate-in-docker
 generate-in-docker:
@@ -112,10 +112,6 @@ $(JSON_MANIFESTS): $(MANIFESTS)
 
 .PHONY: json-manifests
 json-manifests: $(JSON_MANIFESTS_DIR) $(JSON_MANIFESTS)
-
-# Merge cluster roles
-manifests/0000_50_cluster-monitoring-operator_02-role.yaml: hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
-	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding"` > $@
 
 .PHONY: docs
 docs: $(EMBEDMD_BIN) Documentation/telemeter_query

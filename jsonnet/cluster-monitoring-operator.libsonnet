@@ -101,6 +101,89 @@ function(params) {
     },
   },
 
+  // This is the base for the cluster-monitoring-operator ClusterRole. It will
+  // be extended with the rules from all other ClusterRoles in main.jsonnet.
+  clusterRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'ClusterRole',
+    metadata: {
+      name: 'cluster-monitoring-operator',
+      annotations: {
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
+      },
+    },
+    rules: [
+      {
+        apiGroups: ['rbac.authorization.k8s.io'],
+        resources: ['roles', 'rolebindings', 'clusterroles', 'clusterrolebindings'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['admissionregistration.k8s.io'],
+        resources: ['validatingwebhookconfigurations'],
+        verbs: ['create', 'get', 'list', 'watch'],
+      },
+      {
+        apiGroups: ['admissionregistration.k8s.io'],
+        resourceNames: ['prometheusrules.openshift.io'],
+        resources: ['validatingwebhookconfigurations'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: [''],
+        resources: ['services', 'serviceaccounts', 'configmaps'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['apps'],
+        resources: ['deployments', 'daemonsets'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['route.openshift.io'],
+        resources: ['routes'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['security.openshift.io'],
+        resources: ['securitycontextconstraints'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['apiregistration.k8s.io'],
+        resources: ['apiservices'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['config.openshift.io'],
+        resources: ['clusterversions'],
+        verbs: ['get'],
+      },
+      {
+        apiGroups: ['config.openshift.io'],
+        resources: ['infrastructures'],
+        verbs: ['get', 'list', 'watch'],
+      },
+      {
+        apiGroups: ['config.openshift.io'],
+        resources: ['proxies'],
+        verbs: ['get'],
+      },
+      {
+        apiGroups: ['config.openshift.io'],
+        resources: ['clusteroperators', 'clusteroperators/status'],
+        verbs: ['get', 'update', 'create'],
+      },
+      {
+        apiGroups: ['policy'],
+        resources: ['poddisruptionbudgets'],
+        verbs: ['create', 'get', 'update', 'delete'],
+      },
+    ],
+  },
+
   clusterRoleView: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
