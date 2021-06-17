@@ -903,7 +903,7 @@ spec:
         label_node_hyperthread_enabled, label_node_openshift_io_os_id,label_node_role_kubernetes_io_master,label_node_role_kubernetes_io_infra)
         ) by (label_kubernetes_io_arch, label_node_hyperthread_enabled, label_node_openshift_io_os_id,label_node_role_kubernetes_io_master,label_node_role_kubernetes_io_infra)
       record: node_role_os_version_machine:cpu_capacity_sockets:sum
-    - expr: clamp_max(sum(alertmanager_notifications_total),1)
+    - expr: clamp_max(sum(alertmanager_integrations),1)
       record: cluster:alertmanager_routing_enabled:max
     - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
