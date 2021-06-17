@@ -1,4 +1,4 @@
-local metrics = import 'telemeter-client/metrics.jsonnet';
+local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics.jsonnet';
 
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 

@@ -1,4 +1,4 @@
-local querier = import 'kube-thanos/kube-thanos-query.libsonnet';
+local querier = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-query.libsonnet';
 
 function(params)
   local cfg = params;
