@@ -5,6 +5,7 @@ function(params)
   local tq = querier(cfg);
   tq {
     mixin:: (import 'github.com/thanos-io/thanos/mixin/alerts/query.libsonnet') {
+      targetGroups: {},
       query+:: {
         selector: 'job="thanos-querier"',
       },
@@ -323,6 +324,9 @@ function(params)
             ],
             serviceAccountName: 'thanos-querier',
             priorityClassName: 'system-cluster-critical',
+            // securityContext needs to be unset to be compatible with current OpenShift constrains for ServiceAccount
+            // OpenShift will automatically assign unprivileged context
+            securityContext:: {},
             containers: [
               super.containers[0] {
                 livenessProbe: {

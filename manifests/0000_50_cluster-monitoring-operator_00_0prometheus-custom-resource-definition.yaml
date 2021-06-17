@@ -11,6 +11,8 @@ metadata:
 spec:
   group: monitoring.coreos.com
   names:
+    categories:
+    - prometheus-operator
     kind: Prometheus
     listKind: PrometheusList
     plural: prometheuses
@@ -2202,10 +2204,23 @@ spec:
                   only clients authorized to perform these actions can do so. For
                   more information see https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis'
                 type: boolean
+              enableFeatures:
+                description: Enable access to Prometheus disabled features. By default,
+                  no features are enabled. Enabling disabled features is entirely
+                  outside the scope of what the maintainers will support and by doing
+                  so, you accept that this behaviour may break at any time without
+                  notice. For more information see https://prometheus.io/docs/prometheus/latest/disabled_features/
+                items:
+                  type: string
+                type: array
               enforcedNamespaceLabel:
-                description: EnforcedNamespaceLabel enforces adding a namespace label
-                  of origin for each alert and metric that is user created. The label
-                  value will always be the namespace of the object that is being created.
+                description: "EnforcedNamespaceLabel If set, a label will be added
+                  to \n 1. all user-metrics (created by `ServiceMonitor`, `PodMonitor`
+                  and `ProbeConfig` object) and 2. in all `PrometheusRule` objects
+                  (except the ones excluded in `prometheusRulesExcludedFromEnforce`)
+                  to    * alerting & recording rules and    * the metrics used in
+                  their expressions (`expr`). \n Label name is this field's value.
+                  Label value is the namespace of the created object (mentioned above)."
                 type: string
               enforcedSampleLimit:
                 description: EnforcedSampleLimit defines global limit on number of
@@ -2226,7 +2241,7 @@ spec:
                 format: int64
                 type: integer
               evaluationInterval:
-                description: Interval between consecutive evaluations.
+                description: 'Interval between consecutive evaluations. Default: `1m`'
                 type: string
               externalLabels:
                 additionalProperties:
@@ -2271,10 +2286,12 @@ spec:
                   into the Prometheus configuration from external sources. Any errors
                   during the execution of an initContainer will lead to a restart
                   of the Pod. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-                  Using initContainers for any use case other then secret fetching
-                  is entirely outside the scope of what the maintainers will support
-                  and by doing so, you accept that this behaviour may break at any
-                  time without notice.'
+                  InitContainers described here modify an operator generated init
+                  containers if they share the same name and modifications are done
+                  via a strategic merge patch. The current init container name is:
+                  `init-config-reloader`. Overriding init containers is entirely outside
+                  the scope of what the maintainers will support and by doing so,
+                  you accept that this behaviour may break at any time without notice.'
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -3685,7 +3702,7 @@ spec:
                           type: object
                       type: object
                     bearerToken:
-                      description: bearer token for remote read.
+                      description: Bearer token for remote read.
                       type: string
                     bearerTokenFile:
                       description: File to read bearer token for remote read.
@@ -3896,11 +3913,32 @@ spec:
                           type: object
                       type: object
                     bearerToken:
-                      description: File to read bearer token for remote write.
+                      description: Bearer token for remote write.
                       type: string
                     bearerTokenFile:
                       description: File to read bearer token for remote write.
                       type: string
+                    headers:
+                      additionalProperties:
+                        type: string
+                      description: Custom HTTP headers to be sent along with each
+                        remote write request. Be aware that headers that are set by
+                        Prometheus itself can't be overwritten. Only valid in Prometheus
+                        versions 2.25.0 and newer.
+                      type: object
+                    metadataConfig:
+                      description: MetadataConfig configures the sending of series
+                        metadata to remote storage.
+                      properties:
+                        send:
+                          description: Whether metric metadata is sent to remote storage
+                            or not.
+                          type: boolean
+                        sendInterval:
+                          description: How frequently metric metadata is sent to remote
+                            storage.
+                          type: string
+                      type: object
                     name:
                       description: The name of the remote write queue, must be unique
                         if specified. The name is used in metrics and logging in order
@@ -4298,7 +4336,7 @@ spec:
                     type: object
                 type: object
               scrapeInterval:
-                description: Interval between consecutive scrapes.
+                description: 'Interval between consecutive scrapes. Default: `1m`'
                 type: string
               scrapeTimeout:
                 description: Number of seconds to wait for target to respond before
@@ -6485,6 +6523,150 @@ spec:
                   pageTitle:
                     description: The prometheus web page title
                     type: string
+                  tlsConfig:
+                    description: WebTLSConfig defines the TLS parameters for HTTPS.
+                    properties:
+                      cert:
+                        description: Contains the TLS certificate for the server.
+                        properties:
+                          configMap:
+                            description: ConfigMap containing data to use for the
+                              targets.
+                            properties:
+                              key:
+                                description: The key to select.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the ConfigMap or its
+                                  key must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                          secret:
+                            description: Secret containing data to use for the targets.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                        type: object
+                      cipherSuites:
+                        description: 'List of supported cipher suites for TLS versions
+                          up to TLS 1.2. If empty, Go default cipher suites are used.
+                          Available cipher suites are documented in the go documentation:
+                          https://golang.org/pkg/crypto/tls/#pkg-constants'
+                        items:
+                          type: string
+                        type: array
+                      client_ca:
+                        description: Contains the CA certificate for client certificate
+                          authentication to the server.
+                        properties:
+                          configMap:
+                            description: ConfigMap containing data to use for the
+                              targets.
+                            properties:
+                              key:
+                                description: The key to select.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the ConfigMap or its
+                                  key must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                          secret:
+                            description: Secret containing data to use for the targets.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                        type: object
+                      clientAuthType:
+                        description: 'Server policy for client authentication. Maps
+                          to ClientAuth Policies. For more detail on clientAuth options:
+                          https://golang.org/pkg/crypto/tls/#ClientAuthType'
+                        type: string
+                      curvePreferences:
+                        description: 'Elliptic curves that will be used in an ECDHE
+                          handshake, in preference order. Available curves are documented
+                          in the go documentation: https://golang.org/pkg/crypto/tls/#CurveID'
+                        items:
+                          type: string
+                        type: array
+                      keySecret:
+                        description: Secret containing the TLS key for the server.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                      maxVersion:
+                        description: Maximum TLS version that is acceptable. Defaults
+                          to TLS13.
+                        type: string
+                      minVersion:
+                        description: Minimum TLS version that is acceptable. Defaults
+                          to TLS12.
+                        type: string
+                      preferServerCipherSuites:
+                        description: Controls whether the server selects the client's
+                          most preferred cipher suite, or the server's most preferred
+                          cipher suite. If true then the server's preference, as expressed
+                          in the order of elements in cipherSuites, is used.
+                        type: boolean
+                    required:
+                    - cert
+                    - keySecret
+                    type: object
                 type: object
             type: object
           status:

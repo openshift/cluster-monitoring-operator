@@ -9,31 +9,32 @@ spec:
     rules:
     - alert: ThanosRuleQueueIsDroppingAlerts
       annotations:
-        description: Thanos Rule {{$labels.job}} is failing to queue alerts.
+        description: Thanos Rule {{$labels.instance}} is failing to queue alerts.
         summary: Thanos Rule is failing to queue alerts.
       expr: |
-        sum by (job) (rate(thanos_alert_queue_alerts_dropped_total{job="thanos-ruler"}[5m])) > 0
+        sum by (job, instance) (rate(thanos_alert_queue_alerts_dropped_total{job="thanos-ruler"}[5m])) > 0
       for: 5m
       labels:
         severity: critical
     - alert: ThanosRuleSenderIsFailingAlerts
       annotations:
-        description: Thanos Rule {{$labels.job}} is failing to send alerts to alertmanager.
+        description: Thanos Rule {{$labels.instance}} is failing to send alerts to
+          alertmanager.
         summary: Thanos Rule is failing to send alerts to alertmanager.
       expr: |
-        sum by (job) (rate(thanos_alert_sender_alerts_dropped_total{job="thanos-ruler"}[5m])) > 0
+        sum by (job, instance) (rate(thanos_alert_sender_alerts_dropped_total{job="thanos-ruler"}[5m])) > 0
       for: 5m
       labels:
         severity: critical
     - alert: ThanosRuleHighRuleEvaluationFailures
       annotations:
-        description: Thanos Rule {{$labels.job}} is failing to evaluate rules.
+        description: Thanos Rule {{$labels.instance}} is failing to evaluate rules.
         summary: Thanos Rule is failing to evaluate rules.
       expr: |
         (
-          sum by (job) (rate(prometheus_rule_evaluation_failures_total{job="thanos-ruler"}[5m]))
+          sum by (job, instance) (rate(prometheus_rule_evaluation_failures_total{job="thanos-ruler"}[5m]))
         /
-          sum by (job) (rate(prometheus_rule_evaluations_total{job="thanos-ruler"}[5m]))
+          sum by (job, instance) (rate(prometheus_rule_evaluations_total{job="thanos-ruler"}[5m]))
         * 100 > 5
         )
       for: 5m
@@ -41,17 +42,18 @@ spec:
         severity: critical
     - alert: ThanosRuleHighRuleEvaluationWarnings
       annotations:
-        description: Thanos Rule {{$labels.job}} has high number of evaluation warnings.
+        description: Thanos Rule {{$labels.instance}} has high number of evaluation
+          warnings.
         summary: Thanos Rule has high number of evaluation warnings.
       expr: |
-        sum by (job) (rate(thanos_rule_evaluation_with_warnings_total{job="thanos-ruler"}[5m])) > 0
+        sum by (job, instance) (rate(thanos_rule_evaluation_with_warnings_total{job="thanos-ruler"}[5m])) > 0
       for: 15m
       labels:
         severity: info
     - alert: ThanosRuleRuleEvaluationLatencyHigh
       annotations:
-        description: Thanos Rule {{$labels.job}}/{{$labels.instance}} has higher evaluation
-          latency than interval for {{$labels.rule_group}}.
+        description: Thanos Rule {{$labels.instance}} has higher evaluation latency
+          than interval for {{$labels.rule_group}}.
         summary: Thanos Rule has high rule evaluation latency.
       expr: |
         (
@@ -64,14 +66,14 @@ spec:
         severity: warning
     - alert: ThanosRuleGrpcErrorRate
       annotations:
-        description: Thanos Rule {{$labels.job}} is failing to handle {{ $value |
-          humanize }}% of requests.
+        description: Thanos Rule {{$labels.job}} is failing to handle {{$value | humanize}}%
+          of requests.
         summary: Thanos Rule is failing to handle grpc requests.
       expr: |
         (
-          sum by (job) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job="thanos-ruler"}[5m]))
+          sum by (job, instance) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job="thanos-ruler"}[5m]))
         /
-          sum by (job) (rate(grpc_server_started_total{job="thanos-ruler"}[5m]))
+          sum by (job, instance) (rate(grpc_server_started_total{job="thanos-ruler"}[5m]))
         * 100 > 5
         )
       for: 5m
@@ -81,21 +83,21 @@ spec:
       annotations:
         description: Thanos Rule {{$labels.job}} has not been able to reload its configuration.
         summary: Thanos Rule has not been able to reload configuration.
-      expr: avg(thanos_rule_config_last_reload_successful{job="thanos-ruler"}) by
-        (job) != 1
+      expr: avg by (job, instance) (thanos_rule_config_last_reload_successful{job="thanos-ruler"})
+        != 1
       for: 5m
       labels:
         severity: info
     - alert: ThanosRuleQueryHighDNSFailures
       annotations:
-        description: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% of failing
+        description: Thanos Rule {{$labels.job}} has {{$value | humanize}}% of failing
           DNS queries for query endpoints.
         summary: Thanos Rule is having high number of DNS failures.
       expr: |
         (
-          sum by (job) (rate(thanos_rule_query_apis_dns_failures_total{job="thanos-ruler"}[5m]))
+          sum by (job, instance) (rate(thanos_rule_query_apis_dns_failures_total{job="thanos-ruler"}[5m]))
         /
-          sum by (job) (rate(thanos_rule_query_apis_dns_lookups_total{job="thanos-ruler"}[5m]))
+          sum by (job, instance) (rate(thanos_rule_query_apis_dns_lookups_total{job="thanos-ruler"}[5m]))
         * 100 > 1
         )
       for: 15m
@@ -103,14 +105,14 @@ spec:
         severity: warning
     - alert: ThanosRuleAlertmanagerHighDNSFailures
       annotations:
-        description: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% of failing
-          DNS queries for Alertmanager endpoints.
+        description: Thanos Rule {{$labels.instance}} has {{$value | humanize}}% of
+          failing DNS queries for Alertmanager endpoints.
         summary: Thanos Rule is having high number of DNS failures.
       expr: |
         (
-          sum by (job) (rate(thanos_rule_alertmanagers_dns_failures_total{job="thanos-ruler"}[5m]))
+          sum by (job, instance) (rate(thanos_rule_alertmanagers_dns_failures_total{job="thanos-ruler"}[5m]))
         /
-          sum by (job) (rate(thanos_rule_alertmanagers_dns_lookups_total{job="thanos-ruler"}[5m]))
+          sum by (job, instance) (rate(thanos_rule_alertmanagers_dns_lookups_total{job="thanos-ruler"}[5m]))
         * 100 > 1
         )
       for: 15m
@@ -118,25 +120,25 @@ spec:
         severity: warning
     - alert: ThanosRuleNoEvaluationFor10Intervals
       annotations:
-        description: Thanos Rule {{$labels.job}} has {{ $value | humanize }}% rule
-          groups that did not evaluate for at least 10x of their expected interval.
+        description: Thanos Rule {{$labels.job}} has {{$value | humanize}}% rule groups
+          that did not evaluate for at least 10x of their expected interval.
         summary: Thanos Rule has rule groups that did not evaluate for 10 intervals.
       expr: |
-        time() -  max by (job, group) (prometheus_rule_group_last_evaluation_timestamp_seconds{job="thanos-ruler"})
+        time() -  max by (job, instance, group) (prometheus_rule_group_last_evaluation_timestamp_seconds{job="thanos-ruler"})
         >
-        10 * max by (job, group) (prometheus_rule_group_interval_seconds{job="thanos-ruler"})
+        10 * max by (job, instance, group) (prometheus_rule_group_interval_seconds{job="thanos-ruler"})
       for: 5m
       labels:
         severity: info
     - alert: ThanosNoRuleEvaluations
       annotations:
-        description: Thanos Rule {{$labels.job}} did not perform any rule evaluations
-          in the past 2 minutes.
+        description: Thanos Rule {{$labels.instance}} did not perform any rule evaluations
+          in the past 10 minutes.
         summary: Thanos Rule did not perform any rule evaluations.
       expr: |
-        sum(rate(prometheus_rule_evaluations_total{job="thanos-ruler"}[2m])) <= 0
+        sum by (job, instance) (rate(prometheus_rule_evaluations_total{job="thanos-ruler"}[5m])) <= 0
           and
-        sum(thanos_rule_loaded_rules{job="thanos-ruler"}) > 0
-      for: 3m
+        sum by (job, instance) (thanos_rule_loaded_rules{job="thanos-ruler"}) > 0
+      for: 5m
       labels:
         severity: critical

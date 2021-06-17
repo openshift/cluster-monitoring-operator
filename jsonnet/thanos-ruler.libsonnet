@@ -4,6 +4,7 @@ function(params) {
   local cfg = params,
 
   mixin:: (import 'github.com/thanos-io/thanos/mixin/alerts/rule.libsonnet') {
+    targetGroups: {},
     rule+:: {
       selector: 'job="thanos-ruler"',
     },
