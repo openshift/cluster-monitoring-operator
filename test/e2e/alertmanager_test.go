@@ -378,17 +378,17 @@ func TestAlertmanagerOAuthProxy(t *testing.T) {
 			"active", "true",
 		)
 		if err != nil {
-			t.Fatal(err)
+			return errors.Wrap(err, "error getting alerts from Alertmanager")
 		}
 
 		res, err := gabs.ParseJSON(body)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "error parsing Alertmanager response: %s", string(body))
 		}
 
 		count, err := res.ArrayCount()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "error getting count of items")
 		}
 
 		if count == 1 {
