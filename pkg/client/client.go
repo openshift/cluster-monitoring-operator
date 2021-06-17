@@ -177,17 +177,20 @@ func (c *Client) AssurePrometheusOperatorCRsExist() error {
 	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
 		_, err := c.mclient.MonitoringV1().Prometheuses(c.namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			return false, err
+			klog.V(4).ErrorS(err, "AssurePrometheusOperatorCRsExist: failed to list Prometheuses")
+			return false, nil
 		}
 
 		_, err = c.mclient.MonitoringV1().Alertmanagers(c.namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			return false, err
+			klog.V(4).ErrorS(err, "AssurePrometheusOperatorCRsExist: failed to list Alertmanagers")
+			return false, nil
 		}
 
 		_, err = c.mclient.MonitoringV1().ServiceMonitors(c.namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			return false, err
+			klog.V(4).ErrorS(err, "AssurePrometheusOperatorCRsExist: failed to list ServiceMonitors")
+			return false, nil
 		}
 
 		return true, nil
@@ -450,7 +453,9 @@ func (c *Client) DeletePrometheus(p *monv1.Prometheus) error {
 	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
 		pods, err := c.KubernetesInterface().CoreV1().Pods(p.GetNamespace()).List(context.TODO(), prometheusoperator.ListOptions(p.GetName()))
 		if err != nil {
-			return false, errors.Wrap(err, "retrieving pods during polling failed")
+			lastErr = err
+			klog.V(4).ErrorS(err, "DeletePrometheus: failed to list Pods")
+			return false, nil
 		}
 
 		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
@@ -480,7 +485,9 @@ func (c *Client) DeleteThanosRuler(tr *monv1.ThanosRuler) error {
 	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
 		pods, err := c.KubernetesInterface().CoreV1().Pods(tr.GetNamespace()).List(context.TODO(), thanosoperator.ListOptions(tr.GetName()))
 		if err != nil {
-			return false, errors.Wrap(err, "retrieving pods during polling failed")
+			lastErr = err
+			klog.V(4).ErrorS(err, "DeleteThanosRuler: failed to list Pods")
+			return false, nil
 		}
 
 		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
@@ -598,11 +605,15 @@ func (c *Client) WaitForPrometheus(p *monv1.Prometheus) error {
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
 		p, err := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace()).Get(context.TODO(), p.GetName(), metav1.GetOptions{})
 		if err != nil {
-			return false, errors.Wrap(err, "retrieving Prometheus object failed")
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForPrometheus: failed to get Prometheus object")
+			return false, nil
 		}
 		status, _, err := prometheusoperator.Status(context.TODO(), c.kclient.(*kubernetes.Clientset), p)
 		if err != nil {
-			return false, errors.Wrap(err, "retrieving Prometheus status failed")
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForPrometheus: failed to get Prometheus status")
+			return false, nil
 		}
 
 		expectedReplicas := *p.Spec.Replicas
@@ -631,11 +642,15 @@ func (c *Client) WaitForAlertmanager(a *monv1.Alertmanager) error {
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
 		a, err := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace()).Get(context.TODO(), a.GetName(), metav1.GetOptions{})
 		if err != nil {
-			return false, errors.Wrap(err, "retrieving Alertmanager object failed")
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForAlertmanager: failed to get AlertManager")
+			return false, nil
 		}
 		status, _, err := alertmanager.Status(context.TODO(), c.kclient.(*kubernetes.Clientset), a)
 		if err != nil {
-			return false, errors.Wrap(err, "retrieving Alertmanager status failed")
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForAlertmanager: failed to get AlertManager status")
+			return false, nil
 		}
 
 		expectedReplicas := *a.Spec.Replicas
@@ -664,11 +679,15 @@ func (c *Client) WaitForThanosRuler(t *monv1.ThanosRuler) error {
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
 		tr, err := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace()).Get(context.TODO(), t.GetName(), metav1.GetOptions{})
 		if err != nil {
-			return false, errors.Wrap(err, "retrieving Thanos Ruler object failed")
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForThanosRuler: failed to get ThanosRuler")
+			return false, nil
 		}
 		status, _, err := thanos.RulerStatus(context.TODO(), c.kclient.(*kubernetes.Clientset), tr)
 		if err != nil {
-			return false, errors.Wrap(err, "retrieving Thanos Ruler status failed")
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForThanosRuler: failed to get ThanosRuler status")
+			return false, nil
 		}
 
 		expectedReplicas := *tr.Spec.Replicas
@@ -752,7 +771,9 @@ func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
 		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(context.TODO(), dep.GetName(), metav1.GetOptions{})
 		if err != nil {
-			return false, err
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForDeploymentRollout: failed to get Deployment")
+			return false, nil
 		}
 		if d.Generation > d.Status.ObservedGeneration {
 			lastErr = errors.Errorf("current generation %d, observed generation %d",
@@ -784,7 +805,9 @@ func (c *Client) WaitForStatefulsetRollout(sts *appsv1.StatefulSet) error {
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
 		s, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(context.TODO(), sts.GetName(), metav1.GetOptions{})
 		if err != nil {
-			return false, err
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForStatefulsetRollout: failed to get StatefulSet")
+			return false, nil
 		}
 		if s.Generation > s.Status.ObservedGeneration {
 			lastErr = errors.Errorf("expected generation %d, observed generation: %d",
@@ -824,7 +847,9 @@ func (c *Client) WaitForSecret(s *v1.Secret) (*v1.Secret, error) {
 		}
 
 		if err != nil {
-			return false, err
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForSecret: failed to get Secret")
+			return false, nil
 		}
 
 		for _, v := range result.Data {
@@ -851,7 +876,9 @@ func (c *Client) WaitForRouteReady(r *routev1.Route) (string, error) {
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
 		newRoute, err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Get(context.TODO(), r.GetName(), metav1.GetOptions{})
 		if err != nil {
-			return false, err
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForRouteReady: failed to get Route")
+			return false, nil
 		}
 		if len(newRoute.Status.Ingress) == 0 {
 			lastErr = errors.New("no status available")
@@ -929,7 +956,9 @@ func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
 		d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(context.TODO(), ds.GetName(), metav1.GetOptions{})
 		if err != nil {
-			return false, err
+			lastErr = err
+			klog.V(4).ErrorS(err, "WaitForDaemonSetRollout: failed to get DaemonSet")
+			return false, nil
 		}
 		if d.Generation > d.Status.ObservedGeneration {
 			lastErr = errors.Errorf("current generation %d, observed generation: %d",
