@@ -332,6 +332,12 @@ data:
     # (@openshift/team-build-api, OpenShift Build API Team) openshift:build_by_strategy:sum measures total number of builds on a cluster, aggregated by build strategy.
     - '{__name__="openshift:build_by_strategy:sum"}'
     #
+    # (@red-hat-data-services/odh, Open Data Hub team) This is (at a basic level) the availability of the RHODS system.
+    - '{__name__="rhods_aggregate_availability"}'
+    #
+    # (@red-hat-data-services/odh, Open Data Hub team) The total number of users of RHODS using each component.
+    - '{__name__="rhods_total_users"}'
+    #
 kind: ConfigMap
 metadata:
   name: telemetry-config
