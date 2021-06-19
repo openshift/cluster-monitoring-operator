@@ -165,11 +165,10 @@ check-assets:
 ###########
 
 .PHONY: test
-test: test-unit test-e2e
+test: test-unit test-rules test-e2e
 
-# TODO(simonpasquier): we should have a CI job specifically checking Prometheus rules.
 .PHONY: test-unit
-test-unit: test-rules
+test-unit:
 	go test -race -short $(PKGS) -count=1
 
 .PHONY: test-e2e
