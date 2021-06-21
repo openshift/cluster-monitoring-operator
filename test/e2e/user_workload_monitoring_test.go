@@ -94,7 +94,6 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"assert grpc tls rotation", assertGRPCTLSRotation},
 		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
 		{"set VolumeClaimTemplate for prometheus CR, assert that it is created", assertVolumeClaimsConfigAndRollout(rolloutParams{
-			component:       "prometheus-uwm",
 			namespace:       f.UserWorkloadMonitoringNs,
 			claimName:       "prometheus-user-workload-db-prometheus-user-workload-0",
 			statefulSetName: "prometheus-user-workload",

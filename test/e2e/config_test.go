@@ -127,7 +127,6 @@ func assertOperatorCondition(t *testing.T, conditionType configv1.ClusterStatusC
 
 func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 	const (
-		component     = "prom-operator"
 		containerName = "prometheus-operator"
 	)
 
@@ -148,7 +147,6 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 			name: "assert pod configuration is as expected",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: "app.kubernetes.io/name=prometheus-operator",
 				},
@@ -167,7 +165,6 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 
 func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 	const (
-		component       = "prom-k8s"
 		pvcClaimName    = "prometheus-k8s-db-prometheus-k8s-0"
 		statefulsetName = "prometheus-k8s"
 		cpu             = "1m"
@@ -210,7 +207,6 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name: "set configurations for prom operator CR, assert that PVC is created",
 			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				component:       component,
 				namespace:       f.Ns,
 				claimName:       pvcClaimName,
 				statefulSetName: statefulsetName,
@@ -220,7 +216,6 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 			name: "assert that resource requests are created",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: labelSelector,
 				},
@@ -249,7 +244,6 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 
 func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 	const (
-		component       = "alertmanager"
 		pvcClaimName    = "alertmanager-main-db-alertmanager-main-0"
 		statefulsetName = "alertmanager-main"
 		cpu             = "10m"
@@ -285,7 +279,6 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 		{
 			name: "set configurations for alert manager CR, assert that PVC is created",
 			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				component:       component,
 				namespace:       f.Ns,
 				claimName:       pvcClaimName,
 				statefulSetName: statefulsetName,
@@ -295,7 +288,6 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 			name: "assert that resource requests are created",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: labelSelector,
 				},
@@ -314,7 +306,7 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 
 func TestClusterMonitorKSMConfig(t *testing.T) {
 	const (
-		component = "kube-state-metrics"
+		deploymentName = "kube-state-metrics"
 	)
 
 	data := `kubeStateMetrics:
@@ -334,14 +326,13 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
 			name: "test the kube-state-metrics deployment is rolled out",
 			f: assertDeploymentRollout(deploymentRolloutParams{
 				namespace: f.Ns,
-				name:      component,
+				name:      deploymentName,
 			}),
 		},
 		{
 			name: "assert that resource requests are correct",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: "app.kubernetes.io/name=kube-state-metrics",
 				},
@@ -359,7 +350,7 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
 
 func TestClusterMonitorOSMConfig(t *testing.T) {
 	const (
-		component = "openshift-state-metrics"
+		deploymentName = "openshift-state-metrics"
 	)
 
 	data := `openshiftStateMetrics:
@@ -379,14 +370,13 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
 			name: "test the openshift-state-metrics deployment is rolled out",
 			f: assertDeploymentRollout(deploymentRolloutParams{
 				namespace: f.Ns,
-				name:      component,
+				name:      deploymentName,
 			}),
 		},
 		{
 			name: "assert that resource requests are correct",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: "k8s-app=openshift-state-metrics",
 				},
@@ -403,10 +393,7 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
 }
 
 func TestClusterMonitorGrafanaConfig(t *testing.T) {
-	const (
-		component = "grafana"
-	)
-
+	const deploymentName = "grafana"
 	data := `grafana:
   tolerations:
     - operator: "Exists"
@@ -424,14 +411,13 @@ func TestClusterMonitorGrafanaConfig(t *testing.T) {
 			name: "test the grafana deployment is rolled out",
 			f: assertDeploymentRollout(deploymentRolloutParams{
 				namespace: f.Ns,
-				name:      component,
+				name:      deploymentName,
 			}),
 		},
 		{
 			name: "assert that resource requests are correct",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: "app.kubernetes.io/component=grafana",
 				},
@@ -449,7 +435,7 @@ func TestClusterMonitorGrafanaConfig(t *testing.T) {
 
 func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 	const (
-		component = "telemeter-client"
+		deploymentName = "telemeter-client"
 	)
 
 	data := `telemeterClient:
@@ -469,14 +455,13 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 			name: "test the telemeter-client deployment is rolled out",
 			f: assertDeploymentRollout(deploymentRolloutParams{
 				namespace: f.Ns,
-				name:      component,
+				name:      deploymentName,
 			}),
 		},
 		{
 			name: "assert that pod config correct",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: "app.kubernetes.io/component=grafana",
 				},
@@ -494,7 +479,7 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 
 func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
 	const (
-		component = "prometheus-adapter"
+		deploymentName = "prometheus-adapter"
 	)
 
 	data := `k8sPrometheusAdapter:
@@ -514,14 +499,13 @@ func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
 			name: "test the prometheus-adapter deployment is rolled out",
 			f: assertDeploymentRollout(deploymentRolloutParams{
 				namespace: f.Ns,
-				name:      component,
+				name:      deploymentName,
 			}),
 		},
 		{
 			name: "assert that pod config is correct",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: "app.kubernetes.io/component=metrics-adapter",
 				},
@@ -539,10 +523,10 @@ func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
 
 func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 	const (
-		component     = "thanos-querier"
-		containerName = "thanos-query"
-		cpu           = "1m"
-		mem           = "3Mi"
+		deploymentName = "thanos-querier"
+		containerName  = "thanos-query"
+		cpu            = "1m"
+		mem            = "3Mi"
 	)
 
 	data := fmt.Sprintf(`thanosQuerier:
@@ -567,14 +551,13 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 			name: "test the thanos-querier deployment is rolled out",
 			f: assertDeploymentRollout(deploymentRolloutParams{
 				namespace: f.Ns,
-				name:      component,
+				name:      deploymentName,
 			}),
 		},
 		{
 			name: "assert that pod config is correct",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.Ns,
 					labelSelector: "app.kubernetes.io/name=thanos-query",
 				},
@@ -593,7 +576,6 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 
 func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 	const (
-		component     = "prom-operator"
 		containerName = "prometheus-operator"
 	)
 	cm := &v1.ConfigMap{
@@ -637,7 +619,6 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 			name: "assert pod configuration is as expected",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.UserWorkloadMonitoringNs,
 					labelSelector: "app.kubernetes.io/name=prometheus-operator",
 				},
@@ -656,7 +637,6 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 
 func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 	const (
-		component       = "prom-k8s"
 		pvcClaimName    = "prometheus-user-workload-db-prometheus-user-workload-0"
 		statefulsetName = "prometheus-user-workload"
 		cpu             = "1m"
@@ -722,7 +702,6 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name: "set configurations for prom CR, assert that PVC is created",
 			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				component:       component,
 				namespace:       f.UserWorkloadMonitoringNs,
 				claimName:       pvcClaimName,
 				statefulSetName: statefulsetName,
@@ -732,7 +711,6 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 			name: "assert that resource requests are created",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.UserWorkloadMonitoringNs,
 					labelSelector: labelSelector,
 				},
@@ -761,7 +739,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 
 func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 	const (
-		component       = "thanos-ruler"
+		containerName   = "thanos-ruler"
 		pvcClaimName    = "thanos-ruler-user-workload-data-thanos-ruler-user-workload-0"
 		statefulsetName = "thanos-ruler-user-workload"
 		cpu             = "1m"
@@ -817,7 +795,6 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 		{
 			name: "assert that PVC is created and ss rolled out",
 			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				component:       component,
 				namespace:       f.UserWorkloadMonitoringNs,
 				claimName:       pvcClaimName,
 				statefulSetName: statefulsetName,
@@ -827,13 +804,12 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 			name: "assert that pod config is correct",
 			f: assertPodConfiguration(
 				podConfigParams{
-					component:     component,
 					namespace:     f.UserWorkloadMonitoringNs,
 					labelSelector: "app.kubernetes.io/name=thanos-ruler",
 				},
 				[]podAssertionCB{
 					expectCatchAllToleration(),
-					expectMatchingRequests("*", component, mem, cpu),
+					expectMatchingRequests("*", containerName, mem, cpu),
 				},
 			),
 		},
@@ -867,7 +843,7 @@ func assertDeploymentRollout(params deploymentRolloutParams) func(*testing.T) {
 }
 
 type rolloutParams struct {
-	component, namespace, claimName, statefulSetName string
+	namespace, claimName, statefulSetName string
 }
 
 func assertVolumeClaimsConfigAndRollout(params rolloutParams) func(*testing.T) {
@@ -876,7 +852,7 @@ func assertVolumeClaimsConfigAndRollout(params rolloutParams) func(*testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
 			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(params.namespace).Get(context.TODO(), params.claimName, metav1.GetOptions{})
 			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("getting %s persistent volume claim failed", params.component))
+				return errors.Wrap(err, "getting persistent volume claim failed")
 
 			}
 			return nil
@@ -912,7 +888,7 @@ func assertVolumeClaimsConfigAndRollout(params rolloutParams) func(*testing.T) {
 
 // podConfigParams sets pod metadata
 type podConfigParams struct {
-	component, namespace, labelSelector string
+	namespace, labelSelector string
 }
 
 func assertPodConfiguration(params podConfigParams, asserts []podAssertionCB) func(*testing.T) {
@@ -922,18 +898,16 @@ func assertPodConfiguration(params podConfigParams, asserts []podAssertionCB) fu
 				LabelSelector: params.labelSelector,
 				FieldSelector: "status.phase=Running"},
 			)
+
 			if err != nil {
-				t.Fatal(err)
-			}
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("getting %s pods failed", params.component))
+				return errors.Wrap(err, "failed to get Pods")
 			}
 
 			// for each pod in the list of matching labels run each assertion
 			for _, p := range pods.Items {
 				for _, assertion := range asserts {
 					if err := assertion(p); err != nil {
-						return fmt.Errorf("failed assertion for "+params.component, err)
+						return fmt.Errorf("failed assertion for %s - %v", p.Name, err)
 					}
 				}
 			}
