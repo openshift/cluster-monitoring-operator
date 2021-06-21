@@ -9,21 +9,6 @@ function(params)
       _config+:: cfg.mixin._config,
     },
 
-    etcdPrometheusRule: {
-      apiVersion: 'monitoring.coreos.com/v1',
-      kind: 'PrometheusRule',
-      metadata: {
-        labels: cfg.commonLabels + cfg.mixin.ruleLabels,
-        name: 'etcd-prometheus-rules',
-        namespace: cfg.namespace,
-      },
-      spec: {
-        local r = if std.objectHasAll($.etcdMixin, 'prometheusRules') then $.etcdMixin.prometheusRules.groups else [],
-        local a = if std.objectHasAll($.etcdMixin, 'prometheusAlerts') then $.etcdMixin.prometheusAlerts.groups else [],
-        groups: a + r,
-      },
-    },
-
     serviceMonitorEtcd: {
       apiVersion: 'monitoring.coreos.com/v1',
       kind: 'ServiceMonitor',
