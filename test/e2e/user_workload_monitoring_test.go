@@ -44,7 +44,7 @@ const (
 func TestUserWorkloadMonitoring(t *testing.T) {
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
+			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
 		},
 		Data: map[string]string{
@@ -55,7 +55,7 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "user-workload-monitoring-config",
+			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
 		},
 		Data: map[string]string{

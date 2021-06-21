@@ -30,7 +30,8 @@ import (
 )
 
 const (
-	clusterMonitorConfigMapName = "cluster-monitoring-config"
+	clusterMonitorConfigMapName      = "cluster-monitoring-config"
+	userWorkloadMonitorConfigMapName = "user-workload-monitoring-config"
 )
 
 func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
@@ -38,7 +39,7 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	// doesn't rollback the last known and valid configuration.
 	validCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
+			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
 		},
 		Data: map[string]string{
@@ -135,7 +136,7 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -196,7 +197,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
       memory: %s
 `, storage, cpu, mem)
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -268,7 +269,7 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
     - operator: "Exists"
 `, cpu, mem, storage)
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -314,7 +315,7 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -358,7 +359,7 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -399,7 +400,7 @@ func TestClusterMonitorGrafanaConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -443,7 +444,7 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -463,7 +464,7 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 			f: assertPodConfiguration(
 				podConfigParams{
 					namespace:     f.Ns,
-					labelSelector: "app.kubernetes.io/component=grafana",
+					labelSelector: "k8s-app=telemeter-client",
 				},
 				[]podAssertionCB{
 					expectCatchAllToleration(),
@@ -487,7 +488,7 @@ func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -539,7 +540,7 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
       memory: %s
 `, cpu, mem)
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(updateConfigMap(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -580,7 +581,7 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 	)
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
+			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
 		},
 		Data: map[string]string{
@@ -591,7 +592,7 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "user-workload-monitoring-config",
+			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
 		},
 		Data: map[string]string{
@@ -650,7 +651,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
+			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
 		},
 		Data: map[string]string{
@@ -661,7 +662,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "user-workload-monitoring-config",
+			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
 		},
 		Data: map[string]string{
@@ -749,7 +750,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
+			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
 		},
 		Data: map[string]string{
@@ -760,7 +761,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "user-workload-monitoring-config",
+			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
 		},
 		Data: map[string]string{
@@ -919,27 +920,17 @@ func assertPodConfiguration(params podConfigParams, asserts []podAssertionCB) fu
 	}
 }
 
-func updateConfigMap(t *testing.T, addData string) *v1.ConfigMap {
+func configMapWithData(t *testing.T, addData string) *v1.ConfigMap {
 	t.Helper()
-	cm, err := f.OperatorClient.GetConfigmap(f.Ns, clusterMonitorConfigMapName)
-	if err != nil {
-		t.Fatal("failed to get required configMap", err)
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      clusterMonitorConfigMapName,
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": addData,
+		},
 	}
-	if cm == nil {
-		emptyConfigMap := &v1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterMonitorConfigMapName,
-				Namespace: f.Ns,
-			},
-			Data: map[string]string{
-				"config.yaml": addData,
-			},
-		}
-
-		return emptyConfigMap
-	}
-	cm.Data["config.yaml"] = addData
-	return cm
 }
 
 type podAssertionCB func(pod v1.Pod) error
