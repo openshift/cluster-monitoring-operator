@@ -11,13 +11,6 @@ local excludedRuleGroups = [
 
 local excludedRules = [
   {
-    name: 'etcd',
-    rules: [
-      { alert: 'etcdHighNumberOfFailedGRPCRequests' },
-      { alert: 'etcdInsufficientMembers' },
-    ],
-  },
-  {
     name: 'general.rules',
     rules: [
       { alert: 'TargetDown' },
