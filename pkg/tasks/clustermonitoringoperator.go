@@ -47,7 +47,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 	}
 
 	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
-		"cluster-monitoring-view": t.factory.ClusterMonitoringClusterRole,
+		"cluster-monitoring-view": t.factory.ClusterMonitoringClusterRoleView,
 		"monitoring-rules-edit":   t.factory.ClusterMonitoringRulesEditClusterRole,
 		"monitoring-rules-view":   t.factory.ClusterMonitoringRulesViewClusterRole,
 		"monitoring-edit":         t.factory.ClusterMonitoringEditClusterRole,

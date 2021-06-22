@@ -175,7 +175,7 @@ var (
 
 	ClusterMonitoringOperatorService            = "cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor     = "cluster-monitoring-operator/service-monitor.yaml"
-	ClusterMonitoringClusterRole                = "cluster-monitoring-operator/cluster-role.yaml"
+	ClusterMonitoringClusterRoleView            = "cluster-monitoring-operator/cluster-role-view.yaml"
 	ClusterMonitoringRulesEditClusterRole       = "cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
 	ClusterMonitoringRulesViewClusterRole       = "cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
 	ClusterMonitoringEditClusterRole            = "cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
@@ -2337,8 +2337,8 @@ func (f *Factory) GrafanaServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return s, nil
 }
 
-func (f *Factory) ClusterMonitoringClusterRole() (*rbacv1.ClusterRole, error) {
-	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringClusterRole))
+func (f *Factory) ClusterMonitoringClusterRoleView() (*rbacv1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringClusterRoleView))
 	if err != nil {
 		return nil, err
 	}
