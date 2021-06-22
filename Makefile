@@ -117,6 +117,10 @@ json-manifests: $(JSON_MANIFESTS_DIR) $(JSON_MANIFESTS)
 manifests/0000_50_cluster-monitoring-operator_02-role.yaml: hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in $(ASSETS)
 	python2 hack/merge_cluster_roles.py hack/cluster-monitoring-operator-role.yaml.in `find assets | grep role | grep -v "role-binding"` > $@
 
+.PHONY: versions
+versions:
+	./hack/generate-versions.sh > jsonnet/versions.json
+
 .PHONY: docs
 docs: $(EMBEDMD_BIN) Documentation/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
