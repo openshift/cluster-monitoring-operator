@@ -54,18 +54,7 @@ local commonConfig = {
     prometheus: $.prometheusName,
   },
   // versions are used by some CRs and reflected in labels.
-  versions: {
-    alertmanager: '0.21.0',
-    prometheus: '2.26.1',
-    grafana: '7.5.5',
-    kubeStateMetrics: '2.0.0',
-    nodeExporter: '1.1.2',
-    prometheusAdapter: '0.8.4',
-    prometheusOperator: '0.48.1',
-    promLabelProxy: '0.2.0',
-    thanos: '0.20.2',
-    kubeRbacProxy: '0.10.0',
-  },
+  versions: (import './versions.json'),
   // In OSE images are overridden
   images: {
     alertmanager: 'quay.io/prometheus/alertmanager:v' + $.versions.alertmanager,
@@ -76,7 +65,7 @@ local commonConfig = {
     prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions.prometheusAdapter,
     prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions.prometheusOperator,
     prometheusOperatorReloader: 'quay.io/prometheus-operator/prometheus-config-reloader:v' + $.versions.prometheusOperator,
-    promLabelProxy: 'quay.io/prometheuscommunity/prom-label-proxy:v' + $.versions.thanos,
+    promLabelProxy: 'quay.io/prometheuscommunity/prom-label-proxy:v' + $.versions.promLabelProxy,
     telemeter: '',
     thanos: 'quay.io/thanos/thanos:v' + $.versions.thanos,
     kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v' + $.versions.kubeRbacProxy,
