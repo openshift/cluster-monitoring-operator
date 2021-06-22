@@ -89,19 +89,6 @@ local patchedRules = [
     ],
   },
   {
-    name: 'kubernetes-system-apiserver',
-    rules: [
-      {
-        // Lower treshold to be resilient to DNS rollouts and CA rotations.
-        // https://bugzilla.redhat.com/show_bug.cgi?id=1970624
-        alert: 'AggregatedAPIDown',
-        expr: |||
-          (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice[10m]))) * 100 < 70
-        |||,
-      },
-    ],
-  },
-  {
     name: 'prometheus',
     rules: [
       {
