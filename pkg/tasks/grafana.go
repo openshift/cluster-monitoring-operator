@@ -18,7 +18,6 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
-	"k8s.io/klog/v2"
 )
 
 type GrafanaTask struct {
@@ -186,6 +185,142 @@ func (t *GrafanaTask) create() error {
 }
 
 func (t *GrafanaTask) destroy() error {
-	klog.V(2).Info("Grafana is disabled, but destroy not yet implemented.")
+	sm, err := t.factory.GrafanaServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana ServiceMonitor failed")
+	}
+
+	err = t.client.DeleteServiceMonitor(sm)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana ServiceMonitor failed")
+	}
+
+	{
+		trustedCA, err := t.factory.GrafanaTrustedCABundle()
+		if err != nil {
+			return errors.Wrap(err, "initializing Grafana CA bundle ConfigMap failed")
+		}
+
+		d, err := t.factory.GrafanaDeployment(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "initializing Grafana Deployment failed")
+		}
+
+		err = t.client.DeleteDeployment(d)
+		if err != nil {
+			return errors.Wrap(err, "deleting Grafana Deployment failed")
+		}
+
+		err = t.client.DeleteConfigMap(trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "deleting Grafana CA bundle ConfigMap failed")
+		}
+
+		err = t.client.DeleteHashedConfigMap(t.client.Namespace(), "grafana", "")
+		if err != nil {
+			return errors.Wrap(err, "deleting hashed Grafana CA bundle ConfigMap failed")
+		}
+	}
+
+	svc, err := t.factory.GrafanaService()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Service failed")
+	}
+
+	err = t.client.DeleteService(svc)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana Service failed")
+	}
+
+	sa, err := t.factory.GrafanaServiceAccount()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana ServiceAccount failed")
+	}
+
+	err = t.client.DeleteServiceAccount(sa)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana ServiceAccount failed")
+	}
+
+	cmdbs, err := t.factory.GrafanaDashboardSources()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Dashboard Sources ConfigMap failed")
+	}
+
+	err = t.client.DeleteConfigMap(cmdbs)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana Dashboard Sources ConfigMap failed")
+	}
+
+	cmdds, err := t.factory.GrafanaDashboardDefinitions()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Dashboard Definitions ConfigMaps failed")
+	}
+
+	err = t.client.DeleteConfigMapList(cmdds)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana Dashboard Definitions ConfigMaps failed")
+	}
+
+	sds, err := t.factory.GrafanaDatasources()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
+	}
+
+	err = t.client.DeleteSecret(sds)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana Datasources Secret failed")
+	}
+
+	smc, err := t.factory.GrafanaConfig()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Config Secret failed")
+	}
+
+	err = t.client.DeleteSecret(smc)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana Config Secret failed")
+	}
+
+	ps, err := t.factory.GrafanaProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana proxy Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ps)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana proxy Secret failed")
+	}
+
+	r, err := t.factory.GrafanaRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana Route failed")
+	}
+
+	err = t.client.DeleteRoute(r)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana Route failed")
+	}
+
+	crb, err := t.factory.GrafanaClusterRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana ClusterRoleBinding failed")
+	}
+
+	err = t.client.DeleteClusterRoleBinding(crb)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana ClusterRoleBinding failed")
+	}
+
+	cr, err := t.factory.GrafanaClusterRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana ClusterRole failed")
+	}
+
+	err = t.client.DeleteClusterRole(cr)
+	if err != nil {
+		return errors.Wrap(err, "delete Grafana ClusterRole failed")
+	}
+
 	return nil
 }

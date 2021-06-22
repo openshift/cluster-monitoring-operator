@@ -1024,6 +1024,16 @@ func (c *Client) CreateOrUpdateConfigMapList(cml *v1.ConfigMapList) error {
 	return nil
 }
 
+func (c *Client) DeleteConfigMapList(cml *v1.ConfigMapList) error {
+	for _, cm := range cml.Items {
+		err := c.DeleteConfigMap(&cm)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Client) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 	cmClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
 	existing, err := cmClient.Get(context.TODO(), cm.GetName(), metav1.GetOptions{})
