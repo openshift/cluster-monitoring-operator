@@ -94,6 +94,7 @@ function(params)
                           '--metrics-relist-interval=1m',
                           '--prometheus-url=' + cfg.prometheusURL,
                           '--secure-port=6443',
+                          '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [

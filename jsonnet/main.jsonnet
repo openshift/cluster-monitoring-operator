@@ -86,6 +86,8 @@ local commonConfig = {
   commonLabels: {
     'app.kubernetes.io/part-of': 'openshift-monitoring',
   },
+  // TLS Cipher suite applied to every component serving HTTPS traffic
+  tlsCipherSuites: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
 };
 
 // objects deployed in openshift-monitoring namespace
@@ -112,6 +114,7 @@ local inCluster =
         version: $.values.common.versions.alertmanager,
         image: $.values.common.images.alertmanager,
         commonLabels+: $.values.common.commonLabels,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
         mixin+: { ruleLabels: $.values.common.ruleLabels },
       },
       grafana: {
@@ -242,6 +245,7 @@ local inCluster =
           },
         },
         thanos: $.values.thanosSidecar,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
       prometheusAdapter: {
         namespace: $.values.common.namespace,
@@ -249,6 +253,7 @@ local inCluster =
         image: $.values.common.images.prometheusAdapter,
         prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
         commonLabels+: $.values.common.commonLabels,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
       prometheusOperator: {
         namespace: $.values.common.namespace,
@@ -262,6 +267,7 @@ local inCluster =
             prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
           },
         },
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
       thanos: {
         image: $.values.common.images.thanos,
@@ -298,6 +304,7 @@ local inCluster =
         replicaLabels: ['prometheus_replica', 'thanos_ruler_replica'],
         stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
         serviceMonitor: true,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
       telemeterClient: {
         namespace: $.values.common.namespace,
@@ -367,6 +374,7 @@ local userWorkload =
           },
         },
         thanos: inCluster.values.thanosSidecar,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
       prometheusOperator: {
         namespace: $.values.common.namespace,
