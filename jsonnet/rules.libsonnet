@@ -296,10 +296,6 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'node_role_os_version_machine:cpu_capacity_sockets:sum',
           },
           {
-            expr: 'clamp_max(sum(alertmanager_integrations),1)',
-            record: 'cluster:alertmanager_routing_enabled:max',
-          },
-          {
             expr: 'sum by(plugin_name, volume_mode)(pv_collector_total_pv_count)',
             record: 'cluster:kube_persistentvolume_plugin_type_counts:sum',
           },
@@ -321,6 +317,10 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             // Returns 1 if all control plane nodes are ready and is absent otherwise. Should be used to suppress alerts during control plane upgrades or disruption.
           },
           {
+            expr: 'max(alertmanager_integrations{namespace="openshift-monitoring"})',
+            record: 'cluster:alertmanager_integrations:max',
+          },
+          {
             expr: 'max(max_over_time(cluster_monitoring_operator_last_reconciliation_successful[1h])) == 0',
             alert: 'ClusterMonitoringOperatorReconciliationErrors',
             annotations: {
@@ -331,7 +331,8 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             },
           },
           {
-            expr: 'cluster:alertmanager_routing_enabled:max == 0',
+            expr: 'cluster:alertmanager_integrations:max == 0',
+            // The alert is named as AlertmanagerReceiversNotConfigured for historical reasons.
             alert: 'AlertmanagerReceiversNotConfigured',
             'for': '10m',
             annotations: {
