@@ -16,10 +16,11 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/klog/v2"
+	"strings"
 )
 
 // TaskRunner manages lists of task groups. Through the RunAll method task groups are
@@ -40,23 +41,24 @@ func NewTaskRunner(client *client.Client, taskGroups ...*TaskGroup) *TaskRunner 
 
 // RunAll executes all registered task groups sequentially. For each group the
 // taskGroup.RunConcurrently function is called.
-func (tl *TaskRunner) RunAll(ctx context.Context) (string, error) {
+
+func (tl *TaskRunner) RunAll(ctx context.Context) TaskGroupErrors {
 	for i, tGroup := range tl.taskGroups {
 		klog.V(2).Infof("processing task group %d of %d", i+1, len(tl.taskGroups))
-
-		if name, err := tGroup.RunConcurrently(ctx); err != nil {
-			return name, err
+		tErrors := tGroup.RunConcurrently(ctx)
+		if len(tErrors) > 0 {
+			return tErrors
 		}
-
 	}
-	return "", nil
+	return nil
 }
 
 // RunConcurrently dispatches all tasks in a task group. The tasks are scheduled
-// concurrently. Returns the first error if any are encountered.
-func (tg *TaskGroup) RunConcurrently(ctx context.Context) (string, error) {
+// concurrently. Returns all the errors that are encountered.
+func (tg *TaskGroup) RunConcurrently(ctx context.Context) TaskGroupErrors {
 	var g errgroup.Group
 	tgLength := len(tg.tasks)
+	errChan := make(chan TaskErr, tgLength)
 	for i, ts := range tg.tasks {
 		// shadow vars due to concurrency
 		ts := ts
@@ -65,24 +67,27 @@ func (tg *TaskGroup) RunConcurrently(ctx context.Context) (string, error) {
 		g.Go(func() error {
 			klog.V(2).Infof("running task %d of %d: %v", i+1, tgLength, ts.Name)
 			err := ts.Task.Run(ctx)
-			klog.V(2).Infof("ran task %d of %d: %v", i+1, tgLength, ts.Name)
 			if err != nil {
-				return taskErr{error: errors.Wrapf(err, "running task %v failed", ts.Name), name: ts.Name}
+				klog.Warningf("task %d of %d: %v failed: %v", i+1, tgLength, ts.Name, err)
+				errChan <- TaskErr{Err: err, Name: ts.Name}
+			} else {
+				klog.V(2).Infof("ran task %d of %d: %v", i+1, tgLength, ts.Name)
 			}
 			return nil
 		})
 	}
 
-	if err := g.Wait(); err != nil {
-		taskName := ""
-		if tErr, ok := err.(taskErr); ok {
-			taskName = tErr.name
-			err = tErr.error
-
-		}
-		return taskName, err
+	g.Wait()
+	// To be able to use the range function on the buffered channel
+	// the channel needs to closed. Otherwise the range will keep waiting
+	// till the channel is closed. This is why defer is not used.
+	close(errChan)
+	var taskGroupErrors TaskGroupErrors
+	for tErr := range errChan {
+		taskGroupErrors = append(taskGroupErrors, tErr)
 	}
-	return "", nil
+
+	return taskGroupErrors
 }
 
 func NewTaskGroup(tasks []*TaskSpec) *TaskGroup {
@@ -110,7 +115,21 @@ type TaskSpec struct {
 type Task interface {
 	Run(ctx context.Context) error
 }
-type taskErr struct {
-	error
-	name string
+
+type TaskErr struct {
+	Err  error
+	Name string
+}
+
+type TaskGroupErrors []TaskErr
+
+func (tge TaskGroupErrors) Error() string {
+	if len(tge) == 0 {
+		return ""
+	}
+	messages := make([]string, 0, len(tge))
+	for _, err := range tge {
+		messages = append(messages, fmt.Sprintf("%v: %v", strings.ToLower(err.Name), err.Err))
+	}
+	return strings.Join(messages, "\n")
 }
