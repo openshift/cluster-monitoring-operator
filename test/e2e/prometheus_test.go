@@ -15,7 +15,6 @@
 package e2e
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -88,7 +87,7 @@ func TestPrometheusVolumeClaim(t *testing.T) {
 	}
 
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(context.TODO(), "prometheus-k8s-db-prometheus-k8s-0", metav1.GetOptions{})
+		_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(f.Ctx, "prometheus-k8s-db-prometheus-k8s-0", metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "getting prometheus persistent volume claim failed")
 		}
@@ -110,7 +109,7 @@ func TestPrometheusVolumeClaim(t *testing.T) {
 }
 
 func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
-	pods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(context.TODO(), metav1.ListOptions{FieldSelector: "status.phase=Running"})
+	pods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(f.Ctx, metav1.ListOptions{FieldSelector: "status.phase=Running"})
 	if err != nil {
 		t.Fatal(err)
 	}

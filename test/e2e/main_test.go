@@ -15,7 +15,6 @@
 package e2e
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -66,7 +65,7 @@ func testMain(m *testing.M) error {
 
 	// Wait for Prometheus operator.
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(context.TODO(), "prometheus-operator", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(f.Ctx, "prometheus-operator", metav1.GetOptions{})
 		if err != nil {
 			return false, nil
 		}
