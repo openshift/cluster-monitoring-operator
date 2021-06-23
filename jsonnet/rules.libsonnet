@@ -21,6 +21,36 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
               severity: 'warning',
             },
           },
+          {
+            expr: |||
+              count by(node,workload,namespace)
+                (
+                  kube_pod_info{node!=""}
+                  * on(namespace,pod) group_left(workload)
+                  (
+                    kube_pod_spec_volumes_persistentvolumeclaims_info
+                    * on(namespace,pod) group_left(workload)
+                    (
+                      namespace_workload_pod:kube_pod_owner:relabel
+                      * on(namespace,workload,workload_type) group_left()
+                      (
+                        count without(pod) (namespace_workload_pod:kube_pod_owner:relabel{namespace=~"openshift-.*"}) > 1
+                      )
+                    )
+                  )
+                ) > 1
+            |||,
+            alert: 'HighlyAvailableWorkloadIncorrectlySpread',
+            'for': '1h',
+            annotations: {
+              description: 'Workload {{ $labels.namespace }}/{{ $labels.workload }} is incorrectly spread across multiple nodes which breaks high-availability requirements. There are {{ $value }} pods on node {{ $labels.node }}, where there should only be one. Since the workload is using persistent volumes, manual intervention is needed. Please follow the guidelines provided in the runbook of this alert to fix this issue.',
+              summary: 'Highly-available workload is incorrectly spread across multiple nodes and manual intervention is needed.',
+              runbook_url: 'https://github.com/openshift/runbooks/blob/master/alerts/HighlyAvailableWorkloadIncorrectlySpread.md',
+            },
+            labels: {
+              severity: 'warning',
+            },
+          },
         ],
       },
       {
