@@ -47,8 +47,9 @@ func NewPrometheusClientFromRoute(
 	routeClient routev1.RouteV1Interface,
 	namespace, name string,
 	token string,
+	ctx context.Context,
 ) (*PrometheusClient, error) {
-	route, err := routeClient.Routes(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	route, err := routeClient.Routes(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

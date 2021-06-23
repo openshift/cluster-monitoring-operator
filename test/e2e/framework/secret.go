@@ -26,13 +26,13 @@ import (
 	poTestFramework "github.com/prometheus-operator/prometheus-operator/test/framework"
 )
 
-func CreateSecret(kubeClient kubernetes.Interface, namespace string, relativePath string) error {
+func CreateSecret(kubeClient kubernetes.Interface, ctx context.Context, namespace string, relativePath string) error {
 	secret, err := parseSecretYaml(relativePath)
 	if err != nil {
 		return errors.Wrap(err, "parsing secret failed")
 	}
 
-	if _, err := kubeClient.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{}); err != nil {
+	if _, err := kubeClient.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{}); err != nil {
 		return errors.Wrap(err, "creating secret failed")
 	}
 

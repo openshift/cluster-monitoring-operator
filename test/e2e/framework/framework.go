@@ -145,6 +145,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		openshiftRouteClient,
 		namespaceName, "thanos-querier",
 		token,
+		f.Ctx,
 	)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating ThanosQuerierClient failed")
@@ -154,6 +155,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		openshiftRouteClient,
 		namespaceName, "prometheus-k8s",
 		token,
+		f.Ctx,
 	)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating PrometheusK8sClient failed")
@@ -163,6 +165,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		openshiftRouteClient,
 		namespaceName, "alertmanager-main",
 		token,
+		f.Ctx,
 	)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating AlertmanagerClient failed")
