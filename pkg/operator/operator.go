@@ -544,10 +544,17 @@ func (o *Operator) sync(key string) error {
 		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
 
-	taskName, err := tl.RunAll()
-	if err != nil {
-		o.reportError(err, taskName)
-		return err
+	taskErrors := tl.RunAll()
+	if len(taskErrors) > 0 {
+		var failedTask string
+		if len(taskErrors) == 1 {
+			failedTask = strings.Join(strings.Fields(taskErrors[0].Name+"Failed"), "")
+		} else {
+			failedTask = "MultipleTasksFailed"
+		}
+
+		o.reportError(taskErrors, failedTask)
+		return errors.Errorf("cluster monitoring update failed %s", failedTask)
 	}
 
 	var degradedConditionMessage, degradedConditionReason string
@@ -565,12 +572,12 @@ func (o *Operator) sync(key string) error {
 	return nil
 }
 
-func (o *Operator) reportError(err error, taskName string) {
-	klog.Infof("ClusterOperator reconciliation failed (attempt %d), retrying. Err: %v", o.failedReconcileAttempts+1, err)
+func (o *Operator) reportError(err error, failedTaskReason string) {
+	klog.Infof("ClusterOperator reconciliation failed (attempt %d), retrying. ", o.failedReconcileAttempts+1)
 	if o.failedReconcileAttempts == 2 {
 		// Only update the ClusterOperator status after 3 retries have been attempted to avoid flapping status.
-		klog.Infof("Updating ClusterOperator status to failed after %d attempts. Err: %v", o.failedReconcileAttempts+1, err)
-		failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
+		klog.Warningf("Updating ClusterOperator status to failed after %d attempts.", o.failedReconcileAttempts+1)
+
 		reportErr := o.client.StatusReporter().SetFailed(err, failedTaskReason)
 		if reportErr != nil {
 			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
