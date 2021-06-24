@@ -45,9 +45,9 @@ type PrometheusClient struct {
 // NewPrometheusClientFromRoute creates and returns a new PrometheusClient from the given OpenShift route.
 func NewPrometheusClientFromRoute(
 	routeClient routev1.RouteV1Interface,
+	ctx context.Context,
 	namespace, name string,
 	token string,
-	ctx context.Context,
 ) (*PrometheusClient, error) {
 	route, err := routeClient.Routes(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
