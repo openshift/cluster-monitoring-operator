@@ -96,7 +96,7 @@ generate-in-docker:
 		cmo-tooling make generate
 
 
-$(JSONNET_VENDOR): $(JB_BIN) jsonnet/jsonnetfile.json
+$(JSONNET_VENDOR): $(JB_BIN) jsonnet/jsonnetfile.json jsonnet/jsonnetfile.lock.json
 	cd jsonnet && $(JB_BIN) install
 
 $(ASSETS): build-jsonnet
