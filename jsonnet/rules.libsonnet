@@ -343,7 +343,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
           },
           {
             expr: |||
-              (((
+              (
                 kube_deployment_spec_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
                   !=
                 kube_deployment_status_replicas_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
@@ -351,7 +351,7 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
                 changes(kube_deployment_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
                   ==
                 0
-              )) * scalar(cluster:control_plane:all_nodes_ready)) != 0
+              ) and cluster:control_plane:all_nodes_ready
             |||,
             alert: 'KubeDeploymentReplicasMismatch',
             'for': '15m',
