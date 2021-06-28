@@ -201,7 +201,7 @@ func Main() int {
 	ctx, cancel := context.WithCancel(context.Background())
 	wg, ctx := errgroup.WithContext(ctx)
 
-	wg.Go(func() error { return o.Run(ctx.Done()) })
+	wg.Go(func() error { return o.Run(ctx) })
 
 	term := make(chan os.Signal)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
