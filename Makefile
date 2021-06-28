@@ -85,7 +85,7 @@ vendor:
 	go mod verify
 
 .PHONY: generate
-generate: build-jsonnet docs check-assets
+generate: build-jsonnet docs check-assets check-runbooks
 
 .PHONY: generate-in-docker
 generate-in-docker:
@@ -155,6 +155,12 @@ test-rules: check-rules
 .PHONY: check-assets
 check-assets:
 	hack/check-assets.sh
+
+.PHONY: check-runbooks
+check-runbooks:
+	# Get runbook urls from the alerts annotations and test if a link is broken
+	# with wget. It also make sure that the command succeed when there are no urls.
+	@grep -rho 'runbook_url.*' assets || true | cut -f2- -d: | wget --spider -nv -i -
 
 ###########
 # Testing #
