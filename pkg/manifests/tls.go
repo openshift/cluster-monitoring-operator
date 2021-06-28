@@ -54,6 +54,19 @@ func (f *Factory) GRPCSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) MetricsClientCerts() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ClusterMonitoringMetricsClientCertsSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+	s.Data = make(map[string][]byte)
+	s.Annotations = make(map[string]string)
+
+	return s, nil
+}
+
 // RotateGRPCSecret rotates key material for Thanos GRPC TLS based communication.
 //
 // If no key material is present, it creates it.

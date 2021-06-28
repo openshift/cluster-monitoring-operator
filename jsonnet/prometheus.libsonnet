@@ -307,6 +307,7 @@ function(params)
           'prometheus-k8s-htpasswd',
           'prometheus-k8s-thanos-sidecar-tls',
           'kube-rbac-proxy',
+          'metrics-client-certs',
         ],
         configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
         probeNamespaceSelector: cfg.namespaceSelector,

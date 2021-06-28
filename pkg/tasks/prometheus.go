@@ -234,6 +234,17 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "reconciling Thanos sidecar Service failed")
 	}
 
+	// There is no need to hash metrics client certs as Prometheus does that in-process.
+	metricsCerts, err := t.factory.MetricsClientCerts()
+	if err != nil {
+		return errors.Wrap(err, "initializing Metrics Client Certs secret failed")
+	}
+
+	metricsCerts, err = t.client.WaitForSecret(metricsCerts)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Metrics Client Certs secret failed")
+	}
+
 	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus GRPC secret failed")

@@ -123,6 +123,7 @@ const (
 	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
+	metricsClientCerts            = "openshift-monitoring/metrics-client-certs"
 
 	// Canonical name of the cluster-wide infrastrucure resource.
 	clusterResourceName = "cluster"
@@ -423,6 +424,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case telemeterCABundleConfigMap:
 	case alertmanagerCABundleConfigMap:
 	case grpcTLS:
+	case metricsClientCerts:
 	case uwmConfigMap:
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
