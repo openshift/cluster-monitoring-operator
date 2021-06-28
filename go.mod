@@ -7,9 +7,9 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/imdario/mergo v0.3.7
-	github.com/openshift/api v0.0.0-20210225162315-bae60f47eed7
-	github.com/openshift/client-go v0.0.0-20201214125552-e615e336eb49
-	github.com/openshift/library-go v0.0.0-20210113192829-cfbb3f4c80c2
+	github.com/openshift/api v0.0.0-20210706092853-b63d499a70ce
+	github.com/openshift/client-go v0.0.0-20210521082421-73d9475a9142
+	github.com/openshift/library-go v0.0.0-20210720093535-f8ed43828870
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator v0.47.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.48.1
@@ -24,7 +24,7 @@ require (
 	k8s.io/apiserver v0.21.2
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog/v2 v2.8.0
-	k8s.io/kube-aggregator v0.20.0
+	k8s.io/kube-aggregator v0.21.1
 	k8s.io/metrics v0.19.4
 )
 
