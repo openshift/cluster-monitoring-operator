@@ -181,6 +181,16 @@ function(params) {
         resources: ['poddisruptionbudgets'],
         verbs: ['create', 'get', 'update', 'delete'],
       },
+      {
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['certificatesigningrequests'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['certificatesigningrequests/approval', 'certificatesigningrequests/status'],
+        verbs: ['get', 'list', 'watch'],
+      },
     ],
   },
 
