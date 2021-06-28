@@ -14,6 +14,15 @@ spec:
     tlsConfig:
       caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
       serverName: kubernetes
+  - metricRelabelings:
+    - action: drop
+      regex: apiserver_admission_controller_admission_latencies_seconds_.*
+      sourceLabels:
+      - __name__
+    - action: drop
+      regex: apiserver_admission_step_admission_latencies_seconds_.*
+      sourceLabels:
+      - __name__
   jobLabel: component
   namespaceSelector:
     matchNames:
