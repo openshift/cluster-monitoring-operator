@@ -53,6 +53,28 @@ function(params) {
     },
   },
 
+  metricsClientCerts: {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      name: 'metrics-client-certs',
+      namespace: cfg.namespace,
+    },
+    type: 'Opaque',
+    data: {},
+  },
+
+  metricsClientCa: {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      name: 'metrics-client-ca',
+      namespace: cfg.namespace,
+    },
+    type: 'Opaque',
+    data: {},
+  },
+
   service: {
     apiVersion: 'v1',
     kind: 'Service',
@@ -95,6 +117,8 @@ function(params) {
           tlsConfig: {
             caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
             serverName: 'server-name-replaced-at-runtime',
+            certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+            keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
           },
         },
       ],
@@ -180,6 +204,16 @@ function(params) {
         apiGroups: ['policy'],
         resources: ['poddisruptionbudgets'],
         verbs: ['create', 'get', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['certificatesigningrequests'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['certificatesigningrequests/approval', 'certificatesigningrequests/status'],
+        verbs: ['get', 'list', 'watch'],
       },
     ],
   },

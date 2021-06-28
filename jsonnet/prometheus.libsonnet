@@ -249,6 +249,8 @@ function(params)
             tlsConfig: {
               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
               serverName: 'prometheus-k8s',
+              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
             bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
           },
@@ -282,6 +284,8 @@ function(params)
             tlsConfig: {
               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
               serverName: 'prometheus-k8s-thanos-sidecar',
+              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
             bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
           },
@@ -335,6 +339,7 @@ function(params)
           'prometheus-k8s-proxy',
           'prometheus-k8s-thanos-sidecar-tls',
           'kube-rbac-proxy',
+          'metrics-client-certs',
         ],
         configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
         probeNamespaceSelector: cfg.namespaceSelector,

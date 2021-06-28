@@ -68,6 +68,8 @@ function(params)
                 tlsConfig+: {
                   caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
                   insecureSkipVerify: false,
+                  certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+                  keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
                 },
               } +
               {
