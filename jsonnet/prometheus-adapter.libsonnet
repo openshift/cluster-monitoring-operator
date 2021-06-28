@@ -59,6 +59,8 @@ function(params)
               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
               serverName: 'server-name-replaced-at-runtime',
               insecureSkipVerify: false,
+              // TODO: prometheus-adapter currently is a stock upstream aggregated api server.
+              // It does not support static authorization.
             },
           },
           super.endpoints

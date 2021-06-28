@@ -106,6 +106,8 @@ function(params) {
           tlsConfig: {
             caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
             serverName: 'server-name-replaced-at-runtime',
+            certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+            keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
           },
         },
       ],
