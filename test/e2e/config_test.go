@@ -15,7 +15,6 @@
 package e2e
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -46,7 +45,7 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	}
 
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(context.TODO(), "prometheus-user-workload", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -80,7 +79,7 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionTrue)
 	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionFalse)
 	// Check that the previous setup hasn't been reverted
-	_, err = f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(context.TODO(), "prometheus-user-workload", metav1.GetOptions{})
+	_, err = f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload", metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

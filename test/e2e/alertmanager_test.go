@@ -15,7 +15,6 @@
 package e2e
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -65,7 +64,7 @@ func TestAlertmanagerVolumeClaim(t *testing.T) {
 
 	// Wait for persistent volume claim
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(context.TODO(), "alertmanager-main-db-alertmanager-main-0", metav1.GetOptions{})
+		_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(f.Ctx, "alertmanager-main-db-alertmanager-main-0", metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "getting alertmanager persistent volume claim failed")
 		}
@@ -95,7 +94,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 
 	// Wait for the new ConfigMap to be created
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(context.TODO(), "alertmanager-trusted-ca-bundle", metav1.GetOptions{})
+		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(f.Ctx, "alertmanager-trusted-ca-bundle", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting new trusted CA ConfigMap failed")
 		if err != nil {
 			return false, nil
@@ -118,7 +117,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 
 	// Wait for the new hashed trusted CA bundle ConfigMap to be created
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(context.TODO(), newCM.Name, metav1.GetOptions{})
+		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(f.Ctx, newCM.Name, metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting new CA ConfigMap failed")
 		if err != nil {
 			return false, nil
@@ -134,7 +133,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 
 	// Get Alertmanager StatefulSet and make sure it has a volume mounted.
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		ss, err := f.KubeClient.AppsV1().StatefulSets(f.Ns).Get(context.TODO(), "alertmanager-main", metav1.GetOptions{})
+		ss, err := f.KubeClient.AppsV1().StatefulSets(f.Ns).Get(f.Ctx, "alertmanager-main", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting Alertmanager StatefulSet failed")
 		if err != nil {
 			return false, nil
@@ -179,12 +178,12 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 			Name: testNs,
 		},
 	}
-	ns, err = f.KubeClient.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
+	ns, err = f.KubeClient.CoreV1().Namespaces().Create(f.Ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		err := f.KubeClient.CoreV1().Namespaces().Delete(context.TODO(), testNs, metav1.DeleteOptions{})
+		err := f.KubeClient.CoreV1().Namespaces().Delete(f.Ctx, testNs, metav1.DeleteOptions{})
 		t.Logf("deleting namespace %s: %v", testNs, err)
 	}()
 

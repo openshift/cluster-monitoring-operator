@@ -15,7 +15,6 @@
 package e2e
 
 import (
-	"context"
 	"strconv"
 	"testing"
 	"time"
@@ -40,7 +39,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 			},
 		},
 	}
-	_, err := f.KubeClient.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(f.Ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

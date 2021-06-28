@@ -61,6 +61,7 @@ type Framework struct {
 	MetricsClient       *metricsclient.Clientset
 	SchedulingClient    *schedulingv1client.SchedulingV1Client
 	kubeConfigPath      string
+	Ctx                 context.Context
 
 	MonitoringClient             *monClient.MonitoringV1Client
 	Ns, UserWorkloadMonitoringNs string
@@ -125,6 +126,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		Ns:                       namespaceName,
 		UserWorkloadMonitoringNs: userWorkloadNamespaceName,
 		kubeConfigPath:           kubeConfigPath,
+		Ctx:                      context.Background(),
 		SchedulingClient:         schedulingClient,
 	}
 
@@ -141,6 +143,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	// Prometheus client depends on setup above.
 	f.ThanosQuerierClient, err = NewPrometheusClientFromRoute(
 		openshiftRouteClient,
+		f.Ctx,
 		namespaceName, "thanos-querier",
 		token,
 	)
@@ -150,6 +153,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 
 	f.PrometheusK8sClient, err = NewPrometheusClientFromRoute(
 		openshiftRouteClient,
+		f.Ctx,
 		namespaceName, "prometheus-k8s",
 		token,
 	)
@@ -159,6 +163,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 
 	f.AlertmanagerClient, err = NewPrometheusClientFromRoute(
 		openshiftRouteClient,
+		f.Ctx,
 		namespaceName, "alertmanager-main",
 		token,
 	)
@@ -218,20 +223,20 @@ func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (clea
 		},
 	}
 
-	sa, err := f.KubeClient.CoreV1().ServiceAccounts(namespace).Create(context.TODO(), sa, metav1.CreateOptions{})
+	sa, err := f.KubeClient.CoreV1().ServiceAccounts(namespace).Create(f.Ctx, sa, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return func() error {
-		return f.KubeClient.CoreV1().ServiceAccounts(namespace).Delete(context.TODO(), sa.Name, metav1.DeleteOptions{})
+		return f.KubeClient.CoreV1().ServiceAccounts(namespace).Delete(f.Ctx, sa.Name, metav1.DeleteOptions{})
 	}, nil
 }
 
 func (f *Framework) GetServiceAccountToken(namespace, name string) (string, error) {
 	var token string
 	err := Poll(5*time.Second, time.Minute, func() error {
-		secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{})
+		secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(f.Ctx, metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -270,13 +275,13 @@ func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterR
 		},
 	}
 
-	clusterRoleBinding, err := f.KubeClient.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterRoleBinding, metav1.CreateOptions{})
+	clusterRoleBinding, err := f.KubeClient.RbacV1().ClusterRoleBindings().Create(f.Ctx, clusterRoleBinding, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return func() error {
-		return f.KubeClient.RbacV1().ClusterRoleBindings().Delete(context.TODO(), clusterRoleBinding.Name, metav1.DeleteOptions{})
+		return f.KubeClient.RbacV1().ClusterRoleBindings().Delete(f.Ctx, clusterRoleBinding.Name, metav1.DeleteOptions{})
 	}, nil
 }
 
@@ -299,13 +304,13 @@ func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, 
 		},
 	}
 
-	roleBinding, err := f.KubeClient.RbacV1().RoleBindings(namespace).Create(context.TODO(), roleBinding, metav1.CreateOptions{})
+	roleBinding, err := f.KubeClient.RbacV1().RoleBindings(namespace).Create(f.Ctx, roleBinding, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return func() error {
-		return f.KubeClient.RbacV1().RoleBindings(namespace).Delete(context.TODO(), roleBinding.Name, metav1.DeleteOptions{})
+		return f.KubeClient.RbacV1().RoleBindings(namespace).Delete(f.Ctx, roleBinding.Name, metav1.DeleteOptions{})
 	}, nil
 }
 
