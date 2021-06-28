@@ -28,9 +28,6 @@ spec:
         - containerPort: 8443
           name: https-main
         resources:
-          limits:
-            cpu: 20m
-            memory: 40Mi
           requests:
             cpu: 10m
             memory: 20Mi
@@ -50,9 +47,6 @@ spec:
         - containerPort: 9443
           name: https-self
         resources:
-          limits:
-            cpu: 20m
-            memory: 40Mi
           requests:
             cpu: 10m
             memory: 20Mi

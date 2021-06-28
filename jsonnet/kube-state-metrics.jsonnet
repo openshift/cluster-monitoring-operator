@@ -105,6 +105,9 @@ local timezoneVolumeName = 'timezone';
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
                         ],
+                        resources+: {
+                            limits:: {}
+                        },
                       }
                     else
                       c +
