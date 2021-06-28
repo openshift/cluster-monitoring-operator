@@ -191,9 +191,32 @@ local patchRules(groups) = [
       secret.mixin.metadata.withNamespace($._config.namespace) +
       secret.mixin.metadata.withLabels({ 'k8s-app': 'prometheus-k8s' }),
 
+    // Cherry-pick apiserver related changes from https://github.com/prometheus-operator/prometheus-operator/pull/2387
+    // to remove high-cardinality metrics.
+    serviceMonitorApiserver+:
+      {
+        spec+: {
+          endpoints+: [
+            {
+              metricRelabelings+: [
+                {
+                  sourceLabels: ['__name__'],
+                  regex: 'apiserver_admission_controller_admission_latencies_seconds_.*',
+                  action: 'drop',
+                },
+                {
+                  sourceLabels: ['__name__'],
+                  regex: 'apiserver_admission_step_admission_latencies_seconds_.*',
+                  action: 'drop',
+                },
+              ],
+            },
+          ],
+        },
+      },
+
     // This changes the kubelet's certificates to be validated when
     // scraping.
-
     serviceMonitorKubelet:
       {
         apiVersion: 'monitoring.coreos.com/v1',
@@ -226,6 +249,22 @@ local patchRules(groups) = [
               tlsConfig: {
                 caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
               },
+              metricRelabelings: [
+                // Drop container_* metrics with no image.
+                {
+                  sourceLabels: ['__name__', 'image'],
+                  regex: 'container_([a-z_]+);',
+                  action: 'drop',
+                },
+
+                // Drop a bunch of metrics which are disabled but still sent, see
+                // https://github.com/google/cadvisor/issues/1925.
+                {
+                  sourceLabels: ['__name__'],
+                  regex: 'container_(network_tcp_usage_total|network_udp_usage_total|tasks_state|cpu_load_average_10s)',
+                  action: 'drop',
+                },
+              ],
             },
           ],
           jobLabel: 'k8s-app',
