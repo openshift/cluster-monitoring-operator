@@ -84,6 +84,9 @@ local tlsVolumeName = 'node-exporter-tls';
                         volumeMounts: [
                           containerVolumeMount.new(tlsVolumeName, '/etc/tls/private'),
                         ],
+                        resources+: {
+                            limits:: {}
+                        },
                       }
                     else
                       c {
