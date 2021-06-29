@@ -148,6 +148,8 @@ type Operator struct {
 	failedReconcileAttempts int
 
 	assets *manifests.Assets
+
+	ctx context.Context
 }
 
 func New(
@@ -157,8 +159,9 @@ func New(
 	images map[string]string,
 	telemetryMatches []string,
 	a *manifests.Assets,
+	ctx context.Context,
 ) (*Operator, error) {
-	c, err := client.New(config, version, namespace, namespaceUserWorkload)
+	c, err := client.New(config, version, namespace, namespaceUserWorkload, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +237,7 @@ func New(
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
-		o.client.InfrastructureListWatchForResource(context.TODO(), clusterResourceName),
+		o.client.InfrastructureListWatchForResource(o.ctx, clusterResourceName),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -627,7 +630,7 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		}
 
 		err = c.LoadToken(func() (*v1.Secret, error) {
-			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(context.TODO(), "pull-secret", metav1.GetOptions{})
+			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(o.ctx, "pull-secret", metav1.GetOptions{})
 		})
 
 		if err != nil {
