@@ -196,9 +196,17 @@ local patchRules(groups) = [
     serviceMonitorApiserver+:
       {
         spec+: {
-          endpoints+: [
+          endpoints: [
             {
-              metricRelabelings+: [
+              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+              interval: '30s',
+              port: 'https',
+              scheme: 'https',
+              tlsConfig: {
+                caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+              },
+              serverName: 'kubernetes',
+              metricRelabelings: [
                 {
                   sourceLabels: ['__name__'],
                   regex: 'apiserver_admission_controller_admission_latencies_seconds_.*',
@@ -211,7 +219,7 @@ local patchRules(groups) = [
                 },
               ],
             },
-          ],
+          ]
         },
       },
 
