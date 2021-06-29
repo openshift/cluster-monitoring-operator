@@ -460,7 +460,7 @@ func (o *Operator) sync(key string) error {
 				tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
 				tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
 				tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTaks(o.namespace, o.client, factory)),
+				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTask(o.ctx, o.namespace, o.client, factory)),
 				tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
@@ -468,7 +468,6 @@ func (o *Operator) sync(key string) error {
 				tasks.NewTaskSpec("Updating Control Plane components", tasks.NewControlPlaneTask(o.client, factory, config)),
 			}),
 	)
-
 	klog.Info("Updating ClusterOperator status to in progress.")
 	err = o.client.StatusReporter().SetInProgress()
 	if err != nil {
