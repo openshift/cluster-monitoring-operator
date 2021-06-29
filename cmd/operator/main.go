@@ -170,6 +170,8 @@ func Main() int {
 	config.QPS = 100
 	config.Burst = 200
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	userWorkloadConfigMapName := "user-workload-monitoring-config"
 	o, err := cmo.New(
 		config,
@@ -182,6 +184,7 @@ func Main() int {
 		images.asMap(),
 		telemetryConfig.Matches,
 		assets,
+		ctx,
 	)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
@@ -198,7 +201,6 @@ func Main() int {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	go http.ListenAndServe("127.0.0.1:8080", mux)
 
-	ctx, cancel := context.WithCancel(context.Background())
 	wg, ctx := errgroup.WithContext(ctx)
 
 	wg.Go(func() error { return o.Run(ctx.Done()) })
