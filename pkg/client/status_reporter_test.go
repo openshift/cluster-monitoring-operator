@@ -32,6 +32,7 @@ import (
 )
 
 func TestStatusReporterSetDone(t *testing.T) {
+	ctx := context.Background()
 	for _, tc := range []struct {
 		name  string
 		given givenStatusReporter
@@ -102,6 +103,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 			sr := NewStatusReporter(
 				mock,
 				tc.given.operatorName,
+				ctx,
 				tc.given.namespace,
 				tc.given.userWorkloadNamespace,
 				tc.given.version,
@@ -123,6 +125,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 }
 
 func TestStatusReporterSetInProgress(t *testing.T) {
+	ctx := context.Background()
 	for _, tc := range []struct {
 		name  string
 		given givenStatusReporter
@@ -193,6 +196,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 			sr := NewStatusReporter(
 				mock,
 				tc.given.operatorName,
+				ctx,
 				tc.given.namespace,
 				tc.given.userWorkloadNamespace,
 				tc.given.version,
@@ -214,6 +218,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 }
 
 func TestStatusReporterSetFailed(t *testing.T) {
+	ctx := context.Background()
 	failedErr := errors.New("foo")
 
 	for _, tc := range []struct {
@@ -289,6 +294,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 			sr := NewStatusReporter(
 				mock,
 				tc.given.operatorName,
+				ctx,
 				tc.given.namespace,
 				tc.given.userWorkloadNamespace,
 				tc.given.version,
