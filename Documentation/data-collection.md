@@ -304,11 +304,6 @@ data:
     # (cloud credential operator, @openshift/openshift-team-hive) Track current mode the cloud-credentials-operator is functioning under.
     - '{__name__="cco_credentials_mode"}'
     #
-    # (image-registry-team) :apiserver_v1_image_imports:sum counts the number of image stream
-    # imports made using registry protocol v1, we are deprecating this version of the protocol and will use this metric to identify how
-    # many users are impacted by deprecation and when usage has reached zero
-    - '{__name__=":apiserver_v1_image_imports:sum"}'
-    #
     # (@openshift/storage, OpenShift Storage team) Persistent Volume usage metrics: this is the number of volumes per plugin
     # and per volume type (filesystem/block)
     - '{__name__="cluster:kube_persistentvolume_plugin_type_counts:sum"}'
