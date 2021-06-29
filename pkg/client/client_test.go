@@ -1279,7 +1279,7 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(serviceMonitor.DeepCopy()),
-				ctx: context.Background(),
+				ctx:     context.Background(),
 			}
 			if _, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(c.ctx, serviceMonitor.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
@@ -1371,7 +1371,7 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(rule.DeepCopy()),
-				ctx: context.Background(),
+				ctx:     context.Background(),
 			}
 			if _, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(c.ctx, rule.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
@@ -1463,7 +1463,7 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(prometheus.DeepCopy()),
-				ctx: context.Background(),
+				ctx:     context.Background(),
 			}
 			if _, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(c.ctx, prometheus.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
@@ -1556,7 +1556,7 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(alertmanager.DeepCopy()),
-				ctx: context.Background(),
+				ctx:     context.Background(),
 			}
 			if _, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(c.ctx, alertmanager.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
