@@ -412,6 +412,10 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 	a.Spec.ExternalURL = f.AlertmanagerExternalURL(host).String()
 
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel != "" {
+		a.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel
+	}
+
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources != nil {
 		a.Spec.Resources = *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources
 	}

@@ -128,6 +128,7 @@ type TLSConfig struct {
 }
 
 type AlertmanagerMainConfig struct {
+	LogLevel            string                               `json:"logLevel"`
 	NodeSelector        map[string]string                    `json:"nodeSelector"`
 	Tolerations         []v1.Toleration                      `json:"tolerations"`
 	Resources           *v1.ResourceRequirements             `json:"resources"`
