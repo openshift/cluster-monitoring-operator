@@ -9,12 +9,7 @@ spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     interval: 30s
-    port: https
-    scheme: https
-    tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-      serverName: kubernetes
-  - metricRelabelings:
+    metricRelabelings:
     - action: drop
       regex: apiserver_admission_controller_admission_latencies_seconds_.*
       sourceLabels:
@@ -23,6 +18,11 @@ spec:
       regex: apiserver_admission_step_admission_latencies_seconds_.*
       sourceLabels:
       - __name__
+    port: https
+    scheme: https
+    serverName: kubernetes
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   jobLabel: component
   namespaceSelector:
     matchNames:
