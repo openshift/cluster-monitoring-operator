@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"k8s.io/client-go/util/retry"
 	"net/url"
 	"reflect"
 	"strings"
@@ -758,12 +759,15 @@ func (c *Client) CreateDeployment(dep *appsv1.Deployment) error {
 }
 
 func (c *Client) UpdateDeployment(dep *appsv1.Deployment) error {
-	updated, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Update(context.TODO(), dep, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		updated, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Update(context.TODO(), dep, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+		return c.WaitForDeploymentRollout(updated)
+	})
 
-	return c.WaitForDeploymentRollout(updated)
+	return retryErr
 }
 
 func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
