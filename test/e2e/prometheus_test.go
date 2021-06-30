@@ -20,10 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,59 +48,6 @@ func TestPrometheusMetrics(t *testing.T) {
 				},
 			)
 		})
-	}
-}
-
-func TestPrometheusVolumeClaim(t *testing.T) {
-	err := f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "prometheus-k8s",
-			Namespace: f.Ns,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheusK8s:
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-		},
-	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
-		t.Fatal(err)
-	}
-
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.Ns).Get(f.Ctx, "prometheus-k8s-db-prometheus-k8s-0", metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrap(err, "getting prometheus persistent volume claim failed")
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "prometheus-k8s",
-			Namespace: f.Ns,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 

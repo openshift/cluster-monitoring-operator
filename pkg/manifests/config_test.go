@@ -15,6 +15,7 @@
 package manifests
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -184,5 +185,52 @@ func TestEtcdDefaultsToDisabled(t *testing.T) {
 	}
 	if c.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		t.Error("an empty etcd configuration should have etcd disabled")
+	}
+}
+
+func TestHttpProxyConfig(t *testing.T) {
+	conf := `http:
+  httpProxy: http://test.com
+  httpsProxy: https://test.com
+  noProxy: https://example.com	
+`
+
+	c, err := NewConfig(bytes.NewBufferString(conf))
+	if err != nil {
+		t.Errorf("expected no error parsing config - %v", err)
+	}
+
+	tests := []struct {
+		name   string
+		got    func() string
+		expect string
+	}{
+		{
+			name: "expect http proxy value is set",
+			got: func() string {
+				return c.HTTPProxy()
+			},
+			expect: "http://test.com",
+		},
+		{
+			name: "expect https proxy value is set",
+			got: func() string {
+				return c.HTTPSProxy()
+			},
+			expect: "https://test.com",
+		},
+		{
+			name: "expect http proxy value is set",
+			got: func() string {
+				return c.NoProxy()
+			},
+			expect: "https://example.com",
+		},
+	}
+
+	for i, test := range tests {
+		if test.got() != test.expect {
+			t.Errorf("testcase %d: expected enabled %s, got %s", i, test.expect, test.got())
+		}
 	}
 }
