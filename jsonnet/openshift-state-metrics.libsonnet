@@ -17,7 +17,25 @@ function(params) {
   // This shouldn't make much difference as openshift-state-metrics project is scheduled for deprecation
   clusterRoleBinding: osm.openshiftStateMetrics.clusterRoleBinding,
   clusterRole: osm.openshiftStateMetrics.clusterRole,
-  deployment: osm.openshiftStateMetrics.deployment,
+  deployment: osm.openshiftStateMetrics.deployment {
+    spec+: {
+      template+: {
+        spec+: {
+          containers:
+            std.map(
+              function(c)
+                if c.name == 'kube-rbac-proxy-main' || c.name == 'kube-rbac-proxy-self' then
+                  c {
+                    image: cfg.kubeRbacProxyImage,
+                  }
+                else
+                  c,
+              super.containers,
+            ),
+        },
+      },
+    },
+  },
   serviceAccount: osm.openshiftStateMetrics.serviceAccount,
   service: osm.openshiftStateMetrics.service,
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,

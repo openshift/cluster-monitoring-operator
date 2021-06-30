@@ -113,6 +113,10 @@ $(JSON_MANIFESTS): $(MANIFESTS)
 .PHONY: json-manifests
 json-manifests: $(JSON_MANIFESTS_DIR) $(JSON_MANIFESTS)
 
+.PHONY: versions
+versions:
+	./hack/generate-versions.sh > jsonnet/versions.json
+
 .PHONY: docs
 docs: $(EMBEDMD_BIN) Documentation/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`

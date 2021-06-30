@@ -284,7 +284,7 @@ function(params)
           },
           {
             name: 'kube-rbac-proxy',
-            image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0',  //FIXME(paulfantom)
+            image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
                 cpu: '1m',
@@ -321,7 +321,7 @@ function(params)
           },
           {
             name: 'prom-label-proxy',
-            image: 'quay.io/coreos/prom-label-proxy:v0.2.0',  // FIXME(paulfantom)
+            image: cfg.promLabelProxyImage,
             args: [
               '--insecure-listen-address=127.0.0.1:9096',
               '--upstream=http://127.0.0.1:9093',

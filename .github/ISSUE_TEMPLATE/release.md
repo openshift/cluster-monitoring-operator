@@ -31,6 +31,7 @@ about: Create release checklist
 - [ ] update and pin jsonnet dependencies in [jsonnet/jsonnetfile.json](https://github.com/openshift/cluster-monitoring-operator/blob/master/jsonnet/jsonnetfile.json).
   - example: https://github.com/openshift/cluster-monitoring-operator/blob/release-4.3/jsonnet/jsonnetfile.json
   - dependencies should be pinned to branches released in previous paragraph
+  - ensure `jsonnet/version.json` file is tracking up-to-date component versions by running `make versions` and regenerating `assets/` if necessary
 - [ ] update golang dependencies in [go.mod](https://github.com/openshift/cluster-monitoring-operator/blob/master/go.mod) and [hack/tools/go.mod](https://github.com/openshift/cluster-monitoring-operator/blob/master/hack/tools/go.mod) files.
   - most important are dependencies on prometheus-operator and kubernetes components
   - update the tooling prometheus dependency to be in sync with the main one

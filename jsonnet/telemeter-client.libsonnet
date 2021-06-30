@@ -15,9 +15,6 @@ function(params) {
         'TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305',
         'TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
       ],
-      versions+: {
-        kubeRbacProxy: 'latest',
-      },
     },
   },
 
@@ -45,6 +42,10 @@ function(params) {
                       ,
                       c.args,
                     ),
+                  }
+                else if c.name == 'kube-rbac-proxy' then
+                  c {
+                    image: cfg.kubeRbacProxyImage,
                   }
                 else
                   c,

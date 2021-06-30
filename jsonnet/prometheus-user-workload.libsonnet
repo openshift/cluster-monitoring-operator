@@ -229,7 +229,7 @@ function(params)
         containers: [
           {
             name: 'kube-rbac-proxy',
-            image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0',  //FIXME(paulfantom)
+            image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
                 memory: '10Mi',
@@ -260,7 +260,7 @@ function(params)
           },
           {
             name: 'kube-rbac-proxy-thanos',
-            image: 'quay.io/coreos/kube-rbac-proxy:v0.8.0',  //FIXME(paulfantom)
+            image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
                 memory: '10Mi',
