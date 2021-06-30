@@ -107,6 +107,8 @@ local inCluster =
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         mixin+: { ruleLabels: $.values.common.ruleLabels },
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
+        promLabelProxyImage: $.values.common.images.promLabelProxy,
       },
       grafana: {
         namespace: $.values.common.namespace,
@@ -217,6 +219,7 @@ local inCluster =
       },
       openshiftStateMetrics: {
         namespace: $.values.common.namespace,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
       prometheus: {
         namespace: $.values.common.namespace,
@@ -239,6 +242,8 @@ local inCluster =
         },
         thanos: $.values.thanosSidecar,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
+        promLabelProxyImage: $.values.common.images.promLabelProxy,
       },
       prometheusAdapter: {
         namespace: $.values.common.namespace,
@@ -299,9 +304,12 @@ local inCluster =
         stores: ['dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local'],
         serviceMonitor: true,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
+        promLabelProxyImage: $.values.common.images.promLabelProxy,
       },
       telemeterClient: {
         namespace: $.values.common.namespace,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
       controlPlane: {
         namespace: $.values.common.namespace,
@@ -393,6 +401,7 @@ local userWorkload =
         },
         thanos: inCluster.values.thanosSidecar,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
       prometheusOperator: {
         namespace: $.values.common.namespace,
