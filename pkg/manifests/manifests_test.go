@@ -1210,6 +1210,7 @@ k8sPrometheusAdapter:
 
 func TestAlertmanagerMainConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`alertmanagerMain:
+  logLevel: debug
   baseImage: quay.io/test/alertmanager
   nodeSelector:
     type: worker
@@ -1245,6 +1246,10 @@ ingress:
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if a.Spec.LogLevel != "debug" {
+		t.Fatalf("Alertmanager logLevel is not configured correctly, want: 'debug', got: '%s'", a.Spec.LogLevel)
 	}
 
 	if *a.Spec.Image != "docker.io/openshift/origin-prometheus-alertmanager:latest" {
