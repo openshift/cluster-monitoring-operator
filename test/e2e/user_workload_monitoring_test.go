@@ -100,9 +100,7 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		})},
 		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 

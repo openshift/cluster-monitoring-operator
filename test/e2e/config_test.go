@@ -158,9 +158,7 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -237,9 +235,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 			f:    assertRemoteWriteWasSet(f.Ns, crName, "https://test.remotewrite.com/api/write"),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -299,9 +295,7 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -343,9 +337,7 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -387,9 +379,7 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -428,9 +418,7 @@ func TestClusterMonitorGrafanaConfig(t *testing.T) {
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -516,9 +504,7 @@ func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -569,9 +555,7 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -630,9 +614,7 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -732,9 +714,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 			f:    assertRemoteWriteWasSet(f.UserWorkloadMonitoringNs, crName, "https://test.remotewrite.com/api/write"),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
@@ -819,9 +799,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 			f:    assertDeletedUserWorkloadAssets(cm),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
-		}
+		t.Run(scenario.name, scenario.f)
 	}
 }
 
