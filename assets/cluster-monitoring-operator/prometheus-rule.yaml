@@ -240,12 +240,9 @@ spec:
       record: cluster:vsphere_esxi_version_total:sum
     - expr: sum by(hw_version)(vsphere_node_hw_version_total)
       record: cluster:vsphere_node_hw_version_total:sum
-    - expr: |
-        sum(
-          min by (node) (kube_node_status_condition{condition="Ready",status="true"})
-            and
-          max by (node) (kube_node_role{role="master"})
-        ) == bool sum(kube_node_role{role="master"})
+    - expr: absent(count(max by (node) (kube_node_role{role="master"}) and (min by
+        (node) (kube_node_status_condition{condition="Ready",status="true"} == 0)))
+        > 0)
       record: cluster:control_plane:all_nodes_ready
     - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
@@ -278,15 +275,15 @@ spec:
           healthy nodes and then contact support.
         summary: Deployment has not matched the expected number of replicas
       expr: |
-        (((
+        (
           kube_deployment_spec_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
-            >
+            !=
           kube_deployment_status_replicas_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
         ) and (
           changes(kube_deployment_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
             ==
           0
-        ))) * scalar(cluster:control_plane:all_nodes_ready == 1)
+        ) and cluster:control_plane:all_nodes_ready
       for: 15m
       labels:
         severity: warning
