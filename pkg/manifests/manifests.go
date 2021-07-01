@@ -183,6 +183,7 @@ var (
 	ClusterMonitoringGrpcTLSSecret              = "cluster-monitoring-operator/grpc-tls-secret.yaml"
 	ClusterMonitoringOperatorPrometheusRule     = "cluster-monitoring-operator/prometheus-rule.yaml"
 	ClusterMonitoringMetricsClientCertsSecret   = "cluster-monitoring-operator/metrics-client-certs.yaml"
+	ClusterMonitoringMetricsClientCASecret      = "cluster-monitoring-operator/metrics-client-ca.yaml"
 
 	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
 	TelemeterClientClusterRoleBinding     = "telemeter-client/cluster-role-binding.yaml"

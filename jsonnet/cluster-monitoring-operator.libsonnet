@@ -64,6 +64,17 @@ function(params) {
     data: {},
   },
 
+  metricsClientCa: {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      name: 'metrics-client-ca',
+      namespace: cfg.namespace,
+    },
+    type: 'Opaque',
+    data: {},
+  },
+
   service: {
     apiVersion: 'v1',
     kind: 'Service',
