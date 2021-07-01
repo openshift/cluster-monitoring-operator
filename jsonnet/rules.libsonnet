@@ -316,16 +316,9 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             record: 'cluster:vsphere_node_hw_version_total:sum',
           },
           {
-            expr: |||
-              sum(
-                min by (node) (kube_node_status_condition{condition="Ready",status="true"})
-                  and
-                max by (node) (kube_node_role{role="master"})
-              ) == bool sum(kube_node_role{role="master"})
-            |||,
+            expr: 'absent(count(max by (node) (kube_node_role{role="master"}) and (min by (node) (kube_node_status_condition{condition="Ready",status="true"} == 0))) > 0)',
             record: 'cluster:control_plane:all_nodes_ready',
-            // Returns 1 if all control plane nodes are ready or 0 otherwise.
-            // Should be used to suppress alerts during control plane upgrades or disruption.
+            // Returns 1 if all control plane nodes are ready and is absent otherwise. Should be used to suppress alerts during control plane upgrades or disruption.
           },
           {
             expr: 'max(max_over_time(cluster_monitoring_operator_last_reconciliation_successful[1h])) == 0',
@@ -350,15 +343,15 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
           },
           {
             expr: |||
-              (((
+              (
                 kube_deployment_spec_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
-                  >
+                  !=
                 kube_deployment_status_replicas_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
               ) and (
                 changes(kube_deployment_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
                   ==
                 0
-              ))) * scalar(cluster:control_plane:all_nodes_ready == 1)
+              ) and cluster:control_plane:all_nodes_ready
             |||,
             alert: 'KubeDeploymentReplicasMismatch',
             'for': '15m',
