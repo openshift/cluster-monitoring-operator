@@ -300,6 +300,43 @@ spec:
       for: 15m
       labels:
         severity: info
+    - alert: KubePersistentVolumeFillingUp
+      annotations:
+        description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim
+          }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage
+          }} free.
+        summary: PersistentVolume is filling up.
+      expr: |
+        (
+          kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+              /
+          kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+        ) < 0.03
+        and
+        kubelet_volume_stats_used_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"} > 0
+      for: 1m
+      labels:
+        severity: critical
+    - alert: KubePersistentVolumeFillingUp
+      annotations:
+        description: Based on recent sampling, the PersistentVolume claimed by {{
+          $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is
+          expected to fill up within four days. Currently {{ $value | humanizePercentage
+          }} is available.
+        summary: PersistentVolume is filling up.
+      expr: |
+        (
+          kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+            /
+          kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+        ) < 0.15
+        and
+        kubelet_volume_stats_used_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"} > 0
+        and
+        predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+      for: 1h
+      labels:
+        severity: warning
     - expr: avg_over_time((((count((max by (node) (up{job="kubelet",metrics_path="/metrics"}
         == 1) and max by (node) (kube_node_status_condition{condition="Ready",status="true"}
         == 1) and min by (node) (kube_node_spec_unschedulable == 0))) / scalar(count(min
