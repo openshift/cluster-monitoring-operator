@@ -65,6 +65,12 @@ local excludedRules = [
       { alert: 'ThanosQueryRangeLatencyHigh' },
     ],
   },
+  {
+    name: 'kubernetes-storage',
+    rules: [
+      { alert: 'KubePersistentVolumeFillingUp' },
+    ],
+  },
 ];
 
 local patchedRules = [

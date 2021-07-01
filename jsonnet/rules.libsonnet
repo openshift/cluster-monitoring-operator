@@ -382,6 +382,48 @@ local droppedKsmLabels = 'endpoint, instance, job, pod, service';
             },
           },
           {
+            alert: 'KubePersistentVolumeFillingUp',
+            expr: |||
+              (
+                kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+                    /
+                kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+              ) < 0.03
+              and
+              kubelet_volume_stats_used_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"} > 0
+            |||,
+            'for': '1m',
+            labels: {
+              severity: 'critical',
+            },
+            annotations: {
+              description: 'The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.',
+              summary: 'PersistentVolume is filling up.',
+            },
+          },
+          {
+            alert: 'KubePersistentVolumeFillingUp',
+            expr: |||
+              (
+                kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+                  /
+                kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+              ) < 0.15
+              and
+              kubelet_volume_stats_used_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"} > 0
+              and
+              predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+            |||,
+            'for': '1h',
+            labels: {
+              severity: 'warning',
+            },
+            annotations: {
+              description: 'Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value | humanizePercentage }} is available.',
+              summary: 'PersistentVolume is filling up.',
+            },
+          },
+          {
             expr: 'avg_over_time((((count((max by (node) (up{job="kubelet",metrics_path="/metrics"} == 1) and max by (node) (kube_node_status_condition{condition="Ready",status="true"} == 1) and min by (node) (kube_node_spec_unschedulable == 0))) / scalar(count(min by (node) (kube_node_spec_unschedulable == 0))))))[5m:1s])',
             record: 'cluster:usage:kube_schedulable_node_ready_reachable:avg5m',
             // Report a 5m rolling average of the number of schedulable nodes that are ready and reachable to be scraped by metrics. This is
