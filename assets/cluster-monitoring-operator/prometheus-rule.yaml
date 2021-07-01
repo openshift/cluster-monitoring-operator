@@ -51,7 +51,7 @@ spec:
                 namespace_workload_pod:kube_pod_owner:relabel
                 * on(namespace,workload,workload_type) group_left()
                 (
-                  count without(pod) (namespace_workload_pod:kube_pod_owner:relabel{namespace=~"openshift-.*"}) > 1
+                  count without(pod) (namespace_workload_pod:kube_pod_owner:relabel{namespace=~"(openshift-.*|kube-.*|default|logging)"}) > 1
                 )
               )
             )
