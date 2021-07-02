@@ -35,6 +35,7 @@ spec:
         - --collector.netdev.device-exclude=^(veth.*)$
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
+        - --no-collector.cpufreq
         image: quay.io/prometheus/node-exporter:v1.1.2
         name: node-exporter
         resources:
