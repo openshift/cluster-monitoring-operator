@@ -60,6 +60,7 @@ spec:
         - --upstream=https://prometheus-operator.openshift-monitoring.svc:8080/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
+        - --client-ca-file=/etc/tls/client/client-ca.crt
         - --upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt
         image: quay.io/brancz/kube-rbac-proxy:v0.9.0
         name: kube-rbac-proxy
@@ -79,6 +80,9 @@ spec:
         - mountPath: /etc/configmaps/operator-cert-ca-bundle
           name: operator-certs-ca-bundle
           readOnly: false
+        - mountPath: /etc/tls/client
+          name: metrics-client-ca
+          readOnly: false
       nodeSelector:
         kubernetes.io/os: linux
         node-role.kubernetes.io/master: ""
@@ -96,3 +100,6 @@ spec:
       - configMap:
           name: operator-certs-ca-bundle
         name: operator-certs-ca-bundle
+      - configMap:
+          name: metrics-client-ca
+        name: metrics-client-ca
