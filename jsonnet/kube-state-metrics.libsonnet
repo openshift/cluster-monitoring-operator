@@ -93,13 +93,21 @@ function(params)
                       args+: [
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
+                        '--client-ca-file=/etc/tls/client/client-ca.crt',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts: [{
-                        mountPath: '/etc/tls/private',
-                        name: tlsVolumeName,
-                        readOnly: false,
-                      }],
+                      volumeMounts: [
+                        {
+                          mountPath: '/etc/tls/private',
+                          name: tlsVolumeName,
+                          readOnly: false,
+                        },
+                        {
+                          mountPath: '/etc/tls/client',
+                          name: 'metrics-client-ca',
+                          readOnly: false,
+                        },
+                      ],
                       securityContext: {},
                       resources: {
                         requests: {
@@ -138,6 +146,12 @@ function(params)
                 name: tlsVolumeName,
                 secret: {
                   secretName: 'kube-state-metrics-tls',
+                },
+              },
+              {
+                name: 'metrics-client-ca',
+                secret: {
+                  secretName: 'metrics-client-ca',
                 },
               },
             ],
