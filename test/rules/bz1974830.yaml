@@ -1,0 +1,107 @@
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  # Test the correct behaviour of the rule that determines if the control plane is ready
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_role{container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", role="master", service="kube-state-metrics"}'
+        values: '1+0x10'
+      - series: 'kube_node_status_condition{condition="Ready", container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", service="kube-state-metrics", status="true"}'
+        values: '1 0 1+0x10'
+    promql_expr_test:
+      - expr: cluster:control_plane:all_nodes_ready
+        eval_time: 30s
+        exp_samples:
+          - labels: 'cluster:control_plane:all_nodes_ready'
+            value: 1
+      - expr: cluster:control_plane:all_nodes_ready
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:control_plane:all_nodes_ready'
+            value: 0
+      - expr: cluster:control_plane:all_nodes_ready
+        eval_time: 3m
+        exp_samples:
+          - labels: 'cluster:control_plane:all_nodes_ready'
+            value: 1
+    # Test the 'KubeDeploymentReplicasMismatch' will fire if all conditions are met
+  - interval: 5m
+    input_series:
+      - series: 'kube_node_role{container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", role="master", service="kube-state-metrics"}'
+        values: '1+0x10'
+      - series: 'kube_node_status_condition{condition="Ready", container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", service="kube-state-metrics", status="true"}'
+        values: '1+0x10'
+      - series: 'kube_deployment_spec_replicas{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '3+0x10'
+      - series: 'kube_deployment_status_replicas_available{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '2+0x10'
+      - series: 'kube_deployment_status_replicas_updated{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '0+0x10'
+    alert_rule_test:
+      - alertname: KubeDeploymentReplicasMismatch
+        eval_time: 30m
+        exp_alerts:
+          - exp_labels:
+              severity: 'warning'
+              alertname: 'KubeDeploymentReplicasMismatch'
+              container: 'kube-rbac-proxy-main'
+              deployment: 'apiserver'
+              endpoint: 'https-main'
+              job: 'kube-state-metrics'
+              namespace: 'openshift-apiserver'
+              service: 'kube-state-metrics'
+            exp_annotations:
+              summary: 'Deployment has not matched the expected number of replicas'
+              description: >-
+                Deployment openshift-apiserver/apiserver has not matched the expected number of replicas for longer than 15 minutes. This indicates that cluster infrastructure is unable to start or restart the necessary components. This most often occurs when one or more nodes are down or partioned from the cluster, or a fault occurs on the node that prevents the workload from starting. In rare cases this may indicate a new version of a cluster component cannot start due to a bug or configuration error. Assess the pods for this deployment to verify they are running on healthy nodes and then contact support.
+    # Test the 'KubeDeploymentReplicasMismatch' will not fire if all replicas are available
+  - interval: 5m
+    input_series:
+      - series: 'kube_node_role{container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", role="master", service="kube-state-metrics"}'
+        values: '1+0x10'
+      - series: 'kube_node_status_condition{condition="Ready", container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", service="kube-state-metrics", status="true"}'
+        values: '1+0x10'
+      - series: 'kube_deployment_spec_replicas{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '3+0x10'
+      - series: 'kube_deployment_status_replicas_available{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '3+0x10'
+      - series: 'kube_deployment_status_replicas_updated{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '0+0x10'
+    alert_rule_test:
+      - alertname: KubeDeploymentReplicasMismatch
+        eval_time: 30m
+    # Test the 'KubeDeploymentReplicasMismatch' will never fire if the control plane is not ready
+  - interval: 10m
+    input_series:
+      - series: 'kube_node_role{container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", role="master", service="kube-state-metrics"}'
+        values: '1+0x10'
+      - series: 'kube_node_status_condition{condition="Ready", container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", service="kube-state-metrics", status="true"}'
+        values: '0+0x10'
+      - series: 'kube_deployment_spec_replicas{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '3+0x10'
+      - series: 'kube_deployment_status_replicas_available{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '2+0x10'
+      - series: 'kube_deployment_status_replicas_updated{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '0+0x10'
+    alert_rule_test:
+      - alertname: KubeDeploymentReplicasMismatch
+        eval_time: 30m
+    # Test the 'KubeDeploymentReplicasMismatch' will not fire if there have been changes to the replication rollout
+  - interval: 5m
+    input_series:
+      - series: 'kube_node_role{container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", role="master", service="kube-state-metrics"}'
+        values: '1+0x10'
+      - series: 'kube_node_status_condition{condition="Ready", container="kube-rbac-proxy-main", endpoint="https-main", job="kube-state-metrics", namespace="openshift-monitoring", node="ip-10-0-169-51.us-east-2.compute.internal", service="kube-state-metrics", status="true"}'
+        values: '1+0x10'
+      - series: 'kube_deployment_spec_replicas{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '3+0x10'
+      - series: 'kube_deployment_status_replicas_available{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '2+0x10'
+      - series: 'kube_deployment_status_replicas_updated{container="kube-rbac-proxy-main", deployment="apiserver", endpoint="https-main", job="kube-state-metrics", namespace="openshift-apiserver", service="kube-state-metrics"}'
+        values: '1 2 3 4 5 6 7 8 9 1'
+    alert_rule_test:
+      - alertname: KubeDeploymentReplicasMismatch
+        eval_time: 30m
