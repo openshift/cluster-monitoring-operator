@@ -1,7 +1,7 @@
 local tlsVolumeName = 'prometheus-operator-tls';
 local certsCAVolumeName = 'operator-certs-ca-bundle';
 
-local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
+local operator = import 'github.com/PhilipGough/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 
 function(params)
   local cfg = params;

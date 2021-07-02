@@ -8,16 +8,16 @@
           "subdir": "contrib/mixin"
         }
       },
-      "version": "master"
+      "version": "main"
     },
     {
       "source": {
         "git": {
-          "remote": "https://github.com/prometheus-operator/kube-prometheus",
+          "remote": "https://github.com/PhilipGough/kube-prometheus",
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "release-0.8"
+      "version": "bz-1978208"
     },
     {
       "source": {

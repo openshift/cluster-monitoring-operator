@@ -26,8 +26,8 @@ local telemeterClient = import './telemeter-client.libsonnet';
 
 /*
 TODO(paulfantom):
-- thanos sidecar inclusion - needs https://github.com/prometheus-operator/kube-prometheus/pull/909
-- grafana config - needs https://github.com/prometheus-operator/kube-prometheus/pull/907
+- thanos sidecar inclusion - needs https://github.com/PhilipGough/kube-prometheus/pull/909
+- grafana config - needs https://github.com/PhilipGough/kube-prometheus/pull/907
 */
 
 // Common configuration
@@ -337,7 +337,7 @@ local inCluster =
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
   (import './anti-affinity.libsonnet') +
-  (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
+  (import 'github.com/PhilipGough/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
   ibmCloudManagedProfile +
   {};
 

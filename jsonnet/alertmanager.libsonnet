@@ -1,6 +1,6 @@
-local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/alertmanager.libsonnet';
+local alertmanager = import 'github.com/PhilipGough/kube-prometheus/jsonnet/kube-prometheus/components/alertmanager.libsonnet';
 // TODO: replace current addition of kube-rbac-proxy with upstream lib
-// local krp = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
+// local krp = import 'github.com/PhilipGough/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
 
 function(params)
   local cfg = params;

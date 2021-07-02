@@ -1,6 +1,6 @@
 local metrics = import 'telemeter-client/metrics.jsonnet';
 
-local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
+local prometheus = import 'github.com/PhilipGough/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 
 function(params)
   local cfg = params;

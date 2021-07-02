@@ -11,7 +11,7 @@ local servingCertsCABundleDirectory = 'ssl/certs';
 local servingCertsCABundleFileName = 'service-ca.crt';
 local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory;
 
-local prometheusAdapter = (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet');
+local prometheusAdapter = (import 'github.com/PhilipGough/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet');
 
 function(params)
   local cfg = params;
@@ -212,7 +212,7 @@ function(params)
         ],
       },
     },
-    // TODO: remove podDisruptionBudget once https://github.com/prometheus-operator/kube-prometheus/pull/1156 is merged
+    // TODO: remove podDisruptionBudget once https://github.com/PhilipGough/kube-prometheus/pull/1156 is merged
     podDisruptionBudget+: {
       apiVersion: 'policy/v1',
     },
