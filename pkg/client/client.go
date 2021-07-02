@@ -689,9 +689,16 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 			if err != nil {
 				return errors.Wrap(err, "deleting Deployment object failed")
 			}
-			err = c.CreateDeployment(required)
-			if err != nil {
-				return errors.Wrap(err, "creating Deployment object failed after update failed")
+			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err = c.CreateDeployment(required)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+
+			if retryErr != nil {
+				return errors.Wrap(retryErr, "creating Deployment object failed after update failed")
 			}
 		}
 		return errors.Wrap(err, "updating Deployment object failed")
@@ -709,15 +716,12 @@ func (c *Client) CreateDeployment(dep *appsv1.Deployment) error {
 }
 
 func (c *Client) UpdateDeployment(dep *appsv1.Deployment) error {
-	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		updated, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Update(context.TODO(), dep, metav1.UpdateOptions{})
-		if err != nil {
-			return err
-		}
-		return c.WaitForDeploymentRollout(updated)
-	})
+	updated, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Update(context.TODO(), dep, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
 
-	return retryErr
+	return c.WaitForDeploymentRollout(updated)
 }
 
 func (c *Client) WaitForDeploymentRollout(dep *appsv1.Deployment) error {
