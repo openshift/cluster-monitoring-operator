@@ -36,6 +36,7 @@ function(params) {
                     * on(namespace,workload,workload_type) group_left()
                     (
                       count without(pod) (namespace_workload_pod:kube_pod_owner:relabel{%(namespaceSelector)s}) > 1
+                      <= on() group_left count(kube_node_role{role="worker"})
                     )
                   )
                 )
