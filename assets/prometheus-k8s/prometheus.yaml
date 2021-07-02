@@ -202,6 +202,7 @@ spec:
   - prometheus-k8s-htpasswd
   - prometheus-k8s-thanos-sidecar-tls
   - kube-rbac-proxy
+  - metrics-client-certs
   securityContext:
     fsGroup: 65534
     runAsNonRoot: true

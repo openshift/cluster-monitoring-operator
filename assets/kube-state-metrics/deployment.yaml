@@ -65,6 +65,7 @@ spec:
         - --upstream=http://127.0.0.1:8081/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
+        - --client-ca-file=/etc/tls/client/client-ca.crt
         image: quay.io/brancz/kube-rbac-proxy:v0.9.0
         name: kube-rbac-proxy-main
         ports:
@@ -80,6 +81,9 @@ spec:
         - mountPath: /etc/tls/private
           name: kube-state-metrics-tls
           readOnly: false
+        - mountPath: /etc/tls/client
+          name: metrics-client-ca
+          readOnly: false
       - args:
         - --logtostderr
         - --secure-listen-address=:9443
@@ -87,6 +91,7 @@ spec:
         - --upstream=http://127.0.0.1:8082/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
+        - --client-ca-file=/etc/tls/client/client-ca.crt
         image: quay.io/brancz/kube-rbac-proxy:v0.9.0
         name: kube-rbac-proxy-self
         ports:
@@ -102,6 +107,9 @@ spec:
         - mountPath: /etc/tls/private
           name: kube-state-metrics-tls
           readOnly: false
+        - mountPath: /etc/tls/client
+          name: metrics-client-ca
+          readOnly: false
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -113,3 +121,6 @@ spec:
       - name: kube-state-metrics-tls
         secret:
           secretName: kube-state-metrics-tls
+      - name: metrics-client-ca
+        secret:
+          secretName: metrics-client-ca

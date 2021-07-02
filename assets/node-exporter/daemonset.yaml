@@ -62,6 +62,7 @@ spec:
         - --upstream=http://127.0.0.1:9100/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
+        - --client-ca-file=/etc/tls/client/client-ca.crt
         env:
         - name: IP
           valueFrom:
@@ -85,6 +86,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/tls/private
           name: node-exporter-tls
+          readOnly: false
+        - mountPath: /etc/tls/client
+          name: metrics-client-ca
           readOnly: false
       hostNetwork: true
       hostPID: true
@@ -138,6 +142,9 @@ spec:
           path: /var/log/wtmp
           type: File
         name: node-exporter-wtmp
+      - name: metrics-client-ca
+        secret:
+          secretName: metrics-client-ca
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 10%

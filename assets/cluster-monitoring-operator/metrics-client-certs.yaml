@@ -1,0 +1,7 @@
+apiVersion: v1
+data: {}
+kind: Secret
+metadata:
+  name: metrics-client-certs
+  namespace: openshift-monitoring
+type: Opaque
