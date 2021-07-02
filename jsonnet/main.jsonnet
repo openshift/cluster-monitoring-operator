@@ -48,6 +48,7 @@ local commonConfig = {
       },
     ],
   },
+  mixinNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
   prometheusName: 'k8s',
   ruleLabels: {
     role: 'alert-rules',
@@ -96,6 +97,7 @@ local inCluster =
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
             diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
+            namespaceSelector: $.values.common.mixinNamespaceSelector,
           },
         },
       },
@@ -320,7 +322,7 @@ local inCluster =
             diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
             hostNetworkInterfaceSelector: 'device!~"veth.+"',
             kubeSchedulerSelector: 'job="scheduler"',
-            namespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+            namespaceSelector: $.values.common.mixinNamespaceSelector,
             cpuThrottlingSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
             kubeletPodLimit: 250,
           },
