@@ -234,3 +234,46 @@ func TestHttpProxyConfig(t *testing.T) {
 		}
 	}
 }
+
+func TestGrafanaDefaultsToEnabled(t *testing.T) {
+	for _, tt := range []struct {
+		name          string
+		config        string
+		expectEnabled bool
+	}{
+		{
+			name:          "empty config",
+			config:        "",
+			expectEnabled: true,
+		},
+		{
+			name:          "empty grafana config",
+			config:        `{"grafana":{}}`,
+			expectEnabled: true,
+		},
+		{
+			name:          "grafana explicitly enabled",
+			config:        `{"grafana":{"enabled": true}}`,
+			expectEnabled: true,
+		},
+		{
+			name:          "grafana disabled",
+			config:        `{"grafana":{"enabled": false}}`,
+			expectEnabled: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tt.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			enabled := c.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled()
+
+			if enabled != tt.expectEnabled {
+				t.Fatalf("GrafanaConfig.IsEnabled() returned %t, expected %t",
+					enabled, tt.expectEnabled)
+			}
+		})
+	}
+}

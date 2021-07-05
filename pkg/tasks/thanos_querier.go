@@ -72,30 +72,35 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "creating Thanos Querier OAuth Cookie Secret failed")
 	}
 
-	gs, err := t.factory.GrafanaDatasources()
-	if err != nil {
-		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
-	}
+	// If Grafana is enabled, create the basic auth secret.
+	if t.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
+		gs, err := t.factory.GrafanaDatasources()
+		if err != nil {
+			return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
+		}
 
-	gs, err = t.client.WaitForSecret(gs)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
-	}
+		gs, err = t.client.WaitForSecret(gs)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
+		}
 
-	d := &manifests.GrafanaDatasources{}
-	err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling grafana datasource failed")
-	}
+		d := &manifests.GrafanaDatasources{}
+		err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
+		if err != nil {
+			return errors.Wrap(err, "unmarshalling grafana datasource failed")
+		}
 
-	hs, err := t.factory.ThanosQuerierHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Querier htpasswd Secret failed")
-	}
+		basicAuthPassword := d.Datasources[0].BasicAuthPassword
 
-	err = t.client.CreateIfNotExistSecret(hs)
-	if err != nil {
-		return errors.Wrap(err, "creating Thanos Querier htpasswd Secret failed")
+		htpasswdSecret, err := t.factory.ThanosQuerierHtpasswdSecret(basicAuthPassword)
+		if err != nil {
+			return errors.Wrap(err, "initializing Thanos Querier htpasswd Secret failed")
+		}
+
+		err = t.client.CreateOrUpdateSecret(htpasswdSecret)
+		if err != nil {
+			return errors.Wrap(err, "creating Thanos Querier htpasswd Secret failed")
+		}
 	}
 
 	rs, err := t.factory.ThanosQuerierRBACProxySecret()
@@ -203,7 +208,11 @@ func (t *ThanosQuerierTask) Run() error {
 			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
 		}
 
-		dep, err := t.factory.ThanosQuerierDeployment(s, *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled, trustedCA)
+		dep, err := t.factory.ThanosQuerierDeployment(
+			s,
+			*t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled,
+			trustedCA,
+		)
 		if err != nil {
 			return errors.Wrap(err, "initializing Thanos Querier Deployment failed")
 		}

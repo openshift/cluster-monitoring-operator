@@ -94,7 +94,6 @@ spec:
         - -http-address=
         - -email-domain=*
         - -upstream=http://localhost:9090
-        - -htpasswd-file=/etc/proxy/htpasswd/auth
         - -openshift-service-account=thanos-querier
         - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
         - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
@@ -126,8 +125,6 @@ spec:
           name: secret-thanos-querier-tls
         - mountPath: /etc/proxy/secrets
           name: secret-thanos-querier-oauth-cookie
-        - mountPath: /etc/proxy/htpasswd
-          name: secret-thanos-querier-oauth-htpasswd
       - args:
         - --secure-listen-address=0.0.0.0:9092
         - --upstream=http://127.0.0.1:9095
@@ -199,9 +196,6 @@ spec:
       - name: secret-thanos-querier-oauth-cookie
         secret:
           secretName: thanos-querier-oauth-cookie
-      - name: secret-thanos-querier-oauth-htpasswd
-        secret:
-          secretName: thanos-querier-oauth-htpasswd
       - name: secret-thanos-querier-kube-rbac-proxy
         secret:
           secretName: thanos-querier-kube-rbac-proxy

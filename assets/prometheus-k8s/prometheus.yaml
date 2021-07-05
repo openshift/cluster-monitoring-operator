@@ -45,7 +45,6 @@ spec:
     - -http-address=
     - -email-domain=*
     - -upstream=http://localhost:9090
-    - -htpasswd-file=/etc/proxy/htpasswd/auth
     - -openshift-service-account=prometheus-k8s
     - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
     - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
@@ -77,8 +76,6 @@ spec:
       name: secret-prometheus-k8s-tls
     - mountPath: /etc/proxy/secrets
       name: secret-prometheus-k8s-proxy
-    - mountPath: /etc/proxy/htpasswd
-      name: secret-prometheus-k8s-htpasswd
   - args:
     - --secure-listen-address=0.0.0.0:9092
     - --upstream=http://127.0.0.1:9095
@@ -199,7 +196,6 @@ spec:
   - kube-etcd-client-certs
   - prometheus-k8s-tls
   - prometheus-k8s-proxy
-  - prometheus-k8s-htpasswd
   - prometheus-k8s-thanos-sidecar-tls
   - kube-rbac-proxy
   securityContext:

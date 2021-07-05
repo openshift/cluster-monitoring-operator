@@ -272,6 +272,13 @@ function(params)
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and
     // authZ it requires some additonal configuration.
+    //
+    // Note that Grafana is enabled by default, but may be explicitly disabled
+    // by the user.  We need to inject an htpasswd file for the oauth-proxy when
+    // it is enabled, so by default the operator also adds a few things at
+    // runtime: a volume and volume-mount for the secret, and an argument to the
+    // proxy container pointing to the mounted htpasswd file.  If Grafana is
+    // disabled, these things are not injected.
     prometheus+: {
       spec+: {
         alerting+: {
@@ -301,10 +308,11 @@ function(params)
           runAsUser: 65534,
         },
         secrets+: [
+          // NOTE: The following is injected at runtime if Grafana is enabled:
+          // 'prometheus-k8s-htpasswd'
           'kube-etcd-client-certs',  //TODO(paulfantom): move it to etcd addon
           'prometheus-k8s-tls',
           'prometheus-k8s-proxy',
-          'prometheus-k8s-htpasswd',
           'prometheus-k8s-thanos-sidecar-tls',
           'kube-rbac-proxy',
         ],
@@ -348,12 +356,13 @@ function(params)
               },
             ],
             args: [
+              // NOTE: The following is injected at runtime if Grafana is enabled:
+              // '-htpasswd-file=/etc/proxy/htpasswd/auth'
               '-provider=openshift',
               '-https-address=:9091',
               '-http-address=',
               '-email-domain=*',
               '-upstream=http://localhost:9090',
-              '-htpasswd-file=/etc/proxy/htpasswd/auth',
               '-openshift-service-account=prometheus-k8s',
               '-openshift-sar={"resource": "namespaces", "verb": "get"}',
               '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
@@ -366,6 +375,11 @@ function(params)
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
+              // NOTE: The following is injected at runtime if Grafana is enabled:
+              // {
+              //   mountPath: '/etc/proxy/htpasswd',
+              //   name: 'secret-prometheus-k8s-htpasswd',
+              // },
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-prometheus-k8s-tls',
@@ -373,10 +387,6 @@ function(params)
               {
                 mountPath: '/etc/proxy/secrets',
                 name: 'secret-prometheus-k8s-proxy',
-              },
-              {
-                mountPath: '/etc/proxy/htpasswd',
-                name: 'secret-prometheus-k8s-htpasswd',
               },
             ],
           },

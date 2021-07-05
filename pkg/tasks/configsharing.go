@@ -15,6 +15,8 @@
 package tasks
 
 import (
+	"net/url"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -23,12 +25,14 @@ import (
 type ConfigSharingTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.Config
 }
 
-func NewConfigSharingTask(client *client.Client, factory *manifests.Factory) *ConfigSharingTask {
+func NewConfigSharingTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *ConfigSharingTask {
 	return &ConfigSharingTask{
 		client:  client,
 		factory: factory,
+		config:  config,
 	}
 }
 
@@ -53,14 +57,18 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "failed to retrieve Alertmanager host")
 	}
 
-	grafanaRoute, err := t.factory.GrafanaRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing Grafana Route failed")
-	}
+	var grafanaURL *url.URL
 
-	grafanaURL, err := t.client.GetRouteURL(grafanaRoute)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve Grafana host")
+	if t.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
+		grafanaRoute, err := t.factory.GrafanaRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Grafana Route failed")
+		}
+
+		grafanaURL, err = t.client.GetRouteURL(grafanaRoute)
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve Grafana host")
+		}
 	}
 
 	thanosRoute, err := t.factory.ThanosQuerierRoute()

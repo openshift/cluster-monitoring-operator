@@ -18,21 +18,32 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
 )
 
 type GrafanaTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.Config
 }
 
-func NewGrafanaTask(client *client.Client, factory *manifests.Factory) *GrafanaTask {
+func NewGrafanaTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *GrafanaTask {
 	return &GrafanaTask{
 		client:  client,
 		factory: factory,
+		config:  config,
 	}
 }
 
 func (t *GrafanaTask) Run() error {
+	if t.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
+		return t.create()
+	}
+
+	return t.destroy()
+}
+
+func (t *GrafanaTask) create() error {
 	cr, err := t.factory.GrafanaClusterRole()
 	if err != nil {
 		return errors.Wrap(err, "initializing Grafana ClusterRole failed")
@@ -172,4 +183,9 @@ func (t *GrafanaTask) Run() error {
 
 	err = t.client.CreateOrUpdateServiceMonitor(sm)
 	return errors.Wrap(err, "reconciling Grafana ServiceMonitor failed")
+}
+
+func (t *GrafanaTask) destroy() error {
+	klog.V(2).Info("Grafana is disabled, but destroy not yet implemented.")
+	return nil
 }
