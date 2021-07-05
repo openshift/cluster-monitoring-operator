@@ -265,6 +265,12 @@ function(params)
         },
       },
 
+    // Note that Grafana is enabled by default, but may be explicitly disabled
+    // by the user.  We need to inject an htpasswd file for the oauth-proxy when
+    // it is enabled, so by default the operator also adds a few things at
+    // runtime: a volume and volume-mount for the secret, and an argument to the
+    // proxy container pointing to the mounted htpasswd file.  If Grafana is
+    // disabled, these things are not injected.
     deployment+: {
       spec+: {
         strategy+: {
@@ -291,6 +297,13 @@ function(params)
               },
             },
             volumes+: [
+              // NOTE: If Grafana is enabled, the following is injected at runtime:
+              // {
+              //   name: 'secret-thanos-querier-oauth-htpasswd',
+              //   secret: {
+              //     secretName: 'thanos-querier-oauth-htpasswd',
+              //   },
+              // },
               {
                 name: 'secret-thanos-querier-tls',
                 secret: {
@@ -301,12 +314,6 @@ function(params)
                 name: 'secret-thanos-querier-oauth-cookie',
                 secret: {
                   secretName: 'thanos-querier-oauth-cookie',
-                },
-              },
-              {
-                name: 'secret-thanos-querier-oauth-htpasswd',
-                secret: {
-                  secretName: 'thanos-querier-oauth-htpasswd',
                 },
               },
               {
@@ -394,12 +401,13 @@ function(params)
                   { name: 'NO_PROXY', value: '' },
                 ],
                 args: [
+                  // NOTE: The following is injected at runtime if Grafana is enabled:
+                  // '-htpasswd-file=/etc/proxy/htpasswd/auth'
                   '-provider=openshift',
                   '-https-address=:9091',
                   '-http-address=',
                   '-email-domain=*',
                   '-upstream=http://localhost:9090',
-                  '-htpasswd-file=/etc/proxy/htpasswd/auth',
                   '-openshift-service-account=thanos-querier',
                   '-openshift-sar={"resource": "namespaces", "verb": "get"}',
                   '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
@@ -412,6 +420,11 @@ function(params)
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
+                  // NOTE: The following is injected at runtime if Grafana is enabled:
+                  // {
+                  //   mountPath: '/etc/proxy/htpasswd',
+                  //   name: 'secret-thanos-querier-oauth-htpasswd',
+                  // },
                   {
                     mountPath: '/etc/tls/private',
                     name: 'secret-thanos-querier-tls',
@@ -419,10 +432,6 @@ function(params)
                   {
                     mountPath: '/etc/proxy/secrets',
                     name: 'secret-thanos-querier-oauth-cookie',
-                  },
-                  {
-                    mountPath: '/etc/proxy/htpasswd',
-                    name: 'secret-thanos-querier-oauth-htpasswd',
                   },
                 ],
               },

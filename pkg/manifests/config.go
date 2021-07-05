@@ -151,8 +151,19 @@ type ThanosQuerierConfig struct {
 }
 
 type GrafanaConfig struct {
+	Enabled      *bool             `json:"enabled"`
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Tolerations  []v1.Toleration   `json:"tolerations"`
+}
+
+// IsEnabled returns the underlying value of the `Enabled` boolean pointer.  It
+// defaults to TRUE if the pointer is nil because Grafana should be enabled by
+// default.
+func (g *GrafanaConfig) IsEnabled() bool {
+	if g.Enabled == nil {
+		return true
+	}
+	return *g.Enabled
 }
 
 type KubeStateMetricsConfig struct {

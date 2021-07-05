@@ -26,6 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -98,6 +99,59 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	}
 
 	t.Log("asserting that CMO goes back healthy after the configuration is fixed")
+	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionFalse)
+	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionTrue)
+}
+
+func TestGrafanaConfiguration(t *testing.T) {
+	config := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-monitoring-config",
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": "grafana: { enabled: false }",
+		},
+	}
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(config); err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait for Grafana deployment to disappear.
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(context.TODO(), "grafana", metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.New("Grafana deployment still exists")
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("asserting that CMO is healthy after disabling Grafana")
+	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionFalse)
+	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionTrue)
+
+	// Push a default configuration that re-enables Grafana.
+	config.Data["config.yaml"] = "grafana: { enabled: true }"
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(config); err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait for Grafana deployment to appear.
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(context.TODO(), "grafana", metav1.GetOptions{})
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("asserting that CMO is healthy after re-enabling Grafana")
 	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionFalse)
 	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionTrue)
 }

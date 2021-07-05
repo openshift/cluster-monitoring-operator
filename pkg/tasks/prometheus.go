@@ -28,12 +28,14 @@ import (
 type PrometheusTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.Config
 }
 
-func NewPrometheusTask(client *client.Client, factory *manifests.Factory) *PrometheusTask {
+func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *PrometheusTask {
 	return &PrometheusTask{
 		client:  client,
 		factory: factory,
+		config:  config,
 	}
 }
 
@@ -88,30 +90,35 @@ func (t *PrometheusTask) Run() error {
 		return errors.Wrap(err, "creating Prometheus proxy Secret failed")
 	}
 
-	gs, err := t.factory.GrafanaDatasources()
-	if err != nil {
-		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
-	}
+	// If Grafana is enabled, create the basic auth secret.
+	if t.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
+		gs, err := t.factory.GrafanaDatasources()
+		if err != nil {
+			return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
+		}
 
-	gs, err = t.client.WaitForSecret(gs)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
-	}
+		gs, err = t.client.WaitForSecret(gs)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
+		}
 
-	d := &manifests.GrafanaDatasources{}
-	err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling grafana datasource failed")
-	}
+		d := &manifests.GrafanaDatasources{}
+		err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
+		if err != nil {
+			return errors.Wrap(err, "unmarshalling grafana datasource failed")
+		}
 
-	hs, err := t.factory.PrometheusK8sHtpasswdSecret(d.Datasources[0].BasicAuthPassword)
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus htpasswd Secret failed")
-	}
+		basicAuthPassword := d.Datasources[0].BasicAuthPassword
 
-	err = t.client.CreateIfNotExistSecret(hs)
-	if err != nil {
-		return errors.Wrap(err, "creating Prometheus htpasswd Secret failed")
+		htpasswdSecret, err := t.factory.PrometheusK8sHtpasswdSecret(basicAuthPassword)
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus htpasswd Secret failed")
+		}
+
+		err = t.client.CreateOrUpdateSecret(htpasswdSecret)
+		if err != nil {
+			return errors.Wrap(err, "creating Prometheus htpasswd Secret failed")
+		}
 	}
 
 	rs, err := t.factory.PrometheusRBACProxySecret()

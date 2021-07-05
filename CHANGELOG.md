@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.9
+
+- [#1241](https://github.com/openshift/cluster-monitoring-operator/pull/1241) Add config option to disable Grafana deployment.
+
 ## 4.8
 
 - [#1087](https://github.com/openshift/cluster-monitoring-operator/pull/1087) Decrease alert severity to "warning" for ThanosQueryHttpRequestQueryErrorRateHigh and ThanosQueryHttpRequestQueryRangeErrorRateHigh alerts.
