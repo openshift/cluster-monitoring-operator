@@ -2027,7 +2027,7 @@ data:
                                 "step": 2
                             },
                             {
-                                "expr": "sum(rate(grpc_server_handled_total{job=\"$cluster\",grpc_type=\"unary\",grpc_code!=\"OK\"}[5m]))",
+                                "expr": "sum(rate(grpc_server_handled_total{job=\"$cluster\",grpc_type=\"unary\",grpc_code=~\"Unknown|FailedPrecondition|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded\"}[5m]))",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "RPC Failed Rate",
@@ -3054,7 +3054,7 @@ data:
 
                     ],
                     "query": "label_values(etcd_server_has_leader, job)",
-                    "refresh": 1,
+                    "refresh": 2,
                     "regex": "",
                     "sort": 2,
                     "tagValuesQuery": "",
@@ -8616,7 +8616,7 @@ data:
                                 "decimals": 2,
                                 "link": true,
                                 "linkTargetBlank": false,
-                                "linkTooltip": "Drill down to containers",
+                                "linkTooltip": "Drill down to pods",
                                 "linkUrl": "./d/6581e46e4e5c7ba40a07646395ef7b23/k8s-resources-pod?var-datasource=$datasource&var-cluster=$cluster&var-namespace=$namespace&var-pod=$__cell",
                                 "pattern": "pod",
                                 "thresholds": [
@@ -11670,7 +11670,7 @@ data:
                                 "expr": "ceil(sum by(container) (rate(container_fs_reads_total{container!=\"\", cluster=\"$cluster\",namespace=~\"$namespace\", pod=\"$pod\"}[5m]) + rate(container_fs_writes_total{container!=\"\", cluster=\"$cluster\",namespace=~\"$namespace\", pod=\"$pod\"}[5m])))",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "{{pod}}",
+                                "legendFormat": "{{container}}",
                                 "legendLink": null,
                                 "step": 10
                             }
@@ -11756,7 +11756,7 @@ data:
                                 "expr": "sum by(container) (rate(container_fs_reads_bytes_total{container!=\"\", cluster=\"$cluster\",namespace=~\"$namespace\", pod=\"$pod\"}[5m]) + rate(container_fs_writes_bytes_total{container!=\"\", cluster=\"$cluster\",namespace=~\"$namespace\", pod=\"$pod\"}[5m]))",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "{{pod}}",
+                                "legendFormat": "{{container}}",
                                 "legendLink": null,
                                 "step": 10
                             }
@@ -11975,18 +11975,18 @@ data:
                                 "unit": "Bps"
                             },
                             {
-                                "alias": "Pod",
+                                "alias": "Container",
                                 "colorMode": null,
                                 "colors": [
 
                                 ],
                                 "dateFormat": "YYYY-MM-DD HH:mm:ss",
                                 "decimals": 2,
-                                "link": true,
+                                "link": false,
                                 "linkTargetBlank": false,
-                                "linkTooltip": "Drill down to pods",
-                                "linkUrl": "./d/6581e46e4e5c7ba40a07646395ef7b23/k8s-resources-pod?var-datasource=$datasource&var-cluster=$cluster&var-namespace=$namespace&var-pod=$__cell",
-                                "pattern": "pod",
+                                "linkTooltip": "Drill down",
+                                "linkUrl": "",
+                                "pattern": "container",
                                 "thresholds": [
 
                                 ],
