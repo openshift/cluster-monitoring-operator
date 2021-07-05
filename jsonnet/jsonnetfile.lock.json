@@ -14,22 +14,12 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/coreos/etcd.git",
-          "subdir": "contrib/mixin"
-        }
-      },
-      "version": "0a02a107eabb97e3a5ebbace155bd6b2ffba247a",
-      "sum": "EgKKzxcW3ttt7gjPMX//DNTqNcn/0o2VAIaWJ/HSLEc="
-    },
-    {
-      "source": {
-        "git": {
           "remote": "https://github.com/etcd-io/etcd.git",
           "subdir": "contrib/mixin"
         }
       },
-      "version": "d06d93d5b14b7f3aafd96da5703d55f15638c16f",
-      "sum": "EgKKzxcW3ttt7gjPMX//DNTqNcn/0o2VAIaWJ/HSLEc="
+      "version": "14c527f59ab7a6d3c97e07a6f0950f3eb53e4c1e",
+      "sum": "RqOj1ITnyH6jm/6qBtEE+Ob5KTk/nKX1zlhj/SWqARE="
     },
     {
       "source": {
@@ -69,8 +59,8 @@
           "subdir": ""
         }
       },
-      "version": "c67c0f19e869f1da34d79b6507c1fa37c23a6e4e",
-      "sum": "F+RxcI26zeoeI81uot39Jv6IpQ6BOz+xlSHlElJYsz8="
+      "version": "e15ab56a4eea721d1e958888fd13c4b95af4d17d",
+      "sum": "voj/Pfit89sI+xBCyFV8oEV4UgnsaJZ2VrOU7s9jZe8="
     },
     {
       "source": {
@@ -79,7 +69,7 @@
           "subdir": "lib/promgrafonnet"
         }
       },
-      "version": "39a9cda705b5201c35105bd1f24c83923fa839ef",
+      "version": "dbfcd76158c3458855d2c3fead974b19c6c5faf4",
       "sum": "zv7hXGui6BfHzE9wPatHI/AGZa4A2WKo6pq7ZdqBsps="
     },
     {
@@ -131,8 +121,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "2c34d3dff64b7c9a4c158149d6554b0ad9a0e144",
-      "sum": "mG7Jfa33upviONZuXZsQqW3iegVP5CF+U3KFH/HqKUw="
+      "version": "f5096d0fc48ca9afc2b71e4ed07692671802e794",
+      "sum": "haQGmPchNt745Kv/yoZS8/3SJH/8SSz8ORYQI9i7AbY="
     },
     {
       "source": {
