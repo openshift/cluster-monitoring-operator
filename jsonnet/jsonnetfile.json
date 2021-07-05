@@ -4,11 +4,11 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/coreos/etcd",
+          "remote": "https://github.com/etcd-io/etcd",
           "subdir": "contrib/mixin"
         }
       },
-      "version": "master"
+      "version": "main"
     },
     {
       "source": {
