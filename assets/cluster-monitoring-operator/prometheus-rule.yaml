@@ -283,8 +283,9 @@ spec:
       annotations:
         message: Cluster Monitoring Operator is experiencing unexpected reconciliation
           errors. Inspect the cluster-monitoring-operator log for potential root causes.
-      expr: max(max_over_time(cluster_monitoring_operator_last_reconciliation_successful[1h]))
+      expr: max_over_time(cluster_monitoring_operator_last_reconciliation_successful[5m])
         == 0
+      for: 1h
       labels:
         severity: warning
     - alert: AlertmanagerReceiversNotConfigured
