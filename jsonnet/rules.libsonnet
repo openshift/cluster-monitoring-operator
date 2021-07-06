@@ -383,15 +383,15 @@ function(params) {
         {
           expr: |||
             (((
-              kube_deployment_spec_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+              kube_deployment_spec_replicas{%(namespaceSelector)s,job="kube-state-metrics"}
                 >
-              kube_deployment_status_replicas_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+              kube_deployment_status_replicas_available{%(namespaceSelector)s,job="kube-state-metrics"}
             ) and (
-              changes(kube_deployment_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
+              changes(kube_deployment_status_replicas_updated{%(namespaceSelector)s,job="kube-state-metrics"}[5m])
                 ==
               0
             )) * on() group_left cluster:control_plane:all_nodes_ready) > 0
-          |||,
+          ||| % cfg,
           alert: 'KubeDeploymentReplicasMismatch',
           'for': '15m',
           annotations: {
