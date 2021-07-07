@@ -360,8 +360,9 @@ function(params) {
           // Should be used to suppress alerts during control plane upgrades or disruption.
         },
         {
-          expr: 'max(max_over_time(cluster_monitoring_operator_last_reconciliation_successful[1h])) == 0',
+          expr: 'max_over_time(cluster_monitoring_operator_last_reconciliation_successful[5m]) == 0',
           alert: 'ClusterMonitoringOperatorReconciliationErrors',
+          'for': '1h',
           annotations: {
             message: 'Cluster Monitoring Operator is experiencing unexpected reconciliation errors. Inspect the cluster-monitoring-operator log for potential root causes.',
           },
