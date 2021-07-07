@@ -48,7 +48,7 @@ local commonConfig = {
       },
     ],
   },
-  mixinNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+  mixinNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default)"',
   prometheusName: 'k8s',
   ruleLabels: {
     role: 'alert-rules',
@@ -323,7 +323,7 @@ local inCluster =
             hostNetworkInterfaceSelector: 'device!~"veth.+"',
             kubeSchedulerSelector: 'job="scheduler"',
             namespaceSelector: $.values.common.mixinNamespaceSelector,
-            cpuThrottlingSelector: 'namespace=~"(openshift-.*|kube-.*|default|logging)"',
+            cpuThrottlingSelector: $.values.common.mixinNamespaceSelector,
             kubeletPodLimit: 250,
           },
         },

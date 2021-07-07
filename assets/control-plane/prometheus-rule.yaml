@@ -18,9 +18,9 @@ spec:
           }}) is restarting {{ printf "%.2f" $value }} times / 10 minutes.
         summary: Pod is crash looping.
       expr: |
-        increase(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[10m]) > 0
+        increase(kube_pod_container_status_restarts_total{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}[10m]) > 0
         and
-        sum without (phase) (kube_pod_status_phase{phase!="Running",namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} == 1)
+        sum without (phase) (kube_pod_status_phase{phase!="Running",namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} == 1)
       for: 15m
       labels:
         severity: warning
@@ -32,7 +32,7 @@ spec:
       expr: |
         sum by (namespace, pod) (
           max by(namespace, pod) (
-            kube_pod_status_phase{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", phase=~"Pending|Unknown"}
+            kube_pod_status_phase{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", phase=~"Pending|Unknown"}
           ) * on(namespace, pod) group_left(owner_kind) topk by(namespace, pod) (
             1, max by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"})
           )
@@ -47,9 +47,9 @@ spec:
           not been rolled back.
         summary: Deployment generation mismatch due to possible roll-back
       expr: |
-        kube_deployment_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        kube_deployment_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           !=
-        kube_deployment_metadata_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        kube_deployment_metadata_generation{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: warning
@@ -60,11 +60,11 @@ spec:
         summary: Deployment has not matched the expected number of replicas.
       expr: |
         (
-          kube_statefulset_status_replicas_ready{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          kube_statefulset_status_replicas_ready{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
             !=
-          kube_statefulset_status_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+          kube_statefulset_status_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
         ) and (
-          changes(kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[10m])
+          changes(kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}[10m])
             ==
           0
         )
@@ -78,9 +78,9 @@ spec:
           not been rolled back.
         summary: StatefulSet generation mismatch due to possible roll-back
       expr: |
-        kube_statefulset_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        kube_statefulset_status_observed_generation{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           !=
-        kube_statefulset_metadata_generation{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        kube_statefulset_metadata_generation{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: warning
@@ -92,18 +92,18 @@ spec:
       expr: |
         (
           max without (revision) (
-            kube_statefulset_status_current_revision{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_statefulset_status_current_revision{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
               unless
-            kube_statefulset_status_update_revision{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_statefulset_status_update_revision{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           )
             *
           (
-            kube_statefulset_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_statefulset_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
               !=
-            kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           )
         )  and (
-          changes(kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
+          changes(kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}[5m])
             ==
           0
         )
@@ -118,24 +118,24 @@ spec:
       expr: |
         (
           (
-            kube_daemonset_status_current_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_daemonset_status_current_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
              !=
-            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           ) or (
-            kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
              !=
             0
           ) or (
-            kube_daemonset_updated_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_daemonset_updated_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
              !=
-            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           ) or (
-            kube_daemonset_status_number_available{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_daemonset_status_number_available{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
              !=
-            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+            kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           )
         ) and (
-          changes(kube_daemonset_updated_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[5m])
+          changes(kube_daemonset_updated_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}[5m])
             ==
           0
         )
@@ -148,7 +148,7 @@ spec:
           has been in waiting state for longer than 1 hour.
         summary: Pod container waiting longer than 1 hour
       expr: |
-        sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}) > 0
+        sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}) > 0
       for: 1h
       labels:
         severity: warning
@@ -158,9 +158,9 @@ spec:
           }} are not scheduled.'
         summary: DaemonSet pods are not scheduled.
       expr: |
-        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           -
-        kube_daemonset_status_current_number_scheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
+        kube_daemonset_status_current_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} > 0
       for: 10m
       labels:
         severity: warning
@@ -170,7 +170,7 @@ spec:
           }} are running where they are not supposed to run.'
         summary: DaemonSet pods are misscheduled.
       expr: |
-        kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
+        kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} > 0
       for: 15m
       labels:
         severity: warning
@@ -180,7 +180,7 @@ spec:
           more than 12 hours to complete.
         summary: Job did not complete in time
       expr: |
-        kube_job_spec_completions{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
+        kube_job_spec_completions{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}  > 0
       for: 12h
       labels:
         severity: warning
@@ -190,7 +190,7 @@ spec:
           complete. Removing failed job after investigation should clear this alert.
         summary: Job failed to complete.
       expr: |
-        kube_job_failed{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}  > 0
+        kube_job_failed{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}  > 0
       for: 15m
       labels:
         severity: warning
@@ -200,19 +200,19 @@ spec:
           the desired number of replicas for longer than 15 minutes.
         summary: HPA has not matched descired number of replicas.
       expr: |
-        (kube_horizontalpodautoscaler_status_desired_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        (kube_horizontalpodautoscaler_status_desired_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           !=
-        kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})
+        kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"})
           and
-        (kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        (kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           >
-        kube_horizontalpodautoscaler_spec_min_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})
+        kube_horizontalpodautoscaler_spec_min_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"})
           and
-        (kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        (kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           <
-        kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"})
+        kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"})
           and
-        changes(kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}[15m]) == 0
+        changes(kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}[15m]) == 0
       for: 15m
       labels:
         severity: warning
@@ -222,9 +222,9 @@ spec:
           at max replicas for longer than 15 minutes.
         summary: HPA is running at max replicas
       expr: |
-        kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           ==
-        kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"}
+        kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
       for: 15m
       labels:
         severity: warning
@@ -265,7 +265,7 @@ spec:
         description: Cluster has overcommitted CPU resource requests for Namespaces.
         summary: Cluster has overcommitted CPU resource requests.
       expr: |
-        sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard", resource="cpu"})
+        sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard", resource="cpu"})
           /
         sum(kube_node_status_allocatable{resource="cpu"})
           > 1.5
@@ -277,7 +277,7 @@ spec:
         description: Cluster has overcommitted memory resource requests for Namespaces.
         summary: Cluster has overcommitted memory resource requests.
       expr: |
-        sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard", resource="memory"})
+        sum(kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard", resource="memory"})
           /
         sum(kube_node_status_allocatable{resource="memory",job="kube-state-metrics"})
           > 1.5
@@ -290,9 +290,9 @@ spec:
           }} of its {{ $labels.resource }} quota.
         summary: Namespace quota is going to be full.
       expr: |
-        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
+        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
-        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard"} > 0)
+        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"} > 0)
           > 0.9 < 1
       for: 15m
       labels:
@@ -303,9 +303,9 @@ spec:
           }} of its {{ $labels.resource }} quota.
         summary: Namespace quota is fully used.
       expr: |
-        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
+        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
-        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard"} > 0)
+        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"} > 0)
           == 1
       for: 15m
       labels:
@@ -316,9 +316,9 @@ spec:
           }} of its {{ $labels.resource }} quota.
         summary: Namespace quota has exceeded the limits.
       expr: |
-        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="used"}
+        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
-        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics", type="hard"} > 0)
+        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"} > 0)
           > 1
       for: 15m
       labels:
@@ -332,9 +332,9 @@ spec:
           }} free.
         summary: PersistentVolume is filling up.
       expr: |
-        kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+        kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
           /
-        kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+        kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
           < 0.03
       for: 1m
       labels:
@@ -348,12 +348,12 @@ spec:
         summary: PersistentVolume is filling up.
       expr: |
         (
-          kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+          kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
             /
-          kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}
+          kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
         ) < 0.15
         and
-        predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default|logging)",job="kubelet", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+        predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
       for: 1h
       labels:
         severity: warning
@@ -363,7 +363,7 @@ spec:
           {{ $labels.phase }}.
         summary: PersistentVolume is having issues with provisioning.
       expr: |
-        kube_persistentvolume_status_phase{phase=~"Failed|Pending",namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
+        kube_persistentvolume_status_phase{phase=~"Failed|Pending",namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} > 0
       for: 5m
       labels:
         severity: critical
