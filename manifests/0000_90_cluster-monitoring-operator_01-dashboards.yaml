@@ -2027,7 +2027,7 @@ data:
                                 "step": 2
                             },
                             {
-                                "expr": "sum(rate(grpc_server_handled_total{job=\"$cluster\",grpc_type=\"unary\",grpc_code!=\"OK\"}[5m]))",
+                                "expr": "sum(rate(grpc_server_handled_total{job=\"$cluster\",grpc_type=\"unary\",grpc_code=~\"Unknown|FailedPrecondition|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded\"}[5m]))",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "RPC Failed Rate",
@@ -5249,7 +5249,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -5335,7 +5335,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -5433,7 +5433,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -5519,7 +5519,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -7961,7 +7961,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -8047,7 +8047,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -8145,7 +8145,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -8231,7 +8231,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -11125,7 +11125,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -11212,7 +11212,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -11311,7 +11311,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -11398,7 +11398,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -13773,7 +13773,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -13859,7 +13859,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -13957,7 +13957,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -14043,7 +14043,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -15941,7 +15941,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -16027,7 +16027,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -16125,7 +16125,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
@@ -16211,7 +16211,7 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "Bps",
+                                "format": "pps",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,

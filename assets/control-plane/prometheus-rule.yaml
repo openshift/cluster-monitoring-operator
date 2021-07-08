@@ -196,8 +196,8 @@ spec:
         severity: warning
     - alert: KubeHpaReplicasMismatch
       annotations:
-        description: HPA {{ $labels.namespace }}/{{ $labels.hpa }} has not matched
-          the desired number of replicas for longer than 15 minutes.
+        description: HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler  }}
+          has not matched the desired number of replicas for longer than 15 minutes.
         summary: HPA has not matched descired number of replicas.
       expr: |
         (kube_horizontalpodautoscaler_status_desired_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
@@ -218,8 +218,8 @@ spec:
         severity: warning
     - alert: KubeHpaMaxedOut
       annotations:
-        description: HPA {{ $labels.namespace }}/{{ $labels.hpa }} has been running
-          at max replicas for longer than 15 minutes.
+        description: HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler  }}
+          has been running at max replicas for longer than 15 minutes.
         summary: HPA is running at max replicas
       expr: |
         kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
@@ -332,10 +332,13 @@ spec:
           }} free.
         summary: PersistentVolume is filling up.
       expr: |
-        kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
-          /
-        kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
-          < 0.03
+        (
+          kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
+            /
+          kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
+        ) < 0.03
+        and
+        kubelet_volume_stats_used_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"} > 0
       for: 1m
       labels:
         severity: critical
@@ -352,6 +355,8 @@ spec:
             /
           kubelet_volume_stats_capacity_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
         ) < 0.15
+        and
+        kubelet_volume_stats_used_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"} > 0
         and
         predict_linear(kubelet_volume_stats_available_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
       for: 1h
