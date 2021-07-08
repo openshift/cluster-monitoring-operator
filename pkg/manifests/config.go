@@ -38,6 +38,19 @@ type Config struct {
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
 }
 
+func (c Config) IsStorageConfigured() bool {
+	if c.ClusterMonitoringConfiguration == nil {
+		return false
+	}
+
+	prometheusK8sConfig := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
+	if prometheusK8sConfig == nil {
+		return false
+	}
+
+	return prometheusK8sConfig.VolumeClaimTemplate != nil
+}
+
 type ClusterMonitoringConfiguration struct {
 	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
 	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`

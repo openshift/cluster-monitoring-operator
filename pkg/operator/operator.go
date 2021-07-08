@@ -481,9 +481,14 @@ func (o *Operator) sync(key string) error {
 		return err
 	}
 
+	var degradedConditionMessage, degradedConditionReason string
+	if !config.IsStorageConfigured() {
+		degradedConditionMessage = client.StorageNotConfiguredMessage
+		degradedConditionReason = client.StorageNotConfiguredReason
+	}
 	klog.Info("Updating ClusterOperator status to done.")
 	o.failedReconcileAttempts = 0
-	err = o.client.StatusReporter().SetDone()
+	err = o.client.StatusReporter().SetDone(degradedConditionMessage, degradedConditionReason)
 	if err != nil {
 		klog.Errorf("error occurred while setting status to done: %v", err)
 	}

@@ -113,7 +113,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 				w(mock)
 			}
 
-			got := sr.SetDone()
+			got := sr.SetDone("", "")
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
