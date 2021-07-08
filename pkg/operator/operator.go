@@ -145,6 +145,8 @@ type Operator struct {
 	reconcileAttempts prometheus.Counter
 	reconcileStatus   prometheus.Gauge
 
+	failedReconcileAttempts int
+
 	assets *manifests.Assets
 }
 
@@ -170,7 +172,7 @@ func New(
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
-		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-monitoring"),
+		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(50*time.Millisecond, 3*time.Minute), "cluster-monitoring"),
 		informers:                 make([]cache.SharedIndexInformer, 0),
 		assets:                    a,
 	}
@@ -422,11 +424,7 @@ func (o *Operator) enqueue(obj interface{}) {
 func (o *Operator) sync(key string) error {
 	config, err := o.Config(key)
 	if err != nil {
-		klog.Infof("Updating ClusterOperator status to failed: %v", err)
-		reportErr := o.client.StatusReporter().SetFailed(err, "InvalidConfiguration")
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
-		}
+		o.reportError(err, "InvalidConfiguration")
 		return err
 	}
 	config.SetImages(o.images)
@@ -443,24 +441,29 @@ func (o *Operator) sync(key string) error {
 
 	tl := tasks.NewTaskRunner(
 		o.client,
-		[]*tasks.TaskSpec{
-			tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-			tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTaks(o.namespace, o.client, factory)),
-			tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
-			tasks.NewTaskSpec("Updating Control Plane components", tasks.NewControlPlaneTask(o.client, factory, config)),
-		},
+		// update prometheus-operator before anything else because it is responsible for managing many other resources (e.g. Prometheus, Alertmanager, Thanos Ruler, ...).
+		tasks.NewTaskGroup(
+			[]*tasks.TaskSpec{
+				tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
+			}),
+		tasks.NewTaskGroup(
+			[]*tasks.TaskSpec{
+				tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
+				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTaks(o.namespace, o.client, factory)),
+				tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Control Plane components", tasks.NewControlPlaneTask(o.client, factory, config)),
+			}),
 	)
 
 	klog.Info("Updating ClusterOperator status to in progress.")
@@ -471,22 +474,32 @@ func (o *Operator) sync(key string) error {
 
 	taskName, err := tl.RunAll()
 	if err != nil {
-		klog.Infof("Updating ClusterOperator status to failed. Err: %v", err)
-		failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
-		reportErr := o.client.StatusReporter().SetFailed(err, failedTaskReason)
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
-		}
+		o.reportError(err, taskName)
 		return err
 	}
 
 	klog.Info("Updating ClusterOperator status to done.")
+	o.failedReconcileAttempts = 0
 	err = o.client.StatusReporter().SetDone()
 	if err != nil {
 		klog.Errorf("error occurred while setting status to done: %v", err)
 	}
 
 	return nil
+}
+
+func (o *Operator) reportError(err error, taskName string) {
+	klog.Infof("ClusterOperator reconciliation failed (attempt %d), retrying. Err: %v", o.failedReconcileAttempts+1, err)
+	if o.failedReconcileAttempts == 2 {
+		// Only update the ClusterOperator status after 3 retries have been attempted to avoid flapping status.
+		klog.Infof("Updating ClusterOperator status to failed after %d attempts. Err: %v", o.failedReconcileAttempts+1, err)
+		failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
+		reportErr := o.client.StatusReporter().SetFailed(err, failedTaskReason)
+		if reportErr != nil {
+			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
+		}
+	}
+	o.failedReconcileAttempts++
 }
 
 func (o *Operator) loadInfrastructureConfig() *InfrastructureConfig {
