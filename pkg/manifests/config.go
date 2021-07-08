@@ -51,6 +51,26 @@ func (c Config) IsStorageConfigured() bool {
 	return prometheusK8sConfig.VolumeClaimTemplate != nil
 }
 
+// GetPrometheusUWAdditionalAlertmanagerConfigs returns the alertmanager configurations for
+// the User Workload Monitoring Prometheus instance.
+// If no additional configurations are specified, GetPrometheusUWAdditionalAlertmanagerConfigs returns an empty array.
+func (c Config) GetPrometheusUWAdditionalAlertmanagerConfigs() []AdditionalAlertmanagerConfig {
+	if c.UserWorkloadConfiguration == nil {
+		return []AdditionalAlertmanagerConfig{}
+	}
+
+	if c.UserWorkloadConfiguration.Prometheus == nil {
+		return []AdditionalAlertmanagerConfig{}
+	}
+
+	alertmanagerConfigs := c.UserWorkloadConfiguration.Prometheus.AlertmanagerConfigs
+	if alertmanagerConfigs == nil {
+		return []AdditionalAlertmanagerConfig{}
+	}
+
+	return alertmanagerConfigs
+}
+
 type ClusterMonitoringConfiguration struct {
 	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
 	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`
@@ -417,6 +437,7 @@ type PrometheusRestrictedConfig struct {
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
 	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
 	EnforcedTargetLimit *uint64                              `json:"enforcedTargetLimit"`
+	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertManagerConfigs"`
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {

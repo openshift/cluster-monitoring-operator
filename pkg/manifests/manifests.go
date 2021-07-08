@@ -251,8 +251,9 @@ var (
 
 	TrustedCABundleKey = "ca-bundle.crt"
 
-	AdditionalAlertmanagerConfigSecretKey  = "alertmanager-configs.yaml"
-	AdditionalAlertmanagerConfigSecretName = "prometheus-k8s-additional-alertmanager-configs"
+	AdditionalAlertmanagerConfigSecretKey               = "alertmanager-configs.yaml"
+	PrometheusK8sAdditionalAlertmanagerConfigSecretName = "prometheus-k8s-additional-alertmanager-configs"
+	PrometheusUWAdditionalAlertmanagerConfigSecretName  = "prometheus-user-workload-additional-alertmanager-configs"
 )
 
 type Factory struct {
@@ -1436,7 +1437,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		p.Spec.AdditionalAlertManagerConfigs = &v1.SecretKeySelector{
 			Key: AdditionalAlertmanagerConfigSecretKey,
 			LocalObjectReference: v1.LocalObjectReference{
-				Name: AdditionalAlertmanagerConfigSecretName,
+				Name: PrometheusK8sAdditionalAlertmanagerConfigSecretName,
 			},
 		}
 		p.Spec.Secrets = append(p.Spec.Secrets, getAdditionalAlertmanagerSecrets(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs)...)
@@ -1445,8 +1446,27 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	return p, nil
 }
 
-func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
-	alertmanagerConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
+func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
+	return f.AdditionalAlertManagerConfigsSecret(
+		PrometheusK8sAdditionalAlertmanagerConfigSecretName,
+		f.namespace,
+		f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs,
+	)
+}
+
+func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
+	return f.AdditionalAlertManagerConfigsSecret(
+		PrometheusUWAdditionalAlertmanagerConfigSecretName,
+		f.namespaceUserWorkload,
+		f.config.GetPrometheusUWAdditionalAlertmanagerConfigs(),
+	)
+}
+
+func (f *Factory) AdditionalAlertManagerConfigsSecret(
+	secretName string,
+	secretNamespace string,
+	alertmanagerConfigs []AdditionalAlertmanagerConfig,
+) (*v1.Secret, error) {
 	if len(alertmanagerConfigs) == 0 {
 		return nil, nil
 	}
@@ -1565,8 +1585,8 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 
 	additionalPromToAmConfigSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      AdditionalAlertmanagerConfigSecretName,
-			Namespace: f.namespace,
+			Name:      secretName,
+			Namespace: secretNamespace,
 		},
 		Data: map[string][]byte{
 			AdditionalAlertmanagerConfigSecretKey: amConfigYaml,
@@ -1647,6 +1667,17 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 			},
 		},
 	})
+
+	alertManagerConfigs := f.config.GetPrometheusUWAdditionalAlertmanagerConfigs()
+	if alertManagerConfigs != nil {
+		p.Spec.AdditionalAlertManagerConfigs = &v1.SecretKeySelector{
+			Key: AdditionalAlertmanagerConfigSecretKey,
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: PrometheusUWAdditionalAlertmanagerConfigSecretName,
+			},
+		}
+		p.Spec.Secrets = append(p.Spec.Secrets, getAdditionalAlertmanagerSecrets(alertManagerConfigs)...)
+	}
 
 	return p, nil
 }
@@ -3835,7 +3866,6 @@ func trustedCABundleVolume(configMapName, volumeName string) v1.Volume {
 }
 
 func getAdditionalAlertmanagerSecrets(alertmanagerConfigs []AdditionalAlertmanagerConfig) []string {
-
 	secretsName := []string{}
 	for _, alertmanagerConfig := range alertmanagerConfigs {
 		if alertmanagerConfig.TLSConfig.CA != nil {
@@ -3871,8 +3901,4 @@ func removeEmptyDuplicates(elements []string) []string {
 	}
 	// Return the new slice.
 	return result
-}
-
-func (f *Factory) GetAdditionalAlertmanagerConfigSecretName() string {
-	return AdditionalAlertmanagerConfigSecretName
 }

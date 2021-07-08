@@ -1165,7 +1165,8 @@ func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		t.Fatalf("Prometheus secrets are not generated correctly, expected to have %s but got none", exp)
 	}
 
-	s, err := f.AdditionalAlertManagerConfigsSecret()
+	alertManagerConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
+	s, err := f.AdditionalAlertManagerConfigsSecret("secret-name", "secret-namespace", alertManagerConfigs)
 	if err != nil {
 		t.Fatal(err)
 	}
