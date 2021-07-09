@@ -197,6 +197,22 @@ function(params) {
     }],
   },
 
+  // This role enables access to the Alertmanager APIs and UIs through OAuth proxy.
+  monitoringAlertmanagerEditRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'monitoring-alertmanager-edit',
+      namespace: cfg.namespace,
+    },
+    rules: [{
+      apiGroups: ['monitoring.coreos.com'],
+      resources: ['alertmanagers'],
+      verbs: ['patch'],
+      resourceNames: ['non-existant'],
+    }],
+  },
+
   monitoringEditClusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',

@@ -116,6 +116,25 @@ function(params)
         },
       ],
     },
+    alertmanagerRoleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'RoleBinding',
+      metadata: {
+        name: 'alertmanager-prometheus' + cfg.name,
+        labels: cfg.commonLabels,
+        namespace: 'openshift-monitoring',
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'Role',
+        name: 'monitoring-alertmanager-edit',
+      },
+      subjects: [{
+        kind: 'ServiceAccount',
+        name: 'prometheus-' + cfg.name,
+        namespace: cfg.namespace,
+      }],
+    },
 
     // This changes the Prometheuses to be scraped with TLS, authN and
     // authZ, which are not present in kube-prometheus.
