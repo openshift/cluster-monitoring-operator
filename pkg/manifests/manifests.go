@@ -15,7 +15,7 @@
 package manifests
 
 import (
-
+	"crypto/md5"
 	// #nosec
 	"crypto/sha1"
 	"encoding/base64"
@@ -51,6 +51,13 @@ const (
 
 	htpasswdArg = "-htpasswd-file=/etc/proxy/htpasswd/auth"
 	clientCAArg = "--client-ca-file=/etc/tls/client/client-ca.crt"
+)
+
+type alertmanagerHttpConfigFormat string
+
+const (
+	alertmanagerHttpConfigFormatThanos     alertmanagerHttpConfigFormat = "thanos"
+	alertmanagerHttpConfigFormatPrometheus alertmanagerHttpConfigFormat = "prometheus"
 )
 
 var (
@@ -1052,8 +1059,20 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	s.Namespace = f.namespaceUserWorkload
+
+	amConfigs := f.config.GetThanosRulerAlertmanagerConfigs()
+	if amConfigs == nil {
+		return s, nil
+	}
+
+	additionalConfig, err := f.additionalAlertManagerConfigs(amConfigs, alertmanagerHttpConfigFormatThanos)
+	if err != nil {
+		return nil, err
+	}
+
+	s.StringData["alertmanagers.yaml"] += "\n" + string(additionalConfig)
+
 	return s, nil
 }
 
@@ -1284,14 +1303,14 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 			},
 			WriteRelabelConfigs: []monv1.RelabelConfig{
 				*selectorRelabelConfig,
-				monv1.RelabelConfig{
+				{
 					TargetLabel: "_id",
 					Replacement: f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
 				},
 				// relabeling the `ALERTS` series to `alerts` allows us to make
 				// a distinction between the series produced in-cluster and out
 				// of cluster.
-				monv1.RelabelConfig{
+				{
 					SourceLabels: []string{"__name__"},
 					TargetLabel:  "__name__",
 					Regex:        "ALERTS",
@@ -1447,26 +1466,198 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 }
 
 func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
-	return f.AdditionalAlertManagerConfigsSecret(
-		PrometheusK8sAdditionalAlertmanagerConfigSecretName,
-		f.namespace,
-		f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs,
-	)
+	amConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
+
+	config, err := f.additionalAlertManagerConfigs(amConfigs, alertmanagerHttpConfigFormatPrometheus)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      PrometheusK8sAdditionalAlertmanagerConfigSecretName,
+			Namespace: f.namespace,
+		},
+		Data: map[string][]byte{
+			AdditionalAlertmanagerConfigSecretKey: config,
+		},
+	}, nil
 }
 
 func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
-	return f.AdditionalAlertManagerConfigsSecret(
-		PrometheusUWAdditionalAlertmanagerConfigSecretName,
-		f.namespaceUserWorkload,
-		f.config.GetPrometheusUWAdditionalAlertmanagerConfigs(),
-	)
+	amConfigs := f.config.GetPrometheusUWAdditionalAlertmanagerConfigs()
+	config, err := f.additionalAlertManagerConfigs(amConfigs, alertmanagerHttpConfigFormatPrometheus)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      PrometheusUWAdditionalAlertmanagerConfigSecretName,
+			Namespace: f.namespaceUserWorkload,
+		},
+		Data: map[string][]byte{
+			AdditionalAlertmanagerConfigSecretKey: config,
+		},
+	}, nil
 }
 
-func (f *Factory) AdditionalAlertManagerConfigsSecret(
-	secretName string,
-	secretNamespace string,
+func (f *Factory) prometheusAlertmanagerConfigHttpSection(alertmanagerConfig AdditionalAlertmanagerConfig) ([]yaml2.MapItem, error) {
+	cfg := yaml2.MapSlice{}
+	auth := yaml2.MapSlice{}
+	if alertmanagerConfig.BearerToken != nil {
+		if alertmanagerConfig.BearerToken.Name == "" {
+			return nil, errors.Errorf("secret %q for bearer token not found", alertmanagerConfig.BearerToken.Name)
+		}
+		if alertmanagerConfig.BearerToken.Key == "" {
+			return nil, errors.Errorf("secret key %q for bearer token not found", alertmanagerConfig.BearerToken.Key)
+		}
+		auth = append(auth, yaml2.MapItem{
+			Key: "credentials_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+				alertmanagerConfig.BearerToken.Name, alertmanagerConfig.BearerToken.Key),
+		})
+	}
+	if len(auth) != 0 {
+		cfg = append(cfg, yaml2.MapItem{
+			Key:   "authorization",
+			Value: auth,
+		})
+	}
+	tlsConfig := yaml2.MapSlice{}
+	if alertmanagerConfig.TLSConfig.CA != nil {
+		if alertmanagerConfig.TLSConfig.CA.Name == "" {
+			return nil, errors.Errorf("secret %q for ca not found", alertmanagerConfig.TLSConfig.CA.Name)
+		}
+		if alertmanagerConfig.TLSConfig.CA.Key == "" {
+			return nil, errors.Errorf("secret key %q for ca not found", alertmanagerConfig.TLSConfig.CA.Key)
+		}
+		tlsConfig = append(tlsConfig, yaml2.MapItem{
+			Key: "ca_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+				alertmanagerConfig.TLSConfig.CA.Name, alertmanagerConfig.TLSConfig.CA.Key),
+		})
+	}
+	if alertmanagerConfig.TLSConfig.Cert != nil {
+		if alertmanagerConfig.TLSConfig.Cert.Name == "" {
+			return nil, errors.Errorf("secret %q for cert not found", alertmanagerConfig.TLSConfig.Cert.Name)
+		}
+		if alertmanagerConfig.TLSConfig.Cert.Key == "" {
+			return nil, errors.Errorf("secret key %q for cert not found", alertmanagerConfig.TLSConfig.Cert.Key)
+		}
+		tlsConfig = append(tlsConfig, yaml2.MapItem{
+			Key: "cert_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+				alertmanagerConfig.TLSConfig.Cert.Name, alertmanagerConfig.TLSConfig.Cert.Key),
+		})
+	}
+	if alertmanagerConfig.TLSConfig.Key != nil {
+		if alertmanagerConfig.TLSConfig.Key.Name == "" {
+			return nil, errors.Errorf("secret %q for cert key not found", alertmanagerConfig.TLSConfig.Key.Name)
+		}
+		if alertmanagerConfig.TLSConfig.Key.Key == "" {
+			return nil, errors.Errorf("secret key %q for cert key not found", alertmanagerConfig.TLSConfig.Key.Key)
+		}
+		tlsConfig = append(tlsConfig, yaml2.MapItem{
+			Key: "key_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+				alertmanagerConfig.TLSConfig.Key.Name, alertmanagerConfig.TLSConfig.Key.Key),
+		})
+	}
+	if alertmanagerConfig.TLSConfig.ServerName != "" {
+		tlsConfig = append(tlsConfig, yaml2.MapItem{
+			Key: "server_name", Value: alertmanagerConfig.TLSConfig.ServerName,
+		})
+	}
+	tlsConfig = append(tlsConfig, yaml2.MapSlice{
+		{Key: "insecure_skip_verify", Value: alertmanagerConfig.TLSConfig.InsecureSkipVerify},
+	}...)
+
+	cfg = append(cfg, yaml2.MapItem{
+		Key:   "tls_config",
+		Value: tlsConfig,
+	})
+
+	return cfg, nil
+}
+
+func (f *Factory) thanosAlertmanagerConfigHttpSection(alertmanagerConfig AdditionalAlertmanagerConfig) ([]yaml2.MapItem, error) {
+	httpConfig := yaml2.MapSlice{}
+	if alertmanagerConfig.BearerToken != nil {
+		if alertmanagerConfig.BearerToken.Name == "" {
+			return nil, errors.Errorf("secret %q for bearer token not found", alertmanagerConfig.BearerToken.Name)
+		}
+		if alertmanagerConfig.BearerToken.Key == "" {
+			return nil, errors.Errorf("secret key %q for bearer token not found", alertmanagerConfig.BearerToken.Key)
+		}
+
+		value := fmt.Sprintf("/etc/prometheus/secrets/%s/%s", alertmanagerConfig.BearerToken.Name, alertmanagerConfig.BearerToken.Key)
+		httpConfig = append(httpConfig, yaml2.MapItem{
+			Key:   "bearer_token_file",
+			Value: value,
+		})
+	}
+
+	tlsConfig := yaml2.MapSlice{}
+	if alertmanagerConfig.TLSConfig.CA != nil {
+		if alertmanagerConfig.TLSConfig.CA.Name == "" {
+			return nil, errors.Errorf("secret %q for ca not found", alertmanagerConfig.TLSConfig.CA.Name)
+		}
+		if alertmanagerConfig.TLSConfig.CA.Key == "" {
+			return nil, errors.Errorf("secret key %q for ca not found", alertmanagerConfig.TLSConfig.CA.Key)
+		}
+		tlsConfig = append(tlsConfig, yaml2.MapItem{
+			Key: "ca_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+				alertmanagerConfig.TLSConfig.CA.Name, alertmanagerConfig.TLSConfig.CA.Key),
+		})
+	}
+	if alertmanagerConfig.TLSConfig.Cert != nil {
+		if alertmanagerConfig.TLSConfig.Cert.Name == "" {
+			return nil, errors.Errorf("secret %q for cert not found", alertmanagerConfig.TLSConfig.Cert.Name)
+		}
+		if alertmanagerConfig.TLSConfig.Cert.Key == "" {
+			return nil, errors.Errorf("secret key %q for cert not found", alertmanagerConfig.TLSConfig.Cert.Key)
+		}
+		tlsConfig = append(tlsConfig, yaml2.MapItem{
+			Key: "cert_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+				alertmanagerConfig.TLSConfig.Cert.Name, alertmanagerConfig.TLSConfig.Cert.Key),
+		})
+	}
+	if alertmanagerConfig.TLSConfig.Key != nil {
+		if alertmanagerConfig.TLSConfig.Key.Name == "" {
+			return nil, errors.Errorf("secret %q for cert key not found", alertmanagerConfig.TLSConfig.Key.Name)
+		}
+		if alertmanagerConfig.TLSConfig.Key.Key == "" {
+			return nil, errors.Errorf("secret key %q for cert key not found", alertmanagerConfig.TLSConfig.Key.Key)
+		}
+		tlsConfig = append(tlsConfig, yaml2.MapItem{
+			Key: "key_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
+				alertmanagerConfig.TLSConfig.Key.Name, alertmanagerConfig.TLSConfig.Key.Key),
+		})
+	}
+	if alertmanagerConfig.TLSConfig.ServerName != "" {
+		tlsConfig = append(tlsConfig, yaml2.MapItem{
+			Key: "server_name", Value: alertmanagerConfig.TLSConfig.ServerName,
+		})
+	}
+	tlsConfig = append(tlsConfig, yaml2.MapItem{
+		Key:   "insecure_skip_verify",
+		Value: alertmanagerConfig.TLSConfig.InsecureSkipVerify,
+	})
+	httpConfig = append(httpConfig, yaml2.MapItem{
+		Key:   "tls_config",
+		Value: tlsConfig,
+	})
+
+	cfg := yaml2.MapSlice{}
+	cfg = append(cfg, yaml2.MapItem{
+		Key:   "http_config",
+		Value: httpConfig,
+	})
+
+	return cfg, nil
+}
+
+func (f *Factory) additionalAlertManagerConfigs(
 	alertmanagerConfigs []AdditionalAlertmanagerConfig,
-) (*v1.Secret, error) {
+	format alertmanagerHttpConfigFormat,
+) ([]byte, error) {
 	if len(alertmanagerConfigs) == 0 {
 		return nil, nil
 	}
@@ -1496,84 +1687,37 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret(
 			})
 		}
 
-		auth := yaml2.MapSlice{}
-		if alertmanagerConfig.BearerToken != nil {
-			if alertmanagerConfig.BearerToken.Name == "" {
-				return nil, errors.Errorf("secret %q for bearer token not found", alertmanagerConfig.BearerToken.Name)
+		if format == alertmanagerHttpConfigFormatThanos {
+			authSection, err := f.thanosAlertmanagerConfigHttpSection(alertmanagerConfig)
+			if err != nil {
+				return nil, err
 			}
-			if alertmanagerConfig.BearerToken.Key == "" {
-				return nil, errors.Errorf("secret key %q for bearer token not found", alertmanagerConfig.BearerToken.Key)
+			cfg = append(cfg, authSection...)
+		} else {
+			authSection, err := f.prometheusAlertmanagerConfigHttpSection(alertmanagerConfig)
+			if err != nil {
+				return nil, err
 			}
-			auth = append(auth, yaml2.MapItem{
-				Key: "credentials_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
-					alertmanagerConfig.BearerToken.Name, alertmanagerConfig.BearerToken.Key),
-			})
+			cfg = append(cfg, authSection...)
 		}
-		if len(auth) != 0 {
-			cfg = append(cfg, yaml2.MapItem{
-				Key:   "authorization",
-				Value: auth,
-			})
-		}
-		tlsConfig := yaml2.MapSlice{}
-		if alertmanagerConfig.TLSConfig.CA != nil {
-			if alertmanagerConfig.TLSConfig.CA.Name == "" {
-				return nil, errors.Errorf("secret %q for ca not found", alertmanagerConfig.TLSConfig.CA.Name)
-			}
-			if alertmanagerConfig.TLSConfig.CA.Key == "" {
-				return nil, errors.Errorf("secret key %q for ca not found", alertmanagerConfig.TLSConfig.CA.Key)
-			}
-			tlsConfig = append(tlsConfig, yaml2.MapItem{
-				Key: "ca_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
-					alertmanagerConfig.TLSConfig.CA.Name, alertmanagerConfig.TLSConfig.CA.Key),
-			})
-		}
-		if alertmanagerConfig.TLSConfig.Cert != nil {
-			if alertmanagerConfig.TLSConfig.Cert.Name == "" {
-				return nil, errors.Errorf("secret %q for cert not found", alertmanagerConfig.TLSConfig.Cert.Name)
-			}
-			if alertmanagerConfig.TLSConfig.Cert.Key == "" {
-				return nil, errors.Errorf("secret key %q for cert not found", alertmanagerConfig.TLSConfig.Cert.Key)
-			}
-			tlsConfig = append(tlsConfig, yaml2.MapItem{
-				Key: "cert_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
-					alertmanagerConfig.TLSConfig.Cert.Name, alertmanagerConfig.TLSConfig.Cert.Key),
-			})
-		}
-		if alertmanagerConfig.TLSConfig.Key != nil {
-			if alertmanagerConfig.TLSConfig.Key.Name == "" {
-				return nil, errors.Errorf("secret %q for cert key not found", alertmanagerConfig.TLSConfig.Key.Name)
-			}
-			if alertmanagerConfig.TLSConfig.Key.Key == "" {
-				return nil, errors.Errorf("secret key %q for cert key not found", alertmanagerConfig.TLSConfig.Key.Key)
-			}
-			tlsConfig = append(tlsConfig, yaml2.MapItem{
-				Key: "key_file", Value: fmt.Sprintf("/etc/prometheus/secrets/%s/%s",
-					alertmanagerConfig.TLSConfig.Key.Name, alertmanagerConfig.TLSConfig.Key.Key),
-			})
-		}
-		if alertmanagerConfig.TLSConfig.ServerName != "" {
-			tlsConfig = append(tlsConfig, yaml2.MapItem{
-				Key: "server_name", Value: alertmanagerConfig.TLSConfig.ServerName,
-			})
-		}
-		tlsConfig = append(tlsConfig, yaml2.MapSlice{
-			{Key: "insecure_skip_verify", Value: alertmanagerConfig.TLSConfig.InsecureSkipVerify},
-		}...)
-
-		cfg = append(cfg, yaml2.MapItem{
-			Key:   "tls_config",
-			Value: tlsConfig,
-		})
 
 		if len(alertmanagerConfig.StaticConfigs) > 0 {
-			sc := yaml2.MapSlice{
-				{Key: "targets", Value: alertmanagerConfig.StaticConfigs},
+			if format == alertmanagerHttpConfigFormatThanos {
+				sc := yaml2.MapItem{
+					Key:   "static_configs",
+					Value: alertmanagerConfig.StaticConfigs,
+				}
+				cfg = append(cfg, sc)
+			} else {
+				sc := yaml2.MapSlice{
+					{Key: "targets", Value: alertmanagerConfig.StaticConfigs},
+				}
+				cfg = append(cfg, yaml2.MapItem{
+					Key:   "static_configs",
+					Value: []yaml2.MapSlice{sc},
+				})
 			}
-			cfg = append(cfg, yaml2.MapItem{
-				Key:   "static_configs",
-				Value: []yaml2.MapSlice{sc},
-			})
+
 			cfgs = append(cfgs, cfg)
 		}
 	}
@@ -1583,17 +1727,7 @@ func (f *Factory) AdditionalAlertManagerConfigsSecret(
 		return nil, err
 	}
 
-	additionalPromToAmConfigSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: secretNamespace,
-		},
-		Data: map[string][]byte{
-			AdditionalAlertmanagerConfigSecretKey: amConfigYaml,
-		},
-	}
-
-	return additionalPromToAmConfigSecret, nil
+	return amConfigYaml, nil
 }
 
 func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
@@ -3427,7 +3561,12 @@ func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.ConfigMap, grpcTLS *v1.Secret) (*monv1.ThanosRuler, error) {
+func (f *Factory) ThanosRulerCustomResource(
+	queryURL string,
+	trustedCA *v1.ConfigMap,
+	grpcTLS *v1.Secret,
+	alertmanagerConfig *v1.Secret,
+) (*monv1.ThanosRuler, error) {
 	t, err := f.NewThanosRuler(f.assets.MustNewAssetReader(ThanosRulerCustomResource))
 	if err != nil {
 		return nil, err
@@ -3496,6 +3635,9 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 	}
 	t.Spec.Volumes = append(t.Spec.Volumes, secretVolume)
 
+	f.mountThanosRulerAlertmanagerSecrets(t, alertmanagerConfig)
+	f.injectThanosRulerAlertmanagerDigest(t, alertmanagerConfig)
+
 	if queryURL != "" {
 		t.Spec.AlertQueryURL = queryURL
 	}
@@ -3503,6 +3645,58 @@ func (f *Factory) ThanosRulerCustomResource(queryURL string, trustedCA *v1.Confi
 	t.Namespace = f.namespaceUserWorkload
 
 	return t, nil
+}
+
+func (f *Factory) mountThanosRulerAlertmanagerSecrets(t *monv1.ThanosRuler, alertmanagerConfig *v1.Secret) {
+	amAuthSecrets := getAdditionalAlertmanagerSecrets(f.config.GetThanosRulerAlertmanagerConfigs())
+	if len(amAuthSecrets) == 0 {
+		return
+	}
+
+	var volumeMounts []v1.VolumeMount
+	var volumes []v1.Volume
+	for i, secret := range amAuthSecrets {
+		volumeName := fmt.Sprintf("alertmanager-additional-config-secret-%d", i)
+		volumes = append(volumes, v1.Volume{
+			Name: volumeName,
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: secret,
+				},
+			},
+		})
+
+		volumeMounts = append(volumeMounts, v1.VolumeMount{
+			Name:      volumeName,
+			MountPath: "/etc/prometheus/secrets/" + secret,
+		})
+	}
+
+	t.Spec.Volumes = append(t.Spec.Volumes, volumes...)
+	for i, _ := range t.Spec.Containers {
+		containerName := t.Spec.Containers[i].Name
+		if containerName == "thanos-ruler" {
+			t.Spec.Containers[i].VolumeMounts = append(t.Spec.Containers[i].VolumeMounts, volumeMounts...)
+		}
+	}
+}
+
+func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, alertmanagerConfig *v1.Secret) {
+	digest := ""
+	if alertmanagerConfig == nil {
+		return
+	}
+	digestBytes := md5.Sum([]byte(alertmanagerConfig.StringData["alertmanagers.yaml"]))
+	digest = fmt.Sprintf("%x", digestBytes)
+	for i, _ := range t.Spec.Containers {
+		containerName := t.Spec.Containers[i].Name
+		if containerName == "thanos-ruler" {
+			t.Spec.Containers[i].Env = append(t.Spec.Containers[i].Env, v1.EnvVar{
+				Name:  "ALERTMANAGER_CONFIG_SECRET_VERSION",
+				Value: digest,
+			})
+		}
+	}
 }
 
 func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {

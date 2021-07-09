@@ -139,9 +139,9 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager config Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(acs)
+	err = t.client.CreateOrUpdateSecret(acs)
 	if err != nil {
-		return errors.Wrap(err, "creating Thanos Ruler alertmanager config Secret failed")
+		return errors.Wrap(err, "creating or updating Thanos Ruler alertmanager config Secret failed")
 	}
 
 	{
@@ -205,7 +205,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		}
 		queryURL, err := t.client.GetRouteURL(querierRoute)
 
-		tr, err := t.factory.ThanosRulerCustomResource(queryURL.String(), trustedCA, grpcSecret)
+		tr, err := t.factory.ThanosRulerCustomResource(queryURL.String(), trustedCA, grpcSecret, acs)
 		if err != nil {
 			return errors.Wrap(err, "initializing ThanosRuler object failed")
 		}
@@ -372,7 +372,12 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "error hashing UserWorkload Thanos Ruler GRPC TLS secret")
 	}
 
-	tr, err := t.factory.ThanosRulerCustomResource("", trustedCA, grpcSecret)
+	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager config Secret failed")
+	}
+
+	tr, err := t.factory.ThanosRulerCustomResource("", trustedCA, grpcSecret, acs)
 	if err != nil {
 		return errors.Wrap(err, "initializing ThanosRuler object failed")
 	}
@@ -395,11 +400,6 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 	err = t.client.DeleteSecret(qcs)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler query config Secret failed")
-	}
-
-	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager config Secret failed")
 	}
 
 	err = t.client.DeleteSecret(acs)

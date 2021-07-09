@@ -17,15 +17,16 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"io/ioutil"
-	"k8s.io/client-go/util/cert"
 	"net"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"k8s.io/client-go/util/cert"
 
 	"github.com/Jeffail/gabs"
 	"github.com/gogo/protobuf/proto"
@@ -137,8 +138,7 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 			Namespace: f.UserWorkloadMonitoringNs,
 		},
 		Data: map[string]string{
-			"config.yaml":
-			`prometheus:
+			"config.yaml": `prometheus:
   additionalAlertManagerConfigs:
   - scheme: https
     pathPrefix: /prefix
@@ -159,45 +159,18 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 		},
 	}
 
-	testCases := []struct {
-		name      string
-		scenarios []scenario
-	}{
-		{
-			name: "Test enabling and disabling additional alertmanager configs",
-			scenarios: []scenario{
-				{"enable user workload monitoring with 2 more alertmanagers, assert prometheus rollout", createUserWorkloadAssets(cm)},
-				{"assert 5 alertmanagers are discovered (3 built-in and 2 from the additional configs)", assertAlertmanagerInstancesDiscovered(5)},
-				{"disable additional alertmanagers", disableAdditionalAlertmanagerConfigs},
-				{"assert 3 alertmanagers are discovered", assertAlertmanagerInstancesDiscovered(3)},
-				{"assert additional-alertmanager-configs secret is deleted", assertSecretDoesNotExist(manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)},
-				{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
-			},
-		},
-		{
-			name: "Test cleanup of alertmanager config resources",
-			scenarios: []scenario{
-				{"enable user workload monitoring with 2 more alertmanagers, assert prometheus rollout", createUserWorkloadAssets(cm)},
-				{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
-			},
-		},
+	scenarios := []scenario{
+		{"enable user workload monitoring, assert rollout", createUserWorkloadAssets(cm)},
+		{"enable 2 more alertmanagers", updateConfigmap(uwmCM)},
+		{"assert 5 alertmanagers are discovered (3 built-in and 2 from the additional configs)", assertAlertmanagerInstancesDiscovered(5)},
+		{"disable additional alertmanagers", disableAdditionalAlertmanagerConfigs},
+		{"assert additional-alertmanager-configs secret is deleted", assertSecretDoesNotExist(manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)},
+		{"assert 3 alertmanagers are discovered", assertAlertmanagerInstancesDiscovered(3)},
+		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	}
 
-	for _, tt := range testCases {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
-				t.Fatal(err)
-			}
-
-			if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
-				t.Fatal(err)
-			}
-
-			for _, scenario := range tt.scenarios {
-				t.Run(scenario.name, scenario.assertion)
-			}
-		})
+	for _, scenario := range scenarios {
+		t.Run(scenario.name, scenario.assertion)
 	}
 }
 
@@ -220,7 +193,8 @@ func createSelfSignedCertificateSecret(secretName string) error {
 	}
 
 	secretsClient := f.KubeClient.CoreV1().Secrets(f.UserWorkloadMonitoringNs)
-	if err := secretsClient.Delete(context.Background(), "alertmanager-tls", metav1.DeleteOptions{}); err != nil {
+	err = secretsClient.Delete(context.Background(), "alertmanager-tls", metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 
@@ -346,7 +320,7 @@ func assertAlertmanagerInstancesDiscovered(expectedInstances int) func(_ *testin
 	return func(t *testing.T) {
 		query := `max by (job) (prometheus_notifications_alertmanagers_discovered{job="prometheus-user-workload"})`
 		f.ThanosQuerierClient.WaitForQueryReturn(
-			t, 10*time.Minute, query,
+			t, 15*time.Minute, query,
 			func(i int) error {
 				if i == expectedInstances {
 					return nil
@@ -532,6 +506,7 @@ func disableAdditionalAlertmanagerConfigs(t *testing.T) {
 			"config.yaml": `prometheus: {}`,
 		},
 	}
+
 	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
 		t.Fatal(err)
 	}
@@ -1112,7 +1087,7 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = framework.Poll(time.Second, 5*time.Minute, func() error {
+		err = framework.Poll(time.Second, 10*time.Minute, func() error {
 			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-operator", metav1.GetOptions{})
 			if err == nil {
 				return errors.New("prometheus-operator deployment not deleted")
@@ -1126,7 +1101,7 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = framework.Poll(time.Second, 5*time.Minute, func() error {
+		err = framework.Poll(time.Second, 10*time.Minute, func() error {
 			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload", metav1.GetOptions{})
 			if err == nil {
 				return errors.New("prometheus statefulset not deleted")
@@ -1140,7 +1115,7 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = framework.Poll(time.Second, 5*time.Minute, func() error {
+		err = framework.Poll(time.Second, 10*time.Minute, func() error {
 			_, err := f.KubeClient.CoreV1().Secrets(f.UserWorkloadMonitoringNs).Get(f.Ctx, manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, metav1.GetOptions{})
 			if err == nil {
 				return fmt.Errorf("secret %s/%s not deleted", manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)
@@ -1158,9 +1133,15 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 
 func assertSecretDoesNotExist(name string, namespace string) func(*testing.T) {
 	return func(t *testing.T) {
-		_, err := f.OperatorClient.GetSecret(namespace, name)
-		if !apierrors.IsNotFound(err) {
-			t.Fatalf("expected secret %s/%s to not exist", name, namespace)
+		if err := framework.Poll(5*time.Second, 10*time.Minute, func() error {
+			_, err := f.OperatorClient.GetSecret(namespace, name)
+			if err == nil || apierrors.IsNotFound(err) {
+				return nil
+			}
+
+			return err
+		}); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
@@ -1184,6 +1165,14 @@ func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 
 		if err != nil {
 			t.Fatalf("Timed out waiting for EnforcedTargetLimit configuration: %v", err)
+		}
+	}
+}
+
+func updateConfigmap(cm *v1.ConfigMap) func(t *testing.T) {
+	return func(t *testing.T) {
+		if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
