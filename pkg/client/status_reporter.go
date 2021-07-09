@@ -26,7 +26,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const unavailableMessage string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
+const (
+	unavailableMessage string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
+	asExpectedReason   string = "AsExpected"
+)
 
 type StatusReporter struct {
 	client                clientv1.ClusterOperatorInterface
@@ -78,7 +81,7 @@ func (r *StatusReporter) SetDone() error {
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", "RollOutDone", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", "", time)
 	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, "", "", time)
-	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", "", time)
+	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", asExpectedReason, time)
 	co.Status.Conditions = conditions.entries()
 
 	// If we have reached "level" for the operator, report that we are at the version
@@ -120,11 +123,7 @@ func (r *StatusReporter) SetInProgress() error {
 	reasonInProgress := "RollOutInProgress"
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", reasonInProgress, time)
-	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue,
-		"Rollout of the monitoring stack is in progress. Please wait until it finishes.",
-		reasonInProgress,
-		time,
-	)
+	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", asExpectedReason, time)
 	co.Status.Conditions = conditions.entries()
 	co.Status.RelatedObjects = r.relatedObjects()
 
@@ -154,7 +153,7 @@ func (r *StatusReporter) SetFailed(statusErr error, reason string) error {
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, unavailableMessage, reason, time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, unavailableMessage, reason, time)
 	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), reason, time)
-	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, unavailableMessage, reason, time)
+	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", asExpectedReason, time)
 	co.Status.Conditions = conditions.entries()
 
 	_, err = r.client.UpdateStatus(context.TODO(), co, metav1.UpdateOptions{})
