@@ -52,6 +52,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
@@ -738,9 +739,12 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 			if err != nil {
 				return errors.Wrap(err, "deleting Deployment object failed")
 			}
-			err = c.CreateDeployment(required)
-			if err != nil {
-				return errors.Wrap(err, "creating Deployment object failed after update failed")
+			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				return c.CreateDeployment(required)
+			})
+
+			if retryErr != nil {
+				return errors.Wrap(retryErr, "creating Deployment object failed after update failed")
 			}
 		}
 		return errors.Wrap(err, "updating Deployment object failed")
