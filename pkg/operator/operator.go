@@ -21,11 +21,9 @@ import (
 	"strings"
 	"time"
 
-	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/library-go/pkg/operator/csr"
-	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,6 +34,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+
+	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/library-go/pkg/operator/csr"
+	"github.com/openshift/library-go/pkg/operator/events"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -282,7 +284,10 @@ func New(
 		},
 		csr.CSROption{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "system:openshift:openshift-monitoring",
+				GenerateName: "system:openshift:openshift-monitoring-",
+				Labels: map[string]string{
+					"metrics.openshift.io/csr.subject": "prometheus",
+				},
 			},
 			Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
 			SignerName: certapiv1.KubeAPIServerClientSignerName,
