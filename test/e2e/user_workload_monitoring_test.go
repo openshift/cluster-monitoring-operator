@@ -60,6 +60,7 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheus:
+  enforcedTargetLimit: 10
   volumeClaimTemplate:
     spec:
       resources:
@@ -92,6 +93,7 @@ func TestUserWorkloadMonitoring(t *testing.T) {
 		{"assert tenancy model is enforced for rules", assertTenancyForRules},
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
 		{"assert grpc tls rotation", assertGRPCTLSRotation},
+		{"assert enforced target limit is configured", assertEnforcedTargetLimit(10)},
 		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
 		{"set VolumeClaimTemplate for prometheus CR, assert that it is created", assertVolumeClaimsConfigAndRollout(rolloutParams{
 			namespace:       f.UserWorkloadMonitoringNs,
@@ -980,6 +982,29 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(f.Ctx, "user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if prom.Spec.EnforcedTargetLimit == nil {
+				return errors.New("EnforcedTargetLimit not set")
+			} else if *prom.Spec.EnforcedTargetLimit != limit {
+				return fmt.Errorf("expected EnforcedTargetLimit to be %d, but got %d", limit, *prom.Spec.EnforcedTargetLimit)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for EnforcedTargetLimit configuration: %v", err)
 		}
 	}
 }
