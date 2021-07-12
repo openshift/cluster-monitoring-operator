@@ -403,6 +403,7 @@ type PrometheusRestrictedConfig struct {
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
 	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
+	EnforcedTargetLimit *uint64                              `json:"enforcedTargetLimit"`
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {
