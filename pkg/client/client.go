@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	"k8s.io/client-go/util/retry"
 	"net/url"
 	"reflect"
 	"strings"
@@ -53,6 +52,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
@@ -721,11 +721,7 @@ func (c *Client) CreateOrUpdateDeployment(dep *appsv1.Deployment) error {
 				return errors.Wrap(err, "deleting Deployment object failed")
 			}
 			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				err = c.CreateDeployment(required)
-				if err != nil {
-					return err
-				}
-				return nil
+				return c.CreateDeployment(required)
 			})
 
 			if retryErr != nil {
