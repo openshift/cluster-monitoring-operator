@@ -77,7 +77,7 @@ type Client struct {
 	ctx                   context.Context
 }
 
-func New(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, ctx context.Context) (*Client, error) {
+func New(ctx context.Context, cfg *rest.Config, version string, namespace, userWorkloadNamespace string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -1323,7 +1323,7 @@ func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, er
 }
 
 func (c *Client) StatusReporter() *StatusReporter {
-	return NewStatusReporter(c.oscclient.ConfigV1().ClusterOperators(), "monitoring", c.ctx, c.namespace, c.userWorkloadNamespace, c.version)
+	return NewStatusReporter(c.ctx, c.oscclient.ConfigV1().ClusterOperators(), "monitoring",  c.namespace, c.userWorkloadNamespace, c.version)
 }
 
 func (c *Client) DeleteRoleBinding(binding *rbacv1.RoleBinding) error {

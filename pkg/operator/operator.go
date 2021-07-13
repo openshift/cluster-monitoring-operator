@@ -124,6 +124,8 @@ const (
 )
 
 type Operator struct {
+	ctx context.Context
+
 	namespace, namespaceUserWorkload string
 
 	configMapName             string
@@ -148,25 +150,24 @@ type Operator struct {
 	failedReconcileAttempts int
 
 	assets *manifests.Assets
-
-	ctx context.Context
 }
 
 func New(
+	ctx context.Context,
 	config *rest.Config,
 	version, namespace, namespaceUserWorkload, configMapName, userWorkloadConfigMapName string,
 	remoteWrite bool,
 	images map[string]string,
 	telemetryMatches []string,
 	a *manifests.Assets,
-	ctx context.Context,
 ) (*Operator, error) {
-	c, err := client.New(config, version, namespace, namespaceUserWorkload, ctx)
+	c, err := client.New(ctx, config, version, namespace, namespaceUserWorkload)
 	if err != nil {
 		return nil, err
 	}
 
 	o := &Operator{
+		ctx:                       ctx,
 		images:                    images,
 		telemetryMatches:          telemetryMatches,
 		configMapName:             configMapName,

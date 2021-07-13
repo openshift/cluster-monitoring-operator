@@ -101,9 +101,9 @@ func TestStatusReporterSetDone(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
+				ctx,
 				mock,
 				tc.given.operatorName,
-				ctx,
 				tc.given.namespace,
 				tc.given.userWorkloadNamespace,
 				tc.given.version,
@@ -194,9 +194,9 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
+				ctx,
 				mock,
 				tc.given.operatorName,
-				ctx,
 				tc.given.namespace,
 				tc.given.userWorkloadNamespace,
 				tc.given.version,
@@ -292,9 +292,9 @@ func TestStatusReporterSetFailed(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
+				ctx,
 				mock,
 				tc.given.operatorName,
-				ctx,
 				tc.given.namespace,
 				tc.given.userWorkloadNamespace,
 				tc.given.version,

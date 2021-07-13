@@ -174,6 +174,7 @@ func Main() int {
 
 	userWorkloadConfigMapName := "user-workload-monitoring-config"
 	o, err := cmo.New(
+		ctx,
 		config,
 		*releaseVersion,
 		*namespace,
@@ -184,7 +185,6 @@ func Main() int {
 		images.asMap(),
 		telemetryConfig.Matches,
 		assets,
-		ctx,
 	)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)

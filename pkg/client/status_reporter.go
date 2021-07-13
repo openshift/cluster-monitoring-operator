@@ -40,11 +40,11 @@ type StatusReporter struct {
 	version               string
 }
 
-func NewStatusReporter(client clientv1.ClusterOperatorInterface, name string, ctx context.Context, namespace, userWorkloadNamespace, version string) *StatusReporter {
+func NewStatusReporter(ctx context.Context, client clientv1.ClusterOperatorInterface, name string, namespace, userWorkloadNamespace, version string) *StatusReporter {
 	return &StatusReporter{
+		ctx:                   ctx,
 		client:                client,
 		clusterOperatorName:   name,
-		ctx:                   ctx,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
 		version:               version,
