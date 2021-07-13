@@ -976,7 +976,18 @@ func (c *Client) WaitForDaemonSetRollout(ds *appsv1.DaemonSet) error {
 				d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled)
 			return false, nil
 		}
-		if d.Status.NumberUnavailable != 0 {
+
+		var nodeReadyCount int32
+		nodeList, err := c.kclient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+		for _, node := range nodeList.Items {
+			for _, condition := range node.Status.Conditions {
+				if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
+					nodeReadyCount++
+				}
+			}
+		}
+
+		if d.Status.NumberAvailable != nodeReadyCount {
 			lastErr = errors.Errorf("got %d unavailable nodes",
 				d.Status.NumberUnavailable)
 			return false, nil
