@@ -215,6 +215,11 @@ function(params) {
         resources: ['certificatesigningrequests/approval', 'certificatesigningrequests/status'],
         verbs: ['get', 'list', 'watch'],
       },
+      {
+        apiGroups: [''],
+        resources: ['events'],
+        verbs: ['create', 'patch', 'update'],
+      },
     ],
   },
 
