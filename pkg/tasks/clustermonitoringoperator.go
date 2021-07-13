@@ -135,14 +135,14 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "failed to load kube-system/extension-apiserver-authentication configmap")
 	}
 
-	s, err = t.factory.MetricsClientCASecret(apiAuthConfigmap)
+	cm, err := t.factory.MetricsClientCACM(apiAuthConfigmap)
 	if err != nil {
 		return errors.Wrap(err, "initializing Metrics Client CA failed")
 	}
 
-	err = t.client.CreateOrUpdateSecret(s)
+	err = t.client.CreateOrUpdateConfigMap(cm)
 	if err != nil {
-		return errors.Wrap(err, "reconciling PrometheusAdapter Secret failed")
+		return errors.Wrap(err, "reconciling Metrics Client CA ConfigMap failed")
 	}
 
 	return nil

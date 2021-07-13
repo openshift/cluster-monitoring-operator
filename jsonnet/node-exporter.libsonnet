@@ -197,8 +197,8 @@ function(params)
               },
               {
                 name: 'metrics-client-ca',
-                secret: {
-                  secretName: 'metrics-client-ca',
+                configMap: {
+                  name: 'metrics-client-ca',
                 },
               },
             ],
