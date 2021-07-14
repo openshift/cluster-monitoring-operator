@@ -25,7 +25,7 @@ get_version() {
   if [[ "$v" == "" ]]; then
      v="$(get_version_from_user "${component}")"
   fi
-  echo "$v" | sed 's/v//g'
+  echo "${v//v/}"
 }
 
 
