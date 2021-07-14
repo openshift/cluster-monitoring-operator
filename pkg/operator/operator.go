@@ -124,6 +124,8 @@ const (
 )
 
 type Operator struct {
+	ctx context.Context
+
 	namespace, namespaceUserWorkload string
 
 	configMapName             string
@@ -151,6 +153,7 @@ type Operator struct {
 }
 
 func New(
+	ctx context.Context,
 	config *rest.Config,
 	version, namespace, namespaceUserWorkload, configMapName, userWorkloadConfigMapName string,
 	remoteWrite bool,
@@ -158,12 +161,13 @@ func New(
 	telemetryMatches []string,
 	a *manifests.Assets,
 ) (*Operator, error) {
-	c, err := client.New(config, version, namespace, namespaceUserWorkload)
+	c, err := client.New(ctx, config, version, namespace, namespaceUserWorkload)
 	if err != nil {
 		return nil, err
 	}
 
 	o := &Operator{
+		ctx:                       ctx,
 		images:                    images,
 		telemetryMatches:          telemetryMatches,
 		configMapName:             configMapName,
@@ -234,7 +238,7 @@ func New(
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
-		o.client.InfrastructureListWatchForResource(context.TODO(), clusterResourceName),
+		o.client.InfrastructureListWatchForResource(o.ctx, clusterResourceName),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -457,7 +461,7 @@ func (o *Operator) sync(key string) error {
 				tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
 				tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
 				tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTaks(o.namespace, o.client, factory)),
+				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTask(o.ctx, o.namespace, o.client, factory)),
 				tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
@@ -465,7 +469,6 @@ func (o *Operator) sync(key string) error {
 				tasks.NewTaskSpec("Updating Control Plane components", tasks.NewControlPlaneTask(o.client, factory, config)),
 			}),
 	)
-
 	klog.Info("Updating ClusterOperator status to in progress.")
 	err = o.client.StatusReporter().SetInProgress()
 	if err != nil {
@@ -627,7 +630,7 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		}
 
 		err = c.LoadToken(func() (*v1.Secret, error) {
-			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(context.TODO(), "pull-secret", metav1.GetOptions{})
+			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(o.ctx, "pull-secret", metav1.GetOptions{})
 		})
 
 		if err != nil {

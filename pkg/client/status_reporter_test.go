@@ -32,6 +32,7 @@ import (
 )
 
 func TestStatusReporterSetDone(t *testing.T) {
+	ctx := context.Background()
 	for _, tc := range []struct {
 		name  string
 		given givenStatusReporter
@@ -100,6 +101,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
+				ctx,
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,
@@ -123,6 +125,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 }
 
 func TestStatusReporterSetInProgress(t *testing.T) {
+	ctx := context.Background()
 	for _, tc := range []struct {
 		name  string
 		given givenStatusReporter
@@ -191,6 +194,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
+				ctx,
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,
@@ -214,6 +218,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 }
 
 func TestStatusReporterSetFailed(t *testing.T) {
+	ctx := context.Background()
 	failedErr := errors.New("foo")
 
 	for _, tc := range []struct {
@@ -287,6 +292,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
+				ctx,
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,

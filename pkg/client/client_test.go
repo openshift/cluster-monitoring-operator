@@ -192,9 +192,10 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(dep.DeepCopy()),
+				ctx:     context.Background(),
 			}
 
-			if _, err := c.kclient.AppsV1().Deployments(ns).Get(context.TODO(), dep.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.AppsV1().Deployments(ns).Get(c.ctx, dep.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -205,7 +206,7 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			after, err := c.kclient.AppsV1().Deployments(ns).Get(context.TODO(), dep.Name, metav1.GetOptions{})
+			after, err := c.kclient.AppsV1().Deployments(ns).Get(c.ctx, dep.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -287,8 +288,9 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(ds.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			if _, err := c.kclient.AppsV1().DaemonSets(ns).Get(context.TODO(), ds.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.AppsV1().DaemonSets(ns).Get(c.ctx, ds.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -297,7 +299,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 			if err := c.CreateOrUpdateDaemonSet(ds); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.AppsV1().DaemonSets(ns).Get(context.TODO(), ds.Name, metav1.GetOptions{})
+			after, err := c.kclient.AppsV1().DaemonSets(ns).Get(c.ctx, ds.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -378,9 +380,10 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(s.DeepCopy()),
+				ctx:     context.Background(),
 			}
 
-			if _, err := c.kclient.CoreV1().Secrets(ns).Get(context.TODO(), s.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.CoreV1().Secrets(ns).Get(c.ctx, s.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -389,7 +392,7 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 			if err := c.CreateOrUpdateSecret(s); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.CoreV1().Secrets(ns).Get(context.TODO(), s.Name, metav1.GetOptions{})
+			after, err := c.kclient.CoreV1().Secrets(ns).Get(c.ctx, s.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -470,9 +473,10 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(cm),
+				ctx:     context.Background(),
 			}
 
-			if _, err := c.kclient.CoreV1().ConfigMaps(ns).Get(context.TODO(), cm.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.CoreV1().ConfigMaps(ns).Get(c.ctx, cm.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -482,7 +486,7 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			after, err := c.kclient.CoreV1().ConfigMaps(ns).Get(context.TODO(), cm.Name, metav1.GetOptions{})
+			after, err := c.kclient.CoreV1().ConfigMaps(ns).Get(c.ctx, cm.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -611,9 +615,10 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(svc.DeepCopy()),
+				ctx:     context.Background(),
 			}
 
-			before, err := c.kclient.CoreV1().Services(ns).Get(context.TODO(), svc.Name, metav1.GetOptions{})
+			before, err := c.kclient.CoreV1().Services(ns).Get(c.ctx, svc.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -625,7 +630,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			after, err := c.kclient.CoreV1().Services(ns).Get(context.TODO(), svc.Name, metav1.GetOptions{})
+			after, err := c.kclient.CoreV1().Services(ns).Get(c.ctx, svc.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -709,8 +714,9 @@ func TestCreateOrUpdateRole(t *testing.T) {
 			}
 			c := Client{
 				kclient: fake.NewSimpleClientset(role.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			if _, err := c.kclient.RbacV1().Roles(ns).Get(context.TODO(), role.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.RbacV1().Roles(ns).Get(c.ctx, role.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -719,7 +725,7 @@ func TestCreateOrUpdateRole(t *testing.T) {
 			if err := c.CreateOrUpdateRole(role); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.RbacV1().Roles(ns).Get(context.TODO(), role.Name, metav1.GetOptions{})
+			after, err := c.kclient.RbacV1().Roles(ns).Get(c.ctx, role.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -845,8 +851,9 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 			}
 			c := Client{
 				kclient: fake.NewSimpleClientset(roleBinding.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			before, err := c.kclient.RbacV1().RoleBindings(ns).Get(context.TODO(), roleBinding.Name, metav1.GetOptions{})
+			before, err := c.kclient.RbacV1().RoleBindings(ns).Get(c.ctx, roleBinding.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -859,7 +866,7 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.RbacV1().RoleBindings(ns).Get(context.TODO(), roleBinding.Name, metav1.GetOptions{})
+			after, err := c.kclient.RbacV1().RoleBindings(ns).Get(c.ctx, roleBinding.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -942,8 +949,9 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 			}
 			c := Client{
 				kclient: fake.NewSimpleClientset(clusterRole.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			if _, err := c.kclient.RbacV1().ClusterRoles().Get(context.TODO(), clusterRole.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.RbacV1().ClusterRoles().Get(c.ctx, clusterRole.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -952,7 +960,7 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 			if err := c.CreateOrUpdateClusterRole(clusterRole); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.RbacV1().ClusterRoles().Get(context.TODO(), clusterRole.Name, metav1.GetOptions{})
+			after, err := c.kclient.RbacV1().ClusterRoles().Get(c.ctx, clusterRole.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1078,8 +1086,9 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(clusterRoleBinding.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			before, err := c.kclient.RbacV1().ClusterRoleBindings().Get(context.TODO(), clusterRoleBinding.Name, metav1.GetOptions{})
+			before, err := c.kclient.RbacV1().ClusterRoleBindings().Get(c.ctx, clusterRoleBinding.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1091,7 +1100,7 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 			if err := c.CreateOrUpdateClusterRoleBinding(clusterRoleBinding); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.RbacV1().ClusterRoleBindings().Get(context.TODO(), clusterRoleBinding.Name, metav1.GetOptions{})
+			after, err := c.kclient.RbacV1().ClusterRoleBindings().Get(c.ctx, clusterRoleBinding.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1175,10 +1184,11 @@ func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
 
 			c := Client{
 				ossclient: ossfake.NewSimpleClientset(),
+				ctx:       context.Background(),
 			}
-			c.ossclient.SecurityV1().SecurityContextConstraints().Create(context.TODO(), scc.DeepCopy(), metav1.CreateOptions{})
+			c.ossclient.SecurityV1().SecurityContextConstraints().Create(c.ctx, scc.DeepCopy(), metav1.CreateOptions{})
 
-			if _, err := c.ossclient.SecurityV1().SecurityContextConstraints().Get(context.TODO(), scc.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.ossclient.SecurityV1().SecurityContextConstraints().Get(c.ctx, scc.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1188,7 +1198,7 @@ func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			after, err := c.ossclient.SecurityV1().SecurityContextConstraints().Get(context.TODO(), scc.GetName(), metav1.GetOptions{})
+			after, err := c.ossclient.SecurityV1().SecurityContextConstraints().Get(c.ctx, scc.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1269,8 +1279,9 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(serviceMonitor.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			if _, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(context.TODO(), serviceMonitor.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(c.ctx, serviceMonitor.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1279,7 +1290,7 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 			if err := c.CreateOrUpdateServiceMonitor(serviceMonitor); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(context.TODO(), serviceMonitor.GetName(), metav1.GetOptions{})
+			after, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(c.ctx, serviceMonitor.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1360,8 +1371,9 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(rule.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			if _, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(context.TODO(), rule.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(c.ctx, rule.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1370,7 +1382,7 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 			if err := c.CreateOrUpdatePrometheusRule(rule); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(context.TODO(), rule.GetName(), metav1.GetOptions{})
+			after, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(c.ctx, rule.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1451,8 +1463,9 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(prometheus.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			if _, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(context.TODO(), prometheus.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(c.ctx, prometheus.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1462,7 +1475,7 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			after, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(context.TODO(), prometheus.GetName(), metav1.GetOptions{})
+			after, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(c.ctx, prometheus.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1543,8 +1556,9 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(alertmanager.DeepCopy()),
+				ctx:     context.Background(),
 			}
-			if _, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(context.TODO(), alertmanager.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(c.ctx, alertmanager.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1554,7 +1568,7 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			after, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(context.TODO(), alertmanager.GetName(), metav1.GetOptions{})
+			after, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(c.ctx, alertmanager.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}

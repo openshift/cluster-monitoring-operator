@@ -11,15 +11,17 @@ import (
 
 type PrometheusAdapterTask struct {
 	client    *client.Client
+	ctx       context.Context
 	factory   *manifests.Factory
 	namespace string
 }
 
-func NewPrometheusAdapterTaks(namespace string, client *client.Client, factory *manifests.Factory) *PrometheusAdapterTask {
+func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *client.Client, factory *manifests.Factory) *PrometheusAdapterTask {
 	return &PrometheusAdapterTask{
 		client:    client,
 		factory:   factory,
 		namespace: namespace,
+		ctx:       ctx,
 	}
 }
 
@@ -221,7 +223,7 @@ func (t *PrometheusAdapterTask) Run() error {
 }
 
 func (t *PrometheusAdapterTask) deleteOldPrometheusAdapterSecrets(newHash string) error {
-	secrets, err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).List(context.TODO(), metav1.ListOptions{
+	secrets, err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).List(t.ctx, metav1.ListOptions{
 		LabelSelector: "monitoring.openshift.io/name=prometheus-adapter,monitoring.openshift.io/hash!=" + newHash,
 	})
 
@@ -230,7 +232,7 @@ func (t *PrometheusAdapterTask) deleteOldPrometheusAdapterSecrets(newHash string
 	}
 
 	for i := range secrets.Items {
-		err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).Delete(context.TODO(), secrets.Items[i].Name, metav1.DeleteOptions{})
+		err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).Delete(t.ctx, secrets.Items[i].Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "error deleting secret: %s", secrets.Items[i].Name)
 		}
