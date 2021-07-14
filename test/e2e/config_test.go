@@ -259,11 +259,11 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 	}{
 		{
 			name: "set configurations for prom operator CR, assert that PVC is created",
-			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				namespace:       f.Ns,
-				claimName:       pvcClaimName,
-				statefulSetName: statefulsetName,
-			}),
+			f:    assertVolumeClaims(pvcClaimName, f.Ns),
+		},
+		{
+			name: "assert ss rollout",
+			f:    assertStatefulSetExistsAndRollout(statefulsetName, f.Ns),
 		},
 		{
 			name: "assert that resource requests are created",
@@ -329,11 +329,11 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 	}{
 		{
 			name: "set configurations for alert manager CR, assert that PVC is created",
-			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				namespace:       f.Ns,
-				claimName:       pvcClaimName,
-				statefulSetName: statefulsetName,
-			}),
+			f:    assertVolumeClaims(pvcClaimName, f.Ns),
+		},
+		{
+			name: "assert ss rolled out",
+			f:    assertStatefulSetExistsAndRollout(statefulsetName, f.Ns),
 		},
 		{
 			name: "assert that resource requests are created",
@@ -373,10 +373,7 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
 	}{
 		{
 			name: "test the kube-state-metrics deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			f:    assertDeploymentRollout(deploymentName, f.Ns),
 		},
 		{
 			name: "assert that resource requests are correct",
@@ -415,10 +412,7 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
 	}{
 		{
 			name: "test the openshift-state-metrics deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			f:    assertDeploymentRollout(deploymentName, f.Ns),
 		},
 		{
 			name: "assert that resource requests are correct",
@@ -454,10 +448,7 @@ func TestClusterMonitorGrafanaConfig(t *testing.T) {
 	}{
 		{
 			name: "test the grafana deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			f:    assertDeploymentRollout(deploymentName, f.Ns),
 		},
 		{
 			name: "assert that resource requests are correct",
@@ -496,10 +487,7 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 	}{
 		{
 			name: "test the telemeter-client deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			f:    assertDeploymentRollout(deploymentName, f.Ns),
 		},
 		{
 			name: "assert that pod config correct",
@@ -540,10 +528,7 @@ func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
 	}{
 		{
 			name: "test the prometheus-adapter deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			f:    assertDeploymentRollout(deploymentName, f.Ns),
 		},
 		{
 			name: "assert that pod config is correct",
@@ -590,10 +575,7 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 	}{
 		{
 			name: "test the thanos-querier deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			f:    assertDeploymentRollout(deploymentName, f.Ns),
 		},
 		{
 			name: "assert that pod config is correct",
@@ -738,11 +720,11 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 	}{
 		{
 			name: "set configurations for prom CR, assert that PVC is created",
-			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				namespace:       f.UserWorkloadMonitoringNs,
-				claimName:       pvcClaimName,
-				statefulSetName: statefulsetName,
-			}),
+			f:    assertVolumeClaims(pvcClaimName, f.UserWorkloadMonitoringNs),
+		},
+		{
+			name: "assert ss rollout",
+			f:    assertStatefulSetExistsAndRollout(statefulsetName, f.UserWorkloadMonitoringNs),
 		},
 		{
 			name: "assert that resource requests are created",
@@ -758,6 +740,10 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
 				},
 			),
+		},
+		{
+			name: "assert prometheus is created",
+			f:    assertPrometheusIsCreated(f.UserWorkloadMonitoringNs, "user-workload"),
 		},
 		{
 			name: "assert external labels are present on the CR",
@@ -829,11 +815,15 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 	}{
 		{
 			name: "assert that PVC is created and ss rolled out",
-			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				namespace:       f.UserWorkloadMonitoringNs,
-				claimName:       pvcClaimName,
-				statefulSetName: statefulsetName,
-			}),
+			f:    assertVolumeClaims(pvcClaimName, f.UserWorkloadMonitoringNs),
+		},
+		{
+			name: "assert ss rolled out",
+			f:    assertStatefulSetExistsAndRollout(statefulsetName, f.UserWorkloadMonitoringNs),
+		},
+		{
+			name: "assert that thanos rule is created",
+			f:    assertThanosRulerIsCreated(f.UserWorkloadMonitoringNs, "user-workload"),
 		},
 		{
 			name: "assert that pod config is correct",
@@ -857,94 +847,36 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 	}
 }
 
-type deploymentRolloutParams struct {
-	namespace, name string
-}
-
-func assertDeploymentRollout(params deploymentRolloutParams) func(*testing.T) {
+func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 	return func(t *testing.T) {
-		err := f.OperatorClient.WaitForDeploymentRollout(&appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      params.name,
-				Namespace: params.namespace,
-			},
-		})
+		err := f.OperatorClient.DeleteConfigMap(cm)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}
-}
 
-type rolloutParams struct {
-	namespace, claimName, statefulSetName string
-}
-
-func assertVolumeClaimsConfigAndRollout(params rolloutParams) func(*testing.T) {
-	return func(t *testing.T) {
-		// Wait for persistent volume claim
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(params.namespace).Get(context.TODO(), params.claimName, metav1.GetOptions{})
-			if err != nil {
-				return errors.Wrap(err, "getting persistent volume claim failed")
-
+		err = framework.Poll(time.Second, 5*time.Minute, func() error {
+			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-operator", metav1.GetOptions{})
+			if err == nil {
+				return errors.New("prometheus-operator deployment not deleted")
 			}
-			return nil
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		err = framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().StatefulSets(params.namespace).Get(context.TODO(), params.statefulSetName, metav1.GetOptions{})
-			if err != nil {
-				return err
+			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload", metav1.GetOptions{})
+			if err == nil {
+				return errors.New("prometheus statefulset not deleted")
 			}
-			return nil
-		})
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      params.statefulSetName,
-				Namespace: params.namespace,
-			},
-		})
-
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
-// podConfigParams sets pod metadata
-type podConfigParams struct {
-	namespace, labelSelector string
-}
-
-func assertPodConfiguration(params podConfigParams, asserts []podAssertionCB) func(*testing.T) {
-	return func(t *testing.T) {
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			pods, err := f.KubeClient.CoreV1().Pods(params.namespace).List(context.TODO(), metav1.ListOptions{
-				LabelSelector: params.labelSelector,
-				FieldSelector: "status.phase=Running"},
-			)
-
-			if err != nil {
-				return errors.Wrap(err, "failed to get Pods")
+			if apierrors.IsNotFound(err) {
+				return nil
 			}
-
-			// for each pod in the list of matching labels run each assertion
-			for _, p := range pods.Items {
-				for _, assertion := range asserts {
-					if err := assertion(p); err != nil {
-						return fmt.Errorf("failed assertion for %s - %v", p.Name, err)
-					}
-				}
-			}
-			return nil
+			return err
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -964,8 +896,6 @@ func configMapWithData(t *testing.T, addData string) *v1.ConfigMap {
 		},
 	}
 }
-
-type podAssertionCB func(pod v1.Pod) error
 
 // checks that the toleration is set accordingly
 // this toleration will match all so will not affect rolling out workloads
