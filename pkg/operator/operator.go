@@ -516,6 +516,7 @@ func (o *Operator) sync(key string) error {
 		// update prometheus-operator before anything else because it is responsible for managing many other resources (e.g. Prometheus, Alertmanager, Thanos Ruler, ...).
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
+				tasks.NewTaskSpec("Updating metrics scraping client CA", tasks.NewMetricsClientCATask(o.client, factory)),
 				tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
 			}),
 		tasks.NewTaskGroup(

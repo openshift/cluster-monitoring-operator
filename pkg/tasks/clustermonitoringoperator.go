@@ -130,20 +130,5 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "error creating Cluster Monitoring Operator GRPC TLS secret")
 	}
 
-	apiAuthConfigmap, err := t.client.GetConfigmap("kube-system", "extension-apiserver-authentication")
-	if err != nil {
-		return errors.Wrap(err, "failed to load kube-system/extension-apiserver-authentication configmap")
-	}
-
-	cm, err := t.factory.MetricsClientCACM(apiAuthConfigmap)
-	if err != nil {
-		return errors.Wrap(err, "initializing Metrics Client CA failed")
-	}
-
-	err = t.client.CreateOrUpdateConfigMap(cm)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Metrics Client CA ConfigMap failed")
-	}
-
 	return nil
 }
