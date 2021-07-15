@@ -41,7 +41,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1301,7 +1301,7 @@ func (c *Client) WaitForCRDReady(crd *extensionsobj.CustomResourceDefinition) er
 }
 
 func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, error) {
-	crdClient := c.eclient.ApiextensionsV1beta1().CustomResourceDefinitions()
+	crdClient := c.eclient.ApiextensionsV1().CustomResourceDefinitions()
 
 	crdEst, err := crdClient.Get(c.ctx, crd.ObjectMeta.Name, metav1.GetOptions{})
 	if err != nil {
@@ -1323,7 +1323,7 @@ func (c *Client) CRDReady(crd *extensionsobj.CustomResourceDefinition) (bool, er
 }
 
 func (c *Client) StatusReporter() *StatusReporter {
-	return NewStatusReporter(c.ctx, c.oscclient.ConfigV1().ClusterOperators(), "monitoring",  c.namespace, c.userWorkloadNamespace, c.version)
+	return NewStatusReporter(c.ctx, c.oscclient.ConfigV1().ClusterOperators(), "monitoring", c.namespace, c.userWorkloadNamespace, c.version)
 }
 
 func (c *Client) DeleteRoleBinding(binding *rbacv1.RoleBinding) error {
