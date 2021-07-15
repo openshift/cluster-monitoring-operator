@@ -59,6 +59,7 @@ function(params)
                         '--upstream=https://prometheus-operator.openshift-monitoring.svc:8080/',
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
+                        '--client-ca-file=/etc/tls/client/client-ca.crt',
                         '--upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -71,6 +72,11 @@ function(params)
                         {
                           mountPath: '/etc/configmaps/operator-cert-ca-bundle',
                           name: certsCAVolumeName,
+                          readOnly: false,
+                        },
+                        {
+                          mountPath: '/etc/tls/client',
+                          name: 'metrics-client-ca',
                           readOnly: false,
                         },
                       ],
@@ -98,6 +104,12 @@ function(params)
                 name: certsCAVolumeName,
                 configMap: {
                   name: certsCAVolumeName,
+                },
+              },
+              {
+                name: 'metrics-client-ca',
+                configMap: {
+                  name: 'metrics-client-ca',
                 },
               },
             ],
