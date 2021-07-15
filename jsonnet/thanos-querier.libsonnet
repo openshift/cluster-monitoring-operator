@@ -336,18 +336,8 @@ function(params)
             securityContext:: {},
             containers: [
               super.containers[0] {
-                livenessProbe: {
-                  httpGet:: {},
-                  exec: {
-                    command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then exec curl http://localhost:9090/-/healthy; elif [ -x "$(command -v wget)" ]; then exec wget --quiet --tries=1 --spider http://localhost:9090/-/healthy; else exit 1; fi'],
-                  },
-                },
-                readinessProbe: {
-                  httpGet:: {},
-                  exec: {
-                    command: ['sh', '-c', 'if [ -x "$(command -v curl)" ]; then exec curl http://localhost:9090/-/ready; elif [ -x "$(command -v wget)" ]; then exec wget --quiet --tries=1 --spider http://localhost:9090/-/ready; else exit 1; fi'],
-                  },
-                },
+                livenessProbe:: {},
+                readinessProbe:: {},
                 args: std.map(
                   function(a)
                     if std.startsWith(a, '--grpc-address=') then '--grpc-address=127.0.0.1:10901'
@@ -401,6 +391,26 @@ function(params)
                   { name: 'HTTPS_PROXY', value: '' },
                   { name: 'NO_PROXY', value: '' },
                 ],
+                livenessProbe: {
+                  httpGet: {
+                    path: '/-/healthy',
+                    port: 9091,
+                    scheme: 'HTTPS',
+                  },
+                  initialDelaySeconds: 5,
+                  periodSeconds: 30,
+                  failureThreshold: 4,
+                },
+                readinessProbe: {
+                  httpGet: {
+                    path: '/-/ready',
+                    port: 9091,
+                    scheme: 'HTTPS',
+                  },
+                  initialDelaySeconds: 5,
+                  periodSeconds: 5,
+                  failureThreshold: 20,
+                },
                 args: [
                   // NOTE: The following is injected at runtime if Grafana is enabled:
                   // '-htpasswd-file=/etc/proxy/htpasswd/auth'
@@ -418,6 +428,7 @@ function(params)
                   '-cookie-secret-file=/etc/proxy/secrets/session_secret',
                   '-openshift-ca=/etc/pki/tls/cert.pem',
                   '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+                  '-bypass-auth-for=^/-/(healthy|ready)$',
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
