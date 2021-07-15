@@ -266,7 +266,7 @@ spec:
           more than {{ $value }} seconds.
         summary: Thanos Sidecar is unhealthy.
       expr: |
-        time() - max(timestamp(thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"})) by (job,pod) >= 240
+        time() - max(thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}) by (job,pod) >= 240
       for: 1h
       labels:
         severity: warning

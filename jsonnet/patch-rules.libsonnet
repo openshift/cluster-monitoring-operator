@@ -118,8 +118,25 @@ local patchedRules = [
     name: 'thanos-sidecar',
     rules: [
       {
-        alert: '',
+        alert: 'ThanosSidecarPrometheusDown',
         'for': '1h',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'ThanosSidecarBucketOperationsFailed',
+        'for': '1h',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'ThanosSidecarUnhealthy',
+        'for': '1h',
+        expr: |||
+          time() - max(thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}) by (job,pod) >= 240
+        |||,
         labels: {
           severity: 'warning',
         },
