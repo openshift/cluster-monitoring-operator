@@ -50,6 +50,7 @@ const (
 	sharedConfigMap        = "monitoring-shared-config"
 
 	htpasswdArg = "-htpasswd-file=/etc/proxy/htpasswd/auth"
+	clientCAArg = "--client-ca-file=/etc/tls/client/client-ca.crt"
 )
 
 var (
@@ -1369,6 +1370,33 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		case "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+
+			p.Spec.Containers[i].Args = append(
+				p.Spec.Containers[i].Args,
+				clientCAArg,
+			)
+
+			p.Spec.Containers[i].VolumeMounts = append(
+				p.Spec.Containers[i].VolumeMounts,
+				v1.VolumeMount{
+					Name:      "metrics-client-ca",
+					MountPath: "/etc/tls/client",
+					ReadOnly:  true,
+				},
+			)
+
+			p.Spec.Volumes = append(
+				p.Spec.Volumes,
+				v1.Volume{
+					Name: "metrics-client-ca",
+					VolumeSource: v1.VolumeSource{
+						ConfigMap: &v1.ConfigMapVolumeSource{
+							LocalObjectReference: v1.LocalObjectReference{
+								Name: "metrics-client-ca",
+							},
+						},
+					},
+				})
 		case "prom-label-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}
