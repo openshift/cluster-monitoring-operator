@@ -146,7 +146,7 @@ type PrometheusK8sConfig struct {
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
 	TelemetryMatches    []string                             `json:"-"`
 	// EXPERIMENTAL: this configuration field may change in future releases.
-	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertManagerConfigs"`
+	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs"`
 }
 
 type AdditionalAlertmanagerConfig struct {
@@ -194,7 +194,7 @@ type ThanosRulerConfig struct {
 	Tolerations          []v1.Toleration                      `json:"tolerations"`
 	Resources            *v1.ResourceRequirements             `json:"resources"`
 	VolumeClaimTemplate  *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	AlertManagersConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertManagerConfigs"`
+	AlertManagersConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
 }
 
 type ThanosQuerierConfig struct {
@@ -458,7 +458,7 @@ type PrometheusRestrictedConfig struct {
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
 	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
 	EnforcedTargetLimit *uint64                              `json:"enforcedTargetLimit"`
-	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertManagerConfigs"`
+	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {

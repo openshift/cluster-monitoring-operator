@@ -33,7 +33,7 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 		},
 		Data: map[string]string{
 			"config.yaml": `thanosRuler:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - scheme: http
     apiVersion: v2
     staticConfigs: ["dnssrv+_web._tcp.alertmanager-operated.openshift-user-workload-monitoring.svc"]

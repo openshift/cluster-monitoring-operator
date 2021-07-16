@@ -191,13 +191,13 @@ func (t *PrometheusUserWorkloadTask) create() error {
 
 	secret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertManagerConfigs secret failed")
+		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 	}
 	if secret != nil {
-		klog.V(4).Info("initializing UserWorkload Prometheus additionalAlertManagerConfigs secret")
+		klog.V(4).Info("initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret")
 		err = t.client.CreateOrUpdateSecret(secret)
 		if err != nil {
-			return errors.Wrap(err, "reconciling UserWorkload Prometheus additionalAlertManagerConfigs secret failed")
+			return errors.Wrap(err, "reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 		}
 	} else {
 		err = t.client.DeleteSecret(&v1.Secret{
@@ -207,7 +207,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 			},
 		})
 		if err != nil {
-			return errors.Wrap(err, "deleting Prometheus additionalAlertManagerConfigs Secret failed")
+			return errors.Wrap(err, "deleting Prometheus additionalAlertmanagerConfigs Secret failed")
 		}
 	}
 
@@ -424,7 +424,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 			Namespace: t.client.UserWorkloadNamespace(),
 		},
 	}); err != nil {
-		return errors.Wrap(err, "deleting Prometheus additionalAlertManagerConfigs Secret failed")
+		return errors.Wrap(err, "deleting Prometheus additionalAlertmanagerConfigs Secret failed")
 	}
 
 	err = t.client.DeleteConfigMap(cacm)

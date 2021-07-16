@@ -1038,7 +1038,7 @@ ingress:
 	}
 
 	if p.Spec.AdditionalAlertManagerConfigs != nil {
-		t.Fatal("additionalAlertManagerConfigs should not be set")
+		t.Fatal("additionalAlertmanagerConfigs should not be set")
 	}
 
 	storageRequest := p.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
@@ -1062,7 +1062,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "basic config",
 			config: `prometheusK8s:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
@@ -1079,7 +1079,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "version, path and scheme override",
 			config: `prometheusK8s:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - apiVersion: v1
     pathPrefix: /path
     scheme: ftp
@@ -1102,7 +1102,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "bearer token",
 			config: `prometheusK8s:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - apiVersion: v2
     scheme: https    
     bearerToken:
@@ -1127,7 +1127,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "tls configuration token",
 			config: `prometheusK8s:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - apiVersion: v2
     scheme: https    
     tlsConfig:
@@ -1162,7 +1162,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "tls configuration token",
 			config: `prometheusK8s:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - apiVersion: v2
     scheme: https    
     tlsConfig:
@@ -1197,7 +1197,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "full configuration",
 			config: `prometheusK8s:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - apiVersion: v2
     scheme: https
     bearerToken:
@@ -1276,7 +1276,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(string(s.Data[AdditionalAlertmanagerConfigSecretKey]), tt.expected) {
-				t.Fatalf("additionalAlertManagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", string(s.Data[AdditionalAlertmanagerConfigSecretKey]), tt.expected)
+				t.Fatalf("additionalAlertmanagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", string(s.Data[AdditionalAlertmanagerConfigSecretKey]), tt.expected)
 			}
 		})
 	}
@@ -1305,7 +1305,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "basic config",
 			config: `thanosRuler:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
@@ -1331,7 +1331,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "version, path and scheme override",
 			config: `thanosRuler:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - version: v1
     pathPrefix: /path-prefix
     scheme: ftp
@@ -1362,7 +1362,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "bearer token",
 			config: `thanosRuler:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - bearerToken:
       key: key
       name: bearer-token
@@ -1392,7 +1392,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "tls configuration token",
 			config: `thanosRuler:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - tlsConfig:
       ca:
         name: alertmanager-tls
@@ -1432,7 +1432,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "tls configuration token",
 			config: `thanosRuler:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - tlsConfig:
       ca:
         name: alertmanager-ca-tls
@@ -1472,7 +1472,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		{
 			name: "full configuration",
 			config: `thanosRuler:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - apiVersion: v2
     scheme: https
     bearerToken:
@@ -1544,7 +1544,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(s.StringData["alertmanagers.yaml"], tt.expected) {
-				t.Fatalf("additionalAlertManagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", s.StringData["alertmanagers.yaml"], tt.expected)
+				t.Fatalf("additionalAlertmanagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", s.StringData["alertmanagers.yaml"], tt.expected)
 			}
 		})
 	}

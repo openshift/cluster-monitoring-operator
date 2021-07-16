@@ -1066,7 +1066,7 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 		return s, nil
 	}
 
-	additionalConfig, err := f.additionalAlertManagerConfigs(amConfigs, alertmanagerHttpConfigFormatThanos)
+	additionalConfig, err := f.additionalAlertmanagerConfigs(amConfigs, alertmanagerHttpConfigFormatThanos)
 	if err != nil {
 		return nil, err
 	}
@@ -1468,7 +1468,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
 
-	config, err := f.additionalAlertManagerConfigs(amConfigs, alertmanagerHttpConfigFormatPrometheus)
+	config, err := f.additionalAlertmanagerConfigs(amConfigs, alertmanagerHttpConfigFormatPrometheus)
 	if err != nil {
 		return nil, err
 	}
@@ -1486,7 +1486,7 @@ func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret
 
 func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.GetPrometheusUWAdditionalAlertmanagerConfigs()
-	config, err := f.additionalAlertManagerConfigs(amConfigs, alertmanagerHttpConfigFormatPrometheus)
+	config, err := f.additionalAlertmanagerConfigs(amConfigs, alertmanagerHttpConfigFormatPrometheus)
 	if err != nil {
 		return nil, err
 	}
@@ -1654,7 +1654,7 @@ func (f *Factory) thanosAlertmanagerConfigHttpSection(alertmanagerConfig Additio
 	return cfg, nil
 }
 
-func (f *Factory) additionalAlertManagerConfigs(
+func (f *Factory) additionalAlertmanagerConfigs(
 	alertmanagerConfigs []AdditionalAlertmanagerConfig,
 	format alertmanagerHttpConfigFormat,
 ) ([]byte, error) {

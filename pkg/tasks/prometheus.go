@@ -319,13 +319,13 @@ func (t *PrometheusTask) Run() error {
 
 		secret, err := t.factory.PrometheusK8sAdditionalAlertManagerConfigsSecret()
 		if err != nil {
-			return errors.Wrap(err, "initializing Prometheus additionalAlertManagerConfigs secret failed")
+			return errors.Wrap(err, "initializing Prometheus additionalAlertmanagerConfigs secret failed")
 		}
 		if secret != nil {
-			klog.V(4).Info("initializing Prometheus additionalAlertManagerConfigs secret")
+			klog.V(4).Info("initializing Prometheus additionalAlertmanagerConfigs secret")
 			err = t.client.CreateOrUpdateSecret(secret)
 			if err != nil {
-				return errors.Wrap(err, "reconciling Prometheus additionalAlertManagerConfigs secret failed")
+				return errors.Wrap(err, "reconciling Prometheus additionalAlertmanagerConfigs secret failed")
 			}
 		} else {
 			err = t.client.DeleteSecret(&v1.Secret{
@@ -335,7 +335,7 @@ func (t *PrometheusTask) Run() error {
 				},
 			})
 			if err != nil {
-				return errors.Wrap(err, "deleting Prometheus additionalAlertManagerConfigs Secret failed")
+				return errors.Wrap(err, "deleting Prometheus additionalAlertmanagerConfigs Secret failed")
 			}
 		}
 

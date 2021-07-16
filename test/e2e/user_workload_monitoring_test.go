@@ -139,7 +139,7 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheus:
-  additionalAlertManagerConfigs:
+  additionalAlertmanagerConfigs:
   - scheme: https
     pathPrefix: /prefix
     timeout: "30s"
