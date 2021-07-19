@@ -25,14 +25,14 @@ func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *cli
 	}
 }
 
-func (t *PrometheusAdapterTask) Run() error {
+func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 	{
 		cr, err := t.factory.PrometheusAdapterClusterRole()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRole failed")
 		}
 
-		err = t.client.CreateOrUpdateClusterRole(cr)
+		err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ClusterRole failed")
 		}
@@ -43,7 +43,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRole for server resources failed")
 		}
 
-		err = t.client.CreateOrUpdateClusterRole(cr)
+		err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ClusterRole for server resources failed")
 		}
@@ -54,7 +54,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRole aggregating resource metrics read permissions failed")
 		}
 
-		err = t.client.CreateOrUpdateClusterRole(cr)
+		err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ClusterRole aggregating resource metrics read permissions failed")
 		}
@@ -65,7 +65,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRoleBinding failed")
 		}
 
-		err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+		err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ClusterRoleBinding failed")
 		}
@@ -76,7 +76,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRoleBinding for delegator failed")
 		}
 
-		err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+		err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ClusterRoleBinding for delegator failed")
 		}
@@ -87,7 +87,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ClusterRoleBinding for view failed")
 		}
 
-		err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+		err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ClusterRoleBinding for view failed")
 		}
@@ -98,7 +98,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter RoleBinding for auth-reader failed")
 		}
 
-		err = t.client.CreateOrUpdateRoleBinding(rb)
+		err = t.client.CreateOrUpdateRoleBinding(ctx, rb)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter RoleBinding for auth-reader failed")
 		}
@@ -109,7 +109,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ServiceAccount failed")
 		}
 
-		err = t.client.CreateOrUpdateServiceAccount(sa)
+		err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ServiceAccount failed")
 		}
@@ -120,7 +120,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ConfigMap failed")
 		}
 
-		err = t.client.CreateOrUpdateConfigMap(cm)
+		err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ConfigMap failed")
 		}
@@ -131,7 +131,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ConfigMap for Prometheus failed")
 		}
 
-		err = t.client.CreateOrUpdateConfigMap(cm)
+		err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ConfigMap for Prometheus failed")
 		}
@@ -142,18 +142,18 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter Service failed")
 		}
 
-		err = t.client.CreateOrUpdateService(s)
+		err = t.client.CreateOrUpdateService(ctx, s)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter Service failed")
 		}
 	}
 	{
-		tlsSecret, err := t.client.GetSecret(t.namespace, "prometheus-adapter-tls")
+		tlsSecret, err := t.client.GetSecret(ctx, t.namespace, "prometheus-adapter-tls")
 		if err != nil {
 			return errors.Wrap(err, "failed to load prometheus-adapter-tls secret")
 		}
 
-		apiAuthConfigmap, err := t.client.GetConfigmap("kube-system", "extension-apiserver-authentication")
+		apiAuthConfigmap, err := t.client.GetConfigmap(ctx, "kube-system", "extension-apiserver-authentication")
 		if err != nil {
 			return errors.Wrap(err, "failed to load kube-system/extension-apiserver-authentication configmap")
 		}
@@ -168,7 +168,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "deleting old prometheus adapter secrets failed")
 		}
 
-		err = t.client.CreateOrUpdateSecret(secret)
+		err = t.client.CreateOrUpdateSecret(ctx, secret)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter Secret failed")
 		}
@@ -178,7 +178,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter Deployment failed")
 		}
 
-		err = t.client.CreateOrUpdateDeployment(dep)
+		err = t.client.CreateOrUpdateDeployment(ctx, dep)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter Deployment failed")
 		}
@@ -190,7 +190,7 @@ func (t *PrometheusAdapterTask) Run() error {
 		}
 
 		if pdb != nil {
-			err = t.client.CreateOrUpdatePodDisruptionBudget(pdb)
+			err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
 			if err != nil {
 				return errors.Wrap(err, "reconciling PrometheusAdapter PodDisruptionBudget failed")
 			}
@@ -202,7 +202,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter ServiceMonitor failed")
 		}
 
-		err = t.client.CreateOrUpdateServiceMonitor(sm)
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ServiceMonitor failed")
 		}
@@ -213,7 +213,7 @@ func (t *PrometheusAdapterTask) Run() error {
 			return errors.Wrap(err, "initializing PrometheusAdapter APIService failed")
 		}
 
-		err = t.client.CreateOrUpdateAPIService(api)
+		err = t.client.CreateOrUpdateAPIService(ctx, api)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter APIService failed")
 		}

@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -34,21 +35,21 @@ func NewGrafanaTask(client *client.Client, factory *manifests.Factory, config *m
 	}
 }
 
-func (t *GrafanaTask) Run() error {
+func (t *GrafanaTask) Run(ctx context.Context) error {
 	if t.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
-		return t.create()
+		return t.create(ctx)
 	}
 
-	return t.destroy()
+	return t.destroy(ctx)
 }
 
-func (t *GrafanaTask) create() error {
+func (t *GrafanaTask) create(ctx context.Context) error {
 	cr, err := t.factory.GrafanaClusterRole()
 	if err != nil {
 		return errors.Wrap(err, "initializing Grafana ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana ClusterRole failed")
 	}
@@ -58,7 +59,7 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana ClusterRoleBinding failed")
 	}
@@ -68,12 +69,12 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(r)
+	err = t.client.CreateRouteIfNotExists(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "creating Grafana Route failed")
 	}
 
-	_, err = t.client.WaitForRouteReady(r)
+	_, err = t.client.WaitForRouteReady(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Grafana Route to become ready failed")
 	}
@@ -83,7 +84,7 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana proxy Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(ps)
+	err = t.client.CreateIfNotExistSecret(ctx, ps)
 	if err != nil {
 		return errors.Wrap(err, "creating Grafana proxy Secret failed")
 	}
@@ -93,7 +94,7 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana Config Secret failed")
 	}
 
-	err = t.client.CreateOrUpdateSecret(smc)
+	err = t.client.CreateOrUpdateSecret(ctx, smc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana Config Secret failed")
 	}
@@ -103,7 +104,7 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(sds)
+	err = t.client.CreateIfNotExistSecret(ctx, sds)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana Datasources Secret failed")
 	}
@@ -113,7 +114,7 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana Dashboard Definitions ConfigMaps failed")
 	}
 
-	err = t.client.CreateOrUpdateConfigMapList(cmdds)
+	err = t.client.CreateOrUpdateConfigMapList(ctx, cmdds)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana Dashboard Definitions ConfigMaps failed")
 	}
@@ -123,7 +124,7 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana Dashboard Sources ConfigMap failed")
 	}
 
-	err = t.client.CreateOrUpdateConfigMap(cmdbs)
+	err = t.client.CreateOrUpdateConfigMap(ctx, cmdbs)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana Dashboard Sources ConfigMap failed")
 	}
@@ -133,7 +134,7 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana ServiceAccount failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana ServiceAccount failed")
 	}
@@ -143,7 +144,7 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana Service failed")
 	}
@@ -159,7 +160,7 @@ func (t *GrafanaTask) create() error {
 			factory: t.factory,
 			prefix:  "grafana",
 		}
-		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "syncing Grafana CA bundle ConfigMap failed")
 		}
@@ -169,7 +170,7 @@ func (t *GrafanaTask) create() error {
 			return errors.Wrap(err, "initializing Grafana Deployment failed")
 		}
 
-		err = t.client.CreateOrUpdateDeployment(d)
+		err = t.client.CreateOrUpdateDeployment(ctx, d)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Grafana Deployment failed")
 		}
@@ -180,17 +181,17 @@ func (t *GrafanaTask) create() error {
 		return errors.Wrap(err, "initializing Grafana ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(sm)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 	return errors.Wrap(err, "reconciling Grafana ServiceMonitor failed")
 }
 
-func (t *GrafanaTask) destroy() error {
+func (t *GrafanaTask) destroy(ctx context.Context) error {
 	sm, err := t.factory.GrafanaServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing Grafana ServiceMonitor failed")
 	}
 
-	err = t.client.DeleteServiceMonitor(sm)
+	err = t.client.DeleteServiceMonitor(ctx, sm)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana ServiceMonitor failed")
 	}
@@ -206,17 +207,17 @@ func (t *GrafanaTask) destroy() error {
 			return errors.Wrap(err, "initializing Grafana Deployment failed")
 		}
 
-		err = t.client.DeleteDeployment(d)
+		err = t.client.DeleteDeployment(ctx, d)
 		if err != nil {
 			return errors.Wrap(err, "deleting Grafana Deployment failed")
 		}
 
-		err = t.client.DeleteConfigMap(trustedCA)
+		err = t.client.DeleteConfigMap(ctx, trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "deleting Grafana CA bundle ConfigMap failed")
 		}
 
-		err = t.client.DeleteHashedConfigMap(t.client.Namespace(), "grafana", "")
+		err = t.client.DeleteHashedConfigMap(ctx, t.client.Namespace(), "grafana", "")
 		if err != nil {
 			return errors.Wrap(err, "deleting hashed Grafana CA bundle ConfigMap failed")
 		}
@@ -227,7 +228,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana Service failed")
 	}
 
-	err = t.client.DeleteService(svc)
+	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana Service failed")
 	}
@@ -237,7 +238,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana ServiceAccount failed")
 	}
 
-	err = t.client.DeleteServiceAccount(sa)
+	err = t.client.DeleteServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana ServiceAccount failed")
 	}
@@ -247,7 +248,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana Dashboard Sources ConfigMap failed")
 	}
 
-	err = t.client.DeleteConfigMap(cmdbs)
+	err = t.client.DeleteConfigMap(ctx, cmdbs)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana Dashboard Sources ConfigMap failed")
 	}
@@ -257,7 +258,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana Dashboard Definitions ConfigMaps failed")
 	}
 
-	err = t.client.DeleteConfigMapList(cmdds)
+	err = t.client.DeleteConfigMapList(ctx, cmdds)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana Dashboard Definitions ConfigMaps failed")
 	}
@@ -267,7 +268,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
 	}
 
-	err = t.client.DeleteSecret(sds)
+	err = t.client.DeleteSecret(ctx, sds)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana Datasources Secret failed")
 	}
@@ -277,7 +278,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana Config Secret failed")
 	}
 
-	err = t.client.DeleteSecret(smc)
+	err = t.client.DeleteSecret(ctx, smc)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana Config Secret failed")
 	}
@@ -287,7 +288,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana proxy Secret failed")
 	}
 
-	err = t.client.DeleteSecret(ps)
+	err = t.client.DeleteSecret(ctx, ps)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana proxy Secret failed")
 	}
@@ -297,7 +298,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana Route failed")
 	}
 
-	err = t.client.DeleteRoute(r)
+	err = t.client.DeleteRoute(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana Route failed")
 	}
@@ -307,7 +308,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana ClusterRoleBinding failed")
 	}
 
-	err = t.client.DeleteClusterRoleBinding(crb)
+	err = t.client.DeleteClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana ClusterRoleBinding failed")
 	}
@@ -317,7 +318,7 @@ func (t *GrafanaTask) destroy() error {
 		return errors.Wrap(err, "initializing Grafana ClusterRole failed")
 	}
 
-	err = t.client.DeleteClusterRole(cr)
+	err = t.client.DeleteClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "delete Grafana ClusterRole failed")
 	}

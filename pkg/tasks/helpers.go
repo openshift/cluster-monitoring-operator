@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -30,8 +31,8 @@ type caBundleSyncer struct {
 	factory *manifests.Factory
 }
 
-func (cbs *caBundleSyncer) syncTrustedCABundle(trustedCA *v1.ConfigMap) (*v1.ConfigMap, error) {
-	trustedCA, err := cbs.client.CreateIfNotExistConfigMap(trustedCA)
+func (cbs *caBundleSyncer) syncTrustedCABundle(ctx context.Context, trustedCA *v1.ConfigMap) (*v1.ConfigMap, error) {
+	trustedCA, err := cbs.client.CreateIfNotExistConfigMap(ctx, trustedCA)
 	if err != nil {
 		return nil, errors.Wrap(err, " creating root trusted CA bundle ConfigMap failed")
 	}
@@ -42,7 +43,7 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(trustedCA *v1.ConfigMap) (*v1.Con
 	)
 	err = wait.PollImmediate(5*time.Second, 5*time.Minute, func() (bool, error) {
 		var err error
-		lastCM, err = cbs.client.GetConfigmap(trustedCA.GetNamespace(), trustedCA.GetName())
+		lastCM, err = cbs.client.GetConfigmap(ctx, trustedCA.GetNamespace(), trustedCA.GetName())
 
 		if err != nil {
 			lastErr = errors.Wrap(err, "retrieving ConfigMap object failed")
@@ -73,12 +74,13 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(trustedCA *v1.ConfigMap) (*v1.Con
 		return nil, errors.Wrap(err, "hashing trusted CA bundle failed")
 	}
 
-	err = cbs.client.CreateOrUpdateConfigMap(hashedCM)
+	err = cbs.client.CreateOrUpdateConfigMap(ctx, hashedCM)
 	if err != nil {
 		return nil, errors.Wrap(err, "reconciling trusted CA bundle ConfigMap failed")
 	}
 
 	err = cbs.client.DeleteHashedConfigMap(
+		ctx,
 		trustedCA.GetNamespace(),
 		cbs.prefix,
 		string(hashedCM.Labels["monitoring.openshift.io/hash"]),
