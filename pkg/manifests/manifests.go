@@ -48,7 +48,6 @@ import (
 
 const (
 	configManagedNamespace = "openshift-config-managed"
-	sharedConfigMap        = "monitoring-shared-config"
 
 	htpasswdArg = "-htpasswd-file=/etc/proxy/htpasswd/auth"
 )
@@ -1163,36 +1162,6 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 	r.Namespace = f.namespace
 
 	return r, nil
-}
-
-func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
-	data := map[string]string{}
-
-	// Configmap keys need to include "public" to indicate that they are public values.
-	// See https://bugzilla.redhat.com/show_bug.cgi?id=1807100.
-	if promHost != nil {
-		data["prometheusPublicURL"] = promHost.String()
-	}
-
-	if amHost != nil {
-		data["alertmanagerPublicURL"] = amHost.String()
-	}
-
-	if grafanaHost != nil {
-		data["grafanaPublicURL"] = grafanaHost.String()
-	}
-
-	if thanosHost != nil {
-		data["thanosPublicURL"] = thanosHost.String()
-	}
-
-	return &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      sharedConfigMap,
-			Namespace: configManagedNamespace,
-		},
-		Data: data,
-	}
 }
 
 func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
