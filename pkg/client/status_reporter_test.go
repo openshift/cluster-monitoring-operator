@@ -101,7 +101,6 @@ func TestStatusReporterSetDone(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
-				ctx,
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,
@@ -113,7 +112,8 @@ func TestStatusReporterSetDone(t *testing.T) {
 				w(mock)
 			}
 
-			got := sr.SetDone("", "")
+
+			got := sr.SetDone(ctx, "", "")
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
@@ -194,7 +194,6 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
-				ctx,
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,
@@ -206,7 +205,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 				w(mock)
 			}
 
-			got := sr.SetInProgress()
+			got := sr.SetInProgress(ctx)
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
@@ -292,7 +291,6 @@ func TestStatusReporterSetFailed(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
-				ctx,
 				mock,
 				tc.given.operatorName,
 				tc.given.namespace,
@@ -304,7 +302,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 				w(mock)
 			}
 
-			got := sr.SetFailed(tc.given.err, "")
+			got := sr.SetFailed(ctx, tc.given.err, "")
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
