@@ -36,6 +36,7 @@ const (
 )
 
 func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
+	ctx := context.Background()
 	// Enable user workload monitoring to assess that an invalid configuration
 	// doesn't rollback the last known and valid configuration.
 	validCM := &v1.ConfigMap{
@@ -49,12 +50,12 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(validCM); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, validCM); err != nil {
 		t.Fatal(err)
 	}
 
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -80,7 +81,7 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 		t.Fatal(err)
 	}
 
@@ -88,13 +89,13 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionTrue)
 	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionFalse)
 	// Check that the previous setup hasn't been reverted
-	_, err = f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload", metav1.GetOptions{})
+	_, err = f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Restore the first configuration.
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(validCM); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, validCM); err != nil {
 		t.Fatal(err)
 	}
 
@@ -104,6 +105,7 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 }
 
 func TestGrafanaConfiguration(t *testing.T) {
+	ctx := context.Background()
 	config := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-monitoring-config",
@@ -114,7 +116,7 @@ func TestGrafanaConfiguration(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(config); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, config); err != nil {
 		t.Fatal(err)
 	}
 
@@ -138,13 +140,13 @@ func TestGrafanaConfiguration(t *testing.T) {
 	// Push a default configuration that re-enables Grafana.
 	config.Data["config.yaml"] = "grafana: { enabled: true }"
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(config); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, config); err != nil {
 		t.Fatal(err)
 	}
 
 	// Wait for Grafana deployment to appear.
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(context.TODO(), "grafana", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "grafana", metav1.GetOptions{})
 		return err
 	})
 	if err != nil {
@@ -157,11 +159,12 @@ func TestGrafanaConfiguration(t *testing.T) {
 }
 
 func assertOperatorCondition(t *testing.T, conditionType configv1.ClusterStatusConditionType, conditionStatus configv1.ConditionStatus) {
+	ctx := context.Background()
 	t.Helper()
 
 	reporter := f.OperatorClient.StatusReporter()
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		co, err := reporter.Get()
+		co, err := reporter.Get(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -190,7 +193,8 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	ctx := context.Background()
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -248,8 +252,9 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
       cpu: %s
       memory: %s
 `, storage, cpu, mem)
+	ctx := context.Background()
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -319,7 +324,9 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
     - operator: "Exists"
 `, cpu, mem, storage)
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -362,8 +369,9 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
+	ctx := context.Background()
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -405,7 +413,9 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -444,7 +454,9 @@ func TestClusterMonitorGrafanaConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -486,7 +498,9 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -530,7 +544,9 @@ func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
     - operator: "Exists"
 `
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -580,7 +596,9 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
       memory: %s
 `, cpu, mem)
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(configMapWithData(t, data)); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -642,11 +660,13 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
 		t.Fatal(err)
 	}
 
@@ -724,11 +744,13 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
 		t.Fatal(err)
 	}
 
@@ -816,11 +838,13 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+	ctx := context.Background()
+
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
 		t.Fatal(err)
 	}
 	for _, scenario := range []struct {
@@ -862,8 +886,9 @@ type deploymentRolloutParams struct {
 }
 
 func assertDeploymentRollout(params deploymentRolloutParams) func(*testing.T) {
+	ctx := context.Background()
 	return func(t *testing.T) {
-		err := f.OperatorClient.WaitForDeploymentRollout(&appsv1.Deployment{
+		err := f.OperatorClient.WaitForDeploymentRollout(ctx, &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      params.name,
 				Namespace: params.namespace,
@@ -906,7 +931,9 @@ func assertVolumeClaimsConfigAndRollout(params rolloutParams) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
+		ctx := context.Background()
+
+		err = f.OperatorClient.WaitForStatefulsetRollout(ctx, &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      params.statefulSetName,
 				Namespace: params.namespace,

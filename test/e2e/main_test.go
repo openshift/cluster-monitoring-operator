@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -42,6 +43,7 @@ func TestMain(m *testing.M) {
 // `os.Exit` does not honor `defer` statements. For more details see:
 // http://blog.englund.nu/golang,/testing/2017/03/12/using-defer-in-testmain.html
 func testMain(m *testing.M) error {
+	ctx := context.Background()
 	kubeConfigPath := flag.String(
 		"kubeconfig",
 		clientcmd.RecommendedHomeFile,
@@ -65,7 +67,7 @@ func testMain(m *testing.M) error {
 
 	// Wait for Prometheus operator.
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(f.Ctx, "prometheus-operator", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-operator", metav1.GetOptions{})
 		if err != nil {
 			return false, nil
 		}
