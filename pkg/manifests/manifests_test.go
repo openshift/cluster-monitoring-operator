@@ -1067,9 +1067,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
 `,
-			expected: `- tls_config:
-    insecure_skip_verify: false
-  static_configs:
+			expected: `- static_configs:
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
@@ -1090,8 +1088,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			expected: `- scheme: ftp
   path_prefix: /path
   api_version: v1
-  tls_config:
-    insecure_skip_verify: false
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -1115,8 +1111,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   api_version: v2
   authorization:
     credentials_file: /etc/prometheus/secrets/alertmanager1-bearer-token/token
-  tls_config:
-    insecure_skip_verify: false
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -1151,7 +1145,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
     cert_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
     key_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
     server_name: alertmanager-remote.com
-    insecure_skip_verify: false
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -1176,6 +1169,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
         name: alertmanager-key-tls
         key: tls.ca
       serverName: alertmanager-remote.com
+      insecureSkipVerify: true
     staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com`,
@@ -1186,7 +1180,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
     cert_file: /etc/prometheus/secrets/alertmanager-cert-tls/tls.ca
     key_file: /etc/prometheus/secrets/alertmanager-key-tls/tls.ca
     server_name: alertmanager-remote.com
-    insecure_skip_verify: false
+    insecure_skip_verify: true
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -1226,7 +1220,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
     cert_file: /etc/prometheus/secrets/alertmanager-cert-tls/tls.ca
     key_file: /etc/prometheus/secrets/alertmanager-key-tls/tls.ca
     server_name: alertmanager-remote.com
-    insecure_skip_verify: false
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -1320,10 +1313,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   "scheme": "https"
   "static_configs":
   - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
-- http_config:
-    tls_config:
-      insecure_skip_verify: false
-  static_configs:
+- static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
 `,
@@ -1351,9 +1341,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
 - scheme: ftp
   path_prefix: /path-prefix
-  http_config:
-    tls_config:
-      insecure_skip_verify: false
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -1382,8 +1369,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
 - http_config:
     bearer_token_file: /etc/prometheus/secrets/bearer-token/key
-    tls_config:
-      insecure_skip_verify: false
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -1404,6 +1389,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
         name: alertmanager-tls
         key: tls.ca
       serverName: alertmanager-remote.com
+      insecureSkipVerify: true
     staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com`,
@@ -1423,7 +1409,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       cert_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
       key_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
       server_name: alertmanager-remote.com
-      insecure_skip_verify: false
+      insecure_skip_verify: true
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -1463,7 +1449,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       cert_file: /etc/prometheus/secrets/alertmanager-cert-tls/tls.ca
       key_file: /etc/prometheus/secrets/alertmanager-key-tls/tls.ca
       server_name: alertmanager-remote.com
-      insecure_skip_verify: false
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -1511,7 +1496,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       cert_file: /etc/prometheus/secrets/alertmanager-cert-tls/tls.ca
       key_file: /etc/prometheus/secrets/alertmanager-key-tls/tls.ca
       server_name: alertmanager-remote.com
-      insecure_skip_verify: false
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
