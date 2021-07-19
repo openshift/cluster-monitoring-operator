@@ -1321,7 +1321,7 @@ func (c *Client) CRDReady(ctx context.Context, crd *extensionsobj.CustomResource
 }
 
 func (c *Client) StatusReporter() *StatusReporter {
-	return NewStatusReporter(c.oscclient.ConfigV1().ClusterOperators(), "monitoring",  c.namespace, c.userWorkloadNamespace, c.version)
+	return NewStatusReporter(c.oscclient.ConfigV1().ClusterOperators(), "monitoring", c.namespace, c.userWorkloadNamespace, c.version)
 }
 
 func (c *Client) DeleteRoleBinding(ctx context.Context, binding *rbacv1.RoleBinding) error {

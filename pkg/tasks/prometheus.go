@@ -49,7 +49,7 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
 	}
 
-	kscm, err := t.client.GetConfigmap(ctx,"openshift-config-managed", "kubelet-serving-ca")
+	kscm, err := t.client.GetConfigmap(ctx, "openshift-config-managed", "kubelet-serving-ca")
 	if err != nil {
 		return errors.Wrap(err, "openshift-config-managed/kubelet-serving-ca")
 	}
