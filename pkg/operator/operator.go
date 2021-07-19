@@ -541,7 +541,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
 
-	taskName, err := tl.RunAll()
+	taskName, err := tl.RunAll(ctx)
 	if err != nil {
 		o.reportError(ctx, err, taskName)
 		return err
