@@ -29,6 +29,8 @@ import (
 const (
 	unavailableMessage string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
 	asExpectedReason   string = "AsExpected"
+	StorageNotConfiguredMessage = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.8/monitoring/configuring-the-monitoring-stack.html"
+	StorageNotConfiguredReason  = "PrometheusDataPersistenceNotConfigured"
 )
 
 type StatusReporter struct {
@@ -67,7 +69,7 @@ func (r *StatusReporter) relatedObjects() []v1.ObjectReference {
 	}
 }
 
-func (r *StatusReporter) SetDone() error {
+func (r *StatusReporter) SetDone(degradedConditionMessage string, degradedConditionReason string) error {
 	co, err := r.client.Get(r.ctx, r.clusterOperatorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		co = r.newClusterOperator()
@@ -82,7 +84,7 @@ func (r *StatusReporter) SetDone() error {
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", "RollOutDone", time)
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", "", time)
-	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, "", "", time)
+	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, degradedConditionMessage, degradedConditionReason, time)
 	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", asExpectedReason, time)
 	co.Status.Conditions = conditions.entries()
 
