@@ -1060,6 +1060,12 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		mountedSecrets []string
 	}{
 		{
+			name:           "empty config",
+			config:         "",
+			expected:       "[]\n",
+			mountedSecrets: []string{},
+		},
+		{
 			name: "basic config",
 			config: `prometheusK8s:
   additionalAlertmanagerConfigs:

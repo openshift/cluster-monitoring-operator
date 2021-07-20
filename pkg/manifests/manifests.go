@@ -3459,6 +3459,9 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 	for i, _ := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
+			// Thanos ruler does not refresh its config when the alertmanagers secret changes.
+			// Because of this, we need to redeploy the statefulset
+			// whenever there is a change in the data of the secret.
 			t.Spec.Containers[i].Env = append(t.Spec.Containers[i].Env, v1.EnvVar{
 				Name:  "ALERTMANAGER_CONFIG_SECRET_VERSION",
 				Value: digest,

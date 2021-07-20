@@ -20,8 +20,6 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 )
 
@@ -321,22 +319,9 @@ func (t *PrometheusTask) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus additionalAlertmanagerConfigs secret failed")
 		}
-		if secret != nil {
-			klog.V(4).Info("initializing Prometheus additionalAlertmanagerConfigs secret")
-			err = t.client.CreateOrUpdateSecret(secret)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Prometheus additionalAlertmanagerConfigs secret failed")
-			}
-		} else {
-			err = t.client.DeleteSecret(&v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      manifests.PrometheusK8sAdditionalAlertmanagerConfigSecretName,
-					Namespace: t.client.Namespace(),
-				},
-			})
-			if err != nil {
-				return errors.Wrap(err, "deleting Prometheus additionalAlertmanagerConfigs Secret failed")
-			}
+		klog.V(4).Info("reconciling Prometheus additionalAlertmanagerConfigs secret")
+		if err = t.client.CreateOrUpdateSecret(secret); err != nil {
+			return errors.Wrap(err, "reconciling Prometheus additionalAlertmanagerConfigs secret failed")
 		}
 
 		klog.V(4).Info("initializing Prometheus object")

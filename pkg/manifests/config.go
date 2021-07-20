@@ -83,7 +83,7 @@ func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConf
 		return nil
 	}
 
-	alertmanagerConfigs := c.UserWorkloadConfiguration.ThanosRuler.AlertManagersConfigs
+	alertmanagerConfigs := c.UserWorkloadConfiguration.ThanosRuler.AlertmanagersConfigs
 	if len(alertmanagerConfigs) == 0 {
 		return nil
 	}
@@ -193,7 +193,7 @@ type ThanosRulerConfig struct {
 	Tolerations          []v1.Toleration                      `json:"tolerations"`
 	Resources            *v1.ResourceRequirements             `json:"resources"`
 	VolumeClaimTemplate  *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	AlertManagersConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
+	AlertmanagersConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
 }
 
 type ThanosQuerierConfig struct {

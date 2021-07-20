@@ -19,7 +19,7 @@ func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAML() (interface{}, err
 	for i, item := range a {
 		promAmCfg := PrometheusAdditionalAlertmanagerConfig(item)
 		if y, err := promAmCfg.MarshalYAML(); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "additional Alertmanager configuration[%d]", i)
 		} else {
 			result[i] = y
 		}
@@ -108,7 +108,7 @@ type ThanosAlertmanagerAdditionalConfigs []AdditionalAlertmanagerConfig
 
 // ThanosAlertmanagerAdditionalConfig is an AdditionalAlertmanagerConfig
 // which can be marshaled into a yaml string,
-// compatible with the Prometheus configuration format
+// compatible with the Thanos configuration format
 type ThanosAlertmanagerAdditionalConfig AdditionalAlertmanagerConfig
 
 func (a ThanosAlertmanagerAdditionalConfigs) MarshalYAML() (interface{}, error) {
@@ -116,7 +116,7 @@ func (a ThanosAlertmanagerAdditionalConfigs) MarshalYAML() (interface{}, error) 
 	for i, item := range a {
 		promAmCfg := ThanosAlertmanagerAdditionalConfig(item)
 		if y, err := promAmCfg.MarshalYAML(); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "additional Alertmanager configuration[%d]", i)
 		} else {
 			result[i] = y
 		}
@@ -197,13 +197,16 @@ func secretPath(s *v1.SecretKeySelector) (string, error) {
 }
 
 func validateSecret(s *v1.SecretKeySelector) error {
-	if s != nil {
-		if s.Name == "" {
-			return errors.Errorf("secret %q for ca not found", s.Name)
-		}
-		if s.Key == "" {
-			return errors.Errorf("secret key %q for ca not found", s.Key)
-		}
+	if s == nil {
+		return nil
 	}
+
+	if s.Name == "" {
+		return errors.Errorf("secret %q for ca not found", s.Name)
+	}
+	if s.Key == "" {
+		return errors.Errorf("secret key %q for ca not found", s.Key)
+	}
+
 	return nil
 }

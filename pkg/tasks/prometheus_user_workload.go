@@ -17,9 +17,6 @@ package tasks
 import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
 )
@@ -193,22 +190,10 @@ func (t *PrometheusUserWorkloadTask) create() error {
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 	}
-	if secret != nil {
-		klog.V(4).Info("initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret")
-		err = t.client.CreateOrUpdateSecret(secret)
-		if err != nil {
-			return errors.Wrap(err, "reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
-		}
-	} else {
-		err = t.client.DeleteSecret(&v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName,
-				Namespace: t.client.UserWorkloadNamespace(),
-			},
-		})
-		if err != nil {
-			return errors.Wrap(err, "deleting Prometheus additionalAlertmanagerConfigs Secret failed")
-		}
+	klog.V(4).Info("reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret")
+	err = t.client.CreateOrUpdateSecret(secret)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 	}
 
 	klog.V(4).Info("initializing UserWorkload Prometheus object")
@@ -418,13 +403,13 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload serving certs CA Bundle ConfigMap failed")
 	}
 
-	if err = t.client.DeleteSecret(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName,
-			Namespace: t.client.UserWorkloadNamespace(),
-		},
-	}); err != nil {
-		return errors.Wrap(err, "deleting Prometheus additionalAlertmanagerConfigs Secret failed")
+	amsSecret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
+	}
+
+	if err = t.client.DeleteSecret(amsSecret); err != nil {
+		return errors.Wrap(err, "deleting UserWorkload Prometheus additionalAlertmanagerConfigs Secret failed")
 	}
 
 	err = t.client.DeleteConfigMap(cacm)
