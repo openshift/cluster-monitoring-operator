@@ -29,7 +29,7 @@ import (
 const (
 	unavailableMessage string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
 	asExpectedReason   string = "AsExpected"
-	StorageNotConfiguredMessage = "Prometheus is running without persistent storage and upgrades and cluster disruptions can lead to data loss. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.7/monitoring/configuring-the-monitoring-stack.html"
+	StorageNotConfiguredMessage = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.8/monitoring/configuring-the-monitoring-stack.html"
 	StorageNotConfiguredReason  = "PrometheusDataPersistenceNotConfigured"
 )
 
