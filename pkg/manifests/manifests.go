@@ -37,7 +37,6 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -2891,19 +2890,6 @@ func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) 
 	return d, nil
 }
 
-func (f *Factory) NewIngress(manifest io.Reader) (*v1beta1.Ingress, error) {
-	i, err := NewIngress(manifest)
-	if err != nil {
-		return nil, err
-	}
-
-	if i.GetNamespace() == "" {
-		i.SetNamespace(f.namespace)
-	}
-
-	return i, nil
-}
-
 func (f *Factory) NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
 	return NewAPIService(manifest)
 }
@@ -3665,16 +3651,6 @@ func NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) {
 	}
 
 	return &d, nil
-}
-
-func NewIngress(manifest io.Reader) (*v1beta1.Ingress, error) {
-	i := v1beta1.Ingress{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&i)
-	if err != nil {
-		return nil, err
-	}
-
-	return &i, nil
 }
 
 func NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
