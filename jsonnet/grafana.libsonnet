@@ -2,6 +2,15 @@ local grafana = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/k
 
 function(params)
   local cfg = params;
+
+  // List of dashboards which should be shown in OCP developer perspective.
+  local odcDashboards = [
+    'grafana-dashboard-k8s-resources-namespace',
+    'grafana-dashboard-k8s-resources-workloads-namespace',
+    'grafana-dashboard-k8s-resources-pod',
+    'grafana-dashboard-k8s-resources-workload',
+  ];
+
   grafana(cfg) {
 
     consoleDashboardDefinitions: {
@@ -12,7 +21,11 @@ function(params)
           d {
             metadata+: {
               namespace: 'openshift-config-managed',
-              labels+: { 'console.openshift.io/dashboard': 'true' },
+              labels+: {
+                'console.openshift.io/dashboard': 'true',
+              } + if std.count(odcDashboards, d.metadata.name) > 0 then {
+                'console.openshift.io/odc-dashboard': 'true',
+              } else {},
             },
           },
         $.dashboardDefinitions.items,
