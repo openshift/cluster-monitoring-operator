@@ -112,7 +112,6 @@ func TestStatusReporterSetDone(t *testing.T) {
 				w(mock)
 			}
 
-
 			got := sr.SetDone(ctx, "", "")
 
 			for _, check := range tc.check {

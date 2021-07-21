@@ -150,8 +150,8 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 
 	// Prometheus client depends on setup above.
 	f.ThanosQuerierClient, err = NewPrometheusClientFromRoute(
-		openshiftRouteClient,
 		ctx,
+		openshiftRouteClient,
 		namespaceName, "thanos-querier",
 		token,
 	)
@@ -160,8 +160,8 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	}
 
 	f.PrometheusK8sClient, err = NewPrometheusClientFromRoute(
-		openshiftRouteClient,
 		ctx,
+		openshiftRouteClient,
 		namespaceName, "prometheus-k8s",
 		token,
 	)
@@ -170,8 +170,8 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	}
 
 	f.AlertmanagerClient, err = NewPrometheusClientFromRoute(
-		openshiftRouteClient,
 		ctx,
+		openshiftRouteClient,
 		namespaceName, "alertmanager-main",
 		token,
 	)

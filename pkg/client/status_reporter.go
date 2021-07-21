@@ -27,10 +27,10 @@ import (
 )
 
 const (
-	unavailableMessage string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
-	asExpectedReason   string = "AsExpected"
-	StorageNotConfiguredMessage = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.8/monitoring/configuring-the-monitoring-stack.html"
-	StorageNotConfiguredReason  = "PrometheusDataPersistenceNotConfigured"
+	unavailableMessage          string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
+	asExpectedReason            string = "AsExpected"
+	StorageNotConfiguredMessage        = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.8/monitoring/configuring-the-monitoring-stack.html"
+	StorageNotConfiguredReason         = "PrometheusDataPersistenceNotConfigured"
 )
 
 type StatusReporter struct {
@@ -41,7 +41,7 @@ type StatusReporter struct {
 	version               string
 }
 
-func NewStatusReporter(client clientv1.ClusterOperatorInterface, name string, namespace, userWorkloadNamespace, version string) *StatusReporter {
+func NewStatusReporter(client clientv1.ClusterOperatorInterface, name, namespace, userWorkloadNamespace, version string) *StatusReporter {
 	return &StatusReporter{
 		client:                client,
 		clusterOperatorName:   name,
