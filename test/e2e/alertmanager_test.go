@@ -348,3 +348,78 @@ func TestAlertmanagerOAuthProxy(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Users should be able to disable Alertmanager through the cluster-monitoring-config
+func TestAlertmanagerDisabling(t *testing.T) {
+	// Disable alertmanager
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(context.Background(), &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      clusterMonitorConfigMapName,
+			Namespace: f.Ns,
+		},
+		Data: map[string]string{
+			"config.yaml": `alertmanagerMain: { enabled: false }`,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	assertions := []struct {
+		name      string
+		assertion framework.AssertionFunc
+	}{
+		{name: "assert alertmanager does not exist", assertion: f.AssertStatefulsetDoesNotExist("alertmanager-main", f.Ns)},
+		{name: "assert route does not exist", assertion: f.AssertRouteDoesNotExist("alertmanager-main", f.Ns)},
+		{name: "assert alertmanager main config does not exist", assertion: f.AssertSecretDoesNotExist("alertmanager-main", f.Ns)},
+		{name: "assert kube-rbac-proxy secret does not exist", assertion: f.AssertSecretDoesNotExist("alertmanager-kube-rbac-proxy", f.Ns)},
+		{name: "assert proxy secret does not exist", assertion: f.AssertSecretDoesNotExist("alertmanager-main-proxy", f.Ns)},
+		{name: "assert service alertmanager-main does not exist", assertion: f.AssertServiceDoesNotExist("alertmanager-main", f.Ns)},
+		{name: "assert service alertmanager-operated does not exist", assertion: f.AssertServiceDoesNotExist("alertmanager-operated", f.Ns)},
+		{name: "assert serviceaccount alertmanager-main does not exist", assertion: f.AssertServiceAccountDoesNotExist("alertmanager-main", f.Ns)},
+		{name: "assert clusterrole alertmanager-main does not exist", assertion: f.AssertClusterRoleDoesNotExist("alertmanager-main")},
+		{name: "assert clusterrolebinding alertmanager-main does not exist", assertion: f.AssertClusterRoleBindingDoesNotExist("alertmanager-main")},
+		{name: "assert trusted-ca-bundle does not exist", assertion: f.AssertConfigmapDoesNotExist("alertmanager-trusted-ca-bundle", f.Ns)},
+		{name: "assert prometheus rule does not exist", assertion: f.AssertPrometheusRuleDoesNotExist("alertmanager-main-rules", f.Ns)},
+		{name: "assert service monitor does not exist", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager", f.Ns)},
+	}
+	t.Run("disable alertmanager", func(t *testing.T) {
+		for _, assertion := range assertions {
+			t.Run(assertion.name, assertion.assertion)
+		}
+	})
+
+	// Re-enable alertmanager
+	if err := f.OperatorClient.DeleteConfigMap(context.Background(), &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      clusterMonitorConfigMapName,
+			Namespace: f.Ns,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	assertions = []struct {
+		name      string
+		assertion framework.AssertionFunc
+	}{
+		{name: "assert alertmanager exists", assertion: f.AssertStatefulsetExists("alertmanager-main", f.Ns)},
+		{name: "assert route exists", assertion: f.AssertRouteExists("alertmanager-main", f.Ns)},
+		{name: "assert alertmanager main config exists", assertion: f.AssertSecretExists("alertmanager-main", f.Ns)},
+		{name: "assert kube-rbac-proxy secret exists", assertion: f.AssertSecretExists("alertmanager-kube-rbac-proxy", f.Ns)},
+		{name: "assert proxy secret exists", assertion: f.AssertSecretExists("alertmanager-main-proxy", f.Ns)},
+		{name: "assert service alertmanager-main exists", assertion: f.AssertServiceExists("alertmanager-main", f.Ns)},
+		{name: "assert service alertmanager-operated exists", assertion: f.AssertServiceExists("alertmanager-operated", f.Ns)},
+		{name: "assert serviceaccount alertmanager exists", assertion: f.AssertServiceAccountExists("alertmanager-main", f.Ns)},
+		{name: "assert clusterrole alertmanager-main exists", assertion: f.AssertClusterRoleExists("alertmanager-main")},
+		{name: "assert clusterrolebinding alertmanager-main exists", assertion: f.AssertClusterRoleBindingExists("alertmanager-main")},
+		{name: "assert trusted-ca-bundle exists", assertion: f.AssertConfigmapExists(	"alertmanager-trusted-ca-bundle", f.Ns)},
+		{name: "assert prometheus rule exists", assertion: f.AssertPrometheusRuleExists("alertmanager-main-rules", f.Ns)},
+		{name: "assert service monitor exists", assertion: f.AssertServiceMonitorExists("alertmanager", f.Ns)},
+	}
+	t.Run("enable alertmanager", func(t *testing.T) {
+		for _, assertion := range assertions {
+			t.Run(assertion.name, assertion.assertion)
+		}
+	})
+}
+

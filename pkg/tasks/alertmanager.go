@@ -24,16 +24,30 @@ import (
 type AlertmanagerTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.Config
 }
 
-func NewAlertmanagerTask(client *client.Client, factory *manifests.Factory) *AlertmanagerTask {
+func NewAlertmanagerTask(
+	client *client.Client,
+	factory *manifests.Factory,
+	config *manifests.Config,
+) *AlertmanagerTask {
 	return &AlertmanagerTask{
 		client:  client,
 		factory: factory,
+		config:  config,
 	}
 }
 
 func (t *AlertmanagerTask) Run(ctx context.Context) error {
+	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+		return t.create(ctx)
+	}
+
+	return t.destroy(ctx)
+}
+
+func (t *AlertmanagerTask) create(ctx context.Context) error {
 	r, err := t.factory.AlertmanagerRoute()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager Route failed")
@@ -166,4 +180,126 @@ func (t *AlertmanagerTask) Run(ctx context.Context) error {
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
 	return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
+}
+
+func (t *AlertmanagerTask) destroy(ctx context.Context) error {
+	r, err := t.factory.AlertmanagerRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager Route failed")
+	}
+
+	err = t.client.DeleteRoute(ctx, r)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager Route failed")
+	}
+
+	s, err := t.factory.AlertmanagerConfig()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager configuration Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, s)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager configuration Secret failed")
+	}
+
+	rs, err := t.factory.AlertmanagerRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager RBAC proxy Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager RBAC proxy Secret failed")
+	}
+
+	cr, err := t.factory.AlertmanagerClusterRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager ClusterRole failed")
+	}
+
+	err = t.client.DeleteClusterRole(ctx, cr)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager ClusterRole failed")
+	}
+
+	crb, err := t.factory.AlertmanagerClusterRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager ClusterRoleBinding failed")
+	}
+
+	err = t.client.DeleteClusterRoleBinding(ctx, crb)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager ClusterRoleBinding failed")
+	}
+
+	sa, err := t.factory.AlertmanagerServiceAccount()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager ServiceAccount failed")
+	}
+
+	err = t.client.DeleteServiceAccount(ctx, sa)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager ServiceAccount failed")
+	}
+
+	ps, err := t.factory.AlertmanagerProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager proxy Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, ps)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager proxy Secret failed")
+	}
+
+	svc, err := t.factory.AlertmanagerService()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager Service failed")
+	}
+
+	err = t.client.DeleteService(ctx, svc)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager Service failed")
+	}
+
+	{
+		// Create trusted CA bundle ConfigMap.
+		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager CA bundle ConfigMap failed")
+		}
+
+		if err := t.client.DeleteConfigMap(ctx, trustedCA); err != nil {
+			return errors.Wrap(err, "deleting Alertmanager trusted CA bundle failed")
+
+		}
+
+		a, err := t.factory.AlertmanagerMain("", trustedCA)
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager object failed")
+		}
+
+		err = t.client.DeleteAlertmanager(ctx, a)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Alertmanager object failed")
+		}
+	}
+
+	pr, err := t.factory.AlertmanagerPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing alertmanager rules PrometheusRule failed")
+	}
+	err = t.client.DeletePrometheusRule(ctx, pr)
+	if err != nil {
+		return errors.Wrap(err, "deleting alertmanager rules PrometheusRule failed")
+	}
+
+	smam, err := t.factory.AlertmanagerServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")
+	}
+
+	err = t.client.DeleteServiceMonitor(ctx, smam)
+	return errors.Wrap(err, "deleting Alertmanager ServiceMonitor failed")
 }
