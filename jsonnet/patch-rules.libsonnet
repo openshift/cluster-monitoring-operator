@@ -7,6 +7,7 @@ local excludedRuleGroups = [
   // rules managed by openshift/cluster-kube-apiserver-operator.
   'kube-apiserver-slos',
   'kube-apiserver.rules',
+  'kube-apiserver-burnrate.rules',
 ];
 
 local excludedRules = [
