@@ -24,6 +24,8 @@ spec:
     scrapeTimeout: 1m
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
       serverName: server-name-replaced-at-runtime
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     interval: 1m

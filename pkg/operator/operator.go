@@ -16,21 +16,28 @@ package operator
 
 import (
 	"context"
+	"crypto/x509/pkix"
 	"fmt"
 	"strings"
 	"time"
 
-	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
+	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+
+	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/library-go/pkg/operator/csr"
+	"github.com/openshift/library-go/pkg/operator/events"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -118,6 +125,7 @@ const (
 	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
+	metricsClientCerts            = "openshift-monitoring/metrics-client-certs"
 
 	// Canonical name of the cluster-wide infrastrucure resource.
 	clusterResourceName = "cluster"
@@ -139,8 +147,10 @@ type Operator struct {
 
 	client *client.Client
 
-	cmapInf   cache.SharedIndexInformer
-	informers []cache.SharedIndexInformer
+	cmapInf              cache.SharedIndexInformer
+	informers            []cache.SharedIndexInformer
+	informerFactories    []informers.SharedInformerFactory
+	controllersToRunFunc []func(ctx context.Context, workers int)
 
 	queue workqueue.RateLimitingInterface
 
@@ -179,6 +189,8 @@ func New(
 		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(50*time.Millisecond, 3*time.Minute), "cluster-monitoring"),
 		informers:                 make([]cache.SharedIndexInformer, 0),
 		assets:                    a,
+		informerFactories:         make([]informers.SharedInformerFactory, 0),
+		controllersToRunFunc:      make([]func(context.Context, int), 0),
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -246,6 +258,50 @@ func New(
 	})
 	o.informers = append(o.informers, informer)
 
+	kubeInformersOperatorNS := informers.NewSharedInformerFactoryWithOptions(
+		c.KubernetesInterface(),
+		resyncPeriod,
+		informers.WithNamespace(namespace),
+	)
+	o.informerFactories = append(o.informerFactories, kubeInformersOperatorNS)
+
+	controllerRef, err := events.GetControllerReferenceForCurrentPod(o.client.KubernetesInterface(), namespace, nil)
+	if err != nil {
+		klog.Warningf("unable to get owner reference (falling back to namespace): %v", err)
+	}
+
+	eventRecorder := events.NewKubeRecorderWithOptions(
+		o.client.KubernetesInterface().CoreV1().Events(namespace),
+		events.RecommendedClusterSingletonCorrelatorOptions(),
+		"cluster-monitoring-operator",
+		controllerRef,
+	)
+
+	csrController := csr.NewClientCertificateController(
+		csr.ClientCertOption{
+			SecretNamespace: "openshift-monitoring",
+			SecretName:      "metrics-client-certs",
+		},
+		csr.CSROption{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "system:openshift:openshift-monitoring-",
+				Labels: map[string]string{
+					"metrics.openshift.io/csr.subject": "prometheus",
+				},
+			},
+			Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
+			SignerName: certapiv1.KubeAPIServerClientSignerName,
+		},
+		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
+		o.client.KubernetesInterface().CertificatesV1().CertificateSigningRequests(),
+		kubeInformersOperatorNS.Core().V1().Secrets(),
+		o.client.KubernetesInterface().CoreV1(),
+		eventRecorder,
+		"OpenShiftMonitoringClientCertRequester",
+	)
+
+	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run)
+
 	return o, nil
 }
 
@@ -268,7 +324,8 @@ func (o *Operator) RegisterMetrics(r prometheus.Registerer) {
 }
 
 // Run the controller.
-func (o *Operator) Run(stopc <-chan struct{}) error {
+func (o *Operator) Run(ctx context.Context) error {
+	stopc := ctx.Done()
 	defer o.queue.ShutDown()
 
 	errChan := make(chan error)
@@ -298,13 +355,23 @@ func (o *Operator) Run(stopc <-chan struct{}) error {
 		go inf.Run(stopc)
 		synced = append(synced, inf.HasSynced)
 	}
+	for _, f := range o.informerFactories {
+		f.Start(stopc)
+	}
 
 	klog.V(4).Info("Waiting for initial cache sync.")
 	ok := cache.WaitForCacheSync(stopc, synced...)
 	if !ok {
 		return errors.New("failed to sync informers")
 	}
+	for _, f := range o.informerFactories {
+		f.WaitForCacheSync(stopc)
+	}
 	klog.V(4).Info("Initial cache sync done.")
+
+	for _, r := range o.controllersToRunFunc {
+		go r(ctx, 1)
+	}
 
 	go o.worker()
 
@@ -368,6 +435,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case telemeterCABundleConfigMap:
 	case alertmanagerCABundleConfigMap:
 	case grpcTLS:
+	case metricsClientCerts:
 	case uwmConfigMap:
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
@@ -448,6 +516,7 @@ func (o *Operator) sync(key string) error {
 		// update prometheus-operator before anything else because it is responsible for managing many other resources (e.g. Prometheus, Alertmanager, Thanos Ruler, ...).
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
+				tasks.NewTaskSpec("Updating metrics scraping client CA", tasks.NewMetricsClientCATask(o.client, factory)),
 				tasks.NewTaskSpec("Updating Prometheus Operator", tasks.NewPrometheusOperatorTask(o.client, factory)),
 			}),
 		tasks.NewTaskGroup(

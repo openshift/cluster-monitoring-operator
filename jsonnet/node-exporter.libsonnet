@@ -30,6 +30,8 @@ function(params)
             tlsConfig+: {
               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
               serverName: 'server-name-replaced-at-runtime',
+              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
               insecureSkipVerify: false,
             },
           },
@@ -118,13 +120,21 @@ function(params)
                       args+: [
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
+                        '--client-ca-file=/etc/tls/client/client-ca.crt',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts: [{
-                        mountPath: '/etc/tls/private',
-                        name: tlsVolumeName,
-                        readOnly: false,
-                      }],
+                      volumeMounts: [
+                        {
+                          mountPath: '/etc/tls/private',
+                          name: tlsVolumeName,
+                          readOnly: false,
+                        },
+                        {
+                          mountPath: '/etc/tls/client',
+                          name: 'metrics-client-ca',
+                          readOnly: false,
+                        },
+                      ],
                       resources: {
                         requests: {
                           memory: '15Mi',
@@ -183,6 +193,12 @@ function(params)
                 hostPath: {
                   path: wtmpPath,
                   type: 'File',
+                },
+              },
+              {
+                name: 'metrics-client-ca',
+                configMap: {
+                  name: 'metrics-client-ca',
                 },
               },
             ],
