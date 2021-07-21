@@ -51,17 +51,18 @@ const (
 )
 
 type Framework struct {
-	OperatorClient      *client.Client
-	KubeClient          kubernetes.Interface
-	ThanosQuerierClient *PrometheusClient
-	PrometheusK8sClient *PrometheusClient
-	AlertmanagerClient  *PrometheusClient
-	APIServicesClient   *apiservicesclient.Clientset
-	AdmissionClient     *admissionclient.AdmissionregistrationV1Client
-	MetricsClient       *metricsclient.Clientset
-	SchedulingClient    *schedulingv1client.SchedulingV1Client
-	kubeConfigPath      string
-	Ctx                 context.Context
+	OperatorClient       *client.Client
+	OpenShiftRouteClient *routev1.RouteV1Client
+	KubeClient           kubernetes.Interface
+	ThanosQuerierClient  *PrometheusClient
+	PrometheusK8sClient  *PrometheusClient
+	AlertmanagerClient   *PrometheusClient
+	APIServicesClient    *apiservicesclient.Clientset
+	AdmissionClient      *admissionclient.AdmissionregistrationV1Client
+	MetricsClient        *metricsclient.Clientset
+	SchedulingClient     *schedulingv1client.SchedulingV1Client
+	kubeConfigPath       string
+	Ctx                  context.Context
 
 	MonitoringClient             *monClient.MonitoringV1Client
 	Ns, UserWorkloadMonitoringNs string
@@ -118,6 +119,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 
 	f := &Framework{
 		OperatorClient:           operatorClient,
+		OpenShiftRouteClient:     openshiftRouteClient,
 		KubeClient:               kubeClient,
 		APIServicesClient:        apiServicesClient,
 		AdmissionClient:          admissionClient,
@@ -200,7 +202,7 @@ func (f *Framework) setup() (cleanUpFunc, error) {
 	}
 
 	cleanUpFuncs = append(cleanUpFuncs, cf)
-	
+
 	return func() error {
 		var errs []error
 		for _, f := range cleanUpFuncs {
@@ -335,7 +337,7 @@ func (f *Framework) CreateRoleBindingFromRole(namespace, serviceAccount, role st
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "Role",
-			Name:    role,
+			Name:     role,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
