@@ -26,7 +26,7 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "release-0.47"
+      "version": "release-0.48"
     },
     {
       "source": {
@@ -45,7 +45,7 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "release-4.7",
+      "version": "release-4.8",
       "name": "telemeter-client"
     },
     {
@@ -55,7 +55,7 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "release-0.17"
+      "version": "release-0.20"
     },
     {
       "source": {
