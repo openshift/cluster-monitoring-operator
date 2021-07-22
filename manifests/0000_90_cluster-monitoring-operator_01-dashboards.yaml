@@ -8872,6 +8872,7 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.5.5
     console.openshift.io/dashboard: "true"
+    console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-namespace
   namespace: openshift-config-managed
 ---
@@ -12267,6 +12268,7 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.5.5
     console.openshift.io/dashboard: "true"
+    console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-pod
   namespace: openshift-config-managed
 ---
@@ -14248,6 +14250,7 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.5.5
     console.openshift.io/dashboard: "true"
+    console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-workload
   namespace: openshift-config-managed
 ---
@@ -16394,6 +16397,7 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 7.5.5
     console.openshift.io/dashboard: "true"
+    console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-workloads-namespace
   namespace: openshift-config-managed
 ---
