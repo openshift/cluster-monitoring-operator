@@ -17931,7 +17931,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Utilisation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18017,7 +18017,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Saturation (load1 per CPU)",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18115,7 +18115,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Utilisation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18201,7 +18201,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Saturation (Major Page Faults)",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18315,7 +18315,7 @@ data:
                         "timeShift": null,
                         "title": "Net Utilisation (Bytes Receive/Transmit)",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18417,7 +18417,7 @@ data:
                         "timeShift": null,
                         "title": "Net Saturation (Drops Receive/Transmit)",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18515,7 +18515,7 @@ data:
                         "timeShift": null,
                         "title": "Disk IO Utilisation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18601,7 +18601,7 @@ data:
                         "timeShift": null,
                         "title": "Disk IO Saturation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18699,7 +18699,7 @@ data:
                         "timeShift": null,
                         "title": "Disk Space Utilisation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18890,7 +18890,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Utilisation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -18976,7 +18976,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Saturation (Load1 per CPU)",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -19074,7 +19074,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Utilisation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -19160,7 +19160,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Saturation (Major Page Faults)",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -19274,7 +19274,7 @@ data:
                         "timeShift": null,
                         "title": "Net Utilisation (Bytes Receive/Transmit)",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -19376,7 +19376,7 @@ data:
                         "timeShift": null,
                         "title": "Net Saturation (Drops Receive/Transmit)",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -19474,7 +19474,7 @@ data:
                         "timeShift": null,
                         "title": "Disk IO Utilisation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -19560,7 +19560,7 @@ data:
                         "timeShift": null,
                         "title": "Disk IO Saturation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -19658,7 +19658,7 @@ data:
                         "timeShift": null,
                         "title": "Disk Space Utilisation",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21227,7 +21227,7 @@ data:
                         "timeShift": null,
                         "title": "Prometheus Stats",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21326,7 +21326,7 @@ data:
                         "timeShift": null,
                         "title": "Target Sync",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21412,7 +21412,7 @@ data:
                         "timeShift": null,
                         "title": "Targets",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21510,7 +21510,7 @@ data:
                         "timeShift": null,
                         "title": "Average Scrape Interval Duration",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21620,7 +21620,7 @@ data:
                         "timeShift": null,
                         "title": "Scrape failures",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21706,7 +21706,7 @@ data:
                         "timeShift": null,
                         "title": "Appended Samples",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21804,7 +21804,7 @@ data:
                         "timeShift": null,
                         "title": "Head Series",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21890,7 +21890,7 @@ data:
                         "timeShift": null,
                         "title": "Head Chunks",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -21988,7 +21988,7 @@ data:
                         "timeShift": null,
                         "title": "Query Rate",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -22074,7 +22074,7 @@ data:
                         "timeShift": null,
                         "title": "Stage Duration",
                         "tooltip": {
-                            "shared": true,
+                            "shared": false,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -22140,7 +22140,7 @@ data:
                     "type": "datasource"
                 },
                 {
-                    "allValue": null,
+                    "allValue": ".+",
                     "current": {
                         "selected": true,
                         "text": "All",
@@ -22168,7 +22168,7 @@ data:
                     "useTags": false
                 },
                 {
-                    "allValue": null,
+                    "allValue": ".+",
                     "current": {
                         "selected": true,
                         "text": "All",

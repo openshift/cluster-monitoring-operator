@@ -11,6 +11,8 @@ metadata:
 spec:
   group: monitoring.coreos.com
   names:
+    categories:
+    - prometheus-operator
     kind: ServiceMonitor
     listKind: ServiceMonitorList
     plural: servicemonitors
@@ -187,7 +189,9 @@ spec:
                       type: string
                     relabelings:
                       description: 'RelabelConfigs to apply to samples before scraping.
-                        More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config'
+                        Prometheus Operator automatically adds relabelings for a few
+                        standard Kubernetes fields and replaces original scrape job
+                        name with __tmp_prometheus_job_name. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config'
                       items:
                         description: 'RelabelConfig allows dynamic rewriting of the
                           label set, being applied to samples before ingestion. It

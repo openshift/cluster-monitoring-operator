@@ -46,6 +46,7 @@ spec:
         - --query.replica-label=prometheus_replica
         - --query.replica-label=thanos_ruler_replica
         - --store=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
+        - --query.auto-downsampling
         - --store.sd-dns-resolver=miekgdns
         - --grpc-client-tls-secure
         - --grpc-client-tls-cert=/etc/tls/grpc/client.crt
@@ -53,6 +54,11 @@ spec:
         - --grpc-client-tls-ca=/etc/tls/grpc/ca.crt
         - --grpc-client-server-name=prometheus-grpc
         - --rule=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
+        env:
+        - name: HOST_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         image: quay.io/thanos/thanos:v0.20.2
         name: thanos-query
         ports:
@@ -183,6 +189,9 @@ spec:
         - mountPath: /etc/kube-rbac-proxy
           name: secret-thanos-querier-kube-rbac-proxy-rules
       priorityClassName: system-cluster-critical
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
       serviceAccountName: thanos-querier
       terminationGracePeriodSeconds: 120
       volumes:
