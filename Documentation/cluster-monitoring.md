@@ -12,7 +12,7 @@ One of the core components that Cluster Monitoring ships is the [Prometheus Oper
 
 ## Cluster Monitoring
 
-A Prometheus instance dedicated to monitoring the Cluster cluster itself is also shipped, controlled by the Prometheus Operator. This instance includes a set of alerting rules to notify operators about problems in a cluster.
+A Prometheus instance dedicated to monitoring the cluster itself is also shipped, controlled by the Prometheus Operator. This instance includes a set of alerting rules to notify operators about problems in a cluster.
 
 Use the Prometheus [Alertmanager][alertmanager] to send notifications to operators. Cluster Monitoring includes a highly available cluster of the Alertmanager, meant to be used not only by the Prometheus instance monitoring the cluster, but rather by all Prometheus instances.
 
