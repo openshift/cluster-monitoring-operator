@@ -345,6 +345,16 @@ func (c *Client) CreateOrUpdateAlertmanager(a *monv1.Alertmanager) error {
 	return errors.Wrap(err, "updating Alertmanager object failed")
 }
 
+func (c *Client) DeleteAlertmanager(a *monv1.Alertmanager) error {
+	aclient := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace())
+	err := aclient.Delete(c.ctx, a.GetName(), metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
 func (c *Client) CreateOrUpdateThanosRuler(t *monv1.ThanosRuler) error {
 	trclient := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace())
 	existing, err := trclient.Get(c.ctx, t.GetName(), metav1.GetOptions{})
