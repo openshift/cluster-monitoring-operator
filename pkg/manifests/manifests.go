@@ -48,6 +48,7 @@ import (
 
 const (
 	configManagedNamespace = "openshift-config-managed"
+	sharedConfigMap        = "monitoring-shared-config"
 
 	htpasswdArg = "-htpasswd-file=/etc/proxy/htpasswd/auth"
 )
@@ -1162,6 +1163,16 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 	r.Namespace = f.namespace
 
 	return r, nil
+}
+
+// todo(pgough) - delete for 4.10
+func (f *Factory) SharingConfig() *v1.ConfigMap {
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      sharedConfigMap,
+			Namespace: configManagedNamespace,
+		},
+	}
 }
 
 func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
