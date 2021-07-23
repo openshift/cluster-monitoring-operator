@@ -55,7 +55,7 @@ local commonConfig = {
     prometheus: $.prometheusName,
   },
   // versions are used by some CRs and reflected in labels.
-  versions: (import './versions.json'),
+  versions: std.parseYaml(importstr './versions.yaml')[0].versions,
   // In OSE images are overridden
   images: {
     alertmanager: 'quay.io/prometheus/alertmanager:v' + $.versions.alertmanager,
