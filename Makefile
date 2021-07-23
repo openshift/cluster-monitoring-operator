@@ -114,8 +114,8 @@ $(JSON_MANIFESTS): $(MANIFESTS)
 json-manifests: $(JSON_MANIFESTS_DIR) $(JSON_MANIFESTS)
 
 .PHONY: versions
-versions:
-	./hack/generate-versions.sh > jsonnet/versions.json
+versions: $(GOJSONTOYAML_BIN)
+	./hack/generate-versions.sh
 
 .PHONY: docs
 docs: $(EMBEDMD_BIN) Documentation/telemeter_query
