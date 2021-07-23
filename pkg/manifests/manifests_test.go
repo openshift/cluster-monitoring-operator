@@ -21,8 +21,6 @@ import (
 	"strings"
 	"testing"
 
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -819,7 +817,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
-				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 
 				return c
 			},
@@ -860,7 +858,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
-				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom"}}
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 
 				return c
 			},
@@ -883,7 +881,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
-				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []monv1.RemoteWriteSpec{{URL: "http://custom-remote-write"}}
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom-remote-write"}}
 
 				return c
 			},
@@ -1288,7 +1286,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		expected string
 	}{
 		{
-			name:   "no config with alertmanager disabled",
+			name: "no config with alertmanager disabled",
 			config: `alertmanagerMain:
   enabled: false`,
 			expected: `alertmanagers: []`,
@@ -1332,8 +1330,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		},
 		{
 			name: "basic config with alertmanager disabled",
-			config:
-`thanosRuler:
+			config: `thanosRuler:
   additionalAlertmanagerConfigs:
   - staticConfigs:
     - alertmanager1-remote.com

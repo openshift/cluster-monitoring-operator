@@ -1329,7 +1329,7 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	}
 
 	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = append(p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
+		p.Spec.RemoteWrite = addRemoteWriteConfigs(p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
 	}
 
 	for _, rw := range p.Spec.RemoteWrite {
@@ -3794,6 +3794,30 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 		},
 		Data: m,
 	}, nil
+}
+
+func addRemoteWriteConfigs(rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteSpec) []monv1.RemoteWriteSpec {
+	for _, target := range rwTargets {
+		rwConf := monv1.RemoteWriteSpec{
+			URL:                 target.URL,
+			Name:                target.Name,
+			RemoteTimeout:       target.RemoteTimeout,
+			Headers:             target.Headers,
+			QueueConfig:         target.QueueConfig,
+			WriteRelabelConfigs: target.WriteRelabelConfigs,
+			BasicAuth:           target.BasicAuth,
+			BearerTokenFile:     target.BearerTokenFile,
+			ProxyURL:            target.ProxyURL,
+			MetadataConfig:      target.MetadataConfig,
+		}
+		if target.TLSConfig != nil {
+			rwConf.TLSConfig = &monv1.TLSConfig{
+				SafeTLSConfig: *target.TLSConfig,
+			}
+		}
+		rw = append(rw, rwConf)
+	}
+	return rw
 }
 
 func htpasswdVolumeMount(name string) v1.VolumeMount {
