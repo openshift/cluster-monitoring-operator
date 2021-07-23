@@ -119,14 +119,6 @@ function(params)
                 replacement: 'crio',
               },
             ],
-            // Drop metrics with excessive label cardinality.
-            metricRelabelings: [
-              {
-                sourceLabels: ['__name__'],
-                regex: 'container_runtime_crio_image_layer_reuse|container_runtime_crio_image_pulls_.+',
-                action: 'drop',
-              },
-            ],
           }],
       },
     },
