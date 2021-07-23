@@ -216,6 +216,7 @@ local inCluster =
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
             diskDeviceSelector: 'device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"',
+            rateInterval: '1m',  // adjust the rate interval value to be 4 x the node_exporter's scrape interval (15s).
           },
         },
       },
