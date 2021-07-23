@@ -11,6 +11,8 @@ metadata:
 spec:
   group: monitoring.coreos.com
   names:
+    categories:
+    - prometheus-operator
     kind: Prometheus
     listKind: PrometheusList
     plural: prometheuses
@@ -2202,6 +2204,15 @@ spec:
                   only clients authorized to perform these actions can do so. For
                   more information see https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis'
                 type: boolean
+              enableFeatures:
+                description: Enable access to Prometheus disabled features. By default,
+                  no features are enabled. Enabling disabled features is entirely
+                  outside the scope of what the maintainers will support and by doing
+                  so, you accept that this behaviour may break at any time without
+                  notice. For more information see https://prometheus.io/docs/prometheus/latest/disabled_features/
+                items:
+                  type: string
+                type: array
               enforcedNamespaceLabel:
                 description: EnforcedNamespaceLabel enforces adding a namespace label
                   of origin for each alert and metric that is user created. The label
@@ -3685,7 +3696,7 @@ spec:
                           type: object
                       type: object
                     bearerToken:
-                      description: bearer token for remote read.
+                      description: Bearer token for remote read.
                       type: string
                     bearerTokenFile:
                       description: File to read bearer token for remote read.
@@ -3896,11 +3907,32 @@ spec:
                           type: object
                       type: object
                     bearerToken:
-                      description: File to read bearer token for remote write.
+                      description: Bearer token for remote write.
                       type: string
                     bearerTokenFile:
                       description: File to read bearer token for remote write.
                       type: string
+                    headers:
+                      additionalProperties:
+                        type: string
+                      description: Custom HTTP headers to be sent along with each
+                        remote write request. Be aware that headers that are set by
+                        Prometheus itself can't be overwritten. Only valid in Prometheus
+                        versions 2.25.0 and newer.
+                      type: object
+                    metadataConfig:
+                      description: MetadataConfig configures the sending of series
+                        metadata to remote storage.
+                      properties:
+                        send:
+                          description: Whether metric metadata is sent to remote storage
+                            or not.
+                          type: boolean
+                        sendInterval:
+                          description: How frequently metric metadata is sent to remote
+                            storage.
+                          type: string
+                      type: object
                     name:
                       description: The name of the remote write queue, must be unique
                         if specified. The name is used in metrics and logging in order

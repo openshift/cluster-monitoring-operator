@@ -31,8 +31,8 @@ spec:
         - --path.rootfs=/host/root
         - --no-collector.wifi
         - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
-        - --collector.netclass.ignored-devices=^(veth.*)$
-        - --collector.netdev.device-exclude=^(veth.*)$
+        - --collector.netclass.ignored-devices=^(veth.*|[a-z0-9]+@if\d+)$
+        - --collector.netdev.device-exclude=^(veth.*|[a-z0-9]+@if\d+)$
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
         - --no-collector.cpufreq
