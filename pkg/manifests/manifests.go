@@ -1249,9 +1249,11 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		p.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Tolerations
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels != nil {
-		p.Spec.ExternalLabels = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels
+	p.Spec.ExternalLabels = make(map[string]string, len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels)+1)
+	for k, v := range f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels {
+		p.Spec.ExternalLabels[k] = v
 	}
+	p.Spec.ExternalLabels["alert_source"] = "platform"
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.VolumeClaimTemplate != nil {
 		p.Spec.Storage = &monv1.StorageSpec{
@@ -1525,9 +1527,11 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Tolerations = f.config.UserWorkloadConfiguration.Prometheus.Tolerations
 	}
 
-	if f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels != nil {
-		p.Spec.ExternalLabels = f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels
+	p.Spec.ExternalLabels = make(map[string]string, len(f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels)+1)
+	for k, v := range f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels {
+		p.Spec.ExternalLabels[k] = v
 	}
+	p.Spec.ExternalLabels["alert_source"] = "user"
 
 	if f.config.UserWorkloadConfiguration.Prometheus.VolumeClaimTemplate != nil {
 		p.Spec.Storage = &monv1.StorageSpec{
@@ -3411,6 +3415,13 @@ func (f *Factory) ThanosRulerCustomResource(
 	}
 
 	t.Namespace = f.namespaceUserWorkload
+
+	// Add default replica and alert_source labels
+	t.Spec.Labels = map[string]string{
+		"thanos_ruler_replica": "$(POD_NAME)",
+		"alert_source":         "user",
+	}
+	t.Spec.AlertDropLabels = []string{"thanos_ruler_replica"}
 
 	return t, nil
 }
