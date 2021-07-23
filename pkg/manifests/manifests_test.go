@@ -15,7 +15,6 @@
 package manifests
 
 import (
-	"net/url"
 	"reflect"
 	"sort"
 	"strings"
@@ -699,24 +698,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	_, err = f.AlertmanagerTrustedCABundle()
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestSharingConfig(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
-	u, err := url.Parse("http://example.com/")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cm := f.SharingConfig(u, u, u, u)
-	if cm.Namespace == "openshift-monitoring" {
-		t.Fatalf("expecting namespace other than %q", "openshift-monitoring")
-	}
-	for k := range cm.Data {
-		if !strings.Contains(k, "Public") {
-			t.Fatalf("expecting key %q to contain 'Public'", k)
-		}
 	}
 }
 

@@ -15,8 +15,6 @@
 package tasks
 
 import (
-	"net/url"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -25,66 +23,21 @@ import (
 type ConfigSharingTask struct {
 	client  *client.Client
 	factory *manifests.Factory
-	config  *manifests.Config
 }
 
-func NewConfigSharingTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *ConfigSharingTask {
+func NewConfigSharingTask(client *client.Client, factory *manifests.Factory) *ConfigSharingTask {
 	return &ConfigSharingTask{
 		client:  client,
 		factory: factory,
-		config:  config,
 	}
 }
 
 func (t *ConfigSharingTask) Run() error {
-	promRoute, err := t.factory.PrometheusK8sRoute()
+	cm := t.factory.SharingConfig()
+	// delete the config map if it exists, err will be nil if it does not exist
+	err := t.client.DeleteConfigMap(t.factory.SharingConfig())
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Route failed")
-	}
-
-	promURL, err := t.client.GetRouteURL(promRoute)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve Prometheus host")
-	}
-
-	amRoute, err := t.factory.AlertmanagerRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager Route failed")
-	}
-
-	amURL, err := t.client.GetRouteURL(amRoute)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve Alertmanager host")
-	}
-
-	var grafanaURL *url.URL
-
-	if t.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
-		grafanaRoute, err := t.factory.GrafanaRoute()
-		if err != nil {
-			return errors.Wrap(err, "initializing Grafana Route failed")
-		}
-
-		grafanaURL, err = t.client.GetRouteURL(grafanaRoute)
-		if err != nil {
-			return errors.Wrap(err, "failed to retrieve Grafana host")
-		}
-	}
-
-	thanosRoute, err := t.factory.ThanosQuerierRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Querier Route failed")
-	}
-
-	thanosURL, err := t.client.GetRouteURL(thanosRoute)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
-	}
-
-	cm := t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
-	err = t.client.CreateOrUpdateConfigMap(cm)
-	if err != nil {
-		return errors.Wrapf(err, "reconciling %s/%s Config ConfigMap failed", cm.Namespace, cm.Name)
+		return errors.Wrapf(err, "failed to delete sharing config map %s/%s ", cm.Namespace, cm.Name)
 	}
 
 	return nil
