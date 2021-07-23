@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -39,11 +40,11 @@ func NewTaskRunner(client *client.Client, taskGroups ...*TaskGroup) *TaskRunner 
 
 // RunAll executes all registered task groups sequentially. For each group the
 // taskGroup.RunConcurrently function is called.
-func (tl *TaskRunner) RunAll() (string, error) {
+func (tl *TaskRunner) RunAll(ctx context.Context) (string, error) {
 	for i, tGroup := range tl.taskGroups {
 		klog.V(2).Infof("processing task group %d of %d", i+1, len(tl.taskGroups))
 
-		if name, err := tGroup.RunConcurrently(); err != nil {
+		if name, err := tGroup.RunConcurrently(ctx); err != nil {
 			return name, err
 		}
 
@@ -53,7 +54,7 @@ func (tl *TaskRunner) RunAll() (string, error) {
 
 // RunConcurrently dispatches all tasks in a task group. The tasks are scheduled
 // concurrently. Returns the first error if any are encountered.
-func (tg *TaskGroup) RunConcurrently() (string, error) {
+func (tg *TaskGroup) RunConcurrently(ctx context.Context) (string, error) {
 	var g errgroup.Group
 	tgLength := len(tg.tasks)
 	for i, ts := range tg.tasks {
@@ -63,7 +64,7 @@ func (tg *TaskGroup) RunConcurrently() (string, error) {
 
 		g.Go(func() error {
 			klog.V(2).Infof("running task %d of %d: %v", i+1, tgLength, ts.Name)
-			err := ts.Task.Run()
+			err := ts.Task.Run(ctx)
 			klog.V(2).Infof("ran task %d of %d: %v", i+1, tgLength, ts.Name)
 			if err != nil {
 				return taskErr{error: errors.Wrapf(err, "running task %v failed", ts.Name), name: ts.Name}
@@ -107,9 +108,8 @@ type TaskSpec struct {
 }
 
 type Task interface {
-	Run() error
+	Run(ctx context.Context) error
 }
-
 type taskErr struct {
 	error
 	name string

@@ -109,6 +109,7 @@ func TestMergeMetadata(t *testing.T) {
 }
 
 func TestCreateOrUpdateDeployment(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialSpec         appsv1.DeploymentSpec
@@ -192,21 +193,20 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(dep.DeepCopy()),
-				ctx:     context.Background(),
 			}
 
-			if _, err := c.kclient.AppsV1().Deployments(ns).Get(c.ctx, dep.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.AppsV1().Deployments(ns).Get(ctx, dep.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			dep.SetLabels(tc.updatedLabels)
 			dep.SetAnnotations(tc.updatedAnnotations)
 			dep.Spec = tc.updatedSpec
-			if err := c.CreateOrUpdateDeployment(dep); err != nil {
+			if err := c.CreateOrUpdateDeployment(ctx, dep); err != nil {
 				t.Fatal(err)
 			}
 
-			after, err := c.kclient.AppsV1().Deployments(ns).Get(c.ctx, dep.Name, metav1.GetOptions{})
+			after, err := c.kclient.AppsV1().Deployments(ns).Get(ctx, dep.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -223,6 +223,7 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 }
 
 func TestCreateOrUpdateDaemonSet(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -288,18 +289,17 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(ds.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			if _, err := c.kclient.AppsV1().DaemonSets(ns).Get(c.ctx, ds.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.AppsV1().DaemonSets(ns).Get(ctx, ds.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			ds.SetLabels(tc.updatedLabels)
 			ds.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateDaemonSet(ds); err != nil {
+			if err := c.CreateOrUpdateDaemonSet(ctx, ds); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.AppsV1().DaemonSets(ns).Get(c.ctx, ds.Name, metav1.GetOptions{})
+			after, err := c.kclient.AppsV1().DaemonSets(ns).Get(ctx, ds.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -315,6 +315,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 }
 
 func TestCreateOrUpdateSecret(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -380,19 +381,18 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(s.DeepCopy()),
-				ctx:     context.Background(),
 			}
 
-			if _, err := c.kclient.CoreV1().Secrets(ns).Get(c.ctx, s.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, s.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			s.SetLabels(tc.updatedLabels)
 			s.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateSecret(s); err != nil {
+			if err := c.CreateOrUpdateSecret(ctx, s); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.CoreV1().Secrets(ns).Get(c.ctx, s.Name, metav1.GetOptions{})
+			after, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, s.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -408,6 +408,7 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 }
 
 func TestCreateOrUpdateConfigMap(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -473,20 +474,19 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(cm),
-				ctx:     context.Background(),
 			}
 
-			if _, err := c.kclient.CoreV1().ConfigMaps(ns).Get(c.ctx, cm.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.CoreV1().ConfigMaps(ns).Get(ctx, cm.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			cm.SetLabels(tc.updatedLabels)
 			cm.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateConfigMap(cm); err != nil {
+			if err := c.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 				t.Fatal(err)
 			}
 
-			after, err := c.kclient.CoreV1().ConfigMaps(ns).Get(c.ctx, cm.Name, metav1.GetOptions{})
+			after, err := c.kclient.CoreV1().ConfigMaps(ns).Get(ctx, cm.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -502,6 +502,7 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 }
 
 func TestCreateOrUpdateService(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                   string
 		initialSessionAffinity v1.ServiceAffinity
@@ -615,10 +616,9 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(svc.DeepCopy()),
-				ctx:     context.Background(),
 			}
 
-			before, err := c.kclient.CoreV1().Services(ns).Get(c.ctx, svc.Name, metav1.GetOptions{})
+			before, err := c.kclient.CoreV1().Services(ns).Get(ctx, svc.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -626,11 +626,11 @@ func TestCreateOrUpdateService(t *testing.T) {
 			svc.SetLabels(tc.updatedLabels)
 			svc.SetAnnotations(tc.updatedAnnotations)
 			svc.Spec.SessionAffinity = v1.ServiceAffinityClientIP
-			if err := c.CreateOrUpdateService(svc); err != nil {
+			if err := c.CreateOrUpdateService(ctx, svc); err != nil {
 				t.Fatal(err)
 			}
 
-			after, err := c.kclient.CoreV1().Services(ns).Get(c.ctx, svc.Name, metav1.GetOptions{})
+			after, err := c.kclient.CoreV1().Services(ns).Get(ctx, svc.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -650,6 +650,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 }
 
 func TestCreateOrUpdateRole(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -714,18 +715,17 @@ func TestCreateOrUpdateRole(t *testing.T) {
 			}
 			c := Client{
 				kclient: fake.NewSimpleClientset(role.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			if _, err := c.kclient.RbacV1().Roles(ns).Get(c.ctx, role.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.RbacV1().Roles(ns).Get(ctx, role.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			role.SetLabels(tc.updatedLabels)
 			role.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateRole(role); err != nil {
+			if err := c.CreateOrUpdateRole(ctx, role); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.RbacV1().Roles(ns).Get(c.ctx, role.Name, metav1.GetOptions{})
+			after, err := c.kclient.RbacV1().Roles(ns).Get(ctx, role.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -741,6 +741,7 @@ func TestCreateOrUpdateRole(t *testing.T) {
 }
 
 func TestCreateOrUpdateRoleBinding(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name               string
 		initialLabels      map[string]string
@@ -851,9 +852,8 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 			}
 			c := Client{
 				kclient: fake.NewSimpleClientset(roleBinding.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			before, err := c.kclient.RbacV1().RoleBindings(ns).Get(c.ctx, roleBinding.Name, metav1.GetOptions{})
+			before, err := c.kclient.RbacV1().RoleBindings(ns).Get(ctx, roleBinding.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -862,11 +862,11 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 			roleBinding.SetAnnotations(tc.updatedAnnotations)
 			roleBinding.RoleRef = tc.updatedRoleRef
 			roleBinding.Subjects = tc.updatedSubjects
-			err = c.CreateOrUpdateRoleBinding(roleBinding)
+			err = c.CreateOrUpdateRoleBinding(ctx, roleBinding)
 			if err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.RbacV1().RoleBindings(ns).Get(c.ctx, roleBinding.Name, metav1.GetOptions{})
+			after, err := c.kclient.RbacV1().RoleBindings(ns).Get(ctx, roleBinding.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -886,6 +886,7 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 }
 
 func TestCreateOrUpdateClusterRole(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -949,18 +950,17 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 			}
 			c := Client{
 				kclient: fake.NewSimpleClientset(clusterRole.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			if _, err := c.kclient.RbacV1().ClusterRoles().Get(c.ctx, clusterRole.Name, metav1.GetOptions{}); err != nil {
+			if _, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, clusterRole.Name, metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			clusterRole.SetLabels(tc.updatedLabels)
 			clusterRole.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateClusterRole(clusterRole); err != nil {
+			if err := c.CreateOrUpdateClusterRole(ctx, clusterRole); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.RbacV1().ClusterRoles().Get(c.ctx, clusterRole.Name, metav1.GetOptions{})
+			after, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, clusterRole.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -976,6 +976,7 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 }
 
 func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name               string
 		initialLabels      map[string]string
@@ -1086,9 +1087,8 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 
 			c := Client{
 				kclient: fake.NewSimpleClientset(clusterRoleBinding.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			before, err := c.kclient.RbacV1().ClusterRoleBindings().Get(c.ctx, clusterRoleBinding.Name, metav1.GetOptions{})
+			before, err := c.kclient.RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1097,10 +1097,10 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 			clusterRoleBinding.SetAnnotations(tc.updatedAnnotations)
 			clusterRoleBinding.RoleRef = tc.updatedRoleRef
 			clusterRoleBinding.Subjects = tc.updatedSubjects
-			if err := c.CreateOrUpdateClusterRoleBinding(clusterRoleBinding); err != nil {
+			if err := c.CreateOrUpdateClusterRoleBinding(ctx, clusterRoleBinding); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.kclient.RbacV1().ClusterRoleBindings().Get(c.ctx, clusterRoleBinding.Name, metav1.GetOptions{})
+			after, err := c.kclient.RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1120,6 +1120,7 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 }
 
 func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -1184,21 +1185,20 @@ func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
 
 			c := Client{
 				ossclient: ossfake.NewSimpleClientset(),
-				ctx:       context.Background(),
 			}
-			c.ossclient.SecurityV1().SecurityContextConstraints().Create(c.ctx, scc.DeepCopy(), metav1.CreateOptions{})
+			c.ossclient.SecurityV1().SecurityContextConstraints().Create(ctx, scc.DeepCopy(), metav1.CreateOptions{})
 
-			if _, err := c.ossclient.SecurityV1().SecurityContextConstraints().Get(c.ctx, scc.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.ossclient.SecurityV1().SecurityContextConstraints().Get(ctx, scc.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			scc.SetLabels(tc.updatedLabels)
 			scc.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateSecurityContextConstraints(scc); err != nil {
+			if err := c.CreateOrUpdateSecurityContextConstraints(ctx, scc); err != nil {
 				t.Fatal(err)
 			}
 
-			after, err := c.ossclient.SecurityV1().SecurityContextConstraints().Get(c.ctx, scc.GetName(), metav1.GetOptions{})
+			after, err := c.ossclient.SecurityV1().SecurityContextConstraints().Get(ctx, scc.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1214,6 +1214,7 @@ func TestCreateOrUpdateSecurityContextConstraints(t *testing.T) {
 }
 
 func TestCreateOrUpdateServiceMonitor(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -1279,18 +1280,17 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(serviceMonitor.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			if _, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(c.ctx, serviceMonitor.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(ctx, serviceMonitor.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			serviceMonitor.SetLabels(tc.updatedLabels)
 			serviceMonitor.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateServiceMonitor(serviceMonitor); err != nil {
+			if err := c.CreateOrUpdateServiceMonitor(ctx, serviceMonitor); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(c.ctx, serviceMonitor.GetName(), metav1.GetOptions{})
+			after, err := c.mclient.MonitoringV1().ServiceMonitors(ns).Get(ctx, serviceMonitor.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1306,6 +1306,7 @@ func TestCreateOrUpdateServiceMonitor(t *testing.T) {
 }
 
 func TestCreateOrUpdatePrometheusRule(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -1371,18 +1372,17 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(rule.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			if _, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(c.ctx, rule.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(ctx, rule.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			rule.SetLabels(tc.updatedLabels)
 			rule.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdatePrometheusRule(rule); err != nil {
+			if err := c.CreateOrUpdatePrometheusRule(ctx, rule); err != nil {
 				t.Fatal(err)
 			}
-			after, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(c.ctx, rule.GetName(), metav1.GetOptions{})
+			after, err := c.mclient.MonitoringV1().PrometheusRules(ns).Get(ctx, rule.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1398,6 +1398,7 @@ func TestCreateOrUpdatePrometheusRule(t *testing.T) {
 }
 
 func TestCreateOrUpdatePrometheus(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -1463,19 +1464,18 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(prometheus.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			if _, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(c.ctx, prometheus.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(ctx, prometheus.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			prometheus.SetLabels(tc.updatedLabels)
 			prometheus.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdatePrometheus(prometheus); err != nil {
+			if err := c.CreateOrUpdatePrometheus(ctx, prometheus); err != nil {
 				t.Fatal(err)
 			}
 
-			after, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(c.ctx, prometheus.GetName(), metav1.GetOptions{})
+			after, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(ctx, prometheus.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1491,6 +1491,7 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 }
 
 func TestCreateOrUpdateAlertmanager(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name                string
 		initialLabels       map[string]string
@@ -1556,19 +1557,18 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 
 			c := Client{
 				mclient: monfake.NewSimpleClientset(alertmanager.DeepCopy()),
-				ctx:     context.Background(),
 			}
-			if _, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(c.ctx, alertmanager.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(ctx, alertmanager.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			alertmanager.SetLabels(tc.updatedLabels)
 			alertmanager.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateAlertmanager(alertmanager); err != nil {
+			if err := c.CreateOrUpdateAlertmanager(ctx, alertmanager); err != nil {
 				t.Fatal(err)
 			}
 
-			after, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(c.ctx, alertmanager.GetName(), metav1.GetOptions{})
+			after, err := c.mclient.MonitoringV1().Alertmanagers(ns).Get(ctx, alertmanager.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}

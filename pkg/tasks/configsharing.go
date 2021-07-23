@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -36,13 +37,13 @@ func NewConfigSharingTask(client *client.Client, factory *manifests.Factory, con
 	}
 }
 
-func (t *ConfigSharingTask) Run() error {
+func (t *ConfigSharingTask) Run(ctx context.Context) error {
 	promRoute, err := t.factory.PrometheusK8sRoute()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Route failed")
 	}
 
-	promURL, err := t.client.GetRouteURL(promRoute)
+	promURL, err := t.client.GetRouteURL(ctx, promRoute)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve Prometheus host")
 	}
@@ -52,7 +53,7 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager Route failed")
 	}
 
-	amURL, err := t.client.GetRouteURL(amRoute)
+	amURL, err := t.client.GetRouteURL(ctx, amRoute)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve Alertmanager host")
 	}
@@ -65,7 +66,7 @@ func (t *ConfigSharingTask) Run() error {
 			return errors.Wrap(err, "initializing Grafana Route failed")
 		}
 
-		grafanaURL, err = t.client.GetRouteURL(grafanaRoute)
+		grafanaURL, err = t.client.GetRouteURL(ctx, grafanaRoute)
 		if err != nil {
 			return errors.Wrap(err, "failed to retrieve Grafana host")
 		}
@@ -76,13 +77,13 @@ func (t *ConfigSharingTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier Route failed")
 	}
 
-	thanosURL, err := t.client.GetRouteURL(thanosRoute)
+	thanosURL, err := t.client.GetRouteURL(ctx, thanosRoute)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
 	}
 
 	cm := t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
-	err = t.client.CreateOrUpdateConfigMap(cm)
+	err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 	if err != nil {
 		return errors.Wrapf(err, "reconciling %s/%s Config ConfigMap failed", cm.Namespace, cm.Name)
 	}

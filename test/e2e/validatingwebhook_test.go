@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"testing"
 
 	yaml "github.com/ghodss/yaml"
@@ -55,7 +56,9 @@ spec:
 )
 
 func TestPrometheusRuleValidatingWebhook(t *testing.T) {
-	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(f.Ctx, webhookName, metav1.GetOptions{})
+	ctx := context.Background()
+
+	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(ctx, webhookName, metav1.GetOptions{})
 	if err != nil {
 		t.Fatal("unable to get prometheus rules validating webhook", err)
 	}
@@ -65,7 +68,7 @@ func TestPrometheusRuleValidatingWebhook(t *testing.T) {
 	if err != nil {
 		t.Fatal("unable to unmarshal prometheus rule", err)
 	}
-	_, err = f.MonitoringClient.PrometheusRules(f.Ns).Create(f.Ctx, &validPromRule, metav1.CreateOptions{})
+	_, err = f.MonitoringClient.PrometheusRules(f.Ns).Create(ctx, &validPromRule, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal("unable to create prometheus rule", err)
 	}
@@ -75,7 +78,7 @@ func TestPrometheusRuleValidatingWebhook(t *testing.T) {
 	if err != nil {
 		t.Fatal("unable to unmarshal prometheus rule", err)
 	}
-	_, err = f.MonitoringClient.PrometheusRules(f.Ns).Create(f.Ctx, &invalidPromRule, metav1.CreateOptions{})
+	_, err = f.MonitoringClient.PrometheusRules(f.Ns).Create(ctx, &invalidPromRule, metav1.CreateOptions{})
 	if err == nil {
 		t.Fatal("invalid rule was accepted by validatingwebhook")
 	}

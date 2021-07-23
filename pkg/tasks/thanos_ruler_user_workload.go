@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -34,21 +35,21 @@ func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Fa
 	}
 }
 
-func (t *ThanosRulerUserWorkloadTask) Run() error {
+func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) error {
 	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		return t.create()
+		return t.create(ctx)
 	}
 
-	return t.destroy()
+	return t.destroy(ctx)
 }
 
-func (t *ThanosRulerUserWorkloadTask) create() error {
+func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 	svc, err := t.factory.ThanosRulerService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler Service failed")
 	}
@@ -58,12 +59,12 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(r)
+	err = t.client.CreateRouteIfNotExists(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Ruler Route failed")
 	}
 
-	_, err = t.client.WaitForRouteReady(r)
+	_, err = t.client.WaitForRouteReady(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Thanos Ruler Route to become ready failed")
 	}
@@ -73,7 +74,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler ClusterRole failed")
 	}
@@ -83,7 +84,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler ClusterRoleBinding failed")
 	}
@@ -93,7 +94,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler monitoring ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(moncrb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, moncrb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler monitoring ClusterRoleBinding failed")
 	}
@@ -103,7 +104,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler ServiceAccount failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler ServiceAccount failed")
 	}
@@ -113,7 +114,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler OAuth Cookie Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(s)
+	err = t.client.CreateIfNotExistSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Ruler OAuth Cookie Secret failed")
 	}
@@ -126,7 +127,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler query config Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(qcs)
+	err = t.client.CreateIfNotExistSecret(ctx, qcs)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Ruler query config Secret failed")
 	}
@@ -139,7 +140,8 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager config Secret failed")
 	}
 
-	err = t.client.CreateOrUpdateSecret(acs)
+	err = t.client.CreateOrUpdateSecret(ctx, acs)
+
 	if err != nil {
 		return errors.Wrap(err, "creating or updating Thanos Ruler alertmanager config Secret failed")
 	}
@@ -156,7 +158,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 			factory: t.factory,
 			prefix:  "thanos-ruler",
 		}
-		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "syncing Thanos Ruler trusted CA bundle ConfigMap failed")
 		}
@@ -166,7 +168,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 			return errors.Wrap(err, "initializing UserWorkload Thanos Ruler GRPC secret failed")
 		}
 
-		grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+		grpcTLS, err = t.client.WaitForSecret(ctx, grpcTLS)
 		if err != nil {
 			return errors.Wrap(err, "waiting for UserWorkload Thanos Ruler GRPC secret failed")
 		}
@@ -185,12 +187,13 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 			return errors.Wrap(err, "error hashing UserWorkload Thanos Ruler GRPC TLS secret")
 		}
 
-		err = t.client.CreateOrUpdateSecret(grpcSecret)
+		err = t.client.CreateOrUpdateSecret(ctx, grpcSecret)
 		if err != nil {
 			return errors.Wrap(err, "error creating UserWorkload Thanos Ruler GRPC TLS secret")
 		}
 
 		err = t.client.DeleteHashedSecret(
+			ctx,
 			grpcSecret.GetNamespace(),
 			"thanos-ruler-grpc-tls",
 			string(grpcSecret.Labels["monitoring.openshift.io/hash"]),
@@ -203,19 +206,19 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		if err != nil {
 			return errors.Wrap(err, "initializing Thanos Querier Route failed")
 		}
-		queryURL, err := t.client.GetRouteURL(querierRoute)
+		queryURL, err := t.client.GetRouteURL(ctx, querierRoute)
 
 		tr, err := t.factory.ThanosRulerCustomResource(queryURL.String(), trustedCA, grpcSecret, acs)
 		if err != nil {
 			return errors.Wrap(err, "initializing ThanosRuler object failed")
 		}
 
-		err = t.client.CreateOrUpdateThanosRuler(tr)
+		err = t.client.CreateOrUpdateThanosRuler(ctx, tr)
 		if err != nil {
 			return errors.Wrap(err, "reconciling ThanosRuler object failed")
 		}
 
-		err = t.client.WaitForThanosRuler(tr)
+		err = t.client.WaitForThanosRuler(ctx, tr)
 		if err != nil {
 			return errors.Wrap(err, "waiting for ThanosRuler object changes failed")
 		}
@@ -226,7 +229,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(trsm)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, trsm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler ServiceMonitor failed")
 	}
@@ -235,7 +238,7 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler PrometheusRule failed")
 	}
-	err = t.client.CreateOrUpdatePrometheusRule(pm)
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, pm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler PrometheusRule failed")
 	}
@@ -245,20 +248,20 @@ func (t *ThanosRulerUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager Role Binding failed")
 	}
 
-	err = t.client.CreateOrUpdateRoleBinding(tramrb)
+	err = t.client.CreateOrUpdateRoleBinding(ctx, tramrb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Ruler Alertmanager Role Binding failed")
 	}
 	return nil
 }
 
-func (t *ThanosRulerUserWorkloadTask) destroy() error {
+func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 	prmrl, err := t.factory.ThanosRulerPrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler PrometheusRule failed")
 	}
 
-	err = t.client.DeletePrometheusRule(prmrl)
+	err = t.client.DeletePrometheusRule(ctx, prmrl)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler PrometheusRule failed")
 	}
@@ -268,7 +271,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler Route failed")
 	}
 
-	err = t.client.DeleteRoute(route)
+	err = t.client.DeleteRoute(ctx, route)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler Route failed")
 	}
@@ -278,7 +281,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler Service failed")
 	}
 
-	err = t.client.DeleteService(svc)
+	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler Service failed")
 	}
@@ -288,7 +291,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler ClusterRole failed")
 	}
 
-	err = t.client.DeleteClusterRole(cr)
+	err = t.client.DeleteClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler ClusterRole failed")
 	}
@@ -298,7 +301,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler ClusterRoleBinding failed")
 	}
 
-	err = t.client.DeleteClusterRoleBinding(crb)
+	err = t.client.DeleteClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler ClusterRoleBinding failed")
 	}
@@ -308,7 +311,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler ServiceAccount failed")
 	}
 
-	err = t.client.DeleteServiceAccount(sa)
+	err = t.client.DeleteServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler ServiceAccount failed")
 	}
@@ -318,7 +321,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager Role Binding failed")
 	}
 
-	err = t.client.DeleteRoleBinding(tramrb)
+	err = t.client.DeleteRoleBinding(ctx, tramrb)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler Alertmanager Role Binding failed")
 	}
@@ -328,7 +331,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler OAuth Cookie Secret failed")
 	}
 
-	err = t.client.DeleteSecret(oauthSecret)
+	err = t.client.DeleteSecret(ctx, oauthSecret)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler OAuth Cookie Secret failed")
 	}
@@ -338,12 +341,12 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler trusted CA bundle ConfigMap failed")
 	}
 
-	err = t.client.DeleteConfigMap(trustedCA)
+	err = t.client.DeleteConfigMap(ctx, trustedCA)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler trusted CA bundle ConfigMap failed")
 	}
 
-	err = t.client.DeleteHashedConfigMap(trustedCA.GetNamespace(), "thanos-ruler", "")
+	err = t.client.DeleteHashedConfigMap(ctx, trustedCA.GetNamespace(), "thanos-ruler", "")
 	if err != nil {
 		return errors.Wrap(err, "deleting all hashed Thanos Ruler trusted CA bundle ConfigMap failed")
 	}
@@ -353,7 +356,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Thanos Ruler GRPC secret failed")
 	}
 
-	grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+	grpcTLS, err = t.client.WaitForSecret(ctx, grpcTLS)
 	if err != nil {
 		return errors.Wrap(err, "waiting for UserWorkload Thanos Ruler GRPC secret failed")
 	}
@@ -382,12 +385,12 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing ThanosRuler object failed")
 	}
 
-	err = t.client.DeleteThanosRuler(tr)
+	err = t.client.DeleteThanosRuler(ctx, tr)
 	if err != nil {
 		return errors.Wrap(err, "deleting ThanosRuler object failed")
 	}
 
-	err = t.client.DeleteSecret(grpcSecret)
+	err = t.client.DeleteSecret(ctx, grpcSecret)
 	if err != nil {
 		return errors.Wrap(err, "error deleting UserWorkload Thanos Ruler GRPC TLS secret")
 	}
@@ -397,12 +400,13 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler query config Secret failed")
 	}
 
-	err = t.client.DeleteSecret(qcs)
+	err = t.client.DeleteSecret(ctx, qcs)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler query config Secret failed")
 	}
 
-	err = t.client.DeleteSecret(acs)
+	err = t.client.DeleteSecret(ctx, acs)
+
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Ruler alertmanager config Secret failed")
 	}
@@ -412,6 +416,6 @@ func (t *ThanosRulerUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing Thanos Ruler ServiceMonitor failed")
 	}
 
-	err = t.client.DeleteServiceMonitor(trsm)
+	err = t.client.DeleteServiceMonitor(ctx, trsm)
 	return errors.Wrap(err, "deleting Thanos Ruler ServiceMonitor failed")
 }

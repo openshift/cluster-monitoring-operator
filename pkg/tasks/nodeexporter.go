@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -32,13 +33,13 @@ func NewNodeExporterTask(client *client.Client, factory *manifests.Factory) *Nod
 	}
 }
 
-func (t *NodeExporterTask) Run() error {
+func (t *NodeExporterTask) Run(ctx context.Context) error {
 	scc, err := t.factory.NodeExporterSecurityContextConstraints()
 	if err != nil {
 		return errors.Wrap(err, "initializing node-exporter SecurityContextConstraints failed")
 	}
 
-	err = t.client.CreateOrUpdateSecurityContextConstraints(scc)
+	err = t.client.CreateOrUpdateSecurityContextConstraints(ctx, scc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling node-exporter SecurityContextConstraints failed")
 	}
@@ -48,7 +49,7 @@ func (t *NodeExporterTask) Run() error {
 		return errors.Wrap(err, "initializing node-exporter Service failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling node-exporter ServiceAccount failed")
 	}
@@ -58,7 +59,7 @@ func (t *NodeExporterTask) Run() error {
 		return errors.Wrap(err, "initializing node-exporter ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling node-exporter ClusterRole failed")
 	}
@@ -68,7 +69,7 @@ func (t *NodeExporterTask) Run() error {
 		return errors.Wrap(err, "initializing node-exporter ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling node-exporter ClusterRoleBinding failed")
 	}
@@ -78,7 +79,7 @@ func (t *NodeExporterTask) Run() error {
 		return errors.Wrap(err, "initializing node-exporter Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling node-exporter Service failed")
 	}
@@ -88,7 +89,7 @@ func (t *NodeExporterTask) Run() error {
 		return errors.Wrap(err, "initializing node-exporter DaemonSet failed")
 	}
 
-	err = t.client.CreateOrUpdateDaemonSet(ds)
+	err = t.client.CreateOrUpdateDaemonSet(ctx, ds)
 	if err != nil {
 		return errors.Wrap(err, "reconciling node-exporter DaemonSet failed")
 	}
@@ -97,7 +98,7 @@ func (t *NodeExporterTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "initializing node-exporter rules PrometheusRule failed")
 	}
-	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling node-exporter rules PrometheusRule failed")
 	}
@@ -107,6 +108,6 @@ func (t *NodeExporterTask) Run() error {
 		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smn)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smn)
 	return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
 }

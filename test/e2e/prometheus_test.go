@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -52,7 +53,8 @@ func TestPrometheusMetrics(t *testing.T) {
 }
 
 func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
-	pods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(f.Ctx, metav1.ListOptions{FieldSelector: "status.phase=Running"})
+	ctx := context.Background()
+	pods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(ctx, metav1.ListOptions{FieldSelector: "status.phase=Running"})
 	if err != nil {
 		t.Fatal(err)
 	}

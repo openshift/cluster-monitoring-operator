@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -32,13 +33,13 @@ func NewPrometheusOperatorTask(client *client.Client, factory *manifests.Factory
 	}
 }
 
-func (t *PrometheusOperatorTask) Run() error {
+func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	cacm, err := t.factory.PrometheusOperatorCertsCABundle()
 	if err != nil {
 		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
 	}
 
-	_, err = t.client.CreateIfNotExistConfigMap(cacm)
+	_, err = t.client.CreateIfNotExistConfigMap(ctx, cacm)
 	if err != nil {
 		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
 	}
@@ -48,7 +49,7 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus Operator ServiceAccount failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Operator ServiceAccount failed")
 	}
@@ -58,7 +59,7 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus Operator ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Operator ClusterRole failed")
 	}
@@ -68,7 +69,7 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus Operator ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Operator ClusterRoleBinding failed")
 	}
@@ -78,7 +79,7 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus Operator Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Operator Service failed")
 	}
@@ -88,12 +89,12 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus Operator Deployment failed")
 	}
 
-	err = t.client.CreateOrUpdateDeployment(d)
+	err = t.client.CreateOrUpdateDeployment(ctx, d)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Operator Deployment failed")
 	}
 
-	err = t.client.AssurePrometheusOperatorCRsExist()
+	err = t.client.AssurePrometheusOperatorCRsExist(ctx)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Prometheus Operator CRs to become available failed")
 	}
@@ -103,7 +104,7 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus Rule Validating Webhook failed")
 	}
 
-	err = t.client.CreateOrUpdateValidatingWebhookConfiguration(w)
+	err = t.client.CreateOrUpdateValidatingWebhookConfiguration(ctx, w)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Rule Validating Webhook failed")
 	}
@@ -112,7 +113,7 @@ func (t *PrometheusOperatorTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "initializing prometheus-operator rules PrometheusRule failed")
 	}
-	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling prometheus-operator rules PrometheusRule failed")
 	}
@@ -122,6 +123,6 @@ func (t *PrometheusOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing Prometheus Operator ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smpo)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smpo)
 	return errors.Wrap(err, "reconciling Prometheus Operator ServiceMonitor failed")
 }

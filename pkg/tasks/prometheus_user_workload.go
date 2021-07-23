@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -35,21 +36,21 @@ func NewPrometheusUserWorkloadTask(client *client.Client, factory *manifests.Fac
 	}
 }
 
-func (t *PrometheusUserWorkloadTask) Run() error {
+func (t *PrometheusUserWorkloadTask) Run(ctx context.Context) error {
 	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		return t.create()
+		return t.create(ctx)
 	}
 
-	return t.destroy()
+	return t.destroy(ctx)
 }
 
-func (t *PrometheusUserWorkloadTask) create() error {
+func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 	cacm, err := t.factory.PrometheusUserWorkloadServingCertsCABundle()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload serving certs CA Bundle ConfigMap failed")
 	}
 
-	_, err = t.client.CreateIfNotExistConfigMap(cacm)
+	_, err = t.client.CreateIfNotExistConfigMap(ctx, cacm)
 	if err != nil {
 		return errors.Wrap(err, "creating UserWorkload serving certs CA Bundle ConfigMap failed")
 	}
@@ -59,7 +60,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus ServiceAccount failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus ServiceAccount failed")
 	}
@@ -69,7 +70,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus ClusterRole failed")
 	}
@@ -79,7 +80,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus ClusterRoleBinding failed")
 	}
@@ -89,7 +90,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Role config failed")
 	}
 
-	err = t.client.CreateOrUpdateRole(rc)
+	err = t.client.CreateOrUpdateRole(ctx, rc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Role config failed")
 	}
@@ -100,7 +101,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 	}
 
 	for _, r := range rl.Items {
-		err = t.client.CreateOrUpdateRole(&r)
+		err = t.client.CreateOrUpdateRole(ctx, &r)
 		if err != nil {
 			return errors.Wrapf(err, "reconciling UserWorkload Prometheus Role %q failed", r.Name)
 		}
@@ -112,7 +113,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 	}
 
 	for _, rb := range rbl.Items {
-		err = t.client.CreateOrUpdateRoleBinding(&rb)
+		err = t.client.CreateOrUpdateRoleBinding(ctx, &rb)
 		if err != nil {
 			return errors.Wrapf(err, "reconciling UserWorkload Prometheus RoleBinding %q failed", rb.Name)
 		}
@@ -123,7 +124,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus config RoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateRoleBinding(rbc)
+	err = t.client.CreateOrUpdateRoleBinding(ctx, rbc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus config RoleBinding failed")
 	}
@@ -133,7 +134,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Service failed")
 	}
@@ -143,7 +144,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Thanos sidecar Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Thanos sidecar Service failed")
 	}
@@ -153,7 +154,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus GRPC secret failed")
 	}
 
-	grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+	grpcTLS, err = t.client.WaitForSecret(ctx, grpcTLS)
 	if err != nil {
 		return errors.Wrap(err, "waiting for UserWorkload Prometheus GRPC secret failed")
 	}
@@ -172,12 +173,13 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "error hashing UserWorkload Prometheus Client GRPC TLS secret")
 	}
 
-	err = t.client.CreateOrUpdateSecret(s)
+	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "error creating UserWorkload Prometheus Client GRPC TLS secret")
 	}
 
 	err = t.client.DeleteHashedSecret(
+		ctx,
 		s.GetNamespace(),
 		"prometheus-user-workload-grpc-tls",
 		string(s.Labels["monitoring.openshift.io/hash"]),
@@ -191,7 +193,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 	}
 	klog.V(4).Info("reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret")
-	err = t.client.CreateOrUpdateSecret(secret)
+	err = t.client.CreateOrUpdateSecret(ctx, secret)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 	}
@@ -203,13 +205,13 @@ func (t *PrometheusUserWorkloadTask) create() error {
 	}
 
 	klog.V(4).Info("reconciling UserWorkload Prometheus object")
-	err = t.client.CreateOrUpdatePrometheus(p)
+	err = t.client.CreateOrUpdatePrometheus(ctx, p)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus object failed")
 	}
 
 	klog.V(4).Info("waiting for UserWorkload Prometheus object changes")
-	err = t.client.WaitForPrometheus(p)
+	err = t.client.WaitForPrometheus(ctx, p)
 	if err != nil {
 		return errors.Wrap(err, "waiting for UserWorkload Prometheus object changes failed")
 	}
@@ -219,12 +221,12 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smp)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smp)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus ServiceMonitor failed")
 	}
 
-	err = t.deleteDeprecatedServiceMonitors()
+	err = t.deleteDeprecatedServiceMonitors(ctx)
 	if err != nil {
 		return errors.Wrap(err, "deleting deprecated UserWorkload Prometheus ServiceMonitor failed")
 	}
@@ -234,7 +236,7 @@ func (t *PrometheusUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Thanos sidecar ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smt)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smt)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Thanos sidecar ServiceMonitor failed")
 	}
@@ -242,13 +244,13 @@ func (t *PrometheusUserWorkloadTask) create() error {
 	return nil
 }
 
-func (t *PrometheusUserWorkloadTask) destroy() error {
+func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 	smt, err := t.factory.PrometheusUserWorkloadThanosSidecarServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Thanos sidecar ServiceMonitor failed")
 	}
 
-	err = t.client.DeleteServiceMonitor(smt)
+	err = t.client.DeleteServiceMonitor(ctx, smt)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Thanos sidecar ServiceMonitor failed")
 	}
@@ -258,12 +260,12 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus ServiceMonitor failed")
 	}
 
-	err = t.client.DeleteServiceMonitor(smp)
+	err = t.client.DeleteServiceMonitor(ctx, smp)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus ServiceMonitor failed")
 	}
 
-	err = t.deleteDeprecatedServiceMonitors()
+	err = t.deleteDeprecatedServiceMonitors(ctx)
 	if err != nil {
 		return errors.Wrap(err, "deleting deprecated UserWorkload Prometheus ServiceMonitor failed")
 	}
@@ -273,7 +275,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus GRPC secret failed")
 	}
 
-	grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+	grpcTLS, err = t.client.WaitForSecret(ctx, grpcTLS)
 	if err != nil {
 		return errors.Wrap(err, "waiting for UserWorkload Prometheus GRPC secret failed")
 	}
@@ -294,12 +296,12 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus object failed")
 	}
 
-	err = t.client.DeletePrometheus(p)
+	err = t.client.DeletePrometheus(ctx, p)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus object failed")
 	}
 
-	err = t.client.DeleteSecret(s)
+	err = t.client.DeleteSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus TLS secret failed")
 	}
@@ -309,7 +311,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Service failed")
 	}
 
-	err = t.client.DeleteService(svc)
+	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Service failed")
 	}
@@ -319,7 +321,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Thanos sidecar Service failed")
 	}
 
-	err = t.client.DeleteService(svc)
+	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Service failed")
 	}
@@ -329,7 +331,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus config RoleBinding failed")
 	}
 
-	err = t.client.DeleteRoleBinding(rbc)
+	err = t.client.DeleteRoleBinding(ctx, rbc)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Service failed")
 	}
@@ -340,7 +342,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 	}
 
 	for _, rb := range rbl.Items {
-		err = t.client.DeleteRoleBinding(&rb)
+		err = t.client.DeleteRoleBinding(ctx, &rb)
 		if err != nil {
 			return errors.Wrapf(err, "deleting UserWorkload Prometheus RoleBinding %q failed", rb.Name)
 		}
@@ -352,7 +354,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 	}
 
 	for _, r := range rl.Items {
-		err = t.client.DeleteRole(&r)
+		err = t.client.DeleteRole(ctx, &r)
 		if err != nil {
 			return errors.Wrapf(err, "deleting UserWorkload Prometheus Role %q failed", r.Name)
 		}
@@ -363,7 +365,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Role config failed")
 	}
 
-	err = t.client.DeleteRole(rc)
+	err = t.client.DeleteRole(ctx, rc)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Role config failed")
 	}
@@ -373,7 +375,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus ClusterRoleBinding failed")
 	}
 
-	err = t.client.DeleteClusterRoleBinding(crb)
+	err = t.client.DeleteClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus ClusterRoleBinding failed")
 	}
@@ -383,7 +385,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus ClusterRole failed")
 	}
 
-	err = t.client.DeleteClusterRole(cr)
+	err = t.client.DeleteClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus ClusterRole failed")
 	}
@@ -393,7 +395,7 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus ServiceAccount failed")
 	}
 
-	err = t.client.DeleteServiceAccount(sa)
+	err = t.client.DeleteServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus ServiceAccount failed")
 	}
@@ -408,15 +410,15 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 	}
 
-	if err = t.client.DeleteSecret(amsSecret); err != nil {
+	if err = t.client.DeleteSecret(ctx, amsSecret); err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus additionalAlertmanagerConfigs Secret failed")
 	}
 
-	err = t.client.DeleteConfigMap(cacm)
+	err = t.client.DeleteConfigMap(ctx, cacm)
 	return errors.Wrap(err, "deleting UserWorkload serving certs CA Bundle ConfigMap failed")
 }
 
-func (t *PrometheusUserWorkloadTask) deleteDeprecatedServiceMonitors() error {
+func (t *PrometheusUserWorkloadTask) deleteDeprecatedServiceMonitors(ctx context.Context) error {
 	// TODO(bison): This can be removed after the 4.8 release.  The "prometheus"
 	// ServiceMonitor was renamed to "prometheus-user-workload" recently. See:
 	//
@@ -426,7 +428,7 @@ func (t *PrometheusUserWorkloadTask) deleteDeprecatedServiceMonitors() error {
 	deprecatedServiceMonitors := []string{"prometheus"}
 
 	for _, name := range deprecatedServiceMonitors {
-		err := t.client.DeleteServiceMonitorByNamespaceAndName(t.client.UserWorkloadNamespace(), name)
+		err := t.client.DeleteServiceMonitorByNamespaceAndName(ctx, t.client.UserWorkloadNamespace(), name)
 		if err != nil {
 			return err
 		}

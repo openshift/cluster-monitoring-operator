@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"testing"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,17 +27,19 @@ import (
 // system-cluster-critical   2000000000   false            114m
 // system-node-critical      2000001000   false            114m
 func TestToEnsureUserPriorityClassIsPresentAndLower(t *testing.T) {
+	ctx := context.Background()
+
 	// Get system priority class values.
-	systemClusterPriorityClass, err := f.SchedulingClient.PriorityClasses().Get(f.Ctx, "system-cluster-critical", v1.GetOptions{})
+	systemClusterPriorityClass, err := f.SchedulingClient.PriorityClasses().Get(ctx, "system-cluster-critical", v1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	systemNodePriorityClass, err := f.SchedulingClient.PriorityClasses().Get(f.Ctx, "system-node-critical", v1.GetOptions{})
+	systemNodePriorityClass, err := f.SchedulingClient.PriorityClasses().Get(ctx, "system-node-critical", v1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Get our user priority class value.
-	userPriorityClass, err := f.SchedulingClient.PriorityClasses().Get(f.Ctx, "openshift-user-critical", v1.GetOptions{})
+	userPriorityClass, err := f.SchedulingClient.PriorityClasses().Get(ctx, "openshift-user-critical", v1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

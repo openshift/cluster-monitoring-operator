@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -36,13 +37,13 @@ func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory, cfg
 	}
 }
 
-func (t *ThanosQuerierTask) Run() error {
+func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 	svc, err := t.factory.ThanosQuerierService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Querier Service failed")
 	}
@@ -52,12 +53,12 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(r)
+	err = t.client.CreateRouteIfNotExists(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Querier Route failed")
 	}
 
-	_, err = t.client.WaitForRouteReady(r)
+	_, err = t.client.WaitForRouteReady(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Thanos Querier Route to become ready failed")
 	}
@@ -67,7 +68,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier OAuth Cookie Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(s)
+	err = t.client.CreateIfNotExistSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Querier OAuth Cookie Secret failed")
 	}
@@ -79,7 +80,7 @@ func (t *ThanosQuerierTask) Run() error {
 			return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
 		}
 
-		gs, err = t.client.WaitForSecret(gs)
+		gs, err = t.client.WaitForSecret(ctx, gs)
 		if err != nil {
 			return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
 		}
@@ -97,7 +98,7 @@ func (t *ThanosQuerierTask) Run() error {
 			return errors.Wrap(err, "initializing Thanos Querier htpasswd Secret failed")
 		}
 
-		err = t.client.CreateOrUpdateSecret(htpasswdSecret)
+		err = t.client.CreateOrUpdateSecret(ctx, htpasswdSecret)
 		if err != nil {
 			return errors.Wrap(err, "creating Thanos Querier htpasswd Secret failed")
 		}
@@ -108,7 +109,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier RBAC proxy Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(rs)
+	err = t.client.CreateIfNotExistSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Querier RBAC proxy Secret failed")
 	}
@@ -118,7 +119,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier RBAC proxy rules Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(rs)
+	err = t.client.CreateIfNotExistSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Querier RBAC proxy rules Secret failed")
 	}
@@ -128,7 +129,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier ServiceAccount failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Querier ServiceAccount failed")
 	}
@@ -138,7 +139,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Querier ClusterRole failed")
 	}
@@ -148,7 +149,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Querier ClusterRoleBinding failed")
 	}
@@ -158,7 +159,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier GRPC secret failed")
 	}
 
-	grpcTLS, err = t.client.WaitForSecret(grpcTLS)
+	grpcTLS, err = t.client.WaitForSecret(ctx, grpcTLS)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Thanos Querier GRPC secret failed")
 	}
@@ -177,12 +178,13 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "error hashing Thanos Querier Client GRPC TLS secret")
 	}
 
-	err = t.client.CreateOrUpdateSecret(s)
+	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "error creating Thanos Querier Client GRPC TLS secret")
 	}
 
 	err = t.client.DeleteHashedSecret(
+		ctx,
 		s.GetNamespace(),
 		"thanos-querier-grpc-tls",
 		string(s.Labels["monitoring.openshift.io/hash"]),
@@ -203,7 +205,7 @@ func (t *ThanosQuerierTask) Run() error {
 			factory: t.factory,
 			prefix:  "thanos-querier",
 		}
-		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
 		}
@@ -217,7 +219,7 @@ func (t *ThanosQuerierTask) Run() error {
 			return errors.Wrap(err, "initializing Thanos Querier Deployment failed")
 		}
 
-		err = t.client.CreateOrUpdateDeployment(dep)
+		err = t.client.CreateOrUpdateDeployment(ctx, dep)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Thanos Querier Deployment failed")
 		}
@@ -230,7 +232,7 @@ func (t *ThanosQuerierTask) Run() error {
 		}
 
 		if pdb != nil {
-			err = t.client.CreateOrUpdatePodDisruptionBudget(pdb)
+			err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
 			if err != nil {
 				return errors.Wrap(err, "reconciling ThanosQuerier PodDisruptionBudget failed")
 			}
@@ -242,7 +244,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(tqsm)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, tqsm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Querier ServiceMonitor failed")
 	}
@@ -252,7 +254,7 @@ func (t *ThanosQuerierTask) Run() error {
 		return errors.Wrap(err, "initializing Thanos Querier PrometheusRule failed")
 	}
 
-	err = t.client.CreateOrUpdatePrometheusRule(tqpr)
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, tqpr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Querier PrometheusRule failed")
 	}

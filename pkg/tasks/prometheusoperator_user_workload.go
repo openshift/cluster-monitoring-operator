@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 
@@ -35,21 +36,21 @@ func NewPrometheusOperatorUserWorkloadTask(client *client.Client, factory *manif
 	}
 }
 
-func (t *PrometheusOperatorUserWorkloadTask) Run() error {
+func (t *PrometheusOperatorUserWorkloadTask) Run(ctx context.Context) error {
 	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		return t.create()
+		return t.create(ctx)
 	}
 
-	return t.destroy()
+	return t.destroy(ctx)
 }
 
-func (t *PrometheusOperatorUserWorkloadTask) create() error {
+func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 	sa, err := t.factory.PrometheusOperatorUserWorkloadServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceAccount failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator ServiceAccount failed")
 	}
@@ -59,7 +60,7 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator ClusterRole failed")
 	}
@@ -69,7 +70,7 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator ClusterRoleBinding failed")
 	}
@@ -79,7 +80,7 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator Service failed")
 	}
@@ -89,7 +90,7 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Deployment failed")
 	}
 
-	err = t.client.CreateOrUpdateDeployment(d)
+	err = t.client.CreateOrUpdateDeployment(ctx, d)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator Deployment failed")
 	}
@@ -99,14 +100,14 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Alertmanager Role Binding failed")
 	}
 
-	err = t.client.CreateOrUpdateRoleBinding(arb)
+	err = t.client.CreateOrUpdateRoleBinding(ctx, arb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Alertmanager Role Binding failed")
 	}
 
 	// The CRs will be created externally,
 	// but we still have to wait for them here.
-	err = t.client.AssurePrometheusOperatorCRsExist()
+	err = t.client.AssurePrometheusOperatorCRsExist(ctx)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Prometheus Operator CRs to become available failed")
 	}
@@ -116,17 +117,17 @@ func (t *PrometheusOperatorUserWorkloadTask) create() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smpo)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smpo)
 	return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator ServiceMonitor failed")
 }
 
-func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
+func (t *PrometheusOperatorUserWorkloadTask) destroy(ctx context.Context) error {
 	dep, err := t.factory.PrometheusOperatorUserWorkloadDeployment()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Deployment failed")
 	}
 
-	err = t.client.DeleteDeployment(dep)
+	err = t.client.DeleteDeployment(ctx, dep)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator Deployment failed")
 	}
@@ -136,7 +137,7 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceMonitor failed")
 	}
 
-	err = t.client.DeleteServiceMonitor(sm)
+	err = t.client.DeleteServiceMonitor(ctx, sm)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator ServiceMonitor failed")
 	}
@@ -146,7 +147,7 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Service failed")
 	}
 
-	err = t.client.DeleteService(svc)
+	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator Service failed")
 	}
@@ -156,7 +157,7 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ClusterRoleBinding failed")
 	}
 
-	err = t.client.DeleteClusterRoleBinding(crb)
+	err = t.client.DeleteClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator ClusterRoleBinding failed")
 	}
@@ -166,7 +167,7 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Alertmanager Role Binding failed")
 	}
 
-	err = t.client.DeleteRoleBinding(arb)
+	err = t.client.DeleteRoleBinding(ctx, arb)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Alertmanager Role Binding failed")
 	}
@@ -176,7 +177,7 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ClusterRole failed")
 	}
 
-	err = t.client.DeleteClusterRole(cr)
+	err = t.client.DeleteClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator ClusterRoleBinding failed")
 	}
@@ -186,6 +187,6 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy() error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceAccount failed")
 	}
 
-	err = t.client.DeleteServiceAccount(sa)
+	err = t.client.DeleteServiceAccount(ctx, sa)
 	return errors.Wrap(err, "deleting Telemeter client ServiceAccount failed")
 }

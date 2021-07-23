@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -35,13 +36,13 @@ func NewClusterMonitoringOperatorTask(client *client.Client, factory *manifests.
 	}
 }
 
-func (t *ClusterMonitoringOperatorTask) Run() error {
+func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 	svc, err := t.factory.ClusterMonitoringOperatorService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Cluster Monitoring Operator Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Cluster Monitoring Operator Service failed")
 	}
@@ -57,7 +58,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 			return errors.Wrapf(err, "initializing %s ClusterRole failed", name)
 		}
 
-		err = t.client.CreateOrUpdateClusterRole(cr)
+		err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 		if err != nil {
 			return errors.Wrapf(err, "reconciling %s ClusterRole failed", name)
 		}
@@ -68,7 +69,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing UserWorkloadConfigEdit Role failed")
 	}
 
-	err = t.client.CreateOrUpdateRole(uwcr)
+	err = t.client.CreateOrUpdateRole(ctx, uwcr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit Role failed")
 	}
@@ -78,7 +79,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing AlertmanagerWrite Role failed")
 	}
 
-	err = t.client.CreateOrUpdateRole(amwr)
+	err = t.client.CreateOrUpdateRole(ctx, amwr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Alertmanager Role failed")
 	}
@@ -87,7 +88,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "initializing cluster-monitoring-operator rules PrometheusRule failed")
 	}
-	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling cluster-monitoring-operator rules PrometheusRule failed")
 	}
@@ -97,7 +98,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "initializing Cluster Monitoring Operator ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smcmo)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smcmo)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Cluster Monitoring Operator ServiceMonitor failed")
 	}
@@ -107,7 +108,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "error initializing Cluster Monitoring Operator GRPC TLS secret")
 	}
 
-	loaded, err := t.client.GetSecret(s.Namespace, s.Name)
+	loaded, err := t.client.GetSecret(ctx, s.Namespace, s.Name)
 	switch {
 	case apierrors.IsNotFound(err):
 		// No secret was found, proceed with the default empty secret from manifests.
@@ -125,7 +126,7 @@ func (t *ClusterMonitoringOperatorTask) Run() error {
 		return errors.Wrap(err, "error rotating Cluster Monitoring Operator GRPC TLS secret")
 	}
 
-	err = t.client.CreateOrUpdateSecret(s)
+	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "error creating Cluster Monitoring Operator GRPC TLS secret")
 	}

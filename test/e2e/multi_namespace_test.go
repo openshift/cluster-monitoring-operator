@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"strconv"
 	"testing"
 	"time"
@@ -28,8 +29,9 @@ import (
 )
 
 func TestMultinamespacePrometheusRule(t *testing.T) {
-	t.Parallel()
+	ctx := context.Background()
 
+	t.Parallel()
 	nsName := "openshift-test-prometheus-rules" + strconv.FormatInt(time.Now().Unix(), 36)
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -39,13 +41,14 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 			},
 		},
 	}
-	_, err := f.KubeClient.CoreV1().Namespaces().Create(f.Ctx, ns, metav1.CreateOptions{})
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.OperatorClient.DeleteIfExists(nsName)
 
-	err = f.OperatorClient.CreateOrUpdatePrometheusRule(&monv1.PrometheusRule{
+	defer f.OperatorClient.DeleteIfExists(ctx, nsName)
+
+	err = f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "non-monitoring-prometheus-rules",
 			Namespace: nsName,

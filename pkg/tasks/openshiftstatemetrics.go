@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -32,13 +33,13 @@ func NewOpenShiftStateMetricsTask(client *client.Client, factory *manifests.Fact
 	}
 }
 
-func (t *OpenShiftStateMetricsTask) Run() error {
+func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) error {
 	sa, err := t.factory.OpenShiftStateMetricsServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing openshift-state-metrics Service failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling openshift-state-metrics ServiceAccount failed")
 	}
@@ -48,7 +49,7 @@ func (t *OpenShiftStateMetricsTask) Run() error {
 		return errors.Wrap(err, "initializing openshift-state-metrics ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling openshift-state-metrics ClusterRole failed")
 	}
@@ -58,7 +59,7 @@ func (t *OpenShiftStateMetricsTask) Run() error {
 		return errors.Wrap(err, "initializing openshift-state-metrics ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling openshift-state-metrics ClusterRoleBinding failed")
 	}
@@ -68,7 +69,7 @@ func (t *OpenShiftStateMetricsTask) Run() error {
 		return errors.Wrap(err, "initializing openshift-state-metrics Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling openshift-state-metrics Service failed")
 	}
@@ -78,7 +79,7 @@ func (t *OpenShiftStateMetricsTask) Run() error {
 		return errors.Wrap(err, "initializing openshift-state-metrics Deployment failed")
 	}
 
-	err = t.client.CreateOrUpdateDeployment(dep)
+	err = t.client.CreateOrUpdateDeployment(ctx, dep)
 	if err != nil {
 		return errors.Wrap(err, "reconciling openshift-state-metrics Deployment failed")
 	}
@@ -88,6 +89,6 @@ func (t *OpenShiftStateMetricsTask) Run() error {
 		return errors.Wrap(err, "initializing openshift-state-metrics ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(sm)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 	return errors.Wrap(err, "reconciling openshift-state-metrics ServiceMonitor failed")
 }

@@ -132,8 +132,6 @@ const (
 )
 
 type Operator struct {
-	ctx context.Context
-
 	namespace, namespaceUserWorkload string
 
 	configMapName             string
@@ -177,7 +175,6 @@ func New(
 	}
 
 	o := &Operator{
-		ctx:                       ctx,
 		images:                    images,
 		telemetryMatches:          telemetryMatches,
 		configMapName:             configMapName,
@@ -250,7 +247,7 @@ func New(
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
-		o.client.InfrastructureListWatchForResource(o.ctx, clusterResourceName),
+		o.client.InfrastructureListWatchForResource(ctx, clusterResourceName),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -373,7 +370,7 @@ func (o *Operator) Run(ctx context.Context) error {
 		go r(ctx, 1)
 	}
 
-	go o.worker()
+	go o.worker(ctx)
 
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
@@ -449,12 +446,12 @@ func (o *Operator) handleEvent(obj interface{}) {
 	o.enqueue(cmoConfigMap)
 }
 
-func (o *Operator) worker() {
-	for o.processNextWorkItem() {
+func (o *Operator) worker(ctx context.Context) {
+	for o.processNextWorkItem(ctx) {
 	}
 }
 
-func (o *Operator) processNextWorkItem() bool {
+func (o *Operator) processNextWorkItem(ctx context.Context) bool {
 	key, quit := o.queue.Get()
 	if quit {
 		return false
@@ -462,7 +459,7 @@ func (o *Operator) processNextWorkItem() bool {
 	defer o.queue.Done(key)
 
 	o.reconcileAttempts.Inc()
-	err := o.sync(key.(string))
+	err := o.sync(ctx, key.(string))
 	if err == nil {
 		o.reconcileStatus.Set(1)
 		o.queue.Forget(key)
@@ -493,10 +490,10 @@ func (o *Operator) enqueue(obj interface{}) {
 	o.queue.Add(key)
 }
 
-func (o *Operator) sync(key string) error {
-	config, err := o.Config(key)
+func (o *Operator) sync(ctx context.Context, key string) error {
+	config, err := o.Config(ctx, key)
 	if err != nil {
-		o.reportError(err, "InvalidConfiguration")
+		o.reportError(ctx, err, "InvalidConfiguration")
 		return err
 	}
 	config.SetImages(o.images)
@@ -504,12 +501,12 @@ func (o *Operator) sync(key string) error {
 	config.SetRemoteWrite(o.remoteWrite)
 
 	var proxyConfig manifests.ProxyReader
-	proxyConfig, err = o.loadProxyConfig()
+	proxyConfig, err = o.loadProxyConfig(ctx)
 	if err != nil {
 		klog.Warningf("using proxy config from CMO configmap: %v", err)
 		proxyConfig = config
 	}
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(), proxyConfig, o.assets)
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(ctx), proxyConfig, o.assets)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
@@ -530,7 +527,7 @@ func (o *Operator) sync(key string) error {
 				tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
 				tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
 				tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTask(o.ctx, o.namespace, o.client, factory)),
+				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, factory)),
 				tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
@@ -539,14 +536,14 @@ func (o *Operator) sync(key string) error {
 			}),
 	)
 	klog.Info("Updating ClusterOperator status to in progress.")
-	err = o.client.StatusReporter().SetInProgress()
+	err = o.client.StatusReporter().SetInProgress(ctx)
 	if err != nil {
 		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
 
-	taskName, err := tl.RunAll()
+	taskName, err := tl.RunAll(ctx)
 	if err != nil {
-		o.reportError(err, taskName)
+		o.reportError(ctx, err, taskName)
 		return err
 	}
 
@@ -557,7 +554,8 @@ func (o *Operator) sync(key string) error {
 	}
 	klog.Info("Updating ClusterOperator status to done.")
 	o.failedReconcileAttempts = 0
-	err = o.client.StatusReporter().SetDone(degradedConditionMessage, degradedConditionReason)
+	err = o.client.StatusReporter().SetDone(ctx, degradedConditionMessage, degradedConditionReason)
+
 	if err != nil {
 		klog.Errorf("error occurred while setting status to done: %v", err)
 	}
@@ -565,13 +563,13 @@ func (o *Operator) sync(key string) error {
 	return nil
 }
 
-func (o *Operator) reportError(err error, taskName string) {
+func (o *Operator) reportError(ctx context.Context, err error, taskName string) {
 	klog.Infof("ClusterOperator reconciliation failed (attempt %d), retrying. Err: %v", o.failedReconcileAttempts+1, err)
 	if o.failedReconcileAttempts == 2 {
 		// Only update the ClusterOperator status after 3 retries have been attempted to avoid flapping status.
 		klog.Infof("Updating ClusterOperator status to failed after %d attempts. Err: %v", o.failedReconcileAttempts+1, err)
 		failedTaskReason := strings.Join(strings.Fields(taskName+"Failed"), "")
-		reportErr := o.client.StatusReporter().SetFailed(err, failedTaskReason)
+		reportErr := o.client.StatusReporter().SetFailed(ctx, err, failedTaskReason)
 		if reportErr != nil {
 			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
 		}
@@ -579,10 +577,10 @@ func (o *Operator) reportError(err error, taskName string) {
 	o.failedReconcileAttempts++
 }
 
-func (o *Operator) loadInfrastructureConfig() *InfrastructureConfig {
+func (o *Operator) loadInfrastructureConfig(ctx context.Context) *InfrastructureConfig {
 	var infrastructureConfig *InfrastructureConfig
 
-	infrastructure, err := o.client.GetInfrastructure(clusterResourceName)
+	infrastructure, err := o.client.GetInfrastructure(ctx, clusterResourceName)
 	if err != nil {
 		klog.Warningf("Error getting cluster infrastructure: %v", err)
 
@@ -602,10 +600,10 @@ func (o *Operator) loadInfrastructureConfig() *InfrastructureConfig {
 	return o.lastKnowInfrastructureConfig
 }
 
-func (o *Operator) loadProxyConfig() (*ProxyConfig, error) {
+func (o *Operator) loadProxyConfig(ctx context.Context) (*ProxyConfig, error) {
 	var proxyConfig *ProxyConfig
 
-	proxy, err := o.client.GetProxy(clusterResourceName)
+	proxy, err := o.client.GetProxy(ctx, clusterResourceName)
 	if err != nil {
 		klog.Warningf("Error getting cluster proxy configuration: %v", err)
 
@@ -622,10 +620,10 @@ func (o *Operator) loadProxyConfig() (*ProxyConfig, error) {
 	return o.lastKnowProxyConfig, nil
 }
 
-func (o *Operator) loadUserWorkloadConfig() (*manifests.UserWorkloadConfiguration, error) {
+func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, error) {
 	cmKey := fmt.Sprintf("%s/%s", o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 
-	userCM, err := o.client.GetConfigmap(o.namespaceUserWorkload, o.userWorkloadConfigMapName)
+	userCM, err := o.client.GetConfigmap(ctx, o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			klog.Warningf("User Workload Monitoring %q ConfigMap not found. Using defaults.", cmKey)
@@ -676,7 +674,7 @@ func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	return cParsed, nil
 }
 
-func (o *Operator) Config(key string) (*manifests.Config, error) {
+func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, error) {
 	c, err := o.loadConfig(key)
 	if err != nil {
 		return nil, err
@@ -687,7 +685,7 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 	// loadConfig() already initializes the structs with nil values for
 	// UserWorkloadConfiguration struct.
 	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		c.UserWorkloadConfiguration, err = o.loadUserWorkloadConfig()
+		c.UserWorkloadConfiguration, err = o.loadUserWorkloadConfig(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -696,7 +694,7 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 	// Only fetch the token and cluster ID if they have not been specified in the config.
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
 		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
-			return o.client.GetClusterVersion("version")
+			return o.client.GetClusterVersion(ctx, "version")
 		})
 
 		if err != nil {
@@ -704,7 +702,7 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		}
 
 		err = c.LoadToken(func() (*v1.Secret, error) {
-			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(o.ctx, "pull-secret", metav1.GetOptions{})
+			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(ctx, "pull-secret", metav1.GetOptions{})
 		})
 
 		if err != nil {
@@ -712,13 +710,13 @@ func (o *Operator) Config(key string) (*manifests.Config, error) {
 		}
 	}
 
-	cm, err := o.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
+	cm, err := o.client.GetConfigmap(ctx, "openshift-config", "etcd-metric-serving-ca")
 	if err != nil {
 		klog.Warningf("Error loading etcd CA certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
 		return c, nil
 	}
 
-	s, err := o.client.GetSecret("openshift-config", "etcd-metric-client")
+	s, err := o.client.GetSecret(ctx, "openshift-config", "etcd-metric-client")
 	if err != nil {
 		klog.Warningf("Error loading etcd client secrets for Prometheus. Proceeding with etcd disabled. Error: %v", err)
 		return c, nil

@@ -46,12 +46,14 @@ const (
 	userWorkloadTestNs = "user-workload-test"
 )
 
+
 type scenario struct {
 	name      string
 	assertion func(*testing.T)
 }
 
 func TestUserWorkloadMonitoringWithStorage(t *testing.T) {
+	ctx := context.Background()
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterMonitorConfigMapName,
@@ -80,11 +82,11 @@ func TestUserWorkloadMonitoringWithStorage(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
 		t.Fatal(err)
 	}
 
@@ -206,13 +208,14 @@ func createSelfSignedCertificateSecret(secretName string) error {
 }
 
 func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
+	ctx := context.Background()
 	return func(t *testing.T) {
-		if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+		if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 			t.Fatal(err)
 		}
 
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-operator", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-operator", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -224,7 +227,7 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		}
 
 		err = framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -237,7 +240,7 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 
 		// this will only poll if the statefulset is there in the first place
 		// otherwise it will fail immediately.
-		err = f.OperatorClient.WaitForPrometheus(&monitoringv1.Prometheus{
+		err = f.OperatorClient.WaitForPrometheus(ctx, &monitoringv1.Prometheus{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "user-workload",
 				Namespace: f.UserWorkloadMonitoringNs,
@@ -247,7 +250,7 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
+		err = f.OperatorClient.WaitForStatefulsetRollout(ctx, &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "prometheus-user-workload",
 				Namespace: f.UserWorkloadMonitoringNs,
@@ -260,8 +263,9 @@ func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 }
 
 func assertThanosRulerDeployment(t *testing.T) {
+	ctx := context.Background()
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "thanos-ruler-user-workload", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "thanos-ruler-user-workload", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -272,7 +276,7 @@ func assertThanosRulerDeployment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = f.OperatorClient.WaitForThanosRuler(&monitoringv1.ThanosRuler{
+	err = f.OperatorClient.WaitForThanosRuler(ctx, &monitoringv1.ThanosRuler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "user-workload",
 			Namespace: f.UserWorkloadMonitoringNs,
@@ -282,7 +286,7 @@ func assertThanosRulerDeployment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = f.OperatorClient.WaitForStatefulsetRollout(&appsv1.StatefulSet{
+	err = f.OperatorClient.WaitForStatefulsetRollout(ctx, &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "thanos-ruler-user-workload",
 			Namespace: f.UserWorkloadMonitoringNs,
@@ -333,7 +337,8 @@ func assertAlertmanagerInstancesDiscovered(expectedInstances int) func(_ *testin
 }
 
 func deployUserApplication(t *testing.T) {
-	_, err := f.KubeClient.CoreV1().Namespaces().Create(f.Ctx, &v1.Namespace{
+	ctx := context.Background()
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: userWorkloadTestNs,
 		},
@@ -343,7 +348,7 @@ func deployUserApplication(t *testing.T) {
 	}
 
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.CoreV1().Namespaces().Get(f.Ctx, userWorkloadTestNs, metav1.GetOptions{})
+		_, err := f.KubeClient.CoreV1().Namespaces().Get(ctx, userWorkloadTestNs, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -353,7 +358,7 @@ func deployUserApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(f.Ctx, &appsv1.Deployment{
+	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(ctx, &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-app",
 		},
@@ -385,7 +390,7 @@ func deployUserApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.KubeClient.CoreV1().Services(userWorkloadTestNs).Create(f.Ctx, &v1.Service{
+	_, err = f.KubeClient.CoreV1().Services(userWorkloadTestNs).Create(ctx, &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-app",
 			Labels: map[string]string{
@@ -408,7 +413,7 @@ func deployUserApplication(t *testing.T) {
 		},
 	}, metav1.CreateOptions{})
 
-	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(f.Ctx, &monitoringv1.ServiceMonitor{
+	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(ctx, &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-monitor",
 			Labels: map[string]string{
@@ -434,7 +439,7 @@ func deployUserApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(f.Ctx, &monitoringv1.PrometheusRule{
+	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(ctx, &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-rule",
 			Labels: map[string]string{
@@ -464,7 +469,7 @@ func deployUserApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(f.Ctx, &monitoringv1.PrometheusRule{
+	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(ctx, &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-rule-leaf",
 			Labels: map[string]string{
@@ -490,13 +495,14 @@ func deployUserApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = f.OperatorClient.WaitForDeploymentRollout(app)
+	err = f.OperatorClient.WaitForDeploymentRollout(ctx, app)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func disableAdditionalAlertmanagerConfigs(t *testing.T) {
+	ctx := context.Background()
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
@@ -507,13 +513,14 @@ func disableAdditionalAlertmanagerConfigs(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func createPrometheusAlertmanagerInUserNamespace(t *testing.T) {
-	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(f.Ctx, &monitoringv1.Alertmanager{
+	ctx := context.Background()
+	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(ctx, &monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
 		},
@@ -525,7 +532,7 @@ func createPrometheusAlertmanagerInUserNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.MonitoringClient.Prometheuses(userWorkloadTestNs).Create(f.Ctx, &monitoringv1.Prometheus{
+	_, err = f.MonitoringClient.Prometheuses(userWorkloadTestNs).Create(ctx, &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
 		},
@@ -991,23 +998,25 @@ func assertTenancyForRules(t *testing.T) {
 }
 
 func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
-	_, err := f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get(f.Ctx, "prometheus-not-to-be-reconciled", metav1.GetOptions{})
+	ctx := context.Background()
+	_, err := f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get(ctx, "prometheus-not-to-be-reconciled", metav1.GetOptions{})
 	if err == nil {
 		t.Fatal("expected no Prometheus statefulset to be deployed, but found one")
 	}
 
-	_, err = f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get(f.Ctx, "alertmanager-not-to-be-reconciled", metav1.GetOptions{})
+	_, err = f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get(ctx, "alertmanager-not-to-be-reconciled", metav1.GetOptions{})
 	if err == nil {
 		t.Fatal("expected no Alertmanager statefulset to be deployed, but found one")
 	}
 }
 
 func assertGRPCTLSRotation(t *testing.T) {
+	ctx := context.Background()
 	countGRPCSecrets := func(ns string) int {
 		t.Helper()
 		var result int
 		err := framework.Poll(5*time.Second, time.Minute, func() error {
-			s, err := f.KubeClient.CoreV1().Secrets(ns).List(f.Ctx, metav1.ListOptions{LabelSelector: "monitoring.openshift.io/hash"})
+			s, err := f.KubeClient.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{LabelSelector: "monitoring.openshift.io/hash"})
 			if err != nil {
 				return err
 			}
@@ -1026,7 +1035,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 		return result
 	}
 
-	s, err := f.OperatorClient.WaitForSecret(&v1.Secret{
+	s, err := f.OperatorClient.WaitForSecret(ctx, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "grpc-tls",
 			Namespace: f.Ns,
@@ -1042,7 +1051,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 
 	s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"] = "true"
 
-	if err := f.OperatorClient.CreateOrUpdateSecret(s); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateSecret(ctx, s); err != nil {
 		t.Fatalf("error saving grpc-tls secret: %v", err)
 	}
 
@@ -1059,7 +1068,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 	const expectedGRPCSecretCount = 4
 
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		s, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(f.Ctx, "grpc-tls", metav1.GetOptions{})
+		s, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(ctx, "grpc-tls", metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("error loading grpc-tls secret: %v", err)
 		}
@@ -1081,14 +1090,15 @@ func assertGRPCTLSRotation(t *testing.T) {
 }
 
 func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
+	ctx := context.Background()
 	return func(t *testing.T) {
-		err := f.OperatorClient.DeleteConfigMap(cm)
+		err := f.OperatorClient.DeleteConfigMap(ctx, cm)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		err = framework.Poll(time.Second, 10*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-operator", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-operator", metav1.GetOptions{})
 			if err == nil {
 				return errors.New("prometheus-operator deployment not deleted")
 			}
@@ -1102,7 +1112,7 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		}
 
 		err = framework.Poll(time.Second, 10*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(f.Ctx, "prometheus-user-workload", metav1.GetOptions{})
+			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
 			if err == nil {
 				return errors.New("prometheus statefulset not deleted")
 			}
@@ -1116,7 +1126,7 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 		}
 
 		err = framework.Poll(time.Second, 10*time.Minute, func() error {
-			_, err := f.KubeClient.CoreV1().Secrets(f.UserWorkloadMonitoringNs).Get(f.Ctx, manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, metav1.GetOptions{})
+			_, err := f.KubeClient.CoreV1().Secrets(f.UserWorkloadMonitoringNs).Get(ctx, manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, metav1.GetOptions{})
 			if err == nil {
 				return fmt.Errorf("secret %s/%s not deleted", manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)
 			}
@@ -1132,9 +1142,10 @@ func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
 }
 
 func assertSecretDoesNotExist(name string, namespace string) func(*testing.T) {
+	ctx := context.Background()
 	return func(t *testing.T) {
 		if err := framework.Poll(5*time.Second, 10*time.Minute, func() error {
-			_, err := f.OperatorClient.GetSecret(namespace, name)
+			_, err := f.OperatorClient.GetSecret(ctx, namespace, name)
 			if err == nil || apierrors.IsNotFound(err) {
 				return nil
 			}
@@ -1147,9 +1158,10 @@ func assertSecretDoesNotExist(name string, namespace string) func(*testing.T) {
 }
 
 func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
+	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(f.Ctx, "user-workload", metav1.GetOptions{})
+			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -1170,8 +1182,9 @@ func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 }
 
 func updateConfigmap(cm *v1.ConfigMap) func(t *testing.T) {
+	ctx := context.Background()
 	return func(t *testing.T) {
-		if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+		if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 			t.Fatal(err)
 		}
 	}
