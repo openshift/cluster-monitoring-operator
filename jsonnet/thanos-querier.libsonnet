@@ -323,6 +323,9 @@ function(params)
             ],
             serviceAccountName: 'thanos-querier',
             priorityClassName: 'system-cluster-critical',
+            // securityContext needs to be unset to be compatible with current OpenShift constrains for ServiceAccount
+            // OpenShift will automatically assign unprivileged context
+            securityContext:: {},
             containers: [
               super.containers[0] {
                 livenessProbe:: {},
