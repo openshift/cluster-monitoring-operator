@@ -77,6 +77,11 @@ function(params)
     // configured on the `Service` above and adds the default init text
     // collectors to the process.
     daemonset+: {
+      metadata+: {
+        labels+: {
+          'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+        },
+      },
       spec+: {
         template+: {
           spec+: {

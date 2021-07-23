@@ -81,6 +81,11 @@ function(params)
     // released, which is why it is shadowed here for the time being.
 
     deployment+: {
+      metadata+: {
+        labels+: {
+          'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+        },
+      },
       spec+: {
         template+: {
           spec+: {

@@ -2,6 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    app.kubernetes.io/component: telemetry-metrics-collector
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: telemeter-client
+    app.kubernetes.io/part-of: openshift-monitoring
     k8s-app: telemeter-client
   name: telemeter-client
   namespace: openshift-monitoring

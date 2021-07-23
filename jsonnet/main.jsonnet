@@ -309,6 +309,7 @@ local inCluster =
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
+        commonLabels+: $.values.common.commonLabels,
       },
       telemeterClient: {
         namespace: $.values.common.namespace,
