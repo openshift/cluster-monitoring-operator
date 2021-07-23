@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -58,9 +59,10 @@ func isAPIServiceAvailable(conditions []apiservicesv1.APIServiceCondition) bool 
 }
 
 func TestMetricsAPIAvailability(t *testing.T) {
+	ctx := context.Background()
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		metricsService, err := f.APIServicesClient.ApiregistrationV1().APIServices().Get(f.Ctx, "v1beta1.metrics.k8s.io", metav1.GetOptions{})
+		metricsService, err := f.APIServicesClient.ApiregistrationV1().APIServices().Get(ctx, "v1beta1.metrics.k8s.io", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting metrics APIService failed")
 		if err != nil {
 			return false, nil
@@ -80,14 +82,15 @@ func TestMetricsAPIAvailability(t *testing.T) {
 }
 
 func TestNodeMetricsPresence(t *testing.T) {
+	ctx := context.Background()
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		nodes, err := f.KubeClient.CoreV1().Nodes().List(f.Ctx, metav1.ListOptions{})
+		nodes, err := f.KubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 		lastErr = errors.Wrap(err, "getting nodes list failed")
 		if err != nil {
 			return false, nil
 		}
-		nodeMetrics, err := f.MetricsClient.MetricsV1beta1().NodeMetricses().List(f.Ctx, metav1.ListOptions{})
+		nodeMetrics, err := f.MetricsClient.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{})
 		lastErr = errors.Wrap(err, "getting metrics list failed")
 		if err != nil {
 			return false, nil
@@ -118,13 +121,14 @@ func TestNodeMetricsPresence(t *testing.T) {
 
 func TestPodMetricsPresence(t *testing.T) {
 	var lastErr error
+	ctx := context.Background()
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		pods, err := f.KubeClient.CoreV1().Pods("").List(f.Ctx, metav1.ListOptions{FieldSelector: "status.phase=Running"})
+		pods, err := f.KubeClient.CoreV1().Pods("").List(ctx, metav1.ListOptions{FieldSelector: "status.phase=Running"})
 		lastErr = errors.Wrap(err, "getting pods list failed")
 		if err != nil {
 			return false, nil
 		}
-		podMetrics, err := f.MetricsClient.MetricsV1beta1().PodMetricses("").List(f.Ctx, metav1.ListOptions{})
+		podMetrics, err := f.MetricsClient.MetricsV1beta1().PodMetricses("").List(ctx, metav1.ListOptions{})
 		lastErr = errors.Wrap(err, "getting metrics list failed")
 		if err != nil {
 			return false, nil
@@ -157,6 +161,7 @@ func TestPodMetricsPresence(t *testing.T) {
 }
 
 func TestAggregatedMetricPermissions(t *testing.T) {
+	ctx := context.Background()
 	present := func(where []string, what string) bool {
 		sort.Strings(where)
 		i := sort.SearchStrings(where, what)
@@ -168,7 +173,7 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 	hasRule := func(apiGroup, resource, verb string) checkFunc {
 		return func(clusterRole string) error {
 			return framework.Poll(time.Second, 5*time.Minute, func() error {
-				viewRole, err := f.KubeClient.RbacV1().ClusterRoles().Get(f.Ctx, clusterRole, metav1.GetOptions{})
+				viewRole, err := f.KubeClient.RbacV1().ClusterRoles().Get(ctx, clusterRole, metav1.GetOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "getting %s cluster role failed", clusterRole)
 				}
@@ -222,9 +227,10 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 }
 
 func TestPrometheusAdapterCARotation(t *testing.T) {
+	ctx := context.Background()
 	// Wait for prometheus-adapter deployment
 	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(f.Ctx, "prometheus-adapter", metav1.GetOptions{})
+		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-adapter", metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
 		}
@@ -234,12 +240,12 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tls, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get(f.Ctx, "prometheus-adapter-tls", metav1.GetOptions{})
+	tls, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get(ctx, "prometheus-adapter-tls", metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	apiAuth, err := f.KubeClient.CoreV1().ConfigMaps("kube-system").Get(f.Ctx, "extension-apiserver-authentication", metav1.GetOptions{})
+	apiAuth, err := f.KubeClient.CoreV1().ConfigMaps("kube-system").Get(ctx, "extension-apiserver-authentication", metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +258,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 
 	// the secret might not have been created yet, so wait for it
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		_, err = f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get(f.Ctx, adapterSecret.GetName(), metav1.GetOptions{})
+		_, err = f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get(ctx, adapterSecret.GetName(), metav1.GetOptions{})
 		return err
 	})
 	if err != nil {
@@ -261,12 +267,12 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 
 	// Delete the signer secrets. This causes kube-system/extension-apiserver-authentication
 	// to be reissued.
-	err = f.KubeClient.CoreV1().Secrets("openshift-kube-controller-manager-operator").Delete(f.Ctx, "csr-signer-signer", metav1.DeleteOptions{})
+	err = f.KubeClient.CoreV1().Secrets("openshift-kube-controller-manager-operator").Delete(ctx, "csr-signer-signer", metav1.DeleteOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = f.KubeClient.CoreV1().Secrets("openshift-kube-controller-manager-operator").Delete(f.Ctx, "csr-signer", metav1.DeleteOptions{})
+	err = f.KubeClient.CoreV1().Secrets("openshift-kube-controller-manager-operator").Delete(ctx, "csr-signer", metav1.DeleteOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +280,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 	// Wait for the new secret to be deployed
 	var newSecret corev1.Secret
 	err = framework.Poll(5*time.Second, 15*time.Minute, func() error {
-		secrets, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").List(f.Ctx, metav1.ListOptions{
+		secrets, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").List(ctx, metav1.ListOptions{
 			LabelSelector: "monitoring.openshift.io/name=prometheus-adapter,monitoring.openshift.io/hash!=" + adapterSecret.Labels["monitoring.openshift.io/hash"],
 		})
 
@@ -299,7 +305,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 
 	// Wait for prometheus-adapter deployment to reference new secret
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(f.Ctx, "prometheus-adapter", metav1.GetOptions{})
+		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-adapter", metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
 		}
@@ -324,7 +330,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 
 	// Wait for new Prometheus adapter to roll out
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(f.Ctx, "prometheus-adapter", metav1.GetOptions{})
+		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-adapter", metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
 		}

@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -38,25 +39,25 @@ func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory, c
 	}
 }
 
-func (t *TelemeterClientTask) Run() error {
+func (t *TelemeterClientTask) Run(ctx context.Context) error {
 	if t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && !t.config.RemoteWrite {
-		return t.create()
+		return t.create(ctx)
 	}
 
 	if !t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() || t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite {
-		return t.destroy()
+		return t.destroy(ctx)
 	}
 
 	return nil
 }
 
-func (t *TelemeterClientTask) create() error {
+func (t *TelemeterClientTask) create(ctx context.Context) error {
 	cacm, err := t.factory.TelemeterClientServingCertsCABundle()
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter Client serving certs CA Bundle ConfigMap failed")
 	}
 
-	_, err = t.client.CreateIfNotExistConfigMap(cacm)
+	_, err = t.client.CreateIfNotExistConfigMap(ctx, cacm)
 	if err != nil {
 		return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
 	}
@@ -66,7 +67,7 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter client Service failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Telemeter client ServiceAccount failed")
 	}
@@ -76,7 +77,7 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter client ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Telemeter client ClusterRole failed")
 	}
@@ -86,7 +87,7 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter client ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Telemeter client ClusterRoleBinding failed")
 	}
@@ -96,7 +97,7 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter client cluster monitoring view ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Telemeter client cluster monitoring view ClusterRoleBinding failed")
 	}
@@ -106,7 +107,7 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter client Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Telemeter client Service failed")
 	}
@@ -116,7 +117,7 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter client Secret failed")
 	}
 
-	err = t.client.CreateOrUpdateSecret(s)
+	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Telemeter client Secret failed")
 	}
@@ -133,7 +134,7 @@ func (t *TelemeterClientTask) create() error {
 			factory: t.factory,
 			prefix:  "telemeter",
 		}
-		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "syncing Telemeter client CA bundle ConfigMap failed")
 		}
@@ -143,7 +144,7 @@ func (t *TelemeterClientTask) create() error {
 			return errors.Wrap(err, "initializing Telemeter client Deployment failed")
 		}
 
-		err = t.client.CreateOrUpdateDeployment(dep)
+		err = t.client.CreateOrUpdateDeployment(ctx, dep)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Telemeter client Deployment failed")
 		}
@@ -159,7 +160,7 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter client Prometheus Rule failed")
 	}
 
-	err = t.client.CreateOrUpdatePrometheusRule(rule)
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, rule)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Telemeter client Prometheus Rule failed")
 	}
@@ -169,17 +170,17 @@ func (t *TelemeterClientTask) create() error {
 		return errors.Wrap(err, "initializing Telemeter client ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(sm)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 	return errors.Wrap(err, "reconciling Telemeter client ServiceMonitor failed")
 }
 
-func (t *TelemeterClientTask) destroy() error {
+func (t *TelemeterClientTask) destroy(ctx context.Context) error {
 	dep, err := t.factory.TelemeterClientDeployment(nil)
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client Deployment failed")
 	}
 
-	err = t.client.DeleteDeployment(dep)
+	err = t.client.DeleteDeployment(ctx, dep)
 	if err != nil {
 		return errors.Wrap(err, "deleting Telemeter client Deployment failed")
 	}
@@ -189,7 +190,7 @@ func (t *TelemeterClientTask) destroy() error {
 		return errors.Wrap(err, "initializing Telemeter client Secret failed")
 	}
 
-	err = t.client.DeleteSecret(s)
+	err = t.client.DeleteSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "deleting Telemeter client Secret failed")
 	}
@@ -199,7 +200,7 @@ func (t *TelemeterClientTask) destroy() error {
 		return errors.Wrap(err, "initializing Telemeter client Service failed")
 	}
 
-	err = t.client.DeleteService(svc)
+	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "deleting Telemeter client Service failed")
 	}
@@ -209,7 +210,7 @@ func (t *TelemeterClientTask) destroy() error {
 		return errors.Wrap(err, "initializing Telemeter client ClusterRoleBinding failed")
 	}
 
-	err = t.client.DeleteClusterRoleBinding(crb)
+	err = t.client.DeleteClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "deleting Telemeter client ClusterRoleBinding failed")
 	}
@@ -219,7 +220,7 @@ func (t *TelemeterClientTask) destroy() error {
 		return errors.Wrap(err, "initializing Telemeter client ClusterRole failed")
 	}
 
-	err = t.client.DeleteClusterRole(cr)
+	err = t.client.DeleteClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "deleting Telemeter client ClusterRole failed")
 	}
@@ -229,7 +230,7 @@ func (t *TelemeterClientTask) destroy() error {
 		return errors.Wrap(err, "initializing Telemeter client Service failed")
 	}
 
-	err = t.client.DeleteServiceAccount(sa)
+	err = t.client.DeleteServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "deleting Telemeter client ServiceAccount failed")
 	}
@@ -239,7 +240,7 @@ func (t *TelemeterClientTask) destroy() error {
 		return errors.Wrap(err, "initializing Telemeter client ServiceMonitor failed")
 	}
 
-	err = t.client.DeleteServiceMonitor(sm)
+	err = t.client.DeleteServiceMonitor(ctx, sm)
 	if err != nil {
 		return errors.Wrap(err, "deleting Telemeter client ServiceMonitor failed")
 	}
@@ -249,7 +250,7 @@ func (t *TelemeterClientTask) destroy() error {
 		return errors.Wrap(err, "initializing Telemeter Client serving certs CA Bundle ConfigMap failed")
 	}
 
-	err = t.client.DeleteConfigMap(cacm)
+	err = t.client.DeleteConfigMap(ctx, cacm)
 	return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
 }
 

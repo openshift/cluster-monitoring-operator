@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -34,10 +35,10 @@ func NewControlPlaneTask(client *client.Client, factory *manifests.Factory, conf
 	}
 }
 
-func (t *ControlPlaneTask) Run() error {
+func (t *ControlPlaneTask) Run(ctx context.Context) error {
 	// TODO: remove in 4.10
 	// This was needed when etcd rule was moved to cluster-etcd-operator.
-	err := t.client.DeletePrometheusRuleByNamespaceAndName("openshift-monitoring", "etcd-prometheus-rules")
+	err := t.client.DeletePrometheusRuleByNamespaceAndName(ctx, "openshift-monitoring", "etcd-prometheus-rules")
 	if err != nil {
 		return errors.Wrap(err, "deleting etcd rules PrometheusRule failed")
 	}
@@ -46,7 +47,7 @@ func (t *ControlPlaneTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "initializing kubernetes mixin rules PrometheusRule failed")
 	}
-	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling kubernetes mixin rules PrometheusRule failed")
 	}
@@ -56,7 +57,7 @@ func (t *ControlPlaneTask) Run() error {
 		return errors.Wrap(err, "initializing control-plane kubelet ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smk)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smk)
 	if err != nil {
 		return errors.Wrap(err, "reconciling control-plane kubelet ServiceMonitor failed")
 	}
@@ -67,16 +68,16 @@ func (t *ControlPlaneTask) Run() error {
 	}
 
 	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		err = t.client.CreateOrUpdateServiceMonitor(sme)
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, sme)
 		if err != nil {
 			return errors.Wrap(err, "reconciling control-plane etcd ServiceMonitor failed")
 		}
-		etcdCA, err := t.client.GetConfigmap("openshift-config", "etcd-metric-serving-ca")
+		etcdCA, err := t.client.GetConfigmap(ctx, "openshift-config", "etcd-metric-serving-ca")
 		if err != nil {
 			return errors.Wrap(err, "failed to load etcd client CA")
 		}
 
-		etcdClientSecret, err := t.client.GetSecret("openshift-config", "etcd-metric-client")
+		etcdClientSecret, err := t.client.GetSecret(ctx, "openshift-config", "etcd-metric-client")
 		if err != nil {
 			return errors.Wrap(err, "failed to load etcd client secret")
 		}
@@ -86,12 +87,12 @@ func (t *ControlPlaneTask) Run() error {
 			return errors.Wrap(err, "initializing prometheus etcd service monitor secret failed")
 		}
 
-		err = t.client.CreateOrUpdateSecret(promEtcdSecret)
+		err = t.client.CreateOrUpdateSecret(ctx, promEtcdSecret)
 		if err != nil {
 			return errors.Wrap(err, "reconciling prometheus etcd service monitor secret")
 		}
 	} else {
-		err = t.client.DeleteServiceMonitor(sme)
+		err = t.client.DeleteServiceMonitor(ctx, sme)
 		if err != nil {
 			return errors.Wrap(err, "deleting control-plane etcd ServiceMonitor failed")
 		}

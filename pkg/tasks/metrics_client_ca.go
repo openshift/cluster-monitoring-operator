@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -22,8 +23,8 @@ func NewMetricsClientCATask(client *client.Client, factory *manifests.Factory) *
 	}
 }
 
-func (t *MetricsClientCATask) Run() error {
-	apiAuthConfigmap, err := t.client.GetConfigmap("kube-system", "extension-apiserver-authentication")
+func (t *MetricsClientCATask) Run(ctx context.Context) error {
+	apiAuthConfigmap, err := t.client.GetConfigmap(ctx, "kube-system", "extension-apiserver-authentication")
 	if err != nil {
 		return errors.Wrap(err, "failed to load kube-system/extension-apiserver-authentication configmap")
 	}
@@ -33,7 +34,7 @@ func (t *MetricsClientCATask) Run() error {
 		return errors.Wrap(err, "initializing Metrics Client CA failed")
 	}
 
-	err = t.client.CreateOrUpdateConfigMap(cm)
+	err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Metrics Client CA ConfigMap failed")
 	}

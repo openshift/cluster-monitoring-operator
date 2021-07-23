@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"context"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -32,18 +33,18 @@ func NewAlertmanagerTask(client *client.Client, factory *manifests.Factory) *Ale
 	}
 }
 
-func (t *AlertmanagerTask) Run() error {
+func (t *AlertmanagerTask) Run(ctx context.Context) error {
 	r, err := t.factory.AlertmanagerRoute()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(r)
+	err = t.client.CreateRouteIfNotExists(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "creating Alertmanager Route failed")
 	}
 
-	host, err := t.client.WaitForRouteReady(r)
+	host, err := t.client.WaitForRouteReady(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Alertmanager Route to become ready failed")
 	}
@@ -53,7 +54,7 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager configuration Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(s)
+	err = t.client.CreateIfNotExistSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "creating Alertmanager configuration Secret failed")
 	}
@@ -63,7 +64,7 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager RBAC proxy Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(rs)
+	err = t.client.CreateIfNotExistSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "creating Alertmanager RBAC proxy Secret failed")
 	}
@@ -73,7 +74,7 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager ClusterRole failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRole(cr)
+	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Alertmanager ClusterRole failed")
 	}
@@ -83,7 +84,7 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager ClusterRoleBinding failed")
 	}
 
-	err = t.client.CreateOrUpdateClusterRoleBinding(crb)
+	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Alertmanager ClusterRoleBinding failed")
 	}
@@ -93,7 +94,7 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager ServiceAccount failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceAccount(sa)
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Alertmanager ServiceAccount failed")
 	}
@@ -103,7 +104,7 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager proxy Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(ps)
+	err = t.client.CreateIfNotExistSecret(ctx, ps)
 	if err != nil {
 		return errors.Wrap(err, "creating Alertmanager proxy Secret failed")
 	}
@@ -113,7 +114,7 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager Service failed")
 	}
 
-	err = t.client.CreateOrUpdateService(svc)
+	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Alertmanager Service failed")
 	}
@@ -130,7 +131,7 @@ func (t *AlertmanagerTask) Run() error {
 			factory: t.factory,
 			prefix:  "alertmanager",
 		}
-		trustedCA, err = cbs.syncTrustedCABundle(trustedCA)
+		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
 		}
@@ -140,11 +141,11 @@ func (t *AlertmanagerTask) Run() error {
 			return errors.Wrap(err, "initializing Alertmanager object failed")
 		}
 
-		err = t.client.CreateOrUpdateAlertmanager(a)
+		err = t.client.CreateOrUpdateAlertmanager(ctx, a)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Alertmanager object failed")
 		}
-		err = t.client.WaitForAlertmanager(a)
+		err = t.client.WaitForAlertmanager(ctx, a)
 		if err != nil {
 			return errors.Wrap(err, "waiting for Alertmanager object changes failed")
 		}
@@ -153,7 +154,7 @@ func (t *AlertmanagerTask) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "initializing alertmanager rules PrometheusRule failed")
 	}
-	err = t.client.CreateOrUpdatePrometheusRule(pr)
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling alertmanager rules PrometheusRule failed")
 	}
@@ -163,6 +164,6 @@ func (t *AlertmanagerTask) Run() error {
 		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(smam)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
 	return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
 }

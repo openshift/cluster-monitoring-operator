@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -31,6 +32,7 @@ import (
 )
 
 func TestAlertmanagerTrustedCA(t *testing.T) {
+	ctx := context.Background()
 	var (
 		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath))
 		newCM   *v1.ConfigMap
@@ -39,7 +41,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 
 	// Wait for the new ConfigMap to be created
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(f.Ctx, "alertmanager-trusted-ca-bundle", metav1.GetOptions{})
+		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, "alertmanager-trusted-ca-bundle", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting new trusted CA ConfigMap failed")
 		if err != nil {
 			return false, nil
@@ -62,7 +64,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 
 	// Wait for the new hashed trusted CA bundle ConfigMap to be created
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(f.Ctx, newCM.Name, metav1.GetOptions{})
+		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, newCM.Name, metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting new CA ConfigMap failed")
 		if err != nil {
 			return false, nil
@@ -78,7 +80,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 
 	// Get Alertmanager StatefulSet and make sure it has a volume mounted.
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		ss, err := f.KubeClient.AppsV1().StatefulSets(f.Ns).Get(f.Ctx, "alertmanager-main", metav1.GetOptions{})
+		ss, err := f.KubeClient.AppsV1().StatefulSets(f.Ns).Get(ctx, "alertmanager-main", metav1.GetOptions{})
 		lastErr = errors.Wrap(err, "getting Alertmanager StatefulSet failed")
 		if err != nil {
 			return false, nil
@@ -107,6 +109,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 
 // The Alertmanager API should be protected by kube-rbac-proxy (and prom-label-proxy).
 func TestAlertmanagerKubeRbacProxy(t *testing.T) {
+	ctx := context.Background()
 	const testNs = "test-kube-rbac-proxy"
 
 	// The tenancy port (9092) is only exposed in-cluster so we need to use
@@ -123,12 +126,12 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 			Name: testNs,
 		},
 	}
-	ns, err = f.KubeClient.CoreV1().Namespaces().Create(f.Ctx, ns, metav1.CreateOptions{})
+	ns, err = f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		err := f.KubeClient.CoreV1().Namespaces().Delete(f.Ctx, testNs, metav1.DeleteOptions{})
+		err := f.KubeClient.CoreV1().Namespaces().Delete(ctx, testNs, metav1.DeleteOptions{})
 		t.Logf("deleting namespace %s: %v", testNs, err)
 	}()
 
