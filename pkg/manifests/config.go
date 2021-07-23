@@ -51,6 +51,46 @@ func (c Config) IsStorageConfigured() bool {
 	return prometheusK8sConfig.VolumeClaimTemplate != nil
 }
 
+// GetPrometheusUWAdditionalAlertmanagerConfigs returns the alertmanager configurations for
+// the User Workload Monitoring Prometheus instance.
+// If no additional configurations are specified, GetPrometheusUWAdditionalAlertmanagerConfigs returns nil.
+func (c Config) GetPrometheusUWAdditionalAlertmanagerConfigs() []AdditionalAlertmanagerConfig {
+	if c.UserWorkloadConfiguration == nil {
+		return nil
+	}
+
+	if c.UserWorkloadConfiguration.Prometheus == nil {
+		return nil
+	}
+
+	alertmanagerConfigs := c.UserWorkloadConfiguration.Prometheus.AlertmanagerConfigs
+	if len(alertmanagerConfigs) == 0 {
+		return nil
+	}
+
+	return alertmanagerConfigs
+}
+
+// GetThanosRulerAlertmanagerConfigs returns the alertmanager configurations for
+// the User Workload Monitoring Thanos Ruler instance.
+// If no additional configurations are specified, GetThanosRulerAlertmanagerConfigs returns nil.
+func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConfig {
+	if c.UserWorkloadConfiguration == nil {
+		return nil
+	}
+
+	if c.UserWorkloadConfiguration.ThanosRuler == nil {
+		return nil
+	}
+
+	alertmanagerConfigs := c.UserWorkloadConfiguration.ThanosRuler.AlertmanagersConfigs
+	if len(alertmanagerConfigs) == 0 {
+		return nil
+	}
+
+	return alertmanagerConfigs
+}
+
 type ClusterMonitoringConfiguration struct {
 	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
 	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`
@@ -105,8 +145,7 @@ type PrometheusK8sConfig struct {
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
 	TelemetryMatches    []string                             `json:"-"`
-	// EXPERIMENTAL: this configuration field may change in future releases.
-	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertManagerConfigs"`
+	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
 }
 
 type AdditionalAlertmanagerConfig struct {
@@ -149,11 +188,12 @@ type AlertmanagerMainConfig struct {
 }
 
 type ThanosRulerConfig struct {
-	LogLevel            string                               `json:"logLevel"`
-	NodeSelector        map[string]string                    `json:"nodeSelector"`
-	Tolerations         []v1.Toleration                      `json:"tolerations"`
-	Resources           *v1.ResourceRequirements             `json:"resources"`
-	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	LogLevel             string                               `json:"logLevel"`
+	NodeSelector         map[string]string                    `json:"nodeSelector"`
+	Tolerations          []v1.Toleration                      `json:"tolerations"`
+	Resources            *v1.ResourceRequirements             `json:"resources"`
+	VolumeClaimTemplate  *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	AlertmanagersConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
 }
 
 type ThanosQuerierConfig struct {
@@ -417,6 +457,7 @@ type PrometheusRestrictedConfig struct {
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
 	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
 	EnforcedTargetLimit *uint64                              `json:"enforcedTargetLimit"`
+	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {

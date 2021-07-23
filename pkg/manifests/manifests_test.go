@@ -1038,7 +1038,7 @@ ingress:
 	}
 
 	if p.Spec.AdditionalAlertManagerConfigs != nil {
-		t.Fatal("additionalAlertManagerConfigs should not be set")
+		t.Fatal("additionalAlertmanagerConfigs should not be set")
 	}
 
 	storageRequest := p.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
@@ -1052,126 +1052,491 @@ ingress:
 	}
 }
 
-func TestAdditionalAlertManagerConfigsSecret(t *testing.T) {
-	c, err := NewConfigFromString(`prometheusK8s:
-  additionalAlertManagerConfigs:
+func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
+	testCases := []struct {
+		name           string
+		config         string
+		expected       string
+		mountedSecrets []string
+	}{
+		{
+			name:           "empty config",
+			config:         "",
+			expected:       "[]\n",
+			mountedSecrets: []string{},
+		},
+		{
+			name: "basic config",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+  - staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			expected: `- static_configs:
+  - targets:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			mountedSecrets: []string{},
+		},
+		{
+			name: "version, path and scheme override",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v1
+    pathPrefix: /path
+    scheme: ftp
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			expected: `- scheme: ftp
+  path_prefix: /path
+  api_version: v1
+  static_configs:
+  - targets:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			mountedSecrets: []string{},
+		},
+		{
+			name: "bearer token",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
   - apiVersion: v2
+    scheme: https    
     bearerToken:
       name: alertmanager1-bearer-token
       key: token
-    scheme: https
-    tlsConfig:
-      ca: 
-        name: alertmanager1-ca
-        key: root-ca.crt
-    pathPrefix: /
     staticConfigs:
     - alertmanager1-remote.com
-    - alertmanager1-remotex.com
-  - apiVersion: v2
-    scheme: https
-    timeout: 60s
-    tlsConfig:
-      ca: 
-        name: alertmanager2-cert
-        key: root-ca.crt
-      cert:
-        name: alertmanager2-cert
-        key: cert.crt
-      key:
-        name: alertmanager2-cert
-        key: key.crt
-      serverName: alertmanager2-remote.com
-    pathPrefix: /
-    staticConfigs:
-    - alertmanager2-remote.com
-  - apiVersion: v2
-    scheme: https
-    timeout: 60s
-    tlsConfig:
-      ca:
-        name: alertmanager3-ca
-        key: root-ca.crt
-      cert:
-        name: alertmanager3-cert
-        key: cert.crt
-      key:
-        name: alertmanager3-key
-        key: key.crt
-      serverName: alertmanager3-remote.com
-    pathPrefix: /
-    staticConfigs:
-    - alertmanager3-remote.com
-`)
-	expected := `- scheme: https
-  path_prefix: /
+    - alertmanager1-remotex.com`,
+			expected: `- scheme: https
   api_version: v2
   authorization:
     credentials_file: /etc/prometheus/secrets/alertmanager1-bearer-token/token
-  tls_config:
-    ca_file: /etc/prometheus/secrets/alertmanager1-ca/root-ca.crt
-    insecure_skip_verify: false
   static_configs:
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
-- scheme: https
-  path_prefix: /
+`,
+			mountedSecrets: []string{"alertmanager1-bearer-token"},
+		},
+		{
+			name: "tls configuration token",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    scheme: https    
+    tlsConfig:
+      ca:
+        name: alertmanager-tls
+        key: tls.ca
+      cert:
+        name: alertmanager-tls
+        key: tls.ca
+      key:
+        name: alertmanager-tls
+        key: tls.ca
+      serverName: alertmanager-remote.com
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com`,
+			expected: `- scheme: https
   api_version: v2
-  timeout: 60s
   tls_config:
-    ca_file: /etc/prometheus/secrets/alertmanager2-cert/root-ca.crt
-    cert_file: /etc/prometheus/secrets/alertmanager2-cert/cert.crt
-    key_file: /etc/prometheus/secrets/alertmanager2-cert/key.crt
-    server_name: alertmanager2-remote.com
-    insecure_skip_verify: false
+    ca_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
+    cert_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
+    key_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
+    server_name: alertmanager-remote.com
   static_configs:
   - targets:
-    - alertmanager2-remote.com
-- scheme: https
-  path_prefix: /
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			mountedSecrets: []string{"alertmanager-tls"},
+		},
+		{
+			name: "tls configuration token",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    scheme: https    
+    tlsConfig:
+      ca:
+        name: alertmanager-ca-tls
+        key: tls.ca
+      cert:
+        name: alertmanager-cert-tls
+        key: tls.ca
+      key:
+        name: alertmanager-key-tls
+        key: tls.ca
+      serverName: alertmanager-remote.com
+      insecureSkipVerify: true
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com`,
+			expected: `- scheme: https
   api_version: v2
-  timeout: 60s
   tls_config:
-    ca_file: /etc/prometheus/secrets/alertmanager3-ca/root-ca.crt
-    cert_file: /etc/prometheus/secrets/alertmanager3-cert/cert.crt
-    key_file: /etc/prometheus/secrets/alertmanager3-key/key.crt
-    server_name: alertmanager3-remote.com
-    insecure_skip_verify: false
+    ca_file: /etc/prometheus/secrets/alertmanager-ca-tls/tls.ca
+    cert_file: /etc/prometheus/secrets/alertmanager-cert-tls/tls.ca
+    key_file: /etc/prometheus/secrets/alertmanager-key-tls/tls.ca
+    server_name: alertmanager-remote.com
+    insecure_skip_verify: true
   static_configs:
   - targets:
-    - alertmanager3-remote.com
-`
-	if err != nil {
-		t.Fatal(err)
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			mountedSecrets: []string{"alertmanager-ca-tls", "alertmanager-cert-tls", "alertmanager-key-tls"},
+		},
+		{
+			name: "full configuration",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    scheme: https
+    bearerToken:
+      name: alertmanager-bearer-token
+      key: token
+    tlsConfig:
+      ca:
+        name: alertmanager-ca-tls
+        key: tls.ca
+      cert:
+        name: alertmanager-cert-tls
+        key: tls.ca
+      key:
+        name: alertmanager-key-tls
+        key: tls.ca
+      serverName: alertmanager-remote.com
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com`,
+			expected: `- scheme: https
+  api_version: v2
+  authorization:
+    credentials_file: /etc/prometheus/secrets/alertmanager-bearer-token/token
+  tls_config:
+    ca_file: /etc/prometheus/secrets/alertmanager-ca-tls/tls.ca
+    cert_file: /etc/prometheus/secrets/alertmanager-cert-tls/tls.ca
+    key_file: /etc/prometheus/secrets/alertmanager-key-tls/tls.ca
+    server_name: alertmanager-remote.com
+  static_configs:
+  - targets:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			mountedSecrets: []string{"alertmanager-bearer-token", "alertmanager-ca-tls", "alertmanager-cert-tls", "alertmanager-key-tls"},
+		},
 	}
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	for _, tt := range testCases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tt.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
 
-	p, err := f.PrometheusK8s(
-		"prometheus-k8s.openshift-monitoring.svc",
-		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-	)
+			p, err := f.PrometheusK8s(
+				"prometheus-k8s.openshift-monitoring.svc",
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
 
-	secrets := make(map[string]struct{})
-	for _, s := range p.Spec.Secrets {
-		secrets[s] = struct{}{}
+			secrets := make(map[string]struct{})
+			for _, s := range p.Spec.Secrets {
+				secrets[s] = struct{}{}
+			}
+			for _, exp := range tt.mountedSecrets {
+				if _, found := secrets[exp]; found {
+					continue
+				}
+				t.Fatalf("Prometheus secrets are not generated correctly, expected to have %s but got none", exp)
+			}
+
+			s, err := f.PrometheusK8sAdditionalAlertManagerConfigsSecret()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if s.Name != PrometheusK8sAdditionalAlertmanagerConfigSecretName {
+				t.Fatalf("invalid secret name, got %s, want %s", s.Name, PrometheusK8sAdditionalAlertmanagerConfigSecretName)
+			}
+
+			if s.Namespace != "openshift-monitoring" {
+				t.Fatalf("invalid secret namespace, got %s, want %s", s.Namespace, "openshift-monitoring")
+			}
+
+			if !reflect.DeepEqual(string(s.Data[AdditionalAlertmanagerConfigSecretKey]), tt.expected) {
+				t.Fatalf("additionalAlertmanagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", string(s.Data[AdditionalAlertmanagerConfigSecretKey]), tt.expected)
+			}
+		})
 	}
-	for _, exp := range []string{"alertmanager2-cert", "alertmanager1-ca", "alertmanager1-bearer-token", "alertmanager3-ca", "alertmanager3-cert", "alertmanager3-key"} {
-		if _, found := secrets[exp]; found {
-			continue
-		}
-		t.Fatalf("Prometheus secrets are not generated correctly, expected to have %s but got none", exp)
+}
+
+func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
+	testCases := []struct {
+		name     string
+		config   string
+		expected string
+	}{
+		{
+			name:   "no config",
+			config: ``,
+			expected: `"alertmanagers":
+- "api_version": "v2"
+  "http_config":
+    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "tls_config":
+      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
+      "server_name": "alertmanager-main.openshift-monitoring.svc"
+  "scheme": "https"
+  "static_configs":
+  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"`,
+		},
+		{
+			name: "basic config",
+			config: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			expected: `"alertmanagers":
+- "api_version": "v2"
+  "http_config":
+    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "tls_config":
+      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
+      "server_name": "alertmanager-main.openshift-monitoring.svc"
+  "scheme": "https"
+  "static_configs":
+  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+- static_configs:
+  - alertmanager1-remote.com
+  - alertmanager1-remotex.com
+`,
+		},
+		{
+			name: "version, path and scheme override",
+			config: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - version: v1
+    pathPrefix: /path-prefix
+    scheme: ftp
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			expected: `"alertmanagers":
+- "api_version": "v2"
+  "http_config":
+    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "tls_config":
+      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
+      "server_name": "alertmanager-main.openshift-monitoring.svc"
+  "scheme": "https"
+  "static_configs":
+  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+- scheme: ftp
+  path_prefix: /path-prefix
+  static_configs:
+  - alertmanager1-remote.com
+  - alertmanager1-remotex.com
+`,
+		},
+		{
+			name: "bearer token",
+			config: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - bearerToken:
+      key: key
+      name: bearer-token
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			expected: `"alertmanagers":
+- "api_version": "v2"
+  "http_config":
+    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "tls_config":
+      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
+      "server_name": "alertmanager-main.openshift-monitoring.svc"
+  "scheme": "https"
+  "static_configs":
+  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+- http_config:
+    bearer_token_file: /etc/prometheus/secrets/bearer-token/key
+  static_configs:
+  - alertmanager1-remote.com
+  - alertmanager1-remotex.com
+`,
+		},
+		{
+			name: "tls configuration token",
+			config: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - tlsConfig:
+      ca:
+        name: alertmanager-tls
+        key: tls.ca
+      cert:
+        name: alertmanager-tls
+        key: tls.ca
+      key:
+        name: alertmanager-tls
+        key: tls.ca
+      serverName: alertmanager-remote.com
+      insecureSkipVerify: true
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com`,
+			expected: `"alertmanagers":
+- "api_version": "v2"
+  "http_config":
+    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "tls_config":
+      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
+      "server_name": "alertmanager-main.openshift-monitoring.svc"
+  "scheme": "https"
+  "static_configs":
+  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+- http_config:
+    tls_config:
+      ca_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
+      cert_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
+      key_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
+      server_name: alertmanager-remote.com
+      insecure_skip_verify: true
+  static_configs:
+  - alertmanager1-remote.com
+  - alertmanager1-remotex.com
+`,
+		},
+		{
+			name: "tls configuration token",
+			config: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - tlsConfig:
+      ca:
+        name: alertmanager-ca-tls
+        key: tls.ca
+      cert:
+        name: alertmanager-cert-tls
+        key: tls.ca
+      key:
+        name: alertmanager-key-tls
+        key: tls.ca
+      serverName: alertmanager-remote.com
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com`,
+			expected: `"alertmanagers":
+- "api_version": "v2"
+  "http_config":
+    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "tls_config":
+      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
+      "server_name": "alertmanager-main.openshift-monitoring.svc"
+  "scheme": "https"
+  "static_configs":
+  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+- http_config:
+    tls_config:
+      ca_file: /etc/prometheus/secrets/alertmanager-ca-tls/tls.ca
+      cert_file: /etc/prometheus/secrets/alertmanager-cert-tls/tls.ca
+      key_file: /etc/prometheus/secrets/alertmanager-key-tls/tls.ca
+      server_name: alertmanager-remote.com
+  static_configs:
+  - alertmanager1-remote.com
+  - alertmanager1-remotex.com
+`,
+		},
+		{
+			name: "full configuration",
+			config: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    scheme: https
+    bearerToken:
+      name: alertmanager-bearer-token
+      key: token
+    tlsConfig:
+      ca:
+        name: alertmanager-ca-tls
+        key: tls.ca
+      cert:
+        name: alertmanager-cert-tls
+        key: tls.ca
+      key:
+        name: alertmanager-key-tls
+        key: tls.ca
+      serverName: alertmanager-remote.com
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com`,
+			expected: `"alertmanagers":
+- "api_version": "v2"
+  "http_config":
+    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "tls_config":
+      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
+      "server_name": "alertmanager-main.openshift-monitoring.svc"
+  "scheme": "https"
+  "static_configs":
+  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /etc/prometheus/secrets/alertmanager-bearer-token/token
+    tls_config:
+      ca_file: /etc/prometheus/secrets/alertmanager-ca-tls/tls.ca
+      cert_file: /etc/prometheus/secrets/alertmanager-cert-tls/tls.ca
+      key_file: /etc/prometheus/secrets/alertmanager-key-tls/tls.ca
+      server_name: alertmanager-remote.com
+  static_configs:
+  - alertmanager1-remote.com
+  - alertmanager1-remotex.com
+`,
+		},
 	}
 
-	s, err := f.AdditionalAlertManagerConfigsSecret()
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, tt := range testCases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			c := NewDefaultConfig()
+			uwc, err := NewUserConfigFromString(tt.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			c.UserWorkloadConfiguration = uwc
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
 
-	if !reflect.DeepEqual(string(s.Data[AdditionalAlertmanagerConfigSecretKey]), expected) {
-		t.Fatalf("additionalAlertManagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", string(s.Data[AdditionalAlertmanagerConfigSecretKey]), expected)
+			s, err := f.ThanosRulerAlertmanagerConfigSecret()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if s.Name != "thanos-ruler-alertmanagers-config" {
+				t.Fatalf("invalid secret name, got %s, want %s", s.Name, "thanos-ruler-alertmanagers-config")
+			}
+
+			if s.Namespace != "openshift-user-workload-monitoring" {
+				t.Fatalf("invalid secret namepace, got %s, want %s", s.Namespace, "openshift-user-workload-monitoring")
+			}
+
+			if !reflect.DeepEqual(s.StringData["alertmanagers.yaml"], tt.expected) {
+				t.Fatalf("additionalAlertmanagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", s.StringData["alertmanagers.yaml"], tt.expected)
+			}
+		})
 	}
 }
 
@@ -1635,6 +2000,7 @@ func TestThanosRulerConfiguration(t *testing.T) {
 		"",
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1723,6 +2089,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 					"",
 					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+					nil,
 				)
 				if err != nil {
 					return spec{}, err

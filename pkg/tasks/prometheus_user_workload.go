@@ -17,7 +17,6 @@ package tasks
 import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
 )
@@ -185,6 +184,16 @@ func (t *PrometheusUserWorkloadTask) create() error {
 	)
 	if err != nil {
 		return errors.Wrap(err, "error creating UserWorkload Prometheus Client GRPC TLS secret")
+	}
+
+	secret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
+	}
+	klog.V(4).Info("reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret")
+	err = t.client.CreateOrUpdateSecret(secret)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 	}
 
 	klog.V(4).Info("initializing UserWorkload Prometheus object")
@@ -392,6 +401,15 @@ func (t *PrometheusUserWorkloadTask) destroy() error {
 	cacm, err := t.factory.PrometheusUserWorkloadServingCertsCABundle()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload serving certs CA Bundle ConfigMap failed")
+	}
+
+	amsSecret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
+	}
+
+	if err = t.client.DeleteSecret(amsSecret); err != nil {
+		return errors.Wrap(err, "deleting UserWorkload Prometheus additionalAlertmanagerConfigs Secret failed")
 	}
 
 	err = t.client.DeleteConfigMap(cacm)
