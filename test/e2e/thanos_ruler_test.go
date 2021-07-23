@@ -16,6 +16,7 @@ import (
 )
 
 func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
+	ctx := context.Background()
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterMonitorConfigMapName,
@@ -64,11 +65,11 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if err := f.OperatorClient.CreateOrUpdateConfigMap(cm); err != nil {
+			if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 				t.Fatal(err)
 			}
 
-			if err := f.OperatorClient.CreateOrUpdateConfigMap(uwmCM); err != nil {
+			if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
 				t.Fatal(err)
 			}
 
@@ -80,6 +81,7 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 }
 
 func createAlertmanager(t *testing.T) {
+	ctx := context.Background()
 	replicas := int32(1)
 	additionalAlertmanager := monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
@@ -90,17 +92,18 @@ func createAlertmanager(t *testing.T) {
 			Replicas: &replicas,
 		},
 	}
-	if err := f.OperatorClient.CreateOrUpdateAlertmanager(&additionalAlertmanager); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateAlertmanager(ctx, &additionalAlertmanager); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := f.OperatorClient.WaitForAlertmanager(&additionalAlertmanager); err != nil {
+	if err := f.OperatorClient.WaitForAlertmanager(ctx, &additionalAlertmanager); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func createPrometheusRule(t *testing.T) {
-	if err := f.OperatorClient.CreateOrUpdatePrometheusRule(&monitoringv1.PrometheusRule{
+	ctx := context.Background()
+	if err := f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "non-monitoring-prometheus-rules",
 			Namespace: "default",
