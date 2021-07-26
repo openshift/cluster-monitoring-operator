@@ -132,6 +132,10 @@ spec:
       operator: NotIn
       values:
       - "true"
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   podMonitorSelector: {}
   priorityClassName: openshift-user-critical
   probeNamespaceSelector:
@@ -140,6 +144,10 @@ spec:
       operator: NotIn
       values:
       - "true"
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   probeSelector: {}
   replicas: 2
   resources:
@@ -152,6 +160,10 @@ spec:
       operator: NotIn
       values:
       - "true"
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   ruleSelector:
     matchLabels:
       openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
@@ -169,6 +181,10 @@ spec:
       operator: NotIn
       values:
       - "true"
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   serviceMonitorSelector: {}
   thanos:
     image: quay.io/thanos/thanos:v0.22.0

@@ -46,6 +46,11 @@ local commonConfig = {
         operator: 'NotIn',
         values: ['true'],
       },
+      {
+        key: 'openshift.io/user-monitoring',
+        operator: 'NotIn',
+        values: ['false'],
+      },
     ],
   },
   mixinNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default)"',

@@ -169,6 +169,27 @@ func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
 	return body, nil
 }
 
+// PrometheusTargets runs an HTTP GET request against the Prometheus targets API and returns
+// the response body.
+func (c *PrometheusClient) PrometheusTargets() ([]byte, error) {
+	resp, err := c.Do("GET", "/api/v1/targets", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, ClampMax(body))
+	}
+
+	return body, nil
+}
+
 // PrometheusRules runs an HTTP GET request against the Prometheus rules API and returns
 // the response body.
 func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
@@ -335,6 +356,29 @@ func (c *PrometheusClient) WaitForRulesReturn(t *testing.T, timeout time.Duratio
 		body, err := c.PrometheusRules()
 		if err != nil {
 			return errors.Wrap(err, "error getting rules")
+		}
+
+		if err := validate(body); err != nil {
+			return errors.Wrapf(err, "error validating response body %q", string(body))
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// WaitForTargetsReturn waits for Prometheus targets for a given time interval
+// and returns successfully if the validate function doesn't return an error.
+func (c *PrometheusClient) WaitForTargetsReturn(t *testing.T, timeout time.Duration, validate func([]byte) error) {
+	t.Helper()
+
+	err := Poll(5*time.Second, timeout, func() error {
+		body, err := c.PrometheusTargets()
+		if err != nil {
+			return errors.Wrap(err, "error getting targets")
 		}
 
 		if err := validate(body); err != nil {
