@@ -974,9 +974,20 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 				d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled)
 			return false, nil
 		}
-		if d.Status.NumberUnavailable != 0 {
-			lastErr = errors.Errorf("got %d unavailable nodes",
-				d.Status.NumberUnavailable)
+
+		var nodeReadyCount int32
+		nodeList, err := c.kclient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		for _, node := range nodeList.Items {
+			for _, condition := range node.Status.Conditions {
+				if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
+					nodeReadyCount++
+				}
+			}
+		}
+
+		if d.Status.NumberAvailable != nodeReadyCount {
+			lastErr = errors.Errorf("expected %d ready pods for %q daemonset, got %d ",
+				nodeReadyCount, d.GetName(), d.Status.NumberAvailable)
 			return false, nil
 		}
 		return true, nil
