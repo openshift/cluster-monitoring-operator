@@ -330,8 +330,8 @@ function(params) {
           record: 'node_role_os_version_machine:cpu_capacity_sockets:sum',
         },
         {
-          expr: 'clamp_max(sum(alertmanager_integrations),1)',
-          record: 'cluster:alertmanager_routing_enabled:max',
+          expr: 'max(alertmanager_integrations{namespace="openshift-monitoring"})',
+          record: 'cluster:alertmanager_integrations:max',
         },
         {
           expr: 'sum by(plugin_name, volume_mode)(pv_collector_total_pv_count)',
@@ -373,7 +373,7 @@ function(params) {
           },
         },
         {
-          expr: 'cluster:alertmanager_routing_enabled:max == 0',
+          expr: 'cluster:alertmanager_integrations:max == 0',
           alert: 'AlertmanagerReceiversNotConfigured',
           'for': '10m',
           annotations: {
