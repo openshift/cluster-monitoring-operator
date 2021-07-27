@@ -48,14 +48,17 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "failed to retrieve Prometheus host")
 	}
 
-	amRoute, err := t.factory.AlertmanagerRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager Route failed")
-	}
+	var amURL *url.URL
+	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+		amRoute, err := t.factory.AlertmanagerRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager Route failed")
+		}
 
-	amURL, err := t.client.GetRouteURL(ctx, amRoute)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve Alertmanager host")
+		amURL, err = t.client.GetRouteURL(ctx, amRoute)
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve Alertmanager host")
+		}
 	}
 
 	var grafanaURL *url.URL
