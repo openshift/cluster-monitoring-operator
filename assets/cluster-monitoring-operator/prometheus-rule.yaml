@@ -263,8 +263,8 @@ spec:
         label_node_hyperthread_enabled, label_node_openshift_io_os_id,label_node_role_kubernetes_io_master,label_node_role_kubernetes_io_infra)
         ) by (label_kubernetes_io_arch, label_node_hyperthread_enabled, label_node_openshift_io_os_id,label_node_role_kubernetes_io_master,label_node_role_kubernetes_io_infra)
       record: node_role_os_version_machine:cpu_capacity_sockets:sum
-    - expr: clamp_max(sum(alertmanager_integrations),1)
-      record: cluster:alertmanager_routing_enabled:max
+    - expr: max(alertmanager_integrations{namespace="openshift-monitoring"})
+      record: cluster:alertmanager_integrations:max
     - expr: sum by(plugin_name, volume_mode)(pv_collector_total_pv_count)
       record: cluster:kube_persistentvolume_plugin_type_counts:sum
     - expr: sum by(version)(vsphere_vcenter_info)
@@ -295,7 +295,7 @@ spec:
           that you may not be notified in a timely fashion when important failures
           occur. Check the OpenShift documentation to learn how to configure notifications
           with Alertmanager.
-      expr: cluster:alertmanager_routing_enabled:max == 0
+      expr: cluster:alertmanager_integrations:max == 0
       for: 10m
       labels:
         severity: warning

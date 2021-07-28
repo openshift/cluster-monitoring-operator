@@ -404,6 +404,11 @@ data:
     #
     # owners: (@openshift/openshift-team-monitoring)
     #
+    # cluster:alertmanager_integrations:max tracks the total number of active alertmanager integrations sent via telemetry from each cluster.
+    - '{__name__="cluster:alertmanager_integrations:max"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
     # cluster:telemetry_selected_series:count tracks the total number of series
     # sent via telemetry from each cluster.
     - '{__name__="cluster:telemetry_selected_series:count"}'
