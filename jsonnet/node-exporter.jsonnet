@@ -138,7 +138,19 @@ local wtmpVolumeName = 'node-exporter-wtmp';
                         // Remove the flag to disable hwmon that is set upstream so we
                         // gather that data (especially for bare metal clusters), and
                         // add flags to collect data not included by default.
-                        args: [a for a in c.args if a != '--no-collector.hwmon'] + ['--collector.cpu.info', '--collector.textfile.directory=' + textfileDir],
+                        args: [a for a in c.args if a != '--no-collector.hwmon'] +
+                              [
+                                '--collector.cpu.info',
+                                '--collector.textfile.directory=' + textfileDir,
+
+                                // The cpufreq collector seems to be causing high
+                                // load on some nodes with lots of cores.  Disable
+                                // it temporarily as a workaround.
+                                //
+                                // https://bugzilla.redhat.com/show_bug.cgi?id=1972076
+                                // https://github.com/prometheus/node_exporter/issues/1880
+                                '--no-collector.cpufreq',
+                              ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts+: [{
                           mountPath: textfileDir,
