@@ -22168,7 +22168,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(prometheus_build_info, instance)",
+                      "query": "label_values(prometheus_build_info{job=~\"$job\"}, instance)",
                       "refresh": 1,
                       "regex": "",
                       "sort": 2,
