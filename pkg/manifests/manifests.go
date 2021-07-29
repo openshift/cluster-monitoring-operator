@@ -1056,11 +1056,10 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 
 	alertmanagerEnabled := f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled()
 	amConfigs := f.config.GetThanosRulerAlertmanagerConfigs()
-	if amConfigs == nil && alertmanagerEnabled {
-		return s, nil
-	}
-	if amConfigs == nil && !alertmanagerEnabled {
-		s.StringData["alertmanagers.yaml"] = `alertmanagers: []`
+	if amConfigs == nil {
+		if !alertmanagerEnabled {
+			s.StringData["alertmanagers.yaml"] = `alertmanagers: []`
+		}
 		return s, nil
 	}
 
