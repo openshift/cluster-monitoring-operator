@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.26.1
+    app.kubernetes.io/version: 2.28.1
   name: prometheus-user-workload
 rules:
 - apiGroups:
