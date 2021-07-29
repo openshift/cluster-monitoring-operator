@@ -107,6 +107,38 @@ func (f *Framework) AssertServiceAccountDoesNotExist(name string, namespace stri
 	}
 }
 
+func (f *Framework) AssertRoleExists(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertResourceExists(t, func() (metav1.Object, error) {
+			return f.KubeClient.RbacV1().Roles(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		})
+	}
+}
+
+func (f *Framework) AssertRoleDoesNotExist(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
+			return f.KubeClient.RbacV1().Roles(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		})
+	}
+}
+
+func (f *Framework) AssertRoleBindingExists(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertResourceExists(t, func() (metav1.Object, error) {
+			return f.KubeClient.RbacV1().RoleBindings(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		})
+	}
+}
+
+func (f *Framework) AssertRoleBindingDoesNotExist(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
+			return f.KubeClient.RbacV1().RoleBindings(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		})
+	}
+}
+
 func (f *Framework) AssertClusterRoleExists(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {

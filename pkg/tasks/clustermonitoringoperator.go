@@ -27,12 +27,18 @@ import (
 type ClusterMonitoringOperatorTask struct {
 	client  *client.Client
 	factory *manifests.Factory
+	config  *manifests.Config
 }
 
-func NewClusterMonitoringOperatorTask(client *client.Client, factory *manifests.Factory) *ClusterMonitoringOperatorTask {
+func NewClusterMonitoringOperatorTask(
+	client *client.Client,
+	factory *manifests.Factory,
+	config *manifests.Config,
+) *ClusterMonitoringOperatorTask {
 	return &ClusterMonitoringOperatorTask{
 		client:  client,
 		factory: factory,
+		config: config,
 	}
 }
 
@@ -79,9 +85,14 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "initializing AlertmanagerWrite Role failed")
 	}
 
-	err = t.client.CreateOrUpdateRole(ctx, amwr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Alertmanager Role failed")
+	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+		if err = t.client.CreateOrUpdateRole(ctx, amwr); err != nil {
+			return errors.Wrap(err, "reconciling Alertmanager Role failed")
+		}
+	} else {
+		if err = t.client.DeleteRole(ctx, amwr); err != nil {
+			return errors.Wrap(err, "deleting Alertmanager Role failed")
+		}
 	}
 
 	pr, err := t.factory.ClusterMonitoringOperatorPrometheusRule()
