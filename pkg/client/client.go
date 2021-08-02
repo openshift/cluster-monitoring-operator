@@ -900,9 +900,11 @@ func (c *Client) CreateOrUpdateDaemonSet(ds *appsv1.DaemonSet) error {
 			if err != nil {
 				return errors.Wrap(err, "deleting DaemonSet object failed")
 			}
-			err = c.CreateDaemonSet(required)
-			if err != nil {
-				return errors.Wrap(err, "creating DaemonSet object failed after update failed")
+			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				return c.CreateDaemonSet(required)
+			})
+			if retryErr != nil {
+				return errors.Wrap(retryErr, "creating DaemonSet object failed after update failed")
 			}
 		}
 		return errors.Wrap(err, "updating DaemonSet object failed")
