@@ -12,6 +12,12 @@ local excludedRuleGroups = [
 
 local excludedRules = [
   {
+    name: 'alertmanager.rules',
+    rules: [
+      { alert: 'AlertmanagerClusterCrashlooping' },
+    ],
+  },
+  {
     name: 'general.rules',
     rules: [
       { alert: 'TargetDown' },
@@ -60,6 +66,12 @@ local excludedRules = [
     ],
   },
   {
+    name: 'prometheus',
+    rules: [
+      { alert: 'PrometheusErrorSendingAlertsToAnyAlertmanager' },
+    ],
+  },
+  {
     name: 'thanos-query',
     rules: [
       { alert: 'ThanosQueryInstantLatencyHigh' },
@@ -69,6 +81,35 @@ local excludedRules = [
 ];
 
 local patchedRules = [
+  {
+    name: 'alertmanager.rules',
+    rules: [
+      {
+        alert: 'AlertmanagerMembersInconsistent',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'AlertmanagerClusterFailedToSendAlerts',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'AlertmanagerConfigInconsistent',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'AlertmanagerClusterDown',
+        labels: {
+          severity: 'warning',
+        },
+      },
+    ],
+  },
   {
     name: 'kubernetes-apps',
     rules: [
@@ -83,6 +124,107 @@ local patchedRules = [
     ],
   },
   {
+    name: 'kube-state-metrics',
+    rules: [
+      {
+        alert: 'KubeStateMetricsListErrors',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'KubeStateMetricsWatchErrors',
+        labels: {
+          severity: 'warning',
+        },
+      },
+    ],
+  },
+  {
+    name: 'kubernetes-storage',
+    local kubernetesStorageConfig = { prefixedNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default)",', kubeletSelector: 'job="kubelet", metrics_path="/metrics"' },
+    rules: [
+      {
+        alert: 'KubePersistentVolumeErrors',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'KubePersistentVolumeFillingUp',
+        expr: |||
+          (
+            kubelet_volume_stats_available_bytes{%(prefixedNamespaceSelector)s%(kubeletSelector)s}
+              /
+            kubelet_volume_stats_capacity_bytes{%(prefixedNamespaceSelector)s%(kubeletSelector)s}
+          ) < 0.03
+          and
+          kubelet_volume_stats_used_bytes{%(prefixedNamespaceSelector)s%(kubeletSelector)s} > 0
+        ||| % kubernetesStorageConfig,
+        'for': '5m',
+        labels: {
+          severity: 'critical',
+        },
+      },
+      {
+        alert: 'KubePersistentVolumeFillingUp',
+        labels: {
+          severity: 'warning',
+        },
+      },
+    ],
+  },
+  {
+    name: 'node-exporter',
+    local nodeExporterConfig = { nodeExporterSelector: 'job="node-exporter"', fsSelector: 'fstype!=""', fsSpaceFillingUpCriticalThreshold: 15 },
+    rules: [
+      {
+        alert: 'NodeFilesystemSpaceFillingUp',
+        expr: |||
+          (
+            node_filesystem_avail_bytes{%(nodeExporterSelector)s,%(fsSelector)s} / node_filesystem_size_bytes{%(nodeExporterSelector)s,%(fsSelector)s} * 100 < %(fsSpaceFillingUpCriticalThreshold)d
+          and
+            predict_linear(node_filesystem_avail_bytes{%(nodeExporterSelector)s,%(fsSelector)s}[6h], 2*60*60) < 0
+          and
+            node_filesystem_readonly{%(nodeExporterSelector)s,%(fsSelector)s} == 0
+          )
+        ||| % nodeExporterConfig,
+        'for': '1h',
+        labels: {
+          severity: 'critical',
+        },
+      },
+      {
+        alert: 'NodeFilesystemSpaceFillingUp',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'NodeFilesystemFilesFillingUp',
+        expr: |||
+          (
+            node_filesystem_files_free{%(nodeExporterSelector)s,%(fsSelector)s} / node_filesystem_files{%(nodeExporterSelector)s,%(fsSelector)s} * 100 < 20
+          and
+            predict_linear(node_filesystem_files_free{%(nodeExporterSelector)s,%(fsSelector)s}[6h], 2*60*60) < 0
+          and
+            node_filesystem_readonly{%(nodeExporterSelector)s,%(fsSelector)s} == 0
+          )
+        ||| % nodeExporterConfig,
+        'for': '1h',
+        labels: {
+          severity: 'critical',
+        },
+      },
+      {
+        alert: 'NodeFilesystemFilesFillingUp',
+        labels: {
+          severity: 'warning',
+        },
+      },
+    ],
+  },
+  {
     name: 'prometheus',
     rules: [
       {
@@ -92,6 +234,68 @@ local patchedRules = [
       {
         alert: 'PrometheusOutOfOrderTimestamps',
         'for': '1h',
+      },
+      {
+        alert: 'PrometheusBadConfig',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'PrometheusRemoteStorageFailures',
+        expr: |||
+          (
+            (rate(prometheus_remote_storage_failed_samples_total{%(prometheusSelector)s}[5m]) or rate(prometheus_remote_storage_samples_failed_total{%(prometheusSelector)s}[5m]))
+          /
+            (
+              (rate(prometheus_remote_storage_failed_samples_total{%(prometheusSelector)s}[5m]) or rate(prometheus_remote_storage_samples_failed_total{%(prometheusSelector)s}[5m]))
+            +
+              (rate(prometheus_remote_storage_succeeded_samples_total{%(prometheusSelector)s}[5m]) or rate(prometheus_remote_storage_samples_total{%(prometheusSelector)s}[5m]))
+            )
+          )
+          * 100
+          > 10
+        ||| % { prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"' },
+        'for': '15m',
+        labels: {
+          severity: 'warning',
+        },
+
+      },
+      {
+        alert: 'PrometheusRuleFailures',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'PrometheusRemoteWriteBehind',
+        labels: {
+          severity: 'info',
+        },
+      },
+    ],
+  },
+  {
+    name: 'thanos-rule',
+    rules: [
+      {
+        alert: 'ThanosNoRuleEvaluations',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'ThanosRuleHighRuleEvaluationFailures',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'ThanosRuleSenderIsFailingAlerts',
+        labels: {
+          severity: 'warning',
+        },
       },
     ],
   },
@@ -124,19 +328,70 @@ local patchedRules = [
 local patchOrExcludeRule(rule, ruleSet, operation) =
   if std.length(ruleSet) == 0 then
     [rule]
-  else if (('alert' in rule && 'alert' in ruleSet[0]) && std.startsWith(rule.alert, ruleSet[0].alert)) ||
-          (('record' in rule && 'record' in ruleSet[0]) && std.startsWith(rule.record, ruleSet[0].record)) then
-    if operation == 'patch' then
-      local patch = {
-        [k]: ruleSet[0][k]
-        for k in std.objectFields(ruleSet[0])
-        if k != 'alert' && k != 'record'
-      };
-      [std.mergePatch(rule, patch)]
-    else
+  else if ('alert' in rule) then
+    local matchedRules = std.filter(function(ruleItem) ('alert' in ruleItem) && (ruleItem.alert == rule.alert), ruleSet);
+    local matchedRulesSeverity = std.filter(function(ruleItem) if ('labels' in ruleItem) && ('severity' in ruleItem.labels) then ruleItem.labels.severity == rule.labels.severity else false, matchedRules);
+
+    if std.length(matchedRules) > 1 && std.length(matchedRulesSeverity) >= 1 then
+      local targetRule = matchedRulesSeverity[0];
+      if operation == 'patch' then
+        local patch = {
+          [k]: targetRule[k]
+          for k in std.objectFields(targetRule)
+          if k != 'alert' && k != 'record'
+        };
+        [std.mergePatch(rule, patch)]
+      else if operation == 'exclude' then
+        []
+      else
+        assert false : 'operation not support ' + operation;
+        []
+
+    else if std.length(matchedRules) > 1 && std.length(matchedRulesSeverity) == 0 then
+      assert false : 'Duplicated patch rules without matching severity for rule: ' + std.toString(rule);
       []
+    else if std.length(matchedRules) == 1 && std.length(matchedRulesSeverity) <= 1 then
+      local targetRule = matchedRules[0];
+      if operation == 'patch' then
+        local patch = {
+          [k]: targetRule[k]
+          for k in std.objectFields(targetRule)
+          if k != 'alert' && k != 'record'
+        };
+        [std.mergePatch(rule, patch)]
+      else if operation == 'exclude' then
+        []
+      else
+        assert false : 'operation not support ' + operation;
+        []
+
+    else
+      [rule]
+  else if ('record' in rule) then
+
+    local matchedRules = std.filter(function(ruleItem) ('record' in ruleItem) && (ruleItem.record == rule.record), ruleSet);
+
+    if std.length(matchedRules) == 1 then
+      local targetRule = matchedRules[0];
+      if operation == 'patch' then
+        local patch = {
+          [k]: targetRule[k]
+          for k in std.objectFields(targetRule)
+          if k != 'alert' && k != 'record'
+        };
+        [std.mergePatch(rule, patch)]
+      else
+        []
+    else if std.length(matchedRules) > 1 then
+      assert false : 'Duplicated patch for record rules: ' + std.toString(rule) + ' matching patches: ' + std.toString(matchedRules);
+      []
+    else
+      [rule]
+
   else
-    [] + patchOrExcludeRule(rule, ruleSet[1:], operation);
+    // neither alert nor record rule, leave it as is
+    [rule];
+
 
 local patchOrExcludeRuleGroup(group, groupSet, operation) =
   if std.length(groupSet) == 0 then

@@ -25,7 +25,7 @@ spec:
         sum by (job, instance) (rate(thanos_alert_sender_alerts_dropped_total{job="thanos-ruler"}[5m])) > 0
       for: 5m
       labels:
-        severity: critical
+        severity: warning
     - alert: ThanosRuleHighRuleEvaluationFailures
       annotations:
         description: Thanos Rule {{$labels.instance}} is failing to evaluate rules.
@@ -39,7 +39,7 @@ spec:
         )
       for: 5m
       labels:
-        severity: critical
+        severity: warning
     - alert: ThanosRuleHighRuleEvaluationWarnings
       annotations:
         description: Thanos Rule {{$labels.instance}} has high number of evaluation
@@ -141,4 +141,4 @@ spec:
         sum by (job, instance) (thanos_rule_loaded_rules{job="thanos-ruler"}) > 0
       for: 5m
       labels:
-        severity: critical
+        severity: warning

@@ -40,7 +40,7 @@ spec:
           count by (namespace,service) (max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m]))
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: AlertmanagerFailedToSendAlerts
       annotations:
         description: Alertmanager {{ $labels.namespace }}/{{ $labels.pod}} failed
@@ -73,7 +73,7 @@ spec:
         > 0.01
       for: 5m
       labels:
-        severity: critical
+        severity: warning
     - alert: AlertmanagerClusterFailedToSendAlerts
       annotations:
         description: The minimum notification failure rate to {{ $labels.integration
@@ -103,7 +103,7 @@ spec:
         != 1
       for: 20m
       labels:
-        severity: critical
+        severity: warning
     - alert: AlertmanagerClusterDown
       annotations:
         description: '{{ $value | humanizePercentage }} of Alertmanager instances
@@ -124,25 +124,4 @@ spec:
         >= 0.5
       for: 5m
       labels:
-        severity: critical
-    - alert: AlertmanagerClusterCrashlooping
-      annotations:
-        description: '{{ $value | humanizePercentage }} of Alertmanager instances
-          within the {{$labels.job}} cluster have restarted at least 5 times in the
-          last 10m.'
-        summary: Half or more of the Alertmanager instances within the same cluster
-          are crashlooping.
-      expr: |
-        (
-          count by (namespace,service) (
-            changes(process_start_time_seconds{job="alertmanager-main",namespace="openshift-monitoring"}[10m]) > 4
-          )
-        /
-          count by (namespace,service) (
-            up{job="alertmanager-main",namespace="openshift-monitoring"}
-          )
-        )
-        >= 0.5
-      for: 5m
-      labels:
-        severity: critical
+        severity: warning
