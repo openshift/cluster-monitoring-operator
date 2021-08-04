@@ -2,6 +2,7 @@
 
 ## 4.9
 
+- [#1312](https://github.com/openshift/cluster-monitoring-operator/pull/1312) Support label to exclude namespaces from user-workload monitoring.
 - [#1241](https://github.com/openshift/cluster-monitoring-operator/pull/1241) Add config option to disable Grafana deployment.
 - [#1278](https://github.com/openshift/cluster-monitoring-operator/pull/1278) Add EnforcedTargetLimit option for user-workload Prometheus.
 - [#1291](https://github.com/openshift/cluster-monitoring-operator/pull/1291) Drop high caredinality cAdvisor metrics via [kube-prometheus #1250](https://github.com/prometheus-operator/kube-prometheus/pull/1250)
