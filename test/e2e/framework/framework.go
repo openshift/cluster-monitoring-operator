@@ -275,6 +275,21 @@ func (f *Framework) GetServiceAccountToken(namespace, name string) (string, erro
 	return token, err
 }
 
+func (f *Framework) GetLogs(namespace string, podName, containerName string) (string, error) {
+	ctx := context.Background()
+	logs, err := f.KubeClient.CoreV1().RESTClient().Get().
+		Resource("pods").
+		Namespace(namespace).
+		Name(podName).SubResource("log").
+		Param("container", containerName).
+		Do(ctx).
+		Raw()
+	if err != nil {
+		return "", err
+	}
+	return string(logs), err
+}
+
 func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterRole string) (cleanUpFunc, error) {
 	ctx := context.Background()
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
