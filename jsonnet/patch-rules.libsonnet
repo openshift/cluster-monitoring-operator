@@ -155,6 +155,15 @@ local patchedRules = [
       },
     ],
   },
+  {
+    name: 'alertmanager.rules',
+    rules: [
+      {
+        alert: 'AlertmanagerMembersInconsistent',
+        'for': '15m',
+      },
+    ],
+  },
 ];
 
 local patchOrExcludeRule(rule, ruleSet, operation) =
