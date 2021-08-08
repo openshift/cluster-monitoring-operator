@@ -7,6 +7,7 @@
 - [#1291](https://github.com/openshift/cluster-monitoring-operator/pull/1291) Drop high caredinality cAdvisor metrics via [kube-prometheus #1250](https://github.com/prometheus-operator/kube-prometheus/pull/1250)
 - [#1270](https://github.com/openshift/cluster-monitoring-operator/pull/1270) Show a message in the degraded condition when Platform Monitoring Prometheus runs without persistent storage.
 - [#1241](https://github.com/openshift/cluster-monitoring-operator/pull/1241) Allow configuring additional Alertmanagers in User Workload Prometheus and Thanos Ruler.
+- [#1293](https://github.com/openshift/cluster-monitoring-operator/pull/1270) Allow disabling the local Alertmanager.
 
 ## 4.8
 

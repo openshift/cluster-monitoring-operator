@@ -248,10 +248,16 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager Role Binding failed")
 	}
 
-	err = t.client.CreateOrUpdateRoleBinding(ctx, tramrb)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Thanos Ruler Alertmanager Role Binding failed")
+	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+		if err = t.client.CreateOrUpdateRoleBinding(ctx, tramrb); err != nil {
+			return errors.Wrap(err, "reconciling Thanos Ruler Alertmanager Role Binding failed")
+		}
+	} else {
+		if err = t.client.DeleteRoleBinding(ctx, tramrb); err != nil {
+			return errors.Wrap(err, "deleting Thanos Ruler Alertmanager Role Binding failed")
+		}
 	}
+
 	return nil
 }
 

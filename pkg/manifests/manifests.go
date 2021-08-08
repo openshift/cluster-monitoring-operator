@@ -1054,8 +1054,12 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 	}
 	s.Namespace = f.namespaceUserWorkload
 
+	alertmanagerEnabled := f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled()
 	amConfigs := f.config.GetThanosRulerAlertmanagerConfigs()
 	if amConfigs == nil {
+		if !alertmanagerEnabled {
+			s.StringData["alertmanagers.yaml"] = `alertmanagers: []`
+		}
 		return s, nil
 	}
 
@@ -1065,7 +1069,11 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 		return nil, err
 	}
 
-	s.StringData["alertmanagers.yaml"] += "\n" + string(additionalConfig)
+	if alertmanagerEnabled {
+		s.StringData["alertmanagers.yaml"] += "\n" + string(additionalConfig)
+	} else {
+		s.StringData["alertmanagers.yaml"] = `alertmanagers:` + "\n" + string(additionalConfig)
+	}
 
 	return s, nil
 }

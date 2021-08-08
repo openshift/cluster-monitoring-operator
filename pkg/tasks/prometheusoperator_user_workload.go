@@ -100,9 +100,14 @@ func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing UserWorkload Alertmanager Role Binding failed")
 	}
 
-	err = t.client.CreateOrUpdateRoleBinding(ctx, arb)
-	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload Alertmanager Role Binding failed")
+	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+		if err = t.client.CreateOrUpdateRoleBinding(ctx, arb); err != nil {
+			return errors.Wrap(err, "reconciling UserWorkload Alertmanager Role Binding failed")
+		}
+	} else {
+		if err = t.client.DeleteRoleBinding(ctx, arb); err != nil {
+			return errors.Wrap(err, "deleting UserWorkload Alertmanager Role Binding failed")
+		}
 	}
 
 	// The CRs will be created externally,

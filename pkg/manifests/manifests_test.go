@@ -1288,6 +1288,12 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		expected string
 	}{
 		{
+			name:   "no config with alertmanager disabled",
+			config: `alertmanagerMain:
+  enabled: false`,
+			expected: `alertmanagers: []`,
+		},
+		{
 			name:   "no config",
 			config: ``,
 			expected: `"alertmanagers":
@@ -1319,6 +1325,23 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   "scheme": "https"
   "static_configs":
   - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+- static_configs:
+  - alertmanager1-remote.com
+  - alertmanager1-remotex.com
+`,
+		},
+		{
+			name: "basic config with alertmanager disabled",
+			config:
+`thanosRuler:
+  additionalAlertmanagerConfigs:
+  - staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+alertmanagerMain:
+  enabled: false
+`,
+			expected: `alertmanagers:
 - static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -1512,7 +1535,10 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewDefaultConfig()
+			c, err := NewConfigFromString(tt.config)
+			if err != nil {
+				t.Fatal(err)
+			}
 			uwc, err := NewUserConfigFromString(tt.config)
 			if err != nil {
 				t.Fatal(err)
