@@ -15,7 +15,7 @@ function(params) {
     kind: 'PrometheusRule',
     metadata: {
       name: 'thanos-ruler',
-      namespace: 'openshift-user-workload-monitoring',
+      namespace: cfg.namespace,
     },
     spec: $.mixin.prometheusAlerts,
   },
@@ -272,11 +272,11 @@ function(params) {
     spec: {
       ports: [{
         name: 'web',
-        port: cfg.ports.web,
+        port: 9091,
         targetPort: 'web',
       }, {
         name: 'grpc',
-        port: cfg.ports.grpc,
+        port: 10901,
         targetPort: 'grpc',
       }],
       selector: cfg.selectorLabels,
@@ -332,7 +332,7 @@ function(params) {
         runAsNonRoot: true,
         runAsUser: 65534,
       },
-      replicas: 2,
+      replicas: cfg.replicas,
       resources: {
         requests: {
           memory: '21Mi',
@@ -382,13 +382,13 @@ function(params) {
         {
           name: 'secret-thanos-ruler-oauth-cookie',
           secret: {
-            secretName: 'thanos-ruler-oauth-cookie',
+            secretName: $.oauthCookieSecret.metadata.name,
           },
         },
         {
           name: 'secret-thanos-ruler-oauth-htpasswd',
           secret: {
-            secretName: 'thanos-ruler-oauth-htpasswd',
+            secretName: $.oauthHtpasswdSecret.metadata.name,
           },
         },
       ],
@@ -396,6 +396,8 @@ function(params) {
       priorityClassName: 'openshift-user-critical',
       containers: [
         {
+          // Note: this is performing strategic-merge-patch for thanos-ruler container.
+          // Remainder of the container configuration is managed by prometheus-operator based on $.thanosRuler.spec
           name: 'thanos-ruler',
           terminationMessagePolicy: 'FallbackToLogsOnError',
           volumeMounts: [
@@ -417,7 +419,7 @@ function(params) {
           name: 'thanos-ruler-proxy',
           image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
           ports: [{
-            containerPort: cfg.ports.web,
+            containerPort: $.service.spec.ports[0].port,
             name: 'web',
           }],
           env: [
@@ -460,6 +462,8 @@ function(params) {
           ],
         },
         {
+          // Note: this is performing strategic-merge-patch for config-reloader container.
+          // Remainder of the container configuration is managed by prometheus-operator based on $.thanosRuler.spec
           name: 'config-reloader',
           resources: {
             requests: {

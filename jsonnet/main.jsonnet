@@ -276,16 +276,13 @@ local inCluster =
       thanosRuler: $.values.thanos {
         name: 'user-workload',
         namespace: $.values.common.namespaceUserWorkload,
+        replicas: 2,
         labels: {
           'app.kubernetes.io/name': 'user-workload',
         },
         selectorLabels: {
           app: 'thanos-ruler',
           'thanos-ruler': 'user-workload',
-        },
-        ports: {
-          web: 9091,
-          grpc: 10901,
         },
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
       },
