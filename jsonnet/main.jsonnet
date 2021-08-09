@@ -16,7 +16,6 @@ local prometheusOperatorUserWorkload = import './components/prometheus-operator-
 local prometheus = import './components/prometheus.libsonnet';
 local prometheusUserWorkload = import './components/prometheus-user-workload.libsonnet';
 local clusterMonitoringOperator = import './components/cluster-monitoring-operator.libsonnet';
-local ibmCloudManagedProfile = import './utils/ibm-cloud-managed-profile.libsonnet';
 
 local thanosRuler = import './components/thanos-ruler.libsonnet';
 local thanosQuerier = import './components/thanos-querier.libsonnet';
@@ -26,7 +25,6 @@ local telemeterClient = import './components/telemeter-client.libsonnet';
 
 /*
 TODO(paulfantom):
-- thanos sidecar inclusion - needs https://github.com/prometheus-operator/kube-prometheus/pull/909
 - grafana config - needs https://github.com/prometheus-operator/kube-prometheus/pull/907
 */
 
@@ -72,7 +70,6 @@ local commonConfig = {
     kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v' + $.versions.kubeRbacProxy,
 
     openshiftOauthProxy: 'quay.io/openshift/oauth-proxy:latest',
-    //kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v0.8.0',
   },
   // Labels applied to every object
   commonLabels: {
@@ -108,7 +105,9 @@ local inCluster =
         image: $.values.common.images.alertmanager,
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
-        mixin+: { ruleLabels: $.values.common.ruleLabels },
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+        },
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
       },
@@ -243,7 +242,14 @@ local inCluster =
             thanosSelector: 'job=~"prometheus-(k8s|user-workload)-thanos-sidecar"',
           },
         },
-        thanos: $.values.thanosSidecar,
+        thanos: $.values.thanos {
+          resources: {
+            requests: {
+              cpu: '1m',
+              memory: '100Mi',
+            },
+          },
+        },
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
@@ -274,14 +280,6 @@ local inCluster =
       thanos: {
         image: $.values.common.images.thanos,
         version: $.values.common.versions.thanos,
-      },
-      thanosSidecar:: $.values.thanos {
-        resources: {
-          requests: {
-            cpu: '1m',
-            memory: '100Mi',
-          },
-        },
       },
       thanosRuler: $.values.thanos {
         name: 'user-workload',
@@ -374,8 +372,8 @@ local inCluster =
   } +
   (import './utils/anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
-  ibmCloudManagedProfile +
-  {};
+  (import './utils/ibm-cloud-managed-profile.libsonnet') +
+  {}; // Including empty object to simplify adding and removing imports during development
 
 // objects deployed in openshift-user-workload-monitoring namespace
 local userWorkload =
@@ -402,7 +400,7 @@ local userWorkload =
             prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
           },
         },
-        thanos: inCluster.values.thanosSidecar,
+        thanos: inCluster.values.prometheus.thanos,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
@@ -427,7 +425,7 @@ local userWorkload =
     prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
   } +
   (import './utils/anti-affinity.libsonnet') +
-  {};
+  {}; // Including empty object to simplify adding and removing imports during development
 
 // Manifestation
 // TODO(paulfantom): removeRunbookUrl, excludeRules, and patchRules should be converted into sanitizeRules() function
