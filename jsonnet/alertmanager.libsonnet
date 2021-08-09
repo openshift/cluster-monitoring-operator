@@ -178,6 +178,16 @@ function(params)
               resource: 'prometheusrules',
               namespace: '{{ .Value }}',
             },
+            static: [
+              {
+                user: {
+                  name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
+                },
+                verb: 'get',
+                path: '/metrics',
+                resourceRequest: false,
+              },
+            ],
           },
         }),
       },

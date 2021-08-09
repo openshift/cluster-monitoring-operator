@@ -231,6 +231,16 @@ function(params)
               resource: 'pods',
               namespace: '{{ .Value }}',
             },
+            static: [
+              {
+                user: {
+                  name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
+                },
+                apiGroup: 'metrics.k8s.io/v1beta1',
+                resource: 'pods',
+                resourceRequest: true,
+              },
+            ],
           },
         }),
       },
