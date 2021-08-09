@@ -10,6 +10,7 @@ local excludedRuleGroups = [
   'kube-apiserver-slos',
   'kube-apiserver.rules',
   'kube-apiserver-burnrate.rules',
+  'kube-apiserver-histogram.rules',
 ];
 
 local excludedRules = [
@@ -71,6 +72,28 @@ local excludedRules = [
     name: 'prometheus',
     rules: [
       { alert: 'PrometheusErrorSendingAlertsToAnyAlertmanager' },
+    ],
+  },
+  // The following rules are removed due to lack of usefulness
+  // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1996785 for details.
+  {
+    name: 'kube-prometheus-node-recording.rules',
+    rules: [
+      { record: 'instance:node_cpu:ratio' },
+    ],
+  },
+  {
+    name: 'node.rules',
+    rules: [
+      { record: 'node:node_num_cpu:sum' },
+    ],
+  },
+  {
+    name: 'openshift-kubernetes.rules',
+    rules: [
+      { record: 'namespace:container_spec_cpu_shares:sum' },
+      { record: 'pod:container_memory_usage_bytes:sum' },
+      { record: 'pod:container_spec_cpu_shares:sum' },
     ],
   },
   {
