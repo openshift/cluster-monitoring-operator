@@ -1,9 +1,6 @@
 local removeLimits = (import './utils/remove-limits.libsonnet').removeLimits;
-local addReleaseAnnotation = (import './utils/add-annotations.libsonnet').addReleaseAnnotation;
-local addWorkloadAnnotation = (import './utils/add-annotations.libsonnet').addWorkloadAnnotation;
-local excludeRules = (import './utils/patch-rules.libsonnet').excludeRules;
-local patchRules = (import './utils/patch-rules.libsonnet').patchRules;
-local removeRunbookUrl = (import './utils/remove-runbook-urls.libsonnet').removeRunbookUrl;
+local addAnnotations = (import './utils/add-annotations.libsonnet').addAnnotations;
+local sanitizeAlertRules = (import './utils/sanitize-rules.libsonnet').sanitizeAlertRules;
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local grafana = import './components/grafana.libsonnet';
@@ -22,11 +19,6 @@ local thanosQuerier = import './components/thanos-querier.libsonnet';
 
 local openshiftStateMetrics = import './components/openshift-state-metrics.libsonnet';
 local telemeterClient = import './components/telemeter-client.libsonnet';
-
-/*
-TODO(paulfantom):
-- grafana config - needs https://github.com/prometheus-operator/kube-prometheus/pull/907
-*/
 
 // Common configuration
 local commonConfig = {
@@ -373,7 +365,7 @@ local inCluster =
   (import './utils/anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
   (import './utils/ibm-cloud-managed-profile.libsonnet') +
-  {}; // Including empty object to simplify adding and removing imports during development
+  {};  // Including empty object to simplify adding and removing imports during development
 
 // objects deployed in openshift-user-workload-monitoring namespace
 local userWorkload =
@@ -425,11 +417,10 @@ local userWorkload =
     prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
   } +
   (import './utils/anti-affinity.libsonnet') +
-  {}; // Including empty object to simplify adding and removing imports during development
+  {};  // Including empty object to simplify adding and removing imports during development
 
 // Manifestation
-// TODO(paulfantom): removeRunbookUrl, excludeRules, and patchRules should be converted into sanitizeRules() function
-removeRunbookUrl(patchRules(excludeRules(addWorkloadAnnotation(addReleaseAnnotation(removeLimits(
+sanitizeAlertRules(addAnnotations(removeLimits(
   { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
   { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
   { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
@@ -448,4 +439,4 @@ removeRunbookUrl(patchRules(excludeRules(addWorkloadAnnotation(addReleaseAnnotat
   { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
   { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
   {}
-))))))
+)))

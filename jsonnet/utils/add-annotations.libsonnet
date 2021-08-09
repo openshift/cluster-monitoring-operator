@@ -46,4 +46,8 @@
     [k]: addAnnotation(o[k])
     for k in std.objectFields(o)
   },
+
+  addAnnotations(o): $.addWorkloadAnnotation(
+    $.addReleaseAnnotation(o)
+  ),
 }

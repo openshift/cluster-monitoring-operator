@@ -1,3 +1,5 @@
+local k8sMixinUtils = import 'github.com/kubernetes-monitoring/kubernetes-mixin/lib/utils.libsonnet';
+
 local excludedRuleGroups = [
   'kube-apiserver-availability.rules',
   // rules managed by openshift/cluster-kube-controller-manager-operator.
@@ -325,6 +327,17 @@ local patchedRules = [
   },
 ];
 
+// TODO(paulfantom): ideally all alerts have runbooks and this list could be converted into excludeRunbooks
+local includeRunbooks = [
+  'HighlyAvailableWorkloadIncorrectlySpread',
+];
+
+local removeRunbookUrl(rule) = rule {
+  [if 'alert' in rule && ('runbook_url' in rule.annotations) && !std.member(includeRunbooks, rule.alert) then 'annotations']+: {
+    runbook_url:: null,
+  },
+};
+
 local patchOrExcludeRule(rule, ruleSet, operation) =
   if std.length(ruleSet) == 0 then
     [rule]
@@ -402,25 +415,44 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
     [] + patchOrExcludeRuleGroup(group, groupSet[1:], operation);
 
 {
+  excludeRule(o): o {
+    [if (o.kind == 'PrometheusRule') then 'spec']+: {
+      groups: std.filterMap(
+        function(group) !std.member(excludedRuleGroups, group.name),
+        function(group)
+          group {
+            rules: std.flattenArrays(
+              patchOrExcludeRuleGroup(group, excludedRules, 'exclude')
+            ),
+          },
+        super.groups,
+      ),
+    },
+  },
+
+  patchRule(o): o {
+    [if (o.kind == 'PrometheusRule') then 'spec']+: {
+      groups: std.map(
+        function(group)
+          group {
+            rules: std.flattenArrays(
+              patchOrExcludeRuleGroup(group, patchedRules, 'patch')
+            ),
+          },
+        super.groups,
+      ),
+    },
+  },
+
+  removeRunbookAnnotation(o): o {
+    [if (o.kind == 'PrometheusRule') then 'spec']+: k8sMixinUtils.mapRuleGroups(removeRunbookUrl),
+  },
+
   // excludedRules removes upstream rules that we don't want to carry in CMO.
   // It can remove specific rules from a rules group (see excludedRules) or a
   // whole rules group (see excludedRuleGroups).
   excludeRules(o): {
-    local exclude(o) = o {
-      [if (o.kind == 'PrometheusRule') then 'spec']+: {
-        groups: std.filterMap(
-          function(group) !std.member(excludedRuleGroups, group.name),
-          function(group)
-            group {
-              rules: std.flattenArrays(
-                patchOrExcludeRuleGroup(group, excludedRules, 'exclude')
-              ),
-            },
-          super.groups,
-        ),
-      },
-    },
-    [k]: exclude(o[k])
+    [k]: $.excludeRule(o[k])
     for k in std.objectFields(o)
   },
 
@@ -431,20 +463,19 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
   // 'alert' or 'record' identifier. The function will apply the patch to every
   // alerting/recording rule in the group whose name starts by the identifier.
   patchRules(o): {
-    local patch(o) = o {
-      [if (o.kind == 'PrometheusRule') then 'spec']+: {
-        groups: std.map(
-          function(group)
-            group {
-              rules: std.flattenArrays(
-                patchOrExcludeRuleGroup(group, patchedRules, 'patch')
-              ),
-            },
-          super.groups,
-        ),
-      },
-    },
-    [k]: patch(o[k])
+    [k]: $.patchRule(o[k])
+    for k in std.objectFields(o)
+  },
+
+  // removeRunbookUrl removes runbook_url from alert annotations, but skips alerts that are in includeRunbooks list
+  removeRunbookUrl(o): {
+    [k]: $.removeRunbookAnnotation(o[k])
+    for k in std.objectFields(o)
+  },
+
+  // shorthand for rule patching, rule excluding, and runbook_url removal
+  sanitizeAlertRules(o): {
+    [k]: $.removeRunbookAnnotation($.patchRule($.excludeRule(o[k])))
     for k in std.objectFields(o)
   },
 }
