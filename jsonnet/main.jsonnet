@@ -1,28 +1,28 @@
-local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
-local addReleaseAnnotation = (import 'add-release-annotation.libsonnet').addReleaseAnnotation;
-local addWorkloadAnnotation = (import 'add-workload-annotation.libsonnet').addWorkloadAnnotation;
-local excludeRules = (import 'patch-rules.libsonnet').excludeRules;
-local patchRules = (import 'patch-rules.libsonnet').patchRules;
-local removeRunbookUrl = (import 'remove-runbook-urls.libsonnet').removeRunbookUrl;
+local removeLimits = (import './utils/remove-limits.libsonnet').removeLimits;
+local addReleaseAnnotation = (import './utils/add-annotations.libsonnet').addReleaseAnnotation;
+local addWorkloadAnnotation = (import './utils/add-annotations.libsonnet').addWorkloadAnnotation;
+local excludeRules = (import './utils/patch-rules.libsonnet').excludeRules;
+local patchRules = (import './utils/patch-rules.libsonnet').patchRules;
+local removeRunbookUrl = (import './utils/remove-runbook-urls.libsonnet').removeRunbookUrl;
 
-local alertmanager = import './alertmanager.libsonnet';
-local grafana = import './grafana.libsonnet';
-local kubeStateMetrics = import './kube-state-metrics.libsonnet';
-local controlPlane = import './control-plane.libsonnet';
-local nodeExporter = import './node-exporter.libsonnet';
-local prometheusAdapter = import './prometheus-adapter.libsonnet';
-local prometheusOperator = import './prometheus-operator.libsonnet';
-local prometheusOperatorUserWorkload = import './prometheus-operator-user-workload.libsonnet';
-local prometheus = import './prometheus.libsonnet';
-local prometheusUserWorkload = import './prometheus-user-workload.libsonnet';
-local clusterMonitoringOperator = import './cluster-monitoring-operator.libsonnet';
-local ibmCloudManagedProfile = import 'ibm-cloud-managed-profile.libsonnet';
+local alertmanager = import './components/alertmanager.libsonnet';
+local grafana = import './components/grafana.libsonnet';
+local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
+local controlPlane = import './components/control-plane.libsonnet';
+local nodeExporter = import './components/node-exporter.libsonnet';
+local prometheusAdapter = import './components/prometheus-adapter.libsonnet';
+local prometheusOperator = import './components/prometheus-operator.libsonnet';
+local prometheusOperatorUserWorkload = import './components/prometheus-operator-user-workload.libsonnet';
+local prometheus = import './components/prometheus.libsonnet';
+local prometheusUserWorkload = import './components/prometheus-user-workload.libsonnet';
+local clusterMonitoringOperator = import './components/cluster-monitoring-operator.libsonnet';
+local ibmCloudManagedProfile = import './utils/ibm-cloud-managed-profile.libsonnet';
 
-local thanosRuler = import './thanos-ruler.libsonnet';
-local thanosQuerier = import './thanos-querier.libsonnet';
+local thanosRuler = import './components/thanos-ruler.libsonnet';
+local thanosQuerier = import './components/thanos-querier.libsonnet';
 
-local openshiftStateMetrics = import './openshift-state-metrics.libsonnet';
-local telemeterClient = import './telemeter-client.libsonnet';
+local openshiftStateMetrics = import './components/openshift-state-metrics.libsonnet';
+local telemeterClient = import './components/telemeter-client.libsonnet';
 
 /*
 TODO(paulfantom):
@@ -372,7 +372,7 @@ local inCluster =
     telemeterClient: telemeterClient($.values.telemeterClient),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
-  (import './anti-affinity.libsonnet') +
+  (import './utils/anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
   ibmCloudManagedProfile +
   {};
@@ -426,7 +426,7 @@ local userWorkload =
     prometheus: prometheusUserWorkload($.values.prometheus),
     prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
   } +
-  (import './anti-affinity.libsonnet') +
+  (import './utils/anti-affinity.libsonnet') +
   {};
 
 // Manifestation
