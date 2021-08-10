@@ -342,7 +342,8 @@ local patchOrExcludeRule(rule, ruleSet, operation) =
   if std.length(ruleSet) == 0 then
     [rule]
   else if ('alert' in rule) then
-    local matchedRules = std.filter(function(ruleItem) ('alert' in ruleItem) && (ruleItem.alert == rule.alert), ruleSet);
+    // empty alert name is matching-all
+    local matchedRules = std.filter(function(ruleItem) ('alert' in ruleItem) && ((ruleItem.alert == rule.alert) || (ruleItem.alert == '')), ruleSet);
     local matchedRulesSeverity = std.filter(function(ruleItem) if ('labels' in ruleItem) && ('severity' in ruleItem.labels) then ruleItem.labels.severity == rule.labels.severity else false, matchedRules);
 
     if std.length(matchedRules) > 1 && std.length(matchedRulesSeverity) >= 1 then
@@ -381,8 +382,8 @@ local patchOrExcludeRule(rule, ruleSet, operation) =
     else
       [rule]
   else if ('record' in rule) then
-
-    local matchedRules = std.filter(function(ruleItem) ('record' in ruleItem) && (ruleItem.record == rule.record), ruleSet);
+    // empty record name is matching-all
+    local matchedRules = std.filter(function(ruleItem) ('record' in ruleItem) && ((ruleItem.record == rule.record) || (ruleItem.record == '')), ruleSet);
 
     if std.length(matchedRules) == 1 then
       local targetRule = matchedRules[0];
