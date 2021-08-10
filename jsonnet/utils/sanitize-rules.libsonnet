@@ -152,78 +152,6 @@ local patchedRules = [
           severity: 'warning',
         },
       },
-      {
-        alert: 'KubePersistentVolumeFillingUp',
-        expr: |||
-          (
-            kubelet_volume_stats_available_bytes{%(prefixedNamespaceSelector)s%(kubeletSelector)s}
-              /
-            kubelet_volume_stats_capacity_bytes{%(prefixedNamespaceSelector)s%(kubeletSelector)s}
-          ) < 0.03
-          and
-          kubelet_volume_stats_used_bytes{%(prefixedNamespaceSelector)s%(kubeletSelector)s} > 0
-        ||| % kubernetesStorageConfig,
-        'for': '5m',
-        labels: {
-          severity: 'critical',
-        },
-      },
-      {
-        alert: 'KubePersistentVolumeFillingUp',
-        labels: {
-          severity: 'warning',
-        },
-      },
-    ],
-  },
-  {
-    name: 'node-exporter',
-    local nodeExporterConfig = { nodeExporterSelector: 'job="node-exporter"', fsSelector: 'fstype!=""', fsSpaceFillingUpCriticalThreshold: 15 },
-    rules: [
-      {
-        alert: 'NodeFilesystemSpaceFillingUp',
-        expr: |||
-          (
-            node_filesystem_avail_bytes{%(nodeExporterSelector)s,%(fsSelector)s} / node_filesystem_size_bytes{%(nodeExporterSelector)s,%(fsSelector)s} * 100 < %(fsSpaceFillingUpCriticalThreshold)d
-          and
-            predict_linear(node_filesystem_avail_bytes{%(nodeExporterSelector)s,%(fsSelector)s}[6h], 2*60*60) < 0
-          and
-            node_filesystem_readonly{%(nodeExporterSelector)s,%(fsSelector)s} == 0
-          )
-        ||| % nodeExporterConfig,
-        'for': '1h',
-        labels: {
-          severity: 'critical',
-        },
-      },
-      {
-        alert: 'NodeFilesystemSpaceFillingUp',
-        labels: {
-          severity: 'warning',
-        },
-      },
-      {
-        alert: 'NodeFilesystemFilesFillingUp',
-        expr: |||
-          (
-            node_filesystem_files_free{%(nodeExporterSelector)s,%(fsSelector)s} / node_filesystem_files{%(nodeExporterSelector)s,%(fsSelector)s} * 100 < 20
-          and
-            predict_linear(node_filesystem_files_free{%(nodeExporterSelector)s,%(fsSelector)s}[6h], 2*60*60) < 0
-          and
-            node_filesystem_readonly{%(nodeExporterSelector)s,%(fsSelector)s} == 0
-          )
-        ||| % nodeExporterConfig,
-        'for': '1h',
-        labels: {
-          severity: 'critical',
-        },
-      },
-      {
-        alert: 'NodeFilesystemFilesFillingUp',
-        labels: {
-          severity: 'warning',
-        },
-      },
     ],
   },
   {
@@ -245,20 +173,6 @@ local patchedRules = [
       },
       {
         alert: 'PrometheusRemoteStorageFailures',
-        expr: |||
-          (
-            (rate(prometheus_remote_storage_failed_samples_total{%(prometheusSelector)s}[5m]) or rate(prometheus_remote_storage_samples_failed_total{%(prometheusSelector)s}[5m]))
-          /
-            (
-              (rate(prometheus_remote_storage_failed_samples_total{%(prometheusSelector)s}[5m]) or rate(prometheus_remote_storage_samples_failed_total{%(prometheusSelector)s}[5m]))
-            +
-              (rate(prometheus_remote_storage_succeeded_samples_total{%(prometheusSelector)s}[5m]) or rate(prometheus_remote_storage_samples_total{%(prometheusSelector)s}[5m]))
-            )
-          )
-          * 100
-          > 10
-        ||| % { prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"' },
-        'for': '15m',
         labels: {
           severity: 'warning',
         },

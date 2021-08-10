@@ -148,7 +148,7 @@ spec:
           )
         )
         * 100
-        > 10
+        > 1
       for: 15m
       labels:
         severity: warning
