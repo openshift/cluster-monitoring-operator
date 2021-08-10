@@ -444,7 +444,7 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
     },
   },
 
-  removeRunbookAnnotation(o): o {
+  removeRunbookUrls(o): o {
     [if (o.kind == 'PrometheusRule') then 'spec']+: k8sMixinUtils.mapRuleGroups(removeRunbookUrl),
   },
 
@@ -467,15 +467,9 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
     for k in std.objectFields(o)
   },
 
-  // removeRunbookUrl removes runbook_url from alert annotations, but skips alerts that are in includeRunbooks list
-  removeRunbookUrl(o): {
-    [k]: $.removeRunbookAnnotation(o[k])
-    for k in std.objectFields(o)
-  },
-
   // shorthand for rule patching, rule excluding, and runbook_url removal
   sanitizeAlertRules(o): {
-    [k]: $.removeRunbookAnnotation($.patchRule($.excludeRule(o[k])))
+    [k]: $.removeRunbookUrls($.patchRule($.excludeRule(o[k])))
     for k in std.objectFields(o)
   },
 }
