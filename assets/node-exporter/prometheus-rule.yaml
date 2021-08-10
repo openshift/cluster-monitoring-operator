@@ -41,7 +41,7 @@ spec:
         (
           node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 15
         and
-          predict_linear(node_filesystem_avail_bytes{job="node-exporter",fstype!=""}[6h], 4*60*60) < 0
+          predict_linear(node_filesystem_avail_bytes{job="node-exporter",fstype!=""}[6h], 2*60*60) < 0
         and
           node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )
@@ -103,7 +103,7 @@ spec:
         (
           node_filesystem_files_free{job="node-exporter",fstype!=""} / node_filesystem_files{job="node-exporter",fstype!=""} * 100 < 20
         and
-          predict_linear(node_filesystem_files_free{job="node-exporter",fstype!=""}[6h], 4*60*60) < 0
+          predict_linear(node_filesystem_files_free{job="node-exporter",fstype!=""}[6h], 2*60*60) < 0
         and
           node_filesystem_readonly{job="node-exporter",fstype!=""} == 0
         )

@@ -25,7 +25,7 @@ spec:
         max_over_time(prometheus_config_last_reload_successful{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) == 0
       for: 10m
       labels:
-        severity: critical
+        severity: warning
     - alert: PrometheusNotificationQueueRunningFull
       annotations:
         description: Alert notification queue of Prometheus {{$labels.namespace}}/{{$labels.pod}}
@@ -148,10 +148,10 @@ spec:
           )
         )
         * 100
-        > 1
+        > 10
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: PrometheusRemoteWriteBehind
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} remote write
@@ -169,7 +169,7 @@ spec:
         > 120
       for: 15m
       labels:
-        severity: critical
+        severity: info
     - alert: PrometheusRemoteWriteDesiredShards
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} remote write
@@ -199,7 +199,7 @@ spec:
         increase(prometheus_rule_evaluation_failures_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) > 0
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: PrometheusMissingRuleEvaluations
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} has missed {{
@@ -244,22 +244,6 @@ spec:
       for: 5m
       labels:
         severity: critical
-    - alert: PrometheusErrorSendingAlertsToAnyAlertmanager
-      annotations:
-        description: '{{ printf "%.1f" $value }}% minimum errors while sending alerts
-          from Prometheus {{$labels.namespace}}/{{$labels.pod}} to any Alertmanager.'
-        summary: Prometheus encounters more than 3% errors sending alerts to any Alertmanager.
-      expr: |
-        min without (alertmanager) (
-          rate(prometheus_notifications_errors_total{job=~"prometheus-k8s|prometheus-user-workload",alertmanager!~``}[5m])
-        /
-          rate(prometheus_notifications_sent_total{job=~"prometheus-k8s|prometheus-user-workload",alertmanager!~``}[5m])
-        )
-        * 100
-        > 3
-      for: 15m
-      labels:
-        severity: critical
   - name: thanos-sidecar
     rules:
     - alert: ThanosSidecarPrometheusDown
@@ -268,18 +252,18 @@ spec:
         summary: Thanos Sidecar cannot connect to Prometheus
       expr: |
         thanos_sidecar_prometheus_up{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"} == 0
-      for: 1h
+      for: 5m
       labels:
-        severity: warning
+        severity: critical
     - alert: ThanosSidecarBucketOperationsFailed
       annotations:
         description: Thanos Sidecar {{$labels.instance}} bucket operations are failing
         summary: Thanos Sidecar bucket operations are failing
       expr: |
         sum by (job, instance) (rate(thanos_objstore_bucket_operation_failures_total{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}[5m])) > 0
-      for: 1h
+      for: 5m
       labels:
-        severity: warning
+        severity: critical
     - alert: ThanosSidecarUnhealthy
       annotations:
         description: Thanos Sidecar {{$labels.instance}} is unhealthy for more than
@@ -287,6 +271,6 @@ spec:
         summary: Thanos Sidecar is unhealthy.
       expr: |
         time() - max by (job, instance) (thanos_sidecar_last_heartbeat_success_time_seconds{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}) >= 240
-      for: 1h
+      for: 5m
       labels:
-        severity: warning
+        severity: critical

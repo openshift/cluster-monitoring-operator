@@ -8,6 +8,7 @@
 - [#1270](https://github.com/openshift/cluster-monitoring-operator/pull/1270) Show a message in the degraded condition when Platform Monitoring Prometheus runs without persistent storage.
 - [#1241](https://github.com/openshift/cluster-monitoring-operator/pull/1241) Allow configuring additional Alertmanagers in User Workload Prometheus and Thanos Ruler.
 - [#1293](https://github.com/openshift/cluster-monitoring-operator/pull/1270) Allow disabling the local Alertmanager.
+- [#1310](https://github.com/openshift/cluster-monitoring-operator/pull/1310) Update Alert Configs, fewer critical alerts with more accurate triggering condition.
 
 ## 4.8
 
@@ -16,7 +17,7 @@
 - [#1087](https://github.com/openshift/cluster-monitoring-operator/pull/1087) Remove ThanosQueryInstantLatencyHigh and ThanosQueryRangeLatencyHigh alerts.
 - [#1090](https://github.com/openshift/cluster-monitoring-operator/pull/1090) Decrease alert severity to "warning" for all Thanos sidecar alerts.
 - [#1090](https://github.com/openshift/cluster-monitoring-operator/pull/1090) Increase "for" duration to 1 hour for all Thanos sidecar alerts.
-- [#1093](https://github.com/openshift/cluster-monitoring-operator/pull/1093) Bump kube-state-metrics to major new release v2.0.0-rc.1. This changes a lot of metrics and flags, see kube-state-metrics CHANGELOG for full changes. 
+- [#1093](https://github.com/openshift/cluster-monitoring-operator/pull/1093) Bump kube-state-metrics to major new release v2.0.0-rc.1. This changes a lot of metrics and flags, see kube-state-metrics CHANGELOG for full changes.
 - [#1126](https://github.com/openshift/cluster-monitoring-operator/pull/1126) Remove deprecated techPreviewUserWorkload field from CMO's configmap.
 - [#1136](https://github.com/openshift/cluster-monitoring-operator/pull/1136) Add recording rule for builds by strategy
 - [#1210](https://github.com/openshift/cluster-monitoring-operator/pull/1210) Bump Grafana version to 7.5.5
