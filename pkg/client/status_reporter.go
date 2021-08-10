@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/strings"
+	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
 	v1 "github.com/openshift/api/config/v1"
 	clientv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
@@ -149,7 +149,7 @@ func (r *StatusReporter) SetFailed(ctx context.Context, statusErr error, reason 
 
 	time := metav1.Now()
 	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
-	reason = strings.ToPascalCase(reason)
+	reason = cmostr.ToPascalCase(reason)
 
 	conditions := newConditions(co.Status, r.version, time)
 	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, unavailableMessage, reason, time)
