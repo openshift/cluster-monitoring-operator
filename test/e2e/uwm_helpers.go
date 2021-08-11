@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -24,16 +23,6 @@ const (
 var (
 	ctx = context.Background()
 )
-
-func assertDeletionOfUserWorkloadAssets(f *framework.Framework) func(*testing.T) {
-	return func(t *testing.T) {
-		tearDownUserWorkloadAssets(t, f)
-
-		f.AssertDeploymentDoesNotExist("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
-		f.AssertStatefulsetDoesNotExist("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-		f.AssertSecretDoesNotExist(manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)(t)
-	}
-}
 
 // getUserWorkloadEnabledConfigMap returns a config map with uwm enabled
 func getUserWorkloadEnabledConfigMap(t *testing.T, f *framework.Framework) *v1.ConfigMap {

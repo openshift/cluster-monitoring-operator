@@ -29,7 +29,6 @@ import (
 	"k8s.io/client-go/util/cert"
 
 	"github.com/Jeffail/gabs"
-	"github.com/gogo/protobuf/proto"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -37,13 +36,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
-)
-
-// The namespace where to deploy the test application.
-const (
-	userWorkloadTestNs = "user-workload-test"
 )
 
 type scenario struct {
@@ -51,18 +44,11 @@ type scenario struct {
 	assertion func(*testing.T)
 }
 
-func TestUserWorkloadMonitoringWithStorage(t *testing.T) {
-	ctx := context.Background()
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `enableUserWorkload: true
-`,
-		},
-	}
+func TestUserWorkloadMonitoringMetrics(t *testing.T) {
+	setupUserWorkloadAssets(t, f)
+	t.Cleanup(func() {
+		assertDeletionOfUserWorkloadAssets(f)(t)
+	})
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -81,54 +67,168 @@ func TestUserWorkloadMonitoringWithStorage(t *testing.T) {
 		},
 	}
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
-		t.Fatal(err)
-	}
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	setupUserApplication(t, f)
 
 	for _, scenario := range []struct {
 		name string
 		f    func(*testing.T)
 	}{
-		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
-		{"assert thanos ruler deployment", assertThanosRulerDeployment},
-		{"assert metrics for user workload components", assertMetricsForMonitoringComponents},
-		{"create and assert an user application is deployed", deployUserApplication},
-		{"create prometheus and alertmanager in user namespace", createPrometheusAlertmanagerInUserNamespace},
-		{"assert user workload metrics", assertUserWorkloadMetrics},
-		{"assert user workload rules", assertUserWorkloadRules},
-		{"assert tenancy model is enforced for metrics", assertTenancyForMetrics},
-		{"assert tenancy model is enforced for rules", assertTenancyForRules},
-		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
-		{"assert grpc tls rotation", assertGRPCTLSRotation},
-		{"assert enforced target limit is configured", assertEnforcedTargetLimit(10)},
+		{
+			name: "assert metrics for user workload components",
+			f:    assertMetricsForMonitoringComponents,
+		},
+		{
+			name: "assert user workload metrics",
+			f:    assertUserWorkloadMetrics,
+		},
+		{
+			name: "assert tenancy model is enforced for metrics",
+			f:    assertTenancyForMetrics,
+		},
+		{
+			name: "assert prometheus is not deployed in user namespace",
+			f:    f.AssertStatefulsetDoesNotExist("prometheus-not-to-be-reconciled", userWorkloadTestNs),
+		},
+		{
+			name: "assert alertmanager is not deployed in user namespace",
+			f:    f.AssertStatefulsetDoesNotExist("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
+		},
+	} {
+		t.Run(scenario.name, scenario.f)
+	}
+}
+
+func TestUserWorkloadMonitoringAlerting(t *testing.T) {
+	setupUserWorkloadAssets(t, f)
+	t.Cleanup(func() {
+		assertDeletionOfUserWorkloadAssets(f)(t)
+	})
+
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userWorkloadMonitorConfigMapName,
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Data: map[string]string{
+			"config.yaml": `prometheus:
+  enforcedTargetLimit: 10
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: 2Gi
+`,
+		},
+	}
+
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	setupUserApplication(t, f)
+
+	for _, scenario := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
+		{
+			name: "assert user workload rules",
+			f:    assertUserWorkloadRules,
+		},
+		{
+			name: "assert tenancy model is enforced for rules",
+			f:    assertTenancyForRules,
+		},
+		{
+			name: "assert prometheus is not deployed in user namespace",
+			f:    f.AssertStatefulsetDoesNotExist("prometheus-not-to-be-reconciled", userWorkloadTestNs),
+		},
+		{
+			name: "assert alertmanager is not deployed in user namespace",
+			f:    f.AssertStatefulsetDoesNotExist("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
+		},
+	} {
+		t.Run(scenario.name, scenario.f)
+	}
+}
+
+func TestUserWorkloadMonitoringOptOut(t *testing.T) {
+	setupUserWorkloadAssets(t, f)
+	t.Cleanup(func() {
+		assertDeletionOfUserWorkloadAssets(f)(t)
+	})
+
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userWorkloadMonitorConfigMapName,
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Data: map[string]string{
+			"config.yaml": `prometheus:
+  enforcedTargetLimit: 10
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: 2Gi
+`,
+		},
+	}
+
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	setupUserApplication(t, f)
+
+	for _, scenario := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
 		{"assert namespace opt out removes appropriate targets", assertNamespaceOptOut},
-		{"enable user workload monitoring, assert prometheus rollout", createUserWorkloadAssets(cm)},
-		{"set VolumeClaimTemplate for prometheus CR, assert that it is created", assertVolumeClaimsConfigAndRollout(rolloutParams{
-			namespace:       f.UserWorkloadMonitoringNs,
-			claimName:       "prometheus-user-workload-db-prometheus-user-workload-0",
-			statefulSetName: "prometheus-user-workload",
-		})},
-		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
+	} {
+		t.Run(scenario.name, scenario.f)
+	}
+}
+
+func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
+	setupUserWorkloadAssets(t, f)
+	t.Cleanup(func() {
+		assertDeletionOfUserWorkloadAssets(f)(t)
+	})
+
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userWorkloadMonitorConfigMapName,
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Data: map[string]string{
+			"config.yaml": `prometheus:
+  enforcedTargetLimit: 10
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: 2Gi
+`,
+		},
+	}
+
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+
+	for _, scenario := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
+		{"assert grpc tls rotation", assertGRPCTLSRotation},
 	} {
 		t.Run(scenario.name, scenario.f)
 	}
 }
 
 func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `enableUserWorkload: true
-`,
-		},
-	}
+	setupUserWorkloadAssets(t, f)
+	t.Cleanup(func() {
+		assertDeletionOfUserWorkloadAssets(f)(t)
+	})
 
 	if err := createSelfSignedCertificateSecret("alertmanager-tls"); err != nil {
 		t.Fatal(err)
@@ -161,14 +261,14 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 		},
 	}
 
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+
 	scenarios := []scenario{
-		{"enable user workload monitoring, assert rollout", createUserWorkloadAssets(cm)},
-		{"enable 2 more alertmanagers", updateConfigmap(uwmCM)},
 		{"assert 5 alertmanagers are discovered (3 built-in and 2 from the additional configs)", assertAlertmanagerInstancesDiscovered(5)},
 		{"disable additional alertmanagers", disableAdditionalAlertmanagerConfigs},
 		{"assert additional-alertmanager-configs secret is deleted", assertSecretDoesNotExist(manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)},
 		{"assert 3 alertmanagers are discovered", assertAlertmanagerInstancesDiscovered(3)},
-		{"assert assets are deleted when user workload monitoring is disabled", assertDeletedUserWorkloadAssets(cm)},
 	}
 
 	for _, scenario := range scenarios {
@@ -207,58 +307,13 @@ func createSelfSignedCertificateSecret(secretName string) error {
 	return nil
 }
 
-func createUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
-	ctx := context.Background()
+func assertDeletionOfUserWorkloadAssets(f *framework.Framework) func(*testing.T) {
 	return func(t *testing.T) {
-		if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-			t.Fatal(err)
-		}
+		tearDownUserWorkloadAssets(t, f)
 
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-operator", metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// this will only poll if the statefulset is there in the first place
-		// otherwise it will fail immediately.
-		err = f.OperatorClient.WaitForPrometheus(ctx, &monitoringv1.Prometheus{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "user-workload",
-				Namespace: f.UserWorkloadMonitoringNs,
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = f.OperatorClient.WaitForStatefulsetRollout(ctx, &appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "prometheus-user-workload",
-				Namespace: f.UserWorkloadMonitoringNs,
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		f.AssertDeploymentDoesNotExist("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
+		f.AssertStatefulsetDoesNotExist("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+		f.AssertSecretDoesNotExist(manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)(t)
 	}
 }
 
@@ -336,171 +391,6 @@ func assertAlertmanagerInstancesDiscovered(expectedInstances int) func(_ *testin
 	}
 }
 
-func deployUserApplication(t *testing.T) {
-	ctx := context.Background()
-	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: userWorkloadTestNs,
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.CoreV1().Namespaces().Get(ctx, userWorkloadTestNs, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(ctx, &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "prometheus-example-app",
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: proto.Int32(1),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": "prometheus-example-app",
-				},
-			},
-			Template: v1.PodTemplateSpec{
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
-						{
-							Name:  "prometheus-example-app",
-							Image: "ghcr.io/rhobs/prometheus-example-app:0.3.0",
-						},
-					},
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app": "prometheus-example-app",
-					},
-				},
-			},
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.KubeClient.CoreV1().Services(userWorkloadTestNs).Create(ctx, &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "prometheus-example-app",
-			Labels: map[string]string{
-				"app": "prometheus-example-app",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{
-				{
-					Name:       "web",
-					Protocol:   "TCP",
-					Port:       8080,
-					TargetPort: intstr.FromInt(8080),
-				},
-			},
-			Selector: map[string]string{
-				"app": "prometheus-example-app",
-			},
-			Type: v1.ServiceTypeClusterIP,
-		},
-	}, metav1.CreateOptions{})
-
-	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(ctx, &monitoringv1.ServiceMonitor{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "prometheus-example-monitor",
-			Labels: map[string]string{
-				"k8s-app": "prometheus-example-monitor",
-			},
-		},
-		Spec: monitoringv1.ServiceMonitorSpec{
-			Endpoints: []monitoringv1.Endpoint{
-				{
-					Port:     "web",
-					Scheme:   "http",
-					Interval: "30s",
-				},
-			},
-			Selector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": "prometheus-example-app",
-				},
-			},
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(ctx, &monitoringv1.PrometheusRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "prometheus-example-rule",
-			Labels: map[string]string{
-				"k8s-app": "prometheus-example-rule",
-			},
-		},
-		Spec: monitoringv1.PrometheusRuleSpec{
-			Groups: []monitoringv1.RuleGroup{
-				{
-					Name: "example",
-					Rules: []monitoringv1.Rule{
-						{
-							Record: "version:blah:count",
-							Expr:   intstr.FromString(`count(version)`),
-						},
-						{
-							Alert: "VersionAlert",
-							Expr:  intstr.FromString(fmt.Sprintf(`version{namespace="%s",job="prometheus-example-app"} == 1`, userWorkloadTestNs)),
-							For:   "1s",
-						},
-					},
-				},
-			},
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(ctx, &monitoringv1.PrometheusRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "prometheus-example-rule-leaf",
-			Labels: map[string]string{
-				"k8s-app": "prometheus-example-rule-leaf",
-				"openshift.io/prometheus-rule-evaluation-scope": "leaf-prometheus",
-			},
-		},
-		Spec: monitoringv1.PrometheusRuleSpec{
-			Groups: []monitoringv1.RuleGroup{
-				{
-					Name: "example",
-					Rules: []monitoringv1.Rule{
-						{
-							Record: "version:blah:leaf:count",
-							Expr:   intstr.FromString(`count(version)`),
-						},
-					},
-				},
-			},
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = f.OperatorClient.WaitForDeploymentRollout(ctx, app)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func disableAdditionalAlertmanagerConfigs(t *testing.T) {
 	ctx := context.Background()
 	uwmCM := &v1.ConfigMap{
@@ -514,33 +404,6 @@ func disableAdditionalAlertmanagerConfigs(t *testing.T) {
 	}
 
 	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func createPrometheusAlertmanagerInUserNamespace(t *testing.T) {
-	ctx := context.Background()
-	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(ctx, &monitoringv1.Alertmanager{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "not-to-be-reconciled",
-		},
-		Spec: monitoringv1.AlertmanagerSpec{
-			Replicas: proto.Int32(1),
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.MonitoringClient.Prometheuses(userWorkloadTestNs).Create(ctx, &monitoringv1.Prometheus{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "not-to-be-reconciled",
-		},
-		Spec: monitoringv1.PrometheusSpec{
-			Replicas: proto.Int32(1),
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
 		t.Fatal(err)
 	}
 }
@@ -997,19 +860,6 @@ func assertTenancyForRules(t *testing.T) {
 	}
 }
 
-func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
-	ctx := context.Background()
-	_, err := f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get(ctx, "prometheus-not-to-be-reconciled", metav1.GetOptions{})
-	if err == nil {
-		t.Fatal("expected no Prometheus statefulset to be deployed, but found one")
-	}
-
-	_, err = f.KubeClient.AppsV1().StatefulSets(userWorkloadTestNs).Get(ctx, "alertmanager-not-to-be-reconciled", metav1.GetOptions{})
-	if err == nil {
-		t.Fatal("expected no Alertmanager statefulset to be deployed, but found one")
-	}
-}
-
 func assertGRPCTLSRotation(t *testing.T) {
 	ctx := context.Background()
 	countGRPCSecrets := func(ns string) int {
@@ -1153,30 +1003,6 @@ func assertSecretDoesNotExist(name string, namespace string) func(*testing.T) {
 			return err
 		}); err != nil {
 			t.Fatal(err)
-		}
-	}
-}
-
-func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
-	ctx := context.Background()
-	return func(t *testing.T) {
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-
-			if prom.Spec.EnforcedTargetLimit == nil {
-				return errors.New("EnforcedTargetLimit not set")
-			} else if *prom.Spec.EnforcedTargetLimit != limit {
-				return fmt.Errorf("expected EnforcedTargetLimit to be %d, but got %d", limit, *prom.Spec.EnforcedTargetLimit)
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			t.Fatalf("Timed out waiting for EnforcedTargetLimit configuration: %v", err)
 		}
 	}
 }
