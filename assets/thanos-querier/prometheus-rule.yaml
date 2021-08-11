@@ -19,9 +19,9 @@ spec:
         summary: Thanos Query is failing to handle requests.
       expr: |
         (
-          sum by (job) (rate(http_requests_total{code=~"5..", job="thanos-querier", handler="query"}[5m]))
+          sum by (job, namespace) (rate(http_requests_total{code=~"5..", job="thanos-querier", handler="query"}[5m]))
         /
-          sum by (job) (rate(http_requests_total{job="thanos-querier", handler="query"}[5m]))
+          sum by (job, namespace) (rate(http_requests_total{job="thanos-querier", handler="query"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
@@ -33,9 +33,9 @@ spec:
         summary: Thanos Query is failing to handle requests.
       expr: |
         (
-          sum by (job) (rate(http_requests_total{code=~"5..", job="thanos-querier", handler="query_range"}[5m]))
+          sum by (job, namespace) (rate(http_requests_total{code=~"5..", job="thanos-querier", handler="query_range"}[5m]))
         /
-          sum by (job) (rate(http_requests_total{job="thanos-querier", handler="query_range"}[5m]))
+          sum by (job, namespace) (rate(http_requests_total{job="thanos-querier", handler="query_range"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
@@ -47,9 +47,9 @@ spec:
         summary: Thanos Query is failing to handle requests.
       expr: |
         (
-          sum by (job) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job="thanos-querier"}[5m]))
+          sum by (job, namespace) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job="thanos-querier"}[5m]))
         /
-          sum by (job) (rate(grpc_server_started_total{job="thanos-querier"}[5m]))
+          sum by (job, namespace) (rate(grpc_server_started_total{job="thanos-querier"}[5m]))
         * 100 > 5
         )
       for: 5m
@@ -62,9 +62,9 @@ spec:
         summary: Thanos Query is failing to send requests.
       expr: |
         (
-          sum by (job) (rate(grpc_client_handled_total{grpc_code!="OK", job="thanos-querier"}[5m]))
+          sum by (job, namespace) (rate(grpc_client_handled_total{grpc_code!="OK", job="thanos-querier"}[5m]))
         /
-          sum by (job) (rate(grpc_client_started_total{job="thanos-querier"}[5m]))
+          sum by (job, namespace) (rate(grpc_client_started_total{job="thanos-querier"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
@@ -76,9 +76,9 @@ spec:
         summary: Thanos Query is having high number of DNS failures.
       expr: |
         (
-          sum by (job) (rate(thanos_query_store_apis_dns_failures_total{job="thanos-querier"}[5m]))
+          sum by (job, namespace) (rate(thanos_query_store_apis_dns_failures_total{job="thanos-querier"}[5m]))
         /
-          sum by (job) (rate(thanos_query_store_apis_dns_lookups_total{job="thanos-querier"}[5m]))
+          sum by (job, namespace) (rate(thanos_query_store_apis_dns_lookups_total{job="thanos-querier"}[5m]))
         ) * 100 > 1
       for: 15m
       labels:
