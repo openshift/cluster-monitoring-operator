@@ -2,6 +2,7 @@ local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
 
 local kubeStateMetrics = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-state-metrics.libsonnet';
+local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
   local cfg = params;
@@ -72,6 +73,8 @@ function(params)
       },
     },
 
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-state-metrics-kube-rbac-proxy-config'),
+
     // This removes the upstream addon-resizer and all resource requests and
     // limits. Additionally configures the kube-rbac-proxies to use the serving
     // cert configured on the `Service` above.
@@ -94,6 +97,7 @@ function(params)
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
+                        '--config-file=/etc/kube-rbac-policy/config.yaml',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
@@ -106,6 +110,11 @@ function(params)
                           mountPath: '/etc/tls/client',
                           name: 'metrics-client-ca',
                           readOnly: false,
+                        },
+                        {
+                          mountPath: '/etc/kube-rbac-policy',
+                          name: 'kube-state-metrics-kube-rbac-proxy-config',
+                          readOnly: true,
                         },
                       ],
                       securityContext: {},
@@ -152,6 +161,12 @@ function(params)
                 name: 'metrics-client-ca',
                 configMap: {
                   name: 'metrics-client-ca',
+                },
+              },
+              {
+                name: 'kube-state-metrics-kube-rbac-proxy-config',
+                secret: {
+                  secretName: 'kube-state-metrics-kube-rbac-proxy-config',
                 },
               },
             ],

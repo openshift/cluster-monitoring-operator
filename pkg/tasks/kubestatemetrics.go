@@ -64,6 +64,16 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling kube-state-metrics ClusterRoleBinding failed")
 	}
 
+	rs, err := t.factory.KubeStateMetricsRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing kube-state-metrics RBAC proxy Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "creating kube-state-metrics RBAC proxy Secret failed")
+	}
+
 	svc, err := t.factory.KubeStateMetricsService()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-state-metrics Service failed")
@@ -99,5 +109,9 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-	return errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
+	if err != nil {
+		errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
+	}
+
+	return nil
 }

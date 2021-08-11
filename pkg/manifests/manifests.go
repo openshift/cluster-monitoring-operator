@@ -66,13 +66,14 @@ var (
 	AlertmanagerTrustedCABundle    = "alertmanager/trusted-ca-bundle.yaml"
 	AlertmanagerPrometheusRule     = "alertmanager/prometheus-rule.yaml"
 
-	KubeStateMetricsClusterRoleBinding = "kube-state-metrics/cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole        = "kube-state-metrics/cluster-role.yaml"
-	KubeStateMetricsDeployment         = "kube-state-metrics/deployment.yaml"
-	KubeStateMetricsServiceAccount     = "kube-state-metrics/service-account.yaml"
-	KubeStateMetricsService            = "kube-state-metrics/service.yaml"
-	KubeStateMetricsServiceMonitor     = "kube-state-metrics/service-monitor.yaml"
-	KubeStateMetricsPrometheusRule     = "kube-state-metrics/prometheus-rule.yaml"
+	KubeStateMetricsClusterRoleBinding  = "kube-state-metrics/cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole         = "kube-state-metrics/cluster-role.yaml"
+	KubeStateMetricsDeployment          = "kube-state-metrics/deployment.yaml"
+	KubeStateMetricsServiceAccount      = "kube-state-metrics/service-account.yaml"
+	KubeStateMetricsService             = "kube-state-metrics/service.yaml"
+	KubeStateMetricsServiceMonitor      = "kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsPrometheusRule      = "kube-state-metrics/prometheus-rule.yaml"
+	KubeStateMetricsKubeRbacProxySecret = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
 
 	OpenShiftStateMetricsClusterRoleBinding = "openshift-state-metrics/cluster-role-binding.yaml"
 	OpenShiftStateMetricsClusterRole        = "openshift-state-metrics/cluster-role.yaml"
@@ -569,6 +570,17 @@ func (f *Factory) KubeStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
 
 func (f *Factory) KubeStateMetricsService() (*v1.Service, error) {
 	s, err := f.NewService(f.assets.MustNewAssetReader(KubeStateMetricsService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) KubeStateMetricsRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(KubeStateMetricsKubeRbacProxySecret))
 	if err != nil {
 		return nil, err
 	}
