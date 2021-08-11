@@ -5,7 +5,6 @@ go 1.16
 require (
 	github.com/Jeffail/gabs v1.4.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/gogo/protobuf v1.3.2
 	github.com/imdario/mergo v0.3.7
 	github.com/openshift/api v0.0.0-20210706092853-b63d499a70ce
 	github.com/openshift/client-go v0.0.0-20210521082421-73d9475a9142
