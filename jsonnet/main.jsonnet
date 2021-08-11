@@ -1,34 +1,24 @@
-local removeLimits = (import 'remove-limits.libsonnet').removeLimits;
-local addReleaseAnnotation = (import 'add-release-annotation.libsonnet').addReleaseAnnotation;
-local addWorkloadAnnotation = (import 'add-workload-annotation.libsonnet').addWorkloadAnnotation;
-local excludeRules = (import 'patch-rules.libsonnet').excludeRules;
-local patchRules = (import 'patch-rules.libsonnet').patchRules;
-local removeRunbookUrl = (import 'remove-runbook-urls.libsonnet').removeRunbookUrl;
+local removeLimits = (import './utils/remove-limits.libsonnet').removeLimits;
+local addAnnotations = (import './utils/add-annotations.libsonnet').addAnnotations;
+local sanitizeAlertRules = (import './utils/sanitize-rules.libsonnet').sanitizeAlertRules;
 
-local alertmanager = import './alertmanager.libsonnet';
-local grafana = import './grafana.libsonnet';
-local kubeStateMetrics = import './kube-state-metrics.libsonnet';
-local controlPlane = import './control-plane.libsonnet';
-local nodeExporter = import './node-exporter.libsonnet';
-local prometheusAdapter = import './prometheus-adapter.libsonnet';
-local prometheusOperator = import './prometheus-operator.libsonnet';
-local prometheusOperatorUserWorkload = import './prometheus-operator-user-workload.libsonnet';
-local prometheus = import './prometheus.libsonnet';
-local prometheusUserWorkload = import './prometheus-user-workload.libsonnet';
-local clusterMonitoringOperator = import './cluster-monitoring-operator.libsonnet';
-local ibmCloudManagedProfile = import 'ibm-cloud-managed-profile.libsonnet';
+local alertmanager = import './components/alertmanager.libsonnet';
+local grafana = import './components/grafana.libsonnet';
+local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
+local controlPlane = import './components/control-plane.libsonnet';
+local nodeExporter = import './components/node-exporter.libsonnet';
+local prometheusAdapter = import './components/prometheus-adapter.libsonnet';
+local prometheusOperator = import './components/prometheus-operator.libsonnet';
+local prometheusOperatorUserWorkload = import './components/prometheus-operator-user-workload.libsonnet';
+local prometheus = import './components/prometheus.libsonnet';
+local prometheusUserWorkload = import './components/prometheus-user-workload.libsonnet';
+local clusterMonitoringOperator = import './components/cluster-monitoring-operator.libsonnet';
 
-local thanosRuler = import './thanos-ruler.libsonnet';
-local thanosQuerier = import './thanos-querier.libsonnet';
+local thanosRuler = import './components/thanos-ruler.libsonnet';
+local thanosQuerier = import './components/thanos-querier.libsonnet';
 
-local openshiftStateMetrics = import './openshift-state-metrics.libsonnet';
-local telemeterClient = import './telemeter-client.libsonnet';
-
-/*
-TODO(paulfantom):
-- thanos sidecar inclusion - needs https://github.com/prometheus-operator/kube-prometheus/pull/909
-- grafana config - needs https://github.com/prometheus-operator/kube-prometheus/pull/907
-*/
+local openshiftStateMetrics = import './components/openshift-state-metrics.libsonnet';
+local telemeterClient = import './components/telemeter-client.libsonnet';
 
 // Common configuration
 local commonConfig = {
@@ -72,7 +62,6 @@ local commonConfig = {
     kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v' + $.versions.kubeRbacProxy,
 
     openshiftOauthProxy: 'quay.io/openshift/oauth-proxy:latest',
-    //kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v0.8.0',
   },
   // Labels applied to every object
   commonLabels: {
@@ -108,7 +97,9 @@ local inCluster =
         image: $.values.common.images.alertmanager,
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
-        mixin+: { ruleLabels: $.values.common.ruleLabels },
+        mixin+: {
+          ruleLabels: $.values.common.ruleLabels,
+        },
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
       },
@@ -243,7 +234,14 @@ local inCluster =
             thanosSelector: 'job=~"prometheus-(k8s|user-workload)-thanos-sidecar"',
           },
         },
-        thanos: $.values.thanosSidecar,
+        thanos: $.values.thanos {
+          resources: {
+            requests: {
+              cpu: '1m',
+              memory: '100Mi',
+            },
+          },
+        },
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
@@ -275,27 +273,16 @@ local inCluster =
         image: $.values.common.images.thanos,
         version: $.values.common.versions.thanos,
       },
-      thanosSidecar:: $.values.thanos {
-        resources: {
-          requests: {
-            cpu: '1m',
-            memory: '100Mi',
-          },
-        },
-      },
       thanosRuler: $.values.thanos {
         name: 'user-workload',
         namespace: $.values.common.namespaceUserWorkload,
+        replicas: 2,
         labels: {
           'app.kubernetes.io/name': 'user-workload',
         },
         selectorLabels: {
           app: 'thanos-ruler',
           'thanos-ruler': 'user-workload',
-        },
-        ports: {
-          web: 9091,
-          grpc: 10901,
         },
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
       },
@@ -372,10 +359,10 @@ local inCluster =
     telemeterClient: telemeterClient($.values.telemeterClient),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
-  (import './anti-affinity.libsonnet') +
+  (import './utils/anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
-  ibmCloudManagedProfile +
-  {};
+  (import './utils/ibm-cloud-managed-profile.libsonnet') +
+  {};  // Including empty object to simplify adding and removing imports during development
 
 // objects deployed in openshift-user-workload-monitoring namespace
 local userWorkload =
@@ -402,7 +389,7 @@ local userWorkload =
             prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
           },
         },
-        thanos: inCluster.values.thanosSidecar,
+        thanos: inCluster.values.prometheus.thanos,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
@@ -426,12 +413,11 @@ local userWorkload =
     prometheus: prometheusUserWorkload($.values.prometheus),
     prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
   } +
-  (import './anti-affinity.libsonnet') +
-  {};
+  (import './utils/anti-affinity.libsonnet') +
+  {};  // Including empty object to simplify adding and removing imports during development
 
 // Manifestation
-// TODO(paulfantom): removeRunbookUrl, excludeRules, and patchRules should be converted into sanitizeRules() function
-removeRunbookUrl(patchRules(excludeRules(addWorkloadAnnotation(addReleaseAnnotation(removeLimits(
+sanitizeAlertRules(addAnnotations(removeLimits(
   { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
   { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
   { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
@@ -450,4 +436,4 @@ removeRunbookUrl(patchRules(excludeRules(addWorkloadAnnotation(addReleaseAnnotat
   { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
   { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
   {}
-))))))
+)))
