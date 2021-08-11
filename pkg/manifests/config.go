@@ -490,7 +490,7 @@ type PrometheusRestrictedConfig struct {
 	Resources           *v1.ResourceRequirements             `json:"resources"`
 	ExternalLabels      map[string]string                    `json:"externalLabels"`
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
+	RemoteWrite         []RemoteWriteSpec                    `json:"remoteWrite"`
 	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
 	EnforcedTargetLimit *uint64                              `json:"enforcedTargetLimit"`
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`

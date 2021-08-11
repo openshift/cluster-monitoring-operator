@@ -1544,7 +1544,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	}
 
 	if len(f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite
+		p.Spec.RemoteWrite = addRemoteWriteConfigs(p.Spec.RemoteWrite, f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite...)
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit != nil {
