@@ -282,8 +282,10 @@ spec:
       record: cluster:control_plane:all_nodes_ready
     - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
-        message: Cluster Monitoring Operator is experiencing unexpected reconciliation
-          errors. Inspect the cluster-monitoring-operator log for potential root causes.
+        description: Errors are occurring during reconciliation cycles. Inspect the
+          cluster-monitoring-operator log for potential root causes.
+        summary: Cluster Monitoring Operator is experiencing unexpected reconciliation
+          errors.
       expr: max_over_time(cluster_monitoring_operator_last_reconciliation_successful[5m])
         == 0
       for: 1h
@@ -291,10 +293,11 @@ spec:
         severity: warning
     - alert: AlertmanagerReceiversNotConfigured
       annotations:
-        message: Alerts are not configured to be sent to a notification system, meaning
-          that you may not be notified in a timely fashion when important failures
-          occur. Check the OpenShift documentation to learn how to configure notifications
-          with Alertmanager.
+        description: Alerts are not configured to be sent to a notification system,
+          meaning that you may not be notified in a timely fashion when important
+          failures occur. Check the OpenShift documentation to learn how to configure
+          notifications with Alertmanager.
+        summary: Receivers (notification integrations) are not configured on Alertmanager
       expr: cluster:alertmanager_integrations:max == 0
       for: 10m
       labels:
@@ -326,8 +329,10 @@ spec:
         severity: warning
     - alert: MultipleContainersOOMKilled
       annotations:
-        message: Multiple containers were out of memory killed within the past 15
-          minutes.
+        description: Multiple containers were out of memory killed within the past
+          15 minutes. There are many potential causes of OOM errors, however issues
+          on a specific node or containers breaching their limits is common.
+        summary: Containers are being killed due to OOM
       expr: sum(max by(namespace, container, pod) (increase(kube_pod_container_status_restarts_total[12m]))
         and max by(namespace, container, pod) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"})
         == 1) > 5
