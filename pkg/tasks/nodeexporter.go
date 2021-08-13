@@ -46,7 +46,7 @@ func (t *NodeExporterTask) Run(ctx context.Context) error {
 
 	sa, err := t.factory.NodeExporterServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter Service failed")
+		return errors.Wrap(err, "initializing node-exporter ServiceAccount failed")
 	}
 
 	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
