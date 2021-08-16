@@ -31,6 +31,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"golang.org/x/crypto/bcrypt"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,7 +42,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -162,6 +162,7 @@ var (
 	PrometheusOperatorUserWorkloadService            = "prometheus-operator-user-workload/service.yaml"
 	PrometheusOperatorUserWorkloadDeployment         = "prometheus-operator-user-workload/deployment.yaml"
 	PrometheusOperatorUserWorkloadServiceMonitor     = "prometheus-operator-user-workload/service-monitor.yaml"
+	PrometheusOperatorUserWorkloadPrometheusRule     = "prometheus-operator-user-workload/prometheus-rule.yaml"
 
 	GrafanaClusterRoleBinding   = "grafana/cluster-role-binding.yaml"
 	GrafanaClusterRole          = "grafana/cluster-role.yaml"
@@ -1885,6 +1886,10 @@ func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, err
 
 func (f *Factory) PrometheusOperatorPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusOperatorPrometheusRule))
+}
+
+func (f *Factory) PrometheusOperatorUserWorkloadPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadPrometheusRule))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {

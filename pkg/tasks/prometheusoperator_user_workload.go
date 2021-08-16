@@ -117,6 +117,15 @@ func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "waiting for Prometheus Operator CRs to become available failed")
 	}
 
+	pr, err := t.factory.PrometheusOperatorUserWorkloadPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator PrometheusRule failed")
+	}
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator PrometheusRule failed")
+	}
+
 	smpo, err := t.factory.PrometheusOperatorUserWorkloadServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceMonitor failed")
@@ -185,6 +194,15 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy(ctx context.Context) error 
 	err = t.client.DeleteClusterRole(ctx, cr)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator ClusterRoleBinding failed")
+	}
+
+	pr, err := t.factory.PrometheusOperatorUserWorkloadPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator PrometheusRule failed")
+	}
+	err = t.client.DeletePrometheusRule(ctx, pr)
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator PrometheusRule failed")
 	}
 
 	sa, err := t.factory.PrometheusOperatorUserWorkloadServiceAccount()

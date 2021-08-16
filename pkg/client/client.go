@@ -794,6 +794,7 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 				d.Generation, d.Status.ObservedGeneration)
 			return false, nil
 		}
+
 		if d.Status.UpdatedReplicas != d.Status.Replicas {
 			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
 				d.Status.Replicas, d.Status.UpdatedReplicas)

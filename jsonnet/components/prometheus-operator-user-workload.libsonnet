@@ -6,8 +6,6 @@ function(params)
   local cfg = params;
   operator(cfg) + {
 
-    mixin:: null,
-    prometheusRule:: null,
     '0alertmanagerCustomResourceDefinition':: {},
     '0alertmanagerConfigCustomResourceDefinition':: {},
     '0prometheusCustomResourceDefinition':: {},
@@ -111,6 +109,22 @@ function(params)
         annotations+: {
           'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-user-workload-tls',
         },
+      },
+    },
+    prometheusRule+: {
+      metadata+: {
+        name: 'prometheus-operator-user-workload-rules',
+      },
+      spec+: {
+        groups:
+          std.mapWithIndex(
+            function(i, v) if i == 0 then
+              v {
+                name: 'prometheus-operator-user-workload',
+                rules: v.rules,
+              },
+            super.groups
+          ),
       },
     },
     serviceMonitor+: {
