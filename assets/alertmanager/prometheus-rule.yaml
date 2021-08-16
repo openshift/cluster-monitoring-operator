@@ -14,47 +14,24 @@ spec:
   groups:
   - name: alertmanager.rules
     rules:
-    - alert: AlertmanagerFailedReload
+    - alert: AlertmanagerClusterDown
       annotations:
-        description: Configuration has failed to load for {{ $labels.namespace }}/{{
-          $labels.pod}}.
-        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/AlertmanagerFailedReload.md
-        summary: Reloading an Alertmanager configuration has failed.
-      expr: |
-        # Without max_over_time, failed scrapes could create false negatives, see
-        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
-        max_over_time(alertmanager_config_last_reload_successful{job="alertmanager-main",namespace="openshift-monitoring"}[5m]) == 0
-      for: 10m
-      labels:
-        severity: critical
-    - alert: AlertmanagerMembersInconsistent
-      annotations:
-        description: Alertmanager {{ $labels.namespace }}/{{ $labels.pod}} has only
-          found {{ $value }} members of the {{$labels.job}} cluster.
-        summary: A member of an Alertmanager cluster has not found all other cluster
-          members.
-      expr: |
-        # Without max_over_time, failed scrapes could create false negatives, see
-        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
-          max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
-        < on (namespace,service) group_left
-          count by (namespace,service) (max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m]))
-      for: 15m
-      labels:
-        severity: warning
-    - alert: AlertmanagerFailedToSendAlerts
-      annotations:
-        description: Alertmanager {{ $labels.namespace }}/{{ $labels.pod}} failed
-          to send {{ $value | humanizePercentage }} of notifications to {{ $labels.integration
-          }}.
-        summary: An Alertmanager instance failed to send notifications.
+        description: '{{ $value | humanizePercentage }} of Alertmanager instances
+          within the {{$labels.job}} cluster have been up for less than half of the
+          last 5m.'
+        summary: Half or more of the Alertmanager instances within the same cluster
+          are down.
       expr: |
         (
-          rate(alertmanager_notifications_failed_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+          count by (namespace,service) (
+            avg_over_time(up{job="alertmanager-main",namespace="openshift-monitoring"}[5m]) < 0.5
+          )
         /
-          rate(alertmanager_notifications_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+          count by (namespace,service) (
+            up{job="alertmanager-main",namespace="openshift-monitoring"}
+          )
         )
-        > 0.01
+        >= 0.5
       for: 5m
       labels:
         severity: warning
@@ -105,24 +82,47 @@ spec:
       for: 20m
       labels:
         severity: warning
-    - alert: AlertmanagerClusterDown
+    - alert: AlertmanagerFailedReload
       annotations:
-        description: '{{ $value | humanizePercentage }} of Alertmanager instances
-          within the {{$labels.job}} cluster have been up for less than half of the
-          last 5m.'
-        summary: Half or more of the Alertmanager instances within the same cluster
-          are down.
+        description: Configuration has failed to load for {{ $labels.namespace }}/{{
+          $labels.pod}}.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/AlertmanagerFailedReload.md
+        summary: Reloading an Alertmanager configuration has failed.
+      expr: |
+        # Without max_over_time, failed scrapes could create false negatives, see
+        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+        max_over_time(alertmanager_config_last_reload_successful{job="alertmanager-main",namespace="openshift-monitoring"}[5m]) == 0
+      for: 10m
+      labels:
+        severity: critical
+    - alert: AlertmanagerFailedToSendAlerts
+      annotations:
+        description: Alertmanager {{ $labels.namespace }}/{{ $labels.pod}} failed
+          to send {{ $value | humanizePercentage }} of notifications to {{ $labels.integration
+          }}.
+        summary: An Alertmanager instance failed to send notifications.
       expr: |
         (
-          count by (namespace,service) (
-            avg_over_time(up{job="alertmanager-main",namespace="openshift-monitoring"}[5m]) < 0.5
-          )
+          rate(alertmanager_notifications_failed_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
         /
-          count by (namespace,service) (
-            up{job="alertmanager-main",namespace="openshift-monitoring"}
-          )
+          rate(alertmanager_notifications_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
         )
-        >= 0.5
+        > 0.01
       for: 5m
+      labels:
+        severity: warning
+    - alert: AlertmanagerMembersInconsistent
+      annotations:
+        description: Alertmanager {{ $labels.namespace }}/{{ $labels.pod}} has only
+          found {{ $value }} members of the {{$labels.job}} cluster.
+        summary: A member of an Alertmanager cluster has not found all other cluster
+          members.
+      expr: |
+        # Without max_over_time, failed scrapes could create false negatives, see
+        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+          max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+        < on (namespace,service) group_left
+          count by (namespace,service) (max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m]))
+      for: 15m
       labels:
         severity: warning

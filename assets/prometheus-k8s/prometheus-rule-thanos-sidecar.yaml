@@ -14,21 +14,21 @@ spec:
   groups:
   - name: thanos-sidecar
     rules:
-    - alert: ThanosSidecarPrometheusDown
-      annotations:
-        description: Thanos Sidecar {{$labels.instance}} cannot connect to Prometheus.
-        summary: Thanos Sidecar cannot connect to Prometheus
-      expr: |
-        thanos_sidecar_prometheus_up{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"} == 0
-      for: 1h
-      labels:
-        severity: warning
     - alert: ThanosSidecarBucketOperationsFailed
       annotations:
         description: Thanos Sidecar {{$labels.instance}} bucket operations are failing
         summary: Thanos Sidecar bucket operations are failing
       expr: |
         sum by (job, instance) (rate(thanos_objstore_bucket_operation_failures_total{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}[5m])) > 0
+      for: 1h
+      labels:
+        severity: warning
+    - alert: ThanosSidecarPrometheusDown
+      annotations:
+        description: Thanos Sidecar {{$labels.instance}} cannot connect to Prometheus.
+        summary: Thanos Sidecar cannot connect to Prometheus
+      expr: |
+        thanos_sidecar_prometheus_up{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"} == 0
       for: 1h
       labels:
         severity: warning

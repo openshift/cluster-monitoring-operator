@@ -354,28 +354,72 @@ local removeRunbookUrl(rule) = rule {
   },
 };
 
+local deleteIndex(rule) = {
+  [k]: rule[k]
+  for k in std.objectFields(rule)
+  if k != 'index'
+};
+
+
 local patchOrExcludeRule(rule, ruleSet, operation) =
   if std.length(ruleSet) == 0 then
-    [rule]
-  else if (('alert' in rule && 'alert' in ruleSet[0]) && std.startsWith(rule.alert, ruleSet[0].alert)) ||
-          (('record' in rule && 'record' in ruleSet[0]) && std.startsWith(rule.record, ruleSet[0].record)) then
+    [deleteIndex(rule)]
+  else if ((('alert' in rule && 'alert' in ruleSet[0]) && std.startsWith(rule.alert, ruleSet[0].alert)) ||
+           (('record' in rule && 'record' in ruleSet[0]) && std.startsWith(rule.record, ruleSet[0].record))) &&
+          (!('index' in ruleSet[0]) || (('index' in ruleSet[0]) && (ruleSet[0].index == rule.index))) then
     if operation == 'patch' then
       local patch = {
         [k]: ruleSet[0][k]
         for k in std.objectFields(ruleSet[0])
-        if k != 'alert' && k != 'record'
+        if k != 'alert' && k != 'record' && k != 'index'
       };
-      [std.mergePatch(rule, patch)]
-    else
+      std.trace('rule match:' + std.toString(ruleSet[0]) + std.toString(rule), [deleteIndex(std.mergePatch(rule, patch))])
+    else  // equivalnt to operation == 'exclude'
       []
+
   else
     [] + patchOrExcludeRule(rule, ruleSet[1:], operation);
+
+
+local sameRuleName(rule1, rule2) =
+  if ('alert' in rule1 && 'alert' in rule2) && (rule1.alert == rule2.alert) then
+    true
+  else if ('record' in rule1 && 'record' in rule2) && (rule1.record == rule2.record) then
+    true
+  else
+    false;
+
+local indexRules(lastRule, ruleSet) =
+  if std.length(ruleSet) == 0 then
+    []
+  else
+    if (lastRule == null) then
+      local updatedRule = std.mergePatch(ruleSet[0], { index: 0 });
+      [updatedRule] + indexRules(updatedRule, ruleSet[1:])
+    else if sameRuleName(lastRule, ruleSet[0]) then
+      local updatedRule = std.mergePatch(ruleSet[0], { index: lastRule.index + 1 });
+      [updatedRule] + indexRules(updatedRule, ruleSet[1:])
+    else
+      local updatedRule = std.mergePatch(ruleSet[0], { index: 0 });
+      [updatedRule] + indexRules(updatedRule, ruleSet[1:]);
+
 
 local patchOrExcludeRuleGroup(group, groupSet, operation) =
   if std.length(groupSet) == 0 then
     [group.rules]
   else if (group.name == groupSet[0].name) then
-    [patchOrExcludeRule(rule, groupSet[0].rules, operation) for rule in group.rules]
+    local sortedRules = std.sort(
+      group.rules, keyF=function(rule)
+        if ('alert' in rule) then
+          rule.alert
+        else if ('record' in rule) then
+          rule.record
+        else
+          assert false : 'rule should have either "alert" or "record" field' + std.toString(rule);
+          ''
+    );
+    local indexedRules = indexRules(null, sortedRules);
+    [patchOrExcludeRule(rule, groupSet[0].rules, operation) for rule in indexedRules]
   else
     [] + patchOrExcludeRuleGroup(group, groupSet[1:], operation);
 

@@ -28,20 +28,6 @@ spec:
       for: 15m
       labels:
         severity: warning
-    - alert: KubeStateMetricsWatchErrors
-      annotations:
-        description: kube-state-metrics is experiencing errors at an elevated rate
-          in watch operations. This is likely causing it to not be able to expose
-          metrics about Kubernetes objects correctly or at all.
-        summary: kube-state-metrics is experiencing errors in watch operations.
-      expr: |
-        (sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics",result="error"}[5m]))
-          /
-        sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics"}[5m])))
-        > 0.01
-      for: 15m
-      labels:
-        severity: warning
     - alert: KubeStateMetricsShardingMismatch
       annotations:
         description: kube-state-metrics pods are running with different --total-shards
@@ -66,3 +52,17 @@ spec:
       for: 15m
       labels:
         severity: critical
+    - alert: KubeStateMetricsWatchErrors
+      annotations:
+        description: kube-state-metrics is experiencing errors at an elevated rate
+          in watch operations. This is likely causing it to not be able to expose
+          metrics about Kubernetes objects correctly or at all.
+        summary: kube-state-metrics is experiencing errors in watch operations.
+      expr: |
+        (sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics",result="error"}[5m]))
+          /
+        sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics"}[5m])))
+        > 0.01
+      for: 15m
+      labels:
+        severity: warning
