@@ -2,7 +2,7 @@ local removeLimits = (import './utils/remove-limits.libsonnet').removeLimits;
 local addAnnotations = (import './utils/add-annotations.libsonnet').addAnnotations;
 local sanitizeAlertRules = (import './utils/sanitize-rules.libsonnet').sanitizeAlertRules;
 local removeNetworkPolicy = (import './utils/remove-network-policy.libsonnet').removeNetworkPolicy;
-local addBearerTokenToServiceMonitors = (import './utils/add-bearer-token-to-service-monitors.libsonnet').addBearerTokenToServiceMonitors;
+local configureAuthenticationForMonitors = (import './utils/configure-authentication-for-monitors.libsonnet').configureAuthenticationForMonitors;
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local alertmanagerUserWorkload = import './components/alertmanager-user-workload.libsonnet';
@@ -434,27 +434,9 @@ local userWorkload =
 
 // Manifestation
 sanitizeAlertRules(addAnnotations(removeLimits(removeNetworkPolicy(
-  // When the TLS certificate used for authentication gets rotated, Prometheus
-  // doesn't pick up the new certificate until the connection to the target is
-  // re-established. Because Prometheus uses keep-alive HTTP connections, the
-  // consequence is that the scrapes start failing after about 1 day and the
-  // TargetDown alert fires. To resolve the alert, the cluster admin has to
-  // restart the pods being reported as down.
-  //
-  // To workaround the issue (and until Prometheus properly handles certificate
-  // rotation), patch the service monitors in the openshift-monitoring and
-  // openshift-user-workload-monitoring namespaces with fall-back authentication
-  // method using the service account bearer token.
-  //
-  // Details in:
-  // https://github.com/prometheus/prometheus/issues/9512 (upstream)
-  // https://bugzilla.redhat.com/show_bug.cgi?id=2033575
-  //
-  // TODO(simonpasquier): once Prometheus issue #9512 is fixed downstream,
-  // replace addBearerTokenToServiceMonitors() by
-  // removeBearerTokenFromServiceMonitors() to ensure that all service monitors
-  // use only TLS for authentication.
-  addBearerTokenToServiceMonitors(
+  // Enforce mTLS authentication + disable usage of bearer token for all service/pod monitors.
+  // See https://issues.redhat.com/browse/OCPBUGS-4184 for details.
+  configureAuthenticationForMonitors(
     { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
     { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
     { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +

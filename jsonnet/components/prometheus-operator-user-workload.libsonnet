@@ -99,6 +99,7 @@ function(params)
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
                         '--config-file=/etc/kube-rbac-policy/config.yaml',
+                        '--client-ca-file=/etc/tls/client/client-ca.crt',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
@@ -110,6 +111,11 @@ function(params)
                         {
                           mountPath: '/etc/kube-rbac-policy',
                           name: 'prometheus-operator-uwm-kube-rbac-proxy-config',
+                          readOnly: true,
+                        },
+                        {
+                          mountPath: '/etc/tls/client',
+                          name: 'metrics-client-ca',
                           readOnly: true,
                         },
                       ],
@@ -143,6 +149,12 @@ function(params)
                   secretName: 'prometheus-operator-uwm-kube-rbac-proxy-config',
                 },
               },
+              {
+                name: 'metrics-client-ca',
+                configMap: {
+                  name: 'metrics-client-ca',
+                },
+              },
             ],
           },
         },
@@ -162,15 +174,8 @@ function(params)
         endpoints: [
           {
             honorLabels: true,
-            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
             port: 'https',
             scheme: 'https',
-            tlsConfig: {
-              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-              serverName: 'server-name-replaced-at-runtime',
-              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
-              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
-            },
           },
         ],
       },

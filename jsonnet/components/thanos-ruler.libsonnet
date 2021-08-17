@@ -1,4 +1,5 @@
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
+local generateSecret = import '../utils/generate-secret.libsonnet';
 local ruler = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-rule.libsonnet';
 
 local defaults = {
@@ -253,6 +254,10 @@ function(params)
           port: 9091,
           targetPort: 'web',
         }, {
+          name: 'metrics',
+          port: 9092,
+          targetPort: 'metrics',
+        }, {
           name: 'grpc',
           port: 10901,
           targetPort: 'grpc',
@@ -272,21 +277,15 @@ function(params)
         spec+: {
           endpoints: [
             {
-              port: 'web',
+              port: 'metrics',
               interval: '30s',
               scheme: 'https',
-              tlsConfig: {
-                caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                serverName: 'server-name-replaced-at-runtime',
-                certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
-                keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
-              },
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
             },
           ],
         },
       },
 
+    kubeRbacProxyMetricsSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'thanos-ruler-kube-rbac-proxy-metrics'),
 
     thanosRuler: {
       apiVersion: 'monitoring.coreos.com/v1',
@@ -366,6 +365,18 @@ function(params)
               secretName: $.oauthCookieSecret.metadata.name,
             },
           },
+          {
+            name: 'secret-' + $.kubeRbacProxyMetricsSecret.metadata.name,
+            secret: {
+              secretName: $.kubeRbacProxyMetricsSecret.metadata.name,
+            },
+          },
+          {
+            name: 'metrics-client-ca',
+            configMap: {
+              name: 'metrics-client-ca',
+            },
+          },
         ],
         serviceAccountName: tr.config.name,
         priorityClassName: 'openshift-user-critical',
@@ -439,6 +450,56 @@ function(params)
               {
                 mountPath: '/etc/proxy/secrets',
                 name: 'secret-thanos-ruler-oauth-cookie',
+              },
+            ],
+            securityContext: {
+              allowPrivilegeEscalation: false,
+              capabilities: {
+                drop: ['ALL'],
+              },
+            },
+          },
+          {
+            // TODO: merge this metric proxy with tenancy proxy when the issue below is fixed:
+            // https://github.com/brancz/kube-rbac-proxy/issues/146
+            name: 'kube-rbac-proxy-metrics',
+            image: 'quay.io/openshift/origin-kube-rbac-proxy:latest',
+            resources: {
+              requests: {
+                memory: '15Mi',
+                cpu: '1m',
+              },
+            },
+            ports: [
+              {
+                containerPort: 9092,
+                name: 'metrics',
+              },
+            ],
+            args: [
+              '--secure-listen-address=0.0.0.0:9092',
+              '--upstream=http://127.0.0.1:10902',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
+              '--logtostderr=true',
+              '--allow-paths=/metrics',
+            ],
+            terminationMessagePolicy: 'FallbackToLogsOnError',
+            volumeMounts: [
+              {
+                mountPath: '/etc/tls/private',
+                name: 'secret-thanos-ruler-tls',
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxyMetricsSecret.metadata.name,
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'metrics-client-ca',
+                readOnly: true,
               },
             ],
             securityContext: {

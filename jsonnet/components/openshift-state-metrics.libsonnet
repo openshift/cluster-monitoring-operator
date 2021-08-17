@@ -40,11 +40,17 @@ function(params) {
                     image: cfg.kubeRbacProxyImage,
                     args+: [
                       '--config-file=/etc/kube-rbac-policy/config.yaml',
+                      '--client-ca-file=/etc/tls/client/client-ca.crt',
                     ],
                     volumeMounts+: [
                       {
                         mountPath: '/etc/kube-rbac-policy',
                         name: 'openshift-state-metrics-kube-rbac-proxy-config',
+                        readOnly: true,
+                      },
+                      {
+                        mountPath: '/etc/tls/client',
+                        name: 'metrics-client-ca',
                         readOnly: true,
                       },
                     ],
@@ -58,6 +64,12 @@ function(params) {
               name: 'openshift-state-metrics-kube-rbac-proxy-config',
               secret: {
                 secretName: 'openshift-state-metrics-kube-rbac-proxy-config',
+              },
+            },
+            {
+              name: 'metrics-client-ca',
+              configMap: {
+                name: 'metrics-client-ca',
               },
             },
           ],
