@@ -9,7 +9,7 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     honorLabels: true
     interval: 30s
     metricRelabelings:
@@ -57,7 +57,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     honorLabels: true
     honorTimestamps: false
     interval: 30s
@@ -107,7 +107,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     honorLabels: true
     interval: 30s
     path: /metrics/probes

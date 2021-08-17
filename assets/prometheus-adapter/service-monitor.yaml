@@ -10,7 +10,7 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     interval: 30s
     metricRelabelings:
     - action: drop
@@ -24,7 +24,6 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: server-name-replaced-at-runtime
   selector:
     matchLabels:
       app.kubernetes.io/component: metrics-adapter

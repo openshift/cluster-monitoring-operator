@@ -16,6 +16,9 @@ spec:
   - name: web
     port: 9091
     targetPort: web
+  - name: metrics
+    port: 9092
+    targetPort: metrics
   - name: grpc
     port: 10901
     targetPort: grpc

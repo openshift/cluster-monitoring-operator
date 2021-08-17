@@ -7,7 +7,7 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     honorLabels: true
     interval: 2m
     port: https-main
@@ -15,14 +15,20 @@ spec:
     scrapeTimeout: 2m
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
       serverName: openshift-state-metrics.openshift-monitoring.svc
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     interval: 2m
     port: https-self
     scheme: https
     scrapeTimeout: 2m
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
       serverName: openshift-state-metrics.openshift-monitoring.svc
   jobLabel: k8s-app
   selector:
