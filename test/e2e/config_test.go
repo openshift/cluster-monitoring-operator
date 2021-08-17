@@ -231,6 +231,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		containerName   = "prometheus"
 		labelSelector   = "app.kubernetes.io/component=prometheus"
 		crName          = "k8s"
+		thanosRule      = "prometheus-k8s-thanos-sidecar-rules"
 	)
 
 	data := fmt.Sprintf(`prometheusK8s:
@@ -292,6 +293,10 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name: "assert remote write url value in set in CR",
 			f:    assertRemoteWriteWasSet(f.Ns, crName, "https://test.remotewrite.com/api/write"),
+		},
+		{
+			name: "assert rule for Thanos sidecar exists",
+			f:    f.AssertPrometheusRuleExists(thanosRule, f.Ns),
 		},
 	} {
 		t.Run(scenario.name, scenario.f)
