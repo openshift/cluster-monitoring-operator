@@ -235,6 +235,16 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Prometheus rules PrometheusRule failed")
 	}
 
+	tsRule, err := t.factory.PrometheusK8sThanosSidecarPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Sidecar rules failed")
+	}
+
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, tsRule)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos Sidecar rules PrometheusRule failed")
+	}
+
 	svc, err := t.factory.PrometheusK8sService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Service failed")
