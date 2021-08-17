@@ -960,6 +960,10 @@ func (f *Factory) PrometheusK8sGrpcTLSSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) PrometheusK8sThanosSidecarPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusK8sThanosSidecarPrometheusRule))
+}
+
 func (f *Factory) PrometheusUserWorkloadGrpcTLSSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadGrpcTLSSecret))
 	if err != nil {
