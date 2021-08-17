@@ -98,6 +98,7 @@ var (
 	PrometheusK8sRoleConfig                  = "prometheus-k8s/role-config.yaml"
 	PrometheusK8sRoleList                    = "prometheus-k8s/role-specific-namespaces.yaml"
 	PrometheusK8sPrometheusRule              = "prometheus-k8s/prometheus-rule.yaml"
+	PrometheusK8sThanosSidecarPrometheusRule = "prometheus-k8s/prometheus-rule-thanos-sidecar.yaml"
 	PrometheusK8sServiceAccount              = "prometheus-k8s/service-account.yaml"
 	PrometheusK8s                            = "prometheus-k8s/prometheus.yaml"
 	PrometheusK8sPrometheusServiceMonitor    = "prometheus-k8s/service-monitor.yaml"
