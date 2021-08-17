@@ -6,6 +6,7 @@ function(params)
 
     // Hide not needed resources
     prometheusRule:: {},
+    prometheusRuleThanosSidecar:: {},
     endpointsEtcd:: {},
     serviceEtcd:: {},
     serviceMonitorEtcd:: {},
