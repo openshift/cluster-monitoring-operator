@@ -9,6 +9,7 @@
 - [#1241](https://github.com/openshift/cluster-monitoring-operator/pull/1241) Allow configuring additional Alertmanagers in User Workload Prometheus and Thanos Ruler.
 - [#1293](https://github.com/openshift/cluster-monitoring-operator/pull/1270) Allow disabling the local Alertmanager.
 - [#1310](https://github.com/openshift/cluster-monitoring-operator/pull/1310) Update Alert Configs, fewer critical alerts with more accurate triggering condition.
+- [#1324](https://github.com/openshift/cluster-monitoring-operator/pull/1324) Allow filtering by job in 'Prometheus/Overview' dashboard.
 
 ## 4.8
 
