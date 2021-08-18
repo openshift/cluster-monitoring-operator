@@ -560,6 +560,21 @@ data:
     # 99th percentile of the backend commit duration.
     - '{__name__="instance:etcd_disk_backend_commit_duration_seconds:histogram_quantile",quantile="0.99"}'
     #
+    # owners: (@tracing-team)
+    #
+    # Number of jaeger instances using certain storage type.
+    - '{__name__="jaeger_operator_instances_storage_types"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of jaeger instances with certain strategy .
+    - '{__name__="jaeger_operator_instances_strategies"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of jaeger instances used certain agent strategy
+    - '{__name__="jaeger_operator_instances_agent_strategies"}'
+    #
 kind: ConfigMap
 metadata:
   name: telemetry-config
