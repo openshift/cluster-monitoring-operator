@@ -27,6 +27,7 @@ spec:
         - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
+        - --no-collector.cpufreq
         image: openshift/prometheus-node-exporter:v1.0.1
         name: node-exporter
         resources:
