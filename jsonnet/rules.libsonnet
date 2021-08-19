@@ -366,7 +366,8 @@ function(params) {
           alert: 'ClusterMonitoringOperatorReconciliationErrors',
           'for': '1h',
           annotations: {
-            message: 'Cluster Monitoring Operator is experiencing unexpected reconciliation errors. Inspect the cluster-monitoring-operator log for potential root causes.',
+            summary: 'Cluster Monitoring Operator is experiencing unexpected reconciliation errors.',
+            description: 'Errors are occurring during reconciliation cycles. Inspect the cluster-monitoring-operator log for potential root causes.',
           },
           labels: {
             severity: 'warning',
@@ -377,7 +378,8 @@ function(params) {
           alert: 'AlertmanagerReceiversNotConfigured',
           'for': '10m',
           annotations: {
-            message: 'Alerts are not configured to be sent to a notification system, meaning that you may not be notified in a timely fashion when important failures occur. Check the OpenShift documentation to learn how to configure notifications with Alertmanager.',
+            summary: 'Receivers (notification integrations) are not configured on Alertmanager',
+            description: 'Alerts are not configured to be sent to a notification system, meaning that you may not be notified in a timely fashion when important failures occur. Check the OpenShift documentation to learn how to configure notifications with Alertmanager.',
           },
           labels: {
             severity: 'warning',
@@ -410,7 +412,8 @@ function(params) {
           alert: 'MultipleContainersOOMKilled',
           'for': '15m',
           annotations: {
-            message: 'Multiple containers were out of memory killed within the past 15 minutes.',
+            summary: 'Containers are being killed due to OOM',
+            description: 'Multiple containers were out of memory killed within the past 15 minutes. There are many potential causes of OOM errors, however issues on a specific node or containers breaching their limits is common.',
           },
           labels: {
             severity: 'info',
