@@ -15,9 +15,15 @@
 package operator
 
 import (
+	"context"
 	"testing"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
+
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/pkg/errors"
 )
 
@@ -145,6 +151,202 @@ func TestNewProxyConfig(t *testing.T) {
 
 			if err := tc.check(c); err != nil {
 				t.Error(err)
+			}
+		})
+	}
+}
+
+func TestUpgradeableStatus(t *testing.T) {
+	var (
+		haInfrastructure      = InfrastructureConfig{highlyAvailableInfrastructure: true}
+		nonHAInfrastructure   = InfrastructureConfig{highlyAvailableInfrastructure: false}
+		namespace             = "openshift-monitoring"
+		namespaceUserWorkload = "openshift-user-workload-monitoring"
+	)
+
+	for _, tc := range []struct {
+		name          string
+		infra         InfrastructureConfig
+		uwm           bool
+		pods          []v1.Pod
+		labelSelector map[string]string
+		upgradeable   configv1.ConditionStatus
+	}{
+		{
+			name:        "Non HA infrastructures are always Upgradeable",
+			infra:       nonHAInfrastructure,
+			pods:        []v1.Pod{},
+			upgradeable: configv1.ConditionTrue,
+		},
+		{
+			name:  "Prometheus k8s correctly spread",
+			infra: haInfrastructure,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-2"},
+				},
+			},
+			upgradeable: configv1.ConditionTrue,
+		},
+		{
+			name:  "Prometheus k8s incorrectly spread",
+			infra: haInfrastructure,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+			},
+			upgradeable: configv1.ConditionFalse,
+		},
+		{
+			name:  "Prometheus k8s not successfully scheduled",
+			infra: haInfrastructure,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+			},
+			upgradeable: configv1.ConditionTrue,
+		},
+		{
+			name:  "Alertmanager correctly spread",
+			infra: haInfrastructure,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-2"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-2", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-3"},
+				},
+			},
+			upgradeable: configv1.ConditionTrue,
+		},
+		{
+			name:  "Alertmanager incorrectly spread",
+			infra: haInfrastructure,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-2", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+			},
+			upgradeable: configv1.ConditionTrue,
+		},
+		{
+			name:  "Prometheus UWM correctly spread",
+			infra: haInfrastructure,
+			uwm:   true,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-user-workload-0", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-user-workload-1", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-2"},
+				},
+			},
+			upgradeable: configv1.ConditionTrue,
+		},
+		{
+			name:  "Prometheus UWM incorrectly spread",
+			infra: haInfrastructure,
+			uwm:   true,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-user-workload-0", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-user-workload-1", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+			},
+			upgradeable: configv1.ConditionFalse,
+		},
+		{
+			name:  "Thanos ruler correctly spread",
+			infra: haInfrastructure,
+			uwm:   true,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "thanos-ruler-user-workload-0", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "thanos-ruler"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "thanos-ruler-user-workload-1", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "thanos-ruler"}},
+					Spec:       v1.PodSpec{NodeName: "node-2"},
+				},
+			},
+			upgradeable: configv1.ConditionTrue,
+		},
+		{
+			name:  "Thanos ruler incorrectly spread",
+			infra: haInfrastructure,
+			uwm:   true,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "thanos-ruler-user-workload-0", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "thanos-ruler"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "thanos-ruler-user-workload-1", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "thanos-ruler"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+			},
+			upgradeable: configv1.ConditionFalse,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeOperator := &Operator{
+				client: client.New(
+					"",
+					"",
+					"",
+					client.KubernetesClient(
+						fake.NewSimpleClientset(
+							&v1.PodList{Items: tc.pods},
+						),
+					)),
+				lastKnowInfrastructureConfig: &tc.infra,
+				userWorkloadEnabled:          tc.uwm,
+				namespace:                    namespace,
+				namespaceUserWorkload:        namespaceUserWorkload,
+			}
+
+			var message, reason string
+			upgradeable, message, reason, err := fakeOperator.Upgradeable(context.Background())
+			if err != nil {
+				t.Error(err)
+			}
+
+			if tc.upgradeable != upgradeable {
+				t.Errorf("Unexpected ClusterOperator Upgradeable status: expected: %v, got: %v with reason: %v and message: %v.", tc.upgradeable, upgradeable, reason, message)
 			}
 		})
 	}

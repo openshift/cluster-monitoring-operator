@@ -59,7 +59,7 @@ const (
 )
 
 type Framework struct {
-	RestConfig          *rest.Config
+	RestConfig           *rest.Config
 	OperatorClient       *client.Client
 	OpenShiftRouteClient *routev1.RouteV1Client
 	KubeClient           kubernetes.Interface
@@ -101,7 +101,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating monitoring client failed")
 	}
 
-	operatorClient, err := client.New(context.Background(), config, "", namespaceName, userWorkloadNamespaceName)
+	operatorClient, err := client.NewForConfig(config, "", namespaceName, userWorkloadNamespaceName)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating operator client failed")
 	}

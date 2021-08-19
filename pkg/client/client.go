@@ -76,7 +76,7 @@ type Client struct {
 	aggclient             aggregatorclient.Interface
 }
 
-func New(ctx context.Context, cfg *rest.Config, version string, namespace, userWorkloadNamespace string) (*Client, error) {
+func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string) (*Client, error) {
 	mclient, err := monitoring.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -117,18 +117,76 @@ func New(ctx context.Context, cfg *rest.Config, version string, namespace, userW
 		return nil, errors.Wrap(err, "creating kubernetes aggregator")
 	}
 
-	return &Client{
+	return New(
+		version,
+		namespace,
+		userWorkloadNamespace,
+		KubernetesClient(kclient),
+		OpenshiftConfigClient(oscclient),
+		OpenshiftSecurityClient(ossclient),
+		OpenshiftRouteClient(osrclient),
+		MonitoringClient(mclient),
+		ApiExtensionsClient(eclient),
+		AggregatorClient(aggclient),
+	), nil
+}
+
+type Option = func(*Client)
+
+func KubernetesClient(kclient kubernetes.Interface) Option {
+	return func(c *Client) {
+		c.kclient = kclient
+	}
+}
+
+func OpenshiftConfigClient(oscclient openshiftconfigclientset.Interface) Option {
+	return func(c *Client) {
+		c.oscclient = oscclient
+	}
+}
+
+func OpenshiftSecurityClient(ossclient openshiftsecurityclientset.Interface) Option {
+	return func(c *Client) {
+		c.ossclient = ossclient
+	}
+}
+
+func OpenshiftRouteClient(osrclient openshiftrouteclientset.Interface) Option {
+	return func(c *Client) {
+		c.osrclient = osrclient
+	}
+}
+
+func MonitoringClient(mclient monitoring.Interface) Option {
+	return func(c *Client) {
+		c.mclient = mclient
+	}
+}
+
+func ApiExtensionsClient(eclient apiextensionsclient.Interface) Option {
+	return func(c *Client) {
+		c.eclient = eclient
+	}
+}
+
+func AggregatorClient(aggclient aggregatorclient.Interface) Option {
+	return func(c *Client) {
+		c.aggclient = aggclient
+	}
+}
+
+func New(version string, namespace, userWorkloadNamespace string, options ...Option) *Client {
+	c := &Client{
 		version:               version,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
-		kclient:               kclient,
-		oscclient:             oscclient,
-		ossclient:             ossclient,
-		osrclient:             osrclient,
-		mclient:               mclient,
-		eclient:               eclient,
-		aggclient:             aggclient,
-	}, nil
+	}
+
+	for _, opt := range options {
+		opt(c)
+	}
+
+	return c
 }
 
 func (c *Client) KubernetesInterface() kubernetes.Interface {
@@ -282,6 +340,10 @@ func (c *Client) GetConfigmap(ctx context.Context, namespace, name string) (*v1.
 
 func (c *Client) GetSecret(ctx context.Context, namespace, name string) (*v1.Secret, error) {
 	return c.kclient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *Client) ListPods(ctx context.Context, namespace string, opts metav1.ListOptions) (*v1.PodList, error) {
+	return c.kclient.CoreV1().Pods(namespace).List(ctx, opts)
 }
 
 func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Prometheus) error {

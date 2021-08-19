@@ -18,8 +18,10 @@ import (
 	"context"
 	"crypto/x509/pkix"
 	"fmt"
-	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
+	"strings"
 	"time"
+
+	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -28,6 +30,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/rest"
@@ -139,6 +142,7 @@ type Operator struct {
 	images                    map[string]string
 	telemetryMatches          []string
 	remoteWrite               bool
+	userWorkloadEnabled       bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
@@ -169,7 +173,7 @@ func New(
 	telemetryMatches []string,
 	a *manifests.Assets,
 ) (*Operator, error) {
-	c, err := client.New(ctx, config, version, namespace, namespaceUserWorkload)
+	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload)
 	if err != nil {
 		return nil, err
 	}
@@ -180,6 +184,7 @@ func New(
 		configMapName:             configMapName,
 		userWorkloadConfigMapName: userWorkloadConfigMapName,
 		remoteWrite:               remoteWrite,
+		userWorkloadEnabled:       false,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
@@ -536,7 +541,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 			}),
 	)
 	klog.Info("Updating ClusterOperator status to in progress.")
-	err = o.client.StatusReporter().SetInProgress(ctx)
+	err = o.client.StatusReporter().SetRollOutInProgress(ctx)
 	if err != nil {
 		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
@@ -559,12 +564,22 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		degradedConditionMessage = client.StorageNotConfiguredMessage
 		degradedConditionReason = client.StorageNotConfiguredReason
 	}
+
 	klog.Info("Updating ClusterOperator status to done.")
 	o.failedReconcileAttempts = 0
-	err = o.client.StatusReporter().SetDone(ctx, degradedConditionMessage, degradedConditionReason)
-
+	err = o.client.StatusReporter().SetRollOutDone(ctx, degradedConditionMessage, degradedConditionReason)
 	if err != nil {
 		klog.Errorf("error occurred while setting status to done: %v", err)
+	}
+
+	operatorUpgradeable, upgradeableReason, upgradeableMessage, err := o.Upgradeable(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = o.client.StatusReporter().SetUpgradeable(ctx, operatorUpgradeable, upgradeableMessage, upgradeableReason)
+	if err != nil {
+		klog.Errorf("error occurred while setting Upgradeable status: %v", err)
 	}
 
 	return nil
@@ -697,6 +712,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 			return nil, err
 		}
 	}
+	o.userWorkloadEnabled = *c.ClusterMonitoringConfiguration.UserWorkloadEnabled
 
 	// Only fetch the token and cluster ID if they have not been specified in the config.
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
@@ -742,4 +758,109 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	}
 
 	return c, nil
+}
+
+// Upgradeable verifies whether the operator can be upgraded or not. It returns
+// the ConditionStatus with optional reason and message.
+func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, string, string, error) {
+	if !o.lastKnowInfrastructureConfig.HighlyAvailableInfrastructure() {
+		return configv1.ConditionTrue, "", "", nil
+	}
+
+	workloadsCorrectlySpread, reason, message, err := o.WorkloadsCorrectlySpread(ctx)
+	if err != nil {
+		return configv1.ConditionUnknown, "", "", err
+	}
+
+	if !workloadsCorrectlySpread {
+		return configv1.ConditionFalse, reason, message, nil
+	}
+
+	return configv1.ConditionTrue, reason, message, nil
+}
+
+// workloadCorrectlySpread returns whether the selected pods are spread across
+// different nodes ensuring proper high-availability.
+func (o *Operator) workloadCorrectlySpread(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
+	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel)})
+	if err != nil {
+		return false, err
+	}
+
+	// Skip the check if we can't get enough pods. This prevents setting the status when the cluster is degraded.
+	if len(podList.Items) <= 1 {
+		return true, nil
+	}
+
+	nodes := make(map[string]struct{}, len(podList.Items))
+	for _, pod := range podList.Items {
+		nodes[pod.Spec.NodeName] = struct{}{}
+	}
+
+	return len(nodes) > 1, nil
+}
+
+func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, string, error) {
+	type workload struct {
+		namespace     string
+		name          string
+		labelSelector map[string]string
+	}
+
+	workloads := []workload{
+		{
+			namespace:     o.namespace,
+			name:          "prometheus-k8s",
+			labelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
+		},
+		// TODO: verify correct spreading of Alertmanager pods once we deploy
+		// only 2 replicas (instead of 3). With 3 replicas, 2 instances would
+		// end up on the same node for clusters with only 2 worker/infra nodes
+		// (which is a supported configuration).
+		// See https://bugzilla.redhat.com/show_bug.cgi?id=1949262
+		//	{
+		//		namespace:     o.namespace,
+		//		name:          "alertmanager-main",
+		//		labelSelector: map[string]string{"app.kubernetes.io/name": "alertmanager"},
+		//	},
+	}
+
+	if o.userWorkloadEnabled {
+		workloads = append(workloads,
+			workload{
+				namespace:     o.namespaceUserWorkload,
+				name:          "prometheus-user-workload",
+				labelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
+			},
+			workload{
+				namespace:     o.namespaceUserWorkload,
+				name:          "thanos-ruler-user-workload",
+				labelSelector: map[string]string{"app.kubernetes.io/name": "thanos-ruler"},
+			},
+		)
+	}
+
+	var messages []string
+	for _, workload := range workloads {
+		correctlySpread, err := o.workloadCorrectlySpread(ctx, workload.namespace, workload.labelSelector)
+		if err != nil {
+			return false, "", "", err
+		}
+
+		if correctlySpread {
+			continue
+		}
+
+		messages = append(
+			messages,
+			fmt.Sprintf("Highly-available workload %s/%s is incorrectly spread across multiple nodes", workload.namespace, workload.name),
+		)
+	}
+
+	if len(messages) > 0 {
+		messages = append(messages, "Manual intervention is needed to upgrade to the next minor version. Please refer to the following documentation to fix this issue: https://github.com/openshift/runbooks/blob/master/alerts/HighlyAvailableWorkloadIncorrectlySpread.md.")
+		return false, client.WorkloadIncorrectlySpreadReason, strings.Join(messages, "\n"), nil
+	}
+
+	return true, "", "", nil
 }
