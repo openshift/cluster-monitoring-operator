@@ -23,7 +23,7 @@ about: Create release checklist
 
 - [ ] cut new release in [kubernetes-monitoring/kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin)
 - [ ] cut new release in [thanos-io/kube-thanos](https://github.com/thanos-io/kube-thanos)
-- [ ] cut new release in [coreos/kube-prometheus](https://github.com/coreos/kube-prometheus)
+- [ ] cut new release in [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus)
   - update dependencies before doing release
 
 ## Cluster Monitoring Operator
