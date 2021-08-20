@@ -255,71 +255,19 @@ local removeRunbookUrl(rule) = rule {
 local patchOrExcludeRule(rule, ruleSet, operation) =
   if std.length(ruleSet) == 0 then
     [rule]
-  else if ('alert' in rule) then
-    // empty alert name is matching-all
-    local matchedRules = std.filter(function(ruleItem) ('alert' in ruleItem) && ((ruleItem.alert == rule.alert) || (ruleItem.alert == '')), ruleSet);
-    local matchedRulesSeverity = std.filter(function(ruleItem) if ('labels' in ruleItem) && ('severity' in ruleItem.labels) then ruleItem.labels.severity == rule.labels.severity else false, matchedRules);
-
-    if std.length(matchedRules) > 1 && std.length(matchedRulesSeverity) >= 1 then
-      local targetRule = matchedRulesSeverity[0];
-      if operation == 'patch' then
-        local patch = {
-          [k]: targetRule[k]
-          for k in std.objectFields(targetRule)
-          if k != 'alert' && k != 'record'
-        };
-        [std.mergePatch(rule, patch)]
-      else if operation == 'exclude' then
-        []
-      else
-        assert false : 'operation not support ' + operation;
-        []
-
-    else if std.length(matchedRules) > 1 && std.length(matchedRulesSeverity) == 0 then
-      assert false : 'Duplicated patch rules without matching severity for rule: ' + std.toString(rule);
-      []
-    else if std.length(matchedRules) == 1 && std.length(matchedRulesSeverity) <= 1 then
-      local targetRule = matchedRules[0];
-      if operation == 'patch' then
-        local patch = {
-          [k]: targetRule[k]
-          for k in std.objectFields(targetRule)
-          if k != 'alert' && k != 'record'
-        };
-        [std.mergePatch(rule, patch)]
-      else if operation == 'exclude' then
-        []
-      else
-        assert false : 'operation not support ' + operation;
-        []
-
+  else if (('alert' in rule && 'alert' in ruleSet[0]) && std.startsWith(rule.alert, ruleSet[0].alert)) ||
+          (('record' in rule && 'record' in ruleSet[0]) && std.startsWith(rule.record, ruleSet[0].record)) then
+    if operation == 'patch' then
+      local patch = {
+        [k]: ruleSet[0][k]
+        for k in std.objectFields(ruleSet[0])
+        if k != 'alert' && k != 'record'
+      };
+      [std.mergePatch(rule, patch)]
     else
-      [rule]
-  else if ('record' in rule) then
-    // empty record name is matching-all
-    local matchedRules = std.filter(function(ruleItem) ('record' in ruleItem) && ((ruleItem.record == rule.record) || (ruleItem.record == '')), ruleSet);
-
-    if std.length(matchedRules) == 1 then
-      local targetRule = matchedRules[0];
-      if operation == 'patch' then
-        local patch = {
-          [k]: targetRule[k]
-          for k in std.objectFields(targetRule)
-          if k != 'alert' && k != 'record'
-        };
-        [std.mergePatch(rule, patch)]
-      else
-        []
-    else if std.length(matchedRules) > 1 then
-      assert false : 'Duplicated patch for record rules: ' + std.toString(rule) + ' matching patches: ' + std.toString(matchedRules);
       []
-    else
-      [rule]
-
   else
-    // neither alert nor record rule, leave it as is
-    [rule];
-
+    [] + patchOrExcludeRule(rule, ruleSet[1:], operation);
 
 local patchOrExcludeRuleGroup(group, groupSet, operation) =
   if std.length(groupSet) == 0 then
