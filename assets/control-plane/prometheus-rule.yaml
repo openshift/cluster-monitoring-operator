@@ -339,7 +339,7 @@ spec:
         ) < 0.03
         and
         kubelet_volume_stats_used_bytes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"} > 0
-      for: 5m
+      for: 1m
       labels:
         severity: critical
     - alert: KubePersistentVolumeFillingUp
