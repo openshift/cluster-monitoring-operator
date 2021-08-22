@@ -20,6 +20,28 @@ import (
 	"github.com/Jeffail/gabs"
 )
 
+func getActiveTarget(body []byte, jobName string) error {
+	j, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		return err
+	}
+
+	activeJobs, err := j.Path("data.activeTargets").Children()
+	if err != nil {
+		return err
+	}
+
+	for _, job := range activeJobs {
+		name := job.S("discoveredLabels").S("job").Data().(string)
+
+		if name == jobName {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("job name '%s' not found in active targets", jobName)
+}
+
 func getThanosRules(body []byte, expGroupName, expRuleName string) error {
 	j, err := gabs.ParseJSON([]byte(body))
 	if err != nil {
