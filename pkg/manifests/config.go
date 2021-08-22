@@ -95,6 +95,7 @@ type PrometheusK8sConfig struct {
 	ExternalLabels      map[string]string                    `json:"externalLabels"`
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
 	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
+	RemoteRead          []monv1.RemoteReadSpec               `json:"remoteRead"`
 	TelemetryMatches    []string                             `json:"-"`
 }
 
