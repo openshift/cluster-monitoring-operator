@@ -93,7 +93,7 @@ func Main() int {
 	apiserver := flagset.String("apiserver", "", "The address of the apiserver to talk to.")
 	releaseVersion := flagset.String("release-version", "", "Currently targeted release version to be reconciled against.")
 	telemetryConfigFile := flagset.String("telemetry-config", "/etc/cluster-monitoring-operator/telemetry/metrics.yaml", "Path to telemetry-config.")
-	remoteWrite := flagset.Bool("enabled-remote-write", false, "Wether to use legacy telemetry write protocol or Prometheus remote write.")
+	remoteWrite := flagset.Bool("enabled-remote-write", false, "Whether to use legacy telemetry write protocol or Prometheus remote write.")
 	assetsPath := flagset.String("assets", "/assets", "The path to the assets directory.")
 	images := images{}
 	flag.Var(&images, "images", "Images to use for containers managed by the cluster-monitoring-operator.")
