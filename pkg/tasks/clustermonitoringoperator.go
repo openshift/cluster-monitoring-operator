@@ -38,7 +38,7 @@ func NewClusterMonitoringOperatorTask(
 	return &ClusterMonitoringOperatorTask{
 		client:  client,
 		factory: factory,
-		config: config,
+		config:  config,
 	}
 }
 

@@ -16,8 +16,6 @@ package manifests
 
 import (
 	"crypto/md5"
-	// #nosec
-	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -43,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -1008,7 +1007,10 @@ func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, erro
 		return nil, err
 	}
 
-	f.generateHtpasswdSecret(s, password)
+	err = f.generateHtpasswdSecret(s, password)
+	if err != nil {
+		return nil, err
+	}
 	return s, nil
 }
 
@@ -1018,7 +1020,10 @@ func (f *Factory) ThanosQuerierHtpasswdSecret(password string) (*v1.Secret, erro
 		return nil, err
 	}
 
-	f.generateHtpasswdSecret(s, password)
+	err = f.generateHtpasswdSecret(s, password)
+	if err != nil {
+		return nil, err
+	}
 	return s, nil
 }
 
@@ -1028,18 +1033,22 @@ func (f *Factory) ThanosRulerHtpasswdSecret(password string) (*v1.Secret, error)
 		return nil, err
 	}
 
-	f.generateHtpasswdSecret(s, password)
+	err = f.generateHtpasswdSecret(s, password)
+	if err != nil {
+		return nil, err
+	}
 	s.Namespace = f.namespaceUserWorkload
 	return s, nil
 }
 
-func (f *Factory) generateHtpasswdSecret(s *v1.Secret, password string) {
-	// #nosec
-	// TODO: Replace this with a safer algorithm
-	h := sha1.New()
-	h.Write([]byte(password))
-	s.Data["auth"] = []byte("internal:{SHA}" + base64.StdEncoding.EncodeToString(h.Sum(nil)))
+func (f *Factory) generateHtpasswdSecret(s *v1.Secret, password string) error {
+	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	s.Data["auth"] = []byte("internal:" + string(encryptedPassword))
 	s.Namespace = f.namespace
+	return nil
 }
 
 func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {
