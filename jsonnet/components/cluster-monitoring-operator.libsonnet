@@ -158,21 +158,6 @@ function(params) {
         verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
       },
       {
-        apiGroups: [''],
-        resources: ['services', 'serviceaccounts', 'configmaps'],
-        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
-      },
-      {
-        apiGroups: ['apps'],
-        resources: ['deployments', 'daemonsets'],
-        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
-      },
-      {
-        apiGroups: ['route.openshift.io'],
-        resources: ['routes'],
-        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
-      },
-      {
         apiGroups: ['security.openshift.io'],
         resources: ['securitycontextconstraints'],
         verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
@@ -203,11 +188,6 @@ function(params) {
         verbs: ['get', 'update', 'create'],
       },
       {
-        apiGroups: ['policy'],
-        resources: ['poddisruptionbudgets'],
-        verbs: ['create', 'get', 'update', 'delete'],
-      },
-      {
         apiGroups: ['certificates.k8s.io'],
         resources: ['certificatesigningrequests'],
         verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
@@ -216,6 +196,41 @@ function(params) {
         apiGroups: ['certificates.k8s.io'],
         resources: ['certificatesigningrequests/approval', 'certificatesigningrequests/status'],
         verbs: ['get', 'list', 'watch'],
+      },
+    ],
+  },
+
+  namespacedClusterRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'ClusterRole',
+    metadata: {
+      name: 'cluster-monitoring-operator-namespaced',
+      annotations: {
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
+      },
+    },
+    rules: [
+      {
+        apiGroups: [''],
+        resources: ['services', 'serviceaccounts', 'configmaps'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['apps'],
+        resources: ['deployments', 'daemonsets'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['route.openshift.io'],
+        resources: ['routes'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
+      {
+        apiGroups: ['policy'],
+        resources: ['poddisruptionbudgets'],
+        verbs: ['create', 'get', 'update', 'delete'],
       },
       {
         apiGroups: [''],
