@@ -25,7 +25,7 @@ spec:
         max_over_time(prometheus_config_last_reload_successful{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) == 0
       for: 10m
       labels:
-        severity: critical
+        severity: warning
     - alert: PrometheusNotificationQueueRunningFull
       annotations:
         description: Alert notification queue of Prometheus {{$labels.namespace}}/{{$labels.pod}}
@@ -151,7 +151,7 @@ spec:
         > 1
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: PrometheusRemoteWriteBehind
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} remote write
@@ -169,7 +169,7 @@ spec:
         > 120
       for: 15m
       labels:
-        severity: critical
+        severity: info
     - alert: PrometheusRemoteWriteDesiredShards
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} remote write
@@ -199,7 +199,7 @@ spec:
         increase(prometheus_rule_evaluation_failures_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) > 0
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: PrometheusMissingRuleEvaluations
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} has missed {{
@@ -222,22 +222,6 @@ spec:
       for: 15m
       labels:
         severity: warning
-    - alert: PrometheusErrorSendingAlertsToAnyAlertmanager
-      annotations:
-        description: '{{ printf "%.1f" $value }}% minimum errors while sending alerts
-          from Prometheus {{$labels.namespace}}/{{$labels.pod}} to any Alertmanager.'
-        summary: Prometheus encounters more than 3% errors sending alerts to any Alertmanager.
-      expr: |
-        min without (alertmanager) (
-          rate(prometheus_notifications_errors_total{job=~"prometheus-k8s|prometheus-user-workload",alertmanager!~``}[5m])
-        /
-          rate(prometheus_notifications_sent_total{job=~"prometheus-k8s|prometheus-user-workload",alertmanager!~``}[5m])
-        )
-        * 100
-        > 3
-      for: 15m
-      labels:
-        severity: critical
   - name: thanos-sidecar
     rules:
     - alert: ThanosSidecarPrometheusDown

@@ -27,7 +27,7 @@ spec:
         > 0.01
       for: 15m
       labels:
-        severity: critical
+        severity: warning
     - alert: KubeStateMetricsWatchErrors
       annotations:
         description: kube-state-metrics is experiencing errors at an elevated rate
@@ -41,4 +41,4 @@ spec:
         > 0.01
       for: 15m
       labels:
-        severity: critical
+        severity: warning
