@@ -1814,7 +1814,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info, cluster)",
+                      "query": "label_values(up{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 0,
@@ -3008,6 +3008,131 @@ items:
                                   "show": true
                               }
                           ]
+                      },
+                      {
+                          "aliasColors": {
+
+                          },
+                          "bars": false,
+                          "dashLength": 10,
+                          "dashes": false,
+                          "datasource": "$datasource",
+                          "decimals": 0,
+                          "editable": true,
+                          "error": false,
+                          "fieldConfig": {
+                              "defaults": {
+                                  "custom": {
+
+                                  }
+                              },
+                              "overrides": [
+
+                              ]
+                          },
+                          "fill": 0,
+                          "fillGradient": 0,
+                          "gridPos": {
+                              "h": 7,
+                              "w": 12,
+                              "x": 0,
+                              "y": 28
+                          },
+                          "hiddenSeries": false,
+                          "id": 42,
+                          "isNew": true,
+                          "legend": {
+                              "alignAsTable": false,
+                              "avg": false,
+                              "current": false,
+                              "max": false,
+                              "min": false,
+                              "rightSide": false,
+                              "show": false,
+                              "total": false,
+                              "values": false
+                          },
+                          "lines": true,
+                          "linewidth": 2,
+                          "links": [
+
+                          ],
+                          "nullPointMode": "connected",
+                          "options": {
+                              "alertThreshold": true
+                          },
+                          "percentage": false,
+                          "pluginVersion": "7.4.3",
+                          "pointradius": 5,
+                          "points": false,
+                          "renderer": "flot",
+                          "seriesOverrides": [
+
+                          ],
+                          "spaceLength": 10,
+                          "stack": false,
+                          "steppedLine": false,
+                          "targets": [
+                              {
+                                  "expr": "histogram_quantile(0.99, sum by (instance, le) (rate(etcd_network_peer_round_trip_time_seconds_bucket{job=\"$cluster\"}[5m])))",
+                                  "interval": "",
+                                  "intervalFactor": 2,
+                                  "legendFormat": "{{instance}} Peer round trip time",
+                                  "metric": "etcd_network_peer_round_trip_time_seconds_bucket",
+                                  "refId": "A",
+                                  "step": 2
+                              }
+                          ],
+                          "thresholds": [
+
+                          ],
+                          "timeFrom": null,
+                          "timeRegions": [
+
+                          ],
+                          "timeShift": null,
+                          "title": "Peer round trip time",
+                          "tooltip": {
+                              "msResolution": false,
+                              "shared": true,
+                              "sort": 0,
+                              "value_type": "individual"
+                          },
+                          "type": "graph",
+                          "xaxis": {
+                              "buckets": null,
+                              "mode": "time",
+                              "name": null,
+                              "show": true,
+                              "values": [
+
+                              ]
+                          },
+                          "yaxes": [
+                              {
+                                  "$$hashKey": "object:925",
+                                  "decimals": null,
+                                  "format": "s",
+                                  "label": null,
+                                  "logBase": 1,
+                                  "max": null,
+                                  "min": null,
+                                  "show": true
+                              },
+                              {
+                                  "$$hashKey": "object:926",
+                                  "format": "short",
+                                  "label": null,
+                                  "logBase": 1,
+                                  "max": null,
+                                  "min": null,
+                                  "show": true
+                              }
+                          ],
+                          "yaxis": {
+                              "align": false,
+                              "alignLevel": null
+                          }
                       }
                   ],
                   "title": "New row"
@@ -6070,7 +6195,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(node_cpu_seconds_total, cluster)",
+                      "query": "label_values(up{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -17666,7 +17791,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info, cluster)",
+                      "query": "label_values(up{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 0,
@@ -20993,7 +21118,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info, cluster)",
+                      "query": "label_values(up{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 0,
