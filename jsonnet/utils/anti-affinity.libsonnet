@@ -3,7 +3,7 @@ local addon = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kub
 addon {
   values+:: {
     prometheus+: {
-      podAntiAffinity: 'soft',
+      podAntiAffinity: 'hard',
     },
     prometheusAdapter+: {
       podAntiAffinity: 'hard',

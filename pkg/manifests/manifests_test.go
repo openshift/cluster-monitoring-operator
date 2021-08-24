@@ -2348,6 +2348,20 @@ func TestPodDisruptionBudget(t *testing.T) {
 		ha     bool
 	}{
 		{
+			name: "PrometheusK8s HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.PrometheusK8sPodDisruptionBudget()
+			},
+			ha: true,
+		},
+		{
+			name: "PrometheusK8s non-HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.PrometheusK8sPodDisruptionBudget()
+			},
+			ha: false,
+		},
+		{
 			name: "PrometheusAdapter HA",
 			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.PrometheusAdapterPodDisruptionBudget()
@@ -2372,6 +2386,34 @@ func TestPodDisruptionBudget(t *testing.T) {
 			name: "ThanosQuerier non-HA",
 			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.ThanosQuerierPodDisruptionBudget()
+			},
+			ha: false,
+		},
+		{
+			name: "PrometheusUWM HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.PrometheusUserWorkloadPodDisruptionBudget()
+			},
+			ha: true,
+		},
+		{
+			name: "PrometheusUWM non-HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.PrometheusUserWorkloadPodDisruptionBudget()
+			},
+			ha: false,
+		},
+		{
+			name: "ThanosRuler HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.ThanosRulerPodDisruptionBudget()
+			},
+			ha: true,
+		},
+		{
+			name: "ThanosRuler non-HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.ThanosRulerPodDisruptionBudget()
 			},
 			ha: false,
 		},

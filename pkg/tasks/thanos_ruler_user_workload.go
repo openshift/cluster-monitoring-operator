@@ -208,6 +208,18 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		}
 		queryURL, err := t.client.GetRouteURL(ctx, querierRoute)
 
+		pdb, err := t.factory.ThanosRulerPodDisruptionBudget()
+		if err != nil {
+			return errors.Wrap(err, "initializing Thanos Ruler PodDisruptionBudget object failed")
+		}
+
+		if pdb != nil {
+			err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Thanos Ruler PodDisruptionBudget object failed")
+			}
+		}
+
 		tr, err := t.factory.ThanosRulerCustomResource(queryURL.String(), trustedCA, grpcSecret, acs)
 		if err != nil {
 			return errors.Wrap(err, "initializing ThanosRuler object failed")
@@ -384,6 +396,18 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler Alertmanager config Secret failed")
+	}
+
+	pdb, err := t.factory.ThanosRulerPodDisruptionBudget()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler PodDisruptionBudget object failed")
+	}
+
+	if pdb != nil {
+		err = t.client.DeletePodDisruptionBudget(ctx, pdb)
+		if err != nil {
+			return errors.Wrap(err, "deleting Thanos Ruler PodDisruptionBudget object failed")
+		}
 	}
 
 	tr, err := t.factory.ThanosRulerCustomResource("", trustedCA, grpcSecret, acs)

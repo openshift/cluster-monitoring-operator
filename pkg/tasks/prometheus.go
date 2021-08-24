@@ -310,6 +310,20 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 	}
 
 	{
+		pdb, err := t.factory.PrometheusK8sPodDisruptionBudget()
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus PodDisruptionBudget object failed")
+		}
+
+		if pdb != nil {
+			err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
+			if err != nil {
+				return errors.Wrap(err, "reconciling Prometheus PodDisruptionBudget object failed")
+			}
+		}
+	}
+
+	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.PrometheusK8sTrustedCABundle()
 		if err != nil {

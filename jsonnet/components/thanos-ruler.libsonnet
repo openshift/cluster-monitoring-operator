@@ -315,6 +315,17 @@ function(params) {
       },
     },
     spec: {
+      affinity: {
+        podAntiAffinity: {
+          requiredDuringSchedulingIgnoredDuringExecution: [{
+            labelSelector: {
+              matchLabels: cfg.selectorLabels,
+            },
+            namespaces: [cfg.namespace],
+            topologyKey: 'kubernetes.io/hostname',
+          }],
+        },
+      },
       securityContext: {
         fsGroup: 65534,
         runAsNonRoot: true,
@@ -456,6 +467,24 @@ function(params) {
           },
         },
       ],
+    },
+  },
+
+  podDisruptionBudget: {
+    apiVersion: 'policy/v1',
+    kind: 'PodDisruptionBudget',
+    metadata: {
+      name: 'thanos-ruler-' + cfg.name,
+      namespace: cfg.namespace,
+      labels: {
+        thanosRulerName: cfg.name,
+      },
+    },
+    spec: {
+      minAvailable: 1,
+      selector: {
+        matchLabels: cfg.selectorLabels,
+      },
     },
   },
 
