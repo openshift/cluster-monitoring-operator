@@ -29,7 +29,6 @@ import (
 	monitoringv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
 	"github.com/prometheus/alertmanager/config"
-	commoncfg "github.com/prometheus/common/config"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -306,7 +305,7 @@ func (cg *configGenerator) convertWebhookConfig(ctx context.Context, in monitori
 		if err != nil {
 			return nil, errors.Errorf("failed to get key %q from secret %q", in.URLSecret.Key, in.URLSecret.Name)
 		}
-		out.URL = url
+		out.URL = strings.TrimSpace(url)
 	} else if in.URL != nil {
 		out.URL = *in.URL
 	}
@@ -353,7 +352,7 @@ func (cg *configGenerator) convertSlackConfig(ctx context.Context, in monitoring
 		if err != nil {
 			return nil, errors.Errorf("failed to get key %q from secret %q", in.APIURL.Key, in.APIURL.Name)
 		}
-		out.APIURL = url
+		out.APIURL = strings.TrimSpace(url)
 	}
 
 	var actions []slackAction
@@ -826,8 +825,8 @@ func (cg *configGenerator) convertHTTPConfig(ctx context.Context, in monitoringv
 	return out, nil
 }
 
-func (cg *configGenerator) convertTLSConfig(ctx context.Context, in *monitoringv1.SafeTLSConfig, crKey types.NamespacedName) commoncfg.TLSConfig {
-	out := commoncfg.TLSConfig{
+func (cg *configGenerator) convertTLSConfig(ctx context.Context, in *monitoringv1.SafeTLSConfig, crKey types.NamespacedName) tlsConfig {
+	out := tlsConfig{
 		ServerName:         in.ServerName,
 		InsecureSkipVerify: in.InsecureSkipVerify,
 	}

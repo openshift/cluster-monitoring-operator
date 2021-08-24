@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/opentracing/opentracing-go"
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/logger"
@@ -81,7 +82,7 @@ type TLSClientOptions struct {
 	ServerName string
 
 	// InsecureSkipVerify controls whether the certificate chain and hostname presented
-	// by the server are validated. If false, any certificate is accepted.
+	// by the server are validated. If true, any certificate is accepted.
 	InsecureSkipVerify bool
 
 	// VerifyPeerCertificate, if not nil, is called after normal
@@ -292,6 +293,14 @@ func NewWithClient(host, basePath string, schemes []string, client *http.Client)
 	return rt
 }
 
+// WithOpenTracing adds opentracing support to the provided runtime.
+// A new client span is created for each request.
+// If the context of the client operation does not contain an active span, no span is created.
+// The provided opts are applied to each spans - for example to add global tags.
+func (r *Runtime) WithOpenTracing(opts ...opentracing.StartSpanOption) runtime.ClientTransport {
+	return newOpenTracingTransport(r, r.Host, opts)
+}
+
 func (r *Runtime) pickScheme(schemes []string) string {
 	if v := r.selectScheme(r.schemes); v != "" {
 		return v
@@ -441,17 +450,21 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 	}
 	defer res.Body.Close()
 
+	ct := res.Header.Get(runtime.HeaderContentType)
+	if ct == "" { // this should really really never occur
+		ct = r.DefaultMediaType
+	}
+
 	if r.Debug {
-		b, err2 := httputil.DumpResponse(res, true)
+		printBody := true
+		if ct == runtime.DefaultMime {
+			printBody = false // Spare the terminal from a binary blob.
+		}
+		b, err2 := httputil.DumpResponse(res, printBody)
 		if err2 != nil {
 			return nil, err2
 		}
 		r.logger.Debugf("%s\n", string(b))
-	}
-
-	ct := res.Header.Get(runtime.HeaderContentType)
-	if ct == "" { // this should really really never occur
-		ct = r.DefaultMediaType
 	}
 
 	mt, _, err := mime.ParseMediaType(ct)
