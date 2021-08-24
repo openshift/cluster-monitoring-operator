@@ -988,7 +988,8 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 		}
 
 		var nodeReadyCount int32
-		nodeList, err := c.kclient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		nodeList, err := c.kclient.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+			LabelSelector: fields.SelectorFromSet(ds.Spec.Template.Spec.NodeSelector).String()})
 		for _, node := range nodeList.Items {
 			for _, condition := range node.Status.Conditions {
 				if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
