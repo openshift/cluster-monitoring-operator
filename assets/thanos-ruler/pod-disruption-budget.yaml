@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    thanosRulerName: user-workload
+  name: thanos-ruler-user-workload
+  namespace: openshift-user-workload-monitoring
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-ruler
+      thanos-ruler: user-workload

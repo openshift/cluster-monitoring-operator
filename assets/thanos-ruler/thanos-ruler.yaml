@@ -6,6 +6,16 @@ metadata:
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: thanos-ruler
+            thanos-ruler: user-workload
+        namespaces:
+        - openshift-user-workload-monitoring
+        topologyKey: kubernetes.io/hostname
   alertmanagersConfig:
     key: alertmanagers.yaml
     name: thanos-ruler-alertmanagers-config
