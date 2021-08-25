@@ -250,6 +250,32 @@ data:
     - '{__name__="cluster:vsphere_node_hw_version_total:sum"}'
     # (@openshift/team-build-api, OpenShift Build API Team) openshift:build_by_strategy:sum measures total number of builds on a cluster, aggregated by build strategy.
     - '{__name__="openshift:build_by_strategy:sum"}'
+    #
+    # owners: (@openshift/team-etcd)
+    #
+    # 99th percentile of etcd WAL fsync duration.
+    - '{__name__="instance:etcd_disk_wal_fsync_duration_seconds:histogram_quantile",quantile="0.99"}'
+    #
+    # owners: (@openshift/team-etcd)
+    #
+    # Sum by instance of total db size. Used for understanding and improving defrag controller.
+    - '{__name__="instance:etcd_mvcc_db_total_size_in_bytes:sum"}'
+    #
+    # owners: (@openshift/team-etcd)
+    #
+    # 99th percentile of peer to peer latency.
+    - '{__name__="instance:etcd_network_peer_round_trip_time_seconds:histogram_quantile",quantile="0.99"}'
+    #
+    # owners: (@openshift/team-etcd)
+    #
+    # Sum by instance of total db size in use.
+    - '{__name__="instance:etcd_mvcc_db_total_size_in_use_in_bytes:sum"}'
+    #
+    # owners: (@openshift/team-etcd)
+    #
+    # 99th percentile of the backend commit duration.
+    - '{__name__="instance:etcd_disk_backend_commit_duration_seconds:histogram_quantile",quantile="0.99"}'
+    #
 kind: ConfigMap
 metadata:
   name: telemetry-config
