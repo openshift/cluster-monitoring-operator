@@ -8,6 +8,9 @@ function(params)
       targetGroups: {},
       query+:: {
         selector: 'job="thanos-querier"',
+        // All OpenShift alerts should include a namespace label.
+        // See: https://issues.redhat.com/browse/MON-939
+        dimensions: 'job, namespace',
       },
     },
 

@@ -243,6 +243,7 @@ spec:
         ((count(kube_node_status_allocatable{resource="cpu"}) > 1) - 1) / count(kube_node_status_allocatable{resource="cpu"})
       for: 5m
       labels:
+        namespace: kube-system
         severity: warning
     - alert: KubeMemoryOvercommit
       annotations:
@@ -259,6 +260,7 @@ spec:
         count(kube_node_status_allocatable{resource="memory"})
       for: 5m
       labels:
+        namespace: kube-system
         severity: warning
     - alert: KubeCPUQuotaOvercommit
       annotations:
@@ -524,6 +526,7 @@ spec:
         absent(up{job="kubelet", metrics_path="/metrics"} == 1)
       for: 15m
       labels:
+        namespace: kube-system
         severity: critical
   - name: kube-apiserver-histogram.rules
     rules:

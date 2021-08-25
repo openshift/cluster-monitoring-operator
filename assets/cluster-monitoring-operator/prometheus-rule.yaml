@@ -301,6 +301,7 @@ spec:
       expr: cluster:alertmanager_integrations:max == 0
       for: 10m
       labels:
+        namespace: openshift-monitoring
         severity: warning
     - alert: KubeDeploymentReplicasMismatch
       annotations:
@@ -338,6 +339,7 @@ spec:
         == 1) > 5
       for: 15m
       labels:
+        namespace: kube-system
         severity: info
     - expr: avg_over_time((((count((max by (node) (up{job="kubelet",metrics_path="/metrics"}
         == 1) and max by (node) (kube_node_status_condition{condition="Ready",status="true"}
@@ -459,6 +461,7 @@ spec:
           is working properly.
       expr: vector(1)
       labels:
+        namespace: openshift-monitoring
         severity: none
   - name: node-network
     rules:

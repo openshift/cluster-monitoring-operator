@@ -113,6 +113,19 @@ local patchedRules = [
     ],
   },
   {
+    name: 'general.rules',
+    rules: [
+      {
+        alert: 'Watchdog',
+        labels: {
+          // All OpenShift alerts should include a namespace label.
+          // See: https://issues.redhat.com/browse/MON-939
+          namespace: 'openshift-monitoring',
+        },
+      },
+    ],
+  },
+  {
     name: 'kubernetes-apps',
     rules: [
       // Stop-gap fix for https://bugzilla.redhat.com/show_bug.cgi?id=1943667
@@ -122,6 +135,43 @@ local patchedRules = [
           description: 'DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has not finished or progressed for at least 30 minutes.',
         },
         'for': '30m',
+      },
+    ],
+  },
+  {
+    name: 'kubernetes-resources',
+    rules: [
+      // The expression for these alerts are cross-namespace, but all OpenShift
+      // alerts should include a namespace label for routing purposes, so we set
+      // one statically here.
+      //
+      // See: https://issues.redhat.com/browse/MON-939
+      {
+        alert: 'KubeCPUOvercommit',
+        labels: {
+          namespace: 'kube-system',
+        },
+      },
+      {
+        alert: 'KubeMemoryOvercommit',
+        labels: {
+          namespace: 'kube-system',
+        },
+      },
+    ],
+  },
+  {
+    name: 'kubernetes-system-kubelet',
+    rules: [
+      // Similar to above, the expression for this alert uses 'absent()' and
+      // doesn't include a namespace label, so we set one statically.
+      //
+      // See: https://issues.redhat.com/browse/MON-939
+      {
+        alert: 'KubeletDown',
+        labels: {
+          namespace: 'kube-system',
+        },
       },
     ],
   },

@@ -383,6 +383,9 @@ function(params) {
           },
           labels: {
             severity: 'warning',
+            // All OpenShift alerts should have a namespace label.
+            // See: https://issues.redhat.com/browse/MON-939
+            namespace: 'openshift-monitoring',
           },
         },
         {
@@ -417,6 +420,9 @@ function(params) {
           },
           labels: {
             severity: 'info',
+            // All OpenShift alerts should have a namespace label.
+            // See: https://issues.redhat.com/browse/MON-939
+            namespace: 'kube-system',
           },
         },
         {
