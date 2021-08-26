@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.28.1
+    app.kubernetes.io/version: 2.29.1
     prometheus: k8s
   name: k8s
   namespace: openshift-monitoring
@@ -85,7 +85,7 @@ spec:
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --logtostderr=true
     - --v=10
-    image: quay.io/brancz/kube-rbac-proxy:v0.9.0
+    image: quay.io/brancz/kube-rbac-proxy:v0.11.0
     name: kube-rbac-proxy
     ports:
     - containerPort: 9092
@@ -124,7 +124,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    image: quay.io/brancz/kube-rbac-proxy:v0.9.0
+    image: quay.io/brancz/kube-rbac-proxy:v0.11.0
     name: kube-rbac-proxy-thanos
     ports:
     - containerPort: 10902
@@ -162,7 +162,7 @@ spec:
         memory: 10Mi
   enableFeatures: []
   externalLabels: {}
-  image: quay.io/prometheus/prometheus:v2.28.1
+  image: quay.io/prometheus/prometheus:v2.29.1
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -173,7 +173,7 @@ spec:
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.28.1
+      app.kubernetes.io/version: 2.29.1
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
@@ -215,4 +215,4 @@ spec:
         cpu: 1m
         memory: 100Mi
     version: 0.22.0
-  version: 2.28.1
+  version: 2.29.1

@@ -43,12 +43,14 @@ var (
 	invalidLabelCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 )
 
-type configGenerator struct {
+// ConfigGenerator is used to create Prometheus configurations from operator resources.
+type ConfigGenerator struct {
 	logger log.Logger
 }
 
-func newConfigGenerator(logger log.Logger) *configGenerator {
-	cg := &configGenerator{
+// NewConfigGenerator creates a ConfigGenerator instance using the provided Logger.
+func NewConfigGenerator(logger log.Logger) *ConfigGenerator {
+	cg := &ConfigGenerator{
 		logger: logger,
 	}
 	return cg
@@ -153,7 +155,8 @@ func buildExternalLabels(p *v1.Prometheus) yaml.MapSlice {
 	return stringMapToMapSlice(m)
 }
 
-func (cg *configGenerator) generateConfig(
+// GenerateConfig creates a serialized YAML representation of a Prometheus configuration using the provided resources.
+func (cg *ConfigGenerator) GenerateConfig(
 	p *v1.Prometheus,
 	sMons map[string]*v1.ServiceMonitor,
 	pMons map[string]*v1.PodMonitor,
@@ -428,7 +431,7 @@ func initRelabelings() []yaml.MapSlice {
 	}
 }
 
-func (cg *configGenerator) generatePodMonitorConfig(
+func (cg *ConfigGenerator) generatePodMonitorConfig(
 	version semver.Version,
 	m *v1.PodMonitor,
 	ep v1.PodMetricsEndpoint,
@@ -669,7 +672,7 @@ func (cg *configGenerator) generatePodMonitorConfig(
 	return cfg
 }
 
-func (cg *configGenerator) generateProbeConfig(
+func (cg *ConfigGenerator) generateProbeConfig(
 	version semver.Version,
 	m *v1.Probe,
 	apiserverConfig *v1.APIServerConfig,
@@ -706,10 +709,15 @@ func (cg *configGenerator) generateProbeConfig(
 	if m.Spec.ProberSpec.Scheme != "" {
 		cfg = append(cfg, yaml.MapItem{Key: "scheme", Value: m.Spec.ProberSpec.Scheme})
 	}
+	if m.Spec.ProberSpec.ProxyURL != "" {
+		cfg = append(cfg, yaml.MapItem{Key: "proxy_url", Value: m.Spec.ProberSpec.ProxyURL})
+	}
 
-	cfg = append(cfg, yaml.MapItem{Key: "params", Value: yaml.MapSlice{
-		{Key: "module", Value: []string{m.Spec.Module}},
-	}})
+	if m.Spec.Module != "" {
+		cfg = append(cfg, yaml.MapItem{Key: "params", Value: yaml.MapSlice{
+			{Key: "module", Value: []string{m.Spec.Module}},
+		}})
+	}
 
 	relabelings := initRelabelings()
 
@@ -892,7 +900,7 @@ func (cg *configGenerator) generateProbeConfig(
 	return cfg
 }
 
-func (cg *configGenerator) generateServiceMonitorConfig(
+func (cg *ConfigGenerator) generateServiceMonitorConfig(
 	version semver.Version,
 	m *v1.ServiceMonitor,
 	ep v1.Endpoint,
@@ -1095,10 +1103,7 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 
 	// By default, generate a safe job name from the service name.  We also keep
 	// this around if a jobLabel is set in case the targets don't actually have a
-	// value for it. A single service may potentially have multiple metrics
-	// endpoints, therefore the endpoints labels is filled with the ports name or
-	// as a fallback the port number.
-
+	// value for it.
 	relabelings = append(relabelings, yaml.MapSlice{
 		{Key: "source_labels", Value: []string{"__meta_kubernetes_service_name"}},
 		{Key: "target_label", Value: "job"},
@@ -1113,6 +1118,9 @@ func (cg *configGenerator) generateServiceMonitorConfig(
 		})
 	}
 
+	// A single service may potentially have multiple metrics
+	//	endpoints, therefore the endpoints labels is filled with the ports name or
+	//	as a fallback the port number.
 	if ep.Port != "" {
 		relabelings = append(relabelings, yaml.MapSlice{
 			{Key: "target_label", Value: "endpoint"},
@@ -1241,7 +1249,7 @@ func getNamespacesFromNamespaceSelector(nsel *v1.NamespaceSelector, namespace st
 	return nsel.MatchNames
 }
 
-func (cg *configGenerator) generateK8SSDConfig(namespaces []string, apiserverConfig *v1.APIServerConfig, basicAuthSecrets map[string]assets.BasicAuthCredentials, role string) yaml.MapItem {
+func (cg *ConfigGenerator) generateK8SSDConfig(namespaces []string, apiserverConfig *v1.APIServerConfig, basicAuthSecrets map[string]assets.BasicAuthCredentials, role string) yaml.MapItem {
 	k8sSDConfig := yaml.MapSlice{
 		{
 			Key:   "role",
@@ -1298,7 +1306,7 @@ func (cg *configGenerator) generateK8SSDConfig(namespaces []string, apiserverCon
 	}
 }
 
-func (cg *configGenerator) generateAlertmanagerConfig(version semver.Version, am v1.AlertmanagerEndpoints, apiserverConfig *v1.APIServerConfig, basicAuthSecrets map[string]assets.BasicAuthCredentials) yaml.MapSlice {
+func (cg *ConfigGenerator) generateAlertmanagerConfig(version semver.Version, am v1.AlertmanagerEndpoints, apiserverConfig *v1.APIServerConfig, basicAuthSecrets map[string]assets.BasicAuthCredentials) yaml.MapSlice {
 	if am.Scheme == "" {
 		am.Scheme = "http"
 	}
@@ -1359,7 +1367,7 @@ func (cg *configGenerator) generateAlertmanagerConfig(version semver.Version, am
 	return cfg
 }
 
-func (cg *configGenerator) generateRemoteReadConfig(version semver.Version, p *v1.Prometheus, basicAuthSecrets map[string]assets.BasicAuthCredentials) yaml.MapItem {
+func (cg *ConfigGenerator) generateRemoteReadConfig(version semver.Version, p *v1.Prometheus, basicAuthSecrets map[string]assets.BasicAuthCredentials) yaml.MapItem {
 
 	cfgs := []yaml.MapSlice{}
 
@@ -1421,7 +1429,7 @@ func (cg *configGenerator) generateRemoteReadConfig(version semver.Version, p *v
 	}
 }
 
-func (cg *configGenerator) generateRemoteWriteConfig(version semver.Version, p *v1.Prometheus, basicAuthSecrets map[string]assets.BasicAuthCredentials) yaml.MapItem {
+func (cg *ConfigGenerator) generateRemoteWriteConfig(version semver.Version, p *v1.Prometheus, basicAuthSecrets map[string]assets.BasicAuthCredentials) yaml.MapItem {
 
 	cfgs := []yaml.MapSlice{}
 
@@ -1533,8 +1541,10 @@ func (cg *configGenerator) generateRemoteWriteConfig(version semver.Version, p *
 				queueConfig = append(queueConfig, yaml.MapItem{Key: "batch_send_deadline", Value: spec.QueueConfig.BatchSendDeadline})
 			}
 
-			if spec.QueueConfig.MaxRetries != int(0) {
-				queueConfig = append(queueConfig, yaml.MapItem{Key: "max_retries", Value: spec.QueueConfig.MaxRetries})
+			if version.LT(semver.MustParse("2.11.0")) {
+				if spec.QueueConfig.MaxRetries != int(0) {
+					queueConfig = append(queueConfig, yaml.MapItem{Key: "max_retries", Value: spec.QueueConfig.MaxRetries})
+				}
 			}
 
 			if spec.QueueConfig.MinBackoff != "" {

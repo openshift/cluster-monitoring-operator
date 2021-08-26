@@ -357,6 +357,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.PrometheusK8sThanosSidecarPrometheusRule()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.PrometheusK8sServiceAccount()
 	if err != nil {
 		t.Fatal(err)
@@ -1288,7 +1293,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		expected string
 	}{
 		{
-			name:   "no config with alertmanager disabled",
+			name: "no config with alertmanager disabled",
 			config: `alertmanagerMain:
   enabled: false`,
 			expected: `alertmanagers: []`,
@@ -1332,8 +1337,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		},
 		{
 			name: "basic config with alertmanager disabled",
-			config:
-`thanosRuler:
+			config: `thanosRuler:
   additionalAlertmanagerConfigs:
   - staticConfigs:
     - alertmanager1-remote.com
