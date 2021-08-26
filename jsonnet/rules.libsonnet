@@ -302,11 +302,14 @@ function(params) {
           record: 'cluster:kubelet_volume_stats_used_bytes:provisioner:sum',
         },
         {
-          expr: 'sum(etcd_object_counts) BY (instance)',
+          // This recording rule was based on the now deprecated
+          // etcd_object_counts metric which explains the name.
+          // TODO: rename the recording rule and add it to the telemetry allow-list.
+          expr: 'sum by (instance) (apiserver_storage_objects)',
           record: 'instance:etcd_object_counts:sum',
         },
         {
-          expr: 'topk(500, max(etcd_object_counts) by (resource))',
+          expr: 'topk(500, max by(resource) (apiserver_storage_objects))',
           record: 'cluster:usage:resources:sum',
         },
         {
