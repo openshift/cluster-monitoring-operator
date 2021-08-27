@@ -135,6 +135,37 @@ type PrometheusOperatorConfig struct {
 	Tolerations  []v1.Toleration   `json:"tolerations"`
 }
 
+// RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the
+// BearerToken field removed. In the future other fields might be added here.
+type RemoteWriteSpec struct {
+	// The URL of the endpoint to send samples to.
+	URL string `json:"url"`
+	// The name of the remote write queue, must be unique if specified. The
+	// name is used in metrics and logging in order to differentiate queues.
+	// Only valid in Prometheus versions 2.15.0 and newer.
+	Name string `json:"name,omitempty"`
+	// Timeout for requests to the remote write endpoint.
+	RemoteTimeout string `json:"remoteTimeout,omitempty"`
+	// Custom HTTP headers to be sent along with each remote write request.
+	// Be aware that headers that are set by Prometheus itself can't be overwritten.
+	// Only valid in Prometheus versions 2.25.0 and newer.
+	Headers map[string]string `json:"headers,omitempty"`
+	// The list of remote write relabel configurations.
+	WriteRelabelConfigs []monv1.RelabelConfig `json:"writeRelabelConfigs,omitempty"`
+	// BasicAuth for the URL.
+	BasicAuth *monv1.BasicAuth `json:"basicAuth,omitempty"`
+	// Bearer token for remote write.
+	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
+	// TLS Config to use for remote write.
+	TLSConfig *monv1.SafeTLSConfig `json:"tlsConfig,omitempty"`
+	// Optional ProxyURL
+	ProxyURL string `json:"proxyUrl,omitempty"`
+	// QueueConfig allows tuning of the remote write queue parameters.
+	QueueConfig *monv1.QueueConfig `json:"queueConfig,omitempty"`
+	// MetadataConfig configures the sending of series metadata to remote storage.
+	MetadataConfig *monv1.MetadataConfig `json:"metadataConfig,omitempty"`
+}
+
 type PrometheusK8sConfig struct {
 	LogLevel            string                               `json:"logLevel"`
 	Retention           string                               `json:"retention"`
@@ -143,7 +174,7 @@ type PrometheusK8sConfig struct {
 	Resources           *v1.ResourceRequirements             `json:"resources"`
 	ExternalLabels      map[string]string                    `json:"externalLabels"`
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
+	RemoteWrite         []RemoteWriteSpec                    `json:"remoteWrite"`
 	TelemetryMatches    []string                             `json:"-"`
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
 }
@@ -459,7 +490,7 @@ type PrometheusRestrictedConfig struct {
 	Resources           *v1.ResourceRequirements             `json:"resources"`
 	ExternalLabels      map[string]string                    `json:"externalLabels"`
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite         []monv1.RemoteWriteSpec              `json:"remoteWrite"`
+	RemoteWrite         []RemoteWriteSpec                    `json:"remoteWrite"`
 	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
 	EnforcedTargetLimit *uint64                              `json:"enforcedTargetLimit"`
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
