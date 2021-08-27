@@ -550,6 +550,16 @@ function(params) {
           record: 'monitoring:container_memory_working_set_bytes:sum',
         },
         {
+          // For each (namespace, job) pair, sum the number of series added over the past hour, then filter the top 3 items.
+          expr: 'topk(3, sum by(namespace, job)(sum_over_time(scrape_series_added[1h])))',
+          record: 'namespace_job:scrape_series_added:topk3_sum1h',
+        },
+        {
+          // For each (namespace, job) pair, return the target producing the highest number of samples, then filter the top 3 items.
+          expr: 'topk(3, max by(namespace, job) (topk by(namespace,job) (1, scrape_samples_post_metric_relabeling)))',
+          record: 'namespace_job:scrape_samples_post_metric_relabeling:topk3',
+        },
+        {
           expr: 'sum by(exported_service) (rate(haproxy_server_http_responses_total{exported_namespace="openshift-monitoring", exported_service=~"alertmanager-main|grafana|prometheus-k8s"}[5m]))',
           record: 'monitoring:haproxy_server_http_responses_total:sum',
         },
