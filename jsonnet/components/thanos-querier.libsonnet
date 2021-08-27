@@ -288,7 +288,7 @@ function(params)
           spec+: {
             // TODO(slashpai): remove once new kube-thanos is released which has this change
             nodeSelector: {
-            'kubernetes.io/os': 'linux',
+              'kubernetes.io/os': 'linux',
             },
             // TODO(dgrisonnet): remove once the upstream anti-affinity addon
             // can be extended.
