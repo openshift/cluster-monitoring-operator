@@ -369,7 +369,7 @@ spec:
         kube_persistentvolume_status_phase{phase=~"Failed|Pending",namespace=~"(openshift-.*|kube-.*|default|logging)",job="kube-state-metrics"} > 0
       for: 5m
       labels:
-        severity: critical
+        severity: warning
   - name: kubernetes-system
     rules:
     - alert: KubeClientErrors

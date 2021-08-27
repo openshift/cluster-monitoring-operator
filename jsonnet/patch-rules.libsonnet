@@ -18,6 +18,12 @@ local excludedRules = [
     ],
   },
   {
+    name: 'alertmanager.rules',
+    rules: [
+      { alert: 'AlertmanagerClusterCrashlooping' },
+    ],
+  },
+  {
     name: 'general.rules',
     rules: [
       { alert: 'TargetDown' },
@@ -66,6 +72,12 @@ local excludedRules = [
     ],
   },
   {
+    name: 'prometheus',
+    rules: [
+      { alert: 'PrometheusErrorSendingAlertsToAnyAlertmanager' },
+    ],
+  },
+  {
     name: 'thanos-query',
     rules: [
       { alert: 'ThanosQueryInstantLatencyHigh' },
@@ -75,6 +87,36 @@ local excludedRules = [
 ];
 
 local patchedRules = [
+  {
+    name: 'alertmanager.rules',
+    rules: [
+      {
+        alert: 'AlertmanagerClusterFailedToSendAlerts',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'AlertmanagerConfigInconsistent',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'AlertmanagerClusterDown',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'AlertmanagerMembersInconsistent',
+        'for': '15m',
+        labels: {
+          severity: 'warning',
+        },
+      },
+    ],
+  },
   {
     name: 'kubernetes-apps',
     rules: [
@@ -102,6 +144,35 @@ local patchedRules = [
     ],
   },
   {
+    name: 'kube-state-metrics',
+    rules: [
+      {
+        alert: 'KubeStateMetricsListErrors',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'KubeStateMetricsWatchErrors',
+        labels: {
+          severity: 'warning',
+        },
+      },
+    ],
+  },
+  {
+    name: 'kubernetes-storage',
+    local kubernetesStorageConfig = { prefixedNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default)",', kubeletSelector: 'job="kubelet", metrics_path="/metrics"' },
+    rules: [
+      {
+        alert: 'KubePersistentVolumeErrors',
+        labels: {
+          severity: 'warning',
+        },
+      },
+    ],
+  },
+  {
     name: 'prometheus',
     rules: [
       {
@@ -111,6 +182,54 @@ local patchedRules = [
       {
         alert: 'PrometheusOutOfOrderTimestamps',
         'for': '1h',
+      },
+      {
+        alert: 'PrometheusBadConfig',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'PrometheusRemoteStorageFailures',
+        labels: {
+          severity: 'warning',
+        },
+
+      },
+      {
+        alert: 'PrometheusRuleFailures',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'PrometheusRemoteWriteBehind',
+        labels: {
+          severity: 'info',
+        },
+      },
+    ],
+  },
+  {
+    name: 'thanos-rule',
+    rules: [
+      {
+        alert: 'ThanosNoRuleEvaluations',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'ThanosRuleHighRuleEvaluationFailures',
+        labels: {
+          severity: 'warning',
+        },
+      },
+      {
+        alert: 'ThanosRuleSenderIsFailingAlerts',
+        labels: {
+          severity: 'warning',
+        },
       },
     ],
   },
@@ -152,15 +271,6 @@ local patchedRules = [
         labels: {
           severity: 'warning',
         },
-      },
-    ],
-  },
-  {
-    name: 'alertmanager.rules',
-    rules: [
-      {
-        alert: 'AlertmanagerMembersInconsistent',
-        'for': '15m',
       },
     ],
   },
