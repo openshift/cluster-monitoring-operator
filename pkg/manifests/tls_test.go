@@ -16,6 +16,8 @@ package manifests
 
 import (
 	"bytes"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"reflect"
@@ -118,7 +120,13 @@ func TestRotateGrpcTLSSecret(t *testing.T) {
 			},
 			test: func(spre, spost *v1.Secret) error {
 				if bytes.Compare(spre.Data["ca.crt"], spost.Data["ca.crt"]) == 0 {
-					return fmt.Errorf("expected certificate data not to be equal, but it is")
+					return fmt.Errorf("expected ca certificate data not to be equal, but it is")
+				}
+				if bytes.Compare(spre.Data["prometheus-server.crt"], spost.Data["prometheus-server.crt"]) == 0 {
+					return fmt.Errorf("expected server certificate data not to be equal, but it is")
+				}
+				if bytes.Compare(spre.Data["thanos-querier-client.crt"], spost.Data["thanos-querier-client.crt"]) == 0 {
+					return fmt.Errorf("expected client certificate data not to be equal, but it is")
 				}
 
 				preCA, err := crypto.GetCAFromBytes(spre.Data["ca.crt"], spre.Data["ca.key"])
@@ -146,7 +154,7 @@ func TestRotateGrpcTLSSecret(t *testing.T) {
 			},
 		},
 		{
-			name: "force rotation",
+			name: "no rotation on irrelevant annotation",
 			setup: func(s *v1.Secret) {
 				s.Annotations["foo/bar"] = "true"
 			},
@@ -214,4 +222,106 @@ func TestUnconfiguredGRPCManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestCrossSigningAfterRotation(t *testing.T) {
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+
+	for _, tc := range []struct {
+		name string
+		test func(spre, spost *v1.Secret) error
+	}{
+		{
+			name: "validate old server cert with new ca",
+			test: func(spre, spost *v1.Secret) error {
+				newCaCertPem := spost.Data["ca.crt"]
+				oldCertPem := spre.Data["prometheus-server.crt"]
+				if err := assertCertValidityWithCa(oldCertPem, newCaCertPem); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			name: "validate new server cert with old ca",
+			test: func(spre, spost *v1.Secret) error {
+				oldCaCertPem := spre.Data["ca.crt"]
+				newCertPem := spost.Data["prometheus-server.crt"]
+				if err := assertCertValidityWithCa(newCertPem, oldCaCertPem); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			name: "validate old client cert with new ca",
+			test: func(spre, spost *v1.Secret) error {
+				newCaCertPem := spost.Data["ca.crt"]
+				oldCertPem := spre.Data["thanos-querier-client.crt"]
+				if err := assertCertValidityWithCa(oldCertPem, newCaCertPem); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			name: "validate new client cert with old ca",
+			test: func(spre, spost *v1.Secret) error {
+				oldCaCertPem := spre.Data["ca.crt"]
+				newCertPem := spost.Data["thanos-querier-client.crt"]
+				if err := assertCertValidityWithCa(newCertPem, oldCaCertPem); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			spre, err := f.GRPCSecret()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = RotateGRPCSecret(spre)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			spost := spre.DeepCopy()
+			spost.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"] = "true"
+
+			err = RotateGRPCSecret(spost)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := tc.test(spre, spost); err != nil {
+				t.Error(err)
+			}
+		})
+	}
+}
+
+func assertCertValidityWithCa(cert []byte, ca []byte) error {
+	certBlock, _ := pem.Decode(cert)
+	if certBlock == nil {
+		return errors.New("Failed to decode certificate")
+	}
+	x509Cert, err := x509.ParseCertificate(certBlock.Bytes)
+	if err != nil {
+		return err
+	}
+	root := x509.NewCertPool()
+	root.AppendCertsFromPEM(ca)
+	_, err = x509Cert.Verify(x509.VerifyOptions{
+		Roots: root,
+		KeyUsages: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageClientAuth,
+			x509.ExtKeyUsageServerAuth,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
