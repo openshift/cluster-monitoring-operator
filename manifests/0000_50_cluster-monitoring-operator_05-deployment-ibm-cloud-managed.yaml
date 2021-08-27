@@ -77,7 +77,7 @@ spec:
         - mountPath: /etc/cluster-monitoring-operator/telemetry
           name: telemetry-config
       nodeSelector:
-        beta.kubernetes.io/os: linux
+        kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
       serviceAccountName: cluster-monitoring-operator
       tolerations:
