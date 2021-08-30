@@ -187,7 +187,7 @@ spec:
         - mountPath: /etc/kube-rbac-proxy
           name: secret-thanos-querier-kube-rbac-proxy-rules
       nodeSelector:
-        beta.kubernetes.io/os: linux
+        kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
       serviceAccountName: thanos-querier
       terminationGracePeriodSeconds: 120
