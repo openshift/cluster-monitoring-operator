@@ -258,6 +258,10 @@ go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
 # go.uber.org/atomic v1.8.0
 go.uber.org/atomic
+# golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
+## explicit
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish
 # golang.org/x/net v0.0.0-20210610132358-84b48f89b13b
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
