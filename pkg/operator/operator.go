@@ -813,16 +813,11 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 			name:          "prometheus-k8s",
 			labelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
 		},
-		// TODO: verify correct spreading of Alertmanager pods once we deploy
-		// only 2 replicas (instead of 3). With 3 replicas, 2 instances would
-		// end up on the same node for clusters with only 2 worker/infra nodes
-		// (which is a supported configuration).
-		// See https://bugzilla.redhat.com/show_bug.cgi?id=1949262
-		//	{
-		//		namespace:     o.namespace,
-		//		name:          "alertmanager-main",
-		//		labelSelector: map[string]string{"app.kubernetes.io/name": "alertmanager"},
-		//	},
+		{
+			namespace:     o.namespace,
+			name:          "alertmanager-main",
+			labelSelector: map[string]string{"app.kubernetes.io/name": "alertmanager"},
+		},
 	}
 
 	if o.userWorkloadEnabled {

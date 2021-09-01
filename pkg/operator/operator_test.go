@@ -239,6 +239,25 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionTrue,
 		},
 		{
+			name:  "Alertmanager correctly spread between 2 nodes",
+			infra: haInfrastructure,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-2"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-2", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
+					Spec:       v1.PodSpec{NodeName: "node-2"},
+				},
+			},
+			upgradeable: configv1.ConditionTrue,
+		},
+		{
 			name:  "Alertmanager incorrectly spread",
 			infra: haInfrastructure,
 			pods: []v1.Pod{
@@ -255,7 +274,7 @@ func TestUpgradeableStatus(t *testing.T) {
 					Spec:       v1.PodSpec{NodeName: "node-1"},
 				},
 			},
-			upgradeable: configv1.ConditionTrue,
+			upgradeable: configv1.ConditionFalse,
 		},
 		{
 			name:  "Prometheus UWM correctly spread",
