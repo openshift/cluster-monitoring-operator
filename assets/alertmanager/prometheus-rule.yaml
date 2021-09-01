@@ -18,6 +18,7 @@ spec:
       annotations:
         description: Configuration has failed to load for {{ $labels.namespace }}/{{
           $labels.pod}}.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/AlertmanagerFailedReload.md
         summary: Reloading an Alertmanager configuration has failed.
       expr: |
         # Without max_over_time, failed scrapes could create false negatives, see

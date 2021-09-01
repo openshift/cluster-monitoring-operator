@@ -314,6 +314,7 @@ spec:
           version of a cluster component cannot start due to a bug or configuration
           error. Assess the pods for this deployment to verify they are running on
           healthy nodes and then contact support.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeDeploymentReplicasMismatch.md
         summary: Deployment has not matched the expected number of replicas
       expr: |
         (((
