@@ -291,13 +291,42 @@ local patchedRules = [
   },
 ];
 
-// TODO(paulfantom): ideally all alerts have runbooks and this list could be converted into excludeRunbooks
-local includeRunbooks = [
-  'HighlyAvailableWorkloadIncorrectlySpread',
-];
+local openShiftRunbook(runbook) =
+  'https://github.com/openshift/runbooks/blob/master/' + runbook;
+
+local openShiftRunbookCMO(runbook) =
+  openShiftRunbook('alerts/cluster-monitoring-operator/' + runbook);
+
+local includeRunbooks = {
+  AlertmanagerFailedReload: openShiftRunbookCMO('AlertmanagerFailedReload.md'),
+  ClusterOperatorDegraded: openShiftRunbookCMO('ClusterOperatorDegraded.md'),
+  ClusterOperatorDown: openShiftRunbookCMO('ClusterOperatorDown.md'),
+  HighlyAvailableWorkloadIncorrectlySpread: openShiftRunbook('alerts/HighlyAvailableWorkloadIncorrectlySpread.md'),
+  KubeAPIDown: openShiftRunbookCMO('KubeAPIDown.md'),
+  KubeDeploymentReplicasMismatch: openShiftRunbookCMO('KubeDeploymentReplicasMismatch.md'),
+  KubeJobFailed: openShiftRunbookCMO('KubeJobFailed.md'),
+  KubeNodeNotReady: openShiftRunbookCMO('KubeNodeNotReady.md'),
+  KubePersistentVolumeFillingUp: openShiftRunbookCMO('KubePersistentVolumeFillingUp.md'),
+  KubePodNotReady: openShiftRunbookCMO('KubePodNotReady.md'),
+  KubeletDown: openShiftRunbookCMO('KubeletDown.md'),
+  NodeFileDescriptorLimit: openShiftRunbookCMO('NodeFileDescriptorLimit.md'),
+  NodeFilesystemAlmostOutOfFiles: openShiftRunbookCMO('NodeFilesystemAlmostOutOfFiles.md'),
+  NodeFilesystemAlmostOutOfSpace: openShiftRunbookCMO('NodeFilesystemAlmostOutOfSpace.md'),
+  NodeFilesystemFilesFillingUp: openShiftRunbookCMO('NodeFilesystemFilesFillingUp.md'),
+  NodeFilesystemSpaceFillingUp: openShiftRunbookCMO('NodeFilesystemSpaceFillingUp.md'),
+  NodeRAIDDegraded: openShiftRunbookCMO('NodeRAIDDegraded.md'),
+  PrometheusTargetSyncFailure: openShiftRunbookCMO('PrometheusTargetSyncFailure.md'),
+  ThanosRuleQueueIsDroppingAlerts: openShiftRunbookCMO('ThanosRuleQueueIsDroppingAlerts.md'),
+};
+
+local addRunbookUrl(rule) = rule {
+  [if 'alert' in rule && std.objectHas(includeRunbooks, rule.alert) then 'annotations']+: {
+    runbook_url: includeRunbooks[rule.alert],
+  },
+};
 
 local removeRunbookUrl(rule) = rule {
-  [if 'alert' in rule && ('runbook_url' in rule.annotations) && !std.member(includeRunbooks, rule.alert) then 'annotations']+: {
+  [if 'alert' in rule && ('runbook_url' in rule.annotations) && !std.objectHas(includeRunbooks, rule.alert) then 'annotations']+: {
     runbook_url:: null,
   },
 };
@@ -357,6 +386,10 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
     },
   },
 
+  addRunbookUrls(o): o {
+    [if (o.kind == 'PrometheusRule') then 'spec']+: k8sMixinUtils.mapRuleGroups(addRunbookUrl),
+  },
+
   removeRunbookUrls(o): o {
     [if (o.kind == 'PrometheusRule') then 'spec']+: k8sMixinUtils.mapRuleGroups(removeRunbookUrl),
   },
@@ -382,7 +415,7 @@ local patchOrExcludeRuleGroup(group, groupSet, operation) =
 
   // shorthand for rule patching, rule excluding, and runbook_url removal
   sanitizeAlertRules(o): {
-    [k]: $.removeRunbookUrls($.patchRule($.excludeRule(o[k])))
+    [k]: $.addRunbookUrls($.removeRunbookUrls($.patchRule($.excludeRule(o[k]))))
     for k in std.objectFields(o)
   },
 }
