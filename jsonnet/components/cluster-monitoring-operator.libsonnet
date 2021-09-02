@@ -247,6 +247,11 @@ function(params) {
         resources: ['persistentvolumeclaims'],
         verbs: ['get', 'list', 'update', 'delete'],
       },
+      {
+        apiGroups: [''],
+        resources: ['nodes'],
+        verbs: ['get', 'update', 'patch'],
+      },
     ],
   },
 

@@ -139,6 +139,14 @@ rules:
   - update
   - delete
 - apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews

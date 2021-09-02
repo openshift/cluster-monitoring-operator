@@ -342,6 +342,10 @@ func (c *Client) GetSecret(ctx context.Context, namespace, name string) (*v1.Sec
 	return c.kclient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
+func (c *Client) GetNode(ctx context.Context, name string) (*v1.Node, error) {
+	return c.kclient.CoreV1().Nodes().Get(ctx, name, metav1.GetOptions{})
+}
+
 func (c *Client) ListPods(ctx context.Context, namespace string, opts metav1.ListOptions) (*v1.PodList, error) {
 	return c.kclient.CoreV1().Pods(namespace).List(ctx, opts)
 }

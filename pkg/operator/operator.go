@@ -38,6 +38,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+	"k8s.io/kubectl/pkg/drain"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/library-go/pkg/operator/csr"
@@ -167,6 +168,9 @@ type Operator struct {
 	failedReconcileAttempts int
 
 	assets *manifests.Assets
+
+	drainer     *drain.Helper
+	nodesCordon map[string]struct{}
 }
 
 func New(
@@ -198,6 +202,8 @@ func New(
 		assets:                    a,
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
+		drainer:                   &drain.Helper{Ctx: ctx, Client: c.KubernetesInterface()},
+		nodesCordon:               make(map[string]struct{}),
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -501,6 +507,12 @@ func (o *Operator) enqueue(obj interface{}) {
 }
 
 func (o *Operator) sync(ctx context.Context, key string) error {
+	// Ensure that no nodes cordonned by the operator remains
+	err := o.ensureNodesAreUncordonned(ctx)
+	if err != nil {
+		return err
+	}
+
 	config, err := o.Config(ctx, key)
 	if err != nil {
 		o.reportError(ctx, err, "InvalidConfiguration")
@@ -784,6 +796,26 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 	return configv1.ConditionTrue, reason, message, nil
 }
 
+func (o *Operator) ensureNodesAreUncordonned(ctx context.Context) error {
+	for nodeName := range o.nodesCordon {
+		node, err := o.client.GetNode(ctx, nodeName)
+		if apierrors.IsNotFound(err) {
+			delete(o.nodesCordon, nodeName)
+			continue
+		}
+		if err != nil {
+			return err
+		}
+
+		err = drain.RunCordonOrUncordon(o.drainer, node, false)
+		if err != nil {
+			return err
+		}
+		delete(o.nodesCordon, node.Name)
+	}
+	return nil
+}
+
 func (o *Operator) spreadWorkloads(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
 	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel)})
 	if err != nil {
@@ -793,6 +825,26 @@ func (o *Operator) spreadWorkloads(ctx context.Context, namespace string, sel ma
 	if len(podList.Items) <= 1 {
 		return false, nil
 	}
+
+	node, err := o.client.GetNode(ctx, podList.Items[0].Spec.NodeName)
+	if err != nil {
+		return false, err
+	}
+
+	err = drain.RunCordonOrUncordon(o.drainer, node, true)
+	if err != nil {
+		return false, err
+	}
+	o.nodesCordon[node.Name] = struct{}{}
+
+	defer func() {
+		err = drain.RunCordonOrUncordon(o.drainer, node, false)
+		if err != nil {
+			klog.Errorf("Couldn't uncordon node %s: err %v", node.Name, err)
+		} else {
+			delete(o.nodesCordon, node.Name)
+		}
+	}()
 
 	var workloadSpread int
 	for _, pod := range podList.Items {

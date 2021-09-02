@@ -21,6 +21,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/kubectl/pkg/drain"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -162,6 +163,11 @@ func TestUpgradeableStatus(t *testing.T) {
 		nonHAInfrastructure   = InfrastructureConfig{highlyAvailableInfrastructure: false}
 		namespace             = "openshift-monitoring"
 		namespaceUserWorkload = "openshift-user-workload-monitoring"
+		nodes                 = []v1.Node{
+			{ObjectMeta: metav1.ObjectMeta{Name: "node-1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "node-2"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "node-3"}},
+		}
 	)
 
 	for _, tc := range []struct {
@@ -364,13 +370,17 @@ func TestUpgradeableStatus(t *testing.T) {
 					client.KubernetesClient(
 						fake.NewSimpleClientset(
 							&v1.PodList{Items: tc.pods},
+							&v1.NodeList{Items: nodes},
 						),
 					)),
 				lastKnowInfrastructureConfig: &tc.infra,
 				userWorkloadEnabled:          tc.uwm,
 				namespace:                    namespace,
 				namespaceUserWorkload:        namespaceUserWorkload,
+				drainer:                      &drain.Helper{Ctx: context.Background()},
+				nodesCordon:                  make(map[string]struct{}),
 			}
+			fakeOperator.drainer.Client = fakeOperator.client.KubernetesInterface()
 
 			var message, reason string
 			upgradeable, message, reason, err := fakeOperator.Upgradeable(context.Background())
@@ -391,13 +401,14 @@ func TestSpreadWorkloads(t *testing.T) {
 		pods      = []v1.Pod{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-				Spec:       v1.PodSpec{Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-0"}}}}},
+				Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-0"}}}}},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-				Spec:       v1.PodSpec{Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-1"}}}}},
+				Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-1"}}}}},
 			},
 		}
+		nodes         = []v1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "node-1"}}}
 		labelSelector = map[string]string{"app.kubernetes.io/name": "prometheus"}
 	)
 
@@ -449,10 +460,14 @@ func TestSpreadWorkloads(t *testing.T) {
 						fake.NewSimpleClientset(
 							&v1.PodList{Items: pods},
 							&v1.PersistentVolumeClaimList{Items: tc.pvcs},
+							&v1.NodeList{Items: nodes},
 						),
 					)),
-				namespace: namespace,
+				namespace:   namespace,
+				drainer:     &drain.Helper{Ctx: context.Background()},
+				nodesCordon: make(map[string]struct{}),
 			}
+			fakeOperator.drainer.Client = fakeOperator.client.KubernetesInterface()
 
 			spreadByOperator, err := fakeOperator.spreadWorkloads(context.Background(), namespace, labelSelector)
 			if err != nil {
@@ -499,6 +514,15 @@ func TestSpreadWorkloads(t *testing.T) {
 				if !found {
 					t.Errorf("Found unexpected pod that should have been deleted by the operator: %s/%s.", pod.Namespace, pod.Name)
 				}
+			}
+
+			node, err := fakeOperator.client.GetNode(context.Background(), "node-1")
+			if err != nil {
+				t.Error(err)
+			}
+			// Make sure that the node is uncordon
+			if node.Spec.Unschedulable || len(fakeOperator.nodesCordon) > 0 {
+				t.Errorf("Node %s is unschedulable.", node.Name)
 			}
 		})
 	}
