@@ -183,11 +183,11 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-2"},
+					Spec:       v1.PodSpec{NodeName: "node-2", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-1"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionTrue,
@@ -198,11 +198,11 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-1"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionFalse,
@@ -213,7 +213,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-0"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionTrue,
@@ -224,15 +224,15 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-2"},
+					Spec:       v1.PodSpec{NodeName: "node-2", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-1"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-2", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-3"},
+					Spec:       v1.PodSpec{NodeName: "node-3", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-2"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionTrue,
@@ -243,15 +243,15 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-2"},
+					Spec:       v1.PodSpec{NodeName: "node-2", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-1"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-2", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-2"},
+					Spec:       v1.PodSpec{NodeName: "node-2", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-2"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionTrue,
@@ -262,15 +262,15 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-1"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main-2", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "alertmanager"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "alertmanager-main-db-alertmanager-main-2"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionFalse,
@@ -282,11 +282,11 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-user-workload-0", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-user-workload-db-prometheus-user-workload-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-user-workload-1", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-2"},
+					Spec:       v1.PodSpec{NodeName: "node-2", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-user-workload-db-prometheus-user-workload-1"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionTrue,
@@ -298,11 +298,11 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-user-workload-0", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-user-workload-db-prometheus-user-workload-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-user-workload-1", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-user-workload-db-prometheus-user-workload-1"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionFalse,
@@ -314,11 +314,11 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "thanos-ruler-user-workload-0", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "thanos-ruler"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "thanos-ruler-user-workload-data-thanos-ruler-user-workload-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "thanos-ruler-user-workload-1", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "thanos-ruler"}},
-					Spec:       v1.PodSpec{NodeName: "node-2"},
+					Spec:       v1.PodSpec{NodeName: "node-2", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "thanos-ruler-user-workload-data-thanos-ruler-user-workload-1"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionTrue,
@@ -330,14 +330,29 @@ func TestUpgradeableStatus(t *testing.T) {
 			pods: []v1.Pod{
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "thanos-ruler-user-workload-0", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "thanos-ruler"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "thanos-ruler-user-workload-data-thanos-ruler-user-workload-0"}}}}},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "thanos-ruler-user-workload-1", Namespace: namespaceUserWorkload, Labels: map[string]string{"app.kubernetes.io/name": "thanos-ruler"}},
-					Spec:       v1.PodSpec{NodeName: "node-1"},
+					Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "thanos-ruler-user-workload-data-thanos-ruler-user-workload-1"}}}}},
 				},
 			},
 			upgradeable: configv1.ConditionFalse,
+		},
+		{
+			name:  "Workload incorrectly spread without PVC",
+			infra: haInfrastructure,
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PodSpec{NodeName: "node-1"},
+				},
+			},
+			upgradeable: configv1.ConditionTrue,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

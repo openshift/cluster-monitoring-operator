@@ -853,6 +853,18 @@ func (o *Operator) workloadCorrectlySpread(ctx context.Context, namespace string
 		return true, nil
 	}
 
+	// Skip workloads that don't have persistent storage enabled.
+	hasPVC := false
+	for _, vol := range podList.Items[0].Spec.Volumes {
+		if vol.PersistentVolumeClaim != nil {
+			hasPVC = true
+			continue
+		}
+	}
+	if !hasPVC {
+		return true, nil
+	}
+
 	nodes := make(map[string]struct{}, len(podList.Items))
 	for _, pod := range podList.Items {
 		nodes[pod.Spec.NodeName] = struct{}{}
