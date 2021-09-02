@@ -237,6 +237,16 @@ function(params) {
         resources: ['events'],
         verbs: ['create', 'patch', 'update'],
       },
+      {
+        apiGroups: [''],
+        resources: ['pods'],
+        verbs: ['list', 'delete'],
+      },
+      {
+        apiGroups: [''],
+        resources: ['persistentvolumeclaims'],
+        verbs: ['get', 'list', 'update', 'delete'],
+      },
     ],
   },
 
