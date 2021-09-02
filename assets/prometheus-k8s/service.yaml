@@ -19,6 +19,9 @@ spec:
   - name: tenancy
     port: 9092
     targetPort: tenancy
+  - name: config-reloader
+    port: 8081
+    targetPort: config-reloader
   selector:
     app: prometheus
     app.kubernetes.io/component: prometheus

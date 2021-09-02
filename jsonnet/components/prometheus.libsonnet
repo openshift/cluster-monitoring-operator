@@ -97,6 +97,11 @@ function(params)
             port: 9092,
             targetPort: 'tenancy',
           },
+          {
+            name: 'config-reloader',
+            port: 8081,
+            targetPort: 'config-reloader',
+          },
         ],
         type: 'ClusterIP',
       },
@@ -248,7 +253,19 @@ function(params)
             scheme: 'https',
             tlsConfig: {
               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-              serverName: 'prometheus-k8s',
+              serverName: 'server-name-replaced-at-runtime',
+              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
+            },
+            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+          },
+          {
+            port: 'config-reloader',
+            interval: '30s',
+            scheme: 'https',
+            tlsConfig: {
+              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+              serverName: 'server-name-replaced-at-runtime',
               certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
               keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
@@ -449,6 +466,39 @@ function(params)
               {
                 mountPath: '/etc/kube-rbac-proxy',
                 name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+              },
+            ],
+          },
+          {
+            name: 'kube-rbac-proxy-prometheus-config-reloader',
+            image: cfg.kubeRbacProxyImage,
+            resources: {
+              requests: {
+                cpu: '1m',
+                memory: '15Mi',
+              },
+            },
+            ports: [
+              {
+                containerPort: 8081,
+                name: 'config-reloader',
+              },
+            ],
+            args: [
+              '--secure-listen-address=0.0.0.0:8081',
+              '--upstream=http://127.0.0.1:8080',
+              '--allow-paths=/metrics',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+              '--logtostderr=true',
+              '--v=10',
+            ],
+            terminationMessagePolicy: 'FallbackToLogsOnError',
+            volumeMounts: [
+              {
+                mountPath: '/etc/tls/private',
+                name: 'secret-prometheus-k8s-tls',
               },
             ],
           },

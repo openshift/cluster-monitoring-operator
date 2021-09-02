@@ -31,6 +31,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"golang.org/x/crypto/bcrypt"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,7 +42,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -376,6 +376,7 @@ func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
 	}
 
 	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
+	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
 	sm.Namespace = f.namespace
 
 	return sm, nil
@@ -1613,6 +1614,7 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor
 	}
 
 	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-k8s.%s.svc", f.namespace)
+	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("prometheus-k8s.%s.svc", f.namespace)
 	sm.Namespace = f.namespace
 
 	return sm, nil
