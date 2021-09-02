@@ -165,12 +165,11 @@ func TestUpgradeableStatus(t *testing.T) {
 	)
 
 	for _, tc := range []struct {
-		name          string
-		infra         InfrastructureConfig
-		uwm           bool
-		pods          []v1.Pod
-		labelSelector map[string]string
-		upgradeable   configv1.ConditionStatus
+		name        string
+		infra       InfrastructureConfig
+		uwm         bool
+		pods        []v1.Pod
+		upgradeable configv1.ConditionStatus
 	}{
 		{
 			name:        "Non HA infrastructures are always Upgradeable",
@@ -366,6 +365,125 @@ func TestUpgradeableStatus(t *testing.T) {
 
 			if tc.upgradeable != upgradeable {
 				t.Errorf("Unexpected ClusterOperator Upgradeable status: expected: %v, got: %v with reason: %v and message: %v.", tc.upgradeable, upgradeable, reason, message)
+			}
+		})
+	}
+}
+
+func TestSpreadWorkloads(t *testing.T) {
+	var (
+		namespace = "openshift-monitoring"
+		pods      = []v1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+				Spec:       v1.PodSpec{Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-0"}}}}},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+				Spec:       v1.PodSpec{Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-1"}}}}},
+			},
+		}
+		labelSelector = map[string]string{"app.kubernetes.io/name": "prometheus"}
+	)
+
+	for _, tc := range []struct {
+		name             string
+		pvcs             []v1.PersistentVolumeClaim
+		spreadByOperator bool
+		expectedPods     []string
+		expectedPVCs     []string
+	}{
+		{
+			name: "Workload with annotation",
+			pvcs: []v1.PersistentVolumeClaim{
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}}},
+			},
+			spreadByOperator: true,
+			expectedPods:     []string{"prometheus-k8s-0"},
+			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0"},
+		},
+		{
+			name: "Workload without annotation",
+			pvcs: []v1.PersistentVolumeClaim{
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
+			},
+			spreadByOperator: false,
+			expectedPods:     []string{"prometheus-k8s-0", "prometheus-k8s-1"},
+			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
+		},
+		{
+			name: "Should guard when all PVC are annotated",
+			pvcs: []v1.PersistentVolumeClaim{
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}}},
+			},
+			spreadByOperator: true,
+			expectedPods:     []string{"prometheus-k8s-1"},
+			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-1"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeOperator := &Operator{
+				client: client.New(
+					"",
+					"",
+					"",
+					client.KubernetesClient(
+						fake.NewSimpleClientset(
+							&v1.PodList{Items: pods},
+							&v1.PersistentVolumeClaimList{Items: tc.pvcs},
+						),
+					)),
+				namespace: namespace,
+			}
+
+			spreadByOperator, err := fakeOperator.spreadWorkloads(context.Background(), namespace, labelSelector)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if tc.spreadByOperator != spreadByOperator {
+				if tc.spreadByOperator {
+					t.Errorf("Expected operator to be able to spread workloads across multiple node by deleting annotated PVCs.")
+				} else {
+					t.Errorf("Expected operator not to be able to spread workloads across multiple node by deleting annotated PVCs.")
+				}
+			}
+
+			pvcList, err := fakeOperator.client.ListPersistentVolumeClaims(context.Background(), namespace, metav1.ListOptions{})
+			if err != nil {
+				t.Error(err)
+			}
+			for _, pvc := range pvcList.Items {
+				found := false
+				for _, expectedPVC := range tc.expectedPVCs {
+					if pvc.Name == expectedPVC {
+						found = true
+						continue
+					}
+				}
+				if !found {
+					t.Errorf("Found unexpected pvc that should have been deleted by the operator: %s/%s.", pvc.Namespace, pvc.Name)
+				}
+			}
+
+			podList, err := fakeOperator.client.ListPods(context.Background(), namespace, metav1.ListOptions{})
+			if err != nil {
+				t.Error(err)
+			}
+			for _, pod := range podList.Items {
+				found := false
+				for _, expectedPod := range tc.expectedPods {
+					if pod.Name == expectedPod {
+						found = true
+						continue
+					}
+				}
+				if !found {
+					t.Errorf("Found unexpected pod that should have been deleted by the operator: %s/%s.", pod.Namespace, pod.Name)
+				}
 			}
 		})
 	}

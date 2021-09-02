@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -45,6 +46,10 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
+)
+
+const (
+	dropPVCAnnotation = "monitoring.openshift.io/drop-pvc"
 )
 
 // InfrastructureConfig stores information about the cluster infrastructure
@@ -779,6 +784,62 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 	return configv1.ConditionTrue, reason, message, nil
 }
 
+func (o *Operator) spreadWorkloads(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
+	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel)})
+	if err != nil {
+		return false, err
+	}
+
+	if len(podList.Items) <= 1 {
+		return false, nil
+	}
+
+	var workloadSpread int
+	for _, pod := range podList.Items {
+		for _, vol := range pod.Spec.Volumes {
+			if vol.PersistentVolumeClaim != nil {
+				pvc, err := o.client.GetPersistentVolumeClaim(ctx, pod.Namespace, vol.PersistentVolumeClaim.ClaimName)
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				if err != nil {
+					return false, err
+				}
+
+				dropPVC, ok := pvc.Annotations[dropPVCAnnotation]
+				if !ok {
+					continue
+				}
+				if dropPVC == "yes" {
+					// Guard from deleting all PVCs to prevent complete data loss.
+					if workloadSpread == len(podList.Items)-1 {
+						// Remove the annotation so that the PVC doesn't get deleted in future cycles.
+						delete(pvc.Annotations, dropPVCAnnotation)
+						_, err := o.client.UpdatePersistentVolumeClaim(ctx, pvc)
+						if err != nil {
+							return false, err
+						}
+						continue
+					}
+
+					err := o.client.DeletePersistentVolumeClaim(ctx, pvc)
+					if err != nil {
+						return false, err
+					}
+					err = o.client.DeletePod(ctx, &pod)
+					if err != nil {
+						return false, err
+					}
+
+					workloadSpread++
+				}
+			}
+		}
+	}
+
+	return workloadSpread > 0, nil
+}
+
 // workloadCorrectlySpread returns whether the selected pods are spread across
 // different nodes ensuring proper high-availability.
 func (o *Operator) workloadCorrectlySpread(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
@@ -835,7 +896,10 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 		)
 	}
 
-	var messages []string
+	var (
+		messages         []string
+		spreadByOperator bool
+	)
 	for _, workload := range workloads {
 		correctlySpread, err := o.workloadCorrectlySpread(ctx, workload.namespace, workload.labelSelector)
 		if err != nil {
@@ -846,14 +910,44 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 			continue
 		}
 
+		spreadByOperator, err = o.spreadWorkloads(ctx, workload.namespace, workload.labelSelector)
+		if err != nil {
+			return false, "", "", err
+		}
+
+		// If the workloads were spread by the operator, we wait for 5 minutes
+		// before setting the status so that we don't set upgradeable=false after
+		// spreading the pods.
+		if spreadByOperator {
+			err = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+				correctlySpread, err := o.workloadCorrectlySpread(ctx, workload.namespace, workload.labelSelector)
+				if err != nil {
+					return false, err
+				}
+
+				return correctlySpread, nil
+			})
+			if err == nil {
+				continue
+			}
+
+		}
+
 		messages = append(
 			messages,
-			fmt.Sprintf("Highly-available workload %s/%s is incorrectly spread across multiple nodes", workload.namespace, workload.name),
+			fmt.Sprintf("Highly-available workload %s/%s is incorrectly spread across multiple nodes."+
+				"You can run `oc get pvc -n %s -l %s=%s` to get all the PVCs attached to it.",
+				workload.namespace, workload.name, workload.namespace, "app.kubernetes.io/name", workload.labelSelector["app.kubernetes.io/name"],
+			),
 		)
 	}
 
 	if len(messages) > 0 {
-		messages = append(messages, "Manual intervention is needed to upgrade to the next minor version. Please refer to the following documentation to fix this issue: https://github.com/openshift/runbooks/blob/master/alerts/HighlyAvailableWorkloadIncorrectlySpread.md.")
+		msg := "Manual intervention is needed to upgrade to the next minor version. Please refer to the following documentation to fix this issue: https://github.com/openshift/runbooks/blob/master/alerts/HighlyAvailableWorkloadIncorrectlySpread.md."
+		if spreadByOperator {
+			msg += " The operator couldn't rebalance the pods automatically with the annotation, please refer to the runbook to fix this issue manually."
+		}
+		messages = append(messages, msg)
 		return false, client.WorkloadIncorrectlySpreadReason, strings.Join(messages, "\n"), nil
 	}
 

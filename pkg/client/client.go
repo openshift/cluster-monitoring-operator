@@ -631,6 +631,15 @@ func (c *Client) DeleteClusterRoleBinding(ctx context.Context, crb *rbacv1.Clust
 	return err
 }
 
+func (c *Client) DeletePod(ctx context.Context, pod *v1.Pod) error {
+	err := c.kclient.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
 func (c *Client) DeleteService(ctx context.Context, svc *v1.Service) error {
 	err := c.kclient.CoreV1().Services(svc.Namespace).Delete(ctx, svc.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
@@ -1429,6 +1438,27 @@ func (c *Client) DeleteRole(ctx context.Context, role *rbacv1.Role) error {
 	}
 
 	return err
+}
+
+func (c *Client) GetPersistentVolumeClaim(ctx context.Context, namespace, name string) (*v1.PersistentVolumeClaim, error) {
+	return c.kclient.CoreV1().PersistentVolumeClaims(namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *Client) ListPersistentVolumeClaims(ctx context.Context, namespace string, opts metav1.ListOptions) (*v1.PersistentVolumeClaimList, error) {
+	return c.kclient.CoreV1().PersistentVolumeClaims(namespace).List(ctx, opts)
+}
+
+func (c *Client) DeletePersistentVolumeClaim(ctx context.Context, pvc *v1.PersistentVolumeClaim) error {
+	err := c.kclient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Delete(ctx, pvc.Name, metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+func (c *Client) UpdatePersistentVolumeClaim(ctx context.Context, pvc *v1.PersistentVolumeClaim) (*v1.PersistentVolumeClaim, error) {
+	return c.kclient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
 }
 
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
