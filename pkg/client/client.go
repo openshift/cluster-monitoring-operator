@@ -743,6 +743,7 @@ func (c *Client) CreateOrUpdateDeployment(ctx context.Context, dep *appsv1.Deplo
 	err = c.UpdateDeployment(ctx, required)
 	if err != nil {
 		uErr, ok := err.(*apierrors.StatusError)
+		klog.V(4).ErrorS(uErr, "APIError while updating Deployment")
 		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
 			// try to delete Deployment
 			err = c.DeleteDeployment(ctx, existing)
@@ -931,6 +932,7 @@ func (c *Client) CreateOrUpdateDaemonSet(ctx context.Context, ds *appsv1.DaemonS
 	err = c.UpdateDaemonSet(ctx, required)
 	if err != nil {
 		uErr, ok := err.(*apierrors.StatusError)
+		klog.V(4).ErrorS(uErr, "APIError while updating DaemonSet")
 		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
 			// try to delete DaemonSet
 			err = c.DeleteDaemonSet(ctx, existing)
