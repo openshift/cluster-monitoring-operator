@@ -378,7 +378,6 @@ func TestUpgradeableStatus(t *testing.T) {
 				namespace:                    namespace,
 				namespaceUserWorkload:        namespaceUserWorkload,
 				drainer:                      &drain.Helper{Ctx: context.Background()},
-				nodesCordon:                  make(map[string]struct{}),
 			}
 			fakeOperator.drainer.Client = fakeOperator.client.KubernetesInterface()
 
@@ -395,7 +394,7 @@ func TestUpgradeableStatus(t *testing.T) {
 	}
 }
 
-func TestSpreadWorkloads(t *testing.T) {
+func TestRebalanceWorkloads(t *testing.T) {
 	var (
 		namespace = "openshift-monitoring"
 		pods      = []v1.Pod{
@@ -408,7 +407,7 @@ func TestSpreadWorkloads(t *testing.T) {
 				Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-1"}}}}},
 			},
 		}
-		nodes         = []v1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "node-1"}}}
+		nodes         = []v1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "node-1", Annotations: make(map[string]string)}}}
 		labelSelector = map[string]string{"app.kubernetes.io/name": "prometheus"}
 	)
 
@@ -463,13 +462,12 @@ func TestSpreadWorkloads(t *testing.T) {
 							&v1.NodeList{Items: nodes},
 						),
 					)),
-				namespace:   namespace,
-				drainer:     &drain.Helper{Ctx: context.Background()},
-				nodesCordon: make(map[string]struct{}),
+				namespace: namespace,
+				drainer:   &drain.Helper{Ctx: context.Background()},
 			}
 			fakeOperator.drainer.Client = fakeOperator.client.KubernetesInterface()
 
-			spreadByOperator, err := fakeOperator.spreadWorkloads(context.Background(), namespace, labelSelector)
+			spreadByOperator, err := fakeOperator.rebalanceWorkloads(context.Background(), namespace, labelSelector)
 			if err != nil {
 				t.Error(err)
 			}
@@ -521,7 +519,7 @@ func TestSpreadWorkloads(t *testing.T) {
 				t.Error(err)
 			}
 			// Make sure that the node is uncordon
-			if node.Spec.Unschedulable || len(fakeOperator.nodesCordon) > 0 {
+			if node.Spec.Unschedulable {
 				t.Errorf("Node %s is unschedulable.", node.Name)
 			}
 		})

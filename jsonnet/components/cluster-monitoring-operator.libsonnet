@@ -250,7 +250,7 @@ function(params) {
       {
         apiGroups: [''],
         resources: ['nodes'],
-        verbs: ['get', 'update', 'patch'],
+        verbs: ['get', 'list', 'update', 'patch'],
       },
     ],
   },

@@ -50,7 +50,8 @@ import (
 )
 
 const (
-	dropPVCAnnotation = "monitoring.openshift.io/drop-pvc"
+	dropPVCAnnotation = "openshift.io/cluster-monitoring-drop-pvc"
+	cordonAnnotation  = "openshift.io/cluster-monitoring-cordoned"
 )
 
 // InfrastructureConfig stores information about the cluster infrastructure
@@ -169,8 +170,7 @@ type Operator struct {
 
 	assets *manifests.Assets
 
-	drainer     *drain.Helper
-	nodesCordon map[string]struct{}
+	drainer *drain.Helper
 }
 
 func New(
@@ -203,7 +203,6 @@ func New(
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
 		drainer:                   &drain.Helper{Ctx: ctx, Client: c.KubernetesInterface()},
-		nodesCordon:               make(map[string]struct{}),
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -507,8 +506,8 @@ func (o *Operator) enqueue(obj interface{}) {
 }
 
 func (o *Operator) sync(ctx context.Context, key string) error {
-	// Ensure that no nodes cordonned by the operator remains
-	err := o.ensureNodesAreUncordonned(ctx)
+	// Ensure that no nodes cordoned by the operator remains unschedulable.
+	err := o.ensureNodesAreUncordoned(ctx)
 	if err != nil {
 		return err
 	}
@@ -796,27 +795,78 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 	return configv1.ConditionTrue, reason, message, nil
 }
 
-func (o *Operator) ensureNodesAreUncordonned(ctx context.Context) error {
-	for nodeName := range o.nodesCordon {
-		node, err := o.client.GetNode(ctx, nodeName)
-		if apierrors.IsNotFound(err) {
-			delete(o.nodesCordon, nodeName)
+func (o *Operator) ensureNodesAreUncordoned(ctx context.Context) error {
+	nodeList, err := o.client.ListNodes(ctx, metav1.ListOptions{FieldSelector: "spec.unschedulable=true"})
+	if err != nil {
+		return err
+	}
+
+	for _, node := range nodeList.Items {
+		_, cordonedByCMO := node.Annotations[cordonAnnotation]
+		if !cordonedByCMO {
 			continue
 		}
+
+		err = drain.RunCordonOrUncordon(o.drainer, &node, false)
 		if err != nil {
 			return err
 		}
 
-		err = drain.RunCordonOrUncordon(o.drainer, node, false)
+		delete(node.Annotations, cordonAnnotation)
+		_, err = o.client.UpdateNode(ctx, &node)
 		if err != nil {
 			return err
 		}
-		delete(o.nodesCordon, node.Name)
 	}
 	return nil
 }
 
-func (o *Operator) spreadWorkloads(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
+func (o *Operator) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1.PersistentVolumeClaim) (bool, error) {
+	node, err := o.client.GetNode(ctx, pod.Spec.NodeName)
+	if err != nil {
+		return false, err
+	}
+
+	// Check that the node wasn't already cordoned to prevent tempering someone else cordon.
+	alreadyCordoned := node.Spec.Unschedulable
+	if !alreadyCordoned {
+		err = drain.RunCordonOrUncordon(o.drainer, node, true)
+		if err != nil {
+			return false, err
+		}
+		// Set annotation so that we know CMO was at the origin of the cordon
+		node.Annotations[cordonAnnotation] = fmt.Sprintf("node marked as unschedulable by cluster-monitoring-operator to reschedule %s/%s on another node", pod.Namespace, pod.Name)
+		_, err = o.client.UpdateNode(ctx, node)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	err = o.client.DeletePersistentVolumeClaim(ctx, pvc)
+	if err != nil {
+		return false, err
+	}
+	err = o.client.DeletePod(ctx, pod)
+	if err != nil {
+		return false, err
+	}
+
+	if !alreadyCordoned {
+		err = drain.RunCordonOrUncordon(o.drainer, node, false)
+		if err != nil {
+			return false, err
+		}
+		delete(node.Annotations, cordonAnnotation)
+		_, err = o.client.UpdateNode(ctx, node)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
 	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel)})
 	if err != nil {
 		return false, err
@@ -826,74 +876,64 @@ func (o *Operator) spreadWorkloads(ctx context.Context, namespace string, sel ma
 		return false, nil
 	}
 
-	node, err := o.client.GetNode(ctx, podList.Items[0].Spec.NodeName)
-	if err != nil {
-		return false, err
-	}
-
-	err = drain.RunCordonOrUncordon(o.drainer, node, true)
-	if err != nil {
-		return false, err
-	}
-	o.nodesCordon[node.Name] = struct{}{}
-
-	defer func() {
-		err = drain.RunCordonOrUncordon(o.drainer, node, false)
-		if err != nil {
-			klog.Errorf("Couldn't uncordon node %s: err %v", node.Name, err)
-		} else {
-			delete(o.nodesCordon, node.Name)
-		}
-	}()
-
-	var workloadSpread int
+	var (
+		pvcsToDelete []v1.PersistentVolumeClaim
+		podsToDelete []v1.Pod
+	)
 	for _, pod := range podList.Items {
 		for _, vol := range pod.Spec.Volumes {
-			if vol.PersistentVolumeClaim != nil {
-				pvc, err := o.client.GetPersistentVolumeClaim(ctx, pod.Namespace, vol.PersistentVolumeClaim.ClaimName)
-				if apierrors.IsNotFound(err) {
-					continue
-				}
-				if err != nil {
-					return false, err
-				}
+			if vol.PersistentVolumeClaim == nil {
+				continue
+			}
+			pvc, err := o.client.GetPersistentVolumeClaim(ctx, pod.Namespace, vol.PersistentVolumeClaim.ClaimName)
+			if apierrors.IsNotFound(err) {
+				break
+			}
+			if err != nil {
+				return false, err
+			}
 
-				dropPVC, ok := pvc.Annotations[dropPVCAnnotation]
-				if !ok {
-					continue
-				}
-				if dropPVC == "yes" {
-					// Guard from deleting all PVCs to prevent complete data loss.
-					if workloadSpread == len(podList.Items)-1 {
-						// Remove the annotation so that the PVC doesn't get deleted in future cycles.
-						delete(pvc.Annotations, dropPVCAnnotation)
-						_, err := o.client.UpdatePersistentVolumeClaim(ctx, pvc)
-						if err != nil {
-							return false, err
-						}
-						continue
-					}
-
-					err := o.client.DeletePersistentVolumeClaim(ctx, pvc)
-					if err != nil {
-						return false, err
-					}
-					err = o.client.DeletePod(ctx, &pod)
-					if err != nil {
-						return false, err
-					}
-
-					workloadSpread++
-				}
+			dropPVC, ok := pvc.Annotations[dropPVCAnnotation]
+			if !ok {
+				break
+			}
+			if dropPVC == "yes" {
+				pvcsToDelete = append(pvcsToDelete, *pvc)
+				podsToDelete = append(podsToDelete, pod)
 			}
 		}
 	}
 
-	return workloadSpread > 0, nil
+	var workloadRebalanced int
+	for i, pod := range podsToDelete {
+		pvc := pvcsToDelete[i]
+		// Guard from deleting all PVCs to prevent complete data loss.
+		if workloadRebalanced == len(podList.Items)-1 {
+			// Remove the annotation so that the PVC doesn't get deleted in future cycles.
+			delete(pvc.Annotations, dropPVCAnnotation)
+			_, err := o.client.UpdatePersistentVolumeClaim(ctx, &pvc)
+			if err != nil {
+				return false, err
+			}
+			continue
+		}
+
+		rebalanced, err := o.rebalanceWorkload(ctx, &pod, &pvc)
+		if err != nil {
+			return false, err
+		}
+
+		if rebalanced {
+			workloadRebalanced++
+		}
+	}
+
+	return workloadRebalanced > 0, nil
 }
 
 // workloadCorrectlySpread returns whether the selected pods are spread across
 // different nodes ensuring proper high-availability.
+// If the pods don't use persistent storage, it will always return true.
 func (o *Operator) workloadCorrectlySpread(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
 	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel)})
 	if err != nil {
@@ -910,7 +950,7 @@ func (o *Operator) workloadCorrectlySpread(ctx context.Context, namespace string
 	for _, vol := range podList.Items[0].Spec.Volumes {
 		if vol.PersistentVolumeClaim != nil {
 			hasPVC = true
-			continue
+			break
 		}
 	}
 	if !hasPVC {
@@ -961,8 +1001,8 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 	}
 
 	var (
-		messages         []string
-		spreadByOperator bool
+		messages             []string
+		rebalancedByOperator bool
 	)
 	for _, workload := range workloads {
 		correctlySpread, err := o.workloadCorrectlySpread(ctx, workload.namespace, workload.labelSelector)
@@ -974,7 +1014,7 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 			continue
 		}
 
-		spreadByOperator, err = o.spreadWorkloads(ctx, workload.namespace, workload.labelSelector)
+		rebalancedByOperator, err = o.rebalanceWorkloads(ctx, workload.namespace, workload.labelSelector)
 		if err != nil {
 			return false, "", "", err
 		}
@@ -982,7 +1022,7 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 		// If the workloads were spread by the operator, we wait for 5 minutes
 		// before setting the status so that we don't set upgradeable=false after
 		// spreading the pods.
-		if spreadByOperator {
+		if rebalancedByOperator {
 			err = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
 				correctlySpread, err := o.workloadCorrectlySpread(ctx, workload.namespace, workload.labelSelector)
 				if err != nil {
@@ -1000,7 +1040,7 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 		messages = append(
 			messages,
 			fmt.Sprintf("Highly-available workload %s/%s is incorrectly spread across multiple nodes."+
-				"You can run `oc get pvc -n %s -l %s=%s` to get all the PVCs attached to it.",
+				" You can run `oc get pvc -n %s -l %s=%s` to get all the PVCs attached to it.",
 				workload.namespace, workload.name, workload.namespace, "app.kubernetes.io/name", workload.labelSelector["app.kubernetes.io/name"],
 			),
 		)
@@ -1008,7 +1048,7 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 
 	if len(messages) > 0 {
 		msg := "Manual intervention is needed to upgrade to the next minor version. Please refer to the following documentation to fix this issue: https://github.com/openshift/runbooks/blob/master/alerts/HighlyAvailableWorkloadIncorrectlySpread.md."
-		if spreadByOperator {
+		if rebalancedByOperator {
 			msg += " The operator couldn't rebalance the pods automatically with the annotation, please refer to the runbook to fix this issue manually."
 		}
 		messages = append(messages, msg)

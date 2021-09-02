@@ -350,6 +350,14 @@ func (c *Client) ListPods(ctx context.Context, namespace string, opts metav1.Lis
 	return c.kclient.CoreV1().Pods(namespace).List(ctx, opts)
 }
 
+func (c *Client) ListNodes(ctx context.Context, opts metav1.ListOptions) (*v1.NodeList, error) {
+	return c.kclient.CoreV1().Nodes().List(ctx, opts)
+}
+
+func (c *Client) UpdateNode(ctx context.Context, node *v1.Node) (*v1.Node, error) {
+	return c.kclient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+}
+
 func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Prometheus) error {
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
 	existing, err := pclient.Get(ctx, p.GetName(), metav1.GetOptions{})
