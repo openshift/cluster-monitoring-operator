@@ -807,11 +807,13 @@ func (o *Operator) ensureNodesAreUncordoned(ctx context.Context) error {
 			continue
 		}
 
+		klog.V(2).Infof("Uncordoning node %s with annotation %s set.", node.Name, cordonAnnotation)
 		err = drain.RunCordonOrUncordon(o.drainer, &node, false)
 		if err != nil {
 			return err
 		}
 
+		klog.V(4).Infof("Removing annotation %s from node %s since it was uncordoned.", cordonAnnotation, node.Name)
 		delete(node.Annotations, cordonAnnotation)
 		_, err = o.client.UpdateNode(ctx, &node)
 		if err != nil {
@@ -830,11 +832,13 @@ func (o *Operator) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1.P
 	// Check that the node wasn't already cordoned to prevent tempering someone else cordon.
 	alreadyCordoned := node.Spec.Unschedulable
 	if !alreadyCordoned {
+		klog.V(2).Infof("Cordoning node %s.", node.Name)
 		err = drain.RunCordonOrUncordon(o.drainer, node, true)
 		if err != nil {
 			return false, err
 		}
 		// Set annotation so that we know CMO was at the origin of the cordon
+		klog.V(4).Infof("Adding annotation %s to node %s since it was cordoned by CMO.", cordonAnnotation, node.Name)
 		node.Annotations[cordonAnnotation] = fmt.Sprintf("node marked as unschedulable by cluster-monitoring-operator to reschedule %s/%s on another node", pod.Namespace, pod.Name)
 		_, err = o.client.UpdateNode(ctx, node)
 		if err != nil {
@@ -842,20 +846,24 @@ func (o *Operator) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1.P
 		}
 	}
 
+	klog.V(2).Infof("Deleting PersistentVolumeClaim %s/%s.", pvc.Namespace, pvc.Name)
 	err = o.client.DeletePersistentVolumeClaim(ctx, pvc)
 	if err != nil {
 		return false, err
 	}
+	klog.V(2).Infof("Deleting pod %s/%s.", pod.Namespace, pod.Name)
 	err = o.client.DeletePod(ctx, pod)
 	if err != nil {
 		return false, err
 	}
 
 	if !alreadyCordoned {
+		klog.V(2).Infof("Uncordoning node %s.", node.Name)
 		err = drain.RunCordonOrUncordon(o.drainer, node, false)
 		if err != nil {
 			return false, err
 		}
+		klog.V(4).Infof("Removing annotation %s from node %s since it was uncordoned.", cordonAnnotation, node.Name)
 		delete(node.Annotations, cordonAnnotation)
 		_, err = o.client.UpdateNode(ctx, node)
 		if err != nil {
@@ -910,6 +918,7 @@ func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel
 		// Guard from deleting all PVCs to prevent complete data loss.
 		if workloadRebalanced == len(podList.Items)-1 {
 			// Remove the annotation so that the PVC doesn't get deleted in future cycles.
+			klog.V(4).Infof("Removing annotation %s from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", dropPVCAnnotation, pvc.Namespace, pvc.Name)
 			delete(pvc.Annotations, dropPVCAnnotation)
 			_, err := o.client.UpdatePersistentVolumeClaim(ctx, &pvc)
 			if err != nil {
@@ -918,6 +927,7 @@ func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel
 			continue
 		}
 
+		klog.V(4).Infof("Rebalancing pod %s/%s.", pod.Namespace, pod.Name)
 		rebalanced, err := o.rebalanceWorkload(ctx, &pod, &pvc)
 		if err != nil {
 			return false, err
