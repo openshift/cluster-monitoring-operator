@@ -209,6 +209,10 @@ func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "secrets", ns, fields.Everything())
 }
 
+func (c *Client) PersistentVolumeClaimListWatchForNamespace(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "persistentvolumeclaims", ns, fields.Everything())
+}
+
 func (c *Client) InfrastructureListWatchForResource(ctx context.Context, resource string) *cache.ListWatch {
 	infrastructure := c.oscclient.ConfigV1().Infrastructures()
 

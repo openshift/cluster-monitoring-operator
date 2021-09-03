@@ -271,6 +271,15 @@ func New(
 	})
 	o.informers = append(o.informers, informer)
 
+	// Setup PVC informers to sync annotation updates.
+	for _, ns := range []string{o.namespace, o.namespaceUserWorkload} {
+		informer = cache.NewSharedIndexInformer(
+			o.client.PersistentVolumeClaimListWatchForNamespace(ns),
+			&v1.PersistentVolumeClaim{}, resyncPeriod, cache.Indexers{},
+		)
+		o.informers = append(o.informers, informer)
+	}
+
 	kubeInformersOperatorNS := informers.NewSharedInformerFactoryWithOptions(
 		c.KubernetesInterface(),
 		resyncPeriod,
