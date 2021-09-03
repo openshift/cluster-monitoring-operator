@@ -19,6 +19,7 @@ spec:
         description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
           has only {{ printf "%.2f" $value }}% available space left and is filling
           up.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFilesystemSpaceFillingUp.md
         summary: Filesystem is predicted to run out of space within the next 24 hours.
       expr: |
         (
@@ -36,6 +37,7 @@ spec:
         description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
           has only {{ printf "%.2f" $value }}% available space left and is filling
           up fast.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFilesystemSpaceFillingUp.md
         summary: Filesystem is predicted to run out of space within the next 4 hours.
       expr: |
         (
@@ -52,6 +54,7 @@ spec:
       annotations:
         description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
           has only {{ printf "%.2f" $value }}% available space left.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFilesystemAlmostOutOfSpace.md
         summary: Filesystem has less than 5% space left.
       expr: |
         (
@@ -66,6 +69,7 @@ spec:
       annotations:
         description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
           has only {{ printf "%.2f" $value }}% available space left.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFilesystemAlmostOutOfSpace.md
         summary: Filesystem has less than 3% space left.
       expr: |
         (
@@ -81,6 +85,7 @@ spec:
         description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
           has only {{ printf "%.2f" $value }}% available inodes left and is filling
           up.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFilesystemFilesFillingUp.md
         summary: Filesystem is predicted to run out of inodes within the next 24 hours.
       expr: |
         (
@@ -98,6 +103,7 @@ spec:
         description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
           has only {{ printf "%.2f" $value }}% available inodes left and is filling
           up fast.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFilesystemFilesFillingUp.md
         summary: Filesystem is predicted to run out of inodes within the next 4 hours.
       expr: |
         (
@@ -114,6 +120,7 @@ spec:
       annotations:
         description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
           has only {{ printf "%.2f" $value }}% available inodes left.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFilesystemAlmostOutOfFiles.md
         summary: Filesystem has less than 5% inodes left.
       expr: |
         (
@@ -128,6 +135,7 @@ spec:
       annotations:
         description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
           has only {{ printf "%.2f" $value }}% available inodes left.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFilesystemAlmostOutOfFiles.md
         summary: Filesystem has less than 3% inodes left.
       expr: |
         (
@@ -211,6 +219,7 @@ spec:
         description: RAID array '{{ $labels.device }}' on {{ $labels.instance }} is
           in degraded state due to one or more disks failures. Number of spare drives
           is insufficient to fix issue automatically.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeRAIDDegraded.md
         summary: RAID Array is degraded
       expr: |
         node_md_disks_required - ignoring (state) (node_md_disks{state="active"}) > 0
@@ -230,6 +239,7 @@ spec:
       annotations:
         description: File descriptors limit at {{ $labels.instance }} is currently
           at {{ printf "%.2f" $value }}%.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFileDescriptorLimit.md
         summary: Kernel is predicted to exhaust file descriptors limit soon.
       expr: |
         (
@@ -242,6 +252,7 @@ spec:
       annotations:
         description: File descriptors limit at {{ $labels.instance }} is currently
           at {{ printf "%.2f" $value }}%.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeFileDescriptorLimit.md
         summary: Kernel is predicted to exhaust file descriptors limit soon.
       expr: |
         (

@@ -10,6 +10,7 @@ spec:
     - alert: ThanosRuleQueueIsDroppingAlerts
       annotations:
         description: Thanos Rule {{$labels.instance}} is failing to queue alerts.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/ThanosRuleQueueIsDroppingAlerts.md
         summary: Thanos Rule is failing to queue alerts.
       expr: |
         sum by (job, instance) (rate(thanos_alert_queue_alerts_dropped_total{job="thanos-ruler"}[5m])) > 0

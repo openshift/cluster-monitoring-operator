@@ -28,6 +28,7 @@ spec:
       annotations:
         description: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
           state for longer than 15 minutes.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubePodNotReady.md
         summary: Pod has been in a non-ready state for more than 15 minutes.
       expr: |
         sum by (namespace, pod) (
@@ -188,6 +189,7 @@ spec:
       annotations:
         description: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to
           complete. Removing failed job after investigation should clear this alert.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeJobFailed.md
         summary: Job failed to complete.
       expr: |
         kube_job_failed{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}  > 0
@@ -326,6 +328,7 @@ spec:
         description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim
           }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage
           }} free.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubePersistentVolumeFillingUp.md
         summary: PersistentVolume is filling up.
       expr: |
         (
@@ -344,6 +347,7 @@ spec:
           $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is
           expected to fill up within four days. Currently {{ $value | humanizePercentage
           }} is available.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubePersistentVolumeFillingUp.md
         summary: PersistentVolume is filling up.
       expr: |
         (
@@ -408,6 +412,7 @@ spec:
     - alert: KubeAPIDown
       annotations:
         description: KubeAPI has disappeared from Prometheus target discovery.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeAPIDown.md
         summary: Target disappeared from Prometheus target discovery.
       expr: |
         absent(up{job="apiserver"} == 1)
@@ -430,6 +435,7 @@ spec:
     - alert: KubeNodeNotReady
       annotations:
         description: '{{ $labels.node }} has been unready for more than 15 minutes.'
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeNodeNotReady.md
         summary: Node is not ready.
       expr: |
         kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
@@ -515,6 +521,7 @@ spec:
     - alert: KubeletDown
       annotations:
         description: Kubelet has disappeared from Prometheus target discovery.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeletDown.md
         summary: Target disappeared from Prometheus target discovery.
       expr: |
         absent(up{job="kubelet", metrics_path="/metrics"} == 1)

@@ -57,6 +57,7 @@ tests:
               summary: 'Deployment has not matched the expected number of replicas'
               description: >-
                 Deployment openshift-apiserver/apiserver has not matched the expected number of replicas for longer than 15 minutes. This indicates that cluster infrastructure is unable to start or restart the necessary components. This most often occurs when one or more nodes are down or partioned from the cluster, or a fault occurs on the node that prevents the workload from starting. In rare cases this may indicate a new version of a cluster component cannot start due to a bug or configuration error. Assess the pods for this deployment to verify they are running on healthy nodes and then contact support.
+              runbook_url: 'https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeDeploymentReplicasMismatch.md'
     # Test the 'KubeDeploymentReplicasMismatch' will not fire if all replicas are available
   - interval: 5m
     input_series:
