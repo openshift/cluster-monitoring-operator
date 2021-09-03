@@ -519,10 +519,6 @@ function(params) {
       name: 'openshift-build.rules',
       rules: [
         {
-          expr: 'sum(openshift_build_total{job="kubernetes-apiservers",phase="Error"})/(sum(openshift_build_total{job="kubernetes-apiservers",phase=~"Failed|Complete|Error"}))',
-          record: 'build_error_rate',
-        },
-        {
           expr: 'sum by (strategy) (openshift_build_status_phase_total)',
           record: 'openshift:build_by_strategy:sum',
         },
@@ -610,18 +606,6 @@ function(params) {
         {
           expr: 'sum(rate(apiserver_request_total{job="apiserver"}[10m])) BY (code)',
           record: 'code:apiserver_request_total:rate:sum',
-        },
-        {
-          expr: 'sum(rate(apiserver_request_total{job="apiserver",resource=~"image.*",verb!="WATCH"}[10m])) BY (code)',
-          record: 'code:registry_api_request_count:rate:sum',
-        },
-        {
-          expr: 'sum(kube_pod_status_ready{condition="true",namespace="openshift-etcd",pod=~"etcd.*"}) by(condition)',
-          record: 'kube_pod_status_ready:etcd:sum',
-        },
-        {
-          expr: 'sum(kube_pod_status_ready{condition="true",namespace="openshift-image-registry",pod=~"image-registry.*"}) by(condition)',
-          record: 'kube_pod_status_ready:image_registry:sum',
         },
       ],
     },
