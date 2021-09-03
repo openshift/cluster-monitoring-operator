@@ -184,7 +184,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionTrue,
 		},
 		{
-			name:  "Prometheus k8s correctly spread",
+			name:  "Prometheus k8s correctly balanced",
 			infra: haInfrastructure,
 			pods: []v1.Pod{
 				{
@@ -199,7 +199,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionTrue,
 		},
 		{
-			name:  "Prometheus k8s incorrectly spread",
+			name:  "Prometheus k8s incorrectly balanced",
 			infra: haInfrastructure,
 			pods: []v1.Pod{
 				{
@@ -225,7 +225,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionTrue,
 		},
 		{
-			name:  "Alertmanager correctly spread",
+			name:  "Alertmanager correctly balanced",
 			infra: haInfrastructure,
 			pods: []v1.Pod{
 				{
@@ -244,7 +244,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionTrue,
 		},
 		{
-			name:  "Alertmanager correctly spread between 2 nodes",
+			name:  "Alertmanager correctly balanced between 2 nodes",
 			infra: haInfrastructure,
 			pods: []v1.Pod{
 				{
@@ -263,7 +263,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionTrue,
 		},
 		{
-			name:  "Alertmanager incorrectly spread",
+			name:  "Alertmanager incorrectly balanced",
 			infra: haInfrastructure,
 			pods: []v1.Pod{
 				{
@@ -282,7 +282,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionFalse,
 		},
 		{
-			name:  "Prometheus UWM correctly spread",
+			name:  "Prometheus UWM correctly balanced",
 			infra: haInfrastructure,
 			uwm:   true,
 			pods: []v1.Pod{
@@ -298,7 +298,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionTrue,
 		},
 		{
-			name:  "Prometheus UWM incorrectly spread",
+			name:  "Prometheus UWM incorrectly balanced",
 			infra: haInfrastructure,
 			uwm:   true,
 			pods: []v1.Pod{
@@ -314,7 +314,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionFalse,
 		},
 		{
-			name:  "Thanos ruler correctly spread",
+			name:  "Thanos ruler correctly balanced",
 			infra: haInfrastructure,
 			uwm:   true,
 			pods: []v1.Pod{
@@ -330,7 +330,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionTrue,
 		},
 		{
-			name:  "Thanos ruler incorrectly spread",
+			name:  "Thanos ruler incorrectly balanced",
 			infra: haInfrastructure,
 			uwm:   true,
 			pods: []v1.Pod{
@@ -346,7 +346,7 @@ func TestUpgradeableStatus(t *testing.T) {
 			upgradeable: configv1.ConditionFalse,
 		},
 		{
-			name:  "Workload incorrectly spread without PVC",
+			name:  "Workload incorrectly balanced without PVC",
 			infra: haInfrastructure,
 			pods: []v1.Pod{
 				{
@@ -412,12 +412,12 @@ func TestRebalanceWorkloads(t *testing.T) {
 	)
 
 	for _, tc := range []struct {
-		name             string
-		pvs              []v1.PersistentVolume
-		pvcs             []v1.PersistentVolumeClaim
-		spreadByOperator bool
-		expectedPods     []string
-		expectedPVCs     []string
+		name               string
+		pvs                []v1.PersistentVolume
+		pvcs               []v1.PersistentVolumeClaim
+		balancedByOperator bool
+		expectedPods       []string
+		expectedPVCs       []string
 	}{
 		{
 			name: "Annotated workload with zonal PV",
@@ -435,9 +435,9 @@ func TestRebalanceWorkloads(t *testing.T) {
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 				},
 			},
-			spreadByOperator: true,
-			expectedPods:     []string{"prometheus-k8s-0"},
-			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0"},
+			balancedByOperator: true,
+			expectedPods:       []string{"prometheus-k8s-0"},
+			expectedPVCs:       []string{"prometheus-k8s-db-prometheus-k8s-0"},
 		},
 		{
 			name: "Annotated workload with non-zonal PV",
@@ -455,9 +455,9 @@ func TestRebalanceWorkloads(t *testing.T) {
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 				},
 			},
-			spreadByOperator: true,
-			expectedPods:     []string{"prometheus-k8s-0"},
-			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
+			balancedByOperator: true,
+			expectedPods:       []string{"prometheus-k8s-0"},
+			expectedPVCs:       []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
 		},
 		{
 			name: "Non-annotated workload with zonal PV",
@@ -475,9 +475,9 @@ func TestRebalanceWorkloads(t *testing.T) {
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 				},
 			},
-			spreadByOperator: false,
-			expectedPods:     []string{"prometheus-k8s-0", "prometheus-k8s-1"},
-			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
+			balancedByOperator: false,
+			expectedPods:       []string{"prometheus-k8s-0", "prometheus-k8s-1"},
+			expectedPVCs:       []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
 		},
 		{
 			name: "Non-annotated workload with non-zonal PV",
@@ -489,9 +489,9 @@ func TestRebalanceWorkloads(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
 				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
 			},
-			spreadByOperator: false,
-			expectedPods:     []string{"prometheus-k8s-0", "prometheus-k8s-1"},
-			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
+			balancedByOperator: false,
+			expectedPods:       []string{"prometheus-k8s-0", "prometheus-k8s-1"},
+			expectedPVCs:       []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
 		},
 		{
 			name: "Should guard when all PVC are annotated",
@@ -509,9 +509,9 @@ func TestRebalanceWorkloads(t *testing.T) {
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 				},
 			},
-			spreadByOperator: true,
-			expectedPods:     []string{"prometheus-k8s-1"},
-			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-1"},
+			balancedByOperator: true,
+			expectedPods:       []string{"prometheus-k8s-1"},
+			expectedPVCs:       []string{"prometheus-k8s-db-prometheus-k8s-1"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -533,16 +533,16 @@ func TestRebalanceWorkloads(t *testing.T) {
 			}
 			fakeOperator.drainer.Client = fakeOperator.client.KubernetesInterface()
 
-			spreadByOperator, err := fakeOperator.rebalanceWorkloads(context.Background(), namespace, labelSelector)
+			balancedByOperator, err := fakeOperator.rebalanceWorkloads(context.Background(), namespace, labelSelector)
 			if err != nil {
 				t.Error(err)
 			}
 
-			if tc.spreadByOperator != spreadByOperator {
-				if tc.spreadByOperator {
-					t.Errorf("Expected operator to be able to spread workloads across multiple node by deleting annotated PVCs.")
+			if tc.balancedByOperator != balancedByOperator {
+				if tc.balancedByOperator {
+					t.Errorf("Expected operator to be able to balance workloads across multiple node by deleting annotated PVCs.")
 				} else {
-					t.Errorf("Expected operator not to be able to spread workloads across multiple node by deleting annotated PVCs.")
+					t.Errorf("Expected operator not to be able to balance workloads across multiple node by deleting annotated PVCs.")
 				}
 			}
 

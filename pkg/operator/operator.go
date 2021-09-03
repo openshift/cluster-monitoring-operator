@@ -794,12 +794,12 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 		return configv1.ConditionTrue, "", "", nil
 	}
 
-	workloadsCorrectlySpread, reason, message, err := o.WorkloadsCorrectlySpread(ctx)
+	balanced, reason, message, err := o.WorkloadsCorrectlyBalanced(ctx)
 	if err != nil {
 		return configv1.ConditionUnknown, "", "", err
 	}
 
-	if !workloadsCorrectlySpread {
+	if !balanced {
 		return configv1.ConditionFalse, reason, message, nil
 	}
 
@@ -994,10 +994,10 @@ func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel
 	return workloadRebalanced > 0, nil
 }
 
-// workloadCorrectlySpread returns whether the selected pods are spread across
-// different nodes ensuring proper high-availability.
+// workloadCorrectlyBalanced returns whether the selected pods are balanced
+// across different nodes ensuring proper high-availability.
 // If the pods don't use persistent storage, it will always return true.
-func (o *Operator) workloadCorrectlySpread(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
+func (o *Operator) workloadCorrectlyBalanced(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
 	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel)})
 	if err != nil {
 		return false, err
@@ -1028,7 +1028,7 @@ func (o *Operator) workloadCorrectlySpread(ctx context.Context, namespace string
 	return len(nodes) > 1, nil
 }
 
-func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, string, error) {
+func (o *Operator) WorkloadsCorrectlyBalanced(ctx context.Context) (bool, string, string, error) {
 	type workload struct {
 		namespace     string
 		name          string
@@ -1068,12 +1068,12 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 		rebalancedByOperator bool
 	)
 	for _, workload := range workloads {
-		correctlySpread, err := o.workloadCorrectlySpread(ctx, workload.namespace, workload.labelSelector)
+		balanced, err := o.workloadCorrectlyBalanced(ctx, workload.namespace, workload.labelSelector)
 		if err != nil {
 			return false, "", "", err
 		}
 
-		if correctlySpread {
+		if balanced {
 			continue
 		}
 
@@ -1082,17 +1082,17 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 			return false, "", "", err
 		}
 
-		// If the workloads were spread by the operator, we wait for 5 minutes
+		// If the workloads were balanced by the operator, we wait for 5 minutes
 		// before setting the status so that we don't set upgradeable=false after
-		// spreading the pods.
+		// balancing the pods.
 		if rebalancedByOperator {
 			err = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
-				correctlySpread, err := o.workloadCorrectlySpread(ctx, workload.namespace, workload.labelSelector)
+				balanced, err := o.workloadCorrectlyBalanced(ctx, workload.namespace, workload.labelSelector)
 				if err != nil {
 					return false, err
 				}
 
-				return correctlySpread, nil
+				return balanced, nil
 			})
 			if err == nil {
 				continue
@@ -1102,7 +1102,7 @@ func (o *Operator) WorkloadsCorrectlySpread(ctx context.Context) (bool, string, 
 
 		messages = append(
 			messages,
-			fmt.Sprintf("Highly-available workload %s/%s is incorrectly spread across multiple nodes."+
+			fmt.Sprintf("Highly-available workload %s/%s is incorrectly balanced across multiple nodes."+
 				" You can run `oc get pvc -n %s -l %s=%s` to get all the PVCs attached to it.",
 				workload.namespace, workload.name, workload.namespace, "app.kubernetes.io/name", workload.labelSelector["app.kubernetes.io/name"],
 			),
