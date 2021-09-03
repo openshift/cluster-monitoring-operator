@@ -268,6 +268,12 @@ data:
     # stack.
     - '{__name__="monitoring:container_memory_working_set_bytes:sum"}'
     #
+    # (monitoring-team) namespace_job:scrape_series_added:topk3_sum1h tracks the top 3 namespace/job groups which created series churns in the last hour.
+    - '{__name__="namespace_job:scrape_series_added:topk3_sum1h"}'
+    #
+    # (monitoring-team) namespace_job:scrape_samples_post_metric_relabeling:topk3 tracks the top 3 prometheus targets which produced more samples.
+    - '{__name__="namespace_job:scrape_samples_post_metric_relabeling:topk3"}'
+    #
     # (monitoring-team) monitoring:haproxy_server_http_responses_total:sum tracks the number of times users access
     # monitoring routes.
     - '{__name__="monitoring:haproxy_server_http_responses_total:sum"}'
