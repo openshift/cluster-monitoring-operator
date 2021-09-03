@@ -407,7 +407,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 				Spec:       v1.PodSpec{NodeName: "node-1", Volumes: []v1.Volume{{VolumeSource: v1.VolumeSource{PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{ClaimName: "prometheus-k8s-db-prometheus-k8s-1"}}}}},
 			},
 		}
-		nodes         = []v1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "node-1", Annotations: make(map[string]string)}}}
+		nodes         = []v1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "node-1"}}}
 		labelSelector = map[string]string{"app.kubernetes.io/name": "prometheus"}
 	)
 
