@@ -1477,6 +1477,10 @@ func (c *Client) UpdatePersistentVolumeClaim(ctx context.Context, pvc *v1.Persis
 	return c.kclient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
 }
 
+func (c *Client) GetPersistentVolume(ctx context.Context, name string) (*v1.PersistentVolume, error) {
+	return c.kclient.CoreV1().PersistentVolumes().Get(ctx, name, metav1.GetOptions{})
+}
+
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
 // over `existing` keys and values. Additionally function performs filtering of labels and annotations from `exiting` map
 // where keys starting from string defined in `metadataPrefix` are deleted. This prevents issues with preserving stale

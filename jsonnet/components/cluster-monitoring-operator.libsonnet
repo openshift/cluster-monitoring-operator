@@ -252,6 +252,11 @@ function(params) {
         resources: ['nodes'],
         verbs: ['get', 'list', 'update', 'patch'],
       },
+      {
+        apiGroups: [''],
+        resources: ['persistentvolumes'],
+        verbs: ['get'],
+      },
     ],
   },
 

@@ -148,6 +148,12 @@ rules:
   - update
   - patch
 - apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews

@@ -413,23 +413,78 @@ func TestRebalanceWorkloads(t *testing.T) {
 
 	for _, tc := range []struct {
 		name             string
+		pvs              []v1.PersistentVolume
 		pvcs             []v1.PersistentVolumeClaim
 		spreadByOperator bool
 		expectedPods     []string
 		expectedPVCs     []string
 	}{
 		{
-			name: "Workload with annotation",
+			name: "Annotated workload with zonal PV",
+			pvs: []v1.PersistentVolume{
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-0", Labels: map[string]string{zonalTopologyAnnotation: "zone-0"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-1", Labels: map[string]string{zonalTopologyAnnotation: "zone-1"}}},
+			},
 			pvcs: []v1.PersistentVolumeClaim{
-				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
-				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}}},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-0"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}},
+					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
+				},
 			},
 			spreadByOperator: true,
 			expectedPods:     []string{"prometheus-k8s-0"},
 			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0"},
 		},
 		{
-			name: "Workload without annotation",
+			name: "Annotated workload with non-zonal PV",
+			pvs: []v1.PersistentVolume{
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-0"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-1"}},
+			},
+			pvcs: []v1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-0"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}},
+					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
+				},
+			},
+			spreadByOperator: true,
+			expectedPods:     []string{"prometheus-k8s-0"},
+			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
+		},
+		{
+			name: "Non-annotated workload with zonal PV",
+			pvs: []v1.PersistentVolume{
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-0", Labels: map[string]string{zonalTopologyAnnotation: "zone-0"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-1", Labels: map[string]string{zonalTopologyAnnotation: "zone-1"}}},
+			},
+			pvcs: []v1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-0"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},
+					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
+				},
+			},
+			spreadByOperator: false,
+			expectedPods:     []string{"prometheus-k8s-0", "prometheus-k8s-1"},
+			expectedPVCs:     []string{"prometheus-k8s-db-prometheus-k8s-0", "prometheus-k8s-db-prometheus-k8s-1"},
+		},
+		{
+			name: "Non-annotated workload with non-zonal PV",
+			pvs: []v1.PersistentVolume{
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-0"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-1"}},
+			},
 			pvcs: []v1.PersistentVolumeClaim{
 				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
 				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
@@ -440,9 +495,19 @@ func TestRebalanceWorkloads(t *testing.T) {
 		},
 		{
 			name: "Should guard when all PVC are annotated",
+			pvs: []v1.PersistentVolume{
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-0", Labels: map[string]string{zonalTopologyAnnotation: "zone-0"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "pv-1", Labels: map[string]string{zonalTopologyAnnotation: "zone-1"}}},
+			},
 			pvcs: []v1.PersistentVolumeClaim{
-				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}}},
-				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}}},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}},
+					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-0"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}},
+					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
+				},
 			},
 			spreadByOperator: true,
 			expectedPods:     []string{"prometheus-k8s-1"},
@@ -459,6 +524,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 						fake.NewSimpleClientset(
 							&v1.PodList{Items: pods},
 							&v1.PersistentVolumeClaimList{Items: tc.pvcs},
+							&v1.PersistentVolumeList{Items: tc.pvs},
 							&v1.NodeList{Items: nodes},
 						),
 					)),

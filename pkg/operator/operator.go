@@ -51,8 +51,9 @@ import (
 )
 
 const (
-	dropPVCAnnotation = "openshift.io/cluster-monitoring-drop-pvc"
-	cordonAnnotation  = "openshift.io/cluster-monitoring-cordoned"
+	dropPVCAnnotation       = "openshift.io/cluster-monitoring-drop-pvc"
+	cordonAnnotation        = "openshift.io/cluster-monitoring-cordoned"
+	zonalTopologyAnnotation = "topology.kubernetes.io/zone"
 )
 
 // InfrastructureConfig stores information about the cluster infrastructure
@@ -873,11 +874,22 @@ func (o *Operator) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1.P
 		}
 	}
 
-	klog.V(2).Infof("Deleting PersistentVolumeClaim %s/%s.", pvc.Namespace, pvc.Name)
-	err = o.client.DeletePersistentVolumeClaim(ctx, pvc)
+	pv, err := o.client.GetPersistentVolume(ctx, pvc.Spec.VolumeName)
 	if err != nil {
 		return false, err
 	}
+	if pv.Labels != nil {
+		// Do not delete the PVC if the storage provider hasn't set the topology.kubernetes.io/zone label on the PV.
+		// In most cases, when the PV isn't zonal, pods can access it from a node in a different AZ so we don't need to delete it.
+		if _, ok := pv.Labels[zonalTopologyAnnotation]; ok {
+			klog.V(2).Infof("Deleting PersistentVolumeClaim %s/%s.", pvc.Namespace, pvc.Name)
+			err = o.client.DeletePersistentVolumeClaim(ctx, pvc)
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+
 	klog.V(2).Infof("Deleting pod %s/%s.", pod.Namespace, pod.Name)
 	err = o.client.DeletePod(ctx, pod)
 	if err != nil {
