@@ -56,11 +56,13 @@ import (
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
+	"k8s.io/kubectl/pkg/drain"
 )
 
 const (
 	deploymentCreateTimeout = 5 * time.Minute
 	metadataPrefix          = "monitoring.openshift.io/"
+	cordonAnnotation        = "openshift.io/cluster-monitoring-cordoned"
 )
 
 type Client struct {
@@ -1479,6 +1481,78 @@ func (c *Client) UpdatePersistentVolumeClaim(ctx context.Context, pvc *v1.Persis
 
 func (c *Client) GetPersistentVolume(ctx context.Context, name string) (*v1.PersistentVolume, error) {
 	return c.kclient.CoreV1().PersistentVolumes().Get(ctx, name, metav1.GetOptions{})
+}
+
+// CordonNode will make the given node unschedulable if it isn't already and
+// set the openshift.io/cluster-monitoring-cordoned annotation to know that the
+// node was cordoned by CMO. This is needed when uncordoning the node to make
+// sure that we do not temper someone else cordon.
+func (c *Client) CordonNode(ctx context.Context, drainer *drain.Helper, nodeName string) error {
+	node, err := c.GetNode(ctx, nodeName)
+	if err != nil {
+		return err
+	}
+
+	alreadyCordoned := node.Spec.Unschedulable
+	if alreadyCordoned {
+		return nil
+	}
+
+	klog.V(2).Infof("Cordoning node %s.", node.Name)
+	err = drain.RunCordonOrUncordon(drainer, node, true)
+	if err != nil {
+		return err
+	}
+	// Set annotation so that we know CMO was at the origin of the cordon
+	klog.V(4).Infof("Adding annotation %s to node %s since it was cordoned by CMO.", cordonAnnotation, node.Name)
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		node, err := c.GetNode(ctx, node.Name)
+		if err != nil {
+			return err
+		}
+		if node.Annotations == nil {
+			node.Annotations = make(map[string]string)
+		}
+		node.Annotations[cordonAnnotation] = "node marked as unschedulable by cluster-monitoring-operator to reschedule a pod on another node"
+		_, err = c.UpdateNode(ctx, node)
+		return err
+	})
+}
+
+// UncordonNode will make the given node schedulable if it has the
+// openshift.io/cluster-monitoring-cordoned annotation set to make sure that we
+// only uncordon nodes that have been cordon by CMO. Once that is node, we
+// remove the annotation since the node schedulability shouldn't be handled by
+// CMO anymore.
+func (c *Client) UncordonNode(ctx context.Context, drainer *drain.Helper, nodeName string) error {
+	node, err := c.GetNode(ctx, nodeName)
+	if err != nil {
+		return err
+	}
+
+	cordonedByOperator := false
+	if node.Annotations != nil {
+		_, cordonedByOperator = node.Annotations[cordonAnnotation]
+	}
+	if !cordonedByOperator {
+		return nil
+	}
+
+	klog.V(2).Infof("Uncordoning node %s.", node.Name)
+	err = drain.RunCordonOrUncordon(drainer, node, false)
+	if err != nil {
+		return err
+	}
+	klog.V(4).Infof("Removing annotation %s from node %s since it was uncordoned.", cordonAnnotation, node.Name)
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		node, err := c.GetNode(ctx, node.Name)
+		if err != nil {
+			return err
+		}
+		delete(node.Annotations, cordonAnnotation)
+		_, err = c.UpdateNode(ctx, node)
+		return err
+	})
 }
 
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence

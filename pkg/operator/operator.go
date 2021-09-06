@@ -52,7 +52,6 @@ import (
 
 const (
 	dropPVCAnnotation       = "openshift.io/cluster-monitoring-drop-pvc"
-	cordonAnnotation        = "openshift.io/cluster-monitoring-cordoned"
 	zonalTopologyAnnotation = "topology.kubernetes.io/zone"
 )
 
@@ -278,6 +277,9 @@ func New(
 			o.client.PersistentVolumeClaimListWatchForNamespace(ns),
 			&v1.PersistentVolumeClaim{}, resyncPeriod, cache.Indexers{},
 		)
+		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+		})
 		o.informers = append(o.informers, informer)
 	}
 
@@ -813,27 +815,7 @@ func (o *Operator) ensureNodesAreUncordoned(ctx context.Context) error {
 	}
 
 	for _, node := range nodeList.Items {
-		_, cordonedByCMO := node.Annotations[cordonAnnotation]
-		if !cordonedByCMO {
-			continue
-		}
-
-		klog.V(2).Infof("Uncordoning node %s with annotation %s set.", node.Name, cordonAnnotation)
-		err = drain.RunCordonOrUncordon(o.drainer, &node, false)
-		if err != nil {
-			return err
-		}
-
-		klog.V(4).Infof("Removing annotation %s from node %s since it was uncordoned.", cordonAnnotation, node.Name)
-		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			node, err := o.client.GetNode(ctx, node.Name)
-			if err != nil {
-				return err
-			}
-			delete(node.Annotations, cordonAnnotation)
-			_, err = o.client.UpdateNode(ctx, node)
-			return err
-		})
+		err := o.client.UncordonNode(ctx, o.drainer, node.Name)
 		if err != nil {
 			return err
 		}
@@ -841,42 +823,21 @@ func (o *Operator) ensureNodesAreUncordoned(ctx context.Context) error {
 	return nil
 }
 
-func (o *Operator) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1.PersistentVolumeClaim) (bool, error) {
-	node, err := o.client.GetNode(ctx, pod.Spec.NodeName)
+func (o *Operator) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1.PersistentVolumeClaim) error {
+	err := o.client.CordonNode(ctx, o.drainer, pod.Spec.NodeName)
 	if err != nil {
-		return false, err
+		return err
 	}
-
-	// Check that the node wasn't already cordoned to prevent tempering someone else cordon.
-	alreadyCordoned := node.Spec.Unschedulable
-	if !alreadyCordoned {
-		klog.V(2).Infof("Cordoning node %s.", node.Name)
-		err = drain.RunCordonOrUncordon(o.drainer, node, true)
+	defer func() {
+		err := o.client.UncordonNode(ctx, o.drainer, pod.Spec.NodeName)
 		if err != nil {
-			return false, err
+			klog.Errorf("Couldn't uncordon node %v: %v.", pod.Spec.NodeName, err)
 		}
-		// Set annotation so that we know CMO was at the origin of the cordon
-		klog.V(4).Infof("Adding annotation %s to node %s since it was cordoned by CMO.", cordonAnnotation, node.Name)
-		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			node, err := o.client.GetNode(ctx, node.Name)
-			if err != nil {
-				return err
-			}
-			if node.Annotations == nil {
-				node.Annotations = make(map[string]string)
-			}
-			node.Annotations[cordonAnnotation] = fmt.Sprintf("node marked as unschedulable by cluster-monitoring-operator to reschedule %s/%s on another node", pod.Namespace, pod.Name)
-			_, err = o.client.UpdateNode(ctx, node)
-			return err
-		})
-		if err != nil {
-			return false, err
-		}
-	}
+	}()
 
 	pv, err := o.client.GetPersistentVolume(ctx, pvc.Spec.VolumeName)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if pv.Labels != nil {
 		// Do not delete the PVC if the storage provider hasn't set the topology.kubernetes.io/zone label on the PV.
@@ -885,49 +846,23 @@ func (o *Operator) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1.P
 			klog.V(2).Infof("Deleting PersistentVolumeClaim %s/%s.", pvc.Namespace, pvc.Name)
 			err = o.client.DeletePersistentVolumeClaim(ctx, pvc)
 			if err != nil {
-				return false, err
+				return err
 			}
 		}
 	}
 
 	klog.V(2).Infof("Deleting pod %s/%s.", pod.Namespace, pod.Name)
-	err = o.client.DeletePod(ctx, pod)
-	if err != nil {
-		return false, err
-	}
-
-	if !alreadyCordoned {
-		klog.V(2).Infof("Uncordoning node %s.", node.Name)
-		err = drain.RunCordonOrUncordon(o.drainer, node, false)
-		if err != nil {
-			return false, err
-		}
-		klog.V(4).Infof("Removing annotation %s from node %s since it was uncordoned.", cordonAnnotation, node.Name)
-		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			node, err := o.client.GetNode(ctx, node.Name)
-			if err != nil {
-				return err
-			}
-			delete(node.Annotations, cordonAnnotation)
-			_, err = o.client.UpdateNode(ctx, node)
-			return err
-		})
-		if err != nil {
-			return false, err
-		}
-	}
-
-	return true, nil
+	return o.client.DeletePod(ctx, pod)
 }
 
-func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
+func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel map[string]string) error {
 	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel)})
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if len(podList.Items) <= 1 {
-		return false, nil
+		return nil
 	}
 
 	var (
@@ -944,7 +879,7 @@ func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel
 				break
 			}
 			if err != nil {
-				return false, err
+				return err
 			}
 
 			dropPVC, ok := pvc.Annotations[dropPVCAnnotation]
@@ -958,11 +893,14 @@ func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel
 		}
 	}
 
-	var workloadRebalanced int
+	if len(pvcsToDelete) == 0 {
+		return nil
+	}
+
 	for i, pod := range podsToDelete {
 		pvc := pvcsToDelete[i]
 		// Guard from deleting all PVCs to prevent complete data loss.
-		if workloadRebalanced == len(podList.Items)-1 {
+		if i == len(podList.Items)-1 {
 			// Remove the annotation so that the PVC doesn't get deleted in future cycles.
 			klog.V(4).Infof("Removing annotation %s from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", dropPVCAnnotation, pvc.Namespace, pvc.Name)
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -975,23 +913,24 @@ func (o *Operator) rebalanceWorkloads(ctx context.Context, namespace string, sel
 				return err
 			})
 			if err != nil {
-				return false, err
+				return err
 			}
 			break
 		}
 
 		klog.V(4).Infof("Rebalancing pod %s/%s.", pod.Namespace, pod.Name)
-		rebalanced, err := o.rebalanceWorkload(ctx, &pod, &pvc)
+		err := o.rebalanceWorkload(ctx, &pod, &pvc)
 		if err != nil {
-			return false, err
-		}
-
-		if rebalanced {
-			workloadRebalanced++
+			return err
 		}
 	}
 
-	return workloadRebalanced > 0, nil
+	// If the workloads were balanced by the operator, we wait for 5 minutes
+	// before setting the status so that we don't set upgradeable=false after
+	// balancing the pods.
+	return wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+		return o.workloadCorrectlyBalanced(ctx, namespace, sel)
+	})
 }
 
 // workloadCorrectlyBalanced returns whether the selected pods are balanced
@@ -1077,27 +1016,9 @@ func (o *Operator) WorkloadsCorrectlyBalanced(ctx context.Context) (bool, string
 			continue
 		}
 
-		rebalancedByOperator, err = o.rebalanceWorkloads(ctx, workload.namespace, workload.labelSelector)
+		err = o.rebalanceWorkloads(ctx, workload.namespace, workload.labelSelector)
 		if err != nil {
 			return false, "", "", err
-		}
-
-		// If the workloads were balanced by the operator, we wait for 5 minutes
-		// before setting the status so that we don't set upgradeable=false after
-		// balancing the pods.
-		if rebalancedByOperator {
-			err = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
-				balanced, err := o.workloadCorrectlyBalanced(ctx, workload.namespace, workload.labelSelector)
-				if err != nil {
-					return false, err
-				}
-
-				return balanced, nil
-			})
-			if err == nil {
-				continue
-			}
-
 		}
 
 		messages = append(

@@ -245,7 +245,7 @@ function(params) {
       {
         apiGroups: [''],
         resources: ['persistentvolumeclaims'],
-        verbs: ['get', 'list', 'update', 'delete'],
+        verbs: ['get', 'list', 'watch', 'update', 'delete'],
       },
       {
         apiGroups: [''],
