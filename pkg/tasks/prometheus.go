@@ -107,7 +107,7 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 			return errors.Wrap(err, "unmarshalling grafana datasource failed")
 		}
 
-		basicAuthPassword := d.Datasources[0].BasicAuthPassword
+		basicAuthPassword := d.Datasources[0].SecureJSONData.BasicAuthPassword
 
 		htpasswdSecret, err := t.factory.PrometheusK8sHtpasswdSecret(basicAuthPassword)
 		if err != nil {

@@ -31,6 +31,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"golang.org/x/crypto/bcrypt"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,7 +42,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -2165,10 +2165,14 @@ type GrafanaDatasources struct {
 	Datasources []*GrafanaDatasource `json:"datasources"`
 }
 
+type SecureJSONData struct {
+	BasicAuthPassword string           `json:"basicAuthPassword"`
+}
+
 type GrafanaDatasource struct {
 	Access            string           `json:"access"`
 	BasicAuth         bool             `json:"basicAuth"`
-	BasicAuthPassword string           `json:"basicAuthPassword"`
+	SecureJSONData    SecureJSONData   `json:"secureJsonData"`
 	BasicAuthUser     string           `json:"basicAuthUser"`
 	Editable          bool             `json:"editable"`
 	JsonData          *GrafanaJsonData `json:"jsonData"`
@@ -2194,7 +2198,7 @@ func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
 	if err != nil {
 		return nil, err
 	}
-	d.Datasources[0].BasicAuthPassword, err = GeneratePassword(255)
+	d.Datasources[0].SecureJSONData.BasicAuthPassword, err = GeneratePassword(255)
 	if err != nil {
 		return nil, err
 	}
