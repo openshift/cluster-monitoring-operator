@@ -28,6 +28,10 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 )
 
+const (
+	cordonAnnotation = "openshift.io/cluster-monitoring-cordoned"
+)
+
 func TestUpgradeableStatus(t *testing.T) {
 	var (
 		haInfrastructure      = InfrastructureConfig{highlyAvailableInfrastructure: true}
@@ -444,6 +448,61 @@ func TestRebalanceWorkloads(t *testing.T) {
 			// Make sure that the node is uncordon
 			if node.Spec.Unschedulable {
 				t.Errorf("Node %s is unschedulable.", node.Name)
+			}
+		})
+	}
+}
+
+func TestEnsureNodesAreUncordonned(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		node          v1.Node
+		unschedulable bool
+	}{
+		{
+			name: "Node made unschedulable by CMO",
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node-1", Annotations: map[string]string{cordonAnnotation: "cordoned by CMO"}},
+				Spec:       v1.NodeSpec{Unschedulable: true},
+			},
+			unschedulable: false,
+		},
+		{
+			name: "Node not made unschedulable by CMO",
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node-2"},
+				Spec:       v1.NodeSpec{Unschedulable: true},
+			},
+			unschedulable: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeOperator := &Operator{
+				client: client.New(
+					"",
+					"",
+					"",
+					client.KubernetesClient(
+						fake.NewSimpleClientset(
+							&tc.node,
+						),
+					)),
+				drainer: &drain.Helper{Ctx: context.Background()},
+			}
+			fakeOperator.drainer.Client = fakeOperator.client.KubernetesInterface()
+
+			err := fakeOperator.ensureNodesAreUncordoned(context.Background())
+			if err != nil {
+				t.Error(err)
+			}
+
+			node, err := fakeOperator.client.GetNode(context.Background(), tc.node.Name)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if tc.unschedulable != node.Spec.Unschedulable {
+				t.Errorf("Expected node %s unschedulable status to be: %t, got %t.", tc.node.Name, tc.unschedulable, node.Spec.Unschedulable)
 			}
 		})
 	}
