@@ -130,7 +130,7 @@ func (o *Operator) workloadsCorrectlyBalanced(ctx context.Context) (bool, string
 // across different nodes ensuring proper high-availability.
 // If the pods don't use persistent storage, it will always return true.
 func (o *Operator) workloadCorrectlyBalanced(ctx context.Context, namespace string, sel map[string]string) (bool, error) {
-	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel)})
+	podList, err := o.client.ListPods(ctx, namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(sel), FieldSelector: "status.phase=Running"})
 	if err != nil {
 		return false, err
 	}
