@@ -239,6 +239,27 @@ function(params) {
       },
       {
         apiGroups: [''],
+        resources: ['nodes'],
+        verbs: ['get', 'list', 'update', 'patch'],
+      },
+      {
+        apiGroups: [''],
+        resources: ['persistentvolumes'],
+        verbs: ['get'],
+      },
+    ],
+  },
+
+  openshiftMonitoringRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'cluster-monitoring-operator',
+      namespace: cfg.namespace,
+    },
+    rules: [
+      {
+        apiGroups: [''],
         resources: ['pods'],
         verbs: ['list', 'delete'],
       },
@@ -247,15 +268,26 @@ function(params) {
         resources: ['persistentvolumeclaims'],
         verbs: ['get', 'list', 'watch', 'update', 'delete'],
       },
+    ],
+  },
+
+  openshiftUserWorkloadMonitoringRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'cluster-monitoring-operator',
+      namespace: cfg.namespaceUserWorkload,
+    },
+    rules: [
       {
         apiGroups: [''],
-        resources: ['nodes'],
-        verbs: ['get', 'list', 'update', 'patch'],
+        resources: ['pods'],
+        verbs: ['list', 'delete'],
       },
       {
         apiGroups: [''],
-        resources: ['persistentvolumes'],
-        verbs: ['get'],
+        resources: ['persistentvolumeclaims'],
+        verbs: ['get', 'list', 'watch', 'update', 'delete'],
       },
     ],
   },
