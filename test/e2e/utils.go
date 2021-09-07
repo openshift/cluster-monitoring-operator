@@ -16,8 +16,14 @@ package e2e
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Jeffail/gabs"
+	"github.com/openshift/library-go/pkg/crypto"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apiserver/pkg/authentication/user"
 )
 
 func getActiveTarget(body []byte, jobName string) error {
@@ -72,4 +78,66 @@ func getThanosRules(body []byte, expGroupName, expRuleName string) error {
 		}
 	}
 	return fmt.Errorf("'%s' alert not found in '%s' group", expRuleName, expGroupName)
+}
+
+func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
+	newCAConfig, err := crypto.MakeSelfSignedCAConfig(
+		fmt.Sprintf("%s@%d", "openshift-cluster-monitoring-test", time.Now().Unix()),
+		crypto.DefaultCertificateLifetimeInDays,
+	)
+	if err != nil {
+		return errors.Wrap(err, "error generating self signed CA")
+	}
+
+	newCA := &crypto.CA{
+		SerialGenerator: &crypto.RandomSerialGenerator{},
+		Config:          newCAConfig,
+	}
+
+	newCABytes, newCAKeyBytes, err := newCA.Config.GetPEMBytes()
+	if err != nil {
+		return errors.Wrap(err, "error getting PEM bytes from CA")
+	}
+
+	s.Data["ca.crt"] = newCABytes
+	s.Data["ca.key"] = newCAKeyBytes
+	// create serving cert and key
+	{
+		cfg, err := newCA.MakeServerCert(
+			sets.NewString(string(s.Data["serving-cert-url"])),
+			crypto.DefaultCertificateLifetimeInDays,
+		)
+		if err != nil {
+			return errors.Wrap(err, "error making server certificate")
+		}
+
+		crt, key, err := cfg.GetPEMBytes()
+		if err != nil {
+			return errors.Wrap(err, "error getting PEM bytes for server certificate")
+		}
+		s.Data["server.crt"] = crt
+		s.Data["server.key"] = key
+		s.Data["server-ca.pem"] = append(crt, newCABytes...)
+	}
+	// create client cert and key
+	{
+		cfg, err := newCA.MakeClientCertificateForDuration(
+			&user.DefaultInfo{
+				Name: string(s.Data["client-cert-name"]),
+			},
+			time.Duration(crypto.DefaultCertificateLifetimeInDays)*24*time.Hour,
+		)
+		if err != nil {
+			return errors.Wrap(err, "error making client certificate")
+		}
+
+		crt, key, err := cfg.GetPEMBytes()
+		if err != nil {
+			return errors.Wrap(err, "error getting PEM bytes for client certificate")
+		}
+		s.Data["client.crt"] = crt
+		s.Data["client.key"] = key
+	}
+
+	return nil
 }
