@@ -16,8 +16,8 @@ TMP_BIN="$(pwd)/tmp/bin"
 PATH="${TMP_BIN}:${PATH}"
 
 # Set default variable values
-: ${VERSION_FILE:="jsonnet/versions.yaml"}
-: ${INTERACTIVE:="true"}
+: "${VERSION_FILE:=jsonnet/versions.yaml}"
+: "${INTERACTIVE:=true}"
 
 version_from_remote() {
 	curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/master/VERSION"

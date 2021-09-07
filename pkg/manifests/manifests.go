@@ -2166,21 +2166,21 @@ type GrafanaDatasources struct {
 }
 
 type SecureJSONData struct {
-	BasicAuthPassword string           `json:"basicAuthPassword"`
+	BasicAuthPassword string `json:"basicAuthPassword"`
 }
 
 type GrafanaDatasource struct {
-	Access            string           `json:"access"`
-	BasicAuth         bool             `json:"basicAuth"`
-	SecureJSONData    SecureJSONData   `json:"secureJsonData"`
-	BasicAuthUser     string           `json:"basicAuthUser"`
-	Editable          bool             `json:"editable"`
-	JsonData          *GrafanaJsonData `json:"jsonData"`
-	Name              string           `json:"name"`
-	OrgId             int              `json:"orgId"`
-	Type              string           `json:"type"`
-	Url               string           `json:"url"`
-	Version           int              `json:"version"`
+	Access         string           `json:"access"`
+	BasicAuth      bool             `json:"basicAuth"`
+	SecureJSONData SecureJSONData   `json:"secureJsonData"`
+	BasicAuthUser  string           `json:"basicAuthUser"`
+	Editable       bool             `json:"editable"`
+	JsonData       *GrafanaJsonData `json:"jsonData"`
+	Name           string           `json:"name"`
+	OrgId          int              `json:"orgId"`
+	Type           string           `json:"type"`
+	Url            string           `json:"url"`
+	Version        int              `json:"version"`
 }
 
 type GrafanaJsonData struct {
