@@ -63,6 +63,7 @@ const (
 	deploymentCreateTimeout = 5 * time.Minute
 	metadataPrefix          = "monitoring.openshift.io/"
 	cordonAnnotation        = "openshift.io/cluster-monitoring-cordoned"
+	cordonAnnotationMessage = "node marked as unschedulable by cluster-monitoring-operator to reschedule a pod on another node"
 )
 
 type Client struct {
@@ -1513,7 +1514,7 @@ func (c *Client) CordonNode(ctx context.Context, drainer *drain.Helper, nodeName
 		if node.Annotations == nil {
 			node.Annotations = make(map[string]string)
 		}
-		node.Annotations[cordonAnnotation] = "node marked as unschedulable by cluster-monitoring-operator to reschedule a pod on another node"
+		node.Annotations[cordonAnnotation] = cordonAnnotationMessage
 		_, err = c.UpdateNode(ctx, node)
 		return err
 	})

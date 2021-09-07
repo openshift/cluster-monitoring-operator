@@ -24,6 +24,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubectl/pkg/drain"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -1581,4 +1582,117 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCordonNode(t *testing.T) {
+	for _, tc := range []struct {
+		name                  string
+		node                  v1.Node
+		expectedUnschedulable bool
+		expectedAnnotations   map[string]string
+	}{
+		{
+			name: "Schedulable node",
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node-1", Annotations: map[string]string{}},
+				Spec:       v1.NodeSpec{Unschedulable: false},
+			},
+			expectedUnschedulable: true,
+			expectedAnnotations:   map[string]string{cordonAnnotation: cordonAnnotationMessage},
+		},
+		{
+			name: "Unschedulable node",
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node-2", Annotations: map[string]string{}},
+				Spec:       v1.NodeSpec{Unschedulable: true},
+			},
+			expectedUnschedulable: true,
+			expectedAnnotations:   map[string]string{},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := Client{
+				kclient: fake.NewSimpleClientset(tc.node.DeepCopy()),
+			}
+			drainer := drain.Helper{Ctx: context.Background(), Client: c.KubernetesInterface()}
+
+			err := c.CordonNode(context.Background(), &drainer, tc.node.Name)
+			if err != nil {
+				t.Error(err)
+			}
+
+			node, err := c.GetNode(context.Background(), tc.node.Name)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if tc.expectedUnschedulable != node.Spec.Unschedulable {
+				t.Errorf("Expected node %s unschedulable status to be: %t, got %t.", tc.node.Name, tc.expectedUnschedulable, node.Spec.Unschedulable)
+			}
+
+			if !reflect.DeepEqual(tc.expectedAnnotations, node.Annotations) {
+				t.Errorf("Expected node %s annotations to be: %v, got %v.", tc.node.Name, tc.expectedAnnotations, node.Annotations)
+			}
+		})
+	}
+}
+
+func TestUncordonNode(t *testing.T) {
+	expectedAnnotations := map[string]string{}
+	for _, tc := range []struct {
+		name                  string
+		node                  v1.Node
+		expectedUnschedulable bool
+	}{
+		{
+			name: "Schedulable node",
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node-1", Annotations: map[string]string{}},
+				Spec:       v1.NodeSpec{Unschedulable: false},
+			},
+			expectedUnschedulable: false,
+		},
+		{
+			name: "Unschedulable node",
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node-2", Annotations: map[string]string{}},
+				Spec:       v1.NodeSpec{Unschedulable: true},
+			},
+			expectedUnschedulable: true,
+		},
+		{
+			name: "Unschedulable node marked by CMO",
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node-3", Annotations: map[string]string{cordonAnnotation: cordonAnnotationMessage}},
+				Spec:       v1.NodeSpec{Unschedulable: true},
+			},
+			expectedUnschedulable: false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := Client{
+				kclient: fake.NewSimpleClientset(tc.node.DeepCopy()),
+			}
+			drainer := drain.Helper{Ctx: context.Background(), Client: c.KubernetesInterface()}
+
+			err := c.UncordonNode(context.Background(), &drainer, tc.node.Name)
+			if err != nil {
+				t.Error(err)
+			}
+
+			node, err := c.GetNode(context.Background(), tc.node.Name)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if tc.expectedUnschedulable != node.Spec.Unschedulable {
+				t.Errorf("Expected node %s unschedulable status to be: %t, got %t.", tc.node.Name, tc.expectedUnschedulable, node.Spec.Unschedulable)
+			}
+
+			if !reflect.DeepEqual(expectedAnnotations, node.Annotations) {
+				t.Errorf("Expected node %s annotations to be: %v, got %v.", tc.node.Name, expectedAnnotations, node.Annotations)
+			}
+		})
+	}
+
 }
