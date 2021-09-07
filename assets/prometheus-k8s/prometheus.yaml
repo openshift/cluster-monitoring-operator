@@ -141,7 +141,6 @@ spec:
     - sidecar
     - --prometheus.url=http://localhost:9090/
     - --tsdb.path=/prometheus
-    - --grpc-address=[$(POD_IP)]:10901
     - --http-address=127.0.0.1:10902
     - --grpc-server-tls-cert=/etc/tls/grpc/server.crt
     - --grpc-server-tls-key=/etc/tls/grpc/server.key
