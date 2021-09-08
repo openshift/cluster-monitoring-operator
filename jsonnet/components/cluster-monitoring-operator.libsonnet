@@ -194,6 +194,12 @@ function(params) {
       },
       {
         apiGroups: ['config.openshift.io'],
+        resources: ['apiservers'],
+        resourceNames: ['cluster'],
+        verbs: ['get', 'list', 'watch'],
+      },
+      {
+        apiGroups: ['config.openshift.io'],
         resources: ['proxies'],
         verbs: ['get'],
       },

@@ -117,6 +117,16 @@ rules:
   - watch
 - apiGroups:
   - config.openshift.io
+  resourceNames:
+  - cluster
+  resources:
+  - apiservers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
   resources:
   - proxies
   verbs:

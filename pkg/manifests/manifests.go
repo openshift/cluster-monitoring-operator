@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/openshift/library-go/pkg/crypto"
 	"hash/fnv"
 	"io"
 	"net"
@@ -245,6 +246,8 @@ var (
 	PrometheusConfigReloaderFlag                         = "--prometheus-config-reloader="
 	PrometheusOperatorPrometheusInstanceNamespacesFlag   = "--prometheus-instance-namespaces="
 	PrometheusOperatorAlertmanagerInstanceNamespacesFlag = "--alertmanager-instance-namespaces="
+	PrometheusOperatorWebTLSCipherSuitesFlag             = "--web.tls-cipher-suites="
+	PrometheusOperatorWebTLSMinTLSVersionFlag            = "--web.tls-min-version="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -1979,7 +1982,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAcc
 	return s, nil
 }
 
-func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorDeployment(config *APIServerConfig) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorDeployment))
 	if err != nil {
 		return nil, err
@@ -2018,6 +2021,8 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 			if f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel != "" {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel))
 			}
+
+			args = setTLSSecurityConfiguration(f.namespace, args, config)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
@@ -2026,7 +2031,7 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 	return d, nil
 }
 
-func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorUserWorkloadDeployment(config *APIServerConfig) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadDeployment))
 	if err != nil {
 		return nil, err
@@ -2064,12 +2069,40 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment
 			if f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel != "" {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel))
 			}
+			args = setTLSSecurityConfiguration(f.namespace, args, config)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
 	d.Namespace = f.namespaceUserWorkload
 
 	return d, nil
+}
+
+func setTLSSecurityConfiguration(namespace string, args []string, config *APIServerConfig) []string {
+	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(config.GetTLSCiphers()), ",")
+	args = setArg(namespace, args, PrometheusOperatorWebTLSCipherSuitesFlag, cipherSuites)
+
+	minTLSVersion := config.GetMinTLSVersion()
+	args = setArg(namespace, args, PrometheusOperatorWebTLSMinTLSVersionFlag, string(minTLSVersion))
+
+	return args
+}
+
+func setArg(namespace string, args []string, argName string, argValue string) []string {
+	flagFound := false
+	for i := range args {
+		if strings.HasPrefix(args[i], argName) && namespace != "" {
+			args[i] = fmt.Sprintf("%s%s", argName, argValue)
+			flagFound = true
+		}
+	}
+
+	if !flagFound {
+		arg := fmt.Sprintf("%s%s", argName, argValue)
+		args = append(args, arg)
+	}
+
+	return args
 }
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
@@ -3479,7 +3512,7 @@ func (f *Factory) mountThanosRulerAlertmanagerSecrets(t *monv1.ThanosRuler) {
 	}
 
 	t.Spec.Volumes = append(t.Spec.Volumes, volumes...)
-	for i, _ := range t.Spec.Containers {
+	for i := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
 			t.Spec.Containers[i].VolumeMounts = append(t.Spec.Containers[i].VolumeMounts, volumeMounts...)
@@ -3494,7 +3527,7 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 	}
 	digestBytes := md5.Sum([]byte(alertmanagerConfig.StringData["alertmanagers.yaml"]))
 	digest = fmt.Sprintf("%x", digestBytes)
-	for i, _ := range t.Spec.Containers {
+	for i := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
 			// Thanos ruler does not refresh its config when the alertmanagers secret changes.
