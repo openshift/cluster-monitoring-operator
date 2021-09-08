@@ -2194,7 +2194,7 @@ func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
 	}
 
 	d := &GrafanaDatasources{}
-	err = json.Unmarshal(s.Data["datasources.yaml"], d)
+	err = json.Unmarshal([]byte(s.StringData["datasources.yaml"]), d)
 	if err != nil {
 		return nil, err
 	}
@@ -2207,7 +2207,7 @@ func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
 	if err != nil {
 		return nil, err
 	}
-	s.Data["prometheus.yaml"] = b
+	s.StringData["prometheus.yaml"] = string(b)
 
 	s.Namespace = f.namespace
 
