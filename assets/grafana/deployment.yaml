@@ -19,7 +19,7 @@ spec:
     metadata:
       annotations:
         checksum/grafana-config: 94f8833aca0fbf265de53ed84b7547b9
-        checksum/grafana-datasources: 408092253404497e8938a433721d0242
+        checksum/grafana-datasources: 47b57f04e7d67e0e022669613999e381
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: grafana

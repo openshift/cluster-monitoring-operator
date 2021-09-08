@@ -150,7 +150,9 @@ local inCluster =
           editable: false,
           basicAuth: true,
           basicAuthUser: 'internal',
-          basicAuthPassword: '',
+          secureJsonData: {
+            basicAuthPassword: '',
+          },
           jsonData: {
             tlsSkipVerify: true,
           },
