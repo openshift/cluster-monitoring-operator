@@ -64,7 +64,8 @@ cd jsonnet
 jb update
 ```
 
-Now make sure that you only update or adjust the dependency you need to and commit that update
+Now make sure that you only update or adjust the dependency you need to and commit that update.
+Please refer to [Development Doc](Documentation/development.md) for more information.
 
 ```
 git add -p jsonnet/jsonnetfile.lock.json
