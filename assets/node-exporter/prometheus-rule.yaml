@@ -23,7 +23,7 @@ spec:
         summary: Filesystem is predicted to run out of space within the next 24 hours.
       expr: |
         (
-          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 40
+          node_filesystem_avail_bytes{job="node-exporter",fstype!=""} / node_filesystem_size_bytes{job="node-exporter",fstype!=""} * 100 < 20
         and
           predict_linear(node_filesystem_avail_bytes{job="node-exporter",fstype!=""}[6h], 24*60*60) < 0
         and
@@ -264,10 +264,8 @@ spec:
   - name: node-exporter.rules
     rules:
     - expr: |
-        count without (cpu) (
-          count without (mode) (
-            node_cpu_seconds_total{job="node-exporter"}
-          )
+        count without (cpu, mode) (
+          node_cpu_seconds_total{job="node-exporter",mode="idle"}
         )
       record: instance:node_num_cpu:sum
     - expr: |
