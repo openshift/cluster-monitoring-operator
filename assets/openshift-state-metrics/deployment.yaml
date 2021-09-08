@@ -2,20 +2,23 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    k8s-app: openshift-state-metrics
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: openshift-state-metrics
   name: openshift-state-metrics
   namespace: openshift-monitoring
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: openshift-state-metrics
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/name: openshift-state-metrics
   template:
     metadata:
       annotations:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
-        k8s-app: openshift-state-metrics
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/name: openshift-state-metrics
     spec:
       containers:
       - args:
