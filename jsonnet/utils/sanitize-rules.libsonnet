@@ -103,6 +103,14 @@ local excludedRules = [
       { alert: 'ThanosQueryRangeLatencyHigh' },
     ],
   },
+  {
+    // For ksm, sharding is not applicable to CMO
+    name: 'kube-state-metrics',
+    rules: [
+      { alert: 'KubeStateMetricsShardingMismatch' },
+      { alert: 'KubeStateMetricsShardsMissing' },
+    ],
+  },
 ];
 
 local patchedRules = [
