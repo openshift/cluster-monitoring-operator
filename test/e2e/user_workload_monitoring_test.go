@@ -88,6 +88,10 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 			f:    assertTenancyForMetrics,
 		},
 		{
+			name: "assert tenancy model is enforced for labels",
+			f:    assertTenancyForLabels,
+		},
+		{
 			name: "assert prometheus is not deployed in user namespace",
 			f:    f.AssertStatefulsetDoesNotExist("prometheus-not-to-be-reconciled", userWorkloadTestNs),
 		},
@@ -247,13 +251,13 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
     timeout: "30s"
     apiVersion: v1
     tlsConfig:
-      key: 
+      key:
         name: alertmanager-tls
         key: tls.key
-      cert: 
+      cert:
         name: alertmanager-tls
         key: tls.crt
-      ca: 
+      ca:
         name: alertmanager-tls
         key: tls.ca
     staticConfigs: ["127.0.0.1", "127.0.0.2"]
@@ -858,6 +862,143 @@ func assertTenancyForRules(t *testing.T) {
 			t.Fatalf("the account has access to the %q endpoint of Thanos querier: %v", path, err)
 		}
 	}
+}
+
+func assertTenancyForLabels(t *testing.T) {
+	const testAccount = "test-labels"
+
+	_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Grant enough permissions to read labels.
+	_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var token string
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The tenancy port (9092) is only exposed in-cluster so we need to use
+	// port forwarding to access kube-rbac-proxy.
+	host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9092)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanUp()
+
+	client := framework.NewPrometheusClient(
+		host,
+		token,
+		&framework.QueryParameterInjector{
+			Name:  "namespace",
+			Value: userWorkloadTestNs,
+		},
+	)
+
+	t.Logf("Checking all labels")
+
+	// check /api/v1/labels endpoint
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		resp, err := client.Do("GET", "/api/v1/labels", nil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+
+		res, err := gabs.ParseJSON(b)
+		if err != nil {
+			return err
+		}
+
+		labels, err := res.Path("data").Children()
+		if err != nil {
+			return err
+		}
+
+		for _, label := range labels {
+			t.Logf("label %q", label.Data().(string))
+		}
+
+		if len(labels) == 0 {
+			return errors.Errorf("expecting a label list with at least one item.")
+		}
+
+		return nil
+
+	})
+	if err != nil {
+		t.Fatalf("failed to query labels from Thanos querier: %v", err)
+	}
+
+	// check /api/v1/label/namespace/values has a single value
+	t.Logf("Checking Label namespace having a single value")
+	const label = "namespace"
+
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		// The tenancy port (9092) is only exposed in-cluster so we need to use
+		// port forwarding to access kube-rbac-proxy.
+		host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9092)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cleanUp()
+
+		client := framework.NewPrometheusClient(
+			host,
+			token,
+			&framework.QueryParameterInjector{
+				Name:  "namespace",
+				Value: userWorkloadTestNs,
+			},
+		)
+
+		b, err := client.PrometheusLabel(label)
+		if err != nil {
+			return err
+		}
+
+		res, err := gabs.ParseJSON(b)
+		if err != nil {
+			return err
+		}
+
+		values, err := res.Path("data").Children()
+		if err != nil {
+			return err
+		}
+
+		if len(values) != 1 {
+			return errors.Errorf("expecting for label %q value list with exact one item.", label)
+		}
+
+		if values[0].Data().(string) != userWorkloadTestNs {
+			return errors.Errorf("expecting for label %q having value %q, but got %q .", label, userWorkloadTestNs, values[0].Data().(string))
+		}
+
+		return nil
+	})
+
 }
 
 func assertGRPCTLSRotation(t *testing.T) {
