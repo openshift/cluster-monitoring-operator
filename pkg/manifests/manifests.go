@@ -1376,6 +1376,10 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 		}
 	}
 
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile != "" {
+		p.Spec.QueryLogFile = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile
+	}
+
 	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
 	if telemetryEnabled && f.config.RemoteWrite {
 
@@ -1668,6 +1672,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 
 	if f.config.Images.Thanos != "" {
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
+	}
+
+	if f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile != "" {
+		p.Spec.QueryLogFile = f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile
 	}
 
 	for i, container := range p.Spec.Containers {
