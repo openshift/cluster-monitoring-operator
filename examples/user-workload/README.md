@@ -18,25 +18,26 @@ data:
 Configuration example is located in this directory, with the following supported configuration fields:
 ```
 prometheusOperator:
-logLevel     string
-nodeSelector map[string]string
-tolerations  []v1.Toleration
+  logLevel     string
+  nodeSelector map[string]string
+  tolerations  []v1.Toleration
 
 thanosRuler:
-logLevel     string
-nodeSelector map[string]string
-tolerations  []v1.Toleration
-resources           *v1.ResourceRequirements
-volumeClaimTemplate *v1.PersistentVolumeClaim
+  logLevel            string
+  nodeSelector        map[string]string
+  tolerations         []v1.Toleration
+  resources           *v1.ResourceRequirements
+  volumeClaimTemplate *v1.PersistentVolumeClaim
 
 prometheus:
-logLevel     string
-nodeSelector map[string]string
-tolerations  []v1.Toleration
-retention string
-resources           *v1.ResourceRequirements
-externalLabels      map[string]string
-volumeClaimTemplate *v1.PersistentVolumeClaim
-hostport            string
-remoteWrite         []monv1.RemoteWriteSpec
+  logLevel            string
+  nodeSelector        map[string]string
+  tolerations         []v1.Toleration
+  retention           string
+  resources           *v1.ResourceRequirements
+  externalLabels      map[string]string
+  volumeClaimTemplate *v1.PersistentVolumeClaim
+  hostport            string
+  remoteWrite         []monv1.RemoteWriteSpec
+  queryLogFile        string
 ```

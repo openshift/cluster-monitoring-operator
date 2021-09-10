@@ -83,6 +83,10 @@ resources: [v1.ResourceRequirements](https://kubernetes.io/docs/api-reference/v1
 # specified by users
 externalLabels:
   [ - <labelname>: <labelvalue> ]
+# log all the queries run by the engine to a log file
+# this option should be enabled temporarily only to support debugging
+# as there is no option to support or manage log rotation
+queryLogFile: string
 ```
 
 ### AlertmanagerMainConfig
