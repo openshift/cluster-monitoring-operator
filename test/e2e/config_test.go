@@ -728,6 +728,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		},
 		Data: map[string]string{
 			"config.yaml": fmt.Sprintf(`prometheus:
+  enforcedTargetLimit: 10
   logLevel: debug
   retention: 10h
   tolerations:
@@ -793,6 +794,10 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name: "assert remote write url value in set in CR",
 			f:    assertRemoteWriteWasSet(f.UserWorkloadMonitoringNs, crName, "https://test.remotewrite.com/api/write"),
+		},
+		{
+			name: "assert enforced target limit is configured",
+			f:    assertEnforcedTargetLimit(10),
 		},
 	} {
 		t.Run(scenario.name, scenario.f)
@@ -1107,6 +1112,30 @@ func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if prom.Spec.EnforcedTargetLimit == nil {
+				return errors.New("EnforcedTargetLimit not set")
+			} else if *prom.Spec.EnforcedTargetLimit != limit {
+				return fmt.Errorf("expected EnforcedTargetLimit to be %d, but got %d", limit, *prom.Spec.EnforcedTargetLimit)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for EnforcedTargetLimit configuration: %v", err)
 		}
 	}
 }
