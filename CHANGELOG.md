@@ -3,6 +3,7 @@
 ## 4.10
 
 - [#1299](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose expose /api/v1/labels endpoint for Thanos query.
+
 ## 4.9
 
 - [#1312](https://github.com/openshift/cluster-monitoring-operator/pull/1312) Support label to exclude namespaces from user-workload monitoring.
