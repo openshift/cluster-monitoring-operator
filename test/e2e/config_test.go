@@ -151,6 +151,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 	data := fmt.Sprintf(`prometheusK8s:
   logLevel: debug
   retention: 10h
+  queryLogFile: /tmp/test.log
   tolerations:
     - operator: "Exists"
   externalLabels:
@@ -198,6 +199,10 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert remote write url value in set in CR",
 			assertion: assertRemoteWriteWasSet(f.Ns, crName, "https://test.remotewrite.com/api/write"),
+		},
+		{
+			name:      "assert query log file value is set and correct",
+			assertion: assertQueryLogValueEquals(f.Ns, crName, "/tmp/test.log"),
 		},
 		{
 			name:      "assert rule for Thanos sidecar exists",
@@ -523,6 +528,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
   enforcedTargetLimit: 10
   logLevel: debug
   retention: 10h
+  queryLogFile: /tmp/test.log
   tolerations:
     - operator: "Exists"
   externalLabels:
@@ -576,6 +582,10 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert enforced target limit is configured",
 			assertion: assertEnforcedTargetLimit(10),
+		},
+		{
+			name:      "assert query log file value is set and correct",
+			assertion: assertQueryLogValueEquals(f.UserWorkloadMonitoringNs, crName, "/tmp/test.log"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -810,6 +820,28 @@ func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 
 		if err != nil {
 			t.Fatalf("Timed out waiting for EnforcedTargetLimit configuration: %v", err)
+		}
+	}
+}
+
+func assertQueryLogValueEquals(namespace, crName, value string) func(t *testing.T) {
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, time.Minute*5, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(context.Background(), crName, metav1.GetOptions{})
+			if err != nil {
+				t.Fatal("failed to get required prometheus cr", err)
+			}
+
+			if prom.Spec.QueryLogFile != value {
+				return fmt.Errorf(
+					"expected query log file value not found wanted '%s', got '%s'",
+					value, prom.Spec.QueryLogFile,
+				)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 	}
 }
