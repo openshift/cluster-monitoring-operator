@@ -21,9 +21,16 @@ type BasicAuthCredentials struct {
 	Password string
 }
 
-// BearerToken represents a bearer token, see
+// OAuth2Credentials represents a client id and secret pair to be used with
+// basic OAuth 2 authentication.
+type OAuth2Credentials struct {
+	ClientID     string
+	ClientSecret string
+}
+
+// Token represents text tokens such as bearer token, see
 // https://tools.ietf.org/html/rfc6750.
-type BearerToken string
+type Token string
 
 // TLSAsset represents any TLS related opaque string, e.g. CA files, client
 // certificates.
