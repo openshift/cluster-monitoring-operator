@@ -26,7 +26,7 @@ install() {
 
 # Install shellcheck if it is not available
 if ! command -v shellcheck 2>/dev/null; then
-	install
+	(install)
 fi
 
 TOP_DIR="${1:-.}"
