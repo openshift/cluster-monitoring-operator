@@ -18,8 +18,10 @@ import (
 	"context"
 	"crypto/x509/pkix"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
 	"github.com/pkg/errors"
@@ -35,7 +37,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	"k8s.io/kubectl/pkg/drain"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/library-go/pkg/operator/csr"
@@ -44,11 +45,6 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
-)
-
-const (
-	dropPVCAnnotation       = "openshift.io/cluster-monitoring-drop-pvc"
-	zonalTopologyAnnotation = "topology.kubernetes.io/zone"
 )
 
 // InfrastructureConfig stores information about the cluster infrastructure
@@ -167,7 +163,7 @@ type Operator struct {
 
 	assets *manifests.Assets
 
-	drainer *drain.Helper
+	rebalancer *rebalancer.Rebalancer
 }
 
 func New(
@@ -199,7 +195,6 @@ func New(
 		assets:                    a,
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
-		drainer:                   &drain.Helper{Ctx: ctx, Client: c.KubernetesInterface()},
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -322,6 +317,8 @@ func New(
 	)
 
 	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run)
+
+	o.rebalancer = rebalancer.NewRebalancer(ctx, c, o.workloadsToRebalance())
 
 	return o, nil
 }
@@ -516,7 +513,7 @@ func (o *Operator) enqueue(obj interface{}) {
 
 func (o *Operator) sync(ctx context.Context, key string) error {
 	// Ensure that no nodes cordoned by the operator remains unschedulable.
-	err := o.ensureNodesAreUncordoned(ctx)
+	err := o.rebalancer.EnsureNodesAreUncordoned(ctx)
 	if err != nil {
 		return err
 	}
@@ -783,4 +780,89 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	}
 
 	return c, nil
+}
+
+// Upgradeable verifies whether the operator can be upgraded or not. It returns
+// the ConditionStatus with optional reason and message.
+// To set this status, it will verify that in HA topology, workloads with
+// persistent storage are correctly spread across multiple nodes. If it isn't
+// it will try to rebalance the workloads.
+func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, string, string, error) {
+	if !o.lastKnowInfrastructureConfig.HighlyAvailableInfrastructure() {
+		return configv1.ConditionTrue, "", "", nil
+	}
+
+	var (
+		messages           []string
+		workloadRebalanced bool
+	)
+	for _, workload := range o.workloadsToRebalance() {
+		balanced, err := o.rebalancer.WorkloadCorrectlyBalanced(ctx, &workload)
+		if err != nil {
+			return configv1.ConditionUnknown, "", "", err
+		}
+
+		if balanced {
+			continue
+		}
+
+		workloadRebalanced, err := o.rebalancer.RebalanceWorkloads(ctx, &workload)
+		if err != nil {
+			return configv1.ConditionUnknown, "", "", err
+		}
+
+		if !workloadRebalanced {
+			messages = append(
+				messages,
+				fmt.Sprintf("Highly-available workload %s/%s is incorrectly balanced across multiple nodes."+
+					" You can run `oc get pvc -n %s -l %s=%s` to get all the PVCs attached to it.",
+					workload.Namespace, workload.Name, workload.Namespace, "app.kubernetes.io/name", workload.LabelSelector["app.kubernetes.io/name"],
+				),
+			)
+		}
+	}
+
+	if len(messages) > 0 {
+		msg := "Manual intervention is needed to upgrade to the next minor version. Please refer to the following documentation to fix this issue: https://github.com/openshift/runbooks/blob/master/alerts/HighlyAvailableWorkloadIncorrectlySpread.md."
+		if workloadRebalanced {
+			msg += " The operator couldn't rebalance the pods automatically with the annotation, please refer to the runbook to fix this issue manually."
+		}
+		messages = append(messages, msg)
+		return configv1.ConditionFalse, client.WorkloadIncorrectlySpreadReason, strings.Join(messages, "\n"), nil
+	}
+
+	return configv1.ConditionTrue, "", "", nil
+}
+
+// workloadsToRebalance returns the list of workloads with persistent storage
+// that might need to be rebalanced.
+func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
+	workloads := []rebalancer.Workload{
+		{
+			Namespace:     o.namespace,
+			Name:          "prometheus-k8s",
+			LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
+		},
+		{
+			Namespace:     o.namespace,
+			Name:          "alertmanager-main",
+			LabelSelector: map[string]string{"app.kubernetes.io/name": "alertmanager"},
+		},
+	}
+
+	if o.userWorkloadEnabled {
+		workloads = append(workloads,
+			rebalancer.Workload{
+				Namespace:     o.namespaceUserWorkload,
+				Name:          "prometheus-user-workload",
+				LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
+			},
+			rebalancer.Workload{
+				Namespace:     o.namespaceUserWorkload,
+				Name:          "thanos-ruler-user-workload",
+				LabelSelector: map[string]string{"app.kubernetes.io/name": "thanos-ruler"},
+			},
+		)
+	}
+	return workloads
 }

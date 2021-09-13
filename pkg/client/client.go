@@ -1531,10 +1531,7 @@ func (c *Client) UncordonNode(ctx context.Context, drainer *drain.Helper, nodeNa
 		return err
 	}
 
-	cordonedByOperator := false
-	if node.Annotations != nil {
-		_, cordonedByOperator = node.Annotations[cordonAnnotation]
-	}
+	_, cordonedByOperator := node.GetAnnotations()[cordonAnnotation]
 	if !cordonedByOperator {
 		return nil
 	}
