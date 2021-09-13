@@ -42,20 +42,22 @@ type Store struct {
 	sClient  corev1client.SecretsGetter
 	objStore cache.Store
 
-	TLSAssets         map[TLSAssetKey]TLSAsset
-	BearerTokenAssets map[string]BearerToken
-	BasicAuthAssets   map[string]BasicAuthCredentials
+	TLSAssets       map[TLSAssetKey]TLSAsset
+	TokenAssets     map[string]Token
+	BasicAuthAssets map[string]BasicAuthCredentials
+	OAuth2Assets    map[string]OAuth2Credentials
 }
 
 // NewStore returns an empty assetStore.
 func NewStore(cmClient corev1client.ConfigMapsGetter, sClient corev1client.SecretsGetter) *Store {
 	return &Store{
-		cmClient:          cmClient,
-		sClient:           sClient,
-		TLSAssets:         make(map[TLSAssetKey]TLSAsset),
-		BearerTokenAssets: make(map[string]BearerToken),
-		BasicAuthAssets:   make(map[string]BasicAuthCredentials),
-		objStore:          cache.NewStore(assetKeyFunc),
+		cmClient:        cmClient,
+		sClient:         sClient,
+		TLSAssets:       make(map[TLSAssetKey]TLSAsset),
+		TokenAssets:     make(map[string]Token),
+		BasicAuthAssets: make(map[string]BasicAuthCredentials),
+		OAuth2Assets:    make(map[string]OAuth2Credentials),
+		objStore:        cache.NewStore(assetKeyFunc),
 	}
 }
 
@@ -171,19 +173,87 @@ func (s *Store) AddBasicAuth(ctx context.Context, ns string, ba *monitoringv1.Ba
 	return nil
 }
 
-// AddBearerToken processes the given SecretKeySelector and adds the referenced data to the store.
-func (s *Store) AddBearerToken(ctx context.Context, ns string, sel v1.SecretKeySelector, key string) error {
+// AddOAuth2 processes the given *OAuth2 and adds the referenced credentials to the store.
+func (s *Store) AddOAuth2(ctx context.Context, ns string, oauth2 *monitoringv1.OAuth2, key string) error {
+	if oauth2 == nil {
+		return nil
+	}
+
+	if err := oauth2.Validate(); err != nil {
+		return err
+	}
+
+	clientID, err := s.GetKey(ctx, ns, oauth2.ClientID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get oauth2 client id")
+	}
+
+	clientSecret, err := s.GetSecretKey(ctx, ns, oauth2.ClientSecret)
+	if err != nil {
+		return errors.Wrap(err, "failed to get oauth2 client secret")
+	}
+
+	s.OAuth2Assets[key] = OAuth2Credentials{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+	}
+
+	return nil
+}
+
+// AddToken processes the given SecretKeySelector and adds the referenced data to the store.
+func (s *Store) addToken(ctx context.Context, ns string, sel v1.SecretKeySelector, key string) error {
 	if sel.Name == "" {
 		return nil
 	}
 
-	bearerToken, err := s.GetSecretKey(ctx, ns, sel)
+	token, err := s.GetSecretKey(ctx, ns, sel)
+	if err != nil {
+		return errors.Wrap(err, "failed to get token from secret")
+	}
+
+	s.TokenAssets[key] = Token(token)
+
+	return nil
+}
+
+func (s *Store) AddBearerToken(ctx context.Context, ns string, sel v1.SecretKeySelector, key string) error {
+	err := s.addToken(ctx, ns, sel, key)
 	if err != nil {
 		return errors.Wrap(err, "failed to get bearer token")
 	}
+	return nil
+}
 
-	s.BearerTokenAssets[key] = BearerToken(bearerToken)
+func (s *Store) AddSafeAuthorizationCredentials(ctx context.Context, namespace string, auth *monitoringv1.SafeAuthorization, key string) error {
+	if auth == nil || auth.Credentials == nil {
+		return nil
+	}
 
+	if err := auth.Validate(); err != nil {
+		return err
+	}
+
+	err := s.addToken(ctx, namespace, *auth.Credentials, key)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get authorization token of type %s", auth.Type)
+	}
+	return nil
+}
+
+func (s *Store) AddAuthorizationCredentials(ctx context.Context, namespace string, auth *monitoringv1.Authorization, key string) error {
+	if auth == nil || auth.Credentials == nil {
+		return nil
+	}
+
+	if err := auth.Validate(); err != nil {
+		return err
+	}
+
+	err := s.addToken(ctx, namespace, *auth.Credentials, key)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get authorization token of type %s", auth.Type)
+	}
 	return nil
 }
 
