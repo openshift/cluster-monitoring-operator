@@ -30,9 +30,13 @@ import (
 
 func TestMultinamespacePrometheusRule(t *testing.T) {
 	ctx := context.Background()
-
-	t.Parallel()
 	nsName := "openshift-test-prometheus-rules" + strconv.FormatInt(time.Now().Unix(), 36)
+	t.Parallel()
+
+	t.Cleanup(func() {
+		f.OperatorClient.DeleteIfExists(ctx, nsName)
+	})
+
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: nsName,
@@ -45,8 +49,6 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	defer f.OperatorClient.DeleteIfExists(ctx, nsName)
 
 	err = f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{

@@ -229,18 +229,9 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 func TestPrometheusAdapterCARotation(t *testing.T) {
 	ctx := context.Background()
 	// Wait for prometheus-adapter deployment
-	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-adapter", metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.AssertDeploymentExistsAndRollout("prometheus-adapter", f.Ns)(t)
 
-	tls, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get(ctx, "prometheus-adapter-tls", metav1.GetOptions{})
+	tls, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(ctx, "prometheus-adapter-tls", metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,20 +241,14 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	factory := manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath))
+	factory := manifests.NewFactory(f.Ns, "", nil, nil, nil, manifests.NewAssets(assetsPath))
 	adapterSecret, err := factory.PrometheusAdapterSecret(tls, apiAuth)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// the secret might not have been created yet, so wait for it
-	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		_, err = f.KubeClient.CoreV1().Secrets("openshift-monitoring").Get(ctx, adapterSecret.GetName(), metav1.GetOptions{})
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.AssertSecretExists(adapterSecret.GetName(), f.Ns)(t)
 
 	// Delete the signer secrets. This causes kube-system/extension-apiserver-authentication
 	// to be reissued.
@@ -327,29 +312,5 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// Wait for new Prometheus adapter to roll out
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-adapter", metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
-		}
-
-		if d.Status.UpdatedReplicas < *d.Spec.Replicas {
-			return fmt.Errorf("waiting for deployment %q rollout to finish: %d out of %d new replicas have been updated...", d.Name, d.Status.UpdatedReplicas, *d.Spec.Replicas)
-		}
-
-		if d.Status.Replicas > d.Status.UpdatedReplicas {
-			return fmt.Errorf("waiting for deployment %q rollout to finish: %d old replicas are pending termination...", d.Name, d.Status.Replicas-d.Status.UpdatedReplicas)
-		}
-
-		if d.Status.AvailableReplicas < d.Status.UpdatedReplicas {
-			return fmt.Errorf("waiting for deployment %q rollout to finish: %d of %d updated replicas are available...", d.Name, d.Status.AvailableReplicas, d.Status.UpdatedReplicas)
-		}
-
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.AssertDeploymentExistsAndRollout("prometheus-adapter", f.Ns)(t)
 }
