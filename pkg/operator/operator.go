@@ -318,7 +318,7 @@ func New(
 
 	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run)
 
-	o.rebalancer = rebalancer.NewRebalancer(ctx, c, o.workloadsToRebalance())
+	o.rebalancer = rebalancer.NewRebalancer(ctx, c.KubernetesInterface(), o.workloadsToRebalance())
 
 	return o, nil
 }
@@ -513,7 +513,7 @@ func (o *Operator) enqueue(obj interface{}) {
 
 func (o *Operator) sync(ctx context.Context, key string) error {
 	// Ensure that no nodes cordoned by the operator remains unschedulable.
-	err := o.rebalancer.EnsureNodesAreUncordoned(ctx)
+	err := o.rebalancer.EnsureNodesAreUncordoned()
 	if err != nil {
 		return err
 	}

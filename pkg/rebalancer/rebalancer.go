@@ -18,33 +18,34 @@ import (
 	"context"
 	"time"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/drain"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
-	"k8s.io/kubectl/pkg/drain"
 )
 
 const (
+	cordonAnnotation        = "openshift.io/cluster-monitoring-cordoned"
 	dropPVCAnnotation       = "openshift.io/cluster-monitoring-drop-pvc"
 	zonalTopologyAnnotation = "topology.kubernetes.io/zone"
 )
 
 type Rebalancer struct {
-	client    *client.Client
+	client    kubernetes.Interface
 	drainer   *drain.Helper
 	workloads []Workload
 }
 
-func NewRebalancer(ctx context.Context, c *client.Client, workloads []Workload) *Rebalancer {
+func NewRebalancer(ctx context.Context, client kubernetes.Interface, workloads []Workload) *Rebalancer {
 	return &Rebalancer{
-		client:    c,
-		drainer:   &drain.Helper{Ctx: ctx, Client: c.KubernetesInterface()},
+		client:    client,
+		drainer:   drain.NewHelper(ctx, client, cordonAnnotation),
 		workloads: workloads,
 	}
 }
@@ -59,7 +60,7 @@ type Workload struct {
 // across different nodes ensuring proper high-availability.
 // If the pods don't use persistent storage, it will always return true.
 func (r *Rebalancer) WorkloadCorrectlyBalanced(ctx context.Context, workload *Workload) (bool, error) {
-	podList, err := r.client.ListPods(ctx, workload.Namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(workload.LabelSelector), FieldSelector: "status.phase=Running"})
+	podList, err := r.client.CoreV1().Pods(workload.Namespace).List(ctx, metav1.ListOptions{LabelSelector: labels.FormatLabels(workload.LabelSelector), FieldSelector: "status.phase=Running"})
 	if err != nil {
 		return false, err
 	}
@@ -94,7 +95,7 @@ func (r *Rebalancer) WorkloadCorrectlyBalanced(ctx context.Context, workload *Wo
 // the PVCs are annotated for deletion before trying to rebalance the pods.
 // It return whether the workload was rebalanced or not.
 func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload) (bool, error) {
-	podList, err := r.client.ListPods(ctx, workload.Namespace, metav1.ListOptions{LabelSelector: labels.FormatLabels(workload.LabelSelector)})
+	podList, err := r.client.CoreV1().Pods(workload.Namespace).List(ctx, metav1.ListOptions{LabelSelector: labels.FormatLabels(workload.LabelSelector)})
 	if err != nil {
 		return false, err
 	}
@@ -119,12 +120,12 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 			// Remove the annotation so that the PVC doesn't get deleted in future cycles.
 			klog.V(4).Infof("Removing annotation %s from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", dropPVCAnnotation, pvc.Namespace, pvc.Name)
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				pvc, err := r.client.GetPersistentVolumeClaim(ctx, pvc.Namespace, pvc.Name)
+				pvc, err := r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Get(ctx, pvc.Name, metav1.GetOptions{})
 				if err != nil {
 					return err
 				}
 				delete(pvc.Annotations, dropPVCAnnotation)
-				_, err = r.client.UpdatePersistentVolumeClaim(ctx, pvc)
+				_, err = r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
 				return err
 			})
 			if err != nil {
@@ -158,18 +159,23 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 // prevent the pod to be schedule on a node that is located in a different
 // availability zone.
 func (r *Rebalancer) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1.PersistentVolumeClaim) error {
-	err := r.client.CordonNode(ctx, r.drainer, pod.Spec.NodeName)
+	node, err := r.client.CoreV1().Nodes().Get(ctx, pod.Spec.NodeName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	err = drain.RunCordonOrUncordon(r.drainer, node, true)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		err := r.client.UncordonNode(ctx, r.drainer, pod.Spec.NodeName)
+		err := drain.RunCordonOrUncordon(r.drainer, node, false)
 		if err != nil {
 			klog.Errorf("Couldn't uncordon node %v: %v.", pod.Spec.NodeName, err)
 		}
 	}()
 
-	pv, err := r.client.GetPersistentVolume(ctx, pvc.Spec.VolumeName)
+	pv, err := r.client.CoreV1().PersistentVolumes().Get(ctx, pvc.Spec.VolumeName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -177,14 +183,14 @@ func (r *Rebalancer) rebalanceWorkload(ctx context.Context, pod *v1.Pod, pvc *v1
 	// In most cases, when the PV isn't zonal, pods can access it from a node in a different AZ so we don't need to delete it.
 	if _, ok := pv.GetLabels()[zonalTopologyAnnotation]; ok {
 		klog.V(2).Infof("Deleting PersistentVolumeClaim %s/%s.", pvc.Namespace, pvc.Name)
-		err = r.client.DeletePersistentVolumeClaim(ctx, pvc)
+		err = r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Delete(ctx, pvc.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
 	}
 
 	klog.V(2).Infof("Deleting pod %s/%s.", pod.Namespace, pod.Name)
-	return r.client.DeletePod(ctx, pod)
+	return r.client.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{})
 }
 
 func (r *Rebalancer) resourcesToRebalance(ctx context.Context, pods []v1.Pod) ([]v1.Pod, []v1.PersistentVolumeClaim, error) {
@@ -197,7 +203,7 @@ func (r *Rebalancer) resourcesToRebalance(ctx context.Context, pods []v1.Pod) ([
 			if vol.PersistentVolumeClaim == nil {
 				continue
 			}
-			pvc, err := r.client.GetPersistentVolumeClaim(ctx, pod.Namespace, vol.PersistentVolumeClaim.ClaimName)
+			pvc, err := r.client.CoreV1().PersistentVolumeClaims(pod.Namespace).Get(ctx, vol.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
 				break
 			}
@@ -218,15 +224,15 @@ func (r *Rebalancer) resourcesToRebalance(ctx context.Context, pods []v1.Pod) ([
 	return podsToDelete, annotatedPVCs, nil
 }
 
-// EnsureNodesAreUncordoned uncordon all the nodes that were cordoned by CMO.
-func (r *Rebalancer) EnsureNodesAreUncordoned(ctx context.Context) error {
-	nodeList, err := r.client.ListNodes(ctx, metav1.ListOptions{FieldSelector: "spec.unschedulable=true"})
+// EnsureNodesAreUncordoned uncordon all the nodes that were cordoned by the operator.
+func (r *Rebalancer) EnsureNodesAreUncordoned() error {
+	nodeList, err := r.drainer.Client.CoreV1().Nodes().List(r.drainer.Ctx, metav1.ListOptions{FieldSelector: "spec.unschedulable=true"})
 	if err != nil {
 		return err
 	}
 
 	for _, node := range nodeList.Items {
-		err := r.client.UncordonNode(ctx, r.drainer, node.Name)
+		err := drain.RunCordonOrUncordon(r.drainer, &node, false)
 		if err != nil {
 			return err
 		}

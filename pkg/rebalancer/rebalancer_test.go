@@ -21,12 +21,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/kubectl/pkg/drain"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 )
-
-const cordonAnnotation = "openshift.io/cluster-monitoring-cordoned"
 
 func TestRebalanceWorkloads(t *testing.T) {
 	var (
@@ -149,23 +144,12 @@ func TestRebalanceWorkloads(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeRebalancer := &Rebalancer{
-				client: client.New(
-					"",
-					"",
-					"",
-					client.KubernetesClient(
-						fake.NewSimpleClientset(
-							&v1.PodList{Items: pods},
-							&v1.PersistentVolumeClaimList{Items: tc.pvcs},
-							&v1.PersistentVolumeList{Items: tc.pvs},
-							&v1.NodeList{Items: nodes},
-						),
-					)),
-				drainer:   &drain.Helper{Ctx: context.Background()},
-				workloads: []Workload{workload},
-			}
-			fakeRebalancer.drainer.Client = fakeRebalancer.client.KubernetesInterface()
+			fakeRebalancer := NewRebalancer(context.Background(), fake.NewSimpleClientset(
+				&v1.PodList{Items: pods},
+				&v1.PersistentVolumeClaimList{Items: tc.pvcs},
+				&v1.PersistentVolumeList{Items: tc.pvs},
+				&v1.NodeList{Items: nodes},
+			), []Workload{workload})
 
 			workloadRebalanced, err := fakeRebalancer.RebalanceWorkloads(context.Background(), &workload)
 			if err != nil {
@@ -176,7 +160,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 				t.Errorf("Expected workload rebalanced to be: %t, got: %t", tc.expectedRebalanced, workloadRebalanced)
 			}
 
-			pvcList, err := fakeRebalancer.client.ListPersistentVolumeClaims(context.Background(), namespace, metav1.ListOptions{})
+			pvcList, err := fakeRebalancer.client.CoreV1().PersistentVolumeClaims(namespace).List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				t.Error(err)
 			}
@@ -193,7 +177,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 				}
 			}
 
-			podList, err := fakeRebalancer.client.ListPods(context.Background(), namespace, metav1.ListOptions{})
+			podList, err := fakeRebalancer.client.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				t.Error(err)
 			}
@@ -210,7 +194,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 				}
 			}
 
-			node, err := fakeRebalancer.client.GetNode(context.Background(), "node-1")
+			node, err := fakeRebalancer.client.CoreV1().Nodes().Get(context.Background(), "node-1", metav1.GetOptions{})
 			if err != nil {
 				t.Error(err)
 			}
@@ -246,26 +230,15 @@ func TestEnsureNodesAreUncordonned(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeRebalancer := &Rebalancer{
-				client: client.New(
-					"",
-					"",
-					"",
-					client.KubernetesClient(
-						fake.NewSimpleClientset(
-							&tc.node,
-						),
-					)),
-				drainer: &drain.Helper{Ctx: context.Background()},
-			}
-			fakeRebalancer.drainer.Client = fakeRebalancer.client.KubernetesInterface()
+			fakeClient := fake.NewSimpleClientset(tc.node.DeepCopy())
+			fakeRebalancer := NewRebalancer(context.Background(), fakeClient, nil)
 
-			err := fakeRebalancer.EnsureNodesAreUncordoned(context.Background())
+			err := fakeRebalancer.EnsureNodesAreUncordoned()
 			if err != nil {
 				t.Error(err)
 			}
 
-			node, err := fakeRebalancer.client.GetNode(context.Background(), tc.node.Name)
+			node, err := fakeClient.CoreV1().Nodes().Get(context.Background(), tc.node.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Error(err)
 			}
