@@ -344,7 +344,7 @@ func (f *Framework) AssertPodConfiguration(namespace, labelSelector string, asse
 	}
 }
 
-func (f *Framework) AssertOperatorCondition(t *testing.T, conditionType configv1.ClusterStatusConditionType, conditionStatus configv1.ConditionStatus) func(t *testing.T) {
+func (f *Framework) AssertOperatorCondition(conditionType configv1.ClusterStatusConditionType, conditionStatus configv1.ConditionStatus) func(t *testing.T) {
 	return func(t *testing.T) {
 		reporter := f.OperatorClient.StatusReporter()
 		err := Poll(time.Second, 5*time.Minute, func() error {
@@ -364,6 +364,24 @@ func (f *Framework) AssertOperatorCondition(t *testing.T, conditionType configv1
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+func (f *Framework) AssertValueInConfigMapEquals(name, namespace, key, compareWith string) func(t *testing.T) {
+	return func(t *testing.T) {
+		cm := f.MustGetConfigMap(t, name, namespace)
+		if cm.Data[key] != compareWith {
+			t.Fatalf("wanted value %s for key %s but got %s", compareWith, key, cm.Data[key])
+		}
+	}
+}
+
+func (f *Framework) AssertValueInConfigMapNotEquals(name, namespace, key, compareWith string) func(t *testing.T) {
+	return func(t *testing.T) {
+		cm := f.MustGetConfigMap(t, name, namespace)
+		if cm.Data[key] == compareWith {
+			t.Fatalf("did not want value %s for key %s", compareWith, key)
 		}
 	}
 }

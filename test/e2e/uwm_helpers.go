@@ -61,10 +61,15 @@ func setupUserWorkloadAssetsWithTeardownHook(t *testing.T, f *framework.Framewor
 }
 
 // tearDownUserWorkloadAssets deletes the uwm enabled config map and asserts
-// the associated resources are delete
+// the associated resources are deleted
 func tearDownUserWorkloadAssets(t *testing.T, f *framework.Framework) {
 	t.Helper()
-	f.OperatorClient.DeleteConfigMap(context.Background(), getUserWorkloadEnabledConfigMap(t, f))
+	if err := f.OperatorClient.DeleteConfigMap(context.Background(), getUserWorkloadEnabledConfigMap(t, f)); err != nil {
+		t.Fatal(err)
+	}
+
+	f.AssertDeploymentDoesNotExist("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulsetDoesNotExist("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 }
 
 // setupUserApplication is idempotent and deploys the sample app and resources in UserWorkloadTestNs
