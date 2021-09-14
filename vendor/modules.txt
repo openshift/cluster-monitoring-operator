@@ -185,7 +185,6 @@ github.com/prometheus-operator/prometheus-operator/pkg/operator
 github.com/prometheus-operator/prometheus-operator/pkg/prometheus
 github.com/prometheus-operator/prometheus-operator/pkg/thanos
 github.com/prometheus-operator/prometheus-operator/pkg/webconfig
-github.com/prometheus-operator/prometheus-operator/test/framework
 # github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.50.0
 ## explicit
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring
@@ -533,7 +532,6 @@ k8s.io/apimachinery/pkg/util/managedfields
 k8s.io/apimachinery/pkg/util/mergepatch
 k8s.io/apimachinery/pkg/util/naming
 k8s.io/apimachinery/pkg/util/net
-k8s.io/apimachinery/pkg/util/remotecommand
 k8s.io/apimachinery/pkg/util/runtime
 k8s.io/apimachinery/pkg/util/sets
 k8s.io/apimachinery/pkg/util/strategicpatch
@@ -805,12 +803,10 @@ k8s.io/client-go/tools/portforward
 k8s.io/client-go/tools/record
 k8s.io/client-go/tools/record/util
 k8s.io/client-go/tools/reference
-k8s.io/client-go/tools/remotecommand
 k8s.io/client-go/transport
 k8s.io/client-go/transport/spdy
 k8s.io/client-go/util/cert
 k8s.io/client-go/util/connrotation
-k8s.io/client-go/util/exec
 k8s.io/client-go/util/flowcontrol
 k8s.io/client-go/util/homedir
 k8s.io/client-go/util/keyutil
