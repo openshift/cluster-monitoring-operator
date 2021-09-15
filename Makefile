@@ -119,7 +119,7 @@ versions: $(GOJSONTOYAML_BIN)
 	./hack/generate-versions.sh
 
 .PHONY: docs
-docs: $(EMBEDMD_BIN) Documentation/telemeter_query
+docs: $(EMBEDMD_BIN) Documentation/telemetry/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
 
 Documentation/telemeter_query: manifests/0000_50_cluster-monitoring-operator_04-config.yaml hack/telemeter_query.go
