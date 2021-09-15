@@ -1982,7 +1982,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAcc
 	return s, nil
 }
 
-func (f *Factory) PrometheusOperatorDeployment(config *APIServerConfig) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorDeployment(apiServerConfig *APIServerConfig) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorDeployment))
 	if err != nil {
 		return nil, err
@@ -2022,7 +2022,7 @@ func (f *Factory) PrometheusOperatorDeployment(config *APIServerConfig) (*appsv1
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel))
 			}
 
-			args = setTLSSecurityConfiguration(f.namespace, args, config)
+			args = setTLSSecurityConfiguration(args, apiServerConfig)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
@@ -2031,7 +2031,7 @@ func (f *Factory) PrometheusOperatorDeployment(config *APIServerConfig) (*appsv1
 	return d, nil
 }
 
-func (f *Factory) PrometheusOperatorUserWorkloadDeployment(config *APIServerConfig) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorUserWorkloadDeployment(apiServerConfig *APIServerConfig) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadDeployment))
 	if err != nil {
 		return nil, err
@@ -2069,7 +2069,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(config *APIServerConf
 			if f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel != "" {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel))
 			}
-			args = setTLSSecurityConfiguration(f.namespace, args, config)
+			args = setTLSSecurityConfiguration(args, apiServerConfig)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
@@ -2078,20 +2078,20 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(config *APIServerConf
 	return d, nil
 }
 
-func setTLSSecurityConfiguration(namespace string, args []string, config *APIServerConfig) []string {
+func setTLSSecurityConfiguration(args []string, config *APIServerConfig) []string {
 	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(config.GetTLSCiphers()), ",")
-	args = setArg(namespace, args, PrometheusOperatorWebTLSCipherSuitesFlag, cipherSuites)
+	args = setArg(args, PrometheusOperatorWebTLSCipherSuitesFlag, cipherSuites)
 
 	minTLSVersion := config.GetMinTLSVersion()
-	args = setArg(namespace, args, PrometheusOperatorWebTLSMinTLSVersionFlag, string(minTLSVersion))
+	args = setArg(args, PrometheusOperatorWebTLSMinTLSVersionFlag, string(minTLSVersion))
 
 	return args
 }
 
-func setArg(namespace string, args []string, argName string, argValue string) []string {
+func setArg(args []string, argName string, argValue string) []string {
 	flagFound := false
 	for i := range args {
-		if strings.HasPrefix(args[i], argName) && namespace != "" {
+		if strings.HasPrefix(args[i], argName) {
 			args[i] = fmt.Sprintf("%s%s", argName, argValue)
 			flagFound = true
 		}
@@ -3512,7 +3512,7 @@ func (f *Factory) mountThanosRulerAlertmanagerSecrets(t *monv1.ThanosRuler) {
 	}
 
 	t.Spec.Volumes = append(t.Spec.Volumes, volumes...)
-	for i := range t.Spec.Containers {
+	for i, _ := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
 			t.Spec.Containers[i].VolumeMounts = append(t.Spec.Containers[i].VolumeMounts, volumeMounts...)
@@ -3527,7 +3527,7 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 	}
 	digestBytes := md5.Sum([]byte(alertmanagerConfig.StringData["alertmanagers.yaml"]))
 	digest = fmt.Sprintf("%x", digestBytes)
-	for i := range t.Spec.Containers {
+	for i, _ := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
 			// Thanos ruler does not refresh its config when the alertmanagers secret changes.

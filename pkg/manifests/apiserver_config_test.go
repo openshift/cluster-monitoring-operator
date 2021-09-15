@@ -94,6 +94,20 @@ func TestGetTLSCiphers(t *testing.T) {
 			expectedMinTLSVersion: defaultTLSVersion,
 		},
 		{
+			name: "custom profile nil ciphers and empty min tls version",
+			config: newApiserverConfig(&configv1.TLSSecurityProfile{
+				Type:   configv1.TLSProfileCustomType,
+				Custom: &configv1.CustomTLSProfile{
+					TLSProfileSpec: configv1.TLSProfileSpec{
+						Ciphers:       nil,
+						MinTLSVersion: "",
+					},
+				},
+			}),
+			expectedCiphers:       defaultCiphers,
+			expectedMinTLSVersion: defaultTLSVersion,
+		},
+		{
 			name: "custom profile with ciphers and min tls version",
 			config: newApiserverConfig(&configv1.TLSSecurityProfile{
 				Type: configv1.TLSProfileCustomType,

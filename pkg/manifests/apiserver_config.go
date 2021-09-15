@@ -25,7 +25,7 @@ func NewAPIServerConfig(config *configv1.APIServer) *APIServerConfig {
 // TLS security profile defined in the APIServerConfig.
 func (c *APIServerConfig) GetTLSCiphers() []string {
 	profile := c.getTLSProfile()
-	if profile.Ciphers == nil || len(profile.Ciphers) == 0 {
+	if len(profile.Ciphers) == 0 {
 		return APIServerDefaultTLSCiphers
 	}
 	return profile.Ciphers
