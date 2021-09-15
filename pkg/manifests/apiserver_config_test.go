@@ -96,7 +96,7 @@ func TestGetTLSCiphers(t *testing.T) {
 		{
 			name: "custom profile nil ciphers and empty min tls version",
 			config: newApiserverConfig(&configv1.TLSSecurityProfile{
-				Type:   configv1.TLSProfileCustomType,
+				Type: configv1.TLSProfileCustomType,
 				Custom: &configv1.CustomTLSProfile{
 					TLSProfileSpec: configv1.TLSProfileSpec{
 						Ciphers:       nil,

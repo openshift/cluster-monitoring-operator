@@ -2089,20 +2089,20 @@ func setTLSSecurityConfiguration(args []string, config *APIServerConfig) []strin
 }
 
 func setArg(args []string, argName string, argValue string) []string {
-	flagFound := false
-	for i := range args {
-		if strings.HasPrefix(args[i], argName) {
-			args[i] = fmt.Sprintf("%s%s", argName, argValue)
-			flagFound = true
-		}
+	argsMap := make(map[string]string)
+	for _, arg := range args {
+		parts := strings.SplitAfter(arg, "=")
+		argsMap[parts[0]] = parts[1]
 	}
 
-	if !flagFound {
-		arg := fmt.Sprintf("%s%s", argName, argValue)
-		args = append(args, arg)
+	argsMap[argName] = argValue
+
+	resultArgs := make([]string, 0, len(args))
+	for k, v := range argsMap {
+		resultArgs = append(resultArgs, k+v)
 	}
 
-	return args
+	return resultArgs
 }
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
