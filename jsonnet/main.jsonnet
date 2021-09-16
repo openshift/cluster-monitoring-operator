@@ -271,7 +271,7 @@ local inCluster =
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
-            prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
+            prometheusOperatorSelector: 'job="prometheus-operator", namespace=~"%(namespace)s|%(namespaceUserWorkload)s"' % ($.values.common),
           },
         },
         tlsCipherSuites: $.values.common.tlsCipherSuites,
