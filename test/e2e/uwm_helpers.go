@@ -49,7 +49,19 @@ func setupUserWorkloadAssets(t *testing.T, f *framework.Framework) {
 	f.AssertPrometheusExists("user-workload", f.UserWorkloadMonitoringNs)(t)
 }
 
-// tearDownUserWorkloadAssets deletes the uwm enabled config map
+// setupUserWorkloadAssetsWithTeardownHook enables UWM via the config map and asserts resources are up and running
+// cleans up assets after all subtests run
+func setupUserWorkloadAssetsWithTeardownHook(t *testing.T, f *framework.Framework) {
+	t.Helper()
+	setupUserWorkloadAssets(t, f)
+
+	t.Cleanup(func() {
+		tearDownUserWorkloadAssets(t, f)
+	})
+}
+
+// tearDownUserWorkloadAssets deletes the uwm enabled config map and asserts
+// the associated resources are delete
 func tearDownUserWorkloadAssets(t *testing.T, f *framework.Framework) {
 	t.Helper()
 	f.OperatorClient.DeleteConfigMap(context.Background(), getUserWorkloadEnabledConfigMap(t, f))
