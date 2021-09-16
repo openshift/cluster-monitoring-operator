@@ -277,6 +277,11 @@ function(params)
     // proxy container pointing to the mounted htpasswd file.  If Grafana is
     // disabled, these things are not injected.
     deployment+: {
+      metadata+: {
+        labels+: {
+          'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+        },
+      },
       spec+: {
         strategy+: {
           // Apply HA conventions

@@ -8,6 +8,11 @@ function(params)
   operator(cfg) + {
 
     deployment+: {
+      metadata+: {
+        labels+: {
+          'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+        },
+      },
       spec+: {
         template+: {
           spec+: {
