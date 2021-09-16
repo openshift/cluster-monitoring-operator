@@ -230,6 +230,11 @@ data:
     # cnv:vmi_status_running:count is the total number of VM instances running in the cluster.
     - '{__name__="cnv:vmi_status_running:count"}'
     #
+    # owners: (https://github.com/kubevirt)
+    #
+    # cluster:vmi_request_cpu_cores:sum is the total number of CPU cores requested by pods of VMIs.
+    - '{__name__="cluster:vmi_request_cpu_cores:sum"}'
+    #
     # owners: (@openshift/openshift-team-monitoring, @smarterclayton)
     #
     # node_role_os_version_machine:cpu_capacity_cores:sum is the total number
