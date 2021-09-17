@@ -221,6 +221,7 @@ local inCluster =
       openshiftStateMetrics: {
         namespace: $.values.common.namespace,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
+        commonLabels+: $.values.common.commonLabels,
       },
       prometheus: {
         namespace: $.values.common.namespace,
@@ -303,10 +304,12 @@ local inCluster =
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
+        commonLabels+: $.values.common.commonLabels,
       },
       telemeterClient: {
         namespace: $.values.common.namespace,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
+        commonLabels+: $.values.common.commonLabels,
       },
       controlPlane: {
         namespace: $.values.common.namespace,

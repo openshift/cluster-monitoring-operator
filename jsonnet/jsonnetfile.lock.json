@@ -99,8 +99,8 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "689af8b8dcb57484dc0c6428a3e8c9d73ef294a2",
-      "sum": "xoF0ibl74QrQ1DWbmoZ3JY83dEVeU0EQCvom96KGEuA=",
+      "version": "a6c557f455f56e2e406f19f471a49ffc066af610",
+      "sum": "YbabTSgCAw6v0rzfxU59vWkoJy2RNDC5WQdbDGuZo0U=",
       "name": "openshift-state-metrics"
     },
     {
@@ -110,8 +110,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "03842e05c3530786315e436522471667af86627e",
-      "sum": "6V/mbT+FzC90aukHKfM2CtkBCeyeWzHdkif9WMVakrA=",
+      "version": "1e97dddbde49e13867733cbf3219f6505d3b083a",
+      "sum": "Sm209vnPf0l7otdQvWS2rX376AqnhaIrlWqCpopMPCM=",
       "name": "telemeter-client"
     },
     {

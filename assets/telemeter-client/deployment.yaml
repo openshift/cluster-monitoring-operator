@@ -2,20 +2,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    k8s-app: telemeter-client
+    app.kubernetes.io/component: telemetry-metrics-collector
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: telemeter-client
+    app.kubernetes.io/part-of: openshift-monitoring
   name: telemeter-client
   namespace: openshift-monitoring
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: telemeter-client
+      app.kubernetes.io/component: telemetry-metrics-collector
+      app.kubernetes.io/name: telemeter-client
   template:
     metadata:
       annotations:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
-        k8s-app: telemeter-client
+        app.kubernetes.io/component: telemetry-metrics-collector
+        app.kubernetes.io/name: telemeter-client
     spec:
       containers:
       - command:

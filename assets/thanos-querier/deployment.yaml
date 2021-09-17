@@ -4,7 +4,9 @@ metadata:
   labels:
     app.kubernetes.io/component: query-layer
     app.kubernetes.io/instance: thanos-querier
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.22.0
   name: thanos-querier
   namespace: openshift-monitoring
@@ -15,6 +17,7 @@ spec:
       app.kubernetes.io/component: query-layer
       app.kubernetes.io/instance: thanos-querier
       app.kubernetes.io/name: thanos-query
+      app.kubernetes.io/part-of: openshift-monitoring
   strategy:
     rollingUpdate:
       maxUnavailable: 1
@@ -26,6 +29,7 @@ spec:
         app.kubernetes.io/component: query-layer
         app.kubernetes.io/instance: thanos-querier
         app.kubernetes.io/name: thanos-query
+        app.kubernetes.io/part-of: openshift-monitoring
         app.kubernetes.io/version: 0.22.0
     spec:
       affinity:
@@ -36,6 +40,7 @@ spec:
                 app.kubernetes.io/component: query-layer
                 app.kubernetes.io/instance: thanos-querier
                 app.kubernetes.io/name: thanos-query
+                app.kubernetes.io/part-of: openshift-monitoring
             topologyKey: kubernetes.io/hostname
       containers:
       - args:

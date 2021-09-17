@@ -18,6 +18,11 @@ function(params) {
   clusterRoleBinding: osm.openshiftStateMetrics.clusterRoleBinding,
   clusterRole: osm.openshiftStateMetrics.clusterRole,
   deployment: osm.openshiftStateMetrics.deployment {
+    metadata+: {
+      labels+: {
+        'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+      } + cfg.commonLabels + osm._config.commonLabels,
+    },
     spec+: {
       template+: {
         spec+: {

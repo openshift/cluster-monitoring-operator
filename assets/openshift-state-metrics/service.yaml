@@ -17,4 +17,5 @@ spec:
     port: 9443
     targetPort: https-self
   selector:
-    k8s-app: openshift-state-metrics
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: openshift-state-metrics

@@ -28,6 +28,11 @@ function(params) {
   secret: tc.telemeterClient.secret,
   servingCertsCABundle: tc.telemeterClient.servingCertsCABundle,
   deployment: tc.telemeterClient.deployment {
+    metadata+: {
+      labels+: {
+        'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+      } + cfg.commonLabels + tc._config.commonLabels,
+    },
     spec+: {
       template+: {
         spec+: {
