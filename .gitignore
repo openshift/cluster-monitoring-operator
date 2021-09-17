@@ -7,3 +7,6 @@ tmp/
 # purpose is to track the last target execution time to evaluate, whether the
 # container needs to be rebuilt
 .hack-*-image
+
+# This file gets generated as part of `make run-local`
+operator.log
