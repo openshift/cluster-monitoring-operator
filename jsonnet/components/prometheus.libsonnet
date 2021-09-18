@@ -99,6 +99,9 @@ function(params)
           },
         ],
         type: 'ClusterIP',
+        selector+: {
+          app:: null,
+        },
       },
     },
 

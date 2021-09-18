@@ -5,6 +5,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
   labels:
     app: cluster-monitoring-operator
+    app.kubernetes.io/name: cluster-monitoring-operator
   name: cluster-monitoring-operator
   namespace: openshift-monitoring
 spec:
@@ -18,6 +19,7 @@ spec:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app: cluster-monitoring-operator
+        app.kubernetes.io/name: cluster-monitoring-operator
     spec:
       containers:
       - args:
