@@ -996,7 +996,7 @@ func assertSecretDoesNotExist(name string, namespace string) func(*testing.T) {
 	return func(t *testing.T) {
 		if err := framework.Poll(5*time.Second, 10*time.Minute, func() error {
 			_, err := f.OperatorClient.GetSecret(ctx, namespace, name)
-			if err == nil || apierrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return nil
 			}
 
