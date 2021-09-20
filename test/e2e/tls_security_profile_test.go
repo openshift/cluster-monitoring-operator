@@ -66,18 +66,16 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 				Custom: &configv1.CustomTLSProfile{
 					TLSProfileSpec: configv1.TLSProfileSpec{
 						Ciphers: []string{
-							"TLS_AES_128_GCM_SHA256",
-							"ECDHE-ECDSA-AES128-GCM-SHA256",
-							"DHE-RSA-AES256-GCM-SHA384",
+							"ECDHE-RSA-AES128-GCM-SHA256",
+							"ECDHE-ECDSA-AES256-GCM-SHA384",
 						},
 						MinTLSVersion: "VersionTLS10",
 					},
 				},
 			},
 			expectedCipherSuite: []string{
-				"TLS_AES_128_GCM_SHA256",
-				"ECDHE-ECDSA-AES128-GCM-SHA256",
-				"DHE-RSA-AES256-GCM-SHA384",
+				"ECDHE-RSA-AES128-GCM-SHA256",
+				"ECDHE-ECDSA-AES256-GCM-SHA384",
 			},
 			expectedMinTLSVersion: "VersionTLS10",
 		},
