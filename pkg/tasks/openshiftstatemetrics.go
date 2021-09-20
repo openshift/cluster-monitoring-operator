@@ -74,6 +74,16 @@ func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling openshift-state-metrics Service failed")
 	}
 
+	rs, err := t.factory.OpenShiftStateMetricsRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing openshift-state-metrics RBAC proxy Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "creating openshift-state-metrics RBAC proxy Secret failed")
+	}
+
 	dep, err := t.factory.OpenShiftStateMetricsDeployment()
 	if err != nil {
 		return errors.Wrap(err, "initializing openshift-state-metrics Deployment failed")

@@ -75,12 +75,13 @@ var (
 	KubeStateMetricsPrometheusRule      = "kube-state-metrics/prometheus-rule.yaml"
 	KubeStateMetricsKubeRbacProxySecret = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
 
-	OpenShiftStateMetricsClusterRoleBinding = "openshift-state-metrics/cluster-role-binding.yaml"
-	OpenShiftStateMetricsClusterRole        = "openshift-state-metrics/cluster-role.yaml"
-	OpenShiftStateMetricsDeployment         = "openshift-state-metrics/deployment.yaml"
-	OpenShiftStateMetricsServiceAccount     = "openshift-state-metrics/service-account.yaml"
-	OpenShiftStateMetricsService            = "openshift-state-metrics/service.yaml"
-	OpenShiftStateMetricsServiceMonitor     = "openshift-state-metrics/service-monitor.yaml"
+	OpenShiftStateMetricsClusterRoleBinding  = "openshift-state-metrics/cluster-role-binding.yaml"
+	OpenShiftStateMetricsClusterRole         = "openshift-state-metrics/cluster-role.yaml"
+	OpenShiftStateMetricsDeployment          = "openshift-state-metrics/deployment.yaml"
+	OpenShiftStateMetricsServiceAccount      = "openshift-state-metrics/service-account.yaml"
+	OpenShiftStateMetricsService             = "openshift-state-metrics/service.yaml"
+	OpenShiftStateMetricsServiceMonitor      = "openshift-state-metrics/service-monitor.yaml"
+	OpenShiftStateMetricsKubeRbacProxySecret = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
 
 	NodeExporterDaemonSet                  = "node-exporter/daemonset.yaml"
 	NodeExporterService                    = "node-exporter/service.yaml"
@@ -664,6 +665,17 @@ func (f *Factory) OpenShiftStateMetricsServiceAccount() (*v1.ServiceAccount, err
 
 func (f *Factory) OpenShiftStateMetricsService() (*v1.Service, error) {
 	s, err := f.NewService(f.assets.MustNewAssetReader(OpenShiftStateMetricsService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) OpenShiftStateMetricsRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(OpenShiftStateMetricsKubeRbacProxySecret))
 	if err != nil {
 		return nil, err
 	}
