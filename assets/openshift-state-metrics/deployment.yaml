@@ -30,6 +30,7 @@ spec:
         - --upstream=http://127.0.0.1:8081/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
+        - --config-file=/etc/kube-rbac-policy/config.yaml
         image: quay.io/brancz/kube-rbac-proxy:v0.11.0
         name: kube-rbac-proxy-main
         ports:
@@ -43,6 +44,9 @@ spec:
         - mountPath: /etc/tls/private
           name: openshift-state-metrics-tls
           readOnly: false
+        - mountPath: /etc/kube-rbac-policy
+          name: openshift-state-metrics-kube-rbac-proxy-config
+          readOnly: true
       - args:
         - --logtostderr
         - --secure-listen-address=:9443
@@ -50,6 +54,7 @@ spec:
         - --upstream=http://127.0.0.1:8082/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
+        - --config-file=/etc/kube-rbac-policy/config.yaml
         image: quay.io/brancz/kube-rbac-proxy:v0.11.0
         name: kube-rbac-proxy-self
         ports:
@@ -63,6 +68,9 @@ spec:
         - mountPath: /etc/tls/private
           name: openshift-state-metrics-tls
           readOnly: false
+        - mountPath: /etc/kube-rbac-policy
+          name: openshift-state-metrics-kube-rbac-proxy-config
+          readOnly: true
       - args:
         - --host=127.0.0.1
         - --port=8081
@@ -82,3 +90,6 @@ spec:
       - name: openshift-state-metrics-tls
         secret:
           secretName: openshift-state-metrics-tls
+      - name: openshift-state-metrics-kube-rbac-proxy-config
+        secret:
+          secretName: openshift-state-metrics-kube-rbac-proxy-config

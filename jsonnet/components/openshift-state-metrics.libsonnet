@@ -1,3 +1,4 @@
+local generateSecret = import '../utils/generate-secret.libsonnet';
 function(params) {
   local cfg = params,
   local osm = (import 'github.com/openshift/openshift-state-metrics/jsonnet/openshift-state-metrics.libsonnet') + {
@@ -32,15 +33,34 @@ function(params) {
                 if c.name == 'kube-rbac-proxy-main' || c.name == 'kube-rbac-proxy-self' then
                   c {
                     image: cfg.kubeRbacProxyImage,
+                    args+: [
+                      '--config-file=/etc/kube-rbac-policy/config.yaml',
+                    ],
+                    volumeMounts+: [
+                      {
+                        mountPath: '/etc/kube-rbac-policy',
+                        name: 'openshift-state-metrics-kube-rbac-proxy-config',
+                        readOnly: true,
+                      },
+                    ],
                   }
                 else
                   c,
               super.containers,
             ),
+          volumes+: [
+            {
+              name: 'openshift-state-metrics-kube-rbac-proxy-config',
+              secret: {
+                secretName: 'openshift-state-metrics-kube-rbac-proxy-config',
+              },
+            },
+          ],
         },
       },
     },
   },
+  kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'openshift-state-metrics-kube-rbac-proxy-config'),
   serviceAccount: osm.openshiftStateMetrics.serviceAccount,
   service: osm.openshiftStateMetrics.service,
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
