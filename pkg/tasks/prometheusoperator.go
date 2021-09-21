@@ -86,7 +86,7 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 
 	config, err := t.client.GetAPIServerConfig(ctx, "cluster")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get API server configuration")
 	}
 	apiserverConfig := manifests.NewAPIServerConfig(config)
 	d, err := t.factory.PrometheusOperatorDeployment(apiserverConfig)
