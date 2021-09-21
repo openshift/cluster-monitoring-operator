@@ -65,6 +65,7 @@ spec:
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
+        - --config-file=/etc/kube-rbac-policy/config.yaml
         env:
         - name: IP
           valueFrom:
@@ -92,6 +93,9 @@ spec:
         - mountPath: /etc/tls/client
           name: metrics-client-ca
           readOnly: false
+        - mountPath: /etc/kube-rbac-policy
+          name: node-exporter-kube-rbac-proxy-config
+          readOnly: true
       hostNetwork: true
       hostPID: true
       initContainers:
@@ -147,6 +151,9 @@ spec:
       - configMap:
           name: metrics-client-ca
         name: metrics-client-ca
+      - name: node-exporter-kube-rbac-proxy-config
+        secret:
+          secretName: node-exporter-kube-rbac-proxy-config
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 10%

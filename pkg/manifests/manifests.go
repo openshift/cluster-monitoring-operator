@@ -91,6 +91,7 @@ var (
 	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
 	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
+	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
 
 	PrometheusK8sClusterRoleBinding          = "prometheus-k8s/cluster-role-binding.yaml"
 	PrometheusK8sRoleBindingConfig           = "prometheus-k8s/role-binding-config.yaml"
@@ -772,6 +773,17 @@ func (f *Factory) NodeExporterClusterRole() (*rbacv1.ClusterRole, error) {
 
 func (f *Factory) NodeExporterPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetReader(NodeExporterPrometheusRule))
+}
+
+func (f *Factory) NodeExporterRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(NodeExporterKubeRbacProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
