@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"k8s.io/client-go/rest"
+
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 
@@ -238,6 +239,9 @@ func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (clea
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceAccount,
 			Namespace: namespace,
+			Labels: map[string]string{
+				E2eTestLabelName: E2eTestLabelValue,
+			},
 		},
 	}
 
@@ -295,6 +299,9 @@ func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterR
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%s-%s", serviceAccount, clusterRole),
+			Labels: map[string]string{
+				E2eTestLabelName: E2eTestLabelValue,
+			},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -325,6 +332,9 @@ func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, 
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%s-%s", serviceAccount, clusterRole),
+			Labels: map[string]string{
+				E2eTestLabelName: E2eTestLabelValue,
+			},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -355,6 +365,9 @@ func (f *Framework) CreateRoleBindingFromRole(namespace, serviceAccount, role st
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%s-%s", serviceAccount, role),
+			Labels: map[string]string{
+				E2eTestLabelName: E2eTestLabelValue,
+			},
 		},
 		Subjects: []rbacv1.Subject{
 			{

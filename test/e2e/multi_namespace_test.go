@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
@@ -42,6 +43,7 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 			Name: nsName,
 			Labels: map[string]string{
 				"openshift.io/cluster-monitoring": "true",
+				framework.E2eTestLabelName:        framework.E2eTestLabelValue,
 			},
 		},
 	}
@@ -54,6 +56,9 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "non-monitoring-prometheus-rules",
 			Namespace: nsName,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Spec: monv1.PrometheusRuleSpec{
 			Groups: []monv1.RuleGroup{

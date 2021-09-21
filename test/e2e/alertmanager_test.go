@@ -90,6 +90,9 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 	}
 	ns, err = f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
@@ -323,6 +326,9 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `alertmanagerMain: { enabled: false }`,

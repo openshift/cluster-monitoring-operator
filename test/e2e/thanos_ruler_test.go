@@ -21,6 +21,9 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `thanosRuler:
@@ -69,6 +72,9 @@ func createAlertmanager(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "alertmanager-e2e-test",
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Spec: monitoringv1.AlertmanagerSpec{
 			Replicas: &replicas,
@@ -89,6 +95,9 @@ func createPrometheusRule(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "non-monitoring-prometheus-rules",
 			Namespace: "default",
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Spec: monitoringv1.PrometheusRuleSpec{
 			Groups: []monitoringv1.RuleGroup{

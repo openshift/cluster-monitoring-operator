@@ -49,6 +49,9 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheus:
@@ -106,6 +109,9 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheus:
@@ -155,6 +161,9 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheus:
@@ -225,6 +234,9 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheus:
@@ -270,6 +282,9 @@ func createSelfSignedCertificateSecret(secretName string) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		StringData: map[string]string{
 			"tls.key": string(key),
@@ -371,6 +386,9 @@ func disableAdditionalAlertmanagerConfigs(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheus: {}`,
@@ -1000,6 +1018,9 @@ func assertGRPCTLSRotation(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "grpc-tls",
 			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 	})
 	if err != nil {

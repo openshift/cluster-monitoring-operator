@@ -13,11 +13,15 @@ import (
 const (
 	ClusterMonitorConfigMapName      = "cluster-monitoring-config"
 	UserWorkloadMonitorConfigMapName = "user-workload-monitoring-config"
+	E2eTestLabelName                 = "app.kubernetes.io/created-by"
+	E2eTestLabelValue                = "cmo-e2e-test"
+	E2eTestLabel                     = E2eTestLabelName + ": " + E2eTestLabelValue
 )
 
 // MustCreateOrUpdateConfigMap or fail the test
 func (f *Framework) MustCreateOrUpdateConfigMap(t *testing.T, cm *v1.ConfigMap) {
 	t.Helper()
+	ensureCreatedByTestLabel(cm)
 	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 		t.Fatalf("failed to create/update configmap - %s", err.Error())
 	}
@@ -59,4 +63,19 @@ func (f *Framework) MustGetStatefulSet(t *testing.T, name, namespace string) *ap
 		t.Fatalf("failed to get statefulset %s in namespace %s - %s", name, namespace, err.Error())
 	}
 	return statefulSet
+}
+
+func ensureCreatedByTestLabel(obj metav1.Object) {
+	// only add the label if it doesn't exist yet, leave existing values
+	// untouched
+	labels := obj.GetLabels()
+	if labels == nil {
+		obj.SetLabels(map[string]string{
+			E2eTestLabelName: E2eTestLabelValue,
+		})
+		return
+	}
+	if _, ok := labels[E2eTestLabelName]; !ok {
+		labels[E2eTestLabelName] = E2eTestLabelValue
+	}
 }
