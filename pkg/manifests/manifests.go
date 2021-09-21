@@ -53,18 +53,19 @@ const (
 )
 
 var (
-	AlertmanagerConfig             = "alertmanager/secret.yaml"
-	AlertmanagerService            = "alertmanager/service.yaml"
-	AlertmanagerProxySecret        = "alertmanager/proxy-secret.yaml"
-	AlertmanagerMain               = "alertmanager/alertmanager.yaml"
-	AlertmanagerServiceAccount     = "alertmanager/service-account.yaml"
-	AlertmanagerClusterRoleBinding = "alertmanager/cluster-role-binding.yaml"
-	AlertmanagerClusterRole        = "alertmanager/cluster-role.yaml"
-	AlertmanagerRBACProxySecret    = "alertmanager/kube-rbac-proxy-secret.yaml"
-	AlertmanagerRoute              = "alertmanager/route.yaml"
-	AlertmanagerServiceMonitor     = "alertmanager/service-monitor.yaml"
-	AlertmanagerTrustedCABundle    = "alertmanager/trusted-ca-bundle.yaml"
-	AlertmanagerPrometheusRule     = "alertmanager/prometheus-rule.yaml"
+	AlertmanagerConfig                = "alertmanager/secret.yaml"
+	AlertmanagerService               = "alertmanager/service.yaml"
+	AlertmanagerProxySecret           = "alertmanager/proxy-secret.yaml"
+	AlertmanagerMain                  = "alertmanager/alertmanager.yaml"
+	AlertmanagerServiceAccount        = "alertmanager/service-account.yaml"
+	AlertmanagerClusterRoleBinding    = "alertmanager/cluster-role-binding.yaml"
+	AlertmanagerClusterRole           = "alertmanager/cluster-role.yaml"
+	AlertmanagerRBACProxySecret       = "alertmanager/kube-rbac-proxy-secret.yaml"
+	AlertmanagerRBACProxyMetricSecret = "alertmanager/kube-rbac-proxy-metric-secret.yaml"
+	AlertmanagerRoute                 = "alertmanager/route.yaml"
+	AlertmanagerServiceMonitor        = "alertmanager/service-monitor.yaml"
+	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
+	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
 
 	KubeStateMetricsClusterRoleBinding  = "kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole         = "kube-state-metrics/cluster-role.yaml"
@@ -470,6 +471,8 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 			}
 		case "kube-rbac-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "kube-rbac-proxy-metric":
+			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		case "prom-label-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}
@@ -482,6 +485,17 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) AlertmanagerRBACProxyMetricSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxyMetricSecret))
 	if err != nil {
 		return nil, err
 	}

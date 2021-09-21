@@ -19,6 +19,9 @@ spec:
   - name: tenancy
     port: 9092
     targetPort: tenancy
+  - name: metrics
+    port: 9097
+    targetPort: metrics
   selector:
     alertmanager: main
     app: alertmanager

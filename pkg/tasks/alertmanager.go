@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -81,6 +82,16 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 	err = t.client.CreateIfNotExistSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "creating Alertmanager RBAC proxy Secret failed")
+	}
+
+	rsm, err := t.factory.AlertmanagerRBACProxyMetricSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager RBAC proxy metric Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ctx, rsm)
+	if err != nil {
+		return errors.Wrap(err, "creating Alertmanager RBAC proxy metric Secret failed")
 	}
 
 	cr, err := t.factory.AlertmanagerClusterRole()
@@ -211,6 +222,16 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "deleting Alertmanager RBAC proxy Secret failed")
+	}
+
+	rsm, err := t.factory.AlertmanagerRBACProxyMetricSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager RBAC proxy metric Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, rsm)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager RBAC proxy metric Secret failed")
 	}
 
 	cr, err := t.factory.AlertmanagerClusterRole()
