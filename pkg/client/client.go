@@ -795,7 +795,8 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 			return false, nil
 		}
 		if d.Status.UpdatedReplicas != d.Status.Replicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+			lastErr = errors.Errorf("the number of pods targeted by the deployment (%d pods) is different "+
+				"from the number of pods targeted by the deployment that have the desired template spec (%d pods)",
 				d.Status.Replicas, d.Status.UpdatedReplicas)
 			return false, nil
 		}
