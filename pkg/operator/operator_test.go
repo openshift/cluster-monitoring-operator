@@ -377,7 +377,7 @@ func TestUpgradeableStatus(t *testing.T) {
 				namespace:                    namespace,
 				namespaceUserWorkload:        namespaceUserWorkload,
 			}
-			fakeOperator.rebalancer = rebalancer.NewRebalancer(context.Background(), fakeOperator.client.KubernetesInterface(), fakeOperator.workloadsToRebalance())
+			fakeOperator.rebalancer = rebalancer.NewRebalancer(context.Background(), fakeOperator.client.KubernetesInterface())
 
 			var message, reason string
 			upgradeable, message, reason, err := fakeOperator.Upgradeable(context.Background())

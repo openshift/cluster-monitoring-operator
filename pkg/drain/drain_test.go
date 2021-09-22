@@ -58,7 +58,7 @@ func TestCordonNode(t *testing.T) {
 			fakeClient := fake.NewSimpleClientset(tc.node.DeepCopy())
 			drainer := NewHelper(context.Background(), fakeClient, cordonAnnotation)
 
-			err := RunCordonOrUncordon(drainer, &tc.node, true)
+			err := RunCordonOrUncordon(drainer, &tc.node, Cordon)
 			if err != nil {
 				t.Error(err)
 			}
@@ -115,7 +115,7 @@ func TestUncordonNode(t *testing.T) {
 			fakeClient := fake.NewSimpleClientset(tc.node.DeepCopy())
 			drainer := NewHelper(context.Background(), fakeClient, cordonAnnotation)
 
-			err := RunCordonOrUncordon(drainer, &tc.node, false)
+			err := RunCordonOrUncordon(drainer, &tc.node, Uncordon)
 			if err != nil {
 				t.Error(err)
 			}

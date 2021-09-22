@@ -195,6 +195,7 @@ func New(
 		assets:                    a,
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
+		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -317,8 +318,6 @@ func New(
 	)
 
 	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run)
-
-	o.rebalancer = rebalancer.NewRebalancer(ctx, c.KubernetesInterface(), o.workloadsToRebalance())
 
 	return o, nil
 }

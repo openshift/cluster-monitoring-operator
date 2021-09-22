@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package drain is a partial copy of "k8s.io/kubectl/pkg/drain" which allow
-// cordoning and annotating nodes in a single operator.
+// ------------------------------------------------------------------------- //
+// The drain package is a partial copy of "k8s.io/kubectl/pkg/drain" which   //
+// allow cordoning and annotating nodes atomically. This allow marking the   //
+// nodes cordoned by an operator to avoid temptering someone else cordon.    //
+// Since this is not supported by the original package, we preferred copying //
+// part of the package and extending it to fit our needs.                    //
+// ------------------------------------------------------------------------- //
 package drain
 
 import (
@@ -31,6 +36,8 @@ import (
 )
 
 const (
+	Cordon                  = true
+	Uncordon                = false
 	cordonAnnotationMessage = "node marked as unschedulable by an operator to reschedule a pod on another node"
 )
 

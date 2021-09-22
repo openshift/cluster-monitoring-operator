@@ -60,7 +60,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-0"},
 				},
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}},
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{DropPVCAnnotation: "yes"}},
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 				},
 			},
@@ -80,7 +80,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-0"},
 				},
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}},
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{DropPVCAnnotation: "yes"}},
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 				},
 			},
@@ -130,11 +130,11 @@ func TestRebalanceWorkloads(t *testing.T) {
 			},
 			pvcs: []v1.PersistentVolumeClaim{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}},
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{DropPVCAnnotation: "yes"}},
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-0"},
 				},
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{dropPVCAnnotation: "yes"}},
+					ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{DropPVCAnnotation: "yes"}},
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 				},
 			},
@@ -149,7 +149,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 				&v1.PersistentVolumeClaimList{Items: tc.pvcs},
 				&v1.PersistentVolumeList{Items: tc.pvs},
 				&v1.NodeList{Items: nodes},
-			), []Workload{workload})
+			))
 
 			workloadRebalanced, err := fakeRebalancer.RebalanceWorkloads(context.Background(), &workload)
 			if err != nil {
@@ -215,7 +215,7 @@ func TestEnsureNodesAreUncordonned(t *testing.T) {
 		{
 			name: "Node made unschedulable by CMO",
 			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Name: "node-1", Annotations: map[string]string{cordonAnnotation: "cordoned by CMO"}},
+				ObjectMeta: metav1.ObjectMeta{Name: "node-1", Annotations: map[string]string{CordonAnnotation: "cordoned by CMO"}},
 				Spec:       v1.NodeSpec{Unschedulable: true},
 			},
 			unschedulable: false,
@@ -231,7 +231,7 @@ func TestEnsureNodesAreUncordonned(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			fakeClient := fake.NewSimpleClientset(tc.node.DeepCopy())
-			fakeRebalancer := NewRebalancer(context.Background(), fakeClient, nil)
+			fakeRebalancer := NewRebalancer(context.Background(), fakeClient)
 
 			err := fakeRebalancer.EnsureNodesAreUncordoned()
 			if err != nil {
