@@ -187,7 +187,7 @@ data:
 	if err != nil {
 		return err
 	}
-	_, err = f.KubeClient.CoreV1().ConfigMaps(f.Ns).Create(ctx, cfg, metav1.CreateOptions{})
+	err = f.OperatorClient.CreateOrUpdateConfigMap(ctx, cfg)
 	if err != nil {
 		return err
 	}

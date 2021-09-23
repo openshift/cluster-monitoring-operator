@@ -66,6 +66,8 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 	}
 
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	defer f.MustDeleteConfigMap(t, uwmCM)
+
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	setupUserApplication(t, f)
 
@@ -126,6 +128,8 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 	}
 
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	defer f.MustDeleteConfigMap(t, uwmCM)
+
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	setupUserApplication(t, f)
 
@@ -178,6 +182,8 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 	}
 
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	defer f.MustDeleteConfigMap(t, uwmCM)
+
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	setupUserApplication(t, f)
 
@@ -212,6 +218,7 @@ func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
 	}
 
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	for _, scenario := range []struct {
 		name string
@@ -260,6 +267,9 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 		},
 	}
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	defer f.MustDeleteConfigMap(t, uwmCM)
+
+	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	scenarios := []scenario{
 		{"assert 5 alertmanagers are discovered (3 built-in and 2 from the additional configs)", assertAlertmanagerInstancesDiscovered(5)},
