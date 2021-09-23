@@ -587,8 +587,8 @@ data:
     #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
     #
-    # The current amount of CPU used by Application Services products, labelled by product pillar.
-    - '{__name__="appsvcs_cpu_usage_cores"}'
+    # The current amount of CPU used by Application Services products, aggregated by product name.
+    - '{__name__="appsvcs:cores_by_product:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
