@@ -998,8 +998,10 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 				}
 			}
 		}
-
-		if d.Status.NumberAvailable != nodeReadyCount {
+		// It has been noticed that the number of available pods can be greater than
+		// the node ready count. This is because a node can be reported as not ready
+		// but the daemon set status states that all required pods are running.
+		if d.Status.NumberAvailable < nodeReadyCount {
 			lastErr = errors.Errorf("expected %d ready pods for %q daemonset, got %d ",
 				nodeReadyCount, d.GetName(), d.Status.NumberAvailable)
 			return false, nil
