@@ -74,6 +74,15 @@ func (t *NodeExporterTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling node-exporter ClusterRoleBinding failed")
 	}
 
+	nes, err := t.factory.NodeExporterRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "intializing node-exporter rbac proxy secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ctx, nes)
+	if err != nil {
+		return errors.Wrap(err, "creating node-exporter rbac proxy secret failed")
+	}
 	svc, err := t.factory.NodeExporterService()
 	if err != nil {
 		return errors.Wrap(err, "initializing node-exporter Service failed")

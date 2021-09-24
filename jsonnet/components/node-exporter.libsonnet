@@ -5,6 +5,7 @@ local wtmpPath = '/var/log/wtmp';
 local wtmpVolumeName = 'node-exporter-wtmp';
 
 local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
+local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
   local cfg = params;
@@ -126,6 +127,7 @@ function(params)
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
+                        '--config-file=/etc/kube-rbac-policy/config.yaml',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
@@ -138,6 +140,11 @@ function(params)
                           mountPath: '/etc/tls/client',
                           name: 'metrics-client-ca',
                           readOnly: false,
+                        },
+                        {
+                          mountPath: '/etc/kube-rbac-policy',
+                          name: 'node-exporter-kube-rbac-proxy-config',
+                          readOnly: true,
                         },
                       ],
                       resources: {
@@ -206,6 +213,12 @@ function(params)
                   name: 'metrics-client-ca',
                 },
               },
+              {
+                name: 'node-exporter-kube-rbac-proxy-config',
+                secret: {
+                  secretName: 'node-exporter-kube-rbac-proxy-config',
+                },
+              },
             ],
             securityContext: {},
             priorityClassName: 'system-cluster-critical',
@@ -216,4 +229,5 @@ function(params)
         },
       },
     },
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'node-exporter-kube-rbac-proxy-config'),
   }
