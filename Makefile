@@ -84,6 +84,10 @@ vendor:
 	go mod vendor
 	go mod verify
 
+.PHONY: update
+update: $(JB_BIN)
+	cd jsonnet && $(JB_BIN) update $(COMPONENTS)
+
 .PHONY: generate
 generate: build-jsonnet docs check-assets check-runbooks
 
