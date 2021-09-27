@@ -108,7 +108,7 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 	}
 
 	if len(resourcesToDelete) == 0 {
-		klog.V(4).Info("Couldn't find %q annotation on any of the PVCs attached to %s/%s which needs to be rebalanced.", DropPVCAnnotation, workload.Namespace, workload.Name)
+		klog.V(4).Infof("Couldn't find %q annotation on any of the PVCs attached to %s/%s which needs to be rebalanced.", DropPVCAnnotation, workload.Namespace, workload.Name)
 		return false, nil
 	}
 
@@ -143,7 +143,7 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 	// before setting the status so that we don't set upgradeable=false after
 	// balancing the pods.
 	err = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
-		klog.V(4).Info("Waiting until workload %s in namespace %s becomes correctly balanced.", workload.Name, workload.Namespace)
+		klog.V(4).Infof("Waiting until workload %s in namespace %s becomes correctly balanced.", workload.Name, workload.Namespace)
 		return r.WorkloadCorrectlyBalanced(ctx, workload)
 	})
 	return err == nil, err

@@ -434,6 +434,12 @@ func (o *Operator) handleEvent(obj interface{}) {
 		return
 	}
 
+	if _, ok := obj.(*v1.PersistentVolumeClaim); ok {
+		klog.Info("Trigerring update due to a PVC update")
+		o.enqueue(cmoConfigMap)
+		return
+	}
+
 	key, ok := o.keyFunc(obj)
 	if !ok {
 		return
