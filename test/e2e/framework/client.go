@@ -211,6 +211,27 @@ func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
 	return body, nil
 }
 
+// PrometheusRules runs an HTTP GET request against the Prometheus label API and returns
+// the response body.
+func (c *PrometheusClient) PrometheusLabel(label string) ([]byte, error) {
+	resp, err := c.Do("GET", fmt.Sprintf("/api/v1/label/%s/values", url.QueryEscape(label)), nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, ClampMax(body))
+	}
+
+	return body, nil
+}
+
 // AlertmanagerQueryAlerts runs an HTTP GET request against the Alertmanager
 // /api/v2/alerts endpoint and returns the response body.
 func (c *PrometheusClient) AlertmanagerQueryAlerts(kvs ...string) ([]byte, error) {
