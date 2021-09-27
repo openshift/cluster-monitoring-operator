@@ -181,7 +181,7 @@ test-unit:
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
-	go test -v -timeout=60m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	go test -v -timeout=120m ./test/e2e/ --kubeconfig $(KUBECONFIG)
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)

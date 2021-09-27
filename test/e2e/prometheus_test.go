@@ -28,8 +28,6 @@ import (
 
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	"github.com/pkg/errors"
 )
 
 func TestPrometheusMetrics(t *testing.T) {
@@ -249,33 +247,10 @@ spec:
   logLevel: debug
   remoteWrite: %s
 `, rw)
-		if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, cmoConfigMap)); err != nil {
-			t.Fatal(err)
-		}
+		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, cmoConfigMap))
 
-		reporter := f.OperatorClient.StatusReporter()
-		err := framework.Poll(5*time.Second, 2*time.Minute, func() error {
-			co, err := reporter.Get(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-			for _, c := range co.Status.Conditions {
-				if c.Type == osConfigv1.OperatorDegraded {
-					if c.Status == osConfigv1.ConditionTrue {
-						return errors.Errorf("expected ClusterOperator to not be degraded")
-					}
-				}
-				if c.Type == osConfigv1.OperatorProgressing {
-					if c.Status == osConfigv1.ConditionTrue {
-						return errors.Errorf("expected ClusterOperator to cease progressing")
-					}
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		f.AssertOperatorCondition(osConfigv1.OperatorDegraded, osConfigv1.ConditionFalse)
+		f.AssertOperatorCondition(osConfigv1.OperatorProgressing, osConfigv1.ConditionTrue)
 
 		t.Run(scenario.name, checkRemoteWrite(name, ctx))
 	}

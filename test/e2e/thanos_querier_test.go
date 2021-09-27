@@ -16,11 +16,11 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,55 +58,27 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Wait for the new hashed trusted CA bundle ConfigMap to be created
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, newCM.Name, metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting new CA ConfigMap failed")
-		if err != nil {
-			return false, nil
-		}
-		return true, nil
-	})
-	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
-	}
-
-	// Get Thanos Querier Deployment and make sure it has a volume mounted.
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		ss, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "thanos-querier", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting Thanos Querier deployment failed")
-		if err != nil {
-			return false, nil
-		}
-
-		var volMounts []v1.VolumeMount
-		for _, c := range ss.Spec.Template.Spec.Containers {
-			if c.Name == "oauth-proxy" {
-				volMounts = c.VolumeMounts
-			}
-		}
-
-		if len(volMounts) == 0 {
-			return false, errors.New("Could not find any VolumeMounts, expected at least 1")
-		}
-
-		for _, mount := range volMounts {
-			if mount.Name == "thanos-querier-trusted-ca-bundle" {
-				return true, nil
-			}
-		}
-
-		lastErr = fmt.Errorf("no volume %s mounted", newCM.Name)
-		return false, nil
-	})
-	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
+	for _, tc := range []scenario{
+		{
+			name:      "Wait for the new hashed trusted CA bundle ConfigMap to be created",
+			assertion: f.AssertConfigmapExists(newCM.Name, f.Ns),
+		},
+		{
+			name:      "assert deployment rolls out",
+			assertion: f.AssertDeploymentExistsAndRollout("thanos-querier", f.Ns),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/name=thanos-query",
+				[]framework.PodAssertion{
+					expectVolumeMountsInContainer("oauth-proxy", "thanos-querier-trusted-ca-bundle"),
+				},
+			),
+		},
+	} {
+		t.Run(tc.name, tc.assertion)
 	}
 }
 

@@ -24,9 +24,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,39 +34,14 @@ const (
 )
 
 func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
-	ctx := context.Background()
 	// Enable user workload monitoring to assess that an invalid configuration
 	// doesn't rollback the last known and valid configuration.
-	validCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `enableUserWorkload: true
-`,
-		},
-	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, validCM); err != nil {
-		t.Fatal(err)
-	}
-
-	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	setupUserWorkloadAssets(t, f)
+	defer tearDownUserWorkloadAssets(t, f)
 
 	t.Log("asserting that CMO is healthy")
-	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionFalse)
-	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionTrue)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 
 	// Push an invalid configuration.
 	cm := &v1.ConfigMap{
@@ -80,32 +53,22 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 			"config.yaml": `cannot be deserialized`,
 		},
 	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-		t.Fatal(err)
-	}
+	f.MustCreateOrUpdateConfigMap(t, cm)
 
 	t.Log("asserting that CMO goes degraded after an invalid configuration is pushed")
-	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionTrue)
-	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionFalse)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
 	// Check that the previous setup hasn't been reverted
-	_, err = f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.AssertStatefulsetExists("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	// Restore the first configuration.
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, validCM); err != nil {
-		t.Fatal(err)
-	}
-
+	f.MustCreateOrUpdateConfigMap(t, getUserWorkloadEnabledConfigMap(t, f))
 	t.Log("asserting that CMO goes back healthy after the configuration is fixed")
-	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionFalse)
-	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionTrue)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 }
 
 func TestGrafanaConfiguration(t *testing.T) {
-	ctx := context.Background()
 	config := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-monitoring-config",
@@ -115,72 +78,24 @@ func TestGrafanaConfiguration(t *testing.T) {
 			"config.yaml": "grafana: { enabled: false }",
 		},
 	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, config); err != nil {
-		t.Fatal(err)
-	}
+	f.MustCreateOrUpdateConfigMap(t, config)
 
 	// Wait for Grafana deployment to disappear.
-	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(context.TODO(), "grafana", metav1.GetOptions{})
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-
-		return errors.New("Grafana deployment still exists")
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.AssertDeploymentDoesNotExist("grafana", f.Ns)(t)
 
 	t.Log("asserting that CMO is healthy after disabling Grafana")
-	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionFalse)
-	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionTrue)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 
 	// Push a default configuration that re-enables Grafana.
 	config.Data["config.yaml"] = "grafana: { enabled: true }"
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, config); err != nil {
-		t.Fatal(err)
-	}
-
+	f.MustCreateOrUpdateConfigMap(t, config)
 	// Wait for Grafana deployment to appear.
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "grafana", metav1.GetOptions{})
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.AssertDeploymentExists("grafana", f.Ns)(t)
 
 	t.Log("asserting that CMO is healthy after re-enabling Grafana")
-	assertOperatorCondition(t, configv1.OperatorDegraded, configv1.ConditionFalse)
-	assertOperatorCondition(t, configv1.OperatorAvailable, configv1.ConditionTrue)
-}
-
-func assertOperatorCondition(t *testing.T, conditionType configv1.ClusterStatusConditionType, conditionStatus configv1.ConditionStatus) {
-	ctx := context.Background()
-	t.Helper()
-
-	reporter := f.OperatorClient.StatusReporter()
-	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		co, err := reporter.Get(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, c := range co.Status.Conditions {
-			if c.Type == conditionType {
-				if c.Status == conditionStatus {
-					return nil
-				}
-				return errors.Errorf("expecting condition %q to be %q, got %q", conditionType, conditionStatus, c.Status)
-			}
-		}
-		return errors.Errorf("failed to find condition %q", conditionType)
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 }
 
 func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
@@ -193,30 +108,23 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	ctx := context.Background()
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
+
 			name: "assert pod configuration is as expected",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: "app.kubernetes.io/name=prometheus-operator",
-				},
-				[]podAssertionCB{
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/name=prometheus-operator",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectContainerArg("--log-level=info", containerName),
 				},
 			),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -253,32 +161,23 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
       cpu: %s
       memory: %s
 `, storage, cpu, mem)
-	ctx := context.Background()
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "set configurations for prom operator CR, assert that PVC is created",
-			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				namespace:       f.Ns,
-				claimName:       pvcClaimName,
-				statefulSetName: statefulsetName,
-			}),
+			name:      "assert pvc was created",
+			assertion: f.AssertPersistentVolumeClaimsExist(pvcClaimName, f.Ns),
 		},
 		{
-			name: "assert that resource requests are created",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: labelSelector,
-				},
-				[]podAssertionCB{
+			name:      "assert ss exists and rolled out",
+			assertion: f.AssertStatefulSetExistsAndRollout(statefulsetName, f.Ns),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				labelSelector,
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					expectContainerArg("--log.level=debug", containerName),
@@ -287,19 +186,19 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 			),
 		},
 		{
-			name: "assert external labels are present on the CR",
-			f:    assertExternalLabelExists(f.Ns, crName, "datacenter", "eu-west"),
+			name:      "assert external labels are present on the CR",
+			assertion: assertExternalLabelExists(f.Ns, crName, "datacenter", "eu-west"),
 		},
 		{
-			name: "assert remote write url value in set in CR",
-			f:    assertRemoteWriteWasSet(f.Ns, crName, "https://test.remotewrite.com/api/write"),
+			name:      "assert remote write url value in set in CR",
+			assertion: assertRemoteWriteWasSet(f.Ns, crName, "https://test.remotewrite.com/api/write"),
 		},
 		{
-			name: "assert rule for Thanos sidecar exists",
-			f:    f.AssertPrometheusRuleExists(thanosRule, f.Ns),
+			name:      "assert rule for Thanos sidecar exists",
+			assertion: f.AssertPrometheusRuleExists(thanosRule, f.Ns),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -328,40 +227,30 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `, cpu, mem, storage)
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "set configurations for alert manager CR, assert that PVC is created",
-			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				namespace:       f.Ns,
-				claimName:       pvcClaimName,
-				statefulSetName: statefulsetName,
-			}),
+			name:      "assert that PVC is created",
+			assertion: f.AssertPersistentVolumeClaimsExist(pvcClaimName, f.Ns),
 		},
 		{
-			name: "assert that resource requests are created",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: labelSelector,
-				},
-				[]podAssertionCB{
+			name:      "assert that ss is created and rolled out",
+			assertion: f.AssertStatefulSetExistsAndRollout(statefulsetName, f.Ns),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				labelSelector,
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
 				},
 			),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -374,37 +263,25 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	ctx := context.Background()
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "test the kube-state-metrics deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			name:      "test the kube-state-metrics deployment is rolled out",
+			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
 		},
 		{
-			name: "assert that resource requests are correct",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: "app.kubernetes.io/name=kube-state-metrics",
-				},
-				[]podAssertionCB{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/name=kube-state-metrics",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
 			),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -417,38 +294,25 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "test the openshift-state-metrics deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			name:      "test the openshift-state-metrics deployment is rolled out",
+			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
 		},
 		{
-			name: "assert that resource requests are correct",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: "k8s-app=openshift-state-metrics",
-				},
-				[]podAssertionCB{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"k8s-app=openshift-state-metrics",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
 			),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -458,38 +322,25 @@ func TestClusterMonitorGrafanaConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "test the grafana deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			name:      "test the grafana deployment is rolled out",
+			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
 		},
 		{
-			name: "assert that resource requests are correct",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: "app.kubernetes.io/component=grafana",
-				},
-				[]podAssertionCB{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/component=grafana",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
 			),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -502,39 +353,26 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "test the telemeter-client deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			name:      "test the telemeter-client deployment is rolled out",
+			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
 		},
 		{
-			name: "assert that pod config correct",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: "k8s-app=telemeter-client",
-				},
-				[]podAssertionCB{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/component=grafana",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
 			),
 		},
 	} {
-		if ok := t.Run(scenario.name, scenario.f); !ok {
-			t.Fatalf("scenario %q failed", scenario.name)
+		if ok := t.Run(tc.name, tc.assertion); !ok {
+			t.Fatalf("scenario %q failed", tc.name)
 		}
 	}
 }
@@ -548,38 +386,25 @@ func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "test the prometheus-adapter deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			name:      "test the prometheus-adapter deployment is rolled out",
+			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
 		},
 		{
-			name: "assert that pod config is correct",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: "app.kubernetes.io/component=metrics-adapter",
-				},
-				[]podAssertionCB{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/component=metrics-adapter",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
 			),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -600,39 +425,26 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
       cpu: %s
       memory: %s
 `, cpu, mem)
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, configMapWithData(t, data)); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, test := range []scenario{
 		{
-			name: "test the thanos-querier deployment is rolled out",
-			f: assertDeploymentRollout(deploymentRolloutParams{
-				namespace: f.Ns,
-				name:      deploymentName,
-			}),
+			name:      "test the thanos-querier deployment is rolled out",
+			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
 		},
 		{
-			name: "assert that pod config is correct",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.Ns,
-					labelSelector: "app.kubernetes.io/name=thanos-query",
-				},
-				[]podAssertionCB{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/name=thanos-query",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests("*", containerName, mem, cpu),
 				},
 			),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(test.name, test.assertion)
 	}
 }
 
@@ -640,16 +452,8 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 	const (
 		containerName = "prometheus-operator"
 	)
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `enableUserWorkload: true
-`,
-		},
-	}
+
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -664,40 +468,27 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 `,
 		},
 	}
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, test := range []scenario{
 		{
 			name: "assert pod configuration is as expected",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.UserWorkloadMonitoringNs,
-					labelSelector: "app.kubernetes.io/name=prometheus-operator",
-				},
-				[]podAssertionCB{
+			assertion: f.AssertPodConfiguration(
+				f.UserWorkloadMonitoringNs,
+				"app.kubernetes.io/name=prometheus-operator",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectContainerArg("--log-level=debug", containerName),
 				},
 			),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(test.name, test.assertion)
 	}
 }
 
 func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 	const (
 		pvcClaimName    = "prometheus-user-workload-db-prometheus-user-workload-0"
 		statefulsetName = "prometheus-user-workload"
@@ -709,17 +500,6 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		labelSelector   = "app.kubernetes.io/component=prometheus"
 		crName          = "user-workload"
 	)
-
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `enableUserWorkload: true
-`,
-		},
-	}
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -749,37 +529,23 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 `, storage, cpu, mem),
 		},
 	}
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "set configurations for prom CR, assert that PVC is created",
-			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				namespace:       f.UserWorkloadMonitoringNs,
-				claimName:       pvcClaimName,
-				statefulSetName: statefulsetName,
-			}),
+			name:      "assert pvc was created",
+			assertion: f.AssertPersistentVolumeClaimsExist(pvcClaimName, f.UserWorkloadMonitoringNs),
 		},
 		{
-			name: "assert that resource requests are created",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.UserWorkloadMonitoringNs,
-					labelSelector: labelSelector,
-				},
-				[]podAssertionCB{
+			name:      "assert ss exists and rolled out",
+			assertion: f.AssertStatefulSetExistsAndRollout(statefulsetName, f.UserWorkloadMonitoringNs),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.UserWorkloadMonitoringNs,
+				labelSelector,
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					expectContainerArg("--log.level=debug", containerName),
@@ -788,19 +554,19 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 			),
 		},
 		{
-			name: "assert external labels are present on the CR",
-			f:    assertExternalLabelExists(f.UserWorkloadMonitoringNs, crName, "datacenter", "eu-west"),
+			name:      "assert external labels are present on the CR",
+			assertion: assertExternalLabelExists(f.UserWorkloadMonitoringNs, crName, "datacenter", "eu-west"),
 		},
 		{
-			name: "assert remote write url value in set in CR",
-			f:    assertRemoteWriteWasSet(f.UserWorkloadMonitoringNs, crName, "https://test.remotewrite.com/api/write"),
+			name:      "assert remote write url value in set in CR",
+			assertion: assertRemoteWriteWasSet(f.UserWorkloadMonitoringNs, crName, "https://test.remotewrite.com/api/write"),
 		},
 		{
-			name: "assert enforced target limit is configured",
-			f:    assertEnforcedTargetLimit(10),
+			name:      "assert enforced target limit is configured",
+			assertion: assertEnforcedTargetLimit(10),
 		},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -814,16 +580,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 		storage         = "2Gi"
 	)
 
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `enableUserWorkload: true
-`,
-		},
-	}
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -847,145 +604,30 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 `, storage, cpu, mem),
 		},
 	}
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 
-	ctx := context.Background()
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
-		t.Fatal(err)
-	}
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
+	for _, tc := range []scenario{
 		{
-			name: "assert that PVC is created and ss rolled out",
-			f: assertVolumeClaimsConfigAndRollout(rolloutParams{
-				namespace:       f.UserWorkloadMonitoringNs,
-				claimName:       pvcClaimName,
-				statefulSetName: statefulsetName,
-			}),
+			name:      "assert pvc was created",
+			assertion: f.AssertPersistentVolumeClaimsExist(pvcClaimName, f.UserWorkloadMonitoringNs),
 		},
 		{
-			name: "assert that pod config is correct",
-			f: assertPodConfiguration(
-				podConfigParams{
-					namespace:     f.UserWorkloadMonitoringNs,
-					labelSelector: "app.kubernetes.io/name=thanos-ruler",
-				},
-				[]podAssertionCB{
+			name:      "assert ss exists and rolled out",
+			assertion: f.AssertStatefulSetExistsAndRollout(statefulsetName, f.UserWorkloadMonitoringNs),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/name=thanos-ruler",
+				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests("*", containerName, mem, cpu),
 				},
 			),
 		},
-		{
-			name: "assert assets are deleted when user workload monitoring is disabled",
-			f:    assertDeletedUserWorkloadAssets(cm),
-		},
 	} {
-		t.Run(scenario.name, scenario.f)
-	}
-}
-
-type deploymentRolloutParams struct {
-	namespace, name string
-}
-
-func assertDeploymentRollout(params deploymentRolloutParams) func(*testing.T) {
-	ctx := context.Background()
-	return func(t *testing.T) {
-		err := f.OperatorClient.WaitForDeploymentRollout(ctx, &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      params.name,
-				Namespace: params.namespace,
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
-type rolloutParams struct {
-	namespace, claimName, statefulSetName string
-}
-
-func assertVolumeClaimsConfigAndRollout(params rolloutParams) func(*testing.T) {
-	return func(t *testing.T) {
-		// Wait for persistent volume claim
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(params.namespace).Get(context.TODO(), params.claimName, metav1.GetOptions{})
-			if err != nil {
-				return errors.Wrap(err, "getting persistent volume claim failed")
-
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = framework.Poll(time.Second, 5*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().StatefulSets(params.namespace).Get(context.TODO(), params.statefulSetName, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		ctx := context.Background()
-
-		err = f.OperatorClient.WaitForStatefulsetRollout(ctx, &appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      params.statefulSetName,
-				Namespace: params.namespace,
-			},
-		})
-
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
-// podConfigParams sets pod metadata
-type podConfigParams struct {
-	namespace, labelSelector string
-}
-
-func assertPodConfiguration(params podConfigParams, asserts []podAssertionCB) func(*testing.T) {
-	return func(t *testing.T) {
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			pods, err := f.KubeClient.CoreV1().Pods(params.namespace).List(context.TODO(), metav1.ListOptions{
-				LabelSelector: params.labelSelector,
-				FieldSelector: "status.phase=Running"},
-			)
-
-			if err != nil {
-				return errors.Wrap(err, "failed to get Pods")
-			}
-
-			// for each pod in the list of matching labels run each assertion
-			for _, p := range pods.Items {
-				for _, assertion := range asserts {
-					if err := assertion(p); err != nil {
-						return fmt.Errorf("failed assertion for %s - %v", p.Name, err)
-					}
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run(tc.name, tc.assertion)
 	}
 }
 
@@ -1002,11 +644,9 @@ func configMapWithData(t *testing.T, addData string) *v1.ConfigMap {
 	}
 }
 
-type podAssertionCB func(pod v1.Pod) error
-
 // checks that the toleration is set accordingly
 // this toleration will match all so will not affect rolling out workloads
-func expectCatchAllToleration() podAssertionCB {
+func expectCatchAllToleration() framework.PodAssertion {
 	return func(pod v1.Pod) error {
 		var hasToleration bool
 		for _, toleration := range pod.Spec.Tolerations {
@@ -1025,7 +665,7 @@ func expectCatchAllToleration() podAssertionCB {
 
 // checks that the container name has the same request cpu,mem as expected
 // pass "*" as podName t match all
-func expectMatchingRequests(podName, containerName, expectMem, expectCPU string) podAssertionCB {
+func expectMatchingRequests(podName, containerName, expectMem, expectCPU string) framework.PodAssertion {
 	return func(pod v1.Pod) error {
 		if podName == "*" || pod.Name == podName {
 			for _, container := range pod.Spec.Containers {
@@ -1047,7 +687,7 @@ func expectMatchingRequests(podName, containerName, expectMem, expectCPU string)
 	}
 }
 
-func expectContainerArg(arg string, containerName string) podAssertionCB {
+func expectContainerArg(arg string, containerName string) framework.PodAssertion {
 	return func(pod v1.Pod) error {
 		for _, container := range pod.Spec.Containers {
 			if container.Name == containerName {
@@ -1057,6 +697,22 @@ func expectContainerArg(arg string, containerName string) podAssertionCB {
 					}
 				}
 				return fmt.Errorf("arg %s not propagated from manifest", arg)
+			}
+		}
+		return nil
+	}
+}
+
+func expectVolumeMountsInContainer(containerName, mountName string) framework.PodAssertion {
+	return func(pod v1.Pod) error {
+		for _, container := range pod.Spec.Containers {
+			if container.Name == containerName {
+				for _, mount := range container.VolumeMounts {
+					if mount.Name == mountName {
+						return nil
+					}
+				}
+				return fmt.Errorf("expected volume mount %s not found in container %s", mountName, containerName)
 			}
 		}
 		return nil

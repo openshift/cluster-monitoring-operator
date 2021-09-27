@@ -25,9 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"k8s.io/client-go/util/cert"
-
 	"github.com/Jeffail/gabs"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
@@ -37,6 +34,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/cert"
 )
 
 type scenario struct {
@@ -45,10 +43,7 @@ type scenario struct {
 }
 
 func TestUserWorkloadMonitoringMetrics(t *testing.T) {
-	setupUserWorkloadAssets(t, f)
-	t.Cleanup(func() {
-		assertDeletionOfUserWorkloadAssets(f)(t)
-	})
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -105,10 +100,7 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 }
 
 func TestUserWorkloadMonitoringAlerting(t *testing.T) {
-	setupUserWorkloadAssets(t, f)
-	t.Cleanup(func() {
-		assertDeletionOfUserWorkloadAssets(f)(t)
-	})
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -157,10 +149,7 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 }
 
 func TestUserWorkloadMonitoringOptOut(t *testing.T) {
-	setupUserWorkloadAssets(t, f)
-	t.Cleanup(func() {
-		assertDeletionOfUserWorkloadAssets(f)(t)
-	})
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -194,10 +183,7 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 }
 
 func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
-	setupUserWorkloadAssets(t, f)
-	t.Cleanup(func() {
-		assertDeletionOfUserWorkloadAssets(f)(t)
-	})
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -229,10 +215,7 @@ func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
 }
 
 func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
-	setupUserWorkloadAssets(t, f)
-	t.Cleanup(func() {
-		assertDeletionOfUserWorkloadAssets(f)(t)
-	})
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	if err := createSelfSignedCertificateSecret("alertmanager-tls"); err != nil {
 		t.Fatal(err)
@@ -264,14 +247,11 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 `,
 		},
 	}
-
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	scenarios := []scenario{
 		{"assert 5 alertmanagers are discovered (3 built-in and 2 from the additional configs)", assertAlertmanagerInstancesDiscovered(5)},
 		{"disable additional alertmanagers", disableAdditionalAlertmanagerConfigs},
-		{"assert additional-alertmanager-configs secret is deleted", assertSecretDoesNotExist(manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)},
 		{"assert 3 alertmanagers are discovered", assertAlertmanagerInstancesDiscovered(3)},
 	}
 
@@ -309,16 +289,6 @@ func createSelfSignedCertificateSecret(secretName string) error {
 	}
 
 	return nil
-}
-
-func assertDeletionOfUserWorkloadAssets(f *framework.Framework) func(*testing.T) {
-	return func(t *testing.T) {
-		tearDownUserWorkloadAssets(t, f)
-
-		f.AssertDeploymentDoesNotExist("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
-		f.AssertStatefulsetDoesNotExist("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-		f.AssertSecretDoesNotExist(manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)(t)
-	}
 }
 
 func assertThanosRulerDeployment(t *testing.T) {
@@ -1080,74 +1050,6 @@ func assertGRPCTLSRotation(t *testing.T) {
 	}
 }
 
-func assertDeletedUserWorkloadAssets(cm *v1.ConfigMap) func(*testing.T) {
-	ctx := context.Background()
-	return func(t *testing.T) {
-		err := f.OperatorClient.DeleteConfigMap(ctx, cm)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = framework.Poll(time.Second, 10*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().Deployments(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-operator", metav1.GetOptions{})
-			if err == nil {
-				return errors.New("prometheus-operator deployment not deleted")
-			}
-			if apierrors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = framework.Poll(time.Second, 10*time.Minute, func() error {
-			_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
-			if err == nil {
-				return errors.New("prometheus statefulset not deleted")
-			}
-			if apierrors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = framework.Poll(time.Second, 10*time.Minute, func() error {
-			_, err := f.KubeClient.CoreV1().Secrets(f.UserWorkloadMonitoringNs).Get(ctx, manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, metav1.GetOptions{})
-			if err == nil {
-				return fmt.Errorf("secret %s/%s not deleted", manifests.PrometheusUWAdditionalAlertmanagerConfigSecretName, f.UserWorkloadMonitoringNs)
-			}
-			if apierrors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
-func assertSecretDoesNotExist(name string, namespace string) func(*testing.T) {
-	ctx := context.Background()
-	return func(t *testing.T) {
-		if err := framework.Poll(5*time.Second, 10*time.Minute, func() error {
-			_, err := f.OperatorClient.GetSecret(ctx, namespace, name)
-			if err == nil || apierrors.IsNotFound(err) {
-				return nil
-			}
-
-			return err
-		}); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 func assertNamespaceOptOut(t *testing.T) {
 	ctx := context.Background()
 
@@ -1201,13 +1103,4 @@ func assertNamespaceOptOut(t *testing.T) {
 	f.ThanosQuerierClient.WaitForTargetsReturn(t, 5*time.Minute, func(body []byte) error {
 		return getActiveTarget(body, serviceMonitorJobName)
 	})
-}
-
-func updateConfigmap(cm *v1.ConfigMap) func(t *testing.T) {
-	ctx := context.Background()
-	return func(t *testing.T) {
-		if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-			t.Fatal(err)
-		}
-	}
 }

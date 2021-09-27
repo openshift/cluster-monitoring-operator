@@ -17,13 +17,13 @@ package e2e
 import (
 	"context"
 	"fmt"
-	statusv1 "github.com/openshift/api/config/v1"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/Jeffail/gabs"
+	statusv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
@@ -33,59 +33,24 @@ import (
 )
 
 func TestAlertmanagerTrustedCA(t *testing.T) {
-	ctx := context.Background()
 	var (
 		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath))
 		newCM   *v1.ConfigMap
 		lastErr error
 	)
 
-	// Wait for the new ConfigMap to be created
-	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, "alertmanager-trusted-ca-bundle", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting new trusted CA ConfigMap failed")
-		if err != nil {
-			return false, nil
-		}
-
-		newCM, err = factory.HashTrustedCA(cm, "alertmanager")
-		lastErr = errors.Wrap(err, "no trusted CA bundle data available")
-		if err != nil {
-			return false, nil
-		}
-
-		return true, nil
-	})
+	cm := f.MustGetConfigMap(t, "alertmanager-trusted-ca-bundle", f.Ns)
+	newCM, err := factory.HashTrustedCA(cm, "alertmanager")
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
+		t.Fatal(errors.Wrap(err, "no trusted CA bundle data available"))
 	}
 
 	// Wait for the new hashed trusted CA bundle ConfigMap to be created
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, newCM.Name, metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting new CA ConfigMap failed")
-		if err != nil {
-			return false, nil
-		}
-		return true, nil
-	})
-	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
-	}
+	f.AssertConfigmapExists(newCM.Name, f.Ns)(t)
 
 	// Get Alertmanager StatefulSet and make sure it has a volume mounted.
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		ss, err := f.KubeClient.AppsV1().StatefulSets(f.Ns).Get(ctx, "alertmanager-main", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting Alertmanager StatefulSet failed")
-		if err != nil {
-			return false, nil
-		}
+		ss := f.MustGetStatefulSet(t, "alertmanager-main", f.Ns)
 
 		if len(ss.Spec.Template.Spec.Containers[0].VolumeMounts) == 0 {
 			return false, errors.New("Could not find any VolumeMounts, expected at least 1")
@@ -119,7 +84,7 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanUp()
+	t.Cleanup(cleanUp)
 
 	t.Logf("creating namespace %q", testNs)
 	ns := &v1.Namespace{
@@ -131,10 +96,11 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := f.KubeClient.CoreV1().Namespaces().Delete(ctx, testNs, metav1.DeleteOptions{})
-		t.Logf("deleting namespace %s: %v", testNs, err)
-	}()
+	t.Cleanup(func() {
+		if err := f.KubeClient.CoreV1().Namespaces().Delete(ctx, testNs, metav1.DeleteOptions{}); err != nil {
+			t.Logf("err deleting namespace %s: %v", testNs, err)
+		}
+	})
 
 	// Creating service accounts with different role bindings.
 	clients := make(map[string]*framework.PrometheusClient)
@@ -353,7 +319,7 @@ func TestAlertmanagerOAuthProxy(t *testing.T) {
 // Users should be able to disable Alertmanager through the cluster-monitoring-config
 func TestAlertmanagerDisabling(t *testing.T) {
 	// Disable alertmanager
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(context.Background(), &v1.ConfigMap{
+	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
@@ -361,9 +327,8 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		Data: map[string]string{
 			"config.yaml": `alertmanagerMain: { enabled: false }`,
 		},
-	}); err != nil {
-		t.Fatal(err)
 	}
+	f.MustCreateOrUpdateConfigMap(t, cm)
 
 	assertions := []struct {
 		name      string
@@ -386,8 +351,9 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		{name: "assert trusted-ca-bundle does not exist", assertion: f.AssertConfigmapDoesNotExist("alertmanager-trusted-ca-bundle", f.Ns)},
 		{name: "assert prometheus rule does not exist", assertion: f.AssertPrometheusRuleDoesNotExist("alertmanager-main-rules", f.Ns)},
 		{name: "assert service monitor does not exist", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager", f.Ns)},
-		{name: "alertmanager public URL is unset", assertion: assertAlertmanagerURLIsNotSet(f)},
-		{name: "assert operator not degraded", assertion: assertOperatorIsNotDegraded(f)},
+		{name: "alertmanager public URL is unset", assertion: f.AssertValueInConfigMapEquals(
+			"monitoring-shared-config", "openshift-config-managed", "alertmanagerPublicURL", "")},
+		{name: "assert operator not degraded", assertion: f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
 	}
 	t.Run("disable alertmanager", func(t *testing.T) {
 		for _, assertion := range assertions {
@@ -396,17 +362,7 @@ func TestAlertmanagerDisabling(t *testing.T) {
 	})
 
 	// Re-enable alertmanager with user workload monitoring
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(context.Background(), &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-		},
-		Data: map[string]string{
-			"config.yaml": `enableUserWorkload: true`,
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	assertions = []struct {
 		name      string
@@ -429,69 +385,13 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		{name: "assert trusted-ca-bundle exists", assertion: f.AssertConfigmapExists("alertmanager-trusted-ca-bundle", f.Ns)},
 		{name: "assert prometheus rule exists", assertion: f.AssertPrometheusRuleExists("alertmanager-main-rules", f.Ns)},
 		{name: "assert service monitor exists", assertion: f.AssertServiceMonitorExists("alertmanager", f.Ns)},
-		{name: "alertmanager public URL properly set", assertion: assertAlertmanagerURLIsSet(f)},
-		{name: "assert operator not degraded", assertion: assertOperatorIsNotDegraded(f)},
+		{name: "alertmanager public URL properly set", assertion: f.AssertValueInConfigMapNotEquals(
+			"monitoring-shared-config", "openshift-config-managed", "alertmanagerPublicURL", "")},
+		{name: "assert operator not degraded", assertion: f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
 	}
 	t.Run("enable alertmanager", func(t *testing.T) {
 		for _, assertion := range assertions {
 			t.Run(assertion.name, assertion.assertion)
 		}
 	})
-}
-
-func assertAlertmanagerURLIsSet(f *framework.Framework) framework.AssertionFunc {
-	return func(t *testing.T) {
-		cm := getMonitoringSharedConfig(t, f)
-		if cm.Data["alertmanagerPublicURL"] == "" {
-			t.Fatal("expected alertmanagerPublicURL to be set")
-		}
-	}
-}
-
-func assertAlertmanagerURLIsNotSet(f *framework.Framework) framework.AssertionFunc {
-	return func(t *testing.T) {
-		cm := getMonitoringSharedConfig(t, f)
-		if cm.Data["alertmanagerPublicURL"] != "" {
-			t.Fatal("expected alertmanagerPublicURL to not be set")
-		}
-	}
-}
-
-func getMonitoringSharedConfig(t *testing.T, f *framework.Framework) *v1.ConfigMap {
-	cm, err := f.OperatorClient.GetConfigmap(context.Background(), "openshift-config-managed", "monitoring-shared-config")
-	if err != nil {
-		t.Fatal(err)
-	}
-	return cm
-}
-
-func assertOperatorIsNotDegraded(f *framework.Framework) framework.AssertionFunc {
-	return func(t *testing.T) {
-		status := getStatusCondition(f, statusv1.OperatorDegraded)
-		if status == nil {
-			t.Fatalf("status condition with type %s not found", statusv1.OperatorDegraded)
-		}
-
-		if *status != statusv1.ConditionFalse {
-			t.Fatalf("expected operator status %s to be false", statusv1.OperatorDegraded)
-		}
-	}
-}
-
-func getStatusCondition(
-	f *framework.Framework,
-	conditionType statusv1.ClusterStatusConditionType,
-) *statusv1.ConditionStatus {
-	status, err := f.OperatorClient.StatusReporter().Get(context.Background())
-	if err != nil {
-		return nil
-	}
-
-	for _, condition := range status.Status.Conditions {
-		if condition.Type == conditionType {
-			return &condition.Status
-		}
-	}
-
-	return nil
 }
