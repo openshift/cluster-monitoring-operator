@@ -27,11 +27,10 @@ import (
 )
 
 const (
-	unavailableMessage              string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
-	asExpectedReason                string = "AsExpected"
-	StorageNotConfiguredMessage            = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.8/monitoring/configuring-the-monitoring-stack.html"
-	StorageNotConfiguredReason             = "PrometheusDataPersistenceNotConfigured"
-	WorkloadIncorrectlySpreadReason        = "WorkloadIncorrectlySpread"
+	unavailableMessage          string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
+	asExpectedReason            string = "AsExpected"
+	StorageNotConfiguredMessage        = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.8/monitoring/configuring-the-monitoring-stack.html"
+	StorageNotConfiguredReason         = "PrometheusDataPersistenceNotConfigured"
 )
 
 type StatusReporter struct {
@@ -107,7 +106,7 @@ func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
 	return co
 }
 
-func (r *StatusReporter) SetConditions(ctx context.Context, co *v1.ClusterOperator, conditions *conditions) error {
+func (r *StatusReporter) setConditions(ctx context.Context, co *v1.ClusterOperator, conditions *conditions) error {
 	co.Status.Conditions = conditions.entries()
 	co.Status.RelatedObjects = r.relatedObjects()
 
@@ -141,7 +140,7 @@ func (r *StatusReporter) SetRollOutDone(ctx context.Context, degradedConditionMe
 		co.Status.Versions = nil
 	}
 
-	return r.SetConditions(ctx, co, conditions)
+	return r.setConditions(ctx, co, conditions)
 }
 
 // SetRollOutInProgress sets the OperatorProgressing condition to true, either:
@@ -161,7 +160,7 @@ func (r *StatusReporter) SetRollOutInProgress(ctx context.Context) error {
 	conditions := newConditions(co.Status, r.version, metav1.Now())
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", "RollOutInProgress", time)
 
-	return r.SetConditions(ctx, co, conditions)
+	return r.setConditions(ctx, co, conditions)
 }
 
 func (r *StatusReporter) SetFailed(ctx context.Context, statusErr error, reason string) error {
@@ -179,7 +178,7 @@ func (r *StatusReporter) SetFailed(ctx context.Context, statusErr error, reason 
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, unavailableMessage, reason, time)
 	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), reason, time)
 
-	return r.SetConditions(ctx, co, conditions)
+	return r.setConditions(ctx, co, conditions)
 }
 
 func (r *StatusReporter) SetUpgradeable(ctx context.Context, cond v1.ConditionStatus, message, reason string) error {
@@ -192,5 +191,5 @@ func (r *StatusReporter) SetUpgradeable(ctx context.Context, cond v1.ConditionSt
 	conditions := newConditions(co.Status, r.version, metav1.Now())
 	conditions.setCondition(v1.OperatorUpgradeable, cond, message, reason, time)
 
-	return r.SetConditions(ctx, co, conditions)
+	return r.setConditions(ctx, co, conditions)
 }

@@ -41,6 +41,7 @@ import (
 	schedulingv1client "k8s.io/client-go/kubernetes/typed/scheduling/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
+	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 
@@ -59,18 +60,19 @@ const (
 )
 
 type Framework struct {
-	RestConfig           *rest.Config
-	OperatorClient       *client.Client
-	OpenShiftRouteClient *routev1.RouteV1Client
-	KubeClient           kubernetes.Interface
-	ThanosQuerierClient  *PrometheusClient
-	PrometheusK8sClient  *PrometheusClient
-	AlertmanagerClient   *PrometheusClient
-	APIServicesClient    *apiservicesclient.Clientset
-	AdmissionClient      *admissionclient.AdmissionregistrationV1Client
-	MetricsClient        *metricsclient.Clientset
-	SchedulingClient     *schedulingv1client.SchedulingV1Client
-	kubeConfigPath       string
+	RestConfig            *rest.Config
+	OperatorClient        *client.Client
+	OpenshiftConfigClient openshiftconfigclientset.Interface
+	OpenShiftRouteClient  *routev1.RouteV1Client
+	KubeClient            kubernetes.Interface
+	ThanosQuerierClient   *PrometheusClient
+	PrometheusK8sClient   *PrometheusClient
+	AlertmanagerClient    *PrometheusClient
+	APIServicesClient     *apiservicesclient.Clientset
+	AdmissionClient       *admissionclient.AdmissionregistrationV1Client
+	MetricsClient         *metricsclient.Clientset
+	SchedulingClient      *schedulingv1client.SchedulingV1Client
+	kubeConfigPath        string
 
 	MonitoringClient             *monClient.MonitoringV1Client
 	Ns, UserWorkloadMonitoringNs string
@@ -88,6 +90,12 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating kubeClient failed")
+	}
+
+	// Necessary to test the operator status.
+	openshiftConfigClient, err := openshiftconfigclientset.NewForConfig(config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating openshiftConfigClient failed")
 	}
 
 	// So far only necessary for prometheusK8sClient.
@@ -129,6 +137,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	f := &Framework{
 		RestConfig:               config,
 		OperatorClient:           operatorClient,
+		OpenshiftConfigClient:    openshiftConfigClient,
 		OpenShiftRouteClient:     openshiftRouteClient,
 		KubeClient:               kubeClient,
 		APIServicesClient:        apiServicesClient,

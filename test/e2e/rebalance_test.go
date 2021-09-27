@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
+
 	cmodrain "github.com/openshift/cluster-monitoring-operator/pkg/drain"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
@@ -70,16 +72,23 @@ func TestRebalanceWorkloads(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Wait for the automated rebalancing to quick in
+	// Wait until CMO rebalances the pods and starts reporting Upgradeable=true
+	// again.
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		balanced, err := r.WorkloadCorrectlyBalanced(ctx, workload)
+		clusterOperator, err := f.OpenshiftConfigClient.ConfigV1().ClusterOperators().Get(ctx, "monitoring", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		if balanced {
+		for _, condition := range clusterOperator.Status.Conditions {
+			if condition.Type != configv1.OperatorUpgradeable {
+				continue
+			}
+			if condition.Status != configv1.ConditionTrue {
+				return fmt.Errorf("Expected CMO to report Upgradeable=true, got %s", condition.Status)
+			}
 			return nil
 		}
-		return fmt.Errorf("Expected workload %s/%s to be correctly balanced between multiple nodes", workload.Namespace, workload.Name)
+		return fmt.Errorf("Expected CMO to report Upgradeable=true")
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -136,36 +145,24 @@ func incorrectlyRebalanceWorkload(ctx context.Context, r *rebalancer.Rebalancer,
 		return err
 	}
 
-	// Make sure that both replicas of prometheus-k8s are scheduled on the same node
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		podList, err := f.KubeClient.CoreV1().Pods(f.Ns).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=prometheus"})
+	// Wait until CMO starts reporting Upgradeable=false because all the replicas
+	// of Prometheus are scheduled on the same node.
+	return framework.Poll(time.Second, 5*time.Minute, func() error {
+		clusterOperator, err := f.OpenshiftConfigClient.ConfigV1().ClusterOperators().Get(ctx, "monitoring", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		if len(podList.Items) != 2 {
-			return fmt.Errorf("Expected 2 replicas of prometheus-k8s, got: %d", len(podList.Items))
-		}
-		if podList.Items[0].Spec.NodeName != podList.Items[1].Spec.NodeName {
-			return fmt.Errorf("Expected both replicas of prometheus-k8s to be scheduled on the same node")
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	// Verify that the rebalancer is reporting that the workloads are incorrectly balanced
-	framework.Poll(time.Second, 5*time.Minute, func() error {
-		balanced, err := r.WorkloadCorrectlyBalanced(ctx, workload)
-		if err != nil {
-			return err
-		}
-		if !balanced {
+		for _, condition := range clusterOperator.Status.Conditions {
+			if condition.Type != configv1.OperatorUpgradeable {
+				continue
+			}
+			if condition.Status != configv1.ConditionFalse {
+				return fmt.Errorf("Expected CMO to report Upgradeable=false, got %s", condition.Status)
+			}
 			return nil
 		}
-		return fmt.Errorf("Expected workload %s/%s to not be correctly balanced between multiple nodes", workload.Namespace, workload.Name)
+		return fmt.Errorf("Expected CMO to report Upgradeable=false")
 	})
-	return err
 }
 
 func enablePersistentStorage() error {

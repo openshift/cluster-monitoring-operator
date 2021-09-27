@@ -511,7 +511,9 @@ func (o *Operator) enqueue(obj interface{}) {
 }
 
 func (o *Operator) sync(ctx context.Context, key string) error {
-	// Ensure that no nodes cordoned by the operator remains unschedulable.
+	// The operator may have left some nodes as unschedulable during a previous
+	// sync in an attempt to rebalance workloads.
+	// Ensure that the nodes are switched back to schedulable first.
 	err := o.rebalancer.EnsureNodesAreUncordoned()
 	if err != nil {
 		return err
@@ -811,13 +813,7 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 		}
 
 		if !workloadRebalanced {
-			messages = append(
-				messages,
-				fmt.Sprintf("Highly-available workload %s/%s is incorrectly balanced across multiple nodes."+
-					" You can run `oc get pvc -n %s -l %s=%s` to get all the PVCs attached to it.",
-					workload.Namespace, workload.Name, workload.Namespace, "app.kubernetes.io/name", workload.LabelSelector["app.kubernetes.io/name"],
-				),
-			)
+			messages = append(messages, fmt.Sprintf("Highly-available workload %s/%s with persistent storage has a single point of failure.", workload.Namespace, workload.Name))
 		}
 	}
 
@@ -827,7 +823,7 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 			msg += " The operator couldn't rebalance the pods automatically with the annotation, please refer to the runbook to fix this issue manually."
 		}
 		messages = append(messages, msg)
-		return configv1.ConditionFalse, client.WorkloadIncorrectlySpreadReason, strings.Join(messages, "\n"), nil
+		return configv1.ConditionFalse, "WorkloadSinglePointOfFailure", strings.Join(messages, "\n"), nil
 	}
 
 	return configv1.ConditionTrue, "", "", nil

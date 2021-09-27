@@ -237,11 +237,16 @@ function(params) {
         resources: ['events'],
         verbs: ['create', 'patch', 'update'],
       },
+      // The operator needs these permissions to cordon nodes when rebalancing
+      // pods.
       {
         apiGroups: [''],
         resources: ['nodes'],
         verbs: ['get', 'list', 'update', 'patch'],
       },
+      // The operator needs to get PersistentVolumes to know their storage
+      // topology. Based on that information, it will only delete PVCs attached
+      // to volumes with a zonal topology when rebalancing pods.
       {
         apiGroups: [''],
         resources: ['persistentvolumes'],
@@ -250,6 +255,11 @@ function(params) {
     ],
   },
 
+  // This Role contains all the rules needed by the operator to rebalance
+  // workloads on different nodes.
+  // The Role is bound to the openshift-monitoring namespace to avoid giving
+  // the operator the permissions to delete pods and PVCs outside of its
+  // namespace.
   openshiftMonitoringRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
@@ -271,6 +281,11 @@ function(params) {
     ],
   },
 
+  // This Role contains all the rules needed by the operator to rebalance UWM
+  // workloads on different nodes.
+  // The Role is bound to the openshift-user-workload-monitoring namespace to
+  // avoid giving the operator the permissions to delete pods and PVCs outside
+  // of the UWM namespace.
   openshiftUserWorkloadMonitoringRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',

@@ -14,7 +14,7 @@
 
 // ------------------------------------------------------------------------- //
 // The drain package is a partial copy of "k8s.io/kubectl/pkg/drain" which   //
-// allow cordoning and annotating nodes atomically. This allow marking the   //
+// allows cordoning and annotating nodes atomically. This allow marking the  //
 // nodes cordoned by an operator to avoid temptering someone else cordon.    //
 // Since this is not supported by the original package, we preferred copying //
 // part of the package and extending it to fit our needs.                    //

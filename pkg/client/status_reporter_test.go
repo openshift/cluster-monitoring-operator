@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-func TestStatusReporterSetDone(t *testing.T) {
+func TestStatusReporterSetRolloutDone(t *testing.T) {
 	ctx := context.Background()
 	for _, tc := range []struct {
 		name  string

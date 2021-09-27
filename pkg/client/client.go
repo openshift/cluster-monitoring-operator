@@ -61,8 +61,6 @@ import (
 const (
 	deploymentCreateTimeout = 5 * time.Minute
 	metadataPrefix          = "monitoring.openshift.io/"
-	cordonAnnotation        = "openshift.io/cluster-monitoring-cordoned"
-	cordonAnnotationMessage = "node marked as unschedulable by cluster-monitoring-operator to reschedule a pod on another node"
 )
 
 type Client struct {
