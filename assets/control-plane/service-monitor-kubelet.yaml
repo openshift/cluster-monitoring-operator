@@ -72,11 +72,6 @@ spec:
       - pod
       - namespace
     - action: drop
-      regex: (container_fs_.*|container_blkio_device_usage_total);.+
-      sourceLabels:
-      - __name__
-      - container
-    - action: drop
       regex: container_memory_failures_total
       sourceLabels:
       - __name__
