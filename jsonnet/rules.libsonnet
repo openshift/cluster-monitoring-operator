@@ -31,7 +31,7 @@ function(params) {
                 kube_pod_info{node!=""}
                 * on(namespace,pod) group_left(workload)
                 (
-                  kube_pod_spec_volumes_persistentvolumeclaims_info
+                  max by(namespace, pod, workload) (kube_pod_spec_volumes_persistentvolumeclaims_info)
                   * on(namespace,pod) group_left(workload)
                   (
                     namespace_workload_pod:kube_pod_owner:relabel
