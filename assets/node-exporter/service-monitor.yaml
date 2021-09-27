@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 1.1.2
+    app.kubernetes.io/version: 1.2.2
   name: node-exporter
   namespace: openshift-monitoring
 spec:
