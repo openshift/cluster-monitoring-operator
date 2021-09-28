@@ -255,6 +255,18 @@ func New(
 	})
 	o.informers = append(o.informers, informer)
 
+	informer = cache.NewSharedIndexInformer(
+		o.client.ApiServersListWatchForResource(ctx, clusterResourceName),
+		&configv1.APIServer{}, resyncPeriod, cache.Indexers{},
+	)
+
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) {
+			o.handleEvent(newObj)
+		},
+	})
+	o.informers = append(o.informers, informer)
+
 	kubeInformersOperatorNS := informers.NewSharedInformerFactoryWithOptions(
 		c.KubernetesInterface(),
 		resyncPeriod,
@@ -410,6 +422,12 @@ func (o *Operator) handleEvent(obj interface{}) {
 
 	if _, ok := obj.(*configv1.Infrastructure); ok {
 		klog.Infof("Triggering update due to an infrastructure update")
+		o.enqueue(cmoConfigMap)
+		return
+	}
+
+	if _, ok := obj.(*configv1.APIServer); ok {
+		klog.Infof("Triggering update due to an apiserver config update")
 		o.enqueue(cmoConfigMap)
 		return
 	}

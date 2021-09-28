@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -58,18 +59,19 @@ const (
 )
 
 type Framework struct {
-	RestConfig          *rest.Config
-	OperatorClient       *client.Client
-	OpenShiftRouteClient *routev1.RouteV1Client
-	KubeClient           kubernetes.Interface
-	ThanosQuerierClient  *PrometheusClient
-	PrometheusK8sClient  *PrometheusClient
-	AlertmanagerClient   *PrometheusClient
-	APIServicesClient    *apiservicesclient.Clientset
-	AdmissionClient      *admissionclient.AdmissionregistrationV1Client
-	MetricsClient        *metricsclient.Clientset
-	SchedulingClient     *schedulingv1client.SchedulingV1Client
-	kubeConfigPath       string
+	RestConfig            *rest.Config
+	OperatorClient        *client.Client
+	OpenShiftConfigClient *openshiftconfigclientset.Clientset
+	OpenShiftRouteClient  *routev1.RouteV1Client
+	KubeClient            kubernetes.Interface
+	ThanosQuerierClient   *PrometheusClient
+	PrometheusK8sClient   *PrometheusClient
+	AlertmanagerClient    *PrometheusClient
+	APIServicesClient     *apiservicesclient.Clientset
+	AdmissionClient       *admissionclient.AdmissionregistrationV1Client
+	MetricsClient         *metricsclient.Clientset
+	SchedulingClient      *schedulingv1client.SchedulingV1Client
+	kubeConfigPath        string
 
 	MonitoringClient             *monClient.MonitoringV1Client
 	Ns, UserWorkloadMonitoringNs string
@@ -125,9 +127,15 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating scheduling v1 client failed")
 	}
 
+	openshiftConfigClient, err := openshiftconfigclientset.NewForConfig(config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating openshift config v1 client failed")
+	}
+
 	f := &Framework{
 		RestConfig:               config,
 		OperatorClient:           operatorClient,
+		OpenShiftConfigClient:    openshiftConfigClient,
 		OpenShiftRouteClient:     openshiftRouteClient,
 		KubeClient:               kubeClient,
 		APIServicesClient:        apiServicesClient,

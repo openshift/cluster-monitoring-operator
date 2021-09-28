@@ -84,7 +84,12 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Prometheus Operator Service failed")
 	}
 
-	d, err := t.factory.PrometheusOperatorDeployment()
+	config, err := t.client.GetAPIServerConfig(ctx, "cluster")
+	if err != nil {
+		return errors.Wrap(err, "failed to get API server configuration")
+	}
+	apiserverConfig := manifests.NewAPIServerConfig(config)
+	d, err := t.factory.PrometheusOperatorDeployment(apiserverConfig)
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Operator Deployment failed")
 	}
