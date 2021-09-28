@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 1.1.2
+    app.kubernetes.io/version: 1.2.2
   name: node-exporter
   namespace: openshift-monitoring
 spec:
@@ -23,7 +23,7 @@ spec:
         app.kubernetes.io/component: exporter
         app.kubernetes.io/name: node-exporter
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 1.1.2
+        app.kubernetes.io/version: 1.2.2
     spec:
       containers:
       - args:
@@ -37,7 +37,7 @@ spec:
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
         - --no-collector.cpufreq
-        image: quay.io/prometheus/node-exporter:v1.1.2
+        image: quay.io/prometheus/node-exporter:v1.2.2
         name: node-exporter
         resources:
           requests:
@@ -107,7 +107,7 @@ spec:
         env:
         - name: TMPDIR
           value: /tmp
-        image: quay.io/prometheus/node-exporter:v1.1.2
+        image: quay.io/prometheus/node-exporter:v1.2.2
         name: init-textfile
         resources:
           requests:
