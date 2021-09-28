@@ -87,6 +87,17 @@ func (f *Factory) MetricsClientCACM(apiAuthConfigmap *v1.ConfigMap) (*v1.ConfigM
 	return cm, nil
 }
 
+func (f *Factory) UserWorkloadMetricsClientCACM(apiAuthConfigmap *v1.ConfigMap) (*v1.ConfigMap, error) {
+	cm, err := f.MetricsClientCACM(apiAuthConfigmap)
+	if err != nil {
+		return nil, err
+	}
+
+	cm.Namespace = f.namespaceUserWorkload
+
+	return cm, nil
+}
+
 // RotateGRPCSecret rotates key material for Thanos GRPC TLS based communication.
 //
 // If no key material is present, it creates it.
