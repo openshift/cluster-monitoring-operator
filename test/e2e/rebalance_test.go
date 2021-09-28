@@ -145,6 +145,22 @@ func incorrectlyRebalanceWorkload(ctx context.Context, r *rebalancer.Rebalancer,
 		return err
 	}
 
+	// Force operator sync by annotating the cluster-monitoring-config.
+	// This is needed in order to make the operator reevaluate its Upgradeable
+	// status and thus make the check for Upgradeable=false more consistent.
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		config, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, "cluster-monitoring-config", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		config.Annotations = map[string]string{"force-operator-sync": ""}
+		_, err = f.KubeClient.CoreV1().ConfigMaps(f.Ns).Update(ctx, config, metav1.UpdateOptions{})
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
 	// Wait until CMO starts reporting Upgradeable=false because all the replicas
 	// of Prometheus are scheduled on the same node.
 	return framework.Poll(time.Second, 5*time.Minute, func() error {
