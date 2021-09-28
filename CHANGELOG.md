@@ -3,6 +3,7 @@
 ## 4.10
 
 - [#1299](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose expose /api/v1/labels endpoint for Thanos query.
+- [#1402](https://github.com/openshift/cluster-monitoring-operator/pull/1402) Drop pod-centric cAdvisor metrics that are available at slice level.
 
 ## 4.9
 
