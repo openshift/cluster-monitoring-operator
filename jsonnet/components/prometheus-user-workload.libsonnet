@@ -1,3 +1,4 @@
+local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 
 function(params)
@@ -81,16 +82,6 @@ function(params)
     clusterRole+: {
       rules+: [
         {
-          apiGroups: ['authentication.k8s.io'],
-          resources: ['tokenreviews'],
-          verbs: ['create'],
-        },
-        {
-          apiGroups: ['authorization.k8s.io'],
-          resources: ['subjectaccessreviews'],
-          verbs: ['create'],
-        },
-        {
           apiGroups: [''],
           resources: ['namespaces'],
           verbs: ['get'],
@@ -147,10 +138,11 @@ function(params)
             interval: '30s',
             scheme: 'https',
             tlsConfig: {
-              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
               serverName: 'prometheus-user-workload',
+              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
-            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
           },
         ],
       },
@@ -180,14 +172,17 @@ function(params)
             interval: '30s',
             scheme: 'https',
             tlsConfig: {
-              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
               serverName: 'prometheus-user-workload-thanos-sidecar',
+              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
-            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
           },
         ],
       },
     },
+
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
 
     prometheus+: {
       spec+: {
@@ -237,8 +232,9 @@ function(params)
         secrets: [
           'prometheus-user-workload-tls',
           'prometheus-user-workload-thanos-sidecar-tls',
+          $.kubeRbacProxySecret.metadata.name,
         ],
-        configMaps: ['serving-certs-ca-bundle'],
+        configMaps: ['serving-certs-ca-bundle', 'metrics-client-ca'],
         probeNamespaceSelector: cfg.namespaceSelector,
         podMonitorNamespaceSelector: cfg.namespaceSelector,
         serviceMonitorSelector: {},
@@ -265,16 +261,27 @@ function(params)
             args: [
               '--secure-listen-address=0.0.0.0:9091',
               '--upstream=http://127.0.0.1:9090',
+              '--allow-paths=/metrics',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-              '--allow-paths=/metrics',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-prometheus-user-workload-tls',
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'configmap-metrics-client-ca',
+                readOnly: false,
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
               },
             ],
           },
@@ -306,8 +313,10 @@ function(params)
               '--upstream=http://127.0.0.1:10902',
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--allow-paths=/metrics',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--logtostderr=true',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -315,6 +324,15 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-prometheus-user-workload-thanos-sidecar-tls',
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'configmap-metrics-client-ca',
+                readOnly: false,
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
               },
             ],
           },

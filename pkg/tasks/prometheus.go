@@ -125,9 +125,9 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Prometheus RBAC proxy Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
-		return errors.Wrap(err, "creating Prometheus RBAC proxy Secret failed")
+		return errors.Wrap(err, "creating or updating Prometheus RBAC proxy Secret failed")
 	}
 
 	sa, err := t.factory.PrometheusK8sServiceAccount()

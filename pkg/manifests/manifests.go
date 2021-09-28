@@ -109,6 +109,7 @@ var (
 	PrometheusK8sServiceThanosSidecar        = "prometheus-k8s/service-thanos-sidecar.yaml"
 	PrometheusK8sProxySecret                 = "prometheus-k8s/proxy-secret.yaml"
 	PrometheusRBACProxySecret                = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
+	PrometheusUserWorkloadRBACProxySecret    = "prometheus-user-workload/kube-rbac-proxy-secret.yaml"
 	PrometheusK8sRoute                       = "prometheus-k8s/route.yaml"
 	PrometheusK8sHtpasswd                    = "prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sServingCertsCABundle        = "prometheus-k8s/serving-certs-ca-bundle.yaml"
@@ -1138,6 +1139,17 @@ func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 	}
 
 	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
 
 	return s, nil
 }
@@ -3536,7 +3548,7 @@ func (f *Factory) mountThanosRulerAlertmanagerSecrets(t *monv1.ThanosRuler) {
 	}
 
 	t.Spec.Volumes = append(t.Spec.Volumes, volumes...)
-	for i, _ := range t.Spec.Containers {
+	for i := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
 			t.Spec.Containers[i].VolumeMounts = append(t.Spec.Containers[i].VolumeMounts, volumeMounts...)
@@ -3551,7 +3563,7 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 	}
 	digestBytes := md5.Sum([]byte(alertmanagerConfig.StringData["alertmanagers.yaml"]))
 	digest = fmt.Sprintf("%x", digestBytes)
-	for i, _ := range t.Spec.Containers {
+	for i := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
 			// Thanos ruler does not refresh its config when the alertmanagers secret changes.
