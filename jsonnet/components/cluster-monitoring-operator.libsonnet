@@ -197,6 +197,21 @@ function(params) {
         resources: ['certificatesigningrequests/approval', 'certificatesigningrequests/status'],
         verbs: ['get', 'list', 'watch'],
       },
+      // The operator needs these permissions to cordon nodes when rebalancing
+      // pods.
+      {
+        apiGroups: [''],
+        resources: ['nodes'],
+        verbs: ['get', 'list', 'update', 'patch'],
+      },
+      // The operator needs to get PersistentVolumes to know their storage
+      // topology. Based on that information, it will only delete PVCs attached
+      // to volumes with a zonal topology when rebalancing pods.
+      {
+        apiGroups: [''],
+        resources: ['persistentvolumes'],
+        verbs: ['get'],
+      },
     ],
   },
 
@@ -237,73 +252,25 @@ function(params) {
         resources: ['events'],
         verbs: ['create', 'patch', 'update'],
       },
-      // The operator needs these permissions to cordon nodes when rebalancing
-      // pods.
-      {
-        apiGroups: [''],
-        resources: ['nodes'],
-        verbs: ['get', 'list', 'update', 'patch'],
-      },
-      // The operator needs to get PersistentVolumes to know their storage
-      // topology. Based on that information, it will only delete PVCs attached
-      // to volumes with a zonal topology when rebalancing pods.
-      {
-        apiGroups: [''],
-        resources: ['persistentvolumes'],
-        verbs: ['get'],
-      },
-    ],
-  },
-
-  // This Role contains all the rules needed by the operator to rebalance
-  // workloads on different nodes.
-  // The Role is bound to the openshift-monitoring namespace to avoid giving
-  // the operator the permissions to delete pods and PVCs outside of its
-  // namespace.
-  openshiftMonitoringRole: {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'Role',
-    metadata: {
-      name: 'cluster-monitoring-operator',
-      namespace: cfg.namespace,
-    },
-    rules: [
+      // The operator needs to be able to list pods related to a particular
+      // workload and delete them so that they can be rescheduled on a
+      // different node.
       {
         apiGroups: [''],
         resources: ['pods'],
         verbs: ['list', 'delete'],
       },
+      // The operators needs to be able to delete PVCs to rescheduled pods on
+      // different nodes because zonal persistent volumes can cause scheduling
+      // issues if not deleted beforehand.
+      // It also need to watch and update PVC since users are able to mark
+      // their PVC for deletion and the operator needs to react upon that.
       {
         apiGroups: [''],
         resources: ['persistentvolumeclaims'],
         verbs: ['get', 'list', 'watch', 'update', 'delete'],
       },
-    ],
-  },
 
-  // This Role contains all the rules needed by the operator to rebalance UWM
-  // workloads on different nodes.
-  // The Role is bound to the openshift-user-workload-monitoring namespace to
-  // avoid giving the operator the permissions to delete pods and PVCs outside
-  // of the UWM namespace.
-  openshiftUserWorkloadMonitoringRole: {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'Role',
-    metadata: {
-      name: 'cluster-monitoring-operator',
-      namespace: cfg.namespaceUserWorkload,
-    },
-    rules: [
-      {
-        apiGroups: [''],
-        resources: ['pods'],
-        verbs: ['list', 'delete'],
-      },
-      {
-        apiGroups: [''],
-        resources: ['persistentvolumeclaims'],
-        verbs: ['get', 'list', 'watch', 'update', 'delete'],
-      },
     ],
   },
 
