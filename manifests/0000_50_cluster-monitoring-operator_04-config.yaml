@@ -232,6 +232,8 @@ data:
     # imports made using registry protocol v1, we are deprecating this version of the protocol and will use this metric to identify how
     # many users are impacted by deprecation and when usage has reached zero
     - '{__name__=":apiserver_v1_image_imports:sum"}'
+    # (Advanced Cluster Management, @open-cluster-management/cluster-lifecycle-admin) acm_managed_cluster_info provides Subscription watch and other information for the managed clusters for an ACM Hub cluster.
+    - '{__name__="acm_managed_cluster_info"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
