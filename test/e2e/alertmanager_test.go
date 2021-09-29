@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jeffail/gabs"
+	"github.com/Jeffail/gabs/v2"
 	statusv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
@@ -234,21 +234,27 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		count, err := parsed.ArrayCount()
-		if err != nil {
-			t.Fatal(err)
+		count := 0
+		for _, silence := range parsed.Children() {
+			if val := silence.Path("status.state").String(); val != "expired" {
+				count++
+			}
 		}
 
 		if count != 1 {
 			t.Fatalf("expecting 1 silence, got %d (%q)", count, string(b))
 		}
 
-		matchers, err := parsed.Index(0).Path("matchers").Children()
-		if err != nil {
-			t.Fatal(err)
+		var matchers *gabs.Container
+		// grab matcher of first not expired silence for testing
+		for _, silence := range parsed.Children() {
+			if val := silence.Path("status.state").String(); val != "expired" {
+				matchers = silence.Path("matchers")
+				break
+			}
 		}
 		var found bool
-		for _, matcher := range matchers {
+		for _, matcher := range matchers.Children() {
 			name, ok := matcher.Path("name").Data().(string)
 			if !ok {
 				t.Fatalf("couldn't get matcher's name from response %q", string(b))
