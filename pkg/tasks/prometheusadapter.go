@@ -126,6 +126,17 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 		}
 	}
 	{
+		cm, err := t.factory.PrometheusAdapterConfigMapAuditPolicy()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter AuditPolicy ConfigMap failed")
+		}
+
+		err = t.client.CreateOrUpdateConfigMap(ctx, cm)
+		if err != nil {
+			return errors.Wrap(err, "reconciling PrometheusAdapter AuditPolicy ConfigMap failed")
+		}
+	}
+	{
 		cm, err := t.factory.PrometheusAdapterConfigMapPrometheus()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter ConfigMap for Prometheus failed")

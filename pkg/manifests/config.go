@@ -24,6 +24,7 @@ import (
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
+	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 )
 
 const (
@@ -268,6 +269,11 @@ type OpenShiftStateMetricsConfig struct {
 type K8sPrometheusAdapter struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Tolerations  []v1.Toleration   `json:"tolerations"`
+	Audit        *Audit            `json:"audit"`
+}
+
+type Audit struct {
+	Profile auditv1.Level `json:"profile"`
 }
 
 type EtcdConfig struct {
@@ -364,9 +370,17 @@ func (c *Config) applyDefaults() {
 			TelemeterServerURL: "https://infogw.api.openshift.com/",
 		}
 	}
+
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
 	}
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
+		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}
+	}
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile == "" {
+		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
+	}
+
 	if c.ClusterMonitoringConfiguration.EtcdConfig == nil {
 		c.ClusterMonitoringConfiguration.EtcdConfig = &EtcdConfig{}
 	}

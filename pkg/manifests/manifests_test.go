@@ -15,6 +15,7 @@
 package manifests
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -1651,6 +1652,122 @@ alertmanagerMain:
 				t.Fatalf("additionalAlertmanagerConfigs is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", s.StringData["alertmanagers.yaml"], tt.expected)
 			}
 		})
+	}
+}
+
+func TestK8sPrometheusAdapterAuditLog(t *testing.T) {
+	argsForProfile := func(profile string) []string {
+		return []string{
+			fmt.Sprintf("--audit-policy-file=/etc/audit/%s-profile.yaml", profile),
+			"--audit-log-path=/var/log/adapter/audit.log",
+			"--audit-log-maxsize=100",
+			"--audit-log-maxbackup=5",
+			"--audit-log-compress=true",
+		}
+	}
+
+	tt := []struct {
+		scenario string
+		config   string
+		args     []string
+		err      error
+	}{{
+		scenario: "no config",
+		config:   ``,
+		args:     argsForProfile("metadata"),
+	}, {
+		scenario: "no adapter config",
+		config:   `k8sPrometheusAdapter: `,
+		args:     argsForProfile("metadata"),
+	}, {
+		scenario: "no audit config",
+		config: `
+k8sPrometheusAdapter:
+  audit: {} `,
+		args: argsForProfile("metadata"),
+	}, {
+		scenario: "Request",
+		config: `
+k8sPrometheusAdapter:
+  audit:
+    profile: Request
+`,
+		args: argsForProfile("request"),
+	}, {
+		scenario: "RequestResponse",
+		config: `
+k8sPrometheusAdapter:
+  audit:
+    profile: RequestResponse
+`,
+		args: argsForProfile("requestresponse"),
+	}, {
+		scenario: "None",
+		config: `
+  k8sPrometheusAdapter:
+    audit:
+     profile: None
+`,
+		args: argsForProfile("none"),
+	}, {
+		scenario: "no audit config",
+		config: `
+  k8sPrometheusAdapter:
+    audit:
+      profile: Foobar  # should generate an error
+`,
+		err: ErrConfigValidation,
+	}}
+
+	for _, test := range tt {
+		t.Run(test.scenario, func(t *testing.T) {
+			c, err := NewConfigFromString(test.config)
+			if err != nil {
+				t.Logf("%s\n\n", test.config)
+				t.Fatal(err)
+			}
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring",
+				c, defaultInfrastructureReader(), &fakeProxyReader{},
+				NewAssets(assetsPath), &APIServerConfig{})
+
+			d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
+				"requestheader-allowed-names":        "",
+				"requestheader-extra-headers-prefix": "",
+				"requestheader-group-headers":        "",
+				"requestheader-username-headers":     "",
+			})
+
+			if test.err != nil || err != nil {
+				// fail only if the error isn't what is expected
+				if !errors.Is(err, test.err) {
+					t.Fatalf("Expected error %q but got %q", test.err, err)
+				}
+				return
+			}
+
+			adapterArgs := d.Spec.Template.Spec.Containers[0].Args
+			auditArgs := []string{}
+			for _, arg := range adapterArgs {
+				if strings.HasPrefix(arg, "--audit-") {
+					auditArgs = append(auditArgs, arg)
+				}
+			}
+			assertDeepEqual(t, test.args, auditArgs,
+				"k8s-prometheus-adapter audit is not configured correctly")
+		})
+	}
+}
+
+func assertDeepEqual(t *testing.T, expected, got interface{}, msg string) {
+	if !reflect.DeepEqual(expected, got) {
+		t.Fatalf(`%s
+got:
+	%#+v
+
+expected:
+	%#+v
+	`, msg, got, expected)
 	}
 }
 

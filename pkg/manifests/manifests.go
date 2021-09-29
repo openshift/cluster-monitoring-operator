@@ -43,6 +43,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
@@ -146,6 +147,7 @@ var (
 	PrometheusAdapterClusterRoleAggregatedMetricsReader = "prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml"
 	PrometheusAdapterConfigMap                          = "prometheus-adapter/config-map.yaml"
 	PrometheusAdapterConfigMapPrometheus                = "prometheus-adapter/configmap-prometheus.yaml"
+	PrometheusAdapterConfigMapAuditPolicy               = "prometheus-adapter/configmap-audit-profiles.yaml"
 	PrometheusAdapterDeployment                         = "prometheus-adapter/deployment.yaml"
 	PrometheusAdapterPodDisruptionBudget                = "prometheus-adapter/pod-disruption-budget.yaml"
 	PrometheusAdapterRoleBindingAuthReader              = "prometheus-adapter/role-binding-auth-reader.yaml"
@@ -272,6 +274,10 @@ var (
 	AdditionalAlertmanagerConfigSecretKey               = "alertmanager-configs.yaml"
 	PrometheusK8sAdditionalAlertmanagerConfigSecretName = "prometheus-k8s-additional-alertmanager-configs"
 	PrometheusUWAdditionalAlertmanagerConfigSecretName  = "prometheus-user-workload-additional-alertmanager-configs"
+)
+
+var (
+	ErrConfigValidation = fmt.Errorf("invalid value for config")
 )
 
 type Factory struct {
@@ -1795,6 +1801,17 @@ func (f *Factory) PrometheusAdapterConfigMap() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
+func (f *Factory) PrometheusAdapterConfigMapAuditPolicy() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMapAuditPolicy))
+	if err != nil {
+		return nil, err
+	}
+
+	cm.Namespace = f.namespace
+
+	return cm, nil
+}
+
 func (f *Factory) PrometheusAdapterConfigMapPrometheus() (*v1.ConfigMap, error) {
 	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMapPrometheus))
 	if err != nil {
@@ -1806,6 +1823,22 @@ func (f *Factory) PrometheusAdapterConfigMapPrometheus() (*v1.ConfigMap, error) 
 	return cm, nil
 }
 
+func validateAuditProfile(profile auditv1.Level) error {
+	// Refer: audit rules: https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-policy
+	// for valid log levels
+
+	switch profile {
+	case auditv1.LevelNone,
+		auditv1.LevelMetadata,
+		auditv1.LevelRequest,
+		auditv1.LevelRequestResponse:
+		return nil
+	default:
+		// a wrong profile name is a Config validation Error
+		return fmt.Errorf("%w - adapter audit profile: %s", ErrConfigValidation, profile)
+	}
+}
+
 func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string) (*appsv1.Deployment, error) {
 	dep, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusAdapterDeployment))
 	if err != nil {
@@ -1815,12 +1848,14 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	spec := dep.Spec.Template.Spec
 
 	spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
-	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil && len(f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.NodeSelector) > 0 {
-		spec.NodeSelector = f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.NodeSelector
+
+	config := f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter
+	if config != nil && len(config.NodeSelector) > 0 {
+		spec.NodeSelector = config.NodeSelector
 	}
 
-	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil && len(f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Tolerations) > 0 {
-		spec.Tolerations = f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Tolerations
+	if config != nil && len(config.Tolerations) > 0 {
+		spec.Tolerations = config.Tolerations
 	}
 	dep.Namespace = f.namespace
 
@@ -1854,6 +1889,19 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 			ReadOnly:  true,
 			MountPath: "/etc/tls/private",
 		},
+	)
+
+	if err := validateAuditProfile(config.Audit.Profile); err != nil {
+		return nil, err
+	}
+
+	profile := strings.ToLower(string(config.Audit.Profile))
+	spec.Containers[0].Args = append(spec.Containers[0].Args,
+		fmt.Sprintf("--audit-policy-file=/etc/audit/%s-profile.yaml", profile),
+		"--audit-log-path=/var/log/adapter/audit.log",
+		"--audit-log-maxsize=100", // 100 MB
+		"--audit-log-maxbackup=5", // limit space consumed by restricting backups
+		"--audit-log-compress=true",
 	)
 
 	spec.Volumes = append(spec.Volumes,

@@ -72,6 +72,12 @@ spec:
         - mountPath: /etc/ssl/certs
           name: serving-certs-ca-bundle
           readOnly: false
+        - mountPath: /etc/audit
+          name: prometheus-adapter-audit-profiles
+          readOnly: true
+        - mountPath: /var/log/adapter
+          name: audit-log
+          readOnly: false
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -92,3 +98,8 @@ spec:
             path: service-ca.crt
           name: serving-certs-ca-bundle
         name: serving-certs-ca-bundle
+      - emptyDir: {}
+        name: audit-log
+      - configMap:
+          name: prometheus-adapter-audit-profiles
+        name: prometheus-adapter-audit-profiles

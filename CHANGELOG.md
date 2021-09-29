@@ -7,6 +7,7 @@
 - [#1399](https://github.com/openshift/cluster-monitoring-operator/pull/1399) Rename ThanosSidecarUnhealthy to ThanosSidecarNoConnectionToStartedPrometheus and make it resilient to WAL replays.
 - [#1446](https://github.com/openshift/cluster-monitoring-operator/pull/1446) Bump Grafana version to 7.5.11
 - [#1439](https://github.com/openshift/cluster-monitoring-operator/pull/1439) Expose PodDisruptionBudget labels from kube-state-metrics metrics.
+- [#1377](https://github.com/openshift/cluster-monitoring-operator/pull/1377) Allow OpenShift users to configure audit logs for prometheus-adapter
 
 ## 4.9
 
