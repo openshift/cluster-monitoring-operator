@@ -192,6 +192,34 @@ spec:
           name: secret-thanos-querier-tls
         - mountPath: /etc/kube-rbac-proxy
           name: secret-thanos-querier-kube-rbac-proxy-rules
+      - args:
+        - --secure-listen-address=0.0.0.0:9094
+        - --upstream=http://127.0.0.1:9090
+        - --config-file=/etc/kube-rbac-proxy/config.yaml
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - --client-ca-file=/etc/tls/client/client-ca.crt
+        - --logtostderr=true
+        - --allow-paths=/metrics
+        image: quay.io/brancz/kube-rbac-proxy:v0.11.0
+        name: kube-rbac-proxy-metrics
+        ports:
+        - containerPort: 9094
+          name: metrics
+        resources:
+          requests:
+            cpu: 1m
+            memory: 15Mi
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: secret-thanos-querier-tls
+        - mountPath: /etc/kube-rbac-proxy
+          name: secret-thanos-querier-kube-rbac-proxy-metrics
+        - mountPath: /etc/tls/client
+          name: metrics-client-ca
+          readOnly: true
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -210,3 +238,9 @@ spec:
       - name: secret-thanos-querier-kube-rbac-proxy-rules
         secret:
           secretName: thanos-querier-kube-rbac-proxy-rules
+      - name: secret-thanos-querier-kube-rbac-proxy-metrics
+        secret:
+          secretName: thanos-querier-kube-rbac-proxy-metrics
+      - configMap:
+          name: metrics-client-ca
+        name: metrics-client-ca

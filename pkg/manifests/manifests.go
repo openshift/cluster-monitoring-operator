@@ -205,21 +205,22 @@ var (
 	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
 	TelemeterClientKubeRbacProxySecret    = "telemeter-client/kube-rbac-proxy-secret.yaml"
 
-	ThanosQuerierDeployment           = "thanos-querier/deployment.yaml"
-	ThanosQuerierPodDisruptionBudget  = "thanos-querier/pod-disruption-budget.yaml"
-	ThanosQuerierService              = "thanos-querier/service.yaml"
-	ThanosQuerierServiceMonitor       = "thanos-querier/service-monitor.yaml"
-	ThanosQuerierPrometheusRule       = "thanos-querier/prometheus-rule.yaml"
-	ThanosQuerierRoute                = "thanos-querier/route.yaml"
-	ThanosQuerierOauthCookieSecret    = "thanos-querier/oauth-cookie-secret.yaml"
-	ThanosQuerierHtpasswdSecret       = "thanos-querier/oauth-htpasswd-secret.yaml"
-	ThanosQuerierRBACProxySecret      = "thanos-querier/kube-rbac-proxy-secret.yaml"
-	ThanosQuerierRBACProxyRulesSecret = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
-	ThanosQuerierServiceAccount       = "thanos-querier/service-account.yaml"
-	ThanosQuerierClusterRole          = "thanos-querier/cluster-role.yaml"
-	ThanosQuerierClusterRoleBinding   = "thanos-querier/cluster-role-binding.yaml"
-	ThanosQuerierGrpcTLSSecret        = "thanos-querier/grpc-tls-secret.yaml"
-	ThanosQuerierTrustedCABundle      = "thanos-querier/trusted-ca-bundle.yaml"
+	ThanosQuerierDeployment             = "thanos-querier/deployment.yaml"
+	ThanosQuerierPodDisruptionBudget    = "thanos-querier/pod-disruption-budget.yaml"
+	ThanosQuerierService                = "thanos-querier/service.yaml"
+	ThanosQuerierServiceMonitor         = "thanos-querier/service-monitor.yaml"
+	ThanosQuerierPrometheusRule         = "thanos-querier/prometheus-rule.yaml"
+	ThanosQuerierRoute                  = "thanos-querier/route.yaml"
+	ThanosQuerierOauthCookieSecret      = "thanos-querier/oauth-cookie-secret.yaml"
+	ThanosQuerierHtpasswdSecret         = "thanos-querier/oauth-htpasswd-secret.yaml"
+	ThanosQuerierRBACProxySecret        = "thanos-querier/kube-rbac-proxy-secret.yaml"
+	ThanosQuerierRBACProxyRulesSecret   = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
+	ThanosQuerierRBACProxyMetricsSecret = "thanos-querier/kube-rbac-proxy-metric-secret.yaml"
+	ThanosQuerierServiceAccount         = "thanos-querier/service-account.yaml"
+	ThanosQuerierClusterRole            = "thanos-querier/cluster-role.yaml"
+	ThanosQuerierClusterRoleBinding     = "thanos-querier/cluster-role-binding.yaml"
+	ThanosQuerierGrpcTLSSecret          = "thanos-querier/grpc-tls-secret.yaml"
+	ThanosQuerierTrustedCABundle        = "thanos-querier/trusted-ca-bundle.yaml"
 
 	ThanosRulerCustomResource               = "thanos-ruler/thanos-ruler.yaml"
 	ThanosRulerService                      = "thanos-ruler/service.yaml"
@@ -1166,6 +1167,17 @@ func (f *Factory) ThanosQuerierRBACProxySecret() (*v1.Secret, error) {
 }
 func (f *Factory) ThanosQuerierRBACProxyRulesSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyRulesSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ThanosQuerierRBACProxyMetricsSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyMetricsSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -3043,6 +3055,9 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 
 		case "kube-rbac-proxy-rules":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+
+		case "kube-rbac-proxy-metrics":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		}
 	}
 
@@ -3097,7 +3112,7 @@ func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
 	}
 
 	var found bool
-	const endpointPort = "web"
+	const endpointPort = "metrics"
 	for i := range sm.Spec.Endpoints {
 		if sm.Spec.Endpoints[i].Port == endpointPort {
 			found = true
