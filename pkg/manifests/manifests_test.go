@@ -808,6 +808,14 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", prometheusWebTLSVersionArg, expectedPrometheusWebTLSVersionArg)
 	}
 
+	d2, err := f.PrometheusOperatorDeployment(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(d, d2) {
+		t.Fatal("expected PrometheusOperatorDeployment to be an idempotent function")
+	}
 }
 
 func TestPrometheusK8sRemoteWrite(t *testing.T) {

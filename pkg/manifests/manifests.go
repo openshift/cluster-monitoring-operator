@@ -2114,20 +2114,19 @@ func setTLSSecurityConfiguration(args []string, config *APIServerConfig) []strin
 }
 
 func setArg(args []string, argName string, argValue string) []string {
-	argsMap := make(map[string]string)
-	for _, arg := range args {
-		parts := strings.SplitAfter(arg, "=")
-		argsMap[parts[0]] = parts[1]
+	found := false
+	for i, arg := range args {
+		if strings.HasPrefix(arg, argName) {
+			args[i] = argName + argValue
+			found = true
+		}
 	}
 
-	argsMap[argName] = argValue
-
-	resultArgs := make([]string, 0, len(args))
-	for k, v := range argsMap {
-		resultArgs = append(resultArgs, k+v)
+	if !found {
+		args = append(args, argName+argValue)
 	}
 
-	return resultArgs
+	return args
 }
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
