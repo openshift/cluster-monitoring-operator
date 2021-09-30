@@ -20,6 +20,8 @@ local thanosQuerier = import './components/thanos-querier.libsonnet';
 local openshiftStateMetrics = import './components/openshift-state-metrics.libsonnet';
 local telemeterClient = import './components/telemeter-client.libsonnet';
 
+local kpUtils = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/lib/utils.libsonnet';
+
 // Common configuration
 local commonConfig = {
   namespace: 'openshift-monitoring',
@@ -261,6 +263,12 @@ local inCluster =
         prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
+        rangeIntervals+: {
+          kubelet: kpUtils.rangeInterval($.controlPlane.serviceMonitorKubelet.spec.endpoints[0].interval),
+          nodeExporter: kpUtils.rangeInterval($.nodeExporter.serviceMonitor.spec.endpoints[0].interval),
+          // https://github.com/openshift/windows-machine-config-operator/blob/aff550fdba1d688d63d4d4f9df1773e3a3eb9e35/config/windows-exporter/windows-exporter-service-monitor.yaml#L12
+          windowsExporter: kpUtils.rangeInterval('30s'),
+        },
       },
       prometheusOperator: {
         namespace: $.values.common.namespace,
