@@ -85,7 +85,12 @@ func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator Service failed")
 	}
 
-	d, err := t.factory.PrometheusOperatorUserWorkloadDeployment()
+	config, err := t.client.GetAPIServerConfig(ctx, "cluster")
+	if err != nil {
+		return errors.Wrap(err, "failed to get API server configuration")
+	}
+	apiserverConfig := manifests.NewAPIServerConfig(config)
+	d, err := t.factory.PrometheusOperatorUserWorkloadDeployment(apiserverConfig)
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Deployment failed")
 	}
@@ -127,7 +132,7 @@ func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 }
 
 func (t *PrometheusOperatorUserWorkloadTask) destroy(ctx context.Context) error {
-	dep, err := t.factory.PrometheusOperatorUserWorkloadDeployment()
+	dep, err := t.factory.PrometheusOperatorUserWorkloadDeployment(nil)
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Deployment failed")
 	}
