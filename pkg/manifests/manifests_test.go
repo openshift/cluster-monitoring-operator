@@ -15,8 +15,6 @@
 package manifests
 
 import (
-	"fmt"
-	"github.com/openshift/library-go/pkg/crypto"
 	"net/url"
 	"reflect"
 	"sort"
@@ -571,7 +569,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusOperatorDeployment(nil)
+	_, err = f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -750,7 +748,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
-	d, err := f.PrometheusOperatorDeployment(nil)
+	d, err := f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -770,39 +768,15 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 
 	prometheusReloaderFound := false
-	prometheusWebTLSCipherSuitesArg := ""
-	prometheusWebTLSVersionArg := ""
 	for i := range d.Spec.Template.Spec.Containers[0].Args {
 		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest") {
 			prometheusReloaderFound = true
-		}
-
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorWebTLSCipherSuitesFlag) {
-			prometheusWebTLSCipherSuitesArg = d.Spec.Template.Spec.Containers[0].Args[i]
-		}
-
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorWebTLSMinTLSVersionFlag) {
-			prometheusWebTLSVersionArg = d.Spec.Template.Spec.Containers[0].Args[i]
 		}
 	}
 
 	if !prometheusReloaderFound {
 		t.Fatal("Configuring the Prometheus Config reloader image failed")
 	}
-
-	expectedPrometheusWebTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
-	if expectedPrometheusWebTLSCipherSuitesArg != prometheusWebTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", prometheusWebTLSCipherSuitesArg, expectedPrometheusWebTLSCipherSuitesArg)
-	}
-
-	expectedPrometheusWebTLSVersionArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
-	if expectedPrometheusWebTLSVersionArg != prometheusWebTLSVersionArg {
-		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", prometheusWebTLSVersionArg, expectedPrometheusWebTLSVersionArg)
-	}
-
 }
 
 func TestPrometheusK8sRemoteWrite(t *testing.T) {
@@ -2242,58 +2216,6 @@ func TestPodDisruptionBudget(t *testing.T) {
 		}
 	}
 
-}
-
-func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`
-enableUserWorkload: true
-`)
-
-	c.SetImages(map[string]string{
-		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
-		"prometheus-config-reloader": "docker.io/openshift/origin-prometheus-config-reloader:latest",
-		"configmap-reloader":         "docker.io/openshift/origin-configmap-reloader:latest",
-	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
-	d, err := f.PrometheusOperatorUserWorkloadDeployment(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expectedPromOpImage := "docker.io/openshift/origin-prometheus-operator:latest"
-	resPromOpImage := d.Spec.Template.Spec.Containers[0].Image
-	if resPromOpImage != expectedPromOpImage {
-		t.Fatalf("Configuring the Prometheus Operator image failed, expected: %v, got %v", expectedPromOpImage, resPromOpImage)
-	}
-
-	prometheusReloaderFound := false
-	prometheusWebTLSCipherSuitesArg := ""
-	for i := range d.Spec.Template.Spec.Containers[0].Args {
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest") {
-			prometheusReloaderFound = true
-		}
-
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorWebTLSCipherSuitesFlag) {
-			prometheusWebTLSCipherSuitesArg = d.Spec.Template.Spec.Containers[0].Args[i]
-		}
-	}
-
-	if !prometheusReloaderFound {
-		t.Fatal("Configuring the Prometheus Config reloader image failed")
-	}
-
-	expectedPrometheusWebTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","),
-	)
-	if expectedPrometheusWebTLSCipherSuitesArg != prometheusWebTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", prometheusWebTLSCipherSuitesArg, expectedPrometheusWebTLSCipherSuitesArg)
-	}
 }
 
 func trustedCABundleVolumeConfigured(volumes []v1.Volume, volumeName string) bool {

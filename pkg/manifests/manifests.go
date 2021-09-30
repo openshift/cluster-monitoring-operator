@@ -19,7 +19,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/openshift/library-go/pkg/crypto"
 	"hash/fnv"
 	"io"
 	"net"
@@ -248,8 +247,6 @@ var (
 	PrometheusConfigReloaderFlag                         = "--prometheus-config-reloader="
 	PrometheusOperatorPrometheusInstanceNamespacesFlag   = "--prometheus-instance-namespaces="
 	PrometheusOperatorAlertmanagerInstanceNamespacesFlag = "--alertmanager-instance-namespaces="
-	PrometheusOperatorWebTLSCipherSuitesFlag             = "--web.tls-cipher-suites="
-	PrometheusOperatorWebTLSMinTLSVersionFlag            = "--web.tls-min-version="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -2006,7 +2003,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAcc
 	return s, nil
 }
 
-func (f *Factory) PrometheusOperatorDeployment(apiServerConfig *APIServerConfig) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorDeployment))
 	if err != nil {
 		return nil, err
@@ -2045,8 +2042,6 @@ func (f *Factory) PrometheusOperatorDeployment(apiServerConfig *APIServerConfig)
 			if f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel != "" {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel))
 			}
-
-			args = setTLSSecurityConfiguration(args, apiServerConfig)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
@@ -2055,7 +2050,7 @@ func (f *Factory) PrometheusOperatorDeployment(apiServerConfig *APIServerConfig)
 	return d, nil
 }
 
-func (f *Factory) PrometheusOperatorUserWorkloadDeployment(apiServerConfig *APIServerConfig) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadDeployment))
 	if err != nil {
 		return nil, err
@@ -2093,40 +2088,12 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(apiServerConfig *APIS
 			if f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel != "" {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel))
 			}
-			args = setTLSSecurityConfiguration(args, apiServerConfig)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
 	d.Namespace = f.namespaceUserWorkload
 
 	return d, nil
-}
-
-func setTLSSecurityConfiguration(args []string, config *APIServerConfig) []string {
-	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(config.GetTLSCiphers()), ",")
-	args = setArg(args, PrometheusOperatorWebTLSCipherSuitesFlag, cipherSuites)
-
-	minTLSVersion := config.GetMinTLSVersion()
-	args = setArg(args, PrometheusOperatorWebTLSMinTLSVersionFlag, string(minTLSVersion))
-
-	return args
-}
-
-func setArg(args []string, argName string, argValue string) []string {
-	argsMap := make(map[string]string)
-	for _, arg := range args {
-		parts := strings.SplitAfter(arg, "=")
-		argsMap[parts[0]] = parts[1]
-	}
-
-	argsMap[argName] = argValue
-
-	resultArgs := make([]string, 0, len(args))
-	for k, v := range argsMap {
-		resultArgs = append(resultArgs, k+v)
-	}
-
-	return resultArgs
 }
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
