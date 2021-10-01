@@ -1,4 +1,5 @@
 // I didn't invest much time into this file since telemeter-client is scheduled for deprecation when we enable remote-write in prometheus
+local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params) {
   local cfg = params,
@@ -27,6 +28,7 @@ function(params) {
   serviceMonitor: tc.telemeterClient.serviceMonitor,
   secret: tc.telemeterClient.secret,
   servingCertsCABundle: tc.telemeterClient.servingCertsCABundle,
+  kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'telemeter-client-kube-rbac-proxy-config'),
   deployment: tc.telemeterClient.deployment {
     metadata+: {
       labels+: {
@@ -51,11 +53,29 @@ function(params) {
                 else if c.name == 'kube-rbac-proxy' then
                   c {
                     image: cfg.kubeRbacProxyImage,
+                    args+: [
+                      '--config-file=/etc/kube-rbac-policy/config.yaml',
+                    ],
+                    volumeMounts+: [
+                      {
+                        mountPath: '/etc/kube-rbac-policy',
+                        name: 'telemeter-client-kube-rbac-proxy-config',
+                        readOnly: true,
+                      },
+                    ],
                   }
                 else
                   c,
               super.containers,
             ),
+          volumes+: [
+            {
+              name: 'telemeter-client-kube-rbac-proxy-config',
+              secret: {
+                secretName: 'telemeter-client-kube-rbac-proxy-config',
+              },
+            },
+          ],
         },
       },
     },

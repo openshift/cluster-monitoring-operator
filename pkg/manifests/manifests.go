@@ -202,6 +202,7 @@ var (
 	TelemeterClientServiceAccount         = "telemeter-client/service-account.yaml"
 	TelemeterClientServiceMonitor         = "telemeter-client/service-monitor.yaml"
 	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
+	TelemeterClientKubeRbacProxySecret    = "telemeter-client/kube-rbac-proxy-secret.yaml"
 
 	ThanosQuerierDeployment           = "thanos-querier/deployment.yaml"
 	ThanosQuerierPodDisruptionBudget  = "thanos-querier/pod-disruption-budget.yaml"
@@ -3161,6 +3162,16 @@ func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error)
 	sm.Namespace = f.namespace
 
 	return sm, nil
+}
+
+func (f *Factory) TelemeterClientKubeRbacProxySecret() (*v1.Secret, error) {
+	secret, err := f.NewSecret(f.assets.MustNewAssetReader(TelemeterClientKubeRbacProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	secret.Namespace = f.namespace
+	return secret, nil
 }
 
 // TelemeterClientDeployment generates a new Deployment for Telemeter client.

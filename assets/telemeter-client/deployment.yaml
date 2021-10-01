@@ -84,6 +84,7 @@ spec:
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - --config-file=/etc/kube-rbac-policy/config.yaml
         image: quay.io/brancz/kube-rbac-proxy:v0.11.0
         name: kube-rbac-proxy
         ports:
@@ -97,6 +98,9 @@ spec:
         - mountPath: /etc/tls/private
           name: telemeter-client-tls
           readOnly: false
+        - mountPath: /etc/kube-rbac-policy
+          name: telemeter-client-kube-rbac-proxy-config
+          readOnly: true
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -111,3 +115,6 @@ spec:
       - name: telemeter-client-tls
         secret:
           secretName: telemeter-client-tls
+      - name: telemeter-client-kube-rbac-proxy-config
+        secret:
+          secretName: telemeter-client-kube-rbac-proxy-config

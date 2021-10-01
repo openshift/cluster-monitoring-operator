@@ -122,6 +122,16 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Telemeter client Secret failed")
 	}
 
+	krs, err := t.factory.TelemeterClientKubeRbacProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client kube rbac proxy secret failed")
+	}
+
+	err = t.client.CreateOrUpdateSecret(ctx, krs)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Telemeter client kube rbac proxy secret failed")
+	}
+
 	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.TelemeterTrustedCABundle()
@@ -193,6 +203,16 @@ func (t *TelemeterClientTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "deleting Telemeter client Secret failed")
+	}
+
+	krs, err := t.factory.TelemeterClientKubeRbacProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Telemeter client kube rbac proxy secrent failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, krs)
+	if err != nil {
+		return errors.Wrap(err, "deleting Telemeter client kube rbac proxy secret failed")
 	}
 
 	svc, err := t.factory.TelemeterClientService()
