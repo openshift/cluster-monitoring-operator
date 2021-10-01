@@ -21,13 +21,16 @@ ASSETS=$(shell grep -oh '[^"]*/.*\.yaml' pkg/manifests/manifests.go \
 
 BIN_DIR ?= $(shell pwd)/tmp/bin
 
+TYPES_TARGET=pkg/manifests/types.go
+
 EMBEDMD_BIN=$(BIN_DIR)/embedmd
 JB_BIN=$(BIN_DIR)/jb
 GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
 JSONNET_BIN=$(BIN_DIR)/jsonnet
 JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
 PROMTOOL_BIN=$(BIN_DIR)/promtool
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN)
+DOCGEN_BIN=$(BIN_DIR)/docgen
+TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -126,11 +129,15 @@ versions: $(GOJSONTOYAML_BIN)
 	./hack/generate-versions.sh
 
 .PHONY: docs
-docs: $(EMBEDMD_BIN) Documentation/telemetry/telemeter_query
+docs: $(EMBEDMD_BIN) Documentation/telemeter_query Documentation/config.adoc
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
 
 Documentation/telemeter_query: manifests/0000_50_cluster-monitoring-operator_04-config.yaml hack/telemeter_query.go
 	go generate ./hack/telemeter_query.go > Documentation/telemeter_query
+
+Documentation/config.adoc: $(DOCGEN_BIN) $(TYPES_TARGET)
+	$(DOCGEN_BIN) $(TYPES_TARGET) > $@
+
 
 ##############
 # Formatting #
@@ -199,3 +206,4 @@ $(JSON_MANIFESTS_DIR):
 $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools.go
 	@cd hack/tools && go list -mod=mod -tags tools -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
+	@GOBIN=$(BIN_DIR) go install $(GO_PKG)/cmd/docgen
