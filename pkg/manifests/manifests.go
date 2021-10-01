@@ -167,19 +167,20 @@ var (
 	PrometheusOperatorUserWorkloadDeployment         = "prometheus-operator-user-workload/deployment.yaml"
 	PrometheusOperatorUserWorkloadServiceMonitor     = "prometheus-operator-user-workload/service-monitor.yaml"
 
-	GrafanaClusterRoleBinding   = "grafana/cluster-role-binding.yaml"
-	GrafanaClusterRole          = "grafana/cluster-role.yaml"
-	GrafanaConfigSecret         = "grafana/config.yaml"
-	GrafanaDatasourcesSecret    = "grafana/dashboard-datasources.yaml"
-	GrafanaDashboardDefinitions = "grafana/dashboard-definitions.yaml"
-	GrafanaDashboardSources     = "grafana/dashboard-sources.yaml"
-	GrafanaDeployment           = "grafana/deployment.yaml"
-	GrafanaProxySecret          = "grafana/proxy-secret.yaml"
-	GrafanaRoute                = "grafana/route.yaml"
-	GrafanaServiceAccount       = "grafana/service-account.yaml"
-	GrafanaService              = "grafana/service.yaml"
-	GrafanaServiceMonitor       = "grafana/service-monitor.yaml"
-	GrafanaTrustedCABundle      = "grafana/trusted-ca-bundle.yaml"
+	GrafanaClusterRoleBinding    = "grafana/cluster-role-binding.yaml"
+	GrafanaClusterRole           = "grafana/cluster-role.yaml"
+	GrafanaConfigSecret          = "grafana/config.yaml"
+	GrafanaDatasourcesSecret     = "grafana/dashboard-datasources.yaml"
+	GrafanaDashboardDefinitions  = "grafana/dashboard-definitions.yaml"
+	GrafanaDashboardSources      = "grafana/dashboard-sources.yaml"
+	GrafanaDeployment            = "grafana/deployment.yaml"
+	GrafanaRBACProxyMetricSecret = "grafana/kube-rbac-proxy-metric-secret.yaml"
+	GrafanaProxySecret           = "grafana/proxy-secret.yaml"
+	GrafanaRoute                 = "grafana/route.yaml"
+	GrafanaServiceAccount        = "grafana/service-account.yaml"
+	GrafanaService               = "grafana/service.yaml"
+	GrafanaServiceMonitor        = "grafana/service-monitor.yaml"
+	GrafanaTrustedCABundle       = "grafana/trusted-ca-bundle.yaml"
 
 	ClusterMonitoringOperatorService            = "cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor     = "cluster-monitoring-operator/service-monitor.yaml"
@@ -2366,6 +2367,8 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 				})
 				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
 			}
+		case "kube-rbac-proxy-metrics":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		}
 	}
 
@@ -2380,6 +2383,17 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 	d.Namespace = f.namespace
 
 	return d, nil
+}
+
+func (f *Factory) GrafanaRBACProxyMetricSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaRBACProxyMetricSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) GrafanaProxySecret() (*v1.Secret, error) {

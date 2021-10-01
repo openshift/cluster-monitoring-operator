@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -77,6 +78,16 @@ func (t *GrafanaTask) create(ctx context.Context) error {
 	_, err = t.client.WaitForRouteReady(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Grafana Route to become ready failed")
+	}
+
+	rs, err := t.factory.GrafanaRBACProxyMetricSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana RBAC proxy metric Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "creating Grafana RBAC proxy metric Secret failed")
 	}
 
 	ps, err := t.factory.GrafanaProxySecret()
@@ -281,6 +292,16 @@ func (t *GrafanaTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteSecret(ctx, smc)
 	if err != nil {
 		return errors.Wrap(err, "deleting Grafana Config Secret failed")
+	}
+
+	rs, err := t.factory.GrafanaRBACProxyMetricSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Grafana RBAC proxy metric Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "deleting Grafana RBAC proxy metric Secret failed")
 	}
 
 	ps, err := t.factory.GrafanaProxySecret()
