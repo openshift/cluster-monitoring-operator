@@ -206,10 +206,12 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	if !ok {
 		t.Fatalf("couldn't get silenceID from response %q", string(b))
 	}
-	defer func() {
-		clients["editor"].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil)
-		t.Log("deleting silence as 'editor' for cleanup")
-	}()
+	t.Cleanup(func() {
+		resp, err := clients["editor"].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil)
+		if err != nil || resp.Status != "200" {
+			t.Logf("failed to delete silence HTTP: %q err: %q", resp.Status, err)
+		}
+	})
 
 	// List silences and check that the 'namespace' label matcher has been overwritten.
 	t.Log("listing silences as 'anonymous' (denied)")
