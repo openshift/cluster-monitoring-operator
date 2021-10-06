@@ -590,6 +590,10 @@ data:
     # Number of jaeger instances used certain agent strategy
     - '{__name__="jaeger_operator_instances_agent_strategies"}'
     #
+    # owners: (https://github.com/redhat-developer/application-services-metering-operator)
+    #
+    # The current amount of CPU used by Application Services products, aggregated by product name.
+    - '{__name__="appsvcs:cores_by_product:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
