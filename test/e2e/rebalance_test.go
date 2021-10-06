@@ -37,7 +37,7 @@ import (
 func TestRebalanceWorkloads(t *testing.T) {
 	ctx := context.Background()
 	r := rebalancer.NewRebalancer(ctx, f.KubeClient)
-	workload := &rebalancer.Workload{Namespace: f.Ns, Name: "prometheus-k8s", LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"}}
+	workload := &rebalancer.Workload{Namespace: f.Ns, LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"}}
 
 	// Enable persistent storage
 	err := enablePersistentStorage()

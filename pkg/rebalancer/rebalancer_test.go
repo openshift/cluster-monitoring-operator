@@ -26,7 +26,7 @@ import (
 func TestRebalanceWorkloads(t *testing.T) {
 	var (
 		namespace = "openshift-monitoring"
-		workload  = Workload{Namespace: namespace, Name: "prometheus-k8s", LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"}}
+		workload  = Workload{Namespace: namespace, LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"}}
 		pods      = []v1.Pod{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0", Namespace: namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}},

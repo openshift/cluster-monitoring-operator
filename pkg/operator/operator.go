@@ -435,7 +435,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	}
 
 	if _, ok := obj.(*v1.PersistentVolumeClaim); ok {
-		klog.Info("Trigerring update due to a PVC update")
+		klog.Info("Triggering update due to a PVC update")
 		o.enqueue(cmoConfigMap)
 		return
 	}
@@ -790,10 +790,10 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 }
 
 // Upgradeable verifies whether the operator can be upgraded or not. It returns
-// the ConditionStatus with optional reason and message.
-// To set this status, it will verify that in HA topology, workloads with
-// persistent storage are correctly spread across multiple nodes. If it isn't
-// it will try to rebalance the workloads.
+// the ConditionStatus with optional reason and message.  To set this status, it
+// will verify that in HA topology, workloads with persistent storage are
+// correctly balanced across multiple nodes. If it isn't it will try to
+// rebalance the workloads.
 func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, string, string, error) {
 	if !o.lastKnowInfrastructureConfig.HighlyAvailableInfrastructure() {
 		return configv1.ConditionTrue, "", "", nil
@@ -819,14 +819,17 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 		}
 
 		if !workloadRebalanced {
-			messages = append(messages, fmt.Sprintf("Highly-available workload %s/%s with persistent storage has a single point of failure.", workload.Namespace, workload.Name))
+			messages = append(messages, fmt.Sprintf("Highly-available workload in namespace %s, with label %q and persistent storage enabled has a single point of failure.", workload.Namespace, workload.LabelSelector))
 		}
 	}
 
 	if len(messages) > 0 {
-		msg := "Manual intervention is needed to upgrade to the next minor version. Please refer to the following documentation to fix this issue: https://github.com/openshift/runbooks/blob/master/alerts/HighlyAvailableWorkloadIncorrectlySpread.md."
+		msg := "Manual intervention is needed to upgrade to the next minor version. "
 		if workloadRebalanced {
-			msg += " The operator couldn't rebalance the pods automatically with the annotation, please refer to the runbook to fix this issue manually."
+			msg += "The operator couldn't rebalance the pods automatically with the annotation. " +
+				"For each highly-available workload that has a single point of failure, you will need to manually delete at least one of the PersistentVolumeClaims and Pods of this workload until at least 2 of its replicas are scheduled on different nodes."
+		} else {
+			msg += fmt.Sprintf("For each highly-available workload that has a single point of failure please mark at least one of their PersistentVolumeClaim for deletion by annotating them with %q.", map[string]string{rebalancer.DropPVCAnnotation: "yes"})
 		}
 		messages = append(messages, msg)
 		return configv1.ConditionFalse, "WorkloadSinglePointOfFailure", strings.Join(messages, "\n"), nil
@@ -841,12 +844,10 @@ func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
 	workloads := []rebalancer.Workload{
 		{
 			Namespace:     o.namespace,
-			Name:          "prometheus-k8s",
 			LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
 		},
 		{
 			Namespace:     o.namespace,
-			Name:          "alertmanager-main",
 			LabelSelector: map[string]string{"app.kubernetes.io/name": "alertmanager"},
 		},
 	}
@@ -855,12 +856,10 @@ func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
 		workloads = append(workloads,
 			rebalancer.Workload{
 				Namespace:     o.namespaceUserWorkload,
-				Name:          "prometheus-user-workload",
 				LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
 			},
 			rebalancer.Workload{
 				Namespace:     o.namespaceUserWorkload,
-				Name:          "thanos-ruler-user-workload",
 				LabelSelector: map[string]string{"app.kubernetes.io/name": "thanos-ruler"},
 			},
 		)

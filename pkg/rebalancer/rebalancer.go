@@ -50,7 +50,6 @@ func NewRebalancer(ctx context.Context, client kubernetes.Interface) *Rebalancer
 
 type Workload struct {
 	Namespace     string
-	Name          string
 	LabelSelector map[string]string
 }
 
@@ -98,6 +97,9 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 		return false, err
 	}
 
+	// This function always preserves the data of at least one of the pods of the
+	// workload, so it will not rebalance pods if we only have one. As such, we
+	// can return early and preserve the annotation on the PVC.
 	if len(podList.Items) <= 1 {
 		return false, nil
 	}
@@ -108,30 +110,32 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 	}
 
 	if len(resourcesToDelete) == 0 {
-		klog.V(4).Infof("Couldn't find %q annotation on any of the PVCs attached to %s/%s which needs to be rebalanced.", DropPVCAnnotation, workload.Namespace, workload.Name)
+		klog.V(4).Infof("Couldn't find %q annotation on any of the PVCs attached to the workload in namespace %s with label %q which needs to be rebalanced.", DropPVCAnnotation, workload.Namespace, workload.LabelSelector)
 		return false, nil
 	}
 
-	for i, rtd := range resourcesToDelete {
-		// Guard from deleting all PVCs to prevent complete data loss.
-		if i == len(podList.Items)-1 {
-			// Remove the annotation so that the PVC doesn't get deleted in future cycles.
-			klog.V(4).Infof("Removing annotation %q from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", DropPVCAnnotation, rtd.pvc.Namespace, rtd.pvc.Name)
-			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				pvc, err := r.client.CoreV1().PersistentVolumeClaims(rtd.pvc.Namespace).Get(ctx, rtd.pvc.Name, metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
-				delete(pvc.Annotations, DropPVCAnnotation)
-				_, err = r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
-				return err
-			})
+	// Guard from deleting all PVCs to prevent complete data loss.
+	if len(resourcesToDelete) == len(podList.Items) {
+		// Remove the annotation of the last PVC so that it doesn't get deleted in
+		// future cycles.
+		lastPVC := resourcesToDelete[len(resourcesToDelete)-1].pvc
+		resourcesToDelete = resourcesToDelete[:len(resourcesToDelete)-1]
+		klog.V(4).Infof("Removing annotation %q from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", DropPVCAnnotation, lastPVC.Namespace, lastPVC.Name)
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			pvc, err := r.client.CoreV1().PersistentVolumeClaims(lastPVC.Namespace).Get(ctx, lastPVC.Name, metav1.GetOptions{})
 			if err != nil {
-				return false, err
+				return err
 			}
-			break
+			delete(pvc.Annotations, DropPVCAnnotation)
+			_, err = r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
+			return err
+		})
+		if err != nil {
+			return false, err
 		}
+	}
 
+	for _, rtd := range resourcesToDelete {
 		klog.V(4).Infof("Rebalancing pod %s/%s.", rtd.pod.Namespace, rtd.pod.Name)
 		err := r.rebalanceWorkload(ctx, rtd.pod, rtd.pvc)
 		if err != nil {
@@ -143,7 +147,7 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 	// before setting the status so that we don't set upgradeable=false after
 	// balancing the pods.
 	err = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
-		klog.V(4).Infof("Waiting until workload %s in namespace %s becomes correctly balanced.", workload.Name, workload.Namespace)
+		klog.V(4).Infof("Waiting until workload in namespace %s with label %q becomes correctly balanced.", workload.Namespace, workload.LabelSelector)
 		return r.WorkloadCorrectlyBalanced(ctx, workload)
 	})
 	return err == nil, err
@@ -199,8 +203,8 @@ type resourcesToDelete struct {
 }
 
 // resourcesToDelete returns the list of Kubernetes resources that should be
-// deleted in order to rescheduled pods on different nodes. It only returns
-// pods and annotated PVCs that were marked for deletion by the users with the
+// deleted in order to reschedule pods on different nodes. It only returns pods
+// and annotated PVCs that were marked for deletion by the users with the
 // openshift.io/cluster-monitoring-drop-pvc=yes annotation on the PVC.
 func (r *Rebalancer) resourcesToDelete(ctx context.Context, pods []v1.Pod) ([]resourcesToDelete, error) {
 	resources := make([]resourcesToDelete, 0)
