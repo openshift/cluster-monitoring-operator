@@ -25,7 +25,7 @@ function(params)
         endpoints: [
           {
             port: 'etcd-metrics',
-            interval: '30s',
+            interval: '10s',
             scheme: 'https',
             // Prometheus Operator (and Prometheus) allow us to specify a tlsConfig. This is required as most likely your etcd metrics end points is secure.
             tlsConfig: {
