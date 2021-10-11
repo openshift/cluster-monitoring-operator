@@ -110,7 +110,7 @@ function(params)
                     c {
                       args+: [
                         '--metric-denylist=kube_secret_labels',
-                        '--metric-labels-allowlist=pods=[*],node=[*],namespaces=[*]',
+                        '--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*]',
                       ],
                       securityContext: {},
                       resources: {
