@@ -48,6 +48,9 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `cannot be deserialized`,
@@ -73,6 +76,9 @@ func TestGrafanaConfiguration(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-monitoring-config",
 			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": "grafana: { enabled: false }",
@@ -459,6 +465,9 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `prometheusOperator:
@@ -505,6 +514,9 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": fmt.Sprintf(`prometheus:
@@ -586,6 +598,9 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": fmt.Sprintf(`thanosRuler:
@@ -637,6 +652,9 @@ func configMapWithData(t *testing.T, addData string) *v1.ConfigMap {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": addData,

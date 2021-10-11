@@ -28,6 +28,7 @@ import (
 
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
 func TestPrometheusMetrics(t *testing.T) {
@@ -109,7 +110,8 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Labels: map[string]string{
-				"group": name,
+				"group":                    name,
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 			Namespace: f.Ns,
 		},
@@ -145,7 +147,8 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			Name:      "selfsigned-mtls-bundle",
 			Namespace: f.Ns,
 			Labels: map[string]string{
-				"group": name,
+				"group":                    name,
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -168,6 +171,7 @@ metadata:
   namespace: openshift-monitoring
   labels:
     group: %[1]s
+    %[2]s
 spec:
   replicas: 1
   selector:
@@ -201,7 +205,7 @@ spec:
             path: cert.pem
           - key: server.key
             path: key.pem
-`, name)
+`, name, framework.E2eTestLabel)
 	rwTestDeployment, err := manifests.NewDeployment(bytes.NewReader([]byte(targetDeployment)))
 	if err != nil {
 		t.Fatal(err)

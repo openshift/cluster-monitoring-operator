@@ -1,6 +1,9 @@
 # github.com/Jeffail/gabs v1.4.0
 ## explicit
 github.com/Jeffail/gabs
+# github.com/Jeffail/gabs/v2 v2.6.1
+## explicit
+github.com/Jeffail/gabs/v2
 # github.com/PuerkitoBio/purell v1.1.1
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578

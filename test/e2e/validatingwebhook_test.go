@@ -16,9 +16,11 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	yaml "github.com/ghodss/yaml"
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,31 +30,35 @@ const (
 )
 
 var (
-	validPromRuleYaml = `---
+	validPromRuleYaml = fmt.Sprintf(`---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: valid-rule
+  labels:
+    %s
 spec:
   groups:
   - name: recording-rules
     rules:
     - record: my_always_record_one
       expr: 1
-`
+`, framework.E2eTestLabel)
 
-	invalidPromRuleYaml = `---
+	invalidPromRuleYaml = fmt.Sprintf(`---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: invalid-rule
+  labels:
+    %s
 spec:
   groups:
   - name: invalid-rule-group
     rules:
     - record: invalid_rule
       expr: this+/(fails
-`
+`, framework.E2eTestLabel)
 )
 
 func TestPrometheusRuleValidatingWebhook(t *testing.T) {

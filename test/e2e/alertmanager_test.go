@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jeffail/gabs"
+	"github.com/Jeffail/gabs/v2"
 	statusv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
@@ -90,6 +90,9 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 	}
 	ns, err = f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
@@ -203,6 +206,12 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	if !ok {
 		t.Fatalf("couldn't get silenceID from response %q", string(b))
 	}
+	t.Cleanup(func() {
+		resp, err := clients["editor"].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil)
+		if err != nil || resp.Status != "200" {
+			t.Logf("failed to delete silence HTTP: %q err: %q", resp.Status, err)
+		}
+	})
 
 	// List silences and check that the 'namespace' label matcher has been overwritten.
 	t.Log("listing silences as 'anonymous' (denied)")
@@ -227,21 +236,27 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		count, err := parsed.ArrayCount()
-		if err != nil {
-			t.Fatal(err)
+		count := 0
+		for _, silence := range parsed.Children() {
+			if val := silence.Path("status.state").String(); val != "expired" {
+				count++
+			}
 		}
 
 		if count != 1 {
 			t.Fatalf("expecting 1 silence, got %d (%q)", count, string(b))
 		}
 
-		matchers, err := parsed.Index(0).Path("matchers").Children()
-		if err != nil {
-			t.Fatal(err)
+		var matchers *gabs.Container
+		// grab matcher of first not expired silence for testing
+		for _, silence := range parsed.Children() {
+			if val := silence.Path("status.state").String(); val != "expired" {
+				matchers = silence.Path("matchers")
+				break
+			}
 		}
 		var found bool
-		for _, matcher := range matchers {
+		for _, matcher := range matchers.Children() {
 			name, ok := matcher.Path("name").Data().(string)
 			if !ok {
 				t.Fatalf("couldn't get matcher's name from response %q", string(b))
@@ -323,6 +338,9 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterMonitorConfigMapName,
 			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `alertmanagerMain: { enabled: false }`,

@@ -31,6 +31,9 @@ func getUserWorkloadEnabledConfigMap(t *testing.T, f *framework.Framework) *v1.C
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      framework.ClusterMonitorConfigMapName,
 			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Data: map[string]string{
 			"config.yaml": `enableUserWorkload: true
@@ -98,6 +101,9 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: userWorkloadTestNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 	}, metav1.CreateOptions{})
 	if err != nil && !errors.IsAlreadyExists(err) {
@@ -109,6 +115,9 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(ctx, &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-app",
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: toInt32(1),
@@ -142,7 +151,8 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-app",
 			Labels: map[string]string{
-				"app": "prometheus-example-app",
+				"app":                      "prometheus-example-app",
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 		},
 		Spec: v1.ServiceSpec{
@@ -165,7 +175,8 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-monitor",
 			Labels: map[string]string{
-				"k8s-app": "prometheus-example-monitor",
+				"k8s-app":                  "prometheus-example-monitor",
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
@@ -191,7 +202,8 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-rule",
 			Labels: map[string]string{
-				"k8s-app": "prometheus-example-rule",
+				"k8s-app":                  "prometheus-example-rule",
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 		},
 		Spec: monitoringv1.PrometheusRuleSpec{
@@ -223,6 +235,7 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 			Labels: map[string]string{
 				"k8s-app": "prometheus-example-rule-leaf",
 				"openshift.io/prometheus-rule-evaluation-scope": "leaf-prometheus",
+				framework.E2eTestLabelName:                      framework.E2eTestLabelValue,
 			},
 		},
 		Spec: monitoringv1.PrometheusRuleSpec{
@@ -255,6 +268,9 @@ func createPrometheusAlertmanagerInUserNamespace(t *testing.T, f *framework.Fram
 	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(ctx, &monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Spec: monitoringv1.AlertmanagerSpec{
 			Replicas: toInt32(1),
@@ -267,6 +283,9 @@ func createPrometheusAlertmanagerInUserNamespace(t *testing.T, f *framework.Fram
 	_, err = f.MonitoringClient.Prometheuses(userWorkloadTestNs).Create(ctx, &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			Replicas: toInt32(1),
