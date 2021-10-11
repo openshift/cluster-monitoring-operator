@@ -67,99 +67,24 @@ func (r *StatusReporter) relatedObjects() []v1.ObjectReference {
 	}
 }
 
-func (r *StatusReporter) SetDone(ctx context.Context, degradedConditionMessage string, degradedConditionReason string) error {
-	co, err := r.client.Get(ctx, r.clusterOperatorName, metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		co = r.newClusterOperator()
-		co, err = r.client.Create(ctx, co, metav1.CreateOptions{})
-	}
-	if err != nil && !apierrors.IsNotFound(err) {
-		return err
-	}
-
-	time := metav1.Now()
-
-	conditions := newConditions(co.Status, r.version, time)
-	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", "RollOutDone", time)
-	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", "", time)
-	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, degradedConditionMessage, degradedConditionReason, time)
-	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", asExpectedReason, time)
-	co.Status.Conditions = conditions.entries()
-
-	// If we have reached "level" for the operator, report that we are at the version
-	// injected into us during update. We require that all components be rolled out
-	// and available at the new version before reporting this value.
-	if len(r.version) > 0 {
-		co.Status.Versions = []v1.OperandVersion{
-			{
-				Name:    "operator",
-				Version: r.version,
-			},
-		}
-	} else {
-		co.Status.Versions = nil
-	}
-
-	_, err = r.client.UpdateStatus(ctx, co, metav1.UpdateOptions{})
-	return err
-}
-
-// SetInProgress sets the OperatorProgressing condition to true, either:
-// 1. If there has been no previous status yet
-// 2. If the previous ClusterOperator OperatorAvailable condition was false
-//
-// This will ensure that the progressing state will be only set initially or in case of failure.
-// Once controller operator versions are available, an additional check will be introduced that toggles
-// the OperatorProgressing state in case of version upgrades.
-func (r *StatusReporter) SetInProgress(ctx context.Context) error {
-	co, err := r.client.Get(ctx, r.clusterOperatorName, metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		co = r.newClusterOperator()
-		co, err = r.client.Create(ctx, co, metav1.CreateOptions{})
-	}
-	if err != nil && !apierrors.IsNotFound(err) {
-		return err
-	}
-
-	time := metav1.Now()
-	reasonInProgress := "RollOutInProgress"
-	conditions := newConditions(co.Status, r.version, time)
-	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", reasonInProgress, time)
-	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", asExpectedReason, time)
-	co.Status.Conditions = conditions.entries()
-	co.Status.RelatedObjects = r.relatedObjects()
-
-	_, err = r.client.UpdateStatus(ctx, co, metav1.UpdateOptions{})
-	return err
-}
-
 func (r *StatusReporter) Get(ctx context.Context) (*v1.ClusterOperator, error) {
 	return r.client.Get(ctx, r.clusterOperatorName, metav1.GetOptions{})
 }
 
-func (r *StatusReporter) SetFailed(ctx context.Context, statusErr error, reason string) error {
-	co, err := r.client.Get(ctx, r.clusterOperatorName, metav1.GetOptions{})
+func (r *StatusReporter) Create(ctx context.Context, co *v1.ClusterOperator) (*v1.ClusterOperator, error) {
+	return r.client.Create(ctx, co, metav1.CreateOptions{})
+}
+
+func (r *StatusReporter) getOrCreateClusterOperator(ctx context.Context) (*v1.ClusterOperator, error) {
+	co, err := r.Get(ctx)
 	if apierrors.IsNotFound(err) {
 		co = r.newClusterOperator()
-		co, err = r.client.Create(ctx, co, metav1.CreateOptions{})
+		co, err = r.Create(ctx, co)
 	}
-	if err != nil && !apierrors.IsNotFound(err) {
-		return err
+	if err != nil {
+		return nil, err
 	}
-
-	time := metav1.Now()
-	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
-	reason = cmostr.ToPascalCase(reason)
-
-	conditions := newConditions(co.Status, r.version, time)
-	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, unavailableMessage, reason, time)
-	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, unavailableMessage, reason, time)
-	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), reason, time)
-	conditions.setCondition(v1.OperatorUpgradeable, v1.ConditionTrue, "", asExpectedReason, time)
-	co.Status.Conditions = conditions.entries()
-
-	_, err = r.client.UpdateStatus(ctx, co, metav1.UpdateOptions{})
-	return err
+	return co, nil
 }
 
 func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
@@ -179,4 +104,92 @@ func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
 	co.Status.Conditions = newConditions(co.Status, r.version, time).entries()
 
 	return co
+}
+
+func (r *StatusReporter) setConditions(ctx context.Context, co *v1.ClusterOperator, conditions *conditions) error {
+	co.Status.Conditions = conditions.entries()
+	co.Status.RelatedObjects = r.relatedObjects()
+
+	_, err := r.client.UpdateStatus(ctx, co, metav1.UpdateOptions{})
+	return err
+}
+
+func (r *StatusReporter) SetRollOutDone(ctx context.Context, degradedConditionMessage string, degradedConditionReason string) error {
+	co, err := r.getOrCreateClusterOperator(ctx)
+	if err != nil {
+		return err
+	}
+
+	time := metav1.Now()
+	conditions := newConditions(co.Status, r.version, time)
+	conditions.setCondition(v1.OperatorAvailable, v1.ConditionTrue, "Successfully rolled out the stack.", "RollOutDone", time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, "", "", time)
+	conditions.setCondition(v1.OperatorDegraded, v1.ConditionFalse, degradedConditionMessage, degradedConditionReason, time)
+
+	// If we have reached "level" for the operator, report that we are at the version
+	// injected into us during update. We require that all components be rolled out
+	// and available at the new version before reporting this value.
+	if len(r.version) > 0 {
+		co.Status.Versions = []v1.OperandVersion{
+			{
+				Name:    "operator",
+				Version: r.version,
+			},
+		}
+	} else {
+		co.Status.Versions = nil
+	}
+
+	return r.setConditions(ctx, co, conditions)
+}
+
+// SetRollOutInProgress sets the OperatorProgressing condition to true, either:
+// 1. If there has been no previous status yet
+// 2. If the previous ClusterOperator OperatorAvailable condition was false
+//
+// This will ensure that the progressing state will be only set initially or in case of failure.
+// Once controller operator versions are available, an additional check will be introduced that toggles
+// the OperatorProgressing state in case of version upgrades.
+func (r *StatusReporter) SetRollOutInProgress(ctx context.Context) error {
+	co, err := r.getOrCreateClusterOperator(ctx)
+	if err != nil {
+		return err
+	}
+
+	time := metav1.Now()
+	conditions := newConditions(co.Status, r.version, metav1.Now())
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", "RollOutInProgress", time)
+
+	return r.setConditions(ctx, co, conditions)
+}
+
+func (r *StatusReporter) SetFailed(ctx context.Context, statusErr error, reason string) error {
+	co, err := r.getOrCreateClusterOperator(ctx)
+	if err != nil {
+		return err
+	}
+
+	time := metav1.Now()
+	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
+	reason = cmostr.ToPascalCase(reason)
+
+	conditions := newConditions(co.Status, r.version, time)
+	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, unavailableMessage, reason, time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, unavailableMessage, reason, time)
+	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), reason, time)
+
+	return r.setConditions(ctx, co, conditions)
+}
+
+func (r *StatusReporter) SetUpgradeable(ctx context.Context, cond v1.ConditionStatus, message, reason string) error {
+	co, err := r.getOrCreateClusterOperator(ctx)
+	if err != nil {
+		return err
+	}
+
+	time := metav1.Now()
+	conditions := newConditions(co.Status, r.version, metav1.Now())
+	conditions.setCondition(v1.OperatorUpgradeable, cond, message, reason, time)
+
+	return r.setConditions(ctx, co, conditions)
 }

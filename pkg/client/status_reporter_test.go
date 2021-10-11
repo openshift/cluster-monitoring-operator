@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-func TestStatusReporterSetDone(t *testing.T) {
+func TestStatusReporterSetRolloutDone(t *testing.T) {
 	ctx := context.Background()
 	for _, tc := range []struct {
 		name  string
@@ -65,7 +65,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 					"Available", "True",
 					"Degraded", "False",
 					"Progressing", "False",
-					"Upgradeable", "True",
+					"Upgradeable", "Unknown",
 				),
 			},
 		},
@@ -92,7 +92,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 					"Available", "True",
 					"Degraded", "False",
 					"Progressing", "False",
-					"Upgradeable", "True",
+					"Upgradeable", "Unknown",
 				),
 			},
 		},
@@ -112,7 +112,7 @@ func TestStatusReporterSetDone(t *testing.T) {
 				w(mock)
 			}
 
-			got := sr.SetDone(ctx, "", "")
+			got := sr.SetRollOutDone(ctx, "", "")
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
@@ -157,7 +157,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 					"Available", "Unknown",
 					"Degraded", "Unknown",
 					"Progressing", "True",
-					"Upgradeable", "True",
+					"Upgradeable", "Unknown",
 				),
 			},
 		},
@@ -184,7 +184,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 					"Available", "Unknown",
 					"Degraded", "Unknown",
 					"Progressing", "True",
-					"Upgradeable", "True",
+					"Upgradeable", "Unknown",
 				),
 			},
 		},
@@ -204,7 +204,7 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 				w(mock)
 			}
 
-			got := sr.SetInProgress(ctx)
+			got := sr.SetRollOutInProgress(ctx)
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
@@ -252,7 +252,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 					"Available", "False",
 					"Degraded", "True",
 					"Progressing", "False",
-					"Upgradeable", "True",
+					"Upgradeable", "Unknown",
 				),
 				hasUnavailableMessage(),
 			},
@@ -280,7 +280,7 @@ func TestStatusReporterSetFailed(t *testing.T) {
 					"Available", "False",
 					"Degraded", "True",
 					"Progressing", "False",
-					"Upgradeable", "True",
+					"Upgradeable", "Unknown",
 				),
 				hasUnavailableMessage(),
 			},
