@@ -27,14 +27,6 @@ func (f *Framework) MustCreateOrUpdateConfigMap(t *testing.T, cm *v1.ConfigMap) 
 	}
 }
 
-// MustDeleteConfigMap or fail the test
-func (f *Framework) MustDeleteConfigMap(t *testing.T, cm *v1.ConfigMap) {
-	t.Helper()
-	if err := f.OperatorClient.DeleteConfigMap(ctx, cm); err != nil {
-		t.Fatalf("failed to configmap configmap - %s", err.Error())
-	}
-}
-
 // MustGetConfigMap `name` from `namespace` within 5 minutes or fail
 func (f *Framework) MustGetConfigMap(t *testing.T, name, namespace string) *v1.ConfigMap {
 	t.Helper()

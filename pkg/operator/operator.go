@@ -18,11 +18,8 @@ import (
 	"context"
 	"crypto/x509/pkix"
 	"fmt"
-	"strings"
-	"time"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -142,7 +139,6 @@ type Operator struct {
 	images                    map[string]string
 	telemetryMatches          []string
 	remoteWrite               bool
-	userWorkloadEnabled       bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
@@ -162,8 +158,6 @@ type Operator struct {
 	failedReconcileAttempts int
 
 	assets *manifests.Assets
-
-	rebalancer *rebalancer.Rebalancer
 }
 
 func New(
@@ -175,7 +169,7 @@ func New(
 	telemetryMatches []string,
 	a *manifests.Assets,
 ) (*Operator, error) {
-	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload)
+	c, err := client.New(ctx, config, version, namespace, namespaceUserWorkload)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +180,6 @@ func New(
 		configMapName:             configMapName,
 		userWorkloadConfigMapName: userWorkloadConfigMapName,
 		remoteWrite:               remoteWrite,
-		userWorkloadEnabled:       false,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
@@ -195,7 +188,6 @@ func New(
 		assets:                    a,
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
-		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -262,18 +254,6 @@ func New(
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
 	o.informers = append(o.informers, informer)
-
-	// Setup PVC informers to sync annotation updates.
-	for _, ns := range []string{o.namespace, o.namespaceUserWorkload} {
-		informer = cache.NewSharedIndexInformer(
-			o.client.PersistentVolumeClaimListWatchForNamespace(ns),
-			&v1.PersistentVolumeClaim{}, resyncPeriod, cache.Indexers{},
-		)
-		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
-		})
-		o.informers = append(o.informers, informer)
-	}
 
 	kubeInformersOperatorNS := informers.NewSharedInformerFactoryWithOptions(
 		c.KubernetesInterface(),
@@ -434,12 +414,6 @@ func (o *Operator) handleEvent(obj interface{}) {
 		return
 	}
 
-	if _, ok := obj.(*v1.PersistentVolumeClaim); ok {
-		klog.Info("Triggering update due to a PVC update")
-		o.enqueue(cmoConfigMap)
-		return
-	}
-
 	key, ok := o.keyFunc(obj)
 	if !ok {
 		return
@@ -517,14 +491,6 @@ func (o *Operator) enqueue(obj interface{}) {
 }
 
 func (o *Operator) sync(ctx context.Context, key string) error {
-	// The operator may have left some nodes as unschedulable during a previous
-	// sync in an attempt to rebalance workloads.
-	// Ensure that the nodes are switched back to schedulable first.
-	err := o.rebalancer.EnsureNodesAreUncordoned()
-	if err != nil {
-		return err
-	}
-
 	config, err := o.Config(ctx, key)
 	if err != nil {
 		o.reportError(ctx, err, "InvalidConfiguration")
@@ -570,7 +536,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 			}),
 	)
 	klog.Info("Updating ClusterOperator status to in progress.")
-	err = o.client.StatusReporter().SetRollOutInProgress(ctx)
+	err = o.client.StatusReporter().SetInProgress(ctx)
 	if err != nil {
 		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
@@ -593,22 +559,12 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		degradedConditionMessage = client.StorageNotConfiguredMessage
 		degradedConditionReason = client.StorageNotConfiguredReason
 	}
-
 	klog.Info("Updating ClusterOperator status to done.")
 	o.failedReconcileAttempts = 0
-	err = o.client.StatusReporter().SetRollOutDone(ctx, degradedConditionMessage, degradedConditionReason)
+	err = o.client.StatusReporter().SetDone(ctx, degradedConditionMessage, degradedConditionReason)
+
 	if err != nil {
 		klog.Errorf("error occurred while setting status to done: %v", err)
-	}
-
-	operatorUpgradeable, upgradeableReason, upgradeableMessage, err := o.Upgradeable(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = o.client.StatusReporter().SetUpgradeable(ctx, operatorUpgradeable, upgradeableMessage, upgradeableReason)
-	if err != nil {
-		klog.Errorf("error occurred while setting Upgradeable status: %v", err)
 	}
 
 	return nil
@@ -741,7 +697,6 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 			return nil, err
 		}
 	}
-	o.userWorkloadEnabled = *c.ClusterMonitoringConfiguration.UserWorkloadEnabled
 
 	// Only fetch the token and cluster ID if they have not been specified in the config.
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
@@ -787,82 +742,4 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	}
 
 	return c, nil
-}
-
-// Upgradeable verifies whether the operator can be upgraded or not. It returns
-// the ConditionStatus with optional reason and message.  To set this status, it
-// will verify that in HA topology, workloads with persistent storage are
-// correctly balanced across multiple nodes. If it isn't it will try to
-// rebalance the workloads.
-func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, string, string, error) {
-	if !o.lastKnowInfrastructureConfig.HighlyAvailableInfrastructure() {
-		return configv1.ConditionTrue, "", "", nil
-	}
-
-	var (
-		messages           []string
-		workloadRebalanced bool
-	)
-	for _, workload := range o.workloadsToRebalance() {
-		balanced, err := o.rebalancer.WorkloadCorrectlyBalanced(ctx, &workload)
-		if err != nil {
-			return configv1.ConditionUnknown, "", "", err
-		}
-
-		if balanced {
-			continue
-		}
-
-		workloadRebalanced, err := o.rebalancer.RebalanceWorkloads(ctx, &workload)
-		if err != nil {
-			return configv1.ConditionUnknown, "", "", err
-		}
-
-		if !workloadRebalanced {
-			messages = append(messages, fmt.Sprintf("Highly-available workload in namespace %s, with label %q and persistent storage enabled has a single point of failure.", workload.Namespace, workload.LabelSelector))
-		}
-	}
-
-	if len(messages) > 0 {
-		msg := "Manual intervention is needed to upgrade to the next minor version. "
-		if workloadRebalanced {
-			msg += "The operator couldn't rebalance the pods automatically with the annotation. " +
-				"For each highly-available workload that has a single point of failure, you will need to manually delete at least one of the PersistentVolumeClaims and Pods of this workload until at least 2 of its replicas are scheduled on different nodes."
-		} else {
-			msg += fmt.Sprintf("For each highly-available workload that has a single point of failure please mark at least one of their PersistentVolumeClaim for deletion by annotating them with %q.", map[string]string{rebalancer.DropPVCAnnotation: "yes"})
-		}
-		messages = append(messages, msg)
-		return configv1.ConditionFalse, "WorkloadSinglePointOfFailure", strings.Join(messages, "\n"), nil
-	}
-
-	return configv1.ConditionTrue, "", "", nil
-}
-
-// workloadsToRebalance returns the list of workloads with persistent storage
-// that might need to be rebalanced.
-func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
-	workloads := []rebalancer.Workload{
-		{
-			Namespace:     o.namespace,
-			LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
-		},
-		{
-			Namespace:     o.namespace,
-			LabelSelector: map[string]string{"app.kubernetes.io/name": "alertmanager"},
-		},
-	}
-
-	if o.userWorkloadEnabled {
-		workloads = append(workloads,
-			rebalancer.Workload{
-				Namespace:     o.namespaceUserWorkload,
-				LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
-			},
-			rebalancer.Workload{
-				Namespace:     o.namespaceUserWorkload,
-				LabelSelector: map[string]string{"app.kubernetes.io/name": "thanos-ruler"},
-			},
-		)
-	}
-	return workloads
 }
