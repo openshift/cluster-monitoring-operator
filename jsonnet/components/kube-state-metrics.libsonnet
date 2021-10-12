@@ -133,7 +133,7 @@ function(params)
                   else
                     c {
                       args+: [
-                        '--metric-denylist=kube_secret_labels',
+                        '--metric-denylist=kube_secret_labels,kube_*_annotations',
                         '--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*]',
                       ],
                       securityContext: {},
