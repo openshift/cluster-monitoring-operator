@@ -35,6 +35,7 @@ spec:
         - --telemetry-port=8082
         - --metric-denylist=kube_secret_labels,kube_*_annotations
         - --metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*]
+        - --use-apiserver-cache
         - |
           --metric-denylist=
           kube_.+_created,
