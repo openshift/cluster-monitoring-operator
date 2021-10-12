@@ -47,6 +47,7 @@ mv "${prefix}/cluster-monitoring-operator/cluster-role.yaml" \
 mv "${prefix}/cluster-monitoring-operator/namespaced-cluster-role.yaml" \
    "${prefix}/manifests/0000_50_cluster-monitoring-operator_02-namespaced-cluster-role.yaml"
 
+
 # Move resulting manifests to the manifests directory
 mv assets/manifests/* manifests/
 rmdir assets/manifests || true
