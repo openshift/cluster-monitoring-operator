@@ -217,8 +217,12 @@ func (r *Rebalancer) resourcesToDelete(ctx context.Context, pods []v1.Pod) ([]re
 
 	// Sort PVCs by their creation timestamps, from the newest to the oldest to
 	// make sure that the oldest PVC is retained in case all of them are
-	// annotated.
+	// annotated. If some PVCs have the same creation timestamp, they will be
+	// sorted based on their pod name.
 	sort.Slice(resources, func(i, j int) bool {
+		if resources[i].pvc.CreationTimestamp.Equal(&resources[j].pvc.CreationTimestamp) {
+			return resources[i].pod.Name < resources[j].pod.Name
+		}
 		return resources[i].pvc.CreationTimestamp.After(resources[j].pvc.CreationTimestamp.Time)
 	})
 
