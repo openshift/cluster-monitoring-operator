@@ -16,6 +16,7 @@ package rebalancer
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/drain"
@@ -114,27 +115,6 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 		return false, nil
 	}
 
-	// Guard from deleting all PVCs to prevent complete data loss.
-	if len(resourcesToDelete) == len(podList.Items) {
-		// Remove the annotation of the last PVC so that it doesn't get deleted in
-		// future cycles.
-		lastPVC := resourcesToDelete[len(resourcesToDelete)-1].pvc
-		resourcesToDelete = resourcesToDelete[:len(resourcesToDelete)-1]
-		klog.V(4).Infof("Removing annotation %q from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", DropPVCAnnotation, lastPVC.Namespace, lastPVC.Name)
-		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			pvc, err := r.client.CoreV1().PersistentVolumeClaims(lastPVC.Namespace).Get(ctx, lastPVC.Name, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			delete(pvc.Annotations, DropPVCAnnotation)
-			_, err = r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
-			return err
-		})
-		if err != nil {
-			return false, err
-		}
-	}
-
 	for _, rtd := range resourcesToDelete {
 		klog.V(4).Infof("Rebalancing pod %s/%s.", rtd.pod.Namespace, rtd.pod.Name)
 		err := r.rebalanceWorkload(ctx, rtd.pod, rtd.pvc)
@@ -206,6 +186,10 @@ type resourcesToDelete struct {
 // deleted in order to reschedule pods on different nodes. It only returns pods
 // and annotated PVCs that were marked for deletion by the users with the
 // openshift.io/cluster-monitoring-drop-pvc=yes annotation on the PVC.
+// The resources will be returned sorted by their PVC creation timestamp, from
+// the newest to the oldest to make the deletion consistent.
+// If all the PVCs of the workload are annotated, the oldest one is kept and its
+// annotation is removed to prevent complete data loss.
 func (r *Rebalancer) resourcesToDelete(ctx context.Context, pods []v1.Pod) ([]resourcesToDelete, error) {
 	resources := make([]resourcesToDelete, 0)
 	for i, pod := range pods {
@@ -230,6 +214,35 @@ func (r *Rebalancer) resourcesToDelete(ctx context.Context, pods []v1.Pod) ([]re
 			}
 		}
 	}
+
+	// Sort PVCs by their creation timestamps, from the newest to the oldest to
+	// make sure that the oldest PVC is retained in case all of them are
+	// annotated.
+	sort.Slice(resources, func(i, j int) bool {
+		return resources[i].pvc.CreationTimestamp.After(resources[j].pvc.CreationTimestamp.Time)
+	})
+
+	// Guard from deleting all PVCs to prevent complete data loss.
+	if len(resources) == len(pods) {
+		// Remove the annotation of the last PVC so that it doesn't get deleted in
+		// future cycles.
+		lastPVC := resources[len(resources)-1].pvc
+		resources = resources[:len(resources)-1]
+		klog.V(4).Infof("Removing annotation %q from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", DropPVCAnnotation, lastPVC.Namespace, lastPVC.Name)
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			pvc, err := r.client.CoreV1().PersistentVolumeClaims(lastPVC.Namespace).Get(ctx, lastPVC.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			delete(pvc.Annotations, DropPVCAnnotation)
+			_, err = r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
+			return err
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return resources, nil
 }
 
