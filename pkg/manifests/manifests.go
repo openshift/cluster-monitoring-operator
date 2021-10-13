@@ -1370,6 +1370,9 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 					Replacement:  "alerts",
 				},
 			},
+			MetadataConfig: &monv1.MetadataConfig{
+				Send: false,
+			},
 		}
 
 		p.Spec.RemoteWrite = []monv1.RemoteWriteSpec{spec}
