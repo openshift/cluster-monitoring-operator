@@ -116,7 +116,7 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 	}
 
 	for _, rtd := range resourcesToDelete {
-		klog.V(4).Infof("Rebalancing pod %s/%s.", rtd.pod.Namespace, rtd.pod.Name)
+		klog.V(2).Infof("Rebalancing pod %s/%s.", rtd.pod.Namespace, rtd.pod.Name)
 		err := r.rebalanceWorkload(ctx, rtd.pod, rtd.pvc)
 		if err != nil {
 			return false, err

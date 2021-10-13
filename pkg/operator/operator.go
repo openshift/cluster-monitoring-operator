@@ -848,6 +848,7 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 	for _, workload := range o.workloadsToRebalance() {
 		balanced, err := o.rebalancer.WorkloadCorrectlyBalanced(ctx, &workload)
 		if err != nil {
+			klog.Errorf("Couldn't figure out if workload in namespace %s, with label %q is correctly balanced, err %v.", workload.Namespace, workload.LabelSelector, err)
 			return configv1.ConditionUnknown, "", "", err
 		}
 
@@ -857,6 +858,7 @@ func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, s
 
 		workloadRebalanced, err := o.rebalancer.RebalanceWorkloads(ctx, &workload)
 		if err != nil {
+			klog.Errorf("Couldn't rebalance workload in namespace %s, with label %q, err %v.", workload.Namespace, workload.LabelSelector, err)
 			return configv1.ConditionUnknown, "", "", err
 		}
 
