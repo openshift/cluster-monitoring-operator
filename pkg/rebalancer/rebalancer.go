@@ -130,7 +130,11 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 		klog.V(4).Infof("Waiting until workload in namespace %s with label %q becomes correctly balanced.", workload.Namespace, workload.LabelSelector)
 		return r.WorkloadCorrectlyBalanced(ctx, workload)
 	})
-	return err == nil, err
+	if err != nil {
+		return false, err
+	}
+
+	return true, r.ensurePVCsAreNotAnnotated(ctx, workload)
 }
 
 // rebalanceWorkload rebalances the given pod on a different node. To make sure
@@ -228,23 +232,7 @@ func (r *Rebalancer) resourcesToDelete(ctx context.Context, pods []v1.Pod) ([]re
 
 	// Guard from deleting all PVCs to prevent complete data loss.
 	if len(resources) == len(pods) {
-		// Remove the annotation of the last PVC so that it doesn't get deleted in
-		// future cycles.
-		lastPVC := resources[len(resources)-1].pvc
 		resources = resources[:len(resources)-1]
-		klog.V(4).Infof("Removing annotation %q from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", DropPVCAnnotation, lastPVC.Namespace, lastPVC.Name)
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			pvc, err := r.client.CoreV1().PersistentVolumeClaims(lastPVC.Namespace).Get(ctx, lastPVC.Name, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			delete(pvc.Annotations, DropPVCAnnotation)
-			_, err = r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
-			return err
-		})
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return resources, nil
@@ -262,6 +250,37 @@ func (r *Rebalancer) EnsureNodesAreUncordoned() error {
 
 	for _, node := range nodeList.Items {
 		err := drain.RunCordonOrUncordon(r.drainer, &node, drain.Uncordon)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// EnsurePVCsAreNotAnnoted makes sure that none of the PVCs of the given
+// workload have the openshift.io/cluster-monitoring-drop-pvc annotation after
+// the rebalancing is done. In case one of the PVC has the annotation, it will
+// be removed to prevent deleting the PVC in a future cycle.
+func (r *Rebalancer) ensurePVCsAreNotAnnotated(ctx context.Context, workload *Workload) error {
+	pvcList, err := r.client.CoreV1().PersistentVolumeClaims(workload.Namespace).List(ctx, metav1.ListOptions{LabelSelector: labels.FormatLabels(workload.LabelSelector)})
+	if err != nil {
+		return err
+	}
+
+	for _, pvc := range pvcList.Items {
+		if _, found := pvc.GetAnnotations()[DropPVCAnnotation]; !found {
+			continue
+		}
+		klog.V(2).Infof("Removing annotation %q from PersistentVolumeClaim %s/%s to avoid needlessly deleting all PVCs to rebalance a workload.", DropPVCAnnotation, pvc.Namespace, pvc.Name)
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			pvc, err := r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Get(ctx, pvc.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			delete(pvc.Annotations, DropPVCAnnotation)
+			_, err = r.client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Update(ctx, pvc, metav1.UpdateOptions{})
+			return err
+		})
 		if err != nil {
 			return err
 		}

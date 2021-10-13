@@ -20,6 +20,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -245,6 +246,56 @@ func TestEnsureNodesAreUncordonned(t *testing.T) {
 
 			if tc.unschedulable != node.Spec.Unschedulable {
 				t.Errorf("Expected node %s unschedulable status to be: %t, got %t.", tc.node.Name, tc.unschedulable, node.Spec.Unschedulable)
+			}
+		})
+	}
+}
+
+func TestEnsurePVCsAreNotAnnotated(t *testing.T) {
+	workload := &Workload{Namespace: "openshift-monitoring", LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"}}
+	for _, tc := range []struct {
+		name string
+		pvcs []v1.PersistentVolumeClaim
+	}{
+		{
+			name: "PVCs without the annotation",
+			pvcs: []v1.PersistentVolumeClaim{
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: workload.Namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: workload.Namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
+			},
+		},
+		{
+			name: "One PVC with annotation",
+			pvcs: []v1.PersistentVolumeClaim{
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: workload.Namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: workload.Namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{DropPVCAnnotation: "yes"}}},
+			},
+		},
+		{
+			name: "All PVCs with annotation",
+			pvcs: []v1.PersistentVolumeClaim{
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-0", Namespace: workload.Namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{DropPVCAnnotation: "yes"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-db-prometheus-k8s-1", Namespace: workload.Namespace, Labels: map[string]string{"app.kubernetes.io/name": "prometheus"}, Annotations: map[string]string{DropPVCAnnotation: "yes"}}},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeRebalancer := NewRebalancer(context.Background(), fake.NewSimpleClientset(&v1.PersistentVolumeClaimList{Items: tc.pvcs}))
+
+			err := fakeRebalancer.ensurePVCsAreNotAnnotated(context.Background(), workload)
+			if err != nil {
+				t.Error(err)
+			}
+
+			pvcList, err := fakeRebalancer.client.CoreV1().PersistentVolumeClaims(workload.Namespace).List(context.Background(), metav1.ListOptions{LabelSelector: labels.FormatLabels(workload.LabelSelector)})
+			if err != nil {
+				t.Error(err)
+			}
+
+			for _, pvc := range pvcList.Items {
+				if _, found := pvc.GetAnnotations()[DropPVCAnnotation]; found {
+					t.Errorf("Expected PVC %s/%s not to have the %q annotation.", pvc.Namespace, pvc.Name, DropPVCAnnotation)
+				}
 			}
 		})
 	}
