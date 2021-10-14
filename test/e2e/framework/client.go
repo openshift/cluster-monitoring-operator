@@ -151,6 +151,10 @@ func (qp *QueryParameterInjector) WrapTransport(rt http.RoundTripper) http.Round
 // PrometheusQuery runs an HTTP GET request against the Prometheus query API and returns
 // the response body.
 func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
+	return c.PrometheusQueryWithStatus(query, http.StatusOK)
+}
+
+func (c *PrometheusClient) PrometheusQueryWithStatus(query string, status int) ([]byte, error) {
 	resp, err := c.Do("GET", fmt.Sprintf("/api/v1/query?query=%s", url.QueryEscape(query)), nil)
 	if err != nil {
 		return nil, err
@@ -162,8 +166,8 @@ func (c *PrometheusClient) PrometheusQuery(query string) ([]byte, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, ClampMax(body))
+	if resp.StatusCode != status {
+		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", status, resp.StatusCode, ClampMax(body))
 	}
 
 	return body, nil
