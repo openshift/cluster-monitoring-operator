@@ -1,5 +1,6 @@
 local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics.jsonnet';
 
+local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 
 function(params)
@@ -93,9 +94,9 @@ function(params)
             targetPort: 'web',
           },
           {
-            name: 'tenancy',
+            name: 'metrics',
             port: 9092,
-            targetPort: 'tenancy',
+            targetPort: 'metrics',
           },
         ],
         type: 'ClusterIP',
@@ -208,33 +209,7 @@ function(params)
       data: {},
     },
 
-    kubeRbacProxySecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'kube-rbac-proxy',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
-      },
-      type: 'Opaque',
-      data: {},
-      stringData: {
-        'config.yaml': std.manifestYamlDoc({
-          authorization: {
-            rewrites: {
-              byQueryParameter: {
-                name: 'namespace',
-              },
-            },
-            resourceAttributes: {
-              apiVersion: 'metrics.k8s.io/v1beta1',
-              resource: 'pods',
-              namespace: '{{ .Value }}',
-            },
-          },
-        }),
-      },
-    },
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
 
     // This changes the Prometheuses to be scraped with TLS, authN and
     // authZ, which are not present in kube-prometheus.
@@ -243,7 +218,7 @@ function(params)
       spec+: {
         endpoints: [
           {
-            port: 'web',
+            port: 'metrics',
             interval: '30s',
             scheme: 'https',
             tlsConfig: {
@@ -252,7 +227,6 @@ function(params)
               certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
               keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
-            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
           },
         ],
       },
@@ -287,7 +261,6 @@ function(params)
               certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
               keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
-            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
           },
         ],
       },
@@ -341,7 +314,7 @@ function(params)
           'kube-rbac-proxy',
           'metrics-client-certs',
         ],
-        configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle'],
+        configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle', 'metrics-client-ca'],
         probeNamespaceSelector: cfg.namespaceSelector,
         podMonitorNamespaceSelector: cfg.namespaceSelector,
         serviceMonitorSelector: {},
@@ -427,15 +400,17 @@ function(params)
             ports: [
               {
                 containerPort: 9092,
-                name: 'tenancy',
+                name: 'metrics',
               },
             ],
             args: [
               '--secure-listen-address=0.0.0.0:9092',
-              '--upstream=http://127.0.0.1:9095',
+              '--upstream=http://127.0.0.1:9090',
+              '--allow-paths=/metrics',
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--logtostderr=true',
               '--v=10',
@@ -447,26 +422,15 @@ function(params)
                 name: 'secret-prometheus-k8s-tls',
               },
               {
+                mountPath: '/etc/tls/client',
+                name: 'configmap-metrics-client-ca',
+                readOnly: true,
+              },
+              {
                 mountPath: '/etc/kube-rbac-proxy',
                 name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
               },
             ],
-          },
-          {
-            name: 'prom-label-proxy',
-            image: cfg.promLabelProxyImage,
-            args: [
-              '--insecure-listen-address=127.0.0.1:9095',
-              '--upstream=http://127.0.0.1:9090',
-              '--label=namespace',
-            ],
-            resources: {
-              requests: {
-                memory: '15Mi',
-                cpu: '1m',
-              },
-            },
-            terminationMessagePolicy: 'FallbackToLogsOnError',
           },
           {
             name: 'kube-rbac-proxy-thanos',
@@ -496,6 +460,8 @@ function(params)
               '--upstream=http://127.0.0.1:10902',
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--allow-paths=/metrics',
               '--logtostderr=true',
@@ -505,6 +471,10 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-prometheus-k8s-thanos-sidecar-tls',
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
               },
             ],
           },

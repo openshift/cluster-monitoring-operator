@@ -16,9 +16,9 @@ spec:
   - name: web
     port: 9091
     targetPort: web
-  - name: tenancy
+  - name: metrics
     port: 9092
-    targetPort: tenancy
+    targetPort: metrics
   selector:
     app: prometheus
     app.kubernetes.io/component: prometheus
