@@ -16,7 +16,10 @@ package rebalancer
 
 import (
 	"context"
+	"reflect"
+	"sort"
 	"testing"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,8 +142,8 @@ func TestRebalanceWorkloads(t *testing.T) {
 					Spec:       v1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 				},
 			},
-			expectedPods:       []string{"prometheus-k8s-1"},
-			expectedPVCs:       []string{"prometheus-k8s-db-prometheus-k8s-1"},
+			expectedPods:       []string{"prometheus-k8s-0"},
+			expectedPVCs:       []string{"prometheus-k8s-db-prometheus-k8s-0"},
 			expectedRebalanced: true,
 		},
 	} {
@@ -296,6 +299,46 @@ func TestEnsurePVCsAreNotAnnotated(t *testing.T) {
 				if _, found := pvc.GetAnnotations()[DropPVCAnnotation]; found {
 					t.Errorf("Expected PVC %s/%s not to have the %q annotation.", pvc.Namespace, pvc.Name, DropPVCAnnotation)
 				}
+			}
+		})
+	}
+}
+
+func TestResourcesToDeleteByAge(t *testing.T) {
+	oldTS := metav1.Time{}
+	newTS := metav1.NewTime(oldTS.Add(time.Hour))
+	for _, tc := range []struct {
+		name          string
+		resources     []resourcesToDelete
+		expectedOrder []string
+	}{
+		{
+			name: "older pvc",
+			resources: []resourcesToDelete{
+				{pod: &v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0"}}, pvc: &v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{CreationTimestamp: oldTS}}},
+				{pod: &v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1"}}, pvc: &v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{CreationTimestamp: newTS}}},
+			},
+			expectedOrder: []string{"prometheus-k8s-1", "prometheus-k8s-0"},
+		},
+		{
+			name: "pvc with same age",
+			resources: []resourcesToDelete{
+				{pod: &v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-0"}}, pvc: &v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{CreationTimestamp: newTS}}},
+				{pod: &v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-k8s-1"}}, pvc: &v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{CreationTimestamp: newTS}}},
+			},
+			expectedOrder: []string{"prometheus-k8s-1", "prometheus-k8s-0"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			sort.Sort(byAge(tc.resources))
+
+			var order []string
+			for _, r := range tc.resources {
+				order = append(order, r.pod.Name)
+			}
+
+			if !reflect.DeepEqual(order, tc.expectedOrder) {
+				t.Errorf("Expected resources to delete to be: %s got: %s", tc.expectedOrder, order)
 			}
 		})
 	}

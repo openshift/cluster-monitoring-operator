@@ -186,6 +186,26 @@ type resourcesToDelete struct {
 	pvc *v1.PersistentVolumeClaim
 }
 
+// byAge sorts resources by PVC creation time in reverse chronological order
+// (most recent first).  In case of a tie it sorts the resources by the pod
+// names in reverse alphabetical order (e.g. [pod-1, pod-0]).
+type byAge []resourcesToDelete
+
+func (r byAge) Len() int {
+	return len(r)
+}
+
+func (r byAge) Less(i, j int) bool {
+	if r[i].pvc.CreationTimestamp.Equal(&r[j].pvc.CreationTimestamp) {
+		return r[i].pod.Name > r[j].pod.Name
+	}
+	return r[i].pvc.CreationTimestamp.After(r[j].pvc.CreationTimestamp.Time)
+}
+
+func (r byAge) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
+}
+
 // resourcesToDelete returns the list of Kubernetes resources that should be
 // deleted in order to reschedule pods on different nodes. It only returns pods
 // and annotated PVCs that were marked for deletion by the users with the
@@ -223,12 +243,7 @@ func (r *Rebalancer) resourcesToDelete(ctx context.Context, pods []v1.Pod) ([]re
 	// make sure that the oldest PVC is retained in case all of them are
 	// annotated. If some PVCs have the same creation timestamp, they will be
 	// sorted based on their pod name.
-	sort.Slice(resources, func(i, j int) bool {
-		if resources[i].pvc.CreationTimestamp.Equal(&resources[j].pvc.CreationTimestamp) {
-			return resources[i].pod.Name < resources[j].pod.Name
-		}
-		return resources[i].pvc.CreationTimestamp.After(resources[j].pvc.CreationTimestamp.Time)
-	})
+	sort.Sort(byAge(resources))
 
 	// Guard from deleting all PVCs to prevent complete data loss.
 	if len(resources) == len(pods) {
