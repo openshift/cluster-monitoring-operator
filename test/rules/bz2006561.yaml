@@ -1,0 +1,61 @@
+# Tests for https://bugzilla.redhat.com/show_bug.cgi?id=2006561
+# for metric kube_pod_spec_volumes_persistentvolumeclaims_info, make sure duplicated records returned by 'on(namespace, pod)' will not cause error when evaluating "HighlyAvailableWorkloadIncorrectlySpread"
+# For the case of bug 2006561, kube_pod_spec_volumes_persistentvolumeclaims_info is duplicated with "on(namespace, pod)" aggregation because multiple uids exist for the same namespace and pod combination.
+
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  - interval: 1m
+    input_series:
+      # Workload
+      - series: 'namespace_workload_pod:kube_pod_owner:relabel{namespace="openshift-monitoring", pod="prometheus-k8s-0", workload="prometheus-k8s", workload_type="statefulset"}'
+        values: "1+0x60"
+      - series: 'namespace_workload_pod:kube_pod_owner:relabel{namespace="openshift-monitoring", pod="prometheus-k8s-1", workload="prometheus-k8s", workload_type="statefulset"}'
+        values: "1+0x60"
+      - series: 'namespace_workload_pod:kube_pod_owner:relabel{namespace="openshift-monitoring", pod="alertmanager-main-0", workload="alertmanager-main", workload_type="statefulset"}'
+        values: "1+0x60"
+      - series: 'namespace_workload_pod:kube_pod_owner:relabel{namespace="openshift-monitoring", pod="alertmanager-main-1", workload="alertmanager-main", workload_type="statefulset"}'
+        values: "1+0x60"
+      - series: 'namespace_workload_pod:kube_pod_owner:relabel{namespace="openshift-monitoring", pod="alertmanager-main-2", workload="alertmanager-main", workload_type="statefulset"}'
+        values: "1+0x60"
+      # PVC
+      - series: 'kube_pod_spec_volumes_persistentvolumeclaims_info{namespace="openshift-monitoring", persistentvolumeclaim="prometheus-k8s-db-prometheus-k8s-0", pod="prometheus-k8s-0", volumes="prometheus-k8s-db" ,uid="uid-1"}'
+        values: "1+0x60"
+      - series: 'kube_pod_spec_volumes_persistentvolumeclaims_info{namespace="openshift-monitoring", persistentvolumeclaim="prometheus-k8s-db-prometheus-k8s-0", pod="prometheus-k8s-0", volumes="prometheus-k8s-db" ,uid="uid-2"}'
+        values: "1+0x60"
+      - series: 'kube_pod_spec_volumes_persistentvolumeclaims_info{namespace="openshift-monitoring", persistentvolumeclaim="prometheus-k8s-db-prometheus-k8s-1", pod="prometheus-k8s-1", volumes="prometheus-k8s-db" ,uid="uid-3"}'
+        values: "1+0x60"
+      - series: 'kube_pod_spec_volumes_persistentvolumeclaims_info{namespace="openshift-monitoring", persistentvolumeclaim="alertmanager-main-db-alertmanager-main-0", pod="alertmanager-main-0", volumes="alertmanager-main-db" ,uid="uid-4"}'
+        values: "1+0x60"
+      - series: 'kube_pod_spec_volumes_persistentvolumeclaims_info{namespace="openshift-monitoring", persistentvolumeclaim="alertmanager-main-db-alertmanager-main-1", pod="alertmanager-main-1", volumes="alertmanager-main-db" ,uid="uid-5"}'
+        values: "1+0x60"
+      - series: 'kube_pod_spec_volumes_persistentvolumeclaims_info{namespace="openshift-monitoring", persistentvolumeclaim="alertmanager-main-db-alertmanager-main-2", pod="alertmanager-main-2", volumes="alertmanager-main-db" ,uid="uid-6"}'
+        values: "1+0x60"
+      # Node info
+      - series: 'kube_pod_info{namespace="openshift-monitoring", node="ip-10-0-173-86.sa-east-1.compute.internal", pod="prometheus-k8s-0"}'
+        values: "1+0x60"
+      - series: 'kube_pod_info{namespace="openshift-monitoring", node="ip-10-0-173-86.sa-east-1.compute.internal", pod="prometheus-k8s-1"}'
+        values: "1+0x60"
+      - series: 'kube_pod_info{namespace="openshift-monitoring", node="ip-10-0-173-86.sa-east-1.compute.internal", pod="alertmanager-main-0"}'
+        values: "1+0x60"
+      - series: 'kube_pod_info{namespace="openshift-monitoring", node="ip-10-0-173-86.sa-east-2.compute.internal", pod="alertmanager-main-1"}'
+        values: "1+0x60"
+      - series: 'kube_pod_info{namespace="openshift-monitoring", node="ip-10-0-173-86.sa-east-3.compute.internal", pod="alertmanager-main-2"}'
+        values: "1+0x60"
+    alert_rule_test:
+      - eval_time: 0m
+        alertname: "HighlyAvailableWorkloadIncorrectlySpread"
+      - eval_time: 60m
+        alertname: "HighlyAvailableWorkloadIncorrectlySpread"
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              namespace: openshift-monitoring
+              workload: prometheus-k8s
+            exp_annotations:
+              description: "Workload openshift-monitoring/prometheus-k8s is incorrectly spread across multiple nodes which breaks high-availability requirements. Since the workload is using persistent volumes, manual intervention is needed. Please follow the guidelines provided in the runbook of this alert to fix this issue."
+              summary: "Highly-available workload is incorrectly spread across multiple nodes and manual intervention is needed."
+              runbook_url: "https://github.com/openshift/runbooks/blob/master/alerts/HighlyAvailableWorkloadIncorrectlySpread.md"
