@@ -88,6 +88,12 @@ function(params)
                       action: 'drop',
                       regex: 'container_memory_failures_total',
                     },
+                    {
+                      // these metrics are available at the slice level
+                      sourceLabels: ['__name__', 'container'],
+                      action: 'drop',
+                      regex: '(container_fs_.*);.+',
+                    },
                   ],
                 }
               else
