@@ -1609,7 +1609,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.EnforcedTargetLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedTargetLimit
 	}
 
-	// end removal
 	if f.config.Images.Thanos != "" {
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}

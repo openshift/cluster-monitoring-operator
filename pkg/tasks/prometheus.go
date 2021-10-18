@@ -219,12 +219,6 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Prometheus config RoleBinding failed")
 	}
 
-	// TODO(paulfantom): Can be removed after OpenShift 4.7 and earlier are no longer supported
-	err = t.client.DeletePrometheusRuleByNamespaceAndName(ctx, t.client.Namespace(), "prometheus-k8s-rules")
-	if err != nil {
-		return errors.Wrap(err, "removing old Prometheus rules PrometheusRule failed")
-	}
-
 	pm, err := t.factory.PrometheusK8sPrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus rules PrometheusRule failed")
@@ -381,22 +375,5 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Prometheus Thanos sidecar ServiceMonitor failed")
 	}
 
-	// Clean up the service monitors previously managed by the cluster monitoring operator.
-	// TODO(bison): Verify these are no longer needed and remove them after 4.8 release.
-	deprecatedServiceMonitors := []string{
-		"cluster-version-operator",
-		"kube-apiserver",
-		"kube-controller-manager",
-		"kube-scheduler",
-		"openshift-apiserver",
-		"prometheus", // Bug 1952744: Renamed to "prometheus-k8s" in #1044.
-	}
-
-	for _, name := range deprecatedServiceMonitors {
-		err := t.client.DeleteServiceMonitorByNamespaceAndName(ctx, t.client.Namespace(), name)
-		if err != nil {
-			return errors.Wrapf(err, "deleting Prometheus %s ServiceMonitor failed", name)
-		}
-	}
 	return nil
 }
