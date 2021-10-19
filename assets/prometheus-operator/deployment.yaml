@@ -99,6 +99,9 @@ spec:
         secret:
           secretName: prometheus-operator-tls
       - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
           name: operator-certs-ca-bundle
         name: operator-certs-ca-bundle
       - configMap:

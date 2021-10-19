@@ -109,6 +109,12 @@ function(params)
                 name: certsCAVolumeName,
                 configMap: {
                   name: certsCAVolumeName,
+                  items: [
+                    {
+                      key: 'service-ca.crt',
+                      path: 'service-ca.crt',
+                    },
+                  ],
                 },
               },
               {
