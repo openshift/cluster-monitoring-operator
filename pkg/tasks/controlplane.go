@@ -36,13 +36,6 @@ func NewControlPlaneTask(client *client.Client, factory *manifests.Factory, conf
 }
 
 func (t *ControlPlaneTask) Run(ctx context.Context) error {
-	// TODO: remove in 4.10
-	// This was needed when etcd rule was moved to cluster-etcd-operator.
-	err := t.client.DeletePrometheusRuleByNamespaceAndName(ctx, "openshift-monitoring", "etcd-prometheus-rules")
-	if err != nil {
-		return errors.Wrap(err, "deleting etcd rules PrometheusRule failed")
-	}
-
 	pr, err := t.factory.ControlPlanePrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing kubernetes mixin rules PrometheusRule failed")

@@ -236,11 +236,6 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus ServiceMonitor failed")
 	}
 
-	err = t.deleteDeprecatedServiceMonitors(ctx)
-	if err != nil {
-		return errors.Wrap(err, "deleting deprecated UserWorkload Prometheus ServiceMonitor failed")
-	}
-
 	smt, err := t.factory.PrometheusUserWorkloadThanosSidecarServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Thanos sidecar ServiceMonitor failed")
@@ -273,11 +268,6 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteServiceMonitor(ctx, smp)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload Prometheus ServiceMonitor failed")
-	}
-
-	err = t.deleteDeprecatedServiceMonitors(ctx)
-	if err != nil {
-		return errors.Wrap(err, "deleting deprecated UserWorkload Prometheus ServiceMonitor failed")
 	}
 
 	grpcTLS, err := t.factory.GRPCSecret()
@@ -436,23 +426,4 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 
 	err = t.client.DeleteConfigMap(ctx, cacm)
 	return errors.Wrap(err, "deleting UserWorkload serving certs CA Bundle ConfigMap failed")
-}
-
-func (t *PrometheusUserWorkloadTask) deleteDeprecatedServiceMonitors(ctx context.Context) error {
-	// TODO(bison): This can be removed after the 4.8 release.  The "prometheus"
-	// ServiceMonitor was renamed to "prometheus-user-workload" recently. See:
-	//
-	//   https://github.com/openshift/cluster-monitoring-operator/pull/1044
-	//   https://bugzilla.redhat.com/show_bug.cgi?id=1959278
-	//
-	deprecatedServiceMonitors := []string{"prometheus"}
-
-	for _, name := range deprecatedServiceMonitors {
-		err := t.client.DeleteServiceMonitorByNamespaceAndName(ctx, t.client.UserWorkloadNamespace(), name)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
