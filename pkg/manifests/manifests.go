@@ -109,6 +109,7 @@ var (
 	PrometheusK8sServiceThanosSidecar        = "prometheus-k8s/service-thanos-sidecar.yaml"
 	PrometheusK8sProxySecret                 = "prometheus-k8s/proxy-secret.yaml"
 	PrometheusRBACProxySecret                = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
+	PrometheusUserWorkloadRBACProxySecret    = "prometheus-user-workload/kube-rbac-proxy-secret.yaml"
 	PrometheusK8sRoute                       = "prometheus-k8s/route.yaml"
 	PrometheusK8sHtpasswd                    = "prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sServingCertsCABundle        = "prometheus-k8s/serving-certs-ca-bundle.yaml"
@@ -1139,6 +1140,17 @@ func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 	}
 
 	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
 
 	return s, nil
 }

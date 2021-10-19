@@ -188,6 +188,16 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "error creating UserWorkload Prometheus Client GRPC TLS secret")
 	}
 
+	rs, err := t.factory.PrometheusUserWorkloadRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC proxy Secret failed")
+	}
+
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "creating or updating UserWorkload Prometheus RBAC proxy Secret failed")
+	}
+
 	secret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
@@ -403,6 +413,16 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 	cacm, err := t.factory.PrometheusUserWorkloadServingCertsCABundle()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload serving certs CA Bundle ConfigMap failed")
+	}
+
+	rs, err := t.factory.PrometheusUserWorkloadRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC proxy Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "deleting or updating UserWorkload Prometheus RBAC proxy Secret failed")
 	}
 
 	amsSecret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
