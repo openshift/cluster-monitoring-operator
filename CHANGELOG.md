@@ -6,6 +6,7 @@
 - [#1402](https://github.com/openshift/cluster-monitoring-operator/pull/1402) Drop pod-centric cAdvisor metrics that are available at slice level.
 - [#1399](https://github.com/openshift/cluster-monitoring-operator/pull/1399) Rename ThanosSidecarUnhealthy to ThanosSidecarNoConnectionToStartedPrometheus and make it resilient to WAL replays.
 - [#1446](https://github.com/openshift/cluster-monitoring-operator/pull/1446) Bump Grafana version to 7.5.11
+- [#1439](https://github.com/openshift/cluster-monitoring-operator/pull/1439) Expose PodDisruptionBudget labels from kube-state-metrics metrics.
 
 ## 4.9
 
