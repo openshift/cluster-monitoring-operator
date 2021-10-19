@@ -531,6 +531,17 @@ spec:
       labels:
         namespace: kube-system
         severity: critical
+  - name: kubernetes-system-kube-proxy
+    rules:
+    - alert: KubeProxyDown
+      annotations:
+        description: KubeProxy has disappeared from Prometheus target discovery.
+        summary: Target disappeared from Prometheus target discovery.
+      expr: |
+        absent(up{job="kube-proxy"} == 1)
+      for: 15m
+      labels:
+        severity: critical
   - name: k8s.rules
     rules:
     - expr: |
