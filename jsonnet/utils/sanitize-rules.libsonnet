@@ -27,6 +27,14 @@ local excludedRules = [
     ],
   },
   {
+    name: 'kube-state-metrics',
+    rules: [
+      // We do not configure sharding for kube-state-metrics.
+      { alert: 'KubeStateMetricsShardingMismatch' },
+      { alert: 'KubeStateMetricsShardsMissing' },
+    ],
+  },
+  {
     name: 'kubernetes-system',
     rules: [
       { alert: 'KubeVersionMismatch' },
