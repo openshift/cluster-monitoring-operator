@@ -386,6 +386,7 @@ function(params)
               '--insecure-listen-address=127.0.0.1:9096',
               '--upstream=http://127.0.0.1:9093',
               '--label=namespace',
+              '--error-on-replace',
             ],
             resources: {
               requests: {

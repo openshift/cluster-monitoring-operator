@@ -533,6 +533,7 @@ function(params)
                   '--upstream=http://127.0.0.1:9090',
                   '--label=namespace',
                   '--enable-label-apis',
+                  '--error-on-replace',
                 ],
                 resources: {
                   requests: {

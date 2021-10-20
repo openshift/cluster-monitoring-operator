@@ -588,66 +588,94 @@ func assertTenancyForMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, q := range []string{"up", `up{namespace="should-be-overwritten"}`, fmt.Sprintf(`up{namespace="%s"}`, userWorkloadTestNs)} {
-		t.Logf("Running query %q", q)
+	for _, tc := range []struct {
+		name      string
+		query     string
+		expStatus int
+	}{
+		{
+			name:      "expect to add namespace label",
+			query:     "up",
+			expStatus: http.StatusOK,
+		},
+		{
+			name:      "expect no change and status 200",
+			query:     fmt.Sprintf(`up{namespace="%s"}`, userWorkloadTestNs),
+			expStatus: http.StatusOK,
+		},
+		{
+			name:      "expect to return HTTP 400 as it would overwrite the label value (we pass --error-on-replace to prom-label-proxy)",
+			query:     `up{namespace="should-be-overwritten"}`,
+			expStatus: http.StatusBadRequest,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Logf("Running query %q", tc.query)
 
-		err = framework.Poll(5*time.Second, time.Minute, func() error {
-			// The tenancy port (9092) is only exposed in-cluster so we need to use
-			// port forwarding to access kube-rbac-proxy.
-			host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9092)
+			err = framework.Poll(5*time.Second, time.Minute, func() error {
+				// The tenancy port (9092) is only exposed in-cluster so we need to use
+				// port forwarding to access kube-rbac-proxy.
+				host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9092)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer cleanUp()
+
+				client := framework.NewPrometheusClient(
+					host,
+					token,
+					&framework.QueryParameterInjector{
+						Name:  "namespace",
+						Value: userWorkloadTestNs,
+					},
+				)
+
+				b, err := client.PrometheusQueryWithStatus(tc.query, tc.expStatus)
+				if err != nil {
+					return err
+				}
+
+				if tc.expStatus != http.StatusOK {
+					// short circuit if we don't expect HTTP 200, as we
+					// don't need to parse the response
+					return nil
+				}
+
+				res, err := gabs.ParseJSON(b)
+				if err != nil {
+					return err
+				}
+
+				timeseries, err := res.ArrayElementP(0, "data.result")
+				if err != nil {
+					return err
+				}
+
+				labels, err := timeseries.Path("metric").ChildrenMap()
+				if err != nil {
+					return err
+				}
+
+				ns := labels["namespace"].Data().(string)
+				if ns != userWorkloadTestNs {
+					return errors.Errorf("expecting 'namespace' label to be %q, got %q", userWorkloadTestNs, ns)
+				}
+
+				value, err := timeseries.ArrayElementP(1, "value")
+				if err != nil {
+					return err
+				}
+
+				if value.Data().(string) != "1" {
+					return errors.Errorf("expecting value '1', got %q", value.Data().(string))
+				}
+
+				return nil
+			})
 			if err != nil {
-				t.Fatal(err)
+				t.Errorf("failed to query Thanos querier: %v", err)
 			}
-			defer cleanUp()
-
-			client := framework.NewPrometheusClient(
-				host,
-				token,
-				&framework.QueryParameterInjector{
-					Name:  "namespace",
-					Value: userWorkloadTestNs,
-				},
-			)
-
-			b, err := client.PrometheusQuery(q)
-			if err != nil {
-				return err
-			}
-
-			res, err := gabs.ParseJSON(b)
-			if err != nil {
-				return err
-			}
-
-			timeseries, err := res.ArrayElementP(0, "data.result")
-			if err != nil {
-				return err
-			}
-
-			labels, err := timeseries.Path("metric").ChildrenMap()
-			if err != nil {
-				return err
-			}
-
-			ns := labels["namespace"].Data().(string)
-			if ns != userWorkloadTestNs {
-				return errors.Errorf("expecting 'namespace' label to be %q, got %q", userWorkloadTestNs, ns)
-			}
-
-			value, err := timeseries.ArrayElementP(1, "value")
-			if err != nil {
-				return err
-			}
-
-			if value.Data().(string) != "1" {
-				return errors.Errorf("expecting value '1', got %q", value.Data().(string))
-			}
-
-			return nil
 		})
-		if err != nil {
-			t.Fatalf("failed to query Thanos querier: %v", err)
-		}
 	}
 
 	// Check that the account doesn't have to access the rules endpoint.
