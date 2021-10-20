@@ -52,7 +52,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
@@ -776,12 +775,9 @@ func (c *Client) CreateOrUpdateDeployment(ctx context.Context, dep *appsv1.Deplo
 			if err != nil {
 				return errors.Wrap(err, "deleting Deployment object failed")
 			}
-			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				return c.CreateDeployment(ctx, required)
-			})
-
-			if retryErr != nil {
-				return errors.Wrap(retryErr, "creating Deployment object failed after update failed")
+			err = c.CreateDeployment(ctx, required)
+			if err != nil {
+				return errors.Wrap(err, "creating Deployment object failed after update failed")
 			}
 		}
 		return errors.Wrap(err, "updating Deployment object failed")
@@ -965,11 +961,10 @@ func (c *Client) CreateOrUpdateDaemonSet(ctx context.Context, ds *appsv1.DaemonS
 			if err != nil {
 				return errors.Wrap(err, "deleting DaemonSet object failed")
 			}
-			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				return c.CreateDaemonSet(ctx, required)
-			})
-			if retryErr != nil {
-				return errors.Wrap(retryErr, "creating DaemonSet object failed after update failed")
+
+			err = c.CreateDaemonSet(ctx, required)
+			if err != nil {
+				return errors.Wrap(err, "creating DaemonSet object failed after update failed")
 			}
 		}
 		return errors.Wrap(err, "updating DaemonSet object failed")
