@@ -18,8 +18,9 @@ import (
 	"context"
 	"crypto/x509/pkix"
 	"fmt"
-	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 	"time"
+
+	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,7 +67,7 @@ func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
 	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
 		ic.highlyAvailableInfrastructure = false
 	}
-	if i.Status.Platform == configv1.IBMCloudPlatformType {
+	if i.Status.ControlPlaneTopology == configv1.ExternalTopologyMode {
 		ic.hostedControlPlane = true
 	}
 
