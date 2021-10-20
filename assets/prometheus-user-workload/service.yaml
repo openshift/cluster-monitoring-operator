@@ -20,7 +20,6 @@ spec:
     port: 10902
     targetPort: thanos-proxy
   selector:
-    app: prometheus
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
