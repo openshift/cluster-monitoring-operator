@@ -170,7 +170,6 @@ function(params)
         namespace: cfg.namespace,
       },
       data: {
-        'service-ca.crt': '',
       },
     },
 
