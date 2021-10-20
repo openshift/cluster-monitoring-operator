@@ -1,3 +1,4 @@
+local generateSecret = import '../utils/generate-secret.libsonnet';
 local grafana = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/grafana.libsonnet';
 
 function(params)
@@ -75,9 +76,8 @@ function(params)
         spec+: {
           endpoints: [
             {
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
               interval: '30s',
-              port: 'https',
+              port: 'metrics',
               scheme: 'https',
               tlsConfig: {
                 caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
@@ -116,11 +116,19 @@ function(params)
         },
       },
       spec+: {
-        ports: [{
-          name: 'https',
-          port: 3000,
-          targetPort: 'https',
-        }],
+        ports: [
+          {
+            name: 'https',
+            port: 3000,
+            targetPort: 'https',
+          },
+          {
+            name: 'metrics',
+            port: 3002,
+            targetPort: 'metrics',
+          },
+
+        ],
         type: 'ClusterIP',
       },
     },
@@ -137,6 +145,12 @@ function(params)
       },
       type: 'Opaque',
       data: {},
+    },
+
+    kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'grafana-kube-rbac-proxy-metric') + {
+      metadata+: {
+        labels: { 'app.kubernetes.io/name': 'grafana' },
+      },
     },
 
     // In order for the oauth proxy to perform a TokenReview and
@@ -261,6 +275,53 @@ function(params)
                   },
                 ],
               },
+              {
+                // This kube-rbac-proxy sidecar is responsible for serving the /metrics endpoint and requires client TLS certificates for authentication.
+                // We can't use oauth-proxy for this because it only supports bearer token authentication.
+                name: 'kube-rbac-proxy-metrics',
+                image: cfg.kubeRbacProxyImage,
+                resources: {
+                  requests: {
+                    cpu: '1m',
+                    memory: '15Mi',
+                  },
+                },
+                ports: [
+                  {
+                    containerPort: 3002,
+                    name: 'metrics',
+                  },
+                ],
+                args: [
+                  '--secure-listen-address=0.0.0.0:3002',
+                  '--upstream=http://127.0.0.1:3001',
+                  '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                  '--tls-cert-file=/etc/tls/private/tls.crt',
+                  '--tls-private-key-file=/etc/tls/private/tls.key',
+                  '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                  '--client-ca-file=/etc/tls/client/client-ca.crt',
+                  '--logtostderr=true',
+                  '--allow-paths=/metrics',
+                ],
+                terminationMessagePolicy: 'FallbackToLogsOnError',
+                volumeMounts: [
+                  {
+                    mountPath: '/etc/kube-rbac-proxy',
+                    name: 'secret-' + $.kubeRbacProxyMetricSecret.metadata.name,
+                    readOnly: true,
+                  },
+                  {
+                    mountPath: '/etc/tls/private',
+                    name: 'secret-grafana-tls',
+                    readOnly: true,
+                  },
+                  {
+                    mountPath: '/etc/tls/client',
+                    name: 'metrics-client-ca',
+                    readOnly: true,
+                  },
+                ],
+              },
             ],
             volumes+: [
               {
@@ -270,9 +331,21 @@ function(params)
                 },
               },
               {
+                name: 'secret-' + $.kubeRbacProxyMetricSecret.metadata.name,
+                secret: {
+                  secretName: $.kubeRbacProxyMetricSecret.metadata.name,
+                },
+              },
+              {
                 name: 'secret-grafana-proxy',
                 secret: {
                   secretName: 'grafana-proxy',
+                },
+              },
+              {
+                name: 'metrics-client-ca',
+                configMap: {
+                  name: 'metrics-client-ca',
                 },
               },
             ],

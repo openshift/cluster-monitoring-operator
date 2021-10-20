@@ -22,6 +22,9 @@ spec:
   - name: tenancy-rules
     port: 9093
     targetPort: tenancy-rules
+  - name: metrics
+    port: 9094
+    targetPort: metrics
   selector:
     app.kubernetes.io/component: query-layer
     app.kubernetes.io/instance: thanos-querier

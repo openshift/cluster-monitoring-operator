@@ -1,3 +1,4 @@
+local generateSecret = import '../utils/generate-secret.libsonnet';
 local querier = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-query.libsonnet';
 
 function(params)
@@ -179,6 +180,12 @@ function(params)
       },
     },
 
+    kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'thanos-querier-kube-rbac-proxy-metrics') + {
+      metadata+: {
+        labels: { 'app.kubernetes.io/name': 'thanos-query' },
+      },
+    },
+
     // Same as kubeRbacProxySecret but performs a SubjectAccessReview
     // asserting if the request bearer token in flight has permissions
     // to access the prometheusrules.monitoring.coreos.com API.
@@ -233,19 +240,28 @@ function(params)
         labels: tq.config.commonLabels,
       },
       spec+: {
-        ports: [{
-          name: 'web',
-          port: 9091,
-          targetPort: 'web',
-        }, {
-          name: 'tenancy',
-          port: 9092,
-          targetPort: 'tenancy',
-        }, {
-          name: 'tenancy-rules',
-          port: 9093,
-          targetPort: 'tenancy-rules',
-        }],
+        ports: [
+          {
+            name: 'web',
+            port: 9091,
+            targetPort: 'web',
+          },
+          {
+            name: 'tenancy',
+            port: 9092,
+            targetPort: 'tenancy',
+          },
+          {
+            name: 'tenancy-rules',
+            port: 9093,
+            targetPort: 'tenancy-rules',
+          },
+          {
+            name: 'metrics',
+            port: 9094,
+            targetPort: 'metrics',
+          },
+        ],
         type: 'ClusterIP',
       },
     },
@@ -255,7 +271,7 @@ function(params)
         spec+: {
           endpoints: [
             {
-              port: 'web',
+              port: 'metrics',
               interval: '30s',
               scheme: 'https',
               tlsConfig: {
@@ -264,7 +280,6 @@ function(params)
                 certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
                 keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
               },
-              bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
             },
           ],
         },
@@ -340,6 +355,18 @@ function(params)
                 name: 'secret-thanos-querier-kube-rbac-proxy-rules',
                 secret: {
                   secretName: 'thanos-querier-kube-rbac-proxy-rules',
+                },
+              },
+              {
+                name: 'secret-' + $.kubeRbacProxyMetricSecret.metadata.name,
+                secret: {
+                  secretName: $.kubeRbacProxyMetricSecret.metadata.name,
+                },
+              },
+              {
+                name: 'metrics-client-ca',
+                configMap: {
+                  name: 'metrics-client-ca',
                 },
               },
             ],
@@ -549,6 +576,51 @@ function(params)
                   {
                     mountPath: '/etc/kube-rbac-proxy',
                     name: 'secret-' + $.kubeRbacProxyRulesSecret.metadata.name,
+                  },
+                ],
+              },
+              {
+                // TODO: merge this metric proxy with tenancy proxy when the issue below is fixed:
+                // https://github.com/brancz/kube-rbac-proxy/issues/146
+                name: 'kube-rbac-proxy-metrics',
+                image: cfg.kubeRbacProxyImage,
+                resources: {
+                  requests: {
+                    memory: '15Mi',
+                    cpu: '1m',
+                  },
+                },
+                ports: [
+                  {
+                    containerPort: 9094,
+                    name: 'metrics',
+                  },
+                ],
+                args: [
+                  '--secure-listen-address=0.0.0.0:9094',
+                  '--upstream=http://127.0.0.1:9090',
+                  '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                  '--tls-cert-file=/etc/tls/private/tls.crt',
+                  '--tls-private-key-file=/etc/tls/private/tls.key',
+                  '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                  '--client-ca-file=/etc/tls/client/client-ca.crt',
+                  '--logtostderr=true',
+                  '--allow-paths=/metrics',
+                ],
+                terminationMessagePolicy: 'FallbackToLogsOnError',
+                volumeMounts: [
+                  {
+                    mountPath: '/etc/tls/private',
+                    name: 'secret-thanos-querier-tls',
+                  },
+                  {
+                    mountPath: '/etc/kube-rbac-proxy',
+                    name: 'secret-' + $.kubeRbacProxyMetricSecret.metadata.name,
+                  },
+                  {
+                    mountPath: '/etc/tls/client',
+                    name: 'metrics-client-ca',
+                    readOnly: true,
                   },
                 ],
               },

@@ -25,7 +25,23 @@ function(params) {
   clusterRole: tc.telemeterClient.clusterRole,
   serviceAccount: tc.telemeterClient.serviceAccount,
   service: tc.telemeterClient.service,
-  serviceMonitor: tc.telemeterClient.serviceMonitor,
+  serviceMonitor: tc.telemeterClient.serviceMonitor {
+    spec+: {
+      endpoints: [
+        {
+          port: 'https',
+          interval: '30s',
+          scheme: 'https',
+          tlsConfig: {
+            caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+            serverName: 'server-name-replaced-at-runtime',
+            certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+            keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
+          },
+        },
+      ],
+    },
+  },
   secret: tc.telemeterClient.secret,
   servingCertsCABundle: tc.telemeterClient.servingCertsCABundle,
   kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'telemeter-client-kube-rbac-proxy-config'),
@@ -55,11 +71,17 @@ function(params) {
                     image: cfg.kubeRbacProxyImage,
                     args+: [
                       '--config-file=/etc/kube-rbac-policy/config.yaml',
+                      '--client-ca-file=/etc/tls/client/client-ca.crt',
                     ],
                     volumeMounts+: [
                       {
                         mountPath: '/etc/kube-rbac-policy',
-                        name: 'telemeter-client-kube-rbac-proxy-config',
+                        name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+                        readOnly: true,
+                      },
+                      {
+                        mountPath: '/etc/tls/client',
+                        name: 'metrics-client-ca',
                         readOnly: true,
                       },
                     ],
@@ -70,9 +92,15 @@ function(params) {
             ),
           volumes+: [
             {
-              name: 'telemeter-client-kube-rbac-proxy-config',
+              name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
               secret: {
-                secretName: 'telemeter-client-kube-rbac-proxy-config',
+                secretName: $.kubeRbacProxySecret.metadata.name,
+              },
+            },
+            {
+              name: 'metrics-client-ca',
+              configMap: {
+                name: 'metrics-client-ca',
               },
             },
           ],
@@ -95,4 +123,5 @@ function(params) {
       'ca-bundle.crt': '',
     },
   },
+
 }

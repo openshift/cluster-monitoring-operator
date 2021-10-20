@@ -1,6 +1,7 @@
 local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/alertmanager.libsonnet';
 // TODO: replace current addition of kube-rbac-proxy with upstream lib
 // local krp = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
+local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
   local cfg = params;
@@ -85,6 +86,11 @@ function(params)
             name: 'tenancy',
             port: 9092,
             targetPort: 'tenancy',
+          },
+          {
+            name: 'metrics',
+            port: 9097,
+            targetPort: 'metrics',
           },
         ],
         type: 'ClusterIP',
@@ -183,13 +189,19 @@ function(params)
       },
     },
 
+    kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'alertmanager-kube-rbac-proxy-metric') + {
+      metadata+: {
+        labels: { 'app.kubernetes.io/name': 'alertmanager-main' },
+      },
+    },
+
     // This changes the alertmanager to be scraped with TLS, authN and authZ,
     // which are not present in kube-prometheus.
     serviceMonitor+: {
       spec+: {
         endpoints: [
           {
-            port: 'web',
+            port: 'metrics',
             interval: '30s',
             scheme: 'https',
             tlsConfig: {
@@ -198,7 +210,6 @@ function(params)
               certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
               keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
-            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
           },
         ],
       },
@@ -218,6 +229,7 @@ function(params)
           'alertmanager-main-tls',
           'alertmanager-main-proxy',
           $.kubeRbacProxySecret.metadata.name,
+          $.kubeRbacProxyMetricSecret.metadata.name,
         ],
         listenLocal: true,
         resources: {
@@ -307,7 +319,6 @@ function(params)
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--logtostderr=true',
-              '--v=10',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
@@ -318,6 +329,53 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-alertmanager-main-tls',
+              },
+            ],
+          },
+          {
+            // TODO: merge this metric proxy with tenancy proxy when the issue below is fixed:
+            // https://github.com/brancz/kube-rbac-proxy/issues/146
+            name: 'kube-rbac-proxy-metric',
+            image: cfg.kubeRbacProxyImage,
+            resources: {
+              requests: {
+                cpu: '1m',
+                memory: '15Mi',
+              },
+            },
+            ports: [
+              {
+                containerPort: 9097,
+                name: 'metrics',
+              },
+            ],
+            args: [
+              '--secure-listen-address=0.0.0.0:9097',
+              '--upstream=http://127.0.0.1:9093',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
+              '--logtostderr=true',
+              '--allow-paths=/metrics',
+            ],
+            terminationMessagePolicy: 'FallbackToLogsOnError',
+            volumeMounts: [
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxyMetricSecret.metadata.name,
+                readOnly: true,
+              },
+              {
+                mountPath: '/etc/tls/private',
+                name: 'secret-alertmanager-main-tls',
+                readOnly: true,
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'metrics-client-ca',
+                readOnly: true,
               },
             ],
           },
@@ -344,6 +402,14 @@ function(params)
                 cpu: '1m',
                 memory: '10Mi',
               },
+            },
+          },
+        ],
+        volumes+: [
+          {
+            name: 'metrics-client-ca',
+            configMap: {
+              name: 'metrics-client-ca',
             },
           },
         ],

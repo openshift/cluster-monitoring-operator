@@ -195,6 +195,8 @@ local inCluster =
             },
           },
         },
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
       kubeStateMetrics: {
         namespace: $.values.common.namespace,
@@ -310,6 +312,7 @@ local inCluster =
         namespace: $.values.common.namespace,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         commonLabels+: $.values.common.commonLabels,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
       controlPlane: {
         namespace: $.values.common.namespace,

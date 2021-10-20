@@ -137,6 +137,36 @@ spec:
         - mountPath: /etc/proxy/secrets
           name: secret-grafana-proxy
           readOnly: false
+      - args:
+        - --secure-listen-address=0.0.0.0:3002
+        - --upstream=http://127.0.0.1:3001
+        - --config-file=/etc/kube-rbac-proxy/config.yaml
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - --client-ca-file=/etc/tls/client/client-ca.crt
+        - --logtostderr=true
+        - --allow-paths=/metrics
+        image: quay.io/brancz/kube-rbac-proxy:v0.11.0
+        name: kube-rbac-proxy-metrics
+        ports:
+        - containerPort: 3002
+          name: metrics
+        resources:
+          requests:
+            cpu: 1m
+            memory: 15Mi
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/kube-rbac-proxy
+          name: secret-grafana-kube-rbac-proxy-metric
+          readOnly: true
+        - mountPath: /etc/tls/private
+          name: secret-grafana-tls
+          readOnly: true
+        - mountPath: /etc/tls/client
+          name: metrics-client-ca
+          readOnly: true
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -196,6 +226,12 @@ spec:
       - name: secret-grafana-tls
         secret:
           secretName: grafana-tls
+      - name: secret-grafana-kube-rbac-proxy-metric
+        secret:
+          secretName: grafana-kube-rbac-proxy-metric
       - name: secret-grafana-proxy
         secret:
           secretName: grafana-proxy
+      - configMap:
+          name: metrics-client-ca
+        name: metrics-client-ca

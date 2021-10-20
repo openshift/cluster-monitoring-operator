@@ -73,7 +73,6 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --logtostderr=true
-    - --v=10
     image: quay.io/brancz/kube-rbac-proxy:v0.11.0
     name: kube-rbac-proxy
     ports:
@@ -89,6 +88,36 @@ spec:
       name: secret-alertmanager-kube-rbac-proxy
     - mountPath: /etc/tls/private
       name: secret-alertmanager-main-tls
+  - args:
+    - --secure-listen-address=0.0.0.0:9097
+    - --upstream=http://127.0.0.1:9093
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - --client-ca-file=/etc/tls/client/client-ca.crt
+    - --logtostderr=true
+    - --allow-paths=/metrics
+    image: quay.io/brancz/kube-rbac-proxy:v0.11.0
+    name: kube-rbac-proxy-metric
+    ports:
+    - containerPort: 9097
+      name: metrics
+    resources:
+      requests:
+        cpu: 1m
+        memory: 15Mi
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-alertmanager-kube-rbac-proxy-metric
+      readOnly: true
+    - mountPath: /etc/tls/private
+      name: secret-alertmanager-main-tls
+      readOnly: true
+    - mountPath: /etc/tls/client
+      name: metrics-client-ca
+      readOnly: true
   - args:
     - --insecure-listen-address=127.0.0.1:9096
     - --upstream=http://127.0.0.1:9093
@@ -127,9 +156,14 @@ spec:
   - alertmanager-main-tls
   - alertmanager-main-proxy
   - alertmanager-kube-rbac-proxy
+  - alertmanager-kube-rbac-proxy-metric
   securityContext:
     fsGroup: 65534
     runAsNonRoot: true
     runAsUser: 65534
   serviceAccountName: alertmanager-main
   version: 0.22.2
+  volumes:
+  - configMap:
+      name: metrics-client-ca
+    name: metrics-client-ca

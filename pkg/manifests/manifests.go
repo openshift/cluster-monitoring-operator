@@ -54,18 +54,19 @@ const (
 )
 
 var (
-	AlertmanagerConfig             = "alertmanager/secret.yaml"
-	AlertmanagerService            = "alertmanager/service.yaml"
-	AlertmanagerProxySecret        = "alertmanager/proxy-secret.yaml"
-	AlertmanagerMain               = "alertmanager/alertmanager.yaml"
-	AlertmanagerServiceAccount     = "alertmanager/service-account.yaml"
-	AlertmanagerClusterRoleBinding = "alertmanager/cluster-role-binding.yaml"
-	AlertmanagerClusterRole        = "alertmanager/cluster-role.yaml"
-	AlertmanagerRBACProxySecret    = "alertmanager/kube-rbac-proxy-secret.yaml"
-	AlertmanagerRoute              = "alertmanager/route.yaml"
-	AlertmanagerServiceMonitor     = "alertmanager/service-monitor.yaml"
-	AlertmanagerTrustedCABundle    = "alertmanager/trusted-ca-bundle.yaml"
-	AlertmanagerPrometheusRule     = "alertmanager/prometheus-rule.yaml"
+	AlertmanagerConfig                = "alertmanager/secret.yaml"
+	AlertmanagerService               = "alertmanager/service.yaml"
+	AlertmanagerProxySecret           = "alertmanager/proxy-secret.yaml"
+	AlertmanagerMain                  = "alertmanager/alertmanager.yaml"
+	AlertmanagerServiceAccount        = "alertmanager/service-account.yaml"
+	AlertmanagerClusterRoleBinding    = "alertmanager/cluster-role-binding.yaml"
+	AlertmanagerClusterRole           = "alertmanager/cluster-role.yaml"
+	AlertmanagerRBACProxySecret       = "alertmanager/kube-rbac-proxy-secret.yaml"
+	AlertmanagerRBACProxyMetricSecret = "alertmanager/kube-rbac-proxy-metric-secret.yaml"
+	AlertmanagerRoute                 = "alertmanager/route.yaml"
+	AlertmanagerServiceMonitor        = "alertmanager/service-monitor.yaml"
+	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
+	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
 
 	KubeStateMetricsClusterRoleBinding  = "kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole         = "kube-state-metrics/cluster-role.yaml"
@@ -168,19 +169,20 @@ var (
 	PrometheusOperatorUserWorkloadDeployment         = "prometheus-operator-user-workload/deployment.yaml"
 	PrometheusOperatorUserWorkloadServiceMonitor     = "prometheus-operator-user-workload/service-monitor.yaml"
 
-	GrafanaClusterRoleBinding   = "grafana/cluster-role-binding.yaml"
-	GrafanaClusterRole          = "grafana/cluster-role.yaml"
-	GrafanaConfigSecret         = "grafana/config.yaml"
-	GrafanaDatasourcesSecret    = "grafana/dashboard-datasources.yaml"
-	GrafanaDashboardDefinitions = "grafana/dashboard-definitions.yaml"
-	GrafanaDashboardSources     = "grafana/dashboard-sources.yaml"
-	GrafanaDeployment           = "grafana/deployment.yaml"
-	GrafanaProxySecret          = "grafana/proxy-secret.yaml"
-	GrafanaRoute                = "grafana/route.yaml"
-	GrafanaServiceAccount       = "grafana/service-account.yaml"
-	GrafanaService              = "grafana/service.yaml"
-	GrafanaServiceMonitor       = "grafana/service-monitor.yaml"
-	GrafanaTrustedCABundle      = "grafana/trusted-ca-bundle.yaml"
+	GrafanaClusterRoleBinding    = "grafana/cluster-role-binding.yaml"
+	GrafanaClusterRole           = "grafana/cluster-role.yaml"
+	GrafanaConfigSecret          = "grafana/config.yaml"
+	GrafanaDatasourcesSecret     = "grafana/dashboard-datasources.yaml"
+	GrafanaDashboardDefinitions  = "grafana/dashboard-definitions.yaml"
+	GrafanaDashboardSources      = "grafana/dashboard-sources.yaml"
+	GrafanaDeployment            = "grafana/deployment.yaml"
+	GrafanaRBACProxyMetricSecret = "grafana/kube-rbac-proxy-metric-secret.yaml"
+	GrafanaProxySecret           = "grafana/proxy-secret.yaml"
+	GrafanaRoute                 = "grafana/route.yaml"
+	GrafanaServiceAccount        = "grafana/service-account.yaml"
+	GrafanaService               = "grafana/service.yaml"
+	GrafanaServiceMonitor        = "grafana/service-monitor.yaml"
+	GrafanaTrustedCABundle       = "grafana/trusted-ca-bundle.yaml"
 
 	ClusterMonitoringOperatorService            = "cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor     = "cluster-monitoring-operator/service-monitor.yaml"
@@ -206,21 +208,22 @@ var (
 	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
 	TelemeterClientKubeRbacProxySecret    = "telemeter-client/kube-rbac-proxy-secret.yaml"
 
-	ThanosQuerierDeployment           = "thanos-querier/deployment.yaml"
-	ThanosQuerierPodDisruptionBudget  = "thanos-querier/pod-disruption-budget.yaml"
-	ThanosQuerierService              = "thanos-querier/service.yaml"
-	ThanosQuerierServiceMonitor       = "thanos-querier/service-monitor.yaml"
-	ThanosQuerierPrometheusRule       = "thanos-querier/prometheus-rule.yaml"
-	ThanosQuerierRoute                = "thanos-querier/route.yaml"
-	ThanosQuerierOauthCookieSecret    = "thanos-querier/oauth-cookie-secret.yaml"
-	ThanosQuerierHtpasswdSecret       = "thanos-querier/oauth-htpasswd-secret.yaml"
-	ThanosQuerierRBACProxySecret      = "thanos-querier/kube-rbac-proxy-secret.yaml"
-	ThanosQuerierRBACProxyRulesSecret = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
-	ThanosQuerierServiceAccount       = "thanos-querier/service-account.yaml"
-	ThanosQuerierClusterRole          = "thanos-querier/cluster-role.yaml"
-	ThanosQuerierClusterRoleBinding   = "thanos-querier/cluster-role-binding.yaml"
-	ThanosQuerierGrpcTLSSecret        = "thanos-querier/grpc-tls-secret.yaml"
-	ThanosQuerierTrustedCABundle      = "thanos-querier/trusted-ca-bundle.yaml"
+	ThanosQuerierDeployment             = "thanos-querier/deployment.yaml"
+	ThanosQuerierPodDisruptionBudget    = "thanos-querier/pod-disruption-budget.yaml"
+	ThanosQuerierService                = "thanos-querier/service.yaml"
+	ThanosQuerierServiceMonitor         = "thanos-querier/service-monitor.yaml"
+	ThanosQuerierPrometheusRule         = "thanos-querier/prometheus-rule.yaml"
+	ThanosQuerierRoute                  = "thanos-querier/route.yaml"
+	ThanosQuerierOauthCookieSecret      = "thanos-querier/oauth-cookie-secret.yaml"
+	ThanosQuerierHtpasswdSecret         = "thanos-querier/oauth-htpasswd-secret.yaml"
+	ThanosQuerierRBACProxySecret        = "thanos-querier/kube-rbac-proxy-secret.yaml"
+	ThanosQuerierRBACProxyRulesSecret   = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
+	ThanosQuerierRBACProxyMetricsSecret = "thanos-querier/kube-rbac-proxy-metric-secret.yaml"
+	ThanosQuerierServiceAccount         = "thanos-querier/service-account.yaml"
+	ThanosQuerierClusterRole            = "thanos-querier/cluster-role.yaml"
+	ThanosQuerierClusterRoleBinding     = "thanos-querier/cluster-role-binding.yaml"
+	ThanosQuerierGrpcTLSSecret          = "thanos-querier/grpc-tls-secret.yaml"
+	ThanosQuerierTrustedCABundle        = "thanos-querier/trusted-ca-bundle.yaml"
 
 	ThanosRulerCustomResource               = "thanos-ruler/thanos-ruler.yaml"
 	ThanosRulerService                      = "thanos-ruler/service.yaml"
@@ -474,6 +477,8 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 			}
 		case "kube-rbac-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+		case "kube-rbac-proxy-metric":
+			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		case "prom-label-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}
@@ -486,6 +491,17 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) AlertmanagerRBACProxyMetricSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxyMetricSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1167,6 +1183,17 @@ func (f *Factory) ThanosQuerierRBACProxySecret() (*v1.Secret, error) {
 }
 func (f *Factory) ThanosQuerierRBACProxyRulesSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyRulesSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ThanosQuerierRBACProxyMetricsSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyMetricsSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -2383,6 +2410,8 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 				})
 				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
 			}
+		case "kube-rbac-proxy-metrics":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		}
 	}
 
@@ -2397,6 +2426,17 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 	d.Namespace = f.namespace
 
 	return d, nil
+}
+
+func (f *Factory) GrafanaRBACProxyMetricSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaRBACProxyMetricSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) GrafanaProxySecret() (*v1.Secret, error) {
@@ -3072,6 +3112,9 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 
 		case "kube-rbac-proxy-rules":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+
+		case "kube-rbac-proxy-metrics":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 		}
 	}
 
@@ -3126,7 +3169,7 @@ func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
 	}
 
 	var found bool
-	const endpointPort = "web"
+	const endpointPort = "metrics"
 	for i := range sm.Spec.Endpoints {
 		if sm.Spec.Endpoints[i].Port == endpointPort {
 			found = true
