@@ -1872,7 +1872,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-cluster-total
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -3236,7 +3236,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-etcd
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -6253,7 +6253,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-k8s-resources-cluster
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -8990,7 +8990,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-k8s-resources-namespace
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -9961,7 +9961,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-k8s-resources-node
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -12381,7 +12381,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-k8s-resources-pod
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -14360,7 +14360,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-k8s-resources-workload
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -16504,7 +16504,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-k8s-resources-workloads-namespace
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -17961,7 +17961,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-namespace-by-pod
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -19017,7 +19017,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-node-cluster-rsrc-use
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -20099,7 +20099,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-node-rsrc-use
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -21320,7 +21320,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-pod-total
     namespace: openshift-monitoring
 - apiVersion: v1
@@ -22548,7 +22548,7 @@ items:
       app.kubernetes.io/component: grafana
       app.kubernetes.io/name: grafana
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 7.5.5
+      app.kubernetes.io/version: 7.5.11
     name: grafana-dashboard-prometheus
     namespace: openshift-monitoring
 kind: ConfigMapList

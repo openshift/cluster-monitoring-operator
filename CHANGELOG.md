@@ -5,6 +5,7 @@
 - [#1299](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose expose /api/v1/labels endpoint for Thanos query.
 - [#1402](https://github.com/openshift/cluster-monitoring-operator/pull/1402) Drop pod-centric cAdvisor metrics that are available at slice level.
 - [#1399](https://github.com/openshift/cluster-monitoring-operator/pull/1399) Rename ThanosSidecarUnhealthy to ThanosSidecarNoConnectionToStartedPrometheus and make it resilient to WAL replays.
+- [#1446](https://github.com/openshift/cluster-monitoring-operator/pull/1446) Bump Grafana version to 7.5.11
 
 ## 4.9
 

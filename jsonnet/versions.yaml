@@ -15,7 +15,7 @@ repos:
   thanos: openshift/thanos
 versions:
   alertmanager: 0.22.2
-  grafana: 7.5.5
+  grafana: 7.5.11
   kubeRbacProxy: 0.11.0
   kubeStateMetrics: 2.1.1
   nodeExporter: 1.2.2
