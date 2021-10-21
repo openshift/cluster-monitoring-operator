@@ -11,6 +11,8 @@ local servingCertsCABundleDirectory = 'ssl/certs';
 local servingCertsCABundleFileName = 'service-ca.crt';
 local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory;
 
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
+
 local prometheusAdapter = (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet');
 
 function(params)
@@ -155,12 +157,7 @@ function(params)
                     name: prometheusAdapterPrometheusConfig,
                   },
                 },
-                {
-                  name: servingCertsCABundle,
-                  configMap: {
-                    name: 'serving-certs-ca-bundle',
-                  },
-                },
+                generateCertInjection.SCOCaBundleVolume(servingCertsCABundle),
               ],
               securityContext: {},
               priorityClassName: 'system-cluster-critical',

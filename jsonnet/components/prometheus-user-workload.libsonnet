@@ -65,16 +65,7 @@ function(params)
       },
     },
 
-    servingCertsCaBundle+: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata+: {
-        name: 'serving-certs-ca-bundle',
-        namespace: cfg.namespace,
-        annotations: { 'service.alpha.openshift.io/inject-cabundle': 'true' },
-      },
-      data: {},
-    },
+    servingCertsCaBundle+: generateCertInjection.SCOCaBundleCM(cfg.namespace, 'serving-certs-ca-bundle'),
 
     // As Prometheus is protected by the kube-rbac-proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.

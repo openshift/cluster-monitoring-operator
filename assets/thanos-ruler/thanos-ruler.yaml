@@ -103,6 +103,9 @@ spec:
   serviceAccountName: thanos-ruler
   volumes:
   - configmap:
+      items:
+      - key: service-ca.crt
+        path: service-ca.crt
       name: serving-certs-ca-bundle
     name: serving-certs-ca-bundle
   - name: secret-thanos-ruler-tls

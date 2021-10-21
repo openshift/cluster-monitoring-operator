@@ -91,16 +91,7 @@ function(params)
       },
     },
 
-    servingCertsCaBundle+: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata+: {
-        name: 'serving-certs-ca-bundle',
-        namespace: cfg.namespace,
-        annotations: { 'service.alpha.openshift.io/inject-cabundle': 'true' },
-      },
-      data: {},
-    },
+    servingCertsCaBundle+: generateCertInjection.SCOCaBundleCM(cfg.namespace, 'serving-certs-ca-bundle'),
 
     // Even though this bundle will be frequently rotated by the CSR
     // controller, there is no need to add a ConfigMap reloader to

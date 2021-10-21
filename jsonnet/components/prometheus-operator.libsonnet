@@ -1,6 +1,8 @@
 local tlsVolumeName = 'prometheus-operator-tls';
 local certsCAVolumeName = 'operator-certs-ca-bundle';
 
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
+
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 
 function(params)
@@ -105,12 +107,7 @@ function(params)
                 },
 
               },
-              {
-                name: certsCAVolumeName,
-                configMap: {
-                  name: certsCAVolumeName,
-                },
-              },
+              generateCertInjection.SCOCaBundleVolume(certsCAVolumeName),
               {
                 name: 'metrics-client-ca',
                 configMap: {
@@ -153,20 +150,7 @@ function(params)
       },
     },
 
-    operatorCertsCaBundle: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata: {
-        annotations: {
-          'service.alpha.openshift.io/inject-cabundle': 'true',
-        },
-        name: certsCAVolumeName,
-        namespace: cfg.namespace,
-      },
-      data: {
-        'service-ca.crt': '',
-      },
-    },
+    operatorCertsCaBundle: generateCertInjection.SCOCaBundleCM(cfg.namespace, certsCAVolumeName),
 
     prometheusRuleValidatingWebhook: {
       apiVersion: 'admissionregistration.k8s.io/v1',
