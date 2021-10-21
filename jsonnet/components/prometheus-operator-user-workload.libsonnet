@@ -1,6 +1,7 @@
 local tlsVolumeName = 'prometheus-operator-user-workload-tls';
 
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
+local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
   local cfg = params;
@@ -31,7 +32,7 @@ function(params)
         name: 'prometheus-user-workload-operator',
       },
     },
-
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'prometheus-operator-uwm-kube-rbac-proxy-config'),
     deployment+: {
       spec+: {
         template+: {
@@ -77,13 +78,21 @@ function(params)
                       args+: [
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
+                        '--config-file=/etc/kube-rbac-policy/config.yaml',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts: [{
-                        mountPath: '/etc/tls/private',
-                        name: tlsVolumeName,
-                        readOnly: false,
-                      }],
+                      volumeMounts: [
+                        {
+                          mountPath: '/etc/tls/private',
+                          name: tlsVolumeName,
+                          readOnly: false,
+                        },
+                        {
+                          mountPath: '/etc/kube-rbac-policy',
+                          name: 'prometheus-operator-uwm-kube-rbac-proxy-config',
+                          readOnly: true,
+                        },
+                      ],
                       securityContext: {},
                       resources: {
                         requests: {
@@ -96,12 +105,20 @@ function(params)
                     c,
                 super.containers,
               ),
-            volumes+: [{
-              name: tlsVolumeName,
-              secret: {
-                secretName: 'prometheus-operator-user-workload-tls',
+            volumes+: [
+              {
+                name: tlsVolumeName,
+                secret: {
+                  secretName: 'prometheus-operator-user-workload-tls',
+                },
               },
-            }],
+              {
+                name: 'prometheus-operator-uwm-kube-rbac-proxy-config',
+                secret: {
+                  secretName: 'prometheus-operator-uwm-kube-rbac-proxy-config',
+                },
+              },
+            ],
           },
         },
       },

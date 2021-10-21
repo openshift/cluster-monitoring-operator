@@ -163,12 +163,13 @@ var (
 	PrometheusOperatorPrometheusRule        = "prometheus-operator/prometheus-rule.yaml"
 	PrometheusOperatorKubeRbacProxySecret   = "prometheus-operator/kube-rbac-proxy-secret.yaml"
 
-	PrometheusOperatorUserWorkloadServiceAccount     = "prometheus-operator-user-workload/service-account.yaml"
-	PrometheusOperatorUserWorkloadClusterRole        = "prometheus-operator-user-workload/cluster-role.yaml"
-	PrometheusOperatorUserWorkloadClusterRoleBinding = "prometheus-operator-user-workload/cluster-role-binding.yaml"
-	PrometheusOperatorUserWorkloadService            = "prometheus-operator-user-workload/service.yaml"
-	PrometheusOperatorUserWorkloadDeployment         = "prometheus-operator-user-workload/deployment.yaml"
-	PrometheusOperatorUserWorkloadServiceMonitor     = "prometheus-operator-user-workload/service-monitor.yaml"
+	PrometheusOperatorUserWorkloadServiceAccount      = "prometheus-operator-user-workload/service-account.yaml"
+	PrometheusOperatorUserWorkloadClusterRole         = "prometheus-operator-user-workload/cluster-role.yaml"
+	PrometheusOperatorUserWorkloadClusterRoleBinding  = "prometheus-operator-user-workload/cluster-role-binding.yaml"
+	PrometheusOperatorUserWorkloadService             = "prometheus-operator-user-workload/service.yaml"
+	PrometheusOperatorUserWorkloadDeployment          = "prometheus-operator-user-workload/deployment.yaml"
+	PrometheusOperatorUserWorkloadServiceMonitor      = "prometheus-operator-user-workload/service-monitor.yaml"
+	PrometheusOperatorUserWorkloadKubeRbacProxySecret = "prometheus-operator-user-workload/kube-rbac-proxy-secret.yaml"
 
 	GrafanaClusterRoleBinding    = "grafana/cluster-role-binding.yaml"
 	GrafanaClusterRole           = "grafana/cluster-role.yaml"
@@ -2014,6 +2015,17 @@ func (f *Factory) PrometheusOperatorUserWorkloadClusterRoleBinding() (*rbacv1.Cl
 	crb.Subjects[0].Namespace = f.namespaceUserWorkload
 
 	return crb, nil
+}
+
+func (f *Factory) PrometheusOperatorUserWorkloadCRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadKubeRbacProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
 }
 
 func (f *Factory) PrometheusOperatorClusterRole() (*rbacv1.ClusterRole, error) {
