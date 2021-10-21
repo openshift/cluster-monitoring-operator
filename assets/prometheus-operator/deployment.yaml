@@ -63,6 +63,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt
+        - --config-file=/etc/kube-rbac-policy/config.yaml
         image: quay.io/brancz/kube-rbac-proxy:v0.11.0
         name: kube-rbac-proxy
         ports:
@@ -84,6 +85,9 @@ spec:
         - mountPath: /etc/tls/client
           name: metrics-client-ca
           readOnly: false
+        - mountPath: /etc/kube-rbac-policy
+          name: prometheus-operator-kube-rbac-proxy-config
+          readOnly: true
       nodeSelector:
         kubernetes.io/os: linux
         node-role.kubernetes.io/master: ""
@@ -101,6 +105,9 @@ spec:
       - configMap:
           name: operator-certs-ca-bundle
         name: operator-certs-ca-bundle
+      - name: prometheus-operator-kube-rbac-proxy-config
+        secret:
+          secretName: prometheus-operator-kube-rbac-proxy-config
       - configMap:
           name: metrics-client-ca
         name: metrics-client-ca

@@ -161,6 +161,7 @@ var (
 	PrometheusOperatorCertsCABundle         = "prometheus-operator/operator-certs-ca-bundle.yaml"
 	PrometheusOperatorRuleValidatingWebhook = "prometheus-operator/prometheus-rule-validating-webhook.yaml"
 	PrometheusOperatorPrometheusRule        = "prometheus-operator/prometheus-rule.yaml"
+	PrometheusOperatorKubeRbacProxySecret   = "prometheus-operator/kube-rbac-proxy-secret.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount     = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole        = "prometheus-operator-user-workload/cluster-role.yaml"
@@ -2041,6 +2042,17 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAcc
 	}
 
 	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusOperatorRBACProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusOperatorKubeRbacProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
 
 	return s, nil
 }

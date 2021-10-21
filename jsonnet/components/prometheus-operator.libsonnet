@@ -2,11 +2,12 @@ local tlsVolumeName = 'prometheus-operator-tls';
 local certsCAVolumeName = 'operator-certs-ca-bundle';
 
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
+local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
   local cfg = params;
   operator(cfg) + {
-
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'prometheus-operator-kube-rbac-proxy-config'),
     deployment+: {
       metadata+: {
         labels+: {
@@ -66,6 +67,7 @@ function(params)
                         '--tls-private-key-file=/etc/tls/private/tls.key',
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
                         '--upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt',
+                        '--config-file=/etc/kube-rbac-policy/config.yaml',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
@@ -83,6 +85,11 @@ function(params)
                           mountPath: '/etc/tls/client',
                           name: 'metrics-client-ca',
                           readOnly: false,
+                        },
+                        {
+                          mountPath: '/etc/kube-rbac-policy',
+                          name: 'prometheus-operator-kube-rbac-proxy-config',
+                          readOnly: true,
                         },
                       ],
                       securityContext: {},
@@ -109,6 +116,12 @@ function(params)
                 name: certsCAVolumeName,
                 configMap: {
                   name: certsCAVolumeName,
+                },
+              },
+              {
+                name: 'prometheus-operator-kube-rbac-proxy-config',
+                secret: {
+                  secretName: 'prometheus-operator-kube-rbac-proxy-config',
                 },
               },
               {

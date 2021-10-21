@@ -715,6 +715,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	_, err = f.PrometheusOperatorRBACProxySecret()
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestSharingConfig(t *testing.T) {
