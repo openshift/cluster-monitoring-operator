@@ -355,12 +355,7 @@ function(params) {
       },
       ruleNamespaceSelector: cfg.namespaceSelector,
       volumes: [
-        {
-          name: 'serving-certs-ca-bundle',
-          configmap: {
-            name: 'serving-certs-ca-bundle',
-          },
-        },
+        generateCertInjection.SCOCaBundleVolume('serving-certs-ca-bundle'),
         {
           name: 'secret-thanos-ruler-tls',
           secret: {

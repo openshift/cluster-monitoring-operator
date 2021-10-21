@@ -85,6 +85,9 @@ spec:
       - configMap:
           name: prometheus-adapter-prometheus-config
         name: prometheus-adapter-prometheus-config
-      - configMap:
+      - configmap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
           name: serving-certs-ca-bundle
         name: serving-certs-ca-bundle
