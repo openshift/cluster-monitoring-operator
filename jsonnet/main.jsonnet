@@ -291,7 +291,7 @@ local inCluster =
           'app.kubernetes.io/name': 'user-workload',
         },
         selectorLabels: {
-          app: 'thanos-ruler',
+          'app.kubernetes.io/name': 'thanos-ruler',
           'thanos-ruler': 'user-workload',
         },
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,

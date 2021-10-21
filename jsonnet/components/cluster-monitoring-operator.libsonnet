@@ -80,7 +80,7 @@ function(params) {
     metadata: {
       name: cfg.name,
       namespace: cfg.namespace,
-      labels: { app: cfg.name },
+      labels: { 'app.kubernetes.io/name': cfg.name },
       annotations: {
         'service.beta.openshift.io/serving-cert-secret-name': 'cluster-monitoring-operator-tls',
       },
@@ -89,7 +89,7 @@ function(params) {
       ports: [
         { name: 'https', targetPort: 'https', port: 8443 },
       ],
-      selector: { app: cfg.name },
+      selector: { 'app.kubernetes.io/name': cfg.name },
       clusterIP: 'None',
     },
   },

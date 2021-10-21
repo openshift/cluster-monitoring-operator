@@ -15,4 +15,4 @@ spec:
       serverName: server-name-replaced-at-runtime
   selector:
     matchLabels:
-      app: cluster-monitoring-operator
+      app.kubernetes.io/name: cluster-monitoring-operator

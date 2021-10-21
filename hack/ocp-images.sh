@@ -82,15 +82,17 @@ metadata:
   namespace: openshift-monitoring
   labels:
     app: cluster-monitoring-operator
+    app.kubernetes.io/name: cluster-monitoring-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: cluster-monitoring-operator
+      app.kubernetes.io/name: cluster-monitoring-operator
   template:
     metadata:
       labels:
         app: cluster-monitoring-operator
+        app.kubernetes.io/name: cluster-monitoring-operator
     spec:
       serviceAccountName: cluster-monitoring-operator
       containers:

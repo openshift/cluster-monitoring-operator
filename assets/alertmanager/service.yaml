@@ -24,7 +24,6 @@ spec:
     targetPort: metrics
   selector:
     alertmanager: main
-    app: alertmanager
     app.kubernetes.io/component: alert-router
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring

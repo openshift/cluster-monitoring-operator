@@ -20,7 +20,6 @@ spec:
     port: 9092
     targetPort: metrics
   selector:
-    app: prometheus
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring

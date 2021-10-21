@@ -4,7 +4,7 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: cluster-monitoring-operator-tls
   labels:
-    app: cluster-monitoring-operator
+    app.kubernetes.io/name: cluster-monitoring-operator
   name: cluster-monitoring-operator
   namespace: openshift-monitoring
 spec:
@@ -14,4 +14,4 @@ spec:
     port: 8443
     targetPort: https
   selector:
-    app: cluster-monitoring-operator
+    app.kubernetes.io/name: cluster-monitoring-operator

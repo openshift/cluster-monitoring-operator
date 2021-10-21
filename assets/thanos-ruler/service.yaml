@@ -16,7 +16,7 @@ spec:
     port: 10901
     targetPort: grpc
   selector:
-    app: thanos-ruler
+    app.kubernetes.io/name: thanos-ruler
     thanos-ruler: user-workload
   sessionAffinity: ClientIP
   type: ClusterIP
