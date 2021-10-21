@@ -17,7 +17,7 @@ versions:
   alertmanager: 0.22.2
   grafana: 7.5.11
   kubeRbacProxy: 0.11.0
-  kubeStateMetrics: 2.1.1
+  kubeStateMetrics: 2.2.3
   nodeExporter: 1.2.2
   promLabelProxy: 0.4.0
   prometheus: 2.30.3
