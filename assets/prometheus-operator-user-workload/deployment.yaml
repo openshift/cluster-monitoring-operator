@@ -52,6 +52,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
+        - --config-file=/etc/kube-rbac-policy/config.yaml
         image: quay.io/brancz/kube-rbac-proxy:v0.11.0
         name: kube-rbac-proxy
         ports:
@@ -67,6 +68,9 @@ spec:
         - mountPath: /etc/tls/private
           name: prometheus-operator-user-workload-tls
           readOnly: false
+        - mountPath: /etc/kube-rbac-policy
+          name: prometheus-operator-uwm-kube-rbac-proxy-config
+          readOnly: true
       nodeSelector:
         kubernetes.io/os: linux
         node-role.kubernetes.io/master: ""
@@ -81,3 +85,6 @@ spec:
       - name: prometheus-operator-user-workload-tls
         secret:
           secretName: prometheus-operator-user-workload-tls
+      - name: prometheus-operator-uwm-kube-rbac-proxy-config
+        secret:
+          secretName: prometheus-operator-uwm-kube-rbac-proxy-config
