@@ -1,5 +1,6 @@
 local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics.jsonnet';
 
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 
@@ -7,20 +8,7 @@ function(params)
   local cfg = params;
 
   prometheus(cfg) + {
-    trustedCaBundle: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata: {
-        name: 'prometheus-trusted-ca-bundle',
-        namespace: cfg.namespace,
-        labels: {
-          'config.openshift.io/inject-trusted-cabundle': 'true',
-        },
-      },
-      data: {
-        'ca-bundle.crt': '',
-      },
-    },
+    trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'prometheus-trusted-ca-bundle'),
 
     grpcTlsSecret: {
       apiVersion: 'v1',
@@ -111,7 +99,7 @@ function(params)
         namespace: cfg.namespace,
         annotations: { 'service.alpha.openshift.io/inject-cabundle': 'true' },
       },
-      data: { 'service-ca.crt': '' },
+      data: {},
     },
 
     // Even though this bundle will be frequently rotated by the CSR
@@ -126,7 +114,7 @@ function(params)
         name: 'kubelet-serving-ca-bundle',
         namespace: cfg.namespace,
       },
-      data: { 'ca-bundle.crt': '' },
+      data: {},
     },
 
     // As Prometheus is protected by the oauth proxy it requires the

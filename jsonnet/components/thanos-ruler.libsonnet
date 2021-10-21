@@ -1,4 +1,5 @@
 // TODO(paulfantom): This should use upstream kube-thanos project.
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 
 function(params) {
   local cfg = params,
@@ -20,20 +21,7 @@ function(params) {
     spec: $.mixin.prometheusAlerts,
   },
 
-  trustedCaBundle: {
-    apiVersion: 'v1',
-    kind: 'ConfigMap',
-    metadata: {
-      name: 'thanos-ruler-trusted-ca-bundle',
-      namespace: cfg.namespace,
-      labels: {
-        'config.openshift.io/inject-trusted-cabundle': 'true',
-      },
-    },
-    data: {
-      'ca-bundle.crt': '',
-    },
-  },
+  trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'thanos-ruler-trusted-ca-bundle'),
 
   route: {
     apiVersion: 'v1',

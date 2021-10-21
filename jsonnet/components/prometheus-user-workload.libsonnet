@@ -1,4 +1,6 @@
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 
 function(params)
@@ -71,7 +73,7 @@ function(params)
         namespace: cfg.namespace,
         annotations: { 'service.alpha.openshift.io/inject-cabundle': 'true' },
       },
-      data: { 'service-ca.crt': '' },
+      data: {},
     },
 
     // As Prometheus is protected by the kube-rbac-proxy it requires the

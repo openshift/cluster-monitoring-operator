@@ -1,3 +1,4 @@
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local querier = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-query.libsonnet';
 
@@ -26,20 +27,7 @@ function(params)
       spec: $.mixin.prometheusAlerts,
     },
 
-    trustedCaBundle: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata: {
-        name: 'thanos-querier-trusted-ca-bundle',
-        namespace: cfg.namespace,
-        labels: {
-          'config.openshift.io/inject-trusted-cabundle': 'true',
-        },
-      },
-      data: {
-        'ca-bundle.crt': '',
-      },
-    },
+    trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'thanos-querier-trusted-ca-bundle'),
 
     route: {
       apiVersion: 'v1',
