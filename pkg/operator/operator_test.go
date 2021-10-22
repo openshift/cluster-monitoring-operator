@@ -35,10 +35,10 @@ func TestNewInfrastructureConfig(t *testing.T) {
 			haInfrastructure:   true,
 		},
 		{
-			name: "IBM infrastructure",
+			name: "External control plane",
 			infrastructure: configv1.Infrastructure{
 				Status: configv1.InfrastructureStatus{
-					Platform: configv1.IBMCloudPlatformType,
+					ControlPlaneTopology: configv1.ExternalTopologyMode,
 				},
 			},
 			hostedControlPlane: true,
