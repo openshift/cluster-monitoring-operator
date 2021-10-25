@@ -84,6 +84,11 @@ function(params)
             },
           },
           template+: {
+            metadata+: {
+              labels+: {
+                'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+              },
+            },
             spec+: {
               containers:
                 std.map(
