@@ -131,7 +131,7 @@ func TestHashSecret(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 			s, err := f.HashSecret(tt.given, tt.data...)
 			if got := err != nil; got != tt.errExpected {
 				t.Errorf("expected error %t, got %t, err %v", tt.errExpected, got, err)
@@ -146,7 +146,7 @@ func TestHashSecret(t *testing.T) {
 }
 
 func TestUnconfiguredManifests(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	_, err := f.AlertmanagerConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -571,7 +571,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusOperatorDeployment(nil)
+	_, err = f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -728,7 +728,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 }
 
 func TestSharingConfig(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	u, err := url.Parse("http://example.com/")
 	if err != nil {
 		t.Fatal(err)
@@ -764,8 +764,8 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
-	d, err := f.PrometheusOperatorDeployment(nil)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
+	d, err := f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -818,7 +818,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", prometheusWebTLSVersionArg, expectedPrometheusWebTLSVersionArg)
 	}
 
-	d2, err := f.PrometheusOperatorDeployment(nil)
+	d2, err := f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -954,7 +954,7 @@ func TestPrometheusK8sRemoteWrite(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c := tc.config()
 
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 			p, err := f.PrometheusK8s(
 				"prometheus-k8s.openshift-monitoring.svc",
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -1016,7 +1016,7 @@ ingress:
 		"prom-label-proxy": "docker.io/openshift/origin-prom-label-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	p, err := f.PrometheusK8s(
 		"prometheus-k8s.openshift-monitoring.svc",
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -1299,7 +1299,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 
 			p, err := f.PrometheusK8s(
 				"prometheus-k8s.openshift-monitoring.svc",
@@ -1600,7 +1600,7 @@ alertmanagerMain:
 				t.Fatal(err)
 			}
 			c.UserWorkloadConfiguration = uwc
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 
 			s, err := f.ThanosRulerAlertmanagerConfigSecret()
 			if err != nil {
@@ -1635,7 +1635,7 @@ k8sPrometheusAdapter:
 		"k8s-prometheus-adapter": "docker.io/openshift/origin-k8s-prometheus-adapter:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
 		"requestheader-allowed-names":        "",
 		"requestheader-extra-headers-prefix": "",
@@ -1686,7 +1686,7 @@ ingress:
 		"alertmanager": "docker.io/openshift/origin-prometheus-alertmanager:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	a, err := f.AlertmanagerMain(
 		"alertmanager-main.openshift-monitoring.svc",
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -1764,7 +1764,7 @@ func TestNodeExporter(t *testing.T) {
 		"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 
 	ds, err := f.NodeExporterDaemonSet()
 	if err != nil {
@@ -1788,7 +1788,7 @@ func TestKubeStateMetrics(t *testing.T) {
 		"kube-rbac-proxy":    "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 
 	d, err := f.KubeStateMetricsDeployment()
 	if err != nil {
@@ -1819,7 +1819,7 @@ func TestOpenShiftStateMetrics(t *testing.T) {
 		"kube-rbac-proxy":         "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 
 	d, err := f.OpenShiftStateMetricsDeployment()
 	if err != nil {
@@ -1864,7 +1864,7 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath))
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 		r, err := f.ControlPlanePrometheusRule()
 		if err != nil {
 			t.Fatal(err)
@@ -1884,7 +1884,7 @@ func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
 	enabled := false
 	c := NewDefaultConfig()
 	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 
 	cms, err := f.GrafanaDashboardDefinitions()
 	if err != nil {
@@ -1902,7 +1902,7 @@ func TestEtcdGrafanaDashboard(t *testing.T) {
 	enabled := true
 	c := NewDefaultConfig()
 	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 
 	cms, err := f.GrafanaDashboardDefinitions()
 	if err != nil {
@@ -1940,7 +1940,7 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	d, err := f.ThanosQuerierDeployment(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		false,
@@ -2029,7 +2029,7 @@ func TestGrafanaConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	d, err := f.GrafanaDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 	if err != nil {
 		t.Fatal(err)
@@ -2053,7 +2053,7 @@ func TestTelemeterConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	d, err := f.TelemeterClientDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 	if err != nil {
 		t.Fatal(err)
@@ -2077,7 +2077,7 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 	tr, err := f.ThanosRulerCustomResource(
 		"",
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -2182,8 +2182,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 		{
 			name: "Prometheus adapter",
 			getSpec: func(f *Factory) (spec, error) {
-				p, err := f.PrometheusAdapterDeployment(
-					"foo",
+				p, err := f.PrometheusAdapterDeployment("foo",
 					map[string]string{
 						"requestheader-allowed-names":        "",
 						"requestheader-extra-headers-prefix": "",
@@ -2199,7 +2198,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: false}, &fakeProxyReader{}, NewAssets(assetsPath))
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: false}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 		spec, err := tc.getSpec(f)
 		if err != nil {
 			t.Error(err)
@@ -2252,7 +2251,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: tc.ha}, &fakeProxyReader{}, NewAssets(assetsPath))
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: tc.ha}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
 		pdb, err := tc.getPDB(f)
 		if err != nil {
 			t.Error(err)
@@ -2282,8 +2281,8 @@ enableUserWorkload: true
 		t.Fatal(err)
 	}
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath))
-	d, err := f.PrometheusOperatorUserWorkloadDeployment(nil)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
+	d, err := f.PrometheusOperatorUserWorkloadDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
