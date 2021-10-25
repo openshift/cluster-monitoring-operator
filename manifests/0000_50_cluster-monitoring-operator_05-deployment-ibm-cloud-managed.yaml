@@ -101,5 +101,4 @@ spec:
         name: telemetry-config
       - name: cluster-monitoring-operator-tls
         secret:
-          optional: true
           secretName: cluster-monitoring-operator-tls
