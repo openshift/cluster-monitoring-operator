@@ -20,6 +20,7 @@ spec:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: telemetry-metrics-collector
+        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: telemeter-client
     spec:
       containers:

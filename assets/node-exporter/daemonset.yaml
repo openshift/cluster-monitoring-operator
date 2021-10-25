@@ -21,6 +21,7 @@ spec:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: exporter
+        app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: node-exporter
         app.kubernetes.io/part-of: openshift-monitoring
         app.kubernetes.io/version: 1.2.2
