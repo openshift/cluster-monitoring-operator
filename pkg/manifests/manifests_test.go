@@ -16,12 +16,13 @@ package manifests
 
 import (
 	"fmt"
-	"github.com/openshift/library-go/pkg/crypto"
 	"net/url"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/openshift/library-go/pkg/crypto"
 
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -1795,6 +1796,8 @@ func TestKubeStateMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
 	for i, container := range d.Spec.Template.Spec.Containers {
 		if container.Name == "kube-state-metrics" {
 			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-kube-state-metrics:latest" {
@@ -1805,7 +1808,40 @@ func TestKubeStateMetrics(t *testing.T) {
 			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 				t.Fatalf("%s image incorrectly configured", container.Name)
 			}
+
+			for j := range d.Spec.Template.Spec.Containers[i].Args {
+				if strings.HasPrefix(d.Spec.Template.Spec.Containers[i].Args[j], KubeRbacProxyTLSCipherSuitesFlag) {
+					kubeRbacProxyTLSCipherSuitesArg = d.Spec.Template.Spec.Containers[i].Args[j]
+				}
+
+				if strings.HasPrefix(d.Spec.Template.Spec.Containers[i].Args[j], KubeRbacProxyMinTLSVersionFlag) {
+					kubeRbacProxyMinTLSVersionArg = d.Spec.Template.Spec.Containers[i].Args[j]
+				}
+			}
 		}
+	}
+
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
+	}
+
+	d2, err := f.KubeStateMetricsDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(d, d2) {
+		t.Fatal("expected KubeStateMetricsDeployment to be an idempotent function")
 	}
 }
 

@@ -19,13 +19,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/openshift/library-go/pkg/crypto"
 	"hash/fnv"
 	"io"
 	"net"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/openshift/library-go/pkg/crypto"
 
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
@@ -259,6 +260,8 @@ var (
 	PrometheusOperatorWebTLSMinTLSVersionFlag            = "--web.tls-min-version="
 	PrometheusAdapterTLSCipherSuitesFlag                 = "--tls-cipher-suites="
 	PrometheusAdapterTLSMinTLSVersionFlag                = "--tls-min-version="
+	KubeRbacProxyTLSCipherSuitesFlag                     = "--tls-cipher-suites="
+	KubeRbacProxyMinTLSVersionFlag                       = "--tls-min-version="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -566,11 +569,12 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 		return nil, err
 	}
 	for i, container := range d.Spec.Template.Spec.Containers {
-		if container.Name == "kube-state-metrics" {
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeStateMetrics
-		}
-		if container.Name == "kube-rbac-proxy-self" || container.Name == "kube-rbac-proxy-main" {
+		switch container.Name {
+		case "kube-rbac-proxy-self", "kube-rbac-proxy-main":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
+		case "kube-state-metrics":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeStateMetrics
 		}
 	}
 

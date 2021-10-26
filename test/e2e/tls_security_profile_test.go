@@ -17,15 +17,16 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/openshift/library-go/pkg/crypto"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestTLSSecurityProfileConfiguration(t *testing.T) {
@@ -84,7 +85,7 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			setTlsSecurityProfile(t, tt.profile)
+			setTLSSecurityProfile(t, tt.profile)
 			assertCorrectTLSConfiguration(t, "prometheus-operator",
 				manifests.PrometheusOperatorWebTLSCipherSuitesFlag,
 				manifests.PrometheusOperatorWebTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
@@ -92,11 +93,14 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 			assertCorrectTLSConfiguration(t, "prometheus-adapter",
 				manifests.PrometheusAdapterTLSCipherSuitesFlag,
 				manifests.PrometheusAdapterTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
+			assertCorrectTLSConfiguration(t, "kube-state-metrics",
+				manifests.KubeRbacProxyTLSCipherSuitesFlag,
+				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
 		})
 	}
 }
 
-func assertCorrectTLSConfiguration(t *testing.T, component, tlsCipherSuiteFlag, tlsMinTLSVersionFlag string, ciphers []string, tlsVersion string) {
+func assertCorrectTLSConfiguration(t *testing.T, component, tlsCipherSuiteFlag, tlsMinTLSVersionFlag string, expectedCipherSuite []string, expectedTLSVersion string) {
 	ctx := context.Background()
 	if err := framework.Poll(5*time.Second, 5*time.Minute, func() (err error) {
 		d, err := f.KubeClient.AppsV1().Deployments("openshift-monitoring").Get(ctx, component, metav1.GetOptions{})
@@ -104,12 +108,12 @@ func assertCorrectTLSConfiguration(t *testing.T, component, tlsCipherSuiteFlag, 
 			return err
 		}
 
-		isCipherSuiteArgCorrect := correctCipherSuiteArg(tlsCipherSuiteFlag, ciphers, d)
+		isCipherSuiteArgCorrect := correctCipherSuiteArg(tlsCipherSuiteFlag, expectedCipherSuite, d)
 		if !isCipherSuiteArgCorrect {
 			return fmt.Errorf("invalid cipher suite set for %s in openshift-monitoring namespace", component)
 		}
 
-		validTLSVersion := correctMinTLSVersion(tlsMinTLSVersionFlag, tlsVersion, d)
+		validTLSVersion := correctMinTLSVersion(tlsMinTLSVersionFlag, expectedTLSVersion, d)
 		if !validTLSVersion {
 			return fmt.Errorf("invalid tls version set for %s in openshift-monitoring namespace", component)
 		}
@@ -137,7 +141,7 @@ func correctCipherSuiteArg(tlsCipherSuitesArg string, ciphers []string, d *appsv
 	return false
 }
 
-func correctMinTLSVersion(minTLSVersionArg string, tlsVersion string, d *appsv1.Deployment) bool {
+func correctMinTLSVersion(minTLSVersionArg, tlsVersion string, d *appsv1.Deployment) bool {
 	expectedVersionArg := fmt.Sprintf("%s%s", minTLSVersionArg, tlsVersion)
 	for _, c := range d.Spec.Template.Spec.Containers {
 		for _, arg := range c.Args {
@@ -149,7 +153,7 @@ func correctMinTLSVersion(minTLSVersionArg string, tlsVersion string, d *appsv1.
 	return false
 }
 
-func setTlsSecurityProfile(t *testing.T, tlsSecurityProfile *configv1.TLSSecurityProfile) {
+func setTLSSecurityProfile(t *testing.T, tlsSecurityProfile *configv1.TLSSecurityProfile) {
 	ctx := context.Background()
 	apiserverConfig, err := f.OpenShiftConfigClient.ConfigV1().APIServers().Get(ctx, "cluster", metav1.GetOptions{})
 	if err != nil {
