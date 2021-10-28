@@ -34,8 +34,18 @@ function(params)
     },
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'prometheus-operator-uwm-kube-rbac-proxy-config'),
     deployment+: {
+      metadata+: {
+        labels+: {
+          'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+        },
+      },
       spec+: {
         template+: {
+          metadata+: {
+            labels+: {
+              'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+            },
+          },
           spec+: {
             nodeSelector+: {
               'node-role.kubernetes.io/master': '',

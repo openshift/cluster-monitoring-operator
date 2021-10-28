@@ -293,6 +293,11 @@ function(params)
           },
         },
         template+: {
+          metadata+: {
+            labels+: {
+              'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+            },
+          },
           spec+: {
             // TODO(slashpai): remove once new kube-thanos is released which has this change
             nodeSelector: {

@@ -26,6 +26,11 @@ function(params) {
     },
     spec+: {
       template+: {
+        metadata+: {
+          labels+: {
+            'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+          } + cfg.commonLabels,
+        },
         spec+: {
           containers:
             std.map(
