@@ -143,6 +143,7 @@ type Operator struct {
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
+	lastKnownApiServerConfig     *manifests.APIServerConfig
 
 	client *client.Client
 
@@ -525,7 +526,16 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		klog.Warningf("using proxy config from CMO configmap: %v", err)
 		proxyConfig = config
 	}
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(ctx), proxyConfig, o.assets)
+
+	var apiServerConfig *manifests.APIServerConfig
+	apiServerConfig, err = o.loadApiServerConfig(ctx)
+
+	if err != nil {
+		o.reportError(ctx, err, "APIServerConfigError")
+		return err
+	}
+
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(ctx), proxyConfig, o.assets, apiServerConfig)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
@@ -644,6 +654,20 @@ func (o *Operator) loadProxyConfig(ctx context.Context) (*ProxyConfig, error) {
 	}
 
 	return o.lastKnowProxyConfig, nil
+}
+
+func (o *Operator) loadApiServerConfig(ctx context.Context) (*manifests.APIServerConfig, error) {
+	config, err := o.client.GetAPIServerConfig(ctx, "cluster")
+	if err != nil {
+		klog.Warningf("failed to get api server config: %v", err)
+
+		if o.lastKnownApiServerConfig == nil {
+			return nil, errors.Errorf("no last known api server configuration")
+		}
+	} else {
+		o.lastKnownApiServerConfig = manifests.NewAPIServerConfig(config)
+	}
+	return o.lastKnownApiServerConfig, nil
 }
 
 func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, error) {

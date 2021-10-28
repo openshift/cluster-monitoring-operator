@@ -257,6 +257,8 @@ var (
 	PrometheusOperatorAlertmanagerInstanceNamespacesFlag = "--alertmanager-instance-namespaces="
 	PrometheusOperatorWebTLSCipherSuitesFlag             = "--web.tls-cipher-suites="
 	PrometheusOperatorWebTLSMinTLSVersionFlag            = "--web.tls-min-version="
+	PrometheusAdapterTLSCipherSuitesFlag                 = "--tls-cipher-suites="
+	PrometheusAdapterTLSMinTLSVersionFlag                = "--tls-min-version="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -276,6 +278,7 @@ type Factory struct {
 	infrastructure        InfrastructureReader
 	proxy                 ProxyReader
 	assets                *Assets
+	APIServerConfig       *APIServerConfig
 }
 
 // InfrastructureReader has methods to describe the cluster infrastructure.
@@ -291,7 +294,7 @@ type ProxyReader interface {
 	NoProxy() string
 }
 
-func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructure InfrastructureReader, proxy ProxyReader, a *Assets) *Factory {
+func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructure InfrastructureReader, proxy ProxyReader, a *Assets, apiServerConfig *APIServerConfig) *Factory {
 	return &Factory{
 		namespace:             namespace,
 		namespaceUserWorkload: namespaceUserWorkload,
@@ -299,6 +302,7 @@ func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructu
 		infrastructure:        infrastructure,
 		proxy:                 proxy,
 		assets:                a,
+		APIServerConfig:       apiServerConfig,
 	}
 }
 
@@ -1860,6 +1864,9 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 		},
 	)
 
+	spec.Containers[0].Args = f.setTLSSecurityConfiguration(spec.Containers[0].Args,
+		PrometheusAdapterTLSCipherSuitesFlag, PrometheusAdapterTLSMinTLSVersionFlag)
+
 	dep.Spec.Template.Spec = spec
 
 	return dep, nil
@@ -2069,7 +2076,7 @@ func (f *Factory) PrometheusOperatorRBACProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) PrometheusOperatorDeployment(apiServerConfig *APIServerConfig) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorDeployment))
 	if err != nil {
 		return nil, err
@@ -2109,7 +2116,7 @@ func (f *Factory) PrometheusOperatorDeployment(apiServerConfig *APIServerConfig)
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel))
 			}
 
-			args = setTLSSecurityConfiguration(args, apiServerConfig)
+			args = f.setTLSSecurityConfiguration(args, PrometheusOperatorWebTLSCipherSuitesFlag, PrometheusOperatorWebTLSMinTLSVersionFlag)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
@@ -2118,7 +2125,7 @@ func (f *Factory) PrometheusOperatorDeployment(apiServerConfig *APIServerConfig)
 	return d, nil
 }
 
-func (f *Factory) PrometheusOperatorUserWorkloadDeployment(apiServerConfig *APIServerConfig) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadDeployment))
 	if err != nil {
 		return nil, err
@@ -2156,7 +2163,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(apiServerConfig *APIS
 			if f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel != "" {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel))
 			}
-			args = setTLSSecurityConfiguration(args, apiServerConfig)
+			args = f.setTLSSecurityConfiguration(args, PrometheusOperatorWebTLSCipherSuitesFlag, PrometheusOperatorWebTLSMinTLSVersionFlag)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
@@ -2165,12 +2172,12 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment(apiServerConfig *APIS
 	return d, nil
 }
 
-func setTLSSecurityConfiguration(args []string, config *APIServerConfig) []string {
-	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(config.GetTLSCiphers()), ",")
-	args = setArg(args, PrometheusOperatorWebTLSCipherSuitesFlag, cipherSuites)
+func (f *Factory) setTLSSecurityConfiguration(args []string, tlsCipherSuitesArg string, minTLSversionArg string) []string {
+	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.GetTLSCiphers()), ",")
+	args = setArg(args, tlsCipherSuitesArg, cipherSuites)
 
-	minTLSVersion := config.GetMinTLSVersion()
-	args = setArg(args, PrometheusOperatorWebTLSMinTLSVersionFlag, string(minTLSVersion))
+	minTLSVersion := f.APIServerConfig.GetMinTLSVersion()
+	args = setArg(args, minTLSversionArg, string(minTLSVersion))
 
 	return args
 }
