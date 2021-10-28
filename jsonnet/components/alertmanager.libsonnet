@@ -1,26 +1,14 @@
 local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/alertmanager.libsonnet';
 // TODO: replace current addition of kube-rbac-proxy with upstream lib
 // local krp = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
   local cfg = params;
 
   alertmanager(cfg) {
-    trustedCaBundle: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata: {
-        name: 'alertmanager-trusted-ca-bundle',
-        namespace: cfg.namespace,
-        labels: {
-          'config.openshift.io/inject-trusted-cabundle': 'true',
-        },
-      },
-      data: {
-        'ca-bundle.crt': '',
-      },
-    },
+    trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'alertmanager-trusted-ca-bundle'),
 
     // OpenShift route to access the Alertmanager UI.
 

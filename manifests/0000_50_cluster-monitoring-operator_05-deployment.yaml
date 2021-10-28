@@ -49,7 +49,6 @@ spec:
       - name: cluster-monitoring-operator-tls
         secret:
           secretName: cluster-monitoring-operator-tls
-          optional: true
       containers:
       - args:
         - --logtostderr

@@ -1,6 +1,8 @@
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local grafana = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/grafana.libsonnet';
 
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
+
 function(params)
   local cfg = params;
 
@@ -33,20 +35,7 @@ function(params)
       ),
     },
 
-    trustedCaBundle: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata: {
-        name: 'grafana-trusted-ca-bundle',
-        namespace: cfg.namespace,
-        labels: {
-          'config.openshift.io/inject-trusted-cabundle': 'true',
-        },
-      },
-      data: {
-        'ca-bundle.crt': '',
-      },
-    },
+    trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'grafana-trusted-ca-bundle'),
 
     // OpenShift route to access the Grafana UI.
     route: {

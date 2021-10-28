@@ -102,7 +102,10 @@ spec:
       - name: prometheus-operator-tls
         secret:
           secretName: prometheus-operator-tls
-      - configMap:
+      - configmap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
           name: operator-certs-ca-bundle
         name: operator-certs-ca-bundle
       - name: prometheus-operator-kube-rbac-proxy-config

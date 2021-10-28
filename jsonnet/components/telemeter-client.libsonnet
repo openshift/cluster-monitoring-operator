@@ -1,4 +1,5 @@
 // I didn't invest much time into this file since telemeter-client is scheduled for deprecation when we enable remote-write in prometheus
+local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params) {
@@ -109,19 +110,5 @@ function(params) {
     },
   },
 
-  trustedCaBundle: {
-    apiVersion: 'v1',
-    kind: 'ConfigMap',
-    metadata: {
-      name: 'telemeter-trusted-ca-bundle',
-      namespace: cfg.namespace,
-      labels: {
-        'config.openshift.io/inject-trusted-cabundle': 'true',
-      },
-    },
-    data: {
-      'ca-bundle.crt': '',
-    },
-  },
-
+  trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'telemeter-trusted-ca-bundle'),
 }
