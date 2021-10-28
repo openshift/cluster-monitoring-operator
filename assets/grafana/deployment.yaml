@@ -33,7 +33,7 @@ spec:
       - args:
         - -config=/etc/grafana/grafana.ini
         env: []
-        image: grafana/grafana:7.5.11
+        image: grafana/grafana:v7.5.11
         name: grafana
         ports:
         - containerPort: 3001

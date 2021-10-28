@@ -2017,7 +2017,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "sum(rate(grpc_server_started_total{job=\"$cluster\",grpc_type=\"unary\"}[5m]))",
+                                  "expr": "sum(rate(grpc_server_started_total{job=\"$cluster\",grpc_type=\"unary\"}[$__rate_interval]))",
                                   "format": "time_series",
                                   "intervalFactor": 2,
                                   "legendFormat": "RPC Rate",
@@ -2026,7 +2026,7 @@ items:
                                   "step": 2
                               },
                               {
-                                  "expr": "sum(rate(grpc_server_handled_total{job=\"$cluster\",grpc_type=\"unary\",grpc_code=~\"Unknown|FailedPrecondition|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded\"}[5m]))",
+                                  "expr": "sum(rate(grpc_server_handled_total{job=\"$cluster\",grpc_type=\"unary\",grpc_code=~\"Unknown|FailedPrecondition|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded\"}[$__rate_interval]))",
                                   "format": "time_series",
                                   "intervalFactor": 2,
                                   "legendFormat": "RPC Failed Rate",
@@ -2307,7 +2307,7 @@ items:
                           "steppedLine": true,
                           "targets": [
                               {
-                                  "expr": "histogram_quantile(0.99, sum(rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=\"$cluster\"}[5m])) by (instance, le))",
+                                  "expr": "histogram_quantile(0.99, sum(rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=\"$cluster\"}[$__rate_interval])) by (instance, le))",
                                   "hide": false,
                                   "intervalFactor": 2,
                                   "legendFormat": "{{instance}} WAL fsync",
@@ -2316,7 +2316,7 @@ items:
                                   "step": 4
                               },
                               {
-                                  "expr": "histogram_quantile(0.99, sum(rate(etcd_disk_backend_commit_duration_seconds_bucket{job=\"$cluster\"}[5m])) by (instance, le))",
+                                  "expr": "histogram_quantile(0.99, sum(rate(etcd_disk_backend_commit_duration_seconds_bucket{job=\"$cluster\"}[$__rate_interval])) by (instance, le))",
                                   "intervalFactor": 2,
                                   "legendFormat": "{{instance}} DB fsync",
                                   "metric": "etcd_disk_backend_commit_duration_seconds_bucket",
@@ -2494,7 +2494,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "rate(etcd_network_client_grpc_received_bytes_total{job=\"$cluster\"}[5m])",
+                                  "expr": "rate(etcd_network_client_grpc_received_bytes_total{job=\"$cluster\"}[$__rate_interval])",
                                   "intervalFactor": 2,
                                   "legendFormat": "{{instance}} Client Traffic In",
                                   "metric": "etcd_network_client_grpc_received_bytes_total",
@@ -2580,7 +2580,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "rate(etcd_network_client_grpc_sent_bytes_total{job=\"$cluster\"}[5m])",
+                                  "expr": "rate(etcd_network_client_grpc_sent_bytes_total{job=\"$cluster\"}[$__rate_interval])",
                                   "intervalFactor": 2,
                                   "legendFormat": "{{instance}} Client Traffic Out",
                                   "metric": "etcd_network_client_grpc_sent_bytes_total",
@@ -2666,7 +2666,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "sum(rate(etcd_network_peer_received_bytes_total{job=\"$cluster\"}[5m])) by (instance)",
+                                  "expr": "sum(rate(etcd_network_peer_received_bytes_total{job=\"$cluster\"}[$__rate_interval])) by (instance)",
                                   "intervalFactor": 2,
                                   "legendFormat": "{{instance}} Peer Traffic In",
                                   "metric": "etcd_network_peer_received_bytes_total",
@@ -2755,7 +2755,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "sum(rate(etcd_network_peer_sent_bytes_total{job=\"$cluster\"}[5m])) by (instance)",
+                                  "expr": "sum(rate(etcd_network_peer_sent_bytes_total{job=\"$cluster\"}[$__rate_interval])) by (instance)",
                                   "hide": false,
                                   "interval": "",
                                   "intervalFactor": 2,
@@ -2849,7 +2849,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "sum(rate(etcd_server_proposals_failed_total{job=\"$cluster\"}[5m]))",
+                                  "expr": "sum(rate(etcd_server_proposals_failed_total{job=\"$cluster\"}[$__rate_interval]))",
                                   "intervalFactor": 2,
                                   "legendFormat": "Proposal Failure Rate",
                                   "metric": "etcd_server_proposals_failed_total",
@@ -2865,7 +2865,7 @@ items:
                                   "step": 2
                               },
                               {
-                                  "expr": "sum(rate(etcd_server_proposals_committed_total{job=\"$cluster\"}[5m]))",
+                                  "expr": "sum(rate(etcd_server_proposals_committed_total{job=\"$cluster\"}[$__rate_interval]))",
                                   "intervalFactor": 2,
                                   "legendFormat": "Proposal Commit Rate",
                                   "metric": "etcd_server_proposals_committed_total",
@@ -2873,7 +2873,7 @@ items:
                                   "step": 2
                               },
                               {
-                                  "expr": "sum(rate(etcd_server_proposals_applied_total{job=\"$cluster\"}[5m]))",
+                                  "expr": "sum(rate(etcd_server_proposals_applied_total{job=\"$cluster\"}[$__rate_interval]))",
                                   "intervalFactor": 2,
                                   "legendFormat": "Proposal Apply Rate",
                                   "refId": "D",
@@ -3074,7 +3074,7 @@ items:
                           "steppedLine": false,
                           "targets": [
                               {
-                                  "expr": "histogram_quantile(0.99, sum by (instance, le) (rate(etcd_network_peer_round_trip_time_seconds_bucket{job=\"$cluster\"}[5m])))",
+                                  "expr": "histogram_quantile(0.99, sum by (instance, le) (rate(etcd_network_peer_round_trip_time_seconds_bucket{job=\"$cluster\"}[$__rate_interval])))",
                                   "interval": "",
                                   "intervalFactor": 2,
                                   "legendFormat": "{{instance}} Peer round trip time",
@@ -3152,7 +3152,7 @@ items:
                           "value": "Prometheus"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -3314,7 +3314,7 @@ items:
                           "title": "CPU Utilisation",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -3398,7 +3398,7 @@ items:
                           "title": "CPU Requests Commitment",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -3482,7 +3482,7 @@ items:
                           "title": "CPU Limits Commitment",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -3566,7 +3566,7 @@ items:
                           "title": "Memory Utilisation",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -3650,7 +3650,7 @@ items:
                           "title": "Memory Requests Commitment",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -3734,7 +3734,7 @@ items:
                           "title": "Memory Limits Commitment",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -3832,7 +3832,7 @@ items:
                           "title": "CPU Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -4160,7 +4160,7 @@ items:
                           "title": "CPU Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -4259,7 +4259,7 @@ items:
                           "title": "Memory Usage (w/o cache)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -4587,7 +4587,7 @@ items:
                           "title": "Requests by Namespace",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -4889,7 +4889,7 @@ items:
                           "title": "Current Network Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -4988,7 +4988,7 @@ items:
                           "title": "Receive Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5074,7 +5074,7 @@ items:
                           "title": "Transmit Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5172,7 +5172,7 @@ items:
                           "title": "Average Container Bandwidth by Namespace: Received",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5258,7 +5258,7 @@ items:
                           "title": "Average Container Bandwidth by Namespace: Transmitted",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5356,7 +5356,7 @@ items:
                           "title": "Rate of Received Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5442,7 +5442,7 @@ items:
                           "title": "Rate of Transmitted Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5540,7 +5540,7 @@ items:
                           "title": "Rate of Received Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5626,7 +5626,7 @@ items:
                           "title": "Rate of Transmitted Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5725,7 +5725,7 @@ items:
                           "title": "IOPS(Reads+Writes)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -5811,7 +5811,7 @@ items:
                           "title": "ThroughPut(Read+Write)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -6115,7 +6115,7 @@ items:
                           "title": "Current Storage IO",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -6170,7 +6170,7 @@ items:
                           "value": "default"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -6330,7 +6330,7 @@ items:
                           "title": "CPU Utilisation (from requests)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -6414,7 +6414,7 @@ items:
                           "title": "CPU Utilisation (from limits)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -6498,7 +6498,7 @@ items:
                           "title": "Memory Utilisation (from requests)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -6582,7 +6582,7 @@ items:
                           "title": "Memory Utilisation (from limits)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "singlestat",
@@ -6717,7 +6717,7 @@ items:
                           "title": "CPU Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -6989,7 +6989,7 @@ items:
                           "title": "CPU Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -7125,7 +7125,7 @@ items:
                           "title": "Memory Usage (w/o cache)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -7481,7 +7481,7 @@ items:
                           "title": "Memory Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -7783,7 +7783,7 @@ items:
                           "title": "Current Network Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -7882,7 +7882,7 @@ items:
                           "title": "Receive Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -7968,7 +7968,7 @@ items:
                           "title": "Transmit Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -8066,7 +8066,7 @@ items:
                           "title": "Rate of Received Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -8152,7 +8152,7 @@ items:
                           "title": "Rate of Transmitted Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -8250,7 +8250,7 @@ items:
                           "title": "Rate of Received Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -8336,7 +8336,7 @@ items:
                           "title": "Rate of Transmitted Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -8435,7 +8435,7 @@ items:
                           "title": "IOPS(Reads+Writes)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -8521,7 +8521,7 @@ items:
                           "title": "ThroughPut(Read+Write)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -8825,7 +8825,7 @@ items:
                           "title": "Current Storage IO",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -8880,7 +8880,7 @@ items:
                           "value": "default"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -8905,7 +8905,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info, cluster)",
+                      "query": "label_values(up{job=\"kube-state-metrics\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -8932,7 +8932,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info{cluster=\"$cluster\"}, namespace)",
+                      "query": "label_values(kube_namespace_created{cluster=\"$cluster\"}, namespace)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -9069,7 +9069,7 @@ items:
                           "title": "CPU Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -9341,7 +9341,7 @@ items:
                           "title": "CPU Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -9440,7 +9440,7 @@ items:
                           "title": "Memory Usage (w/o cache)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -9796,7 +9796,7 @@ items:
                           "title": "Memory Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -9851,7 +9851,7 @@ items:
                           "value": "default"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -9876,7 +9876,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info, cluster)",
+                      "query": "label_values(up{job=\"kube-state-metrics\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -9903,7 +9903,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info{cluster=\"$cluster\"}, node)",
+                      "query": "label_values(up{job=\"kube-state-metrics\", cluster=\"$cluster\"}, node)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -10073,7 +10073,7 @@ items:
                           "title": "CPU Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -10178,7 +10178,7 @@ items:
                           "title": "CPU Throttling",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -10450,7 +10450,7 @@ items:
                           "title": "CPU Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -10584,7 +10584,7 @@ items:
                           "title": "Memory Usage (WSS)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -10940,7 +10940,7 @@ items:
                           "title": "Memory Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -11040,7 +11040,7 @@ items:
                           "title": "Receive Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11127,7 +11127,7 @@ items:
                           "title": "Transmit Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11226,7 +11226,7 @@ items:
                           "title": "Rate of Received Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11313,7 +11313,7 @@ items:
                           "title": "Rate of Transmitted Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11412,7 +11412,7 @@ items:
                           "title": "Rate of Received Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11499,7 +11499,7 @@ items:
                           "title": "Rate of Transmitted Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11606,7 +11606,7 @@ items:
                           "title": "IOPS",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11700,7 +11700,7 @@ items:
                           "title": "ThroughPut",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11799,7 +11799,7 @@ items:
                           "title": "IOPS(Reads+Writes)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -11885,7 +11885,7 @@ items:
                           "title": "ThroughPut(Read+Write)",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -12189,7 +12189,7 @@ items:
                           "title": "Current Storage IO",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -12244,7 +12244,7 @@ items:
                           "value": "default"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -12269,7 +12269,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info, cluster)",
+                      "query": "label_values(up{job=\"kube-state-metrics\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -12296,7 +12296,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info{cluster=\"$cluster\"}, namespace)",
+                      "query": "label_values(kube_namespace_created{cluster=\"$cluster\"}, namespace)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -12460,7 +12460,7 @@ items:
                           "title": "CPU Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -12732,7 +12732,7 @@ items:
                           "title": "CPU Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -12831,7 +12831,7 @@ items:
                           "title": "Memory Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -13103,7 +13103,7 @@ items:
                           "title": "Memory Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -13405,7 +13405,7 @@ items:
                           "title": "Current Network Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -13504,7 +13504,7 @@ items:
                           "title": "Receive Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -13590,7 +13590,7 @@ items:
                           "title": "Transmit Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -13688,7 +13688,7 @@ items:
                           "title": "Average Container Bandwidth by Pod: Received",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -13774,7 +13774,7 @@ items:
                           "title": "Average Container Bandwidth by Pod: Transmitted",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -13872,7 +13872,7 @@ items:
                           "title": "Rate of Received Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -13958,7 +13958,7 @@ items:
                           "title": "Rate of Transmitted Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -14056,7 +14056,7 @@ items:
                           "title": "Rate of Received Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -14142,7 +14142,7 @@ items:
                           "title": "Rate of Transmitted Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -14196,7 +14196,7 @@ items:
                           "value": "default"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -14221,7 +14221,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info, cluster)",
+                      "query": "label_values(up{job=\"kube-state-metrics\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -14248,7 +14248,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info{cluster=\"$cluster\"}, namespace)",
+                      "query": "label_values(kube_namespace_created{cluster=\"$cluster\"}, namespace)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -14476,7 +14476,7 @@ items:
                           "title": "CPU Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -14795,7 +14795,7 @@ items:
                           "title": "CPU Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -14931,7 +14931,7 @@ items:
                           "title": "Memory Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -15250,7 +15250,7 @@ items:
                           "title": "Memory Quota",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -15571,7 +15571,7 @@ items:
                           "title": "Current Network Usage",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -15670,7 +15670,7 @@ items:
                           "title": "Receive Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -15756,7 +15756,7 @@ items:
                           "title": "Transmit Bandwidth",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -15854,7 +15854,7 @@ items:
                           "title": "Average Container Bandwidth by Workload: Received",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -15940,7 +15940,7 @@ items:
                           "title": "Average Container Bandwidth by Workload: Transmitted",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -16038,7 +16038,7 @@ items:
                           "title": "Rate of Received Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -16124,7 +16124,7 @@ items:
                           "title": "Rate of Transmitted Packets",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -16222,7 +16222,7 @@ items:
                           "title": "Rate of Received Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -16308,7 +16308,7 @@ items:
                           "title": "Rate of Transmitted Packets Dropped",
                           "tooltip": {
                               "shared": false,
-                              "sort": 0,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -16362,7 +16362,7 @@ items:
                           "value": "default"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -16387,7 +16387,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(kube_pod_info, cluster)",
+                      "query": "label_values(up{job=\"kube-state-metrics\"}, cluster)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 1,
@@ -18935,7 +18935,7 @@ items:
                           "value": "Prometheus"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -19991,7 +19991,7 @@ items:
                           "value": "Prometheus"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
@@ -21526,8 +21526,8 @@ items:
                           "timeShift": null,
                           "title": "Prometheus Stats",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "transform": "table",
@@ -21625,8 +21625,8 @@ items:
                           "timeShift": null,
                           "title": "Target Sync",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -21711,8 +21711,8 @@ items:
                           "timeShift": null,
                           "title": "Targets",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -21809,8 +21809,8 @@ items:
                           "timeShift": null,
                           "title": "Average Scrape Interval Duration",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -21927,8 +21927,8 @@ items:
                           "timeShift": null,
                           "title": "Scrape failures",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -22013,8 +22013,8 @@ items:
                           "timeShift": null,
                           "title": "Appended Samples",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -22111,8 +22111,8 @@ items:
                           "timeShift": null,
                           "title": "Head Series",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -22197,8 +22197,8 @@ items:
                           "timeShift": null,
                           "title": "Head Chunks",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -22295,8 +22295,8 @@ items:
                           "timeShift": null,
                           "title": "Query Rate",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -22381,8 +22381,8 @@ items:
                           "timeShift": null,
                           "title": "Stage Duration",
                           "tooltip": {
-                              "shared": false,
-                              "sort": 0,
+                              "shared": true,
+                              "sort": 2,
                               "value_type": "individual"
                           },
                           "type": "graph",
@@ -22436,7 +22436,7 @@ items:
                           "value": "default"
                       },
                       "hide": 0,
-                      "label": null,
+                      "label": "Data Source",
                       "name": "datasource",
                       "options": [
 
