@@ -2,7 +2,6 @@ component: "Monitoring"
 
 reviewers:
 - simonpasquier
-- dgrisonnet
 - jan--f
 - bison
 - fpetkovski
@@ -16,7 +15,6 @@ reviewers:
 approvers:
 - bparees
 - simonpasquier
-- dgrisonnet
 - jan--f
 - bison
 - fpetkovski
@@ -29,6 +27,7 @@ approvers:
 
 emeritus_approvers:
 - brancz
+- dgrisonnet
 - squat
 - metalmatze
 - pgier
