@@ -143,8 +143,9 @@ spec:
         severity: warning
     - alert: KubeContainerWaiting
       annotations:
-        description: Pod {{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container}}
-          has been in waiting state for longer than 1 hour.
+        description: pod/{{ $labels.pod }} in namespace {{ $labels.namespace }} on
+          container {{ $labels.container}} has been in waiting state for longer than
+          1 hour.
         summary: Pod container waiting longer than 1 hour
       expr: |
         sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}) > 0
@@ -530,6 +531,17 @@ spec:
       for: 15m
       labels:
         namespace: kube-system
+        severity: critical
+  - name: kubernetes-system-kube-proxy
+    rules:
+    - alert: KubeProxyDown
+      annotations:
+        description: KubeProxy has disappeared from Prometheus target discovery.
+        summary: Target disappeared from Prometheus target discovery.
+      expr: |
+        absent(up{job="kube-proxy"} == 1)
+      for: 15m
+      labels:
         severity: critical
   - name: k8s.rules
     rules:
