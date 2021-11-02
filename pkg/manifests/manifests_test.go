@@ -1862,15 +1862,53 @@ func TestOpenShiftStateMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
-		t.Fatal("kube-rbac-proxy image incorrectly configured")
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
+	for i, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "openshift-state-metrics" {
+			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-openshift-state-metrics:latest" {
+				t.Fatal("openshift-state-metrics image incorrectly configured")
+			}
+		}
+		if container.Name == "kube-rbac-proxy-self" || container.Name == "kube-rbac-proxy-main" {
+			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+				t.Fatal("kube-rbac-proxy image incorrectly configured")
+			}
+			for j := range d.Spec.Template.Spec.Containers[i].Args {
+				if strings.HasPrefix(d.Spec.Template.Spec.Containers[i].Args[j], KubeRbacProxyTLSCipherSuitesFlag) {
+					kubeRbacProxyTLSCipherSuitesArg = d.Spec.Template.Spec.Containers[i].Args[j]
+				}
+
+				if strings.HasPrefix(d.Spec.Template.Spec.Containers[i].Args[j], KubeRbacProxyMinTLSVersionFlag) {
+					kubeRbacProxyMinTLSVersionArg = d.Spec.Template.Spec.Containers[i].Args[j]
+				}
+			}
+		}
 	}
-	if d.Spec.Template.Spec.Containers[1].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
-		t.Fatal("kube-rbac-proxy image incorrectly configured")
+
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
 	}
-	if d.Spec.Template.Spec.Containers[2].Image != "docker.io/openshift/origin-openshift-state-metrics:latest" {
-		t.Fatal("openshift-state-metrics image incorrectly configured")
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
+
+	d2, err := f.OpenShiftStateMetricsDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(d, d2) {
+		t.Fatal("expected OpenShiftStateMetricsDeployment to be an idempotent function")
+	}
+
 }
 
 func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {

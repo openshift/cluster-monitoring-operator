@@ -663,10 +663,9 @@ func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) 
 
 	for i, container := range d.Spec.Template.Spec.Containers {
 		switch container.Name {
-		case "kube-rbac-proxy-main":
+		case "kube-rbac-proxy-main", "kube-rbac-proxy-self":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-		case "kube-rbac-proxy-self":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "openshift-state-metrics":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OpenShiftStateMetrics
 		}
