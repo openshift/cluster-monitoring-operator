@@ -88,11 +88,23 @@ function(params)
                       action: 'drop',
                       regex: 'container_memory_failures_total',
                     },
+                    // stash 'container_fs_usage_bytes' because we don't want to include it in the drop set
+                    {
+                      sourceLabels: ['__name__'],
+                      regex: 'container_fs_usage_bytes',
+                      targetLabel: '__tmp_keep_metric',
+                      replacement: 'true',
+                    },
                     {
                       // these metrics are available at the slice level
-                      sourceLabels: ['__name__', 'container'],
+                      sourceLabels: ['__tmp_keep_metric', '__name__', 'container'],
                       action: 'drop',
-                      regex: '(container_fs_.*);.+',
+                      regex: ';(container_fs_.*);.+',
+                    },
+                    // drop the temporarily stashed metrics
+                    {
+                      action: 'labeldrop',
+                      regex: '__tmp_keep_metric',
                     },
                   ],
                 }

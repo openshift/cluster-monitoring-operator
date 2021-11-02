@@ -80,11 +80,19 @@ spec:
       regex: container_memory_failures_total
       sourceLabels:
       - __name__
-    - action: drop
-      regex: (container_fs_.*);.+
+    - regex: container_fs_usage_bytes
+      replacement: "true"
       sourceLabels:
       - __name__
+      targetLabel: __tmp_keep_metric
+    - action: drop
+      regex: ;(container_fs_.*);.+
+      sourceLabels:
+      - __tmp_keep_metric
+      - __name__
       - container
+    - action: labeldrop
+      regex: __tmp_keep_metric
     path: /metrics/cadvisor
     port: https-metrics
     relabelings:
