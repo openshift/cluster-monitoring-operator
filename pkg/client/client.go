@@ -59,6 +59,8 @@ import (
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
+const PlatformNamespaceLabel = "openshift.io/cluster-monitoring"
+
 const (
 	deploymentCreateTimeout = 5 * time.Minute
 	metadataPrefix          = "monitoring.openshift.io/"
@@ -221,6 +223,17 @@ func (c *Client) AlertingRuleListWatchForNamespace(ns string) *cache.ListWatch {
 
 func (c *Client) PrometheusRuleListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.mclient.MonitoringV1().RESTClient(), "prometheusrules", ns, fields.Everything())
+}
+
+func (c *Client) PlatformNamespacesListWatch() *cache.ListWatch {
+	return cache.NewFilteredListWatchFromClient(
+		c.kclient.CoreV1().RESTClient(),
+		"namespaces",
+		metav1.NamespaceAll,
+		func(opts *metav1.ListOptions) {
+			opts.LabelSelector = PlatformNamespaceLabel + "=true"
+		},
+	)
 }
 
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
