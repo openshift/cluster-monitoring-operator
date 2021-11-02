@@ -200,6 +200,17 @@ func (c *Client) UserWorkloadNamespace() string {
 	return c.userWorkloadNamespace
 }
 
+func (c *Client) PlatformNamespacesListWatch() *cache.ListWatch {
+	return cache.NewFilteredListWatchFromClient(
+		c.kclient.CoreV1().RESTClient(),
+		"namespaces",
+		metav1.NamespaceAll,
+		func(opts *metav1.ListOptions) {
+			opts.LabelSelector = "openshift.io/cluster-monitoring=true"
+		},
+	)
+}
+
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
