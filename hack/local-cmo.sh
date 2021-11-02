@@ -75,7 +75,7 @@ __EOF
 }
 
 images_from_deployment() {
-  kc get deployment cluster-monitoring-operator -o yaml | grep -o '\-images.*'
+  kc get deployment cluster-monitoring-operator -o json | jq -r '.spec.template.spec.containers[] | select(.name=="cluster-monitoring-operator") | .args[] | select(.|test("\\-images.*"))'
 }
 
 run() {
