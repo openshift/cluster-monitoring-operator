@@ -740,6 +740,7 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.NodeExporter
 		case "kube-rbac-proxy":
 			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			ds.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 
