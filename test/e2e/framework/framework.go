@@ -62,7 +62,7 @@ const (
 type Framework struct {
 	RestConfig            *rest.Config
 	OperatorClient        *client.Client
-	OpenshiftConfigClient openshiftconfigclientset.Interface
+	OpenShiftConfigClient openshiftconfigclientset.Interface
 	OpenShiftRouteClient  *routev1.RouteV1Client
 	KubeClient            kubernetes.Interface
 	ThanosQuerierClient   *PrometheusClient
@@ -137,7 +137,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	f := &Framework{
 		RestConfig:               config,
 		OperatorClient:           operatorClient,
-		OpenshiftConfigClient:    openshiftConfigClient,
+		OpenShiftConfigClient:    openshiftConfigClient,
 		OpenShiftRouteClient:     openshiftRouteClient,
 		KubeClient:               kubeClient,
 		APIServicesClient:        apiServicesClient,

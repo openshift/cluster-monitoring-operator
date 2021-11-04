@@ -75,7 +75,7 @@ func TestRebalanceWorkloads(t *testing.T) {
 	// Wait until CMO rebalances the pods and starts reporting Upgradeable=true
 	// again.
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		clusterOperator, err := f.OpenshiftConfigClient.ConfigV1().ClusterOperators().Get(ctx, "monitoring", metav1.GetOptions{})
+		clusterOperator, err := f.OpenShiftConfigClient.ConfigV1().ClusterOperators().Get(ctx, "monitoring", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -164,7 +164,7 @@ func incorrectlyRebalanceWorkload(ctx context.Context, r *rebalancer.Rebalancer,
 	// Wait until CMO starts reporting Upgradeable=false because all the replicas
 	// of Prometheus are scheduled on the same node.
 	return framework.Poll(time.Second, 5*time.Minute, func() error {
-		clusterOperator, err := f.OpenshiftConfigClient.ConfigV1().ClusterOperators().Get(ctx, "monitoring", metav1.GetOptions{})
+		clusterOperator, err := f.OpenShiftConfigClient.ConfigV1().ClusterOperators().Get(ctx, "monitoring", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
