@@ -1549,16 +1549,23 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *mon
 	}
 
 	for i, remote := range p.Spec.RemoteWrite {
-		if err := store.AddBasicAuth(ctx, p.GetNamespace(), remote.BasicAuth, fmt.Sprintf("remoteWrite/%d", i)); err != nil {
+		if err := validateRemoteWriteSpec(remote); err != nil {
 			return errors.Wrapf(err, "remote write %d", i)
 		}
-		if err := store.AddOAuth2(ctx, p.GetNamespace(), remote.OAuth2, fmt.Sprintf("remoteWrite/%d", i)); err != nil {
+		key := fmt.Sprintf("remoteWrite/%d", i)
+		if err := store.AddBasicAuth(ctx, p.GetNamespace(), remote.BasicAuth, key); err != nil {
+			return errors.Wrapf(err, "remote write %d", i)
+		}
+		if err := store.AddOAuth2(ctx, p.GetNamespace(), remote.OAuth2, key); err != nil {
 			return errors.Wrapf(err, "remote write %d", i)
 		}
 		if err := store.AddTLSConfig(ctx, p.GetNamespace(), remote.TLSConfig); err != nil {
 			return errors.Wrapf(err, "remote write %d", i)
 		}
 		if err := store.AddAuthorizationCredentials(ctx, p.GetNamespace(), remote.Authorization, fmt.Sprintf("remoteWrite/auth/%d", i)); err != nil {
+			return errors.Wrapf(err, "remote write %d", i)
+		}
+		if err := store.AddSigV4(ctx, p.GetNamespace(), remote.Sigv4, key); err != nil {
 			return errors.Wrapf(err, "remote write %d", i)
 		}
 	}
@@ -1947,39 +1954,48 @@ func (c *Operator) selectProbes(ctx context.Context, p *monitoringv1.Prometheus,
 
 	var rejected int
 	res := make(map[string]*monitoringv1.Probe, len(probes))
+
 	for probeName, probe := range probes {
-		if probe.Spec.Targets.StaticConfig == nil && probe.Spec.Targets.Ingress == nil {
+		rejectFn := func(probe *monitoringv1.Probe, err error) {
 			rejected++
 			level.Warn(c.logger).Log(
 				"msg", "skipping probe",
-				"error", "Probe needs at least one target of type staticConfig or ingress",
-				"probe", probeName,
+				"error", err.Error(),
+				"probe", probe,
 				"namespace", p.Namespace,
 				"prometheus", p.Name,
 			)
+		}
+		if probe.Spec.Targets.StaticConfig == nil && probe.Spec.Targets.Ingress == nil {
+			rejectFn(probe, err)
 			continue
 		}
 		pnKey := fmt.Sprintf("probe/%s/%s", probe.GetNamespace(), probe.GetName())
 		if err = store.AddBearerToken(ctx, probe.GetNamespace(), probe.Spec.BearerTokenSecret, pnKey); err != nil {
-			break
+			rejectFn(probe, err)
+			continue
 		}
 
 		if err = store.AddBasicAuth(ctx, probe.GetNamespace(), probe.Spec.BasicAuth, pnKey); err != nil {
-			break
+			rejectFn(probe, err)
+			continue
 		}
 
 		if probe.Spec.TLSConfig != nil {
 			if err = store.AddSafeTLSConfig(ctx, probe.GetNamespace(), &probe.Spec.TLSConfig.SafeTLSConfig); err != nil {
-				break
+				rejectFn(probe, err)
+				continue
 			}
 		}
 		pnAuthKey := fmt.Sprintf("probe/auth/%s/%s", probe.GetNamespace(), probe.GetName())
 		if err = store.AddSafeAuthorizationCredentials(ctx, probe.GetNamespace(), probe.Spec.Authorization, pnAuthKey); err != nil {
-			break
+			rejectFn(probe, err)
+			continue
 		}
 
 		if err = store.AddOAuth2(ctx, probe.GetNamespace(), probe.Spec.OAuth2, pnKey); err != nil {
-			break
+			rejectFn(probe, err)
+			continue
 		}
 
 		res[probeName] = probe
@@ -2027,4 +2043,29 @@ func (c *Operator) listMatchingNamespaces(selector labels.Selector) ([]string, e
 		return nil, errors.Wrap(err, "failed to list namespaces")
 	}
 	return ns, nil
+}
+
+// validateRemoteWriteSpec checks that mutually exclusive configurations are not
+// included in the Prometheus remoteWrite configuration section.
+// Reference:
+// https://github.com/prometheus/prometheus/blob/main/docs/configuration/configuration.md#remote_write
+func validateRemoteWriteSpec(spec monitoringv1.RemoteWriteSpec) error {
+	var nonNilFields []string
+	for k, v := range map[string]interface{}{
+		"basicAuth":     spec.BasicAuth,
+		"oauth2":        spec.OAuth2,
+		"authorization": spec.Authorization,
+		"sigv4":         spec.Sigv4,
+	} {
+		if reflect.ValueOf(v).IsNil() {
+			continue
+		}
+		nonNilFields = append(nonNilFields, fmt.Sprintf("%q", k))
+	}
+
+	if len(nonNilFields) > 1 {
+		return errors.Errorf("%s can't be set at the same time, at most one of them must be defined", strings.Join(nonNilFields, " and "))
+	}
+
+	return nil
 }

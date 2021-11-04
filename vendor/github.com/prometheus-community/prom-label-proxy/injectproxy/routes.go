@@ -38,13 +38,15 @@ type routes struct {
 	handler  http.Handler
 	label    string
 
-	mux       *http.ServeMux
-	modifiers map[string]func(*http.Response) error
+	mux            *http.ServeMux
+	modifiers      map[string]func(*http.Response) error
+	errorOnReplace bool
 }
 
 type options struct {
-	enableLabelAPIs bool
-	pasthroughPaths []string
+	enableLabelAPIs  bool
+	passthroughPaths []string
+	errorOnReplace   bool
 }
 
 type Option interface {
@@ -69,7 +71,15 @@ func WithEnabledLabelsAPI() Option {
 // NOTE: Passthrough "all" paths like "/" or "" and regex are not allowed.
 func WithPassthroughPaths(paths []string) Option {
 	return optionFunc(func(o *options) {
-		o.pasthroughPaths = paths
+		o.passthroughPaths = paths
+	})
+}
+
+// ErrorOnReplace causes the proxy to return 403 if a label matcher we want to
+// inject is present in the query already and matches something different
+func WithErrorOnReplace() Option {
+	return optionFunc(func(o *options) {
+		o.errorOnReplace = true
 	})
 }
 
@@ -124,7 +134,7 @@ func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error)
 
 	proxy := httputil.NewSingleHostReverseProxy(upstream)
 
-	r := &routes{upstream: upstream, handler: proxy, label: label}
+	r := &routes{upstream: upstream, handler: proxy, label: label, errorOnReplace: opt.errorOnReplace}
 	mux := newStrictMux()
 
 	errs := merrors.New(
@@ -134,11 +144,12 @@ func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error)
 		mux.Handle("/api/v1/alerts", r.enforceLabel(enforceMethods(r.passthrough, "GET"))),
 		mux.Handle("/api/v1/rules", r.enforceLabel(enforceMethods(r.passthrough, "GET"))),
 		mux.Handle("/api/v1/series", r.enforceLabel(enforceMethods(r.matcher, "GET"))),
+		mux.Handle("/api/v1/query_exemplars", r.enforceLabel(enforceMethods(r.query, "GET", "POST"))),
 	)
 
 	if opt.enableLabelAPIs {
 		errs.Add(
-			mux.Handle("/api/v1/labels", r.enforceLabel(enforceMethods(r.matcher, "GET"))),
+			mux.Handle("/api/v1/labels", r.enforceLabel(enforceMethods(r.matcher, "GET", "POST"))),
 			// Full path is /api/v1/label/<label_name>/values but http mux does not support patterns.
 			// This is fine though as we don't care about name for matcher injector.
 			mux.Handle("/api/v1/label/", r.enforceLabel(enforceMethods(r.matcher, "GET"))),
@@ -155,21 +166,21 @@ func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error)
 	}
 
 	// Validate paths.
-	for _, path := range opt.pasthroughPaths {
+	for _, path := range opt.passthroughPaths {
 		u, err := url.Parse(fmt.Sprintf("http://example.com%v", path))
 		if err != nil {
-			return nil, fmt.Errorf("path %v is not a valid URI path, got %v", path, opt.pasthroughPaths)
+			return nil, fmt.Errorf("path %q is not a valid URI path, got %v", path, opt.passthroughPaths)
 		}
 		if u.Path != path {
-			return nil, fmt.Errorf("path %v is not a valid URI path, got %v", path, opt.pasthroughPaths)
+			return nil, fmt.Errorf("path %q is not a valid URI path, got %v", path, opt.passthroughPaths)
 		}
 		if u.Path == "" || u.Path == "/" {
-			return nil, fmt.Errorf("path %v is not allowed, got %v", u.Path, opt.pasthroughPaths)
+			return nil, fmt.Errorf("path %q is not allowed, got %v", u.Path, opt.passthroughPaths)
 		}
 	}
 
 	// Register optional passthrough paths.
-	for _, path := range opt.pasthroughPaths {
+	for _, path := range opt.passthroughPaths {
 		if err := mux.Handle(path, http.HandlerFunc(r.passthrough)); err != nil {
 			return nil, err
 		}
@@ -186,7 +197,7 @@ func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error)
 
 func (r *routes) enforceLabel(h http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		lvalue := req.URL.Query().Get(r.label)
+		lvalue := req.FormValue(r.label)
 		if lvalue == "" {
 			http.Error(w, fmt.Sprintf("Bad request. The %q query parameter must be provided.", r.label), http.StatusBadRequest)
 			return
@@ -195,8 +206,25 @@ func (r *routes) enforceLabel(h http.HandlerFunc) http.Handler {
 
 		// Remove the proxy label from the query parameters.
 		q := req.URL.Query()
-		q.Del(r.label)
+		if q.Get(r.label) != "" {
+			q.Del(r.label)
+		}
 		req.URL.RawQuery = q.Encode()
+		// Remove the proxy label from the PostForm.
+		if req.Method == http.MethodPost {
+			if err := req.ParseForm(); err != nil {
+				http.Error(w, fmt.Sprintf("Failed to parse the PostForm: %v", err), http.StatusInternalServerError)
+				return
+			}
+			if req.PostForm.Get(r.label) != "" {
+				req.PostForm.Del(r.label)
+				newBody := req.PostForm.Encode()
+				// We are replacing request body, close previous one (req.FormValue ensures it is read fully and not nil).
+				_ = req.Body.Close()
+				req.Body = ioutil.NopCloser(strings.NewReader(newBody))
+				req.ContentLength = int64(len(newBody))
+			}
+		}
 
 		h.ServeHTTP(w, req)
 	})
@@ -251,11 +279,12 @@ func (r *routes) passthrough(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *routes) query(w http.ResponseWriter, req *http.Request) {
-	e := NewEnforcer([]*labels.Matcher{{
-		Name:  r.label,
-		Type:  labels.MatchEqual,
-		Value: mustLabelValue(req.Context()),
-	}}...)
+	e := NewEnforcer(r.errorOnReplace,
+		[]*labels.Matcher{{
+			Name:  r.label,
+			Type:  labels.MatchEqual,
+			Value: mustLabelValue(req.Context()),
+		}}...)
 
 	// The `query` can come in the URL query string and/or the POST body.
 	// For this reason, we need to try to enforcing in both places.
@@ -264,6 +293,9 @@ func (r *routes) query(w http.ResponseWriter, req *http.Request) {
 	// enforce in both places.
 	q, found1, err := enforceQueryValues(e, req.URL.Query())
 	if err != nil {
+		if _, ok := err.(IllegalLabelMatcherError); ok {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
 		return
 	}
 	req.URL.RawQuery = q
@@ -276,6 +308,9 @@ func (r *routes) query(w http.ResponseWriter, req *http.Request) {
 		}
 		q, found2, err = enforceQueryValues(e, req.PostForm)
 		if err != nil {
+			if _, ok := err.(IllegalLabelMatcherError); ok {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
 			return
 		}
 		// We are replacing request body, close previous one (ParseForm ensures it is read fully and not nil).
@@ -321,8 +356,29 @@ func (r *routes) matcher(w http.ResponseWriter, req *http.Request) {
 		Type:  labels.MatchEqual,
 		Value: mustLabelValue(req.Context()),
 	}
-
 	q := req.URL.Query()
+	if err := injectMatcher(q, matcher); err != nil {
+		return
+	}
+	req.URL.RawQuery = q.Encode()
+	if req.Method == http.MethodPost {
+		if err := req.ParseForm(); err != nil {
+			return
+		}
+		q = req.PostForm
+		if err := injectMatcher(q, matcher); err != nil {
+			return
+		}
+		// We are replacing request body, close previous one (ParseForm ensures it is read fully and not nil).
+		_ = req.Body.Close()
+		newBody := q.Encode()
+		req.Body = ioutil.NopCloser(strings.NewReader(newBody))
+		req.ContentLength = int64(len(newBody))
+	}
+	r.handler.ServeHTTP(w, req)
+}
+
+func injectMatcher(q url.Values, matcher *labels.Matcher) error {
 	matchers := q[matchersParam]
 	if len(matchers) == 0 {
 		q.Set(matchersParam, matchersToString(matcher))
@@ -331,15 +387,13 @@ func (r *routes) matcher(w http.ResponseWriter, req *http.Request) {
 		for i, m := range matchers {
 			ms, err := parser.ParseMetricSelector(m)
 			if err != nil {
-				return
+				return err
 			}
 			matchers[i] = matchersToString(append(ms, matcher)...)
 		}
 		q[matchersParam] = matchers
 	}
-
-	req.URL.RawQuery = q.Encode()
-	r.handler.ServeHTTP(w, req)
+	return nil
 }
 
 func matchersToString(ms ...*labels.Matcher) string {
