@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.22.2
-  name: alertmanager
+  name: alertmanager-main
   namespace: openshift-monitoring
 spec:
   endpoints:

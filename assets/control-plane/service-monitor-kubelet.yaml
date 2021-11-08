@@ -3,6 +3,7 @@ kind: ServiceMonitor
 metadata:
   labels:
     app.kubernetes.io/name: kubelet
+    app.kubernetes.io/part-of: openshift-monitoring
     k8s-app: kubelet
   name: kubelet
   namespace: openshift-monitoring
