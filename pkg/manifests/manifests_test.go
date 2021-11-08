@@ -759,6 +759,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
 		"prometheus-config-reloader": "docker.io/openshift/origin-prometheus-config-reloader:latest",
 		"configmap-reloader":         "docker.io/openshift/origin-configmap-reloader:latest",
+		"kube-rbac-proxy":            "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
 	if err != nil {
@@ -779,26 +780,29 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatalf("expected node selector to be master, got %q", got)
 	}
 
-	expectedPromOpImage := "docker.io/openshift/origin-prometheus-operator:latest"
-	resPromOpImage := d.Spec.Template.Spec.Containers[0].Image
-	if resPromOpImage != expectedPromOpImage {
-		t.Fatalf("Configuring the Prometheus Operator image failed, expected: %v, got %v", expectedPromOpImage, resPromOpImage)
-	}
-
 	prometheusReloaderFound := false
 	prometheusWebTLSCipherSuitesArg := ""
 	prometheusWebTLSVersionArg := ""
-	for i := range d.Spec.Template.Spec.Containers[0].Args {
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest") {
-			prometheusReloaderFound = true
-		}
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
+	for _, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "prometheus-operator":
+			if container.Image != "docker.io/openshift/origin-prometheus-operator:latest" {
+				t.Fatalf("%s image incorrectly configured", container.Name)
+			}
 
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorWebTLSCipherSuitesFlag) {
-			prometheusWebTLSCipherSuitesArg = d.Spec.Template.Spec.Containers[0].Args[i]
-		}
-
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorWebTLSMinTLSVersionFlag) {
-			prometheusWebTLSVersionArg = d.Spec.Template.Spec.Containers[0].Args[i]
+			if getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest", container.Name) != "" {
+				prometheusReloaderFound = true
+			}
+			prometheusWebTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
+			prometheusWebTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
+		case "kube-rbac-proxy":
+			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+				t.Fatalf("%s image incorrectly configured", container.Name)
+			}
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
 	}
 
@@ -819,6 +823,20 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", prometheusWebTLSVersionArg, expectedPrometheusWebTLSVersionArg)
 	}
 
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
+	}
+
 	d2, err := f.PrometheusOperatorDeployment()
 	if err != nil {
 		t.Fatal(err)
@@ -827,6 +845,19 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	if !reflect.DeepEqual(d, d2) {
 		t.Fatal("expected PrometheusOperatorDeployment to be an idempotent function")
 	}
+}
+
+func getContainerArgValue(containers []v1.Container, argFlag string, containerName string) string {
+	for _, container := range containers {
+		if container.Name == containerName {
+			for _, arg := range container.Args {
+				if strings.HasPrefix(arg, argFlag) {
+					return arg
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func TestPrometheusK8sRemoteWrite(t *testing.T) {
@@ -1798,26 +1829,19 @@ func TestKubeStateMetrics(t *testing.T) {
 
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
-	for i, container := range d.Spec.Template.Spec.Containers {
-		if container.Name == "kube-state-metrics" {
-			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-kube-state-metrics:latest" {
+	for _, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "kube-state-metrics":
+			if container.Image != "docker.io/openshift/origin-kube-state-metrics:latest" {
 				t.Fatal("kube-state-metrics image incorrectly configured")
 			}
-		}
-		if container.Name == "kube-rbac-proxy-self" || container.Name == "kube-rbac-proxy-main" {
-			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+		case "kube-rbac-proxy-self", "kube-rbac-proxy-main":
+			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 				t.Fatalf("%s image incorrectly configured", container.Name)
 			}
 
-			for j := range d.Spec.Template.Spec.Containers[i].Args {
-				if strings.HasPrefix(d.Spec.Template.Spec.Containers[i].Args[j], KubeRbacProxyTLSCipherSuitesFlag) {
-					kubeRbacProxyTLSCipherSuitesArg = d.Spec.Template.Spec.Containers[i].Args[j]
-				}
-
-				if strings.HasPrefix(d.Spec.Template.Spec.Containers[i].Args[j], KubeRbacProxyMinTLSVersionFlag) {
-					kubeRbacProxyMinTLSVersionArg = d.Spec.Template.Spec.Containers[i].Args[j]
-				}
-			}
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
 	}
 
@@ -1864,25 +1888,19 @@ func TestOpenShiftStateMetrics(t *testing.T) {
 
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
-	for i, container := range d.Spec.Template.Spec.Containers {
-		if container.Name == "openshift-state-metrics" {
-			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-openshift-state-metrics:latest" {
+	for _, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "openshift-state-metrics":
+			if container.Image != "docker.io/openshift/origin-openshift-state-metrics:latest" {
 				t.Fatal("openshift-state-metrics image incorrectly configured")
 			}
-		}
-		if container.Name == "kube-rbac-proxy-self" || container.Name == "kube-rbac-proxy-main" {
-			if d.Spec.Template.Spec.Containers[i].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+
+		case "kube-rbac-proxy-self", "kube-rbac-proxy-main":
+			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 				t.Fatal("kube-rbac-proxy image incorrectly configured")
 			}
-			for j := range d.Spec.Template.Spec.Containers[i].Args {
-				if strings.HasPrefix(d.Spec.Template.Spec.Containers[i].Args[j], KubeRbacProxyTLSCipherSuitesFlag) {
-					kubeRbacProxyTLSCipherSuitesArg = d.Spec.Template.Spec.Containers[i].Args[j]
-				}
-
-				if strings.HasPrefix(d.Spec.Template.Spec.Containers[i].Args[j], KubeRbacProxyMinTLSVersionFlag) {
-					kubeRbacProxyMinTLSVersionArg = d.Spec.Template.Spec.Containers[i].Args[j]
-				}
-			}
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
 	}
 
@@ -2349,6 +2367,7 @@ enableUserWorkload: true
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
 		"prometheus-config-reloader": "docker.io/openshift/origin-prometheus-config-reloader:latest",
 		"configmap-reloader":         "docker.io/openshift/origin-configmap-reloader:latest",
+		"kube-rbac-proxy":            "docker.io/openshift/origin-kube-rbac-proxy:latest",
 	})
 
 	if err != nil {
@@ -2361,21 +2380,30 @@ enableUserWorkload: true
 		t.Fatal(err)
 	}
 
-	expectedPromOpImage := "docker.io/openshift/origin-prometheus-operator:latest"
-	resPromOpImage := d.Spec.Template.Spec.Containers[0].Image
-	if resPromOpImage != expectedPromOpImage {
-		t.Fatalf("Configuring the Prometheus Operator image failed, expected: %v, got %v", expectedPromOpImage, resPromOpImage)
-	}
-
 	prometheusReloaderFound := false
 	prometheusWebTLSCipherSuitesArg := ""
-	for i := range d.Spec.Template.Spec.Containers[0].Args {
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest") {
-			prometheusReloaderFound = true
-		}
+	prometheusWebTLSVersionArg := ""
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
+	for _, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "prometheus-operator":
+			if container.Image != "docker.io/openshift/origin-prometheus-operator:latest" {
+				t.Fatalf("%s image incorrectly configured", container.Name)
+			}
+			if getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest", container.Name) != "" {
+				prometheusReloaderFound = true
+			}
 
-		if strings.HasPrefix(d.Spec.Template.Spec.Containers[0].Args[i], PrometheusOperatorWebTLSCipherSuitesFlag) {
-			prometheusWebTLSCipherSuitesArg = d.Spec.Template.Spec.Containers[0].Args[i]
+			prometheusWebTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
+			prometheusWebTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
+
+		case "kube-rbac-proxy":
+			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+				t.Fatal("kube-rbac-proxy image incorrectly configured")
+			}
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
 	}
 
@@ -2389,6 +2417,35 @@ enableUserWorkload: true
 	)
 	if expectedPrometheusWebTLSCipherSuitesArg != prometheusWebTLSCipherSuitesArg {
 		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", prometheusWebTLSCipherSuitesArg, expectedPrometheusWebTLSCipherSuitesArg)
+	}
+
+	expectedPrometheusWebTLSVersionArg := fmt.Sprintf("%s%s",
+		PrometheusOperatorWebTLSMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedPrometheusWebTLSVersionArg != prometheusWebTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", prometheusWebTLSVersionArg, expectedPrometheusWebTLSVersionArg)
+	}
+
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
+	}
+
+	d2, err := f.PrometheusOperatorUserWorkloadDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(d, d2) {
+		t.Fatal("expected PrometheusOperatorUserWorkloadDeployment to be an idempotent function")
 	}
 }
 

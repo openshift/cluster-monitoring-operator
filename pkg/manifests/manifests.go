@@ -2098,6 +2098,7 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 		switch container.Name {
 		case "kube-rbac-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "prometheus-operator":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusOperator
 
@@ -2146,6 +2147,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment
 		switch container.Name {
 		case "kube-rbac-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "prometheus-operator":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusOperator
 
