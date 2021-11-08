@@ -168,17 +168,18 @@ type RemoteWriteSpec struct {
 }
 
 type PrometheusK8sConfig struct {
-	LogLevel            string                               `json:"logLevel"`
-	Retention           string                               `json:"retention"`
-	NodeSelector        map[string]string                    `json:"nodeSelector"`
-	Tolerations         []v1.Toleration                      `json:"tolerations"`
-	Resources           *v1.ResourceRequirements             `json:"resources"`
-	ExternalLabels      map[string]string                    `json:"externalLabels"`
-	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite         []RemoteWriteSpec                    `json:"remoteWrite"`
-	TelemetryMatches    []string                             `json:"-"`
-	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
-	QueryLogFile        string                               `json:"queryLogFile"`
+	LogLevel                  string                               `json:"logLevel"`
+	Retention                 string                               `json:"retention"`
+	NodeSelector              map[string]string                    `json:"nodeSelector"`
+	Tolerations               []v1.Toleration                      `json:"tolerations"`
+	Resources                 *v1.ResourceRequirements             `json:"resources"`
+	ExternalLabels            map[string]string                    `json:"externalLabels"`
+	VolumeClaimTemplate       *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	RemoteWrite               []RemoteWriteSpec                    `json:"remoteWrite"`
+	TelemetryMatches          []string                             `json:"-"`
+	AlertmanagerConfigs       []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
+	QueryLogFile              string                               `json:"queryLogFile"`
+	TopologySpreadConstraints []v1.TopologySpreadConstraint        `json:"topologySpreadConstraints"`
 }
 
 type AdditionalAlertmanagerConfig struct {
@@ -213,12 +214,13 @@ type TLSConfig struct {
 }
 
 type AlertmanagerMainConfig struct {
-	Enabled             *bool                                `json:"enabled"`
-	LogLevel            string                               `json:"logLevel"`
-	NodeSelector        map[string]string                    `json:"nodeSelector"`
-	Tolerations         []v1.Toleration                      `json:"tolerations"`
-	Resources           *v1.ResourceRequirements             `json:"resources"`
-	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	Enabled                   *bool                                `json:"enabled"`
+	LogLevel                  string                               `json:"logLevel"`
+	NodeSelector              map[string]string                    `json:"nodeSelector"`
+	Tolerations               []v1.Toleration                      `json:"tolerations"`
+	Resources                 *v1.ResourceRequirements             `json:"resources"`
+	VolumeClaimTemplate       *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	TopologySpreadConstraints []v1.TopologySpreadConstraint        `json:"topologySpreadConstraints"`
 }
 
 func (a AlertmanagerMainConfig) IsEnabled() bool {
@@ -226,12 +228,13 @@ func (a AlertmanagerMainConfig) IsEnabled() bool {
 }
 
 type ThanosRulerConfig struct {
-	LogLevel             string                               `json:"logLevel"`
-	NodeSelector         map[string]string                    `json:"nodeSelector"`
-	Tolerations          []v1.Toleration                      `json:"tolerations"`
-	Resources            *v1.ResourceRequirements             `json:"resources"`
-	VolumeClaimTemplate  *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	AlertmanagersConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
+	LogLevel                  string                               `json:"logLevel"`
+	NodeSelector              map[string]string                    `json:"nodeSelector"`
+	Tolerations               []v1.Toleration                      `json:"tolerations"`
+	Resources                 *v1.ResourceRequirements             `json:"resources"`
+	VolumeClaimTemplate       *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	AlertmanagersConfigs      []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
+	TopologySpreadConstraints []v1.TopologySpreadConstraint        `json:"topologySpreadConstraints"`
 }
 
 type ThanosQuerierConfig struct {
