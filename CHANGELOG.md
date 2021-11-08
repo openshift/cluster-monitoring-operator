@@ -1,5 +1,8 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.12
+- [#1624](https://github.com/openshift/cluster-monitoring-operator/pull/1624) Add option to specify TopologySpreadConstraints for Prometheus, Alertmanager, and ThanosRuler.
+
 ## 4.11
 - [#1652](https://github.com/openshift/cluster-monitoring-operator/pull/1652) Double scrape interval for all CMO controlled ServiceMonitors on single node deployments
 - [#1567](https://github.com/openshift/cluster-monitoring-operator/pull/1567) Enable validating webhook for AlertmanagerConfig custom resources
