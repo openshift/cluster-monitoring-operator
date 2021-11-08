@@ -73,6 +73,25 @@ func (f *Framework) MustGetStatefulSet(t *testing.T, name, namespace string) *ap
 	return statefulSet
 }
 
+// MustGetPods return all pods from `namespace` within 5 minutes or fail
+func (f *Framework) MustGetPods(t *testing.T, namespace string) *v1.PodList {
+	t.Helper()
+	var pods *v1.PodList
+	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		pl, err := f.KubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return false, nil
+		}
+
+		pods = pl
+		return true, nil
+	})
+	if err != nil {
+		t.Fatalf("failed to get pods in namespace %s - %s", namespace, err.Error())
+	}
+	return pods
+}
+
 func ensureCreatedByTestLabel(obj metav1.Object) {
 	// only add the label if it doesn't exist yet, leave existing values
 	// untouched
