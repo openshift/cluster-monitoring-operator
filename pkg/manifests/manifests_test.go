@@ -1802,11 +1802,46 @@ func TestNodeExporter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ds.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-prometheus-node-exporter:latest" {
-		t.Fatalf("image for node-exporter daemonset is wrong: %s", ds.Spec.Template.Spec.Containers[0].Image)
+
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
+
+	for _, container := range ds.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "node-exporter":
+			if container.Image != "docker.io/openshift/origin-prometheus-node-exporter:latest" {
+				t.Fatalf("image for node-exporter daemonset is wrong: %s", container.Name)
+			}
+		case "kube-rbac-proxy":
+			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+				t.Fatalf("image for kube-rbac-proxy in node-exporter daemonset is wrong: %s", container.Name)
+			}
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(ds.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(ds.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
+		}
 	}
-	if ds.Spec.Template.Spec.Containers[1].Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
-		t.Fatalf("image for kube-rbac-proxy in node-exporter daemonset is wrong: %s", ds.Spec.Template.Spec.Containers[1].Image)
+
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
+	}
+
+	ds2, err := f.NodeExporterDaemonSet()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(ds, ds2) {
+		t.Fatal("expected NodeExporterDaemonSet to be an idempotent function")
 	}
 }
 
