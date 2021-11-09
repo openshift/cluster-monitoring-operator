@@ -3,10 +3,15 @@ package framework
 import (
 	"context"
 	"fmt"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 	"time"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	ctx = context.Background()
 )
 
 type AssertionFunc func(t *testing.T)
@@ -14,7 +19,7 @@ type AssertionFunc func(t *testing.T)
 func (f *Framework) AssertStatefulsetExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -22,7 +27,7 @@ func (f *Framework) AssertStatefulsetExists(name string, namespace string) func(
 func (f *Framework) AssertStatefulsetDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -30,7 +35,7 @@ func (f *Framework) AssertStatefulsetDoesNotExist(name string, namespace string)
 func (f *Framework) AssertRouteExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.OpenShiftRouteClient.Routes(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.OpenShiftRouteClient.Routes(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -38,7 +43,7 @@ func (f *Framework) AssertRouteExists(name string, namespace string) func(t *tes
 func (f *Framework) AssertRouteDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.OpenShiftRouteClient.Routes(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.OpenShiftRouteClient.Routes(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -46,7 +51,7 @@ func (f *Framework) AssertRouteDoesNotExist(name string, namespace string) func(
 func (f *Framework) AssertSecretExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -54,7 +59,7 @@ func (f *Framework) AssertSecretExists(name string, namespace string) func(t *te
 func (f *Framework) AssertSecretDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -62,7 +67,7 @@ func (f *Framework) AssertSecretDoesNotExist(name string, namespace string) func
 func (f *Framework) AssertServiceExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -70,7 +75,7 @@ func (f *Framework) AssertServiceExists(name string, namespace string) func(t *t
 func (f *Framework) AssertServiceDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -78,7 +83,7 @@ func (f *Framework) AssertServiceDoesNotExist(name string, namespace string) fun
 func (f *Framework) AssertConfigmapExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -86,7 +91,7 @@ func (f *Framework) AssertConfigmapExists(name string, namespace string) func(t 
 func (f *Framework) AssertConfigmapDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -94,7 +99,7 @@ func (f *Framework) AssertConfigmapDoesNotExist(name string, namespace string) f
 func (f *Framework) AssertServiceAccountExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -102,7 +107,7 @@ func (f *Framework) AssertServiceAccountExists(name string, namespace string) fu
 func (f *Framework) AssertServiceAccountDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -110,7 +115,7 @@ func (f *Framework) AssertServiceAccountDoesNotExist(name string, namespace stri
 func (f *Framework) AssertRoleExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.RbacV1().Roles(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -118,7 +123,7 @@ func (f *Framework) AssertRoleExists(name string, namespace string) func(t *test
 func (f *Framework) AssertRoleDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.RbacV1().Roles(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -126,7 +131,7 @@ func (f *Framework) AssertRoleDoesNotExist(name string, namespace string) func(t
 func (f *Framework) AssertRoleBindingExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.RbacV1().RoleBindings(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.RbacV1().RoleBindings(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -134,7 +139,7 @@ func (f *Framework) AssertRoleBindingExists(name string, namespace string) func(
 func (f *Framework) AssertRoleBindingDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.RbacV1().RoleBindings(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.RbacV1().RoleBindings(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -142,7 +147,7 @@ func (f *Framework) AssertRoleBindingDoesNotExist(name string, namespace string)
 func (f *Framework) AssertClusterRoleExists(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.RbacV1().ClusterRoles().Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.RbacV1().ClusterRoles().Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -150,7 +155,7 @@ func (f *Framework) AssertClusterRoleExists(name string) func(t *testing.T) {
 func (f *Framework) AssertClusterRoleDoesNotExist(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.RbacV1().ClusterRoles().Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.RbacV1().ClusterRoles().Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -158,7 +163,7 @@ func (f *Framework) AssertClusterRoleDoesNotExist(name string) func(t *testing.T
 func (f *Framework) AssertClusterRoleBindingExists(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.RbacV1().ClusterRoleBindings().Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.RbacV1().ClusterRoleBindings().Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -166,7 +171,7 @@ func (f *Framework) AssertClusterRoleBindingExists(name string) func(t *testing.
 func (f *Framework) AssertClusterRoleBindingDoesNotExist(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.KubeClient.RbacV1().ClusterRoleBindings().Get(context.TODO(), name, metav1.GetOptions{})
+			return f.KubeClient.RbacV1().ClusterRoleBindings().Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -174,7 +179,7 @@ func (f *Framework) AssertClusterRoleBindingDoesNotExist(name string) func(t *te
 func (f *Framework) AssertPrometheusRuleExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.MonitoringClient.PrometheusRules(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.MonitoringClient.PrometheusRules(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -182,7 +187,7 @@ func (f *Framework) AssertPrometheusRuleExists(name string, namespace string) fu
 func (f *Framework) AssertPrometheusRuleDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.MonitoringClient.PrometheusRules(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.MonitoringClient.PrometheusRules(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -190,7 +195,7 @@ func (f *Framework) AssertPrometheusRuleDoesNotExist(name string, namespace stri
 func (f *Framework) AssertServiceMonitorExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
-			return f.MonitoringClient.ServiceMonitors(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.MonitoringClient.ServiceMonitors(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }
@@ -198,7 +203,7 @@ func (f *Framework) AssertServiceMonitorExists(name string, namespace string) fu
 func (f *Framework) AssertServiceMonitorDoesNotExist(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
-			return f.MonitoringClient.ServiceMonitors(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			return f.MonitoringClient.ServiceMonitors(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }

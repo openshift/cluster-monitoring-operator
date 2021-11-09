@@ -96,12 +96,6 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating openshiftConfigClient failed")
 	}
 
-	// Necessary to test the operator status.
-	openshiftConfigClient, err := openshiftconfigclientset.NewForConfig(config)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating openshiftConfigClient failed")
-	}
-
 	// So far only necessary for prometheusK8sClient.
 	openshiftRouteClient, err := routev1.NewForConfig(config)
 	if err != nil {

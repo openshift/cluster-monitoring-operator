@@ -31,7 +31,10 @@ import (
 
 const assetsPath = "../../assets"
 
-var f *framework.Framework
+var (
+	ctx = context.Background()
+	f   *framework.Framework
+)
 
 func TestMain(m *testing.M) {
 	if err := testMain(m); err != nil {
