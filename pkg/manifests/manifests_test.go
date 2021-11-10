@@ -2104,8 +2104,11 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 		})
 	}
 
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
 	for _, c := range d.Spec.Template.Spec.Containers {
-		if c.Name == "thanos-query" {
+		switch c.Name {
+		case "thanos-query":
 			for _, tc := range []struct {
 				name, want string
 				resource   func() *resource.Quantity
@@ -2137,9 +2140,8 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 					}
 				})
 			}
-		}
 
-		if c.Name == "oauth-proxy" {
+		case "oauth-proxy":
 			volumeName := "thanos-querier-trusted-ca-bundle"
 			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", c.Name)
@@ -2147,7 +2149,24 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 			if !trustedCABundleVolumeMountsConfigured(c.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", c.Name)
 			}
+
+		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics":
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, c.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, c.Name)
 		}
+	}
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 }
 

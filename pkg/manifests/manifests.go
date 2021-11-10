@@ -3144,14 +3144,9 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		case "prom-label-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 
-		case "kube-rbac-proxy":
+		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-
-		case "kube-rbac-proxy-rules":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-
-		case "kube-rbac-proxy-metrics":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 

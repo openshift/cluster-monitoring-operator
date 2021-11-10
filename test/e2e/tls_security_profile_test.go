@@ -104,6 +104,9 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 			assertCorrectTLSConfiguration(t, "telemeter-client", "deployment",
 				manifests.KubeRbacProxyTLSCipherSuitesFlag,
 				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
+			assertCorrectTLSConfiguration(t, "thanos-querier", "deployment",
+				manifests.KubeRbacProxyTLSCipherSuitesFlag,
+				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
 		})
 	}
 }
