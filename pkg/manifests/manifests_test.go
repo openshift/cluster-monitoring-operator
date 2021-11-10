@@ -1773,16 +1773,36 @@ ingress:
 		t.Fatal("Alertmanager volumeClaimTemplate not configured correctly, expected 10Gi storage request, but found", storageRequestPtr.String())
 	}
 
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range a.Spec.Containers {
 		volumeName := "alertmanager-trusted-ca-bundle"
-		if container.Name == "prometheus-proxy" || container.Name == "prometheus" {
+		switch container.Name {
+		case "prometheus-proxy", "prometheus":
 			if !trustedCABundleVolumeConfigured(a.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
 			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
+		case "kube-rbac-proxy", "kube-rbac-proxy-metric":
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(a.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(a.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
+	}
+
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 }
 

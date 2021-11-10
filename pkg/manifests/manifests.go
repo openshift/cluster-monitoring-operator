@@ -484,10 +484,9 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 					trustedCABundleVolumeMount(volumeName),
 				)
 			}
-		case "kube-rbac-proxy":
+		case "kube-rbac-proxy", "kube-rbac-proxy-metric":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-		case "kube-rbac-proxy-metric":
-			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "prom-label-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}

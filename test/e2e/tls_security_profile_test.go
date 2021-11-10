@@ -110,38 +110,47 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 			assertCorrectTLSConfiguration(t, "grafana", "deployment",
 				manifests.KubeRbacProxyTLSCipherSuitesFlag,
 				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
+			assertCorrectTLSConfiguration(t, "alertmanager-main", "statefulset",
+				manifests.KubeRbacProxyTLSCipherSuitesFlag,
+				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
 		})
 	}
 }
 
-func assertCorrectTLSConfiguration(t *testing.T, component, objectType, tlsCipherSuiteFlag, tlsMinTLSVersionFlag string, expectedCipherSuite []string, expectedTLSVersion string) {
+func assertCorrectTLSConfiguration(t *testing.T, componentName, objectType, tlsCipherSuiteFlag, tlsMinTLSVersionFlag string, expectedCipherSuite []string, expectedTLSVersion string) {
 	ctx := context.Background()
 	var containers []v1.Container
 
 	if err := framework.Poll(5*time.Second, 5*time.Minute, func() (err error) {
 		switch objectType {
 		case "deployment":
-			d, err := f.KubeClient.AppsV1().Deployments("openshift-monitoring").Get(ctx, component, metav1.GetOptions{})
+			d, err := f.KubeClient.AppsV1().Deployments("openshift-monitoring").Get(ctx, componentName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 			containers = d.Spec.Template.Spec.Containers
 		case "daemonset":
-			ds, err := f.KubeClient.AppsV1().DaemonSets("openshift-monitoring").Get(ctx, component, metav1.GetOptions{})
+			ds, err := f.KubeClient.AppsV1().DaemonSets("openshift-monitoring").Get(ctx, componentName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 			containers = ds.Spec.Template.Spec.Containers
+		case "statefulset":
+			am, err := f.KubeClient.AppsV1().StatefulSets("openshift-monitoring").Get(ctx, componentName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			containers = am.Spec.Template.Spec.Containers
 		}
 
 		isCipherSuiteArgCorrect := correctCipherSuiteArg(tlsCipherSuiteFlag, expectedCipherSuite, containers)
 		if !isCipherSuiteArgCorrect {
-			return fmt.Errorf("invalid cipher suite set for %s in openshift-monitoring namespace", component)
+			return fmt.Errorf("invalid cipher suite set for %s in openshift-monitoring namespace", componentName)
 		}
 
 		validTLSVersion := correctMinTLSVersion(tlsMinTLSVersionFlag, expectedTLSVersion, containers)
 		if !validTLSVersion {
-			return fmt.Errorf("invalid tls version set for %s in openshift-monitoring namespace", component)
+			return fmt.Errorf("invalid tls version set for %s in openshift-monitoring namespace", componentName)
 		}
 		return nil
 	}); err != nil {
