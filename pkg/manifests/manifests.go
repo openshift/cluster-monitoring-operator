@@ -1492,9 +1492,11 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 
 		case "kube-rbac-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 
+			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 			p.Spec.Containers[i].Args = append(
 				p.Spec.Containers[i].Args,
 				clientCAArg,
@@ -1664,6 +1666,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	for i, container := range p.Spec.Containers {
 		if container.Name == "kube-rbac-proxy" || container.Name == "kube-rbac-proxy-thanos" {
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
