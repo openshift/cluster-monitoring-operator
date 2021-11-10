@@ -139,11 +139,11 @@ func assertCorrectTLSConfiguration(t *testing.T, componentName, objectType, tlsC
 			}
 			containers = ds.Spec.Template.Spec.Containers
 		case "statefulset":
-			am, err := f.KubeClient.AppsV1().StatefulSets("openshift-monitoring").Get(ctx, componentName, metav1.GetOptions{})
+			sts, err := f.KubeClient.AppsV1().StatefulSets("openshift-monitoring").Get(ctx, componentName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
-			containers = am.Spec.Template.Spec.Containers
+			containers = sts.Spec.Template.Spec.Containers
 		}
 
 		isCipherSuiteArgCorrect := correctCipherSuiteArg(tlsCipherSuiteFlag, expectedCipherSuite, containers)
