@@ -189,6 +189,14 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")
 	}
 
+	// Alertmanager ServiceMonitor has been renamed from alertmanager to alertmanager-${config}.
+	// This deletion ensures that the previous ServiceMonitor will be always removed after a CMO upgrade.
+	// Refer https://github.com/prometheus-operator/kube-prometheus/pull/1471 for more info.
+	t.client.DeleteServiceMonitorByNamespaceAndName(ctx, smam.Namespace, manifests.AlertmanagerLegacyServiceMonitorName)
+	if err != nil {
+		return errors.Wrap(err, "deleting legacy Alertmanager ServiceMonitor failed")
+	}
+
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
 	return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
 }

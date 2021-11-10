@@ -11,6 +11,9 @@ local excludedRuleGroups = [
   'kube-apiserver.rules',
   'kube-apiserver-burnrate.rules',
   'kube-apiserver-histogram.rules',
+  // Availability of kube-proxy depends on the selected CNO plugin hence the
+  // rules should be managed by CNO directly.
+  'kubernetes-system-kube-proxy',
 ];
 
 local excludedRules = [
