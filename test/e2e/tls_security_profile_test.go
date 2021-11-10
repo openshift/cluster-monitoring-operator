@@ -101,6 +101,9 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 			assertCorrectTLSConfiguration(t, "node-exporter", "daemonset",
 				manifests.KubeRbacProxyTLSCipherSuitesFlag,
 				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
+			assertCorrectTLSConfiguration(t, "telemeter-client", "deployment",
+				manifests.KubeRbacProxyTLSCipherSuitesFlag,
+				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
 		})
 	}
 }

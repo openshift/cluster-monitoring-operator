@@ -3351,6 +3351,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusConfigReloader
 		case "kube-rbac-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 
