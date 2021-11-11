@@ -1067,21 +1067,35 @@ ingress:
 		t.Fatal("Prometheus image is not configured correctly")
 	}
 
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range p.Spec.Containers {
-		if container.Name == "prometheus-proxy" && container.Image != "docker.io/openshift/origin-oauth-proxy:latest" {
-			t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
-		}
+		switch container.Name {
+		case "prometheus-proxy":
+			if container.Image != "docker.io/openshift/origin-oauth-proxy:latest" {
+				t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
+			}
+			volumeName := "prometheus-trusted-ca-bundle"
+			if !trustedCABundleVolumeConfigured(p.Spec.Volumes, volumeName) {
+				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
+			}
+			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
+			}
 
-		if container.Name == "kube-rbac-proxy" && container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
-			t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
-		}
+		case "kube-rbac-proxy":
+			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
+				t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
+			}
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(p.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(p.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 
-		if container.Name == "prom-label-proxy" && container.Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
-			t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
-		}
-
-		volumeName := "prometheus-trusted-ca-bundle"
-		if container.Name == "prometheus-proxy" || container.Name == "prometheus" {
+		case "prom-label-proxy":
+			if container.Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
+				t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
+			}
+		case "prometheus":
+			volumeName := "prometheus-trusted-ca-bundle"
 			if !trustedCABundleVolumeConfigured(p.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
@@ -1089,6 +1103,20 @@ ingress:
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
 		}
+	}
+
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 
 	cpuLimit := p.Spec.Resources.Limits[v1.ResourceCPU]
@@ -1890,16 +1918,36 @@ ingress:
 		t.Fatal("Alertmanager volumeClaimTemplate not configured correctly, expected 10Gi storage request, but found", storageRequestPtr.String())
 	}
 
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range a.Spec.Containers {
 		volumeName := "alertmanager-trusted-ca-bundle"
-		if container.Name == "prometheus-proxy" || container.Name == "prometheus" {
+		switch container.Name {
+		case "prometheus-proxy", "prometheus":
 			if !trustedCABundleVolumeConfigured(a.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
 			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
+		case "kube-rbac-proxy", "kube-rbac-proxy-metric":
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(a.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(a.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
+	}
+
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 }
 
@@ -2221,8 +2269,11 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 		})
 	}
 
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
 	for _, c := range d.Spec.Template.Spec.Containers {
-		if c.Name == "thanos-query" {
+		switch c.Name {
+		case "thanos-query":
 			for _, tc := range []struct {
 				name, want string
 				resource   func() *resource.Quantity
@@ -2254,9 +2305,8 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 					}
 				})
 			}
-		}
 
-		if c.Name == "oauth-proxy" {
+		case "oauth-proxy":
 			volumeName := "thanos-querier-trusted-ca-bundle"
 			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", c.Name)
@@ -2264,7 +2314,24 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 			if !trustedCABundleVolumeMountsConfigured(c.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", c.Name)
 			}
+
+		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics":
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, c.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, c.Name)
 		}
+	}
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 }
 
@@ -2279,8 +2346,11 @@ func TestGrafanaConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
-		if container.Name == "grafana-proxy" {
+		switch container.Name {
+		case "grafana-proxy":
 			volumeName := "grafana-trusted-ca-bundle"
 			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
@@ -2288,7 +2358,23 @@ func TestGrafanaConfiguration(t *testing.T) {
 			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
+		case "kube-rbac-proxy-metrics":
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
+	}
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 }
 
@@ -2303,8 +2389,11 @@ func TestTelemeterConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	kubeRbacProxyTLSCipherSuitesArg := ""
+	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
-		if container.Name == "telemeter-client" {
+		switch container.Name {
+		case "telemeter-client":
 			volumeName := "telemeter-trusted-ca-bundle"
 			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
@@ -2312,7 +2401,24 @@ func TestTelemeterConfiguration(t *testing.T) {
 			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
+		case "kube-rbac-proxy":
+			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
+			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
+	}
+
+	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+
+	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
+	}
+
+	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
+		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 }
 

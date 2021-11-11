@@ -491,10 +491,9 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 					trustedCABundleVolumeMount(volumeName),
 				)
 			}
-		case "kube-rbac-proxy":
+		case "kube-rbac-proxy", "kube-rbac-proxy-metric":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-		case "kube-rbac-proxy-metric":
-			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "prom-label-proxy":
 			a.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}
@@ -1500,9 +1499,11 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 
 		case "kube-rbac-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 
+			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 			p.Spec.Containers[i].Args = append(
 				p.Spec.Containers[i].Args,
 				clientCAArg,
@@ -1672,6 +1673,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	for i, container := range p.Spec.Containers {
 		if container.Name == "kube-rbac-proxy" || container.Name == "kube-rbac-proxy-thanos" {
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
@@ -2498,6 +2500,7 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 			}
 		case "kube-rbac-proxy-metrics":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 
@@ -3193,14 +3196,9 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		case "prom-label-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 
-		case "kube-rbac-proxy":
+		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-
-		case "kube-rbac-proxy-rules":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-
-		case "kube-rbac-proxy-metrics":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 
@@ -3400,6 +3398,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*app
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusConfigReloader
 		case "kube-rbac-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 
