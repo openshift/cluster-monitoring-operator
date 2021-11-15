@@ -284,17 +284,16 @@ local inCluster =
         version: $.values.common.versions.thanos,
       },
       thanosRuler: $.values.thanos {
-        name: 'user-workload',
+        name: 'thanos-ruler',
+        crName: 'user-workload',
         namespace: $.values.common.namespaceUserWorkload,
         replicas: 2,
-        labels: {
-          'app.kubernetes.io/name': 'user-workload',
-        },
         selectorLabels: {
           'app.kubernetes.io/name': 'thanos-ruler',
           'thanos-ruler': 'user-workload',
         },
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
+        commonLabels+: $.values.common.commonLabels,
       },
       thanosQuerier: $.values.thanos {
         name: 'thanos-querier',
