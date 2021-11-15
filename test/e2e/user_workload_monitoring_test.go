@@ -804,7 +804,6 @@ func assertTenancyForRules(t *testing.T) {
 		}
 
 		type testData struct {
-			file      string
 			ruleType  string
 			name      string
 			namespace string
@@ -812,19 +811,16 @@ func assertTenancyForRules(t *testing.T) {
 
 		expected := []testData{
 			{
-				file:      "/etc/prometheus/rules/prometheus-user-workload-rulefiles-0/user-workload-test-prometheus-example-rule-leaf.yaml",
 				ruleType:  "recording",
 				name:      "version:blah:leaf:count",
 				namespace: "user-workload-test",
 			},
 			{
-				file:      "/etc/thanos/rules/thanos-ruler-user-workload-rulefiles-0/user-workload-test-prometheus-example-rule.yaml",
 				ruleType:  "alerting",
 				name:      "VersionAlert",
 				namespace: "user-workload-test",
 			},
 			{
-				file:      "/etc/thanos/rules/thanos-ruler-user-workload-rulefiles-0/user-workload-test-prometheus-example-rule.yaml",
 				ruleType:  "recording",
 				name:      "version:blah:count",
 				namespace: "user-workload-test",
@@ -846,7 +842,6 @@ func assertTenancyForRules(t *testing.T) {
 				}
 
 				got = append(got, testData{
-					file:      group.Path("file").Data().(string),
 					ruleType:  rule.Path("type").Data().(string),
 					name:      rule.Path("name").Data().(string),
 					namespace: labels["namespace"].Data().(string),
