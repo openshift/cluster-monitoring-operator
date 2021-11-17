@@ -581,6 +581,11 @@ data:
     #
     # The current amount of CPU used by Application Services products, aggregated by product name.
     - '{__name__="appsvcs:cores_by_product:sum"}'
+    #
+    # owners: (https://github.com/openshift/cluster-node-tuning-operator)
+    #
+    # Number of nodes using a custom TuneD profile not shipped by the Node Tuning Operator.
+    - '{__name__="nto_custom_profiles:count"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
