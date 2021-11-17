@@ -11,3 +11,31 @@ status:
   versions:
   - name: operator
     version: "0.0.1-snapshot"
+  relatedObjects:
+    - group: ''
+      name: openshift-monitoring
+      resource: namespaces
+    - group: ''
+      name: openshift-user-workload-monitoring
+      resource: namespaces
+    - group: monitoring.coreos.com
+      name: ''
+      resource: servicemonitors
+    - group: monitoring.coreos.com
+      name: ''
+      resource: podmonitors
+    - group: monitoring.coreos.com
+      name: ''
+      resource: prometheusrules
+    - group: monitoring.coreos.com
+      name: ''
+      resource: alertmanagers
+    - group: monitoring.coreos.com
+      name: ''
+      resource: prometheuses
+    - group: monitoring.coreos.com
+      name: ''
+      resource: thanosrulers
+    - group: monitoring.coreos.com
+      name: ''
+      resource: alertmanagerconfigs
