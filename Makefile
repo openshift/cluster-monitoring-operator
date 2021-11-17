@@ -129,8 +129,8 @@ versions: $(GOJSONTOYAML_BIN)
 docs: $(EMBEDMD_BIN) Documentation/telemetry/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
 
-Documentation/telemeter_query: manifests/0000_50_cluster-monitoring-operator_04-config.yaml hack/telemeter_query.go
-	go generate ./hack/telemeter_query.go > Documentation/telemeter_query
+Documentation/telemetry/telemeter_query: manifests/0000_50_cluster-monitoring-operator_04-config.yaml hack/telemeter_query.go
+	go generate ./hack/telemeter_query.go > Documentation/telemetry/telemeter_query
 
 ##############
 # Formatting #
