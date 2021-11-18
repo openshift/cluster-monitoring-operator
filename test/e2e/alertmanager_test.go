@@ -209,7 +209,7 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	t.Cleanup(func() {
 		resp, err := clients["editor"].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil)
 		if err != nil || resp.Status != "200" {
-			t.Logf("failed to delete silence HTTP: %q err: %q", resp.Status, err)
+			t.Logf("failed to delete silence HTTP: %q err: %v", resp.Status, err)
 		}
 	})
 
