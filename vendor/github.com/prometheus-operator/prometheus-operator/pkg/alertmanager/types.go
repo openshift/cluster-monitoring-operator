@@ -51,6 +51,7 @@ type globalConfig struct {
 	SMTPAuthIdentity string          `yaml:"smtp_auth_identity,omitempty" json:"smtp_auth_identity,omitempty"`
 	SMTPRequireTLS   *bool           `yaml:"smtp_require_tls,omitempty" json:"smtp_require_tls,omitempty"`
 	SlackAPIURL      *config.URL     `yaml:"slack_api_url,omitempty" json:"slack_api_url,omitempty"`
+	SlackAPIURLFile  string          `yaml:"slack_api_url_file,omitempty" json:"slack_api_url_file,omitempty"`
 	PagerdutyURL     *config.URL     `yaml:"pagerduty_url,omitempty" json:"pagerduty_url,omitempty"`
 	HipchatAPIURL    *config.URL     `yaml:"hipchat_api_url,omitempty" json:"hipchat_api_url,omitempty"`
 	HipchatAuthToken string          `yaml:"hipchat_auth_token,omitempty" json:"hipchat_auth_token,omitempty"`
@@ -68,6 +69,7 @@ type route struct {
 	GroupByStr     []string          `yaml:"group_by,omitempty" json:"group_by,omitempty"`
 	Match          map[string]string `yaml:"match,omitempty" json:"match,omitempty"`
 	MatchRE        map[string]string `yaml:"match_re,omitempty" json:"match_re,omitempty"`
+	Matchers       []string          `yaml:"matchers,omitempty" json:"matchers,omitempty"`
 	Continue       bool              `yaml:"continue,omitempty" json:"continue,omitempty"`
 	Routes         []*route          `yaml:"routes,omitempty" json:"routes,omitempty"`
 	GroupWait      string            `yaml:"group_wait,omitempty" json:"group_wait,omitempty"`
@@ -76,11 +78,13 @@ type route struct {
 }
 
 type inhibitRule struct {
-	TargetMatch   map[string]string `yaml:"target_match,omitempty" json:"target_match,omitempty"`
-	TargetMatchRE map[string]string `yaml:"target_match_re,omitempty" json:"target_match_re,omitempty"`
-	SourceMatch   map[string]string `yaml:"source_match,omitempty" json:"source_match,omitempty"`
-	SourceMatchRE map[string]string `yaml:"source_match_re,omitempty" json:"source_match_re,omitempty"`
-	Equal         []string          `yaml:"equal,omitempty" json:"equal,omitempty"`
+	TargetMatch    map[string]string `yaml:"target_match,omitempty" json:"target_match,omitempty"`
+	TargetMatchRE  map[string]string `yaml:"target_match_re,omitempty" json:"target_match_re,omitempty"`
+	TargetMatchers []string          `yaml:"target_matchers,omitempty" json:"target_matchers,omitempty"`
+	SourceMatch    map[string]string `yaml:"source_match,omitempty" json:"source_match,omitempty"`
+	SourceMatchRE  map[string]string `yaml:"source_match_re,omitempty" json:"source_match_re,omitempty"`
+	SourceMatchers []string          `yaml:"source_matchers,omitempty" json:"source_matchers,omitempty"`
+	Equal          []string          `yaml:"equal,omitempty" json:"equal,omitempty"`
 }
 
 type receiver struct {
@@ -154,6 +158,7 @@ type slackConfig struct {
 	VSendResolved *bool             `yaml:"send_resolved,omitempty" json:"send_resolved,omitempty"`
 	HTTPConfig    *httpClientConfig `yaml:"http_config,omitempty" json:"http_config,omitempty"`
 	APIURL        string            `yaml:"api_url,omitempty" json:"api_url,omitempty"`
+	APIURLFile    string            `yaml:"api_url_file,omitempty" json:"api_url_file,omitempty"`
 	Channel       string            `yaml:"channel,omitempty" json:"channel,omitempty"`
 	Username      string            `yaml:"username,omitempty" json:"username,omitempty"`
 	Color         string            `yaml:"color,omitempty" json:"color,omitempty"`
@@ -176,11 +181,12 @@ type slackConfig struct {
 }
 
 type httpClientConfig struct {
-	BasicAuth       *basicAuth `yaml:"basic_auth,omitempty"`
-	BearerToken     string     `yaml:"bearer_token,omitempty"`
-	BearerTokenFile string     `yaml:"bearer_token_file,omitempty"`
-	ProxyURL        string     `yaml:"proxy_url,omitempty"`
-	TLSConfig       tlsConfig  `yaml:"tls_config,omitempty"`
+	Authorization   *authorization `yaml:"authorization,omitempty"`
+	BasicAuth       *basicAuth     `yaml:"basic_auth,omitempty"`
+	BearerToken     string         `yaml:"bearer_token,omitempty"`
+	BearerTokenFile string         `yaml:"bearer_token_file,omitempty"`
+	ProxyURL        string         `yaml:"proxy_url,omitempty"`
+	TLSConfig       tlsConfig      `yaml:"tls_config,omitempty"`
 }
 
 type tlsConfig struct {
@@ -189,6 +195,12 @@ type tlsConfig struct {
 	KeyFile            string `yaml:"key_file,omitempty"`
 	ServerName         string `yaml:"server_name,omitempty"`
 	InsecureSkipVerify bool   `yaml:"insecure_skip_verify"`
+}
+
+type authorization struct {
+	Type            string `yaml:"type,omitempty"`
+	Credentials     string `yaml:"credentials,omitempty"`
+	CredentialsFile string `yaml:"credentials_file,omitempty"`
 }
 
 type basicAuth struct {

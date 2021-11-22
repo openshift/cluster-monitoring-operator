@@ -18,14 +18,14 @@ import "github.com/prometheus/common/version"
 
 const (
 	// DefaultAlertmanagerVersion is a default image tag for the prometheus alertmanager
-	DefaultAlertmanagerVersion = "v0.22.2"
+	DefaultAlertmanagerVersion = "v0.23.0"
 	// DefaultAlertmanagerBaseImage is a base container registry address for the prometheus alertmanager
 	DefaultAlertmanagerBaseImage = "quay.io/prometheus/alertmanager"
 	// DefaultAlertmanagerImage is a default image pulling address for the prometheus alertmanager
 	DefaultAlertmanagerImage = DefaultAlertmanagerBaseImage + ":" + DefaultAlertmanagerVersion
 
 	// DefaultThanosVersion is a default image tag for the Thanos long-term prometheus storage collector
-	DefaultThanosVersion = "v0.22.0"
+	DefaultThanosVersion = "v0.23.1"
 	// DefaultThanosBaseImage is a base container registry address for the Thanos long-term prometheus
 	// storage collector
 	DefaultThanosBaseImage = "quay.io/thanos/thanos"
@@ -96,5 +96,10 @@ var (
 		"v2.28.1",
 		"v2.29.0",
 		"v2.29.1",
+		"v2.30.0",
+		"v2.30.1",
+		"v2.30.2",
+		"v2.30.3",
+		"v2.31.0",
 	}
 )
