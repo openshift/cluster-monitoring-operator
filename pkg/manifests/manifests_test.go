@@ -2590,6 +2590,20 @@ func TestPodDisruptionBudget(t *testing.T) {
 			ha: false,
 		},
 		{
+			name: "Alertmanager HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.AlertmanagerPodDisruptionBudget()
+			},
+			ha: true,
+		},
+		{
+			name: "Alertmanager non-HA",
+			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
+				return f.AlertmanagerPodDisruptionBudget()
+			},
+			ha: false,
+		},
+		{
 			name: "PrometheusAdapter HA",
 			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.PrometheusAdapterPodDisruptionBudget()

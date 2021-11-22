@@ -272,9 +272,9 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	scenarios := []scenario{
-		{"assert 5 alertmanagers are discovered (3 built-in and 2 from the additional configs)", assertAlertmanagerInstancesDiscovered(5)},
+		{"assert 4 alertmanagers are discovered (2 built-in and 2 from the additional configs)", assertAlertmanagerInstancesDiscovered(4)},
 		{"disable additional alertmanagers", disableAdditionalAlertmanagerConfigs},
-		{"assert 3 alertmanagers are discovered", assertAlertmanagerInstancesDiscovered(3)},
+		{"assert 2 alertmanagers are discovered", assertAlertmanagerInstancesDiscovered(2)},
 	}
 
 	for _, scenario := range scenarios {

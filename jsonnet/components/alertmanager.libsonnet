@@ -5,7 +5,9 @@ local generateCertInjection = import '../utils/generate-certificate-injection.li
 local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
-  local cfg = params;
+  local cfg = params {
+    replicas: 2,
+  };
 
   alertmanager(cfg) {
     trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'alertmanager-trusted-ca-bundle'),
@@ -228,6 +230,30 @@ function(params)
         },
         containers: [
           {
+            name: 'alertmanager',
+            // Configure a startup probe to ensure that the Alertmanager
+            // container has time to replicate data from other peers before
+            // declaring itself as ready. This allows silences and
+            // notifications to be preserved on roll-outs even if persistent
+            // storage isn't configured.
+            // We assume that 20 seconds is enough for a full synchronization
+            // (this is twice the time Alertmanager waits before declaring that
+            // it can start sending notfications).
+            startupProbe: {
+              exec: {
+                command: [
+                  'sh',
+                  '-c',
+                  'exec curl http://localhost:9093/-/ready',
+                ],
+              },
+              timeoutSeconds: 3,
+              periodSeconds: 1,
+              successThreshold: 1,
+              initialDelaySeconds: 20,
+            },
+          },
+          {
             name: 'alertmanager-proxy',
             image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
             ports: [
@@ -404,7 +430,9 @@ function(params)
         ],
       },
     },
-    // Removing PDB since it doesn't allow cluster upgrade when hard pod anti affinity is not set https://github.com/openshift/cluster-monitoring-operator/pull/1198
-    // Review hard anti-affinity changes and then we can add back PDB
-    podDisruptionBudget:: {},
+
+    // TODO: remove podDisruptionBudget once https://github.com/prometheus-operator/kube-prometheus/pull/1156 is merged
+    podDisruptionBudget+: {
+      apiVersion: 'policy/v1',
+    },
   }

@@ -38,7 +38,7 @@ func TestPrometheusMetrics(t *testing.T) {
 		"prometheus-k8s-thanos-sidecar": 2,
 		"thanos-querier":                2,
 		"prometheus-adapter":            2,
-		"alertmanager-main":             3,
+		"alertmanager-main":             2,
 		"kube-state-metrics":            2, // one for the kube metrics + one for the metrics of the process itself.
 		"openshift-state-metrics":       2, // ditto.
 		"telemeter-client":              1,
@@ -59,44 +59,39 @@ func TestPrometheusMetrics(t *testing.T) {
 	}
 }
 
-func TestPrometheusAlertmanagerAntiAffinity(t *testing.T) {
-	ctx := context.Background()
-	pods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(ctx, metav1.ListOptions{FieldSelector: "status.phase=Running"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var (
-		testPod1      = "alertmanager-main"
-		testPod2      = "prometheus-k8s"
-		testNameSpace = "openshift-monitoring"
-
-		almOk = false
-		k8sOk = false
-	)
-
-	for _, p := range pods.Items {
-		if strings.Contains(p.Namespace, testNameSpace) &&
-			strings.Contains(p.Name, testPod1) {
-			if p.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution != nil {
-				almOk = true
-			} else {
-				t.Fatal("Failed to find preferredDuringSchedulingIgnoredDuringExecution in alertmanager pod spec")
+func TestAntiAffinity(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		instance string
+	}{
+		{
+			name:     "alertmanager",
+			instance: "main",
+		},
+		{
+			name:     "prometheus",
+			instance: "k8s",
+		},
+	} {
+		t.Run(fmt.Sprintf("name=%q", tc.name), func(t *testing.T) {
+			ctx := context.Background()
+			pods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(ctx, metav1.ListOptions{
+				LabelSelector: fmt.Sprintf("app.kubernetes.io/instance=%s,app.kubernetes.io/name=%s", tc.instance, tc.name),
+				FieldSelector: "status.phase=Running",
+			})
+			if err != nil {
+				t.Fatal(err)
 			}
-		}
 
-		if strings.Contains(p.Namespace, testNameSpace) &&
-			strings.Contains(p.Name, testPod2) {
-			if p.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
-				k8sOk = true
-			} else {
-				t.Fatal("Failed to find requiredDuringSchedulingIgnoredDuringExecution in prometheus pod spec")
+			if len(pods.Items) != 2 {
+				t.Fatalf("expecting 2 pods, got %d", len(pods.Items))
 			}
-		}
-	}
 
-	if !almOk == true || !k8sOk == true {
-		t.Fatal("Can not find pods: prometheus-k8s or alertmanager-main")
+			pod := pods.Items[0]
+			if pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+				t.Fatal("pod doesn't define requiredDuringSchedulingIgnoredDuringExecution")
+			}
+		})
 	}
 }
 

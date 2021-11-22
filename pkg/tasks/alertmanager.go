@@ -74,6 +74,18 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "creating Alertmanager configuration Secret failed")
 	}
 
+	pdb, err := t.factory.AlertmanagerPodDisruptionBudget()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager PodDisruptionBudget object failed")
+	}
+
+	if pdb != nil {
+		err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Alertmanager PodDisruptionBudget object failed")
+		}
+	}
+
 	rs, err := t.factory.AlertmanagerRBACProxySecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager RBAC proxy Secret failed")
@@ -290,6 +302,18 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "deleting Alertmanager Service failed")
+	}
+
+	pdb, err := t.factory.AlertmanagerPodDisruptionBudget()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager PodDisruptionBudget object failed")
+	}
+
+	if pdb != nil {
+		err = t.client.DeletePodDisruptionBudget(ctx, pdb)
+		if err != nil {
+			return errors.Wrap(err, "deleting Alertmanager PodDisruptionBudget object failed")
+		}
 	}
 
 	{
