@@ -208,6 +208,18 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
 	}
 
+	pdb, err := t.factory.PrometheusUserWorkloadPodDisruptionBudget()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus PodDisruptionBudget object failed")
+	}
+
+	if pdb != nil {
+		err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
+		if err != nil {
+			return errors.Wrap(err, "reconciling UserWorkload Prometheus PodDisruptionBudget object failed")
+		}
+	}
+
 	klog.V(4).Info("initializing UserWorkload Prometheus object")
 	p, err := t.factory.PrometheusUserWorkload(s)
 	if err != nil {
@@ -290,6 +302,18 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		"server.crt", string(grpcTLS.Data["prometheus-server.crt"]),
 		"server.key", string(grpcTLS.Data["prometheus-server.key"]),
 	)
+
+	pdb, err := t.factory.PrometheusUserWorkloadPodDisruptionBudget()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus PodDisruptionBudget object failed")
+	}
+
+	if pdb != nil {
+		err = t.client.DeletePodDisruptionBudget(ctx, pdb)
+		if err != nil {
+			return errors.Wrap(err, "deleting UserWorkload Prometheus PodDisruptionBudget object failed")
+		}
+	}
 
 	p, err := t.factory.PrometheusUserWorkload(s)
 	if err != nil {

@@ -121,6 +121,7 @@ var (
 	PrometheusK8sTrustedCABundle             = "prometheus-k8s/trusted-ca-bundle.yaml"
 	PrometheusK8sThanosSidecarServiceMonitor = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
 	PrometheusK8sTAlertmanagerRoleBinding    = "prometheus-k8s/alertmanager-role-binding.yaml"
+	PrometheusK8sPodDisruptionBudget         = "prometheus-k8s/pod-disruption-budget.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
@@ -137,6 +138,7 @@ var (
 	PrometheusUserWorkloadGrpcTLSSecret               = "prometheus-user-workload/grpc-tls-secret.yaml"
 	PrometheusUserWorkloadThanosSidecarServiceMonitor = "prometheus-user-workload/service-monitor-thanos-sidecar.yaml"
 	PrometheusUserWorkloadAlertmanagerRoleBinding     = "prometheus-user-workload/alertmanager-role-binding.yaml"
+	PrometheusUserWorkloadPodDisruptionBudget         = "prometheus-user-workload/pod-disruption-budget.yaml"
 
 	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
@@ -246,6 +248,7 @@ var (
 	ThanosRulerServiceMonitor               = "thanos-ruler/service-monitor.yaml"
 	ThanosRulerPrometheusRule               = "thanos-ruler/thanos-ruler-prometheus-rule.yaml"
 	ThanosRulerAlertmanagerRoleBinding      = "thanos-ruler/alertmanager-role-binding.yaml"
+	ThanosRulerPodDisruptionBudget          = "thanos-ruler/pod-disruption-budget.yaml"
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
@@ -2305,6 +2308,18 @@ func (f *Factory) PrometheusK8sServiceThanosSidecar() (*v1.Service, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusK8sPodDisruptionBudget))
+}
+
+func (f *Factory) PrometheusUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusUserWorkloadPodDisruptionBudget))
+}
+
+func (f *Factory) ThanosRulerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(ThanosRulerPodDisruptionBudget))
 }
 
 func (f *Factory) PrometheusUserWorkloadService() (*v1.Service, error) {
