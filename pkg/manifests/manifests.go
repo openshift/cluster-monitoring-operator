@@ -1674,6 +1674,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		p.Spec.Secrets = append(p.Spec.Secrets, getAdditionalAlertmanagerSecrets(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs)...)
 	}
 
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit != "" {
+		p.Spec.EnforcedBodySizeLimit = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit
+	}
+
 	return p, nil
 }
 

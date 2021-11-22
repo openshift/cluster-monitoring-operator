@@ -829,6 +829,12 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	}
 	o.userWorkloadEnabled = *c.ClusterMonitoringConfiguration.UserWorkloadEnabled
 
+	err = c.LoadEnforcedBodySizeLimit(o.client, ctx)
+	if err != nil {
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit = ""
+		klog.Warningf("Error loading enforced body size limit, no body size limit will be enforced: %v", err)
+	}
+
 	// Only fetch the token and cluster ID if they have not been specified in the config.
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
 		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {

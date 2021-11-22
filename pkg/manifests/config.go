@@ -16,19 +16,33 @@ package manifests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 
 	configv1 "github.com/openshift/api/config/v1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
+	"k8s.io/klog/v2"
 )
 
 const (
 	DefaultRetentionValue = "15d"
+
+	// Limit the body size from scrape queries
+	// Assumptions: one node has in average 110 pods, each pod exposes 400 metrics, each metric is expressed by on average 250 bytes.
+	// 1.5x the size for a safe margin,
+	// minimal HA requires 3 nodes. it rounds to 47.2 MB (49,500,000 Bytes).
+	minimalSizeLimit = 3 * 1.5 * 110 * 400 * 250
+
+	// A value of Prometheusk8s.enforceBodySizeLimit,
+	// meaning the limit will be automatically calculated based on cluster capacity.
+	automaticBodySizeLimit = "automatic"
 )
 
 type Config struct {
@@ -186,6 +200,12 @@ type PrometheusK8sConfig struct {
 	TelemetryMatches    []string                             `json:"-"`
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
 	QueryLogFile        string                               `json:"queryLogFile"`
+	/* EnforcedBodySizeLimit accept 3 kind of values:
+	 * 1. empty value: no limit
+	 * 2. a value in Prometheus size format, e.g. "64MB"
+	 * 3. string "automatic", which means the limit will be automatically calculated based on cluster capacity.
+	 */
+	EnforcedBodySizeLimit string `json:"enforcedBodySizeLimit,omitempty"`
 }
 
 type AdditionalAlertmanagerConfig struct {
@@ -329,7 +349,6 @@ func NewConfig(content io.Reader) (*Config, error) {
 	res := &c
 	res.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
-
 	return res, nil
 }
 
@@ -475,6 +494,42 @@ func (c *Config) HTTPSProxy() string {
 // NoProxy implements the ProxyReader interface.
 func (c *Config) NoProxy() string {
 	return c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy
+}
+
+// PodCapacityReader returns the maximum number of pods that can be scheduled in a cluster.
+type PodCapacityReader interface {
+	PodCapacity(context.Context) (int, error)
+}
+
+func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Context) error {
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit == "" {
+		return nil
+	}
+
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit == automaticBodySizeLimit {
+		podCapacity, err := pcr.PodCapacity(ctx)
+		if err != nil {
+			return fmt.Errorf("error fetching pod capacity: %v", err)
+		}
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit = calculateBodySizeLimit(podCapacity)
+		return nil
+	}
+
+	return poperator.ValidateSizeField(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
+
+}
+
+func calculateBodySizeLimit(podCapacity int) string {
+	const samplesPerPod = 400 // 400 samples per pod
+	const sizePerSample = 200 // 200 Bytes
+
+	bodySize := podCapacity * samplesPerPod * sizePerSample
+	if bodySize < minimalSizeLimit {
+		klog.Infof("Calculated scrape body size limit %v is too small, using default value %v instead", bodySize, minimalSizeLimit)
+		bodySize = minimalSizeLimit
+	}
+
+	return fmt.Sprintf("%dMB", int(math.Ceil(float64(bodySize)/(1024*1024))))
 }
 
 func NewConfigFromString(content string) (*Config, error) {
