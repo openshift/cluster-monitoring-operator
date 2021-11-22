@@ -12,19 +12,28 @@ metadata:
 spec:
   affinity:
     podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/component: alert-router
-              app.kubernetes.io/instance: main
-              app.kubernetes.io/name: alertmanager
-              app.kubernetes.io/part-of: openshift-monitoring
-          namespaces:
-          - openshift-monitoring
-          topologyKey: kubernetes.io/hostname
-        weight: 100
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: alert-router
+            app.kubernetes.io/instance: main
+            app.kubernetes.io/name: alertmanager
+            app.kubernetes.io/part-of: openshift-monitoring
+        namespaces:
+        - openshift-monitoring
+        topologyKey: kubernetes.io/hostname
   containers:
+  - name: alertmanager
+    startupProbe:
+      exec:
+        command:
+        - sh
+        - -c
+        - exec curl http://localhost:9093/-/ready
+      initialDelaySeconds: 20
+      periodSeconds: 1
+      successThreshold: 1
+      timeoutSeconds: 3
   - args:
     - -provider=openshift
     - -https-address=:9095
@@ -150,7 +159,7 @@ spec:
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 0.22.2
   priorityClassName: system-cluster-critical
-  replicas: 3
+  replicas: 2
   resources:
     requests:
       cpu: 4m
