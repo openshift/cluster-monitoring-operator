@@ -4,7 +4,11 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: thanos-ruler-tls
   labels:
-    app.kubernetes.io/name: user-workload
+    app.kubernetes.io/component: rule-evaluation-engine
+    app.kubernetes.io/instance: thanos-ruler
+    app.kubernetes.io/name: thanos-rule
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.22.0
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring
 spec:
