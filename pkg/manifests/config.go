@@ -178,6 +178,7 @@ type PrometheusK8sConfig struct {
 	RemoteWrite         []RemoteWriteSpec                    `json:"remoteWrite"`
 	TelemetryMatches    []string                             `json:"-"`
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
+	QueryLogFile        string                               `json:"queryLogFile"`
 }
 
 type AdditionalAlertmanagerConfig struct {
@@ -508,6 +509,7 @@ type PrometheusRestrictedConfig struct {
 	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
 	EnforcedTargetLimit *uint64                              `json:"enforcedTargetLimit"`
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
+	QueryLogFile        string                               `json:"queryLogFile"`
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {

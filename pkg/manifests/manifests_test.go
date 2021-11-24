@@ -1035,6 +1035,7 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
     datacenter: eu-west
   remoteWrite:
   - url: "https://test.remotewrite.com/api/write"
+  queryLogFile: /tmp/test
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
 `)
@@ -1167,6 +1168,10 @@ ingress:
 
 	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
 		t.Fatal("Prometheus remote-write is not configured correctly")
+	}
+
+	if p.Spec.QueryLogFile != "/tmp/test" {
+		t.Fatal("Prometheus query log is not configured correctly")
 	}
 }
 

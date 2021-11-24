@@ -9,6 +9,7 @@
 - [#1439](https://github.com/openshift/cluster-monitoring-operator/pull/1439) Expose PodDisruptionBudget labels from kube-state-metrics metrics.
 - [#1377](https://github.com/openshift/cluster-monitoring-operator/pull/1377) Allow OpenShift users to configure audit logs for prometheus-adapter
 - [#1481](https://github.com/openshift/cluster-monitoring-operator/pull/1481) Removing one of the AlertmanagerClusterFailedToSendAlerts alerts
+- [#1373](https://github.com/openshift/cluster-monitoring-operator/pull/1373) Enable admins to toggle the [query_log_file](https://prometheus.io/docs/guides/query-log/#enable-the-query-log) setting for Prometheus.
 
 ## 4.9
 
