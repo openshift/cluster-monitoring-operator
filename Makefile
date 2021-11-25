@@ -94,6 +94,9 @@ update: $(JB_BIN)
 .PHONY: generate
 generate: build-jsonnet docs check-assets check-runbooks
 
+.PHONY: verify
+verify: check-assets check-rules check-runbooks
+
 # TODO(paulfantom): generate-in-docker can be completely removed after OpenShift 4.7 is EOL
 .PHONY: generate-in-docker
 generate-in-docker:
