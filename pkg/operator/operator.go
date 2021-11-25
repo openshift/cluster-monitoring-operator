@@ -572,7 +572,10 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	tl := tasks.NewTaskRunner(
 		o.client,
-		// update prometheus-operator before anything else because it is responsible for managing many other resources (e.g. Prometheus, Alertmanager, Thanos Ruler, ...).
+		// Update prometheus-operator before anything else because it is
+		// responsible for managing many other resources (e.g. Prometheus,
+		// Alertmanager, Thanos Ruler, ...). The metrics scraping client CA
+		// should also be created first because it is referenced by Prometheus.
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
 				tasks.NewTaskSpec("Updating metrics scraping client CA", tasks.NewMetricsClientCATask(o.client, factory, config)),
@@ -591,11 +594,16 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
 				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, factory)),
 				tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
-				tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating Control Plane components", tasks.NewControlPlaneTask(o.client, factory, config)),
 			}),
+		// The shared configmap depends on resources being created by the previous tasks hence run it last.
+		tasks.NewTaskGroup(
+			[]*tasks.TaskSpec{
+				tasks.NewTaskSpec("Updating configuration sharing", tasks.NewConfigSharingTask(o.client, factory, config)),
+			},
+		),
 	)
 	klog.Info("Updating ClusterOperator status to in progress.")
 	err = o.client.StatusReporter().SetRollOutInProgress(ctx)
