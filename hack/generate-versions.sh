@@ -2,7 +2,7 @@
 #
 # A naive way to generate `jsonnet/versions.json` file from downstream forks
 # It uses `VERSION` file located in each repository or a special function to figure out version
-# 
+#
 # Script is based on following ones:
 # - https://github.com/prometheus-operator/kube-prometheus/blob/main/scripts/generate-versions.sh
 # - https://github.com/thaum-xyz/ankhmorpork/blob/master/hack/version-update.sh
@@ -20,7 +20,11 @@ PATH="${TMP_BIN}:${PATH}"
 : "${INTERACTIVE:=true}"
 
 version_from_remote() {
-	curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/master/VERSION"
+	if [ "$1" = "openshift/grafana" ]; then
+		curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/master/package.json" | jq -r '.version'
+	else
+		curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/master/VERSION"
+	fi
 }
 
 # Fallback mechanism when VERSION file is empty or not found
@@ -31,7 +35,7 @@ version_from_user() {
 	echo "$ver"
 }
 
-CONTENT="$(gojsontoyaml -yamltojson < "${VERSION_FILE}")"
+CONTENT="$(gojsontoyaml -yamltojson <"${VERSION_FILE}")"
 
 COMPONENTS="$(echo "$CONTENT" | jq -r '.repos | keys[]')"
 
@@ -56,7 +60,7 @@ for c in $COMPONENTS; do
 	fi
 done
 
-cat <<EOF > "${VERSION_FILE}"
+cat <<EOF >"${VERSION_FILE}"
 ---
 # This file is meant to be managed by hack/generate-versions.sh script
 # Versions provided here are mapped to 'app.kubernetes.io/version' label in all generated manifests
