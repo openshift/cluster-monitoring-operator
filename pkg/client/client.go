@@ -295,6 +295,14 @@ func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Contex
 
 	required := w.DeepCopy()
 	required.ResourceVersion = existing.ResourceVersion
+	// retain the CABundle that service-ca-operator created if the proper annotation is found
+	if val, ok := required.Annotations["service.beta.openshift.io/inject-cabundle"]; ok && val == "true" {
+		for i := range required.Webhooks {
+			if len(existing.Webhooks[i].ClientConfig.CABundle) > 0 {
+				required.Webhooks[i].ClientConfig.CABundle = existing.Webhooks[i].ClientConfig.CABundle
+			}
+		}
+	}
 	_, err = admclient.Update(ctx, required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
 }
@@ -1113,9 +1121,42 @@ func (c *Client) CreateOrUpdateSecret(ctx context.Context, s *v1.Secret) error {
 
 	required := s.DeepCopy()
 	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
+	// Check if the Secret has an owner reference to a Service, that carries
+	// the annotation with key
+	// service.beta.openshift.io/serving-cert-secret-name and the Secrets
+	// name as the value.
+	// This means that service-ca-operator controls and populates the two
+	// data fields tls.crt and tls.key. We want to retain those on updates
+	// if they existing and are not empty.
+	if c.maybeHasServiceCAData(ctx, required) {
+		if v, ok := existing.Data["tls.crt"]; ok && len(v) > 0 {
+			required.Data["tls.crt"] = v
+		}
+		if v, ok := existing.Data["tls.key"]; ok && len(v) > 0 {
+			required.Data["tls.key"] = v
+		}
+	}
 	_, err = sClient.Update(ctx, required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Secret object failed")
+}
+
+// maybeHasServiceCAData checks if the passed Secret s has at least one owner reference that
+// points to a Service with the annotation service.beta.openshift.io/serving-cert-secret-name: s.name
+func (c *Client) maybeHasServiceCAData(ctx context.Context, s *v1.Secret) bool {
+	for _, owner := range s.OwnerReferences {
+		if owner.Kind != "Service" {
+			continue
+		}
+		sclient := c.kclient.CoreV1().Services(s.GetNamespace())
+		svc, err := sclient.Get(ctx, owner.Name, metav1.GetOptions{})
+		if err != nil {
+			return false
+		}
+		if secName, ok := svc.Annotations["service.beta.openshift.io/serving-cert-secret-name"]; ok && secName == s.Name {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Client) CreateIfNotExistSecret(ctx context.Context, s *v1.Secret) error {
@@ -1162,6 +1203,12 @@ func (c *Client) CreateOrUpdateConfigMap(ctx context.Context, cm *v1.ConfigMap) 
 
 	required := cm.DeepCopy()
 	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+	if val, ok := required.Annotations["service.beta.openshift.io/inject-cabundle"]; ok && val == "true" {
+		// retain any service-ca data that service-ca-operator has created
+		if v, ok := existing.Data["service-ca.crt"]; ok && len(v) > 0 {
+			required.Data["service-ca.crt"] = v
+		}
+	}
 
 	_, err = cmClient.Update(ctx, required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating ConfigMap object failed")
@@ -1395,8 +1442,10 @@ func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apire
 
 	required := apiService.DeepCopy()
 	required.ResourceVersion = existing.ResourceVersion
-	if len(existing.Spec.CABundle) > 0 {
-		required.Spec.CABundle = existing.Spec.CABundle
+	if val, ok := required.Annotations["service.beta.openshift.io/inject-cabundle"]; ok && val == "true" {
+		if len(existing.Spec.CABundle) > 0 {
+			required.Spec.CABundle = existing.Spec.CABundle
+		}
 	}
 	_, err = apsc.Update(ctx, required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating APIService object failed")

@@ -15,11 +15,13 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"reflect"
 	"testing"
 
 	secv1 "github.com/openshift/api/security/v1"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -320,10 +322,13 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 		name                string
 		initialLabels       map[string]string
 		initialAnnotations  map[string]string
+		initialData         map[string][]byte
 		updatedLabels       map[string]string
 		updatedAnnotations  map[string]string
+		updatedData         map[string][]byte
 		expectedLabels      map[string]string
 		expectedAnnotations map[string]string
+		expectedData        map[string][]byte
 	}{
 		{
 			name: "inital labels/annotations are empty",
@@ -377,6 +382,7 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 					Labels:      tc.initialLabels,
 					Annotations: tc.initialAnnotations,
 				},
+				Data: tc.initialData,
 			}
 
 			c := Client{
@@ -389,6 +395,7 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 
 			s.SetLabels(tc.updatedLabels)
 			s.SetAnnotations(tc.updatedAnnotations)
+			s.Data = tc.updatedData
 			if err := c.CreateOrUpdateSecret(ctx, s); err != nil {
 				t.Fatal(err)
 			}
@@ -403,6 +410,99 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
 				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
 			}
+			if !reflect.DeepEqual(tc.expectedData, after.Data) {
+				t.Errorf("%q: expected data %q, got %q", tc.name, tc.expectedData, after.Data)
+			}
+		})
+	}
+}
+
+func TestCreateOrUpdateSecretWithSCOData(t *testing.T) {
+	ctx := context.Background()
+	testCases := []struct {
+		name               string
+		serviceAnnotations map[string]string
+		initialData        map[string][]byte
+		updatedData        map[string][]byte
+		expectedData       map[string][]byte
+	}{
+		{
+			name: "retain existing tls data",
+			serviceAnnotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": "secret",
+			},
+			initialData: map[string][]byte{
+				"tls.crt": []byte("foocrt"),
+				"tls.key": []byte("fookey"),
+			},
+			updatedData: map[string][]byte{},
+			expectedData: map[string][]byte{
+				"tls.crt": []byte("foocrt"),
+				"tls.key": []byte("fookey"),
+			},
+		},
+		{
+			name: "drop existing but empty tls data",
+			serviceAnnotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": "secret",
+			},
+			initialData: map[string][]byte{
+				"tls.crt": []byte(""),
+				"tls.key": []byte(""),
+			},
+		},
+		{
+			name: "drop existing without owning Service",
+			initialData: map[string][]byte{
+				"tls.crt": []byte("foocrt"),
+				"tls.key": []byte("fookey"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			s := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: ns,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind: "Service",
+							Name: "service",
+						},
+					},
+				},
+				Data: tc.initialData,
+			}
+			svc := &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "service",
+					Namespace:   ns,
+					Annotations: tc.serviceAnnotations,
+				},
+			}
+
+			c := Client{
+				kclient: fake.NewSimpleClientset(s.DeepCopy(), svc),
+			}
+
+			if _, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, s.Name, metav1.GetOptions{}); err != nil {
+				t.Fatal(err)
+			}
+
+			s.Data = tc.updatedData
+			if err := c.CreateOrUpdateSecret(ctx, s); err != nil {
+				t.Fatal(err)
+			}
+			after, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, s.Name, metav1.GetOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(tc.expectedData, after.Data) {
+				t.Errorf("%q: expected data %q, got %q", tc.name, tc.expectedData, after.Data)
+			}
 		})
 	}
 }
@@ -413,10 +513,13 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 		name                string
 		initialLabels       map[string]string
 		initialAnnotations  map[string]string
+		initialData         map[string]string
 		updatedLabels       map[string]string
 		updatedAnnotations  map[string]string
+		updatedData         map[string]string
 		expectedLabels      map[string]string
 		expectedAnnotations map[string]string
+		expectedData        map[string]string
 	}{
 		{
 			name: "inital labels/annotations are empty",
@@ -459,6 +562,48 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 				"annotation":                  "value",
 			},
 		},
+		{
+			name: "retain existing service-ca.crt",
+			initialAnnotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
+			initialData: map[string]string{
+				"service-ca.crt": "foocrt",
+			},
+			updatedAnnotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
+			updatedData: map[string]string{},
+			expectedAnnotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
+			expectedData: map[string]string{
+				"service-ca.crt": "foocrt",
+			},
+		},
+		{
+			name: "drop existing service-ca.crt when annotation is missing",
+			initialData: map[string]string{
+				"service-ca.crt": "foocrt",
+			},
+			updatedData:  map[string]string{},
+			expectedData: map[string]string{},
+		},
+		{
+			name: "drop existing but empty service-ca.crt",
+			initialAnnotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
+			initialData: map[string]string{
+				"service-ca.crt": "",
+			},
+			updatedAnnotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
+			expectedAnnotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -470,6 +615,7 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 					Labels:      tc.initialLabels,
 					Annotations: tc.initialAnnotations,
 				},
+				Data: tc.initialData,
 			}
 
 			c := Client{
@@ -482,6 +628,7 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 
 			cm.SetLabels(tc.updatedLabels)
 			cm.SetAnnotations(tc.updatedAnnotations)
+			cm.Data = tc.updatedData
 			if err := c.CreateOrUpdateConfigMap(ctx, cm); err != nil {
 				t.Fatal(err)
 			}
@@ -496,6 +643,9 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
 				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+			}
+			if !reflect.DeepEqual(tc.expectedData, after.Data) {
+				t.Errorf("%q: expected data %q, got %q", tc.name, tc.expectedData, after.Data)
 			}
 		})
 	}
@@ -1578,6 +1728,71 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
 				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+			}
+		})
+	}
+}
+
+func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
+	ctx := context.Background()
+	testCases := []struct {
+		name               string
+		initialAnnotations map[string]string
+		initialCABundle    []byte
+		expectedCABundle   []byte
+	}{
+		{
+			name: "retain CA bundle",
+			initialAnnotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
+			initialCABundle:  []byte("fooCA"),
+			expectedCABundle: []byte("fooCA"),
+		},
+		{
+			name:               "drop CA bundle of annotation is missing",
+			initialAnnotations: map[string]string{},
+			initialCABundle:    []byte("fooCA"),
+			expectedCABundle:   []byte(""),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			webhook := admissionv1.ValidatingWebhookConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "test",
+					Annotations: tc.initialAnnotations,
+				},
+				Webhooks: []admissionv1.ValidatingWebhook{
+					{
+						ClientConfig: admissionv1.WebhookClientConfig{
+							CABundle: tc.initialCABundle,
+						},
+					},
+				},
+			}
+
+			c := Client{
+				kclient: fake.NewSimpleClientset(webhook.DeepCopy()),
+			}
+
+			if _, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{}); err != nil {
+				t.Fatal(err)
+			}
+
+			webhook.Webhooks[0].ClientConfig.CABundle = []byte{}
+			if err := c.CreateOrUpdateValidatingWebhookConfiguration(ctx, &webhook); err != nil {
+				t.Fatal(err)
+			}
+			newWebhook, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{})
+			after := newWebhook.Webhooks[0].ClientConfig.CABundle
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if bytes.Compare(tc.expectedCABundle, after) != 0 {
+				t.Errorf("%q: expected CABundle %q, got %q", tc.name, tc.expectedCABundle, after)
 			}
 		})
 	}
