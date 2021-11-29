@@ -5,10 +5,10 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: prometheus-user-workload-thanos-sidecar-tls
   labels:
     app.kubernetes.io/component: thanos-sidecar
+    app.kubernetes.io/instance: user-workload
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 2.30.3
-    prometheus: user-workload
   name: prometheus-user-workload-thanos-sidecar
   namespace: openshift-user-workload-monitoring
 spec:
@@ -19,6 +19,6 @@ spec:
     targetPort: thanos-proxy
   selector:
     app.kubernetes.io/component: prometheus
+    app.kubernetes.io/instance: user-workload
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    prometheus: user-workload

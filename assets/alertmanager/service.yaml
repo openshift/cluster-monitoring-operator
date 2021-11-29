@@ -4,8 +4,8 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: alertmanager-main-tls
   labels:
-    alertmanager: main
     app.kubernetes.io/component: alert-router
+    app.kubernetes.io/instance: main
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.22.2
@@ -23,8 +23,8 @@ spec:
     port: 9097
     targetPort: metrics
   selector:
-    alertmanager: main
     app.kubernetes.io/component: alert-router
+    app.kubernetes.io/instance: main
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring
   sessionAffinity: ClientIP

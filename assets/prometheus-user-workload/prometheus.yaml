@@ -3,10 +3,10 @@ kind: Prometheus
 metadata:
   labels:
     app.kubernetes.io/component: prometheus
+    app.kubernetes.io/instance: user-workload
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 2.30.3
-    prometheus: user-workload
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
@@ -16,9 +16,9 @@ spec:
       - labelSelector:
           matchLabels:
             app.kubernetes.io/component: prometheus
+            app.kubernetes.io/instance: user-workload
             app.kubernetes.io/name: prometheus
             app.kubernetes.io/part-of: openshift-monitoring
-            prometheus: user-workload
         namespaces:
         - openshift-user-workload-monitoring
         topologyKey: kubernetes.io/hostname
@@ -135,10 +135,10 @@ spec:
       target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
     labels:
       app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: user-workload
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.30.3
-      prometheus: user-workload
   podMonitorNamespaceSelector:
     matchExpressions:
     - key: openshift.io/cluster-monitoring
