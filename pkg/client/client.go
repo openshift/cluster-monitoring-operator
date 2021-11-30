@@ -1127,7 +1127,7 @@ func (c *Client) CreateOrUpdateSecret(ctx context.Context, s *v1.Secret) error {
 	// name as the value.
 	// This means that service-ca-operator controls and populates the two
 	// data fields tls.crt and tls.key. We want to retain those on updates
-	// if they existing and are not empty.
+	// if they exist and are not empty.
 	if c.maybeHasServiceCAData(ctx, required) {
 		if v, ok := existing.Data["tls.crt"]; ok && len(v) > 0 {
 			required.Data["tls.crt"] = v
@@ -1150,7 +1150,7 @@ func (c *Client) maybeHasServiceCAData(ctx context.Context, s *v1.Secret) bool {
 		sclient := c.kclient.CoreV1().Services(s.GetNamespace())
 		svc, err := sclient.Get(ctx, owner.Name, metav1.GetOptions{})
 		if err != nil {
-			return false
+			continue
 		}
 		if secName, ok := svc.Annotations["service.beta.openshift.io/serving-cert-secret-name"]; ok && secName == s.Name {
 			return true
