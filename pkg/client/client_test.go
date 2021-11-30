@@ -425,6 +425,7 @@ func TestCreateOrUpdateSecretWithSCOData(t *testing.T) {
 		initialData        map[string][]byte
 		updatedData        map[string][]byte
 		expectedData       map[string][]byte
+		ownerRefs          []metav1.OwnerReference
 	}{
 		{
 			name: "retain existing tls data",
@@ -440,6 +441,37 @@ func TestCreateOrUpdateSecretWithSCOData(t *testing.T) {
 				"tls.crt": []byte("foocrt"),
 				"tls.key": []byte("fookey"),
 			},
+			ownerRefs: []metav1.OwnerReference{
+				{
+					Kind: "Service",
+					Name: "service",
+				},
+			},
+		},
+		{
+			name: "retain existing tls data with multiple owner refs",
+			serviceAnnotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": "secret",
+			},
+			initialData: map[string][]byte{
+				"tls.crt": []byte("foocrt"),
+				"tls.key": []byte("fookey"),
+			},
+			updatedData: map[string][]byte{},
+			expectedData: map[string][]byte{
+				"tls.crt": []byte("foocrt"),
+				"tls.key": []byte("fookey"),
+			},
+			ownerRefs: []metav1.OwnerReference{
+				{
+					Kind: "any",
+					Name: "doesnotexist",
+				},
+				{
+					Kind: "Service",
+					Name: "service",
+				},
+			},
 		},
 		{
 			name: "drop existing but empty tls data",
@@ -450,12 +482,24 @@ func TestCreateOrUpdateSecretWithSCOData(t *testing.T) {
 				"tls.crt": []byte(""),
 				"tls.key": []byte(""),
 			},
+			ownerRefs: []metav1.OwnerReference{
+				{
+					Kind: "Service",
+					Name: "service",
+				},
+			},
 		},
 		{
 			name: "drop existing without owning Service",
 			initialData: map[string][]byte{
 				"tls.crt": []byte("foocrt"),
 				"tls.key": []byte("fookey"),
+			},
+			ownerRefs: []metav1.OwnerReference{
+				{
+					Kind: "Service",
+					Name: "service",
+				},
 			},
 		},
 	}
@@ -464,14 +508,9 @@ func TestCreateOrUpdateSecretWithSCOData(t *testing.T) {
 		t.Run(tc.name, func(st *testing.T) {
 			s := &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: ns,
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							Kind: "Service",
-							Name: "service",
-						},
-					},
+					Name:            "secret",
+					Namespace:       ns,
+					OwnerReferences: tc.ownerRefs,
 				},
 				Data: tc.initialData,
 			}
