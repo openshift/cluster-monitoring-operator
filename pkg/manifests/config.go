@@ -267,13 +267,24 @@ type OpenShiftStateMetricsConfig struct {
 	Tolerations  []v1.Toleration   `json:"tolerations"`
 }
 
+// Prometheus Adapater related configurations
 type K8sPrometheusAdapter struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Tolerations  []v1.Toleration   `json:"tolerations"`
-	Audit        *Audit            `json:"audit"`
+
+	// Prometheus Adapter audit logging related configuration
+	Audit *Audit `json:"audit"`
 }
 
+// Audit profile configurations
 type Audit struct {
+
+	// The Profile to set for audit logs. This currently matches the various
+	// audit log levels such as: "metadata, request, requestresponse, none".
+	// The default audit log level is "metadata"
+	//
+	// see: https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-policy
+	// for more information about auditing and log levels.
 	Profile auditv1.Level `json:"profile"`
 }
 
