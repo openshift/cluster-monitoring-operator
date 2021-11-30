@@ -54,7 +54,7 @@ disable_managed_cmo(){
         "overrides": [
           [ .spec | .? | .overrides[] | .? | select(.name != "cluster-monitoring-operator")] +
           [{
-            "group": "apps/v1",
+            "group": "apps",
             "kind": "Deployment",
             "name": "cluster-monitoring-operator",
             "namespace": "openshift-monitoring",
