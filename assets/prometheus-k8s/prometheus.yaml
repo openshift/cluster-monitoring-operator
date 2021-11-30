@@ -3,10 +3,10 @@ kind: Prometheus
 metadata:
   labels:
     app.kubernetes.io/component: prometheus
+    app.kubernetes.io/instance: k8s
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 2.30.3
-    prometheus: k8s
   name: k8s
   namespace: openshift-monitoring
 spec:
@@ -16,9 +16,9 @@ spec:
       - labelSelector:
           matchLabels:
             app.kubernetes.io/component: prometheus
+            app.kubernetes.io/instance: k8s
             app.kubernetes.io/name: prometheus
             app.kubernetes.io/part-of: openshift-monitoring
-            prometheus: k8s
         namespaces:
         - openshift-monitoring
         topologyKey: kubernetes.io/hostname
@@ -167,10 +167,10 @@ spec:
       target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
     labels:
       app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.30.3
-      prometheus: k8s
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"

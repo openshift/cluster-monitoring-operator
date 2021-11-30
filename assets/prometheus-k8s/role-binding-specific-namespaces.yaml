@@ -5,6 +5,7 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.30.3
@@ -23,6 +24,7 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.30.3
@@ -41,6 +43,7 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.30.3
@@ -59,6 +62,7 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.30.3
@@ -77,6 +81,7 @@ items:
   metadata:
     labels:
       app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
       app.kubernetes.io/version: 2.30.3

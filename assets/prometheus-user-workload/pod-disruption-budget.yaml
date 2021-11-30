@@ -3,6 +3,7 @@ kind: PodDisruptionBudget
 metadata:
   labels:
     app.kubernetes.io/component: prometheus
+    app.kubernetes.io/instance: user-workload
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 2.30.3
@@ -13,6 +14,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: user-workload
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      prometheus: user-workload
