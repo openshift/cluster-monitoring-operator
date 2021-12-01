@@ -92,7 +92,7 @@ update: $(JB_BIN)
 	cd jsonnet && $(JB_BIN) update $(COMPONENTS)
 
 .PHONY: generate
-generate: build-jsonnet docs check-assets check-runbooks
+generate: build-jsonnet docs
 
 .PHONY: verify
 verify: check-assets check-rules check-runbooks
@@ -140,7 +140,7 @@ Documentation/telemetry/telemeter_query: manifests/0000_50_cluster-monitoring-op
 ##############
 
 .PHONY: format
-format: go-fmt shellcheck jsonnet-fmt check-rules
+format: go-fmt shellcheck jsonnet-fmt
 
 .PHONY: go-fmt
 go-fmt:
