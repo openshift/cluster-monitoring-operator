@@ -23,17 +23,6 @@ spec:
         - openshift-monitoring
         topologyKey: kubernetes.io/hostname
   containers:
-  - name: alertmanager
-    startupProbe:
-      exec:
-        command:
-        - sh
-        - -c
-        - exec curl http://localhost:9093/-/ready
-      initialDelaySeconds: 20
-      periodSeconds: 1
-      successThreshold: 1
-      timeoutSeconds: 3
   - args:
     - -provider=openshift
     - -https-address=:9095
