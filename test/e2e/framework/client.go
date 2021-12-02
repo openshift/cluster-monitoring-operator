@@ -69,6 +69,7 @@ func NewPrometheusClient(host, token string, wts ...WrapTransporter) *Prometheus
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	rt = (&HeaderInjector{Name: "Authorization", Value: "Bearer " + token}).WrapTransport(rt)
+	rt = (&HeaderInjector{Name: "Content-Type", Value: "application/json"}).WrapTransport(rt)
 	for i := range wts {
 		rt = wts[i].WrapTransport(rt)
 	}
@@ -236,15 +237,25 @@ func (c *PrometheusClient) PrometheusLabel(label string) ([]byte, error) {
 	return body, nil
 }
 
-// AlertmanagerQueryAlerts runs an HTTP GET request against the Alertmanager
+// GetAlertmanagerAlerts runs an HTTP GET request against the Alertmanager
 // /api/v2/alerts endpoint and returns the response body.
-func (c *PrometheusClient) AlertmanagerQueryAlerts(kvs ...string) ([]byte, error) {
+func (c *PrometheusClient) GetAlertmanagerAlerts(kvs ...string) ([]byte, error) {
+	return c.getAlertmanager("/api/v2/alerts", kvs...)
+}
+
+// GetAlertmanagerSilences runs an HTTP GET request against the Alertmanager
+// /api/v2/silences endpoint and returns the response body.
+func (c *PrometheusClient) GetAlertmanagerSilences(kvs ...string) ([]byte, error) {
+	return c.getAlertmanager("/api/v2/silences", kvs...)
+}
+
+func (c *PrometheusClient) getAlertmanager(path string, kvs ...string) ([]byte, error) {
 	q := make(url.Values)
 	for i := 0; i < len(kvs)/2; i++ {
 		q.Add(kvs[i*2], kvs[i*2+1])
 	}
 	u := url.URL{
-		Path:     "/api/v2/alerts",
+		Path:     path,
 		RawQuery: q.Encode(),
 	}
 
@@ -260,7 +271,7 @@ func (c *PrometheusClient) AlertmanagerQueryAlerts(kvs ...string) ([]byte, error
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code response, want %d, got %d (%q)", http.StatusOK, resp.StatusCode, ClampMax(body))
+		return nil, fmt.Errorf("%s: unexpected status code response, want %d, got %d (%q)", path, http.StatusOK, resp.StatusCode, ClampMax(body))
 	}
 
 	return body, nil

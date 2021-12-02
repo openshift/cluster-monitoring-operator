@@ -483,7 +483,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	}
 
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		body, err := f.AlertmanagerClient.AlertmanagerQueryAlerts(
+		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="VersionAlert"`,
 			"active", "true",
 		)
