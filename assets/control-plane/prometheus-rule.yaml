@@ -340,7 +340,7 @@ spec:
         unless on(namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_access_mode{namespace=~"(openshift-.*|kube-.*|default)", access_mode="ReadOnlyMany"} == 1
         unless on(namespace, persistentvolumeclaim)
-        kube_persistentvolumeclaim_labels{namespace=~"(openshift-.*|kube-.*|default)",label_excluded_from_alerts="true"} == 1
+        kube_persistentvolumeclaim_labels{namespace=~"(openshift-.*|kube-.*|default)",label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"} == 1
       for: 1m
       labels:
         severity: critical
@@ -365,7 +365,7 @@ spec:
         unless on(namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_access_mode{namespace=~"(openshift-.*|kube-.*|default)", access_mode="ReadOnlyMany"} == 1
         unless on(namespace, persistentvolumeclaim)
-        kube_persistentvolumeclaim_labels{namespace=~"(openshift-.*|kube-.*|default)",label_excluded_from_alerts="true"} == 1
+        kube_persistentvolumeclaim_labels{namespace=~"(openshift-.*|kube-.*|default)",label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"} == 1
       for: 1h
       labels:
         severity: warning
