@@ -1837,6 +1837,76 @@ k8sPrometheusAdapter:
 	}
 }
 
+func TestAlertmanagerMainStartupProbe(t *testing.T) {
+	for _, tc := range []struct {
+		name                string
+		config              string
+		infrastructure      InfrastructureReader
+		startupProbeDefined bool
+	}{
+		{
+			name:                "without persistent storage",
+			config:              `alertmanagerMain: {}`,
+			infrastructure:      defaultInfrastructureReader(),
+			startupProbeDefined: true,
+		},
+		{
+			name:                "without persistent storage and single node",
+			config:              `alertmanagerMain: {}`,
+			infrastructure:      &fakeInfrastructureReader{highlyAvailableInfrastructure: false, hostedControlPlane: false},
+			startupProbeDefined: false,
+		},
+		{
+			name: "with persistent storage",
+			config: `alertmanagerMain:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: 10Gi
+`,
+			infrastructure:      defaultInfrastructureReader(),
+			startupProbeDefined: false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{})
+			a, err := f.AlertmanagerMain(
+				"alertmanager-main.openshift-monitoring.svc",
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for _, container := range a.Spec.Containers {
+				switch container.Name {
+				case "alertmanager":
+					if container.StartupProbe != nil {
+						if !tc.startupProbeDefined {
+							t.Fatal("Alertmanager container not configured correctly, expected no startupProbe, but found", container.StartupProbe.String())
+						}
+						return
+					}
+
+					if tc.startupProbeDefined {
+						t.Fatal("Alertmanager container not configured correctly, expected startupProbe, but found none")
+					}
+					return
+				}
+			}
+
+			if tc.startupProbeDefined {
+				t.Fatal("Alertmanager container not found")
+			}
+		})
+	}
+}
+
 func TestAlertmanagerMainConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`alertmanagerMain:
   logLevel: debug
