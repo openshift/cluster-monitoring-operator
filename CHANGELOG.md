@@ -11,6 +11,7 @@
 - [#1481](https://github.com/openshift/cluster-monitoring-operator/pull/1481) Removing one of the AlertmanagerClusterFailedToSendAlerts alerts
 - [#1373](https://github.com/openshift/cluster-monitoring-operator/pull/1373) Enable admins to toggle the [query_log_file](https://prometheus.io/docs/guides/query-log/#enable-the-query-log) setting for Prometheus.
 - [#1491](https://github.com/openshift/cluster-monitoring-operator/pull/1491) Rename alerts `AggregatedAPIErrors to KubeAggregatedAPIErrors` and `AggregatedAPIDown to KubeAggregatedAPIDown`.
+- [#1505](https://github.com/openshift/cluster-monitoring-operator/pull/1505) Add external label `'openshift_io_alert_source': 'platform'` to platform Prometheus.
 
 ## 4.9
 
