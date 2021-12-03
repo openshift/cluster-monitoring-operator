@@ -255,6 +255,9 @@ local inCluster =
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
+        externalLabels: {
+          openshift_io_alert_source: 'platform',
+        },
       },
       prometheusAdapter: {
         namespace: $.values.common.namespace,

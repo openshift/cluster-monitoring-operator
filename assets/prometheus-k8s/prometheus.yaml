@@ -157,7 +157,8 @@ spec:
         cpu: 1m
         memory: 10Mi
   enableFeatures: []
-  externalLabels: {}
+  externalLabels:
+    openshift_io_alert_source: platform
   image: quay.io/prometheus/prometheus:v2.30.3
   listenLocal: true
   nodeSelector:
