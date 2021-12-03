@@ -12,7 +12,8 @@ GOPROXY?=http://proxy.golang.org
 export GO111MODULE
 export GOPROXY
 
-PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
+# go pakages for unit tests, excluding e2e tests
+PKGS=$(shell go list ./... | grep -v /test/e2e)
 GOLANG_FILES:=$(shell find . -name \*.go -print)
 # NOTE: grep -v %.yaml is needed  because "%s-policy.yaml" is used
 # in manifest.go and that isn't a valid asset.
@@ -144,7 +145,7 @@ format: go-fmt shellcheck jsonnet-fmt
 
 .PHONY: go-fmt
 go-fmt:
-	go fmt $(PKGS)
+	go fmt ./...
 
 .PHONY: jsonnet-fmt
 jsonnet-fmt: $(JSONNETFMT_BIN)
