@@ -255,6 +255,10 @@ local inCluster =
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
+        additionalRelabelConfigs: {
+          name: 'alert-relabel-configs',
+          key: 'config.yaml',
+        },
       },
       prometheusAdapter: {
         namespace: $.values.common.namespace,

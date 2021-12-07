@@ -325,6 +325,7 @@ function(params)
         ruleNamespaceSelector: cfg.namespaceSelector,
         listenLocal: true,
         priorityClassName: 'system-cluster-critical',
+        additionalAlertRelabelConfigs: cfg.additionalRelabelConfigs,
         containers: [
           {
             name: 'prometheus-proxy',
