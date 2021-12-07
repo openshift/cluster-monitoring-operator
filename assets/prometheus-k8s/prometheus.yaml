@@ -10,6 +10,9 @@ metadata:
   name: k8s
   namespace: openshift-monitoring
 spec:
+  additionalAlertRelabelConfigs:
+    key: config.yaml
+    name: alert-relabel-configs
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
