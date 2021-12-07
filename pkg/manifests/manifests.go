@@ -69,6 +69,7 @@ var (
 	AlertmanagerServiceMonitor        = "alertmanager/service-monitor.yaml"
 	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
 	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
+	AlertmanagerPodDisruptionBudget   = "alertmanager/pod-disruption-budget.yaml"
 
 	KubeStateMetricsClusterRoleBinding  = "kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole         = "kube-state-metrics/cluster-role.yaml"
@@ -463,6 +464,34 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		a.Spec.Storage = &monv1.StorageSpec{
 			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate,
 		}
+	} else if f.infrastructure.HighlyAvailableInfrastructure() {
+		// When no persistent storage is configured, add a startup probe to
+		// ensure that the Alertmanager container has time to replicate data
+		// from other peers before declaring itself as ready. This allows
+		// silences and notifications to be preserved on roll-outs. We assume
+		// that 20 seconds is enough for a full synchronization (this is twice
+		// the time Alertmanager waits before declaring that it can start
+		// sending notfications).
+		a.Spec.Containers = append(a.Spec.Containers,
+			v1.Container{
+				Name: "alertmanager",
+				StartupProbe: &v1.Probe{
+					Handler: v1.Handler{
+						Exec: &v1.ExecAction{
+							Command: []string{
+								"sh",
+								"-c",
+								"exec curl http://localhost:9093/-/ready",
+							},
+						},
+					},
+					InitialDelaySeconds: 20,
+					PeriodSeconds:       1,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      3,
+				},
+			},
+		)
 	}
 
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.NodeSelector != nil {
@@ -553,6 +582,10 @@ func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBindi
 	crb.Subjects[0].Namespace = f.namespace
 
 	return crb, nil
+}
+
+func (f *Factory) AlertmanagerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AlertmanagerPodDisruptionBudget))
 }
 
 func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {

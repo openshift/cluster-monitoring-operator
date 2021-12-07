@@ -138,10 +138,6 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 					Name:  "namespace",
 					Value: testNs,
 				},
-				&framework.HeaderInjector{
-					Name:  "Content-Type",
-					Value: "application/json",
-				},
 			)
 			return nil
 		})
@@ -173,7 +169,7 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		}
 
 		if resp.StatusCode != expectedCode {
-			t.Fatalf("expecting %d status code,  got %d (%q)", expectedCode, resp.StatusCode, framework.ClampMax(b))
+			t.Fatalf("expecting %d status code, got %d (%q)", expectedCode, resp.StatusCode, framework.ClampMax(b))
 		}
 
 		return b
@@ -299,10 +295,108 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	)
 }
 
+// Even when no persistent storage is configured, silences (and notifications)
+// shouldn't be lost when new Alertmanager pods are rolled out.
+func TestAlertmanagerDataReplication(t *testing.T) {
+	const (
+		silenceLabelName  = "test"
+		silenceLabelValue = "AlertmanagerReplication"
+	)
+
+	// Create a silence.
+	now := time.Now()
+	sil := []byte(fmt.Sprintf(
+		`{"matchers":[{"name":"%s","value":"%s","isRegex":false}],"startsAt":"%s","endsAt":"%s","createdBy":"somebody","comment":"some comment"}`,
+		silenceLabelName,
+		silenceLabelValue,
+		now.Format(time.RFC3339),
+		now.Add(time.Hour).Format(time.RFC3339),
+	))
+	err := framework.Poll(5*time.Second, time.Minute, func() error {
+		resp, err := f.AlertmanagerClient.Do("POST", "/api/v2/silences", sil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "fail to read response body")
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("expecting 200 status code, got %d (%q)", resp.StatusCode, framework.ClampMax(b))
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Trigger a rollout of the Alertmanager pods by changing the log level.
+	const (
+		statefulSetName = "alertmanager-main"
+		containerName   = "alertmanager"
+	)
+
+	data := fmt.Sprintf(`alertmanagerMain:
+  logLevel: warn
+`)
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+
+	for _, test := range []scenario{
+		{
+			name:      "test the alertmanager-main statefulset is rolled out",
+			assertion: f.AssertStatefulSetExistsAndRollout(statefulSetName, f.Ns),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/name=alertmanager,app.kubernetes.io/instance=main",
+				[]framework.PodAssertion{
+					expectContainerArg("--log.level=warn", containerName),
+				},
+			),
+		},
+	} {
+		t.Run(test.name, test.assertion)
+	}
+
+	// Ensure that the silence has been preserved.
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		body, err := f.AlertmanagerClient.GetAlertmanagerSilences(
+			"filter", fmt.Sprintf(`%s="%s"`, silenceLabelName, silenceLabelValue),
+		)
+		if err != nil {
+			return errors.Wrap(err, "error getting silences from Alertmanager")
+		}
+		res, err := gabs.ParseJSON(body)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing Alertmanager response: %s", string(body))
+		}
+
+		count, err := res.ArrayCount()
+		if err != nil {
+			return errors.Wrap(err, "error getting count of items")
+		}
+
+		if count == 1 {
+			return nil
+		}
+
+		return fmt.Errorf("expected 1 matching silence, got %d", count)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 // The Alertmanager API should be protected by the OAuth proxy.
 func TestAlertmanagerOAuthProxy(t *testing.T) {
 	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		body, err := f.AlertmanagerClient.AlertmanagerQueryAlerts(
+		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="Watchdog"`,
 			"active", "true",
 		)
