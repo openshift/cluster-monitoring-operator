@@ -22,7 +22,10 @@ const (
 func (f *Framework) MustCreateOrUpdateConfigMap(t *testing.T, cm *v1.ConfigMap) {
 	t.Helper()
 	ensureCreatedByTestLabel(cm)
-	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm); err != nil {
+	err := Poll(time.Second, 10*time.Second, func() error {
+		return f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm)
+	})
+	if err != nil {
 		t.Fatalf("failed to create/update configmap - %s", err.Error())
 	}
 }
@@ -30,8 +33,11 @@ func (f *Framework) MustCreateOrUpdateConfigMap(t *testing.T, cm *v1.ConfigMap) 
 // MustDeleteConfigMap or fail the test
 func (f *Framework) MustDeleteConfigMap(t *testing.T, cm *v1.ConfigMap) {
 	t.Helper()
-	if err := f.OperatorClient.DeleteConfigMap(ctx, cm); err != nil {
-		t.Fatalf("failed to configmap configmap - %s", err.Error())
+	err := Poll(time.Second, 10*time.Second, func() error {
+		return f.OperatorClient.DeleteConfigMap(ctx, cm)
+	})
+	if err != nil {
+		t.Fatalf("failed to delete configmap - %s", err.Error())
 	}
 }
 
