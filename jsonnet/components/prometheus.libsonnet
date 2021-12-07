@@ -190,6 +190,29 @@ function(params)
 
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
 
+    // this secret allows us to identify alerts that
+    // are coming from platform monitoring
+    additionalAlertManagerRelabellingSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'alert-relabel-configs',
+        namespace: cfg.namespace,
+        labels: cfg.commonLabels,
+      },
+      type: 'Opaque',
+      data: {},
+      stringData: {
+        'config.yaml': std.manifestYamlDoc([
+          {
+            target_label: 'openshift_io_alert_source',
+            action: 'replace',
+            replacement: 'platform',
+          },
+        ],),
+      },
+    },
+
     // This changes the Prometheuses to be scraped with TLS, authN and
     // authZ, which are not present in kube-prometheus.
 
