@@ -7,12 +7,11 @@ function(params)
   local tq = querier(cfg);
   tq {
     mixin:: (import 'github.com/thanos-io/thanos/mixin/alerts/query.libsonnet') {
-      targetGroups: {},
+      targetGroups: {
+        namespace: cfg.namespace,
+      },
       query+:: {
         selector: 'job="thanos-querier"',
-        // All OpenShift alerts should include a namespace label.
-        // See: https://issues.redhat.com/browse/MON-939
-        dimensions: 'job, namespace',
       },
     },
 
