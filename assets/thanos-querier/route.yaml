@@ -10,6 +10,7 @@ metadata:
   name: thanos-querier
   namespace: openshift-monitoring
 spec:
+  path: /api
   port:
     targetPort: web
   tls:
