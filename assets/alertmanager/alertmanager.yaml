@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: main
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.22.2
+    app.kubernetes.io/version: 0.23.0
   name: main
   namespace: openshift-monitoring
 spec:
@@ -134,7 +134,7 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
-  image: quay.io/prometheus/alertmanager:v0.22.2
+  image: quay.io/prometheus/alertmanager:v0.23.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -146,7 +146,7 @@ spec:
       app.kubernetes.io/instance: main
       app.kubernetes.io/name: alertmanager
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 0.22.2
+      app.kubernetes.io/version: 0.23.0
   priorityClassName: system-cluster-critical
   replicas: 2
   resources:
@@ -163,7 +163,7 @@ spec:
     runAsNonRoot: true
     runAsUser: 65534
   serviceAccountName: alertmanager-main
-  version: 0.22.2
+  version: 0.23.0
   volumes:
   - configMap:
       name: metrics-client-ca
