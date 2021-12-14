@@ -3245,8 +3245,18 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 			if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources != nil {
 				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources
 			}
+
 			if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.LogLevel != "" {
 				d.Spec.Template.Spec.Containers[i].Args = append(d.Spec.Template.Spec.Containers[i].Args, fmt.Sprintf("--log.level=%s", f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.LogLevel))
+			}
+
+			if f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.EnableRequestLogging {
+				d.Spec.Template.Spec.Containers[i].Args = append(
+					d.Spec.Template.Spec.Containers[i].Args,
+					fmt.Sprintf("--request.logging-config=%s",
+						getThanosQuerierRequestLoggingConf(f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.LogLevel),
+					),
+				)
 			}
 
 		case "prom-label-proxy":
@@ -4190,4 +4200,32 @@ func removeEmptyDuplicates(elements []string) []string {
 	}
 	// Return the new slice.
 	return result
+}
+
+func getThanosQuerierRequestLoggingConf(logLevel string) string {
+	switch logLevel {
+	case "debug":
+		logLevel = "DEBUG"
+	case "info":
+		logLevel = "INFO"
+	case "warn":
+		logLevel = "WARNING"
+	case "error":
+		logLevel = "ERROR"
+	default:
+		logLevel = "ERROR"
+	}
+
+	return fmt.Sprintf(`http:
+  options:
+    level: %s
+    decision:
+      log_start: false
+      log_end: true
+grpc:
+  options:
+    level: %s
+    decision:
+      log_start: false
+      log_end: true`, logLevel, logLevel)
 }
