@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: k8s
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.30.3
+    app.kubernetes.io/version: 2.31.1
   name: k8s
   namespace: openshift-monitoring
 spec:
@@ -158,7 +158,7 @@ spec:
         memory: 10Mi
   enableFeatures: []
   externalLabels: {}
-  image: quay.io/prometheus/prometheus:v2.30.3
+  image: quay.io/prometheus/prometheus:v2.31.1
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -170,7 +170,7 @@ spec:
       app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.30.3
+      app.kubernetes.io/version: 2.31.1
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
@@ -212,4 +212,4 @@ spec:
         cpu: 1m
         memory: 100Mi
     version: 0.23.1
-  version: 2.30.3
+  version: 2.31.1

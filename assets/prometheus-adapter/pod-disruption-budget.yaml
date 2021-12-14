@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: metrics-adapter
     app.kubernetes.io/name: prometheus-adapter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.9.0
+    app.kubernetes.io/version: 0.9.1
   name: prometheus-adapter
   namespace: openshift-monitoring
 spec:
