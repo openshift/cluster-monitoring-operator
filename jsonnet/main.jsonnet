@@ -241,7 +241,11 @@ local inCluster =
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
             prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
-            thanosSelector: 'job=~"prometheus-(k8s|user-workload)-thanos-sidecar"',
+            thanos+: {
+              sidecar+: {
+                selector: 'job=~"prometheus-(k8s|user-workload)-thanos-sidecar"',
+              },
+            },
           },
         },
         thanos: $.values.thanos {
