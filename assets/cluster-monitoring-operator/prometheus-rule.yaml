@@ -384,6 +384,8 @@ spec:
     - expr: sum (max without(service,endpoint,container,pod,job,namespace) (irate(haproxy_server_http_responses_total{exported_namespace=~"openshift-.*"}[5m])))
         or absent(__does_not_exist__)*0
       record: cluster:usage:openshift:ingress_request_total:irate5m
+    - expr: sum(ingress_controller_aws_nlb_active) or vector(0)
+      record: cluster:ingress_controller_aws_nlb_active:sum
   - name: openshift-build.rules
     rules:
     - expr: sum by (strategy) (openshift_build_status_phase_total)

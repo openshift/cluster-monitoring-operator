@@ -513,6 +513,11 @@ function(params) {
           record: 'cluster:usage:openshift:ingress_request_total:irate5m',
           // The instantaneous rate of openshift requests per second arriving at the ingress controllers
         },
+        {
+          expr: 'sum(ingress_controller_aws_nlb_active) or vector(0)',
+          record: 'cluster:ingress_controller_aws_nlb_active:sum',
+          // Informs how many NLBs are active in AWS.
+        },
       ],
     },
     {

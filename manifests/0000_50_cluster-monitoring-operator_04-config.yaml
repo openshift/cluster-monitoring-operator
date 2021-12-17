@@ -382,6 +382,12 @@ data:
     # at least max of one instance with  k8s.v1.cni.cncf.io/networks annotation, labelled by networks (any or sriov).
     - '{__name__="cluster:network_attachment_definition_enabled_instance_up:max"}'
     #
+    # owners: (@openshift/network-edge)
+    #
+    # cluster:ingress_controller_aws_nlb_active:sum informs how many NLBs are active in AWS.
+    # Zero would indicate ELB (legacy). This metric is only emitted on AWS.
+    - '{__name__="cluster:ingress_controller_aws_nlb_active:sum"}'
+    #
     # owners: (https://github.com/openshift/insights-operator/blob/master/OWNERS)
     #
     # insightsclient_request_send tracks the number of metrics sends.
