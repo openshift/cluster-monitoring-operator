@@ -101,7 +101,7 @@ func TestUserWorkloadMonitoringWithStorage(t *testing.T) {
 		{"assert user workload metrics", assertUserWorkloadMetrics},
 		{"assert user workload rules", assertUserWorkloadRules},
 		{"assert tenancy model is enforced for metrics", assertTenancyForMetrics},
-		{"assert tenancy model is enforced for labels", assertTenancyForLabels},
+		{"assert tenancy model is enforced for series metadata", assertTenancyForSeriesMetadata},
 		{"assert tenancy model is enforced for rules", assertTenancyForRules},
 		{"assert prometheus and alertmanager is not deployed in user namespace", assertPrometheusAlertmanagerInUserNamespace},
 		{"assert grpc tls rotation", assertGRPCTLSRotation},
@@ -1011,7 +1011,7 @@ func assertPrometheusAlertmanagerInUserNamespace(t *testing.T) {
 	}
 }
 
-func assertTenancyForLabels(t *testing.T) {
+func assertTenancyForSeriesMetadata(t *testing.T) {
 	const testAccount = "test-labels"
 
 	_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
@@ -1098,7 +1098,61 @@ func assertTenancyForLabels(t *testing.T) {
 		t.Fatalf("failed to query labels from Thanos querier: %v", err)
 	}
 
-	// check /api/v1/label/namespace/values has a single value
+	// Check the /api/v1/series endpoint.
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		// The tenancy port (9092) is only exposed in-cluster so we need to use
+		// port forwarding to access kube-rbac-proxy.
+		host, cleanUp, err := f.ForwardPort(t, "thanos-querier", 9092)
+		if err != nil {
+			return err
+		}
+		defer cleanUp()
+
+		client := framework.NewPrometheusClient(
+			host,
+			token,
+			&framework.QueryParameterInjector{
+				Name:  "namespace",
+				Value: userWorkloadTestNs,
+			},
+		)
+
+		resp, err := client.Do("GET", "/api/v1/series?match[]=up", nil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+
+		res, err := gabs.ParseJSON(b)
+		if err != nil {
+			return err
+		}
+
+		series, err := res.Path("data").Children()
+		if err != nil {
+			return err
+		}
+
+		if len(series) != 1 {
+			return errors.Errorf("expecting a series list with one item, got %d (%s)", len(series), framework.ClampMax(b))
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("failed to query series from Thanos querier: %v", err)
+	}
+
+	// Check that /api/v1/label/{namespace}/values returns a single value.
 	t.Logf("Checking Label namespace having a single value")
 	const label = "namespace"
 
