@@ -20,7 +20,7 @@ spec:
     - name: v1
       schema:
         openAPIV3Schema:
-          description: 'Network holds cluster-wide information about Network. The canonical name is `cluster`. It is used to configure the desired network configuration, such as: IP address pools for services/pod IPs, network plugin, etc. Please view network.spec for an explanation on what applies when configuring this resource.'
+          description: "Network holds cluster-wide information about Network. The canonical name is `cluster`. It is used to configure the desired network configuration, such as: IP address pools for services/pod IPs, network plugin, etc. Please view network.spec for an explanation on what applies when configuring this resource. \n Compatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer)."
           type: object
           required:
             - spec
@@ -113,6 +113,38 @@ spec:
                   description: Migration contains the cluster network migration configuration.
                   type: object
                   properties:
+                    mtu:
+                      description: MTU contains the MTU migration configuration.
+                      type: object
+                      properties:
+                        machine:
+                          description: Machine contains MTU migration configuration for the machine's uplink.
+                          type: object
+                          properties:
+                            from:
+                              description: From is the MTU to migrate from.
+                              type: integer
+                              format: int32
+                              minimum: 0
+                            to:
+                              description: To is the MTU to migrate to.
+                              type: integer
+                              format: int32
+                              minimum: 0
+                        network:
+                          description: Network contains MTU migration configuration for the default network.
+                          type: object
+                          properties:
+                            from:
+                              description: From is the MTU to migrate from.
+                              type: integer
+                              format: int32
+                              minimum: 0
+                            to:
+                              description: To is the MTU to migrate to.
+                              type: integer
+                              format: int32
+                              minimum: 0
                     networkType:
                       description: 'NetworkType is the target plugin that is to be deployed. Currently supported values are: OpenShiftSDN, OVNKubernetes'
                       type: string
