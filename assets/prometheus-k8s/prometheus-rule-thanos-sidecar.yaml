@@ -17,20 +17,22 @@ spec:
     rules:
     - alert: ThanosSidecarBucketOperationsFailed
       annotations:
-        description: Thanos Sidecar {{$labels.instance}} bucket operations are failing
+        description: Thanos Sidecar {{$labels.instance}} in {{$labels.namespace}}
+          bucket operations are failing
         summary: Thanos Sidecar bucket operations are failing
       expr: |
-        sum by (job, instance) (rate(thanos_objstore_bucket_operation_failures_total{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"}[5m])) > 0
+        sum by (namespace, job, instance) (rate(thanos_objstore_bucket_operation_failures_total{job="thanos-sidecar"}[5m])) > 0
       for: 1h
       labels:
         severity: warning
     - alert: ThanosSidecarNoConnectionToStartedPrometheus
       annotations:
-        description: Thanos Sidecar {{$labels.instance}} is unhealthy.
+        description: Thanos Sidecar {{$labels.instance}} in {{$labels.namespace}}
+          is unhealthy.
         summary: Thanos Sidecar cannot access Prometheus, even though Prometheus seems
           healthy and has reloaded WAL.
       expr: |
-        thanos_sidecar_prometheus_up{job=~"prometheus-(k8s|user-workload)-thanos-sidecar"} == 0
+        thanos_sidecar_prometheus_up{job="thanos-sidecar"} == 0
         AND on (namespace, pod)
         prometheus_tsdb_data_replay_duration_seconds != 0
       for: 1h
