@@ -746,8 +746,9 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 		return errors.Wrap(err, "provision alertmanager configuration")
 	}
 
-	if err := c.createOrUpdateTLSAssetSecret(ctx, am, assetStore); err != nil {
-		return errors.Wrap(err, "creating tls asset secret failed")
+	tlsAssets, err := c.createOrUpdateTLSAssetSecrets(ctx, am, assetStore)
+	if err != nil {
+		return errors.Wrap(err, "creating tls asset secrets failed")
 	}
 
 	// Create governing service if it doesn't exist.
@@ -768,12 +769,12 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 		oldSpec = ss.Spec
 	}
 
-	newSSetInputHash, err := createSSetInputHash(*am, c.config, oldSpec)
+	newSSetInputHash, err := createSSetInputHash(*am, c.config, tlsAssets, oldSpec)
 	if err != nil {
 		return err
 	}
 
-	sset, err := makeStatefulSet(am, c.config, newSSetInputHash)
+	sset, err := makeStatefulSet(am, c.config, newSSetInputHash, tlsAssets.ShardNames())
 	if err != nil {
 		return errors.Wrap(err, "failed to make statefulset")
 	}
@@ -826,12 +827,13 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	return nil
 }
 
-func createSSetInputHash(a monitoringv1.Alertmanager, c Config, s appsv1.StatefulSetSpec) (string, error) {
+func createSSetInputHash(a monitoringv1.Alertmanager, c Config, tlsAssets *operator.ShardedSecret, s appsv1.StatefulSetSpec) (string, error) {
 	hash, err := hashstructure.Hash(struct {
 		A monitoringv1.Alertmanager
 		C Config
 		S appsv1.StatefulSetSpec
-	}{a, c, s},
+		T []string `hash:"set"`
+	}{a, c, s, tlsAssets.ShardNames()},
 		nil,
 	)
 	if err != nil {
@@ -898,7 +900,7 @@ receivers:
 		return nil
 	}
 
-	baseConfig, err := loadCfg(string(rawBaseConfig))
+	baseConfig, err := alertmanagerConfigFrom(string(rawBaseConfig))
 	if err != nil {
 		return errors.Wrap(err, "base config from Secret could not be parsed")
 	}
@@ -909,7 +911,7 @@ receivers:
 		return errors.Wrap(err, "failed to parse alertmanager version")
 	}
 
-	amConfigs, err := c.selectAlertmanagerConfigs(ctx, am, store)
+	amConfigs, err := c.selectAlertmanagerConfigs(ctx, am, version, store)
 	if err != nil {
 		return errors.Wrap(err, "selecting AlertmanagerConfigs failed")
 	}
@@ -963,7 +965,7 @@ func (c *Operator) createOrUpdateGeneratedConfigSecret(ctx context.Context, am *
 	return nil
 }
 
-func (c *Operator) selectAlertmanagerConfigs(ctx context.Context, am *monitoringv1.Alertmanager, store *assets.Store) (map[string]*monitoringv1alpha1.AlertmanagerConfig, error) {
+func (c *Operator) selectAlertmanagerConfigs(ctx context.Context, am *monitoringv1.Alertmanager, amVersion semver.Version, store *assets.Store) (map[string]*monitoringv1alpha1.AlertmanagerConfig, error) {
 	namespaces := []string{}
 
 	// If 'AlertmanagerConfigNamespaceSelector' is nil, only check own namespace.
@@ -1011,7 +1013,7 @@ func (c *Operator) selectAlertmanagerConfigs(ctx context.Context, am *monitoring
 	res := make(map[string]*monitoringv1alpha1.AlertmanagerConfig, len(amConfigs))
 
 	for namespaceAndName, amc := range amConfigs {
-		if err := checkAlertmanagerConfig(ctx, amc, store); err != nil {
+		if err := checkAlertmanagerConfigResource(ctx, amc, amVersion, store); err != nil {
 			rejected++
 			level.Warn(c.logger).Log(
 				"msg", "skipping alertmanagerconfig",
@@ -1040,15 +1042,56 @@ func (c *Operator) selectAlertmanagerConfigs(ctx context.Context, am *monitoring
 	return res, nil
 }
 
-// checkAlertmanagerConfig verifies that an AlertmanagerConfig object is valid
+// checkAlertmanagerConfigResource verifies that an AlertmanagerConfig object is valid
 // and has no missing references to other objects.
-func checkAlertmanagerConfig(ctx context.Context, amc *monitoringv1alpha1.AlertmanagerConfig, store *assets.Store) error {
+func checkAlertmanagerConfigResource(ctx context.Context, amc *monitoringv1alpha1.AlertmanagerConfig, amVersion semver.Version, store *assets.Store) error {
 	receiverNames, err := checkReceivers(ctx, amc, store)
 	if err != nil {
 		return err
 	}
 
-	return validateAlertManagerRoutes(amc.Spec.Route, receiverNames, true)
+	muteTimeIntervalNames, err := validateMuteTimeIntervals(amc.Spec.MuteTimeIntervals)
+	if err != nil {
+		return err
+	}
+
+	if err := checkRoutes(ctx, amc.Spec.Route, receiverNames, muteTimeIntervalNames, amVersion); err != nil {
+		return err
+	}
+
+	return checkInhibitRules(ctx, amc, amVersion)
+}
+
+func checkRoutes(ctx context.Context, route *monitoringv1alpha1.Route, receiverNames, muteTimeIntervalNames map[string]struct{}, amVersion semver.Version) error {
+	if route == nil {
+		return nil
+	}
+
+	if err := validateAlertManagerRoutes(route, receiverNames, muteTimeIntervalNames, true); err != nil {
+		return err
+	}
+
+	return checkRoute(ctx, *route, amVersion)
+}
+
+func checkRoute(ctx context.Context, route monitoringv1alpha1.Route, amVersion semver.Version) error {
+	matchersV2Allowed := amVersion.GTE(semver.MustParse("0.22.0"))
+	if !matchersV2Allowed && checkIsV2Matcher(route.Matchers) {
+		return fmt.Errorf(
+			`invalid syntax in route config for 'matchers' comparison based matching is supported in Alertmanager >= 0.22.0 only (matchers=%v) (receiver=%v)`,
+			route.Matchers, route.Receiver)
+	}
+
+	childRoutes, err := route.ChildRoutes()
+	if err != nil {
+		return err
+	}
+	for _, route := range childRoutes {
+		if err := checkRoute(ctx, route, amVersion); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func checkReceivers(ctx context.Context, amc *monitoringv1alpha1.AlertmanagerConfig, store *assets.Store) (map[string]struct{}, error) {
@@ -1168,8 +1211,12 @@ func checkWebhookConfigs(ctx context.Context, configs []monitoringv1alpha1.Webho
 		webhookConfigKey := fmt.Sprintf("%s/webhook/%d", key, i)
 
 		if config.URLSecret != nil {
-			if _, err := store.GetSecretKey(ctx, namespace, *config.URLSecret); err != nil {
+			url, err := store.GetSecretKey(ctx, namespace, *config.URLSecret)
+			if err != nil {
 				return err
+			}
+			if _, err := ValidateURL(strings.TrimSpace(url)); err != nil {
+				return errors.Wrapf(err, "webhook 'url' %s invalid", url)
 			}
 		}
 
@@ -1271,6 +1318,36 @@ func checkPushoverConfigs(ctx context.Context, configs []monitoringv1alpha1.Push
 	return nil
 }
 
+func checkInhibitRules(ctx context.Context, amc *monitoringv1alpha1.AlertmanagerConfig, version semver.Version) error {
+	matchersV2Allowed := version.GTE(semver.MustParse("0.22.0"))
+
+	for i, rule := range amc.Spec.InhibitRules {
+		if !matchersV2Allowed {
+			// check if rule has provided invalid syntax and error if true
+			if checkIsV2Matcher(rule.SourceMatch, rule.TargetMatch) {
+				msg := fmt.Sprintf(
+					`'sourceMatch' and/or 'targetMatch' are using matching syntax which is supported in Alertmanager >= 0.22.0 only (sourceMatch=%v, targetMatch=%v)`,
+					rule.SourceMatch, rule.TargetMatch)
+				return errors.New(msg)
+			}
+			continue
+		}
+
+		for j, tm := range rule.TargetMatch {
+			if err := tm.Validate(); err != nil {
+				return errors.Wrapf(err, "invalid targetMatchers[%d] in inhibitRule[%d] in config %s", j, i, amc.Name)
+			}
+		}
+
+		for j, sm := range rule.SourceMatch {
+			if err := sm.Validate(); err != nil {
+				return errors.Wrapf(err, "invalid sourceMatchers[%d] in inhibitRule[%d] in config %s", j, i, amc.Name)
+			}
+		}
+	}
+	return nil
+}
+
 // configureHTTPConfigInStore configure the asset store for HTTPConfigs.
 func configureHTTPConfigInStore(ctx context.Context, httpConfig *monitoringv1alpha1.HTTPConfig, namespace string, key string, store *assets.Store) error {
 	if httpConfig == nil {
@@ -1295,14 +1372,33 @@ func configureHTTPConfigInStore(ctx context.Context, httpConfig *monitoringv1alp
 	return store.AddSafeTLSConfig(ctx, namespace, httpConfig.TLSConfig)
 }
 
-func (c *Operator) createOrUpdateTLSAssetSecret(ctx context.Context, am *monitoringv1.Alertmanager, store *assets.Store) error {
-	boolTrue := true
+func (c *Operator) createOrUpdateTLSAssetSecrets(ctx context.Context, am *monitoringv1.Alertmanager, store *assets.Store) (*operator.ShardedSecret, error) {
+	labels := c.config.Labels.Merge(managedByOperatorLabels)
+	template := newTLSAssetSecret(am, labels)
+
+	sSecret := operator.NewShardedSecret(template, tlsAssetsSecretName(am.Name))
+
+	for k, v := range store.TLSAssets {
+		sSecret.AppendData(k.String(), []byte(v))
+	}
+
 	sClient := c.kclient.CoreV1().Secrets(am.Namespace)
 
-	tlsAssetsSecret := &v1.Secret{
+	if err := sSecret.StoreSecrets(ctx, sClient); err != nil {
+		return nil, errors.Wrapf(err, "failed to create TLS assets secret for Alertmanager")
+	}
+
+	level.Debug(c.logger).Log("msg", "tls-asset secret: stored")
+
+	return sSecret, nil
+}
+
+func newTLSAssetSecret(am *monitoringv1.Alertmanager, labels map[string]string) *v1.Secret {
+	boolTrue := true
+	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   tlsAssetsSecretName(am.Name),
-			Labels: c.config.Labels.Merge(managedByOperatorLabels),
+			Labels: labels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion:         am.APIVersion,
@@ -1314,19 +1410,8 @@ func (c *Operator) createOrUpdateTLSAssetSecret(ctx context.Context, am *monitor
 				},
 			},
 		},
-		Data: make(map[string][]byte, len(store.TLSAssets)),
+		Data: make(map[string][]byte),
 	}
-
-	for key, asset := range store.TLSAssets {
-		tlsAssetsSecret.Data[key.String()] = []byte(asset)
-	}
-
-	err := k8sutil.CreateOrUpdateSecret(ctx, sClient, tlsAssetsSecret)
-	if err != nil {
-		return errors.Wrap(err, "failed to create TLS assets secret for Alertmanager")
-	}
-
-	return nil
 }
 
 //checkAlertmanagerSpecDeprecation checks for deprecated fields in the prometheus spec and logs a warning if applicable

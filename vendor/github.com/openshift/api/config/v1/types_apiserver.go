@@ -11,6 +11,9 @@ import (
 // APIServer holds configuration (like serving certificates, client CA and CORS domains)
 // shared by all API servers in the system, among them especially kube-apiserver
 // and openshift-apiserver. The canonical name of an instance is 'cluster'.
+//
+// Compatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).
+// +openshift:compatibility-gen:level=1
 type APIServer struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -94,9 +97,10 @@ type Audit struct {
 	// HTTP payloads for read requests (get, list).
 	// - None: no requests are logged at all, not even oauthaccesstokens and oauthauthorizetokens.
 	//
-	// Warning: to raise a Red Hat support request, it is required to set this to Default,
-	// WriteRequestBodies, or AllRequestBodies to generate audit log events that can be
-	// analyzed by support.
+	// Warning: It is not recommended to disable audit logging by using the `None` profile unless you
+	// are fully aware of the risks of not logging data that can be beneficial when troubleshooting issues.
+	// If you disable audit logging and a support situation arises, you might need to enable audit logging
+	// and reproduce the issue in order to troubleshoot properly.
 	//
 	// If unset, the 'Default' profile is used as the default.
 	//
@@ -198,6 +202,8 @@ type APIServerStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// Compatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).
+// +openshift:compatibility-gen:level=1
 type APIServerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`

@@ -11,33 +11,31 @@ import (
 	restclient "k8s.io/client-go/rest"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/klog/v2"
 )
 
 // IsCertificateValid return true if
 // 1) All certs in client certificate are not expired.
 // 2) At least one cert matches the given subject if specified
-func IsCertificateValid(certData []byte, subject *pkix.Name) (bool, error) {
+func IsCertificateValid(certData []byte, subject *pkix.Name) error {
 	certs, err := certutil.ParseCertsPEM(certData)
 	if err != nil {
-		return false, errors.New("unable to parse certificate")
+		return fmt.Errorf("unable to parse certificate: %w", err)
 	}
 
 	if len(certs) == 0 {
-		return false, errors.New("No cert found in certificate")
+		return fmt.Errorf("No cert found in certificate: %w", err)
 	}
 
 	now := time.Now()
 	// make sure no cert in the certificate chain expired
 	for _, cert := range certs {
 		if now.After(cert.NotAfter) {
-			klog.V(4).Infof("Part of the certificate is expired: %v", cert.NotAfter)
-			return false, nil
+			return fmt.Errorf("part of the certificate is expired: sub: %v, notAfter: %v", cert.Subject.String(), cert.NotAfter.String())
 		}
 	}
 
 	if subject == nil {
-		return true, nil
+		return nil
 	}
 
 	// check subject of certificates
@@ -45,11 +43,10 @@ func IsCertificateValid(certData []byte, subject *pkix.Name) (bool, error) {
 		if cert.Subject.CommonName != subject.CommonName {
 			continue
 		}
-		return true, nil
+		return nil
 	}
 
-	klog.V(4).Infof("Certificate is not issued for subject (cn=%s)", subject.CommonName)
-	return false, nil
+	return fmt.Errorf("the certificate was not issued for subject (cn=%s)", subject.CommonName)
 }
 
 // getCertValidityPeriod returns the validity period of the client certificate in the secret

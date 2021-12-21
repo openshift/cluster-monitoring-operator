@@ -32,11 +32,21 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
 	"github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	"github.com/prometheus/alertmanager/config"
+	"github.com/prometheus/alertmanager/timeinterval"
 	"gopkg.in/yaml.v2"
+
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func loadCfg(s string) (*alertmanagerConfig, error) {
+const inhibitRuleNamespaceKey = "namespace"
+
+// alertmanagerConfigFrom returns a valid global alertmanagerConfig from s
+// or returns an error if
+// 1. s fails validation provided by upstream
+// 2. s fails to unmarshal into internal type
+// 3. the unmarshalled output is invalid
+func alertmanagerConfigFrom(s string) (*alertmanagerConfig, error) {
 	// Run upstream Load function to get any validation checks that it runs.
 	_, err := config.Load(s)
 	if err != nil {
@@ -49,6 +59,22 @@ func loadCfg(s string) (*alertmanagerConfig, error) {
 		return nil, err
 	}
 
+	rootRoute := cfg.Route
+	if rootRoute == nil {
+		return nil, errors.New("root route must exist")
+	}
+
+	if rootRoute.Receiver == "" {
+		return nil, errors.New("root route's receiver must exist")
+	}
+
+	if len(rootRoute.Matchers) > 0 || len(rootRoute.Match) > 0 || len(rootRoute.MatchRE) > 0 {
+		return nil, errors.New("'matchers' not permitted on root route")
+	}
+
+	if len(rootRoute.MuteTimeIntervals) > 0 {
+		return nil, errors.New("'mute_time_intervals' not permitted on root route")
+	}
 	return cfg, nil
 }
 
@@ -127,7 +153,14 @@ func (cg *configGenerator) generateConfig(
 
 		// Add inhibitRules to baseConfig.InhibitRules.
 		for _, inhibitRule := range amConfigs[amConfigIdentifier].Spec.InhibitRules {
-			baseConfig.InhibitRules = append(baseConfig.InhibitRules, convertInhibitRule(&inhibitRule, crKey))
+			baseConfig.InhibitRules = append(baseConfig.InhibitRules,
+				cg.enforceNamespaceForInhibitRule(
+					cg.convertInhibitRule(
+						&inhibitRule,
+					),
+					crKey.Namespace,
+				),
+			)
 		}
 
 		// Skip early if there's no route definition.
@@ -135,7 +168,15 @@ func (cg *configGenerator) generateConfig(
 			continue
 		}
 
-		subRoutes = append(subRoutes, convertRoute(amConfigs[amConfigIdentifier].Spec.Route, crKey, true))
+		subRoutes = append(subRoutes,
+			cg.enforceNamespaceForRoute(
+				cg.convertRoute(
+					amConfigs[amConfigIdentifier].Spec.Route,
+					crKey,
+				),
+				amConfigs[amConfigIdentifier].Namespace,
+			),
+		)
 
 		for _, receiver := range amConfigs[amConfigIdentifier].Spec.Receivers {
 			receivers, err := cg.convertReceiver(ctx, &receiver, crKey)
@@ -144,12 +185,20 @@ func (cg *configGenerator) generateConfig(
 			}
 			baseConfig.Receivers = append(baseConfig.Receivers, receivers)
 		}
+
+		for _, muteTimeInterval := range amConfigs[amConfigIdentifier].Spec.MuteTimeIntervals {
+			mti, err := convertMuteTimeInterval(&muteTimeInterval, crKey)
+			if err != nil {
+				return nil, errors.Wrapf(err, "AlertmanagerConfig %s", crKey.String())
+			}
+			baseConfig.MuteTimeIntervals = append(baseConfig.MuteTimeIntervals, mti)
+		}
 	}
 
 	// For alerts to be processed by the AlertmanagerConfig routes, they need
 	// to appear before the routes defined in the main configuration.
 	// Because all first-level AlertmanagerConfig routes have "continue: true",
-	// alerts will fallthrough.
+	// alerts will fall through.
 	baseConfig.Route.Routes = append(subRoutes, baseConfig.Route.Routes...)
 
 	generatedConf := &baseConfig
@@ -159,35 +208,97 @@ func (cg *configGenerator) generateConfig(
 	return yaml.Marshal(generatedConf)
 }
 
-func convertRoute(in *monitoringv1alpha1.Route, crKey types.NamespacedName, firstLevelRoute bool) *route {
-	// Enforce "continue" to be true for the top-level route.
-	cont := in.Continue
-	if firstLevelRoute {
-		cont = true
+// enforceNamespaceForInhibitRule modifies the inhibition rule to match alerts
+// originating only from the given namespace.
+func (cg *configGenerator) enforceNamespaceForInhibitRule(ir *inhibitRule, namespace string) *inhibitRule {
+	matchersV2Allowed := cg.amVersion.GTE(semver.MustParse("0.22.0"))
+
+	// Inhibition rule created from AlertmanagerConfig resources should only match
+	// alerts that come from the same namespace.
+	delete(ir.SourceMatchRE, inhibitRuleNamespaceKey)
+	delete(ir.TargetMatchRE, inhibitRuleNamespaceKey)
+
+	if !matchersV2Allowed {
+		ir.SourceMatch[inhibitRuleNamespaceKey] = namespace
+		ir.TargetMatch[inhibitRuleNamespaceKey] = namespace
+
+		return ir
 	}
 
+	v2NamespaceMatcher := monitoringv1alpha1.Matcher{
+		Name:      inhibitRuleNamespaceKey,
+		Value:     namespace,
+		MatchType: monitoringv1alpha1.MatchEqual,
+	}.String()
+
+	if !contains(v2NamespaceMatcher, ir.SourceMatchers) {
+		ir.SourceMatchers = append(ir.SourceMatchers, v2NamespaceMatcher)
+	}
+	if !contains(v2NamespaceMatcher, ir.TargetMatchers) {
+		ir.TargetMatchers = append(ir.TargetMatchers, v2NamespaceMatcher)
+	}
+
+	delete(ir.SourceMatch, inhibitRuleNamespaceKey)
+	delete(ir.TargetMatch, inhibitRuleNamespaceKey)
+
+	return ir
+}
+
+// enforceNamespaceForRoute modifies the route configuration to match alerts
+// originating only from the given namespace.
+func (cg *configGenerator) enforceNamespaceForRoute(r *route, namespace string) *route {
+	matchersV2Allowed := cg.amVersion.GTE(semver.MustParse("0.22.0"))
+
+	// Routes created from AlertmanagerConfig resources should only match
+	// alerts that come from the same namespace.
+	if matchersV2Allowed {
+		r.Matchers = append(r.Matchers, monitoringv1alpha1.Matcher{
+			Name:      "namespace",
+			Value:     namespace,
+			MatchType: monitoringv1alpha1.MatchEqual,
+		}.String())
+	} else {
+		r.Match["namespace"] = namespace
+	}
+
+	// Alerts should still be evaluated by the following routes.
+	r.Continue = true
+
+	return r
+}
+
+func (cg *configGenerator) getValidURLFromSecret(ctx context.Context, namespace string, selector v1.SecretKeySelector) (string, error) {
+	url, err := cg.store.GetSecretKey(ctx, namespace, selector)
+	if err != nil {
+		return "", errors.Errorf("failed to get key %q from secret %q", selector.Key, selector.Name)
+	}
+
+	url = strings.TrimSpace(url)
+	if _, err := ValidateURL(url); err != nil {
+		return url, errors.Wrapf(err, "invalid url %s in secret %s config", url, selector.Name)
+	}
+	return url, nil
+}
+
+func (cg *configGenerator) convertRoute(in *monitoringv1alpha1.Route, crKey types.NamespacedName) *route {
+	var matchers []string
+
+	// deprecated
 	match := map[string]string{}
 	matchRE := map[string]string{}
 
 	for _, matcher := range in.Matchers {
+		// prefer matchers to deprecated config
+		if matcher.MatchType != "" {
+			matchers = append(matchers, matcher.String())
+			continue
+		}
+
 		if matcher.Regex {
 			matchRE[matcher.Name] = matcher.Value
 		} else {
 			match[matcher.Name] = matcher.Value
 		}
-	}
-	if firstLevelRoute {
-		match["namespace"] = crKey.Namespace
-		delete(matchRE, "namespace")
-	}
-
-	// Set to nil if empty so that it doesn't show up in the resulting yaml.
-	if len(match) == 0 {
-		match = nil
-	}
-	// Set to nil if empty so that it doesn't show up in the resulting yaml.
-	if len(matchRE) == 0 {
-		matchRE = nil
 	}
 
 	var routes []*route
@@ -201,22 +312,31 @@ func convertRoute(in *monitoringv1alpha1.Route, crKey types.NamespacedName, firs
 			panic(err)
 		}
 		for i := range children {
-			routes[i] = convertRoute(&children[i], crKey, false)
+			routes[i] = cg.convertRoute(&children[i], crKey)
 		}
 	}
 
-	receiver := prefixReceiverName(in.Receiver, crKey)
+	receiver := makeNamespacedString(in.Receiver, crKey)
+
+	var prefixedMuteTimeIntervals []string
+	if len(in.MuteTimeIntervals) > 0 {
+		for _, mti := range in.MuteTimeIntervals {
+			prefixedMuteTimeIntervals = append(prefixedMuteTimeIntervals, makeNamespacedString(mti, crKey))
+		}
+	}
 
 	return &route{
-		Receiver:       receiver,
-		GroupByStr:     in.GroupBy,
-		GroupWait:      in.GroupWait,
-		GroupInterval:  in.GroupInterval,
-		RepeatInterval: in.RepeatInterval,
-		Continue:       cont,
-		Match:          match,
-		MatchRE:        matchRE,
-		Routes:         routes,
+		Receiver:          receiver,
+		GroupByStr:        in.GroupBy,
+		GroupWait:         in.GroupWait,
+		GroupInterval:     in.GroupInterval,
+		RepeatInterval:    in.RepeatInterval,
+		Continue:          in.Continue,
+		Match:             match,
+		MatchRE:           matchRE,
+		Matchers:          matchers,
+		Routes:            routes,
+		MuteTimeIntervals: prefixedMuteTimeIntervals,
 	}
 }
 
@@ -320,7 +440,7 @@ func (cg *configGenerator) convertReceiver(ctx context.Context, in *monitoringv1
 	}
 
 	return &receiver{
-		Name:             prefixReceiverName(in.Name, crKey),
+		Name:             makeNamespacedString(in.Name, crKey),
 		OpsgenieConfigs:  opsgenieConfigs,
 		PagerdutyConfigs: pagerdutyConfigs,
 		SlackConfigs:     slackConfigs,
@@ -338,13 +458,17 @@ func (cg *configGenerator) convertWebhookConfig(ctx context.Context, in monitori
 	}
 
 	if in.URLSecret != nil {
-		url, err := cg.store.GetSecretKey(ctx, crKey.Namespace, *in.URLSecret)
+		url, err := cg.getValidURLFromSecret(ctx, crKey.Namespace, *in.URLSecret)
 		if err != nil {
-			return nil, errors.Errorf("failed to get key %q from secret %q", in.URLSecret.Key, in.URLSecret.Name)
+			return nil, err
 		}
-		out.URL = strings.TrimSpace(url)
+		out.URL = url
 	} else if in.URL != nil {
-		out.URL = *in.URL
+		url, err := ValidateURL(*in.URL)
+		if err != nil {
+			return nil, err
+		}
+		out.URL = url.String()
 	}
 
 	if in.HTTPConfig != nil {
@@ -385,11 +509,11 @@ func (cg *configGenerator) convertSlackConfig(ctx context.Context, in monitoring
 	}
 
 	if in.APIURL != nil {
-		url, err := cg.store.GetSecretKey(ctx, crKey.Namespace, *in.APIURL)
+		url, err := cg.getValidURLFromSecret(ctx, crKey.Namespace, *in.APIURL)
 		if err != nil {
-			return nil, errors.Errorf("failed to get key %q from secret %q", in.APIURL.Key, in.APIURL.Name)
+			return nil, err
 		}
-		out.APIURL = strings.TrimSpace(url)
+		out.APIURL = url
 	}
 
 	var actions []slackAction
@@ -484,6 +608,31 @@ func (cg *configGenerator) convertPagerdutyConfig(ctx context.Context, in monito
 		}
 	}
 	out.Details = details
+
+	var linkConfigs []pagerdutyLink
+	if l := len(in.PagerDutyLinkConfigs); l > 0 {
+		linkConfigs = make([]pagerdutyLink, l)
+		for i, lc := range in.PagerDutyLinkConfigs {
+			linkConfigs[i] = pagerdutyLink{
+				Href: lc.Href,
+				Text: lc.Text,
+			}
+		}
+	}
+	out.Links = linkConfigs
+
+	var imageConfig []pagerdutyImage
+	if l := len(in.PagerDutyImageConfigs); l > 0 {
+		imageConfig = make([]pagerdutyImage, l)
+		for i, ic := range in.PagerDutyImageConfigs {
+			imageConfig[i] = pagerdutyImage{
+				Src:  ic.Src,
+				Alt:  ic.Alt,
+				Href: ic.Href,
+			}
+		}
+	}
+	out.Images = imageConfig
 
 	if in.HTTPConfig != nil {
 		httpConfig, err := cg.convertHTTPConfig(ctx, *in.HTTPConfig, crKey)
@@ -739,10 +888,34 @@ func (cg *configGenerator) convertPushoverConfig(ctx context.Context, in monitor
 	return out, nil
 }
 
-func convertInhibitRule(in *monitoringv1alpha1.InhibitRule, crKey types.NamespacedName) *inhibitRule {
+func (cg *configGenerator) convertInhibitRule(in *monitoringv1alpha1.InhibitRule) *inhibitRule {
+	matchersV2Allowed := cg.amVersion.GTE(semver.MustParse("0.22.0"))
+	var sourceMatchers []string
+	var targetMatchers []string
+
+	// todo (pgough) the following config are deprecated and can be removed when
+	// support matrix has reached >= 0.22.0
 	sourceMatch := map[string]string{}
 	sourceMatchRE := map[string]string{}
+	targetMatch := map[string]string{}
+	targetMatchRE := map[string]string{}
+
 	for _, sm := range in.SourceMatch {
+		// prefer matchers to deprecated syntax
+		if sm.MatchType != "" {
+			sourceMatchers = append(sourceMatchers, sm.String())
+			continue
+		}
+
+		if matchersV2Allowed {
+			if sm.Regex {
+				sourceMatchers = append(sourceMatchers, inhibitRuleRegexToV2(sm.Name, sm.Value))
+			} else {
+				sourceMatchers = append(sourceMatchers, inhibitRuleToV2(sm.Name, sm.Value))
+			}
+			continue
+		}
+
 		if sm.Regex {
 			sourceMatchRE[sm.Name] = sm.Value
 		} else {
@@ -750,17 +923,22 @@ func convertInhibitRule(in *monitoringv1alpha1.InhibitRule, crKey types.Namespac
 		}
 	}
 
-	sourceMatch["namespace"] = crKey.Namespace
-	delete(sourceMatchRE, "namespace")
-
-	// Set to nil if empty so that it doesn't show up in resulting yaml
-	if len(sourceMatchRE) == 0 {
-		sourceMatchRE = nil
-	}
-
-	targetMatch := map[string]string{}
-	targetMatchRE := map[string]string{}
 	for _, tm := range in.TargetMatch {
+		// prefer matchers to deprecated config
+		if tm.MatchType != "" {
+			targetMatchers = append(targetMatchers, tm.String())
+			continue
+		}
+
+		if matchersV2Allowed {
+			if tm.Regex {
+				targetMatchers = append(targetMatchers, inhibitRuleRegexToV2(tm.Name, tm.Value))
+			} else {
+				targetMatchers = append(targetMatchers, inhibitRuleToV2(tm.Name, tm.Value))
+			}
+			continue
+		}
+
 		if tm.Regex {
 			targetMatchRE[tm.Name] = tm.Value
 		} else {
@@ -768,33 +946,94 @@ func convertInhibitRule(in *monitoringv1alpha1.InhibitRule, crKey types.Namespac
 		}
 	}
 
-	targetMatch["namespace"] = crKey.Namespace
-	delete(targetMatchRE, "namespace")
-
-	// Set to nil if empty so that it doesn't show up in resulting yaml
-	if len(targetMatchRE) == 0 {
-		targetMatchRE = nil
-	}
-
-	equal := in.Equal
-	if len(equal) == 0 {
-		equal = nil
-	}
-
 	return &inhibitRule{
-		SourceMatch:   sourceMatch,
-		SourceMatchRE: sourceMatchRE,
-		TargetMatch:   targetMatch,
-		TargetMatchRE: targetMatchRE,
-		Equal:         equal,
+		SourceMatch:    sourceMatch,
+		SourceMatchRE:  sourceMatchRE,
+		SourceMatchers: sourceMatchers,
+		TargetMatch:    targetMatch,
+		TargetMatchRE:  targetMatchRE,
+		TargetMatchers: targetMatchers,
+		Equal:          in.Equal,
 	}
 }
 
-func prefixReceiverName(receiverName string, crKey types.NamespacedName) string {
-	if receiverName == "" {
+func convertMuteTimeInterval(in *monitoringv1alpha1.MuteTimeInterval, crKey types.NamespacedName) (*muteTimeInterval, error) {
+	muteTimeInterval := &muteTimeInterval{}
+
+	for _, timeInterval := range in.TimeIntervals {
+		ti := timeinterval.TimeInterval{}
+
+		for _, time := range timeInterval.Times {
+			parsedTime, err := time.Parse()
+			if err != nil {
+				return nil, err
+			}
+			ti.Times = append(ti.Times, timeinterval.TimeRange{
+				StartMinute: parsedTime.Start,
+				EndMinute:   parsedTime.End,
+			})
+		}
+
+		for _, wd := range timeInterval.Weekdays {
+			parsedWeekday, err := wd.Parse()
+			if err != nil {
+				return nil, err
+			}
+			ti.Weekdays = append(ti.Weekdays, timeinterval.WeekdayRange{
+				InclusiveRange: timeinterval.InclusiveRange{
+					Begin: parsedWeekday.Start,
+					End:   parsedWeekday.End,
+				},
+			})
+		}
+
+		for _, dom := range timeInterval.DaysOfMonth {
+			ti.DaysOfMonth = append(ti.DaysOfMonth, timeinterval.DayOfMonthRange{
+				InclusiveRange: timeinterval.InclusiveRange{
+					Begin: dom.Start,
+					End:   dom.End,
+				},
+			})
+		}
+
+		for _, month := range timeInterval.Months {
+			parsedMonth, err := month.Parse()
+			if err != nil {
+				return nil, err
+			}
+			ti.Months = append(ti.Months, timeinterval.MonthRange{
+				InclusiveRange: timeinterval.InclusiveRange{
+					Begin: parsedMonth.Start,
+					End:   parsedMonth.End,
+				},
+			})
+		}
+
+		for _, year := range timeInterval.Years {
+			parsedYear, err := year.Parse()
+			if err != nil {
+				return nil, err
+			}
+			ti.Years = append(ti.Years, timeinterval.YearRange{
+				InclusiveRange: timeinterval.InclusiveRange{
+					Begin: parsedYear.Start,
+					End:   parsedYear.End,
+				},
+			})
+		}
+
+		muteTimeInterval.Name = makeNamespacedString(in.Name, crKey)
+		muteTimeInterval.TimeIntervals = append(muteTimeInterval.TimeIntervals, ti)
+	}
+
+	return muteTimeInterval, nil
+}
+
+func makeNamespacedString(in string, crKey types.NamespacedName) string {
+	if in == "" {
 		return ""
 	}
-	return crKey.Namespace + "-" + crKey.Name + "-" + receiverName
+	return crKey.Namespace + "-" + crKey.Name + "-" + in
 }
 
 func (cg *configGenerator) convertHTTPConfig(ctx context.Context, in monitoringv1alpha1.HTTPConfig, crKey types.NamespacedName) (*httpClientConfig, error) {
@@ -888,8 +1127,13 @@ func (c *alertmanagerConfig) sanitize(amVersion semver.Version, logger log.Logge
 		}
 	}
 
-	err := c.Route.sanitize(amVersion, logger)
-	return err
+	if len(c.MuteTimeIntervals) > 0 && !amVersion.GTE(semver.MustParse("0.22.0")) {
+		// mute time intervals are unsupported < 0.22.0, and we already log the situation
+		// when handling the routes so just set to nil
+		c.MuteTimeIntervals = nil
+	}
+
+	return c.Route.sanitize(amVersion, logger)
 }
 
 // sanitize globalConfig
@@ -1033,15 +1277,31 @@ func (wcc *weChatConfig) sanitize(amVersion semver.Version, logger log.Logger) {
 func (ir *inhibitRule) sanitize(amVersion semver.Version, logger log.Logger) error {
 	matchersV2Allowed := amVersion.GTE(semver.MustParse("0.22.0"))
 
-	if matchersV2Allowed && checkNotEmptyMap(ir.SourceMatch, ir.TargetMatch, ir.SourceMatchRE, ir.TargetMatchRE) {
+	if !matchersV2Allowed {
+		// check if rule has provided invalid syntax and error if true
+		if checkNotEmptyStrSlice(ir.SourceMatchers, ir.TargetMatchers) {
+			msg := fmt.Sprintf(`target_matchers and source_matchers matching is supported in Alertmanager >= 0.22.0 only (target_matchers=%v, source_matchers=%v)`, ir.TargetMatchers, ir.SourceMatchers)
+			return errors.New(msg)
+		}
+		return nil
+	}
+
+	// we log a warning if the rule continues to use deprecated values in addition
+	// to the namespace label we have injected - but we won't convert these
+	if checkNotEmptyMap(ir.SourceMatch, ir.TargetMatch, ir.SourceMatchRE, ir.TargetMatchRE) {
 		msg := "inhibit rule is using a deprecated match syntax which will be removed in future versions"
 		level.Warn(logger).Log("msg", msg, "source_match", ir.SourceMatch, "target_match", ir.TargetMatch, "source_match_re", ir.SourceMatchRE, "target_match_re", ir.TargetMatchRE)
 	}
 
-	if !matchersV2Allowed && checkNotEmptySlice(ir.SourceMatchers, ir.TargetMatchers) {
-		msg := fmt.Sprintf(`target_matchers and source_matchers matching is supported in Alertmanager >= 0.22.0 only (target_matchers=%v, source_matchers=%v)`, ir.TargetMatchers, ir.SourceMatchers)
-		return errors.New(msg)
-	}
+	// ensure empty data structures are assigned nil so their yaml output is sanitized
+	ir.TargetMatch = convertMapToNilIfEmpty(ir.TargetMatch)
+	ir.TargetMatchRE = convertMapToNilIfEmpty(ir.TargetMatchRE)
+	ir.SourceMatch = convertMapToNilIfEmpty(ir.SourceMatch)
+	ir.SourceMatchRE = convertMapToNilIfEmpty(ir.SourceMatchRE)
+	ir.TargetMatchers = convertSliceToNilIfEmpty(ir.TargetMatchers)
+	ir.SourceMatchers = convertSliceToNilIfEmpty(ir.SourceMatchers)
+	ir.Equal = convertSliceToNilIfEmpty(ir.Equal)
+
 	return nil
 }
 
@@ -1054,15 +1314,22 @@ func (r *route) sanitize(amVersion semver.Version, logger log.Logger) error {
 	}
 
 	matchersV2Allowed := amVersion.GTE(semver.MustParse("0.22.0"))
+	muteTimeIntervalsAllowed := matchersV2Allowed
 	withLogger := log.With(logger, "receiver", r.Receiver)
+
+	if !matchersV2Allowed && checkNotEmptyStrSlice(r.Matchers) {
+		return fmt.Errorf(`invalid syntax in route config for 'matchers' comparison based matching is supported in Alertmanager >= 0.22.0 only (matchers=%v)`, r.Matchers)
+	}
 
 	if matchersV2Allowed && checkNotEmptyMap(r.Match, r.MatchRE) {
 		msg := "'matchers' field is using a deprecated syntax which will be removed in future versions"
 		level.Warn(withLogger).Log("msg", msg, "match", r.Match, "match_re", r.MatchRE)
 	}
 
-	if !matchersV2Allowed && checkNotEmptySlice(r.Matchers) {
-		return fmt.Errorf(`invalid syntax in route config for 'matchers' comparison based matching is supported in Alertmanager >= 0.22.0 only (matchers=%v)`, r.Matchers)
+	if !muteTimeIntervalsAllowed {
+		msg := "named mute time intervals in route is supported in Alertmanager >= 0.22.0 only - dropping config"
+		level.Warn(withLogger).Log("msg", msg, "mute_time_intervals", r.MuteTimeIntervals)
+		r.MuteTimeIntervals = nil
 	}
 
 	for i, child := range r.Routes {
@@ -1070,6 +1337,10 @@ func (r *route) sanitize(amVersion semver.Version, logger log.Logger) error {
 			return errors.Wrapf(err, "route[%d]", i)
 		}
 	}
+	// Set to nil if empty so that it doesn't show up in the resulting yaml.
+	r.Match = convertMapToNilIfEmpty(r.Match)
+	r.MatchRE = convertMapToNilIfEmpty(r.MatchRE)
+	r.Matchers = convertSliceToNilIfEmpty(r.Matchers)
 	return nil
 }
 
@@ -1082,10 +1353,62 @@ func checkNotEmptyMap(in ...map[string]string) bool {
 	return false
 }
 
-func checkNotEmptySlice(in ...[]string) bool {
+func checkNotEmptyStrSlice(in ...[]string) bool {
 	for _, input := range in {
 		if len(input) > 0 {
 			return true
+		}
+	}
+	return false
+}
+
+func convertMapToNilIfEmpty(in map[string]string) map[string]string {
+	if len(in) > 0 {
+		return in
+	}
+	return nil
+}
+
+func convertSliceToNilIfEmpty(in []string) []string {
+	if len(in) > 0 {
+		return in
+	}
+	return nil
+}
+
+// contains will return true if any slice value with all whitespace removed
+// is equal to the provided value with all whitespace removed
+func contains(value string, in []string) bool {
+	for _, str := range in {
+		if strings.ReplaceAll(value, " ", "") == strings.ReplaceAll(str, " ", "") {
+			return true
+		}
+	}
+	return false
+}
+
+func inhibitRuleToV2(name, value string) string {
+	return monitoringv1alpha1.Matcher{
+		Name:      name,
+		Value:     value,
+		MatchType: monitoringv1alpha1.MatchEqual,
+	}.String()
+}
+
+func inhibitRuleRegexToV2(name, value string) string {
+	return monitoringv1alpha1.Matcher{
+		Name:      name,
+		Value:     value,
+		MatchType: monitoringv1alpha1.MatchRegexp,
+	}.String()
+}
+
+func checkIsV2Matcher(in ...[]monitoringv1alpha1.Matcher) bool {
+	for _, input := range in {
+		for _, matcher := range input {
+			if matcher.MatchType != "" {
+				return true
+			}
 		}
 	}
 	return false
