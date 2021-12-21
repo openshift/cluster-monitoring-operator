@@ -88,6 +88,13 @@ vendor:
 	go mod vendor
 	go mod verify
 
+.PHONY: update-go-deps
+update-go-deps:
+	for m in $$(go list -mod=readonly -m -f '{{ if and (not .Indirect) (not .Main)}}{{.Path}}{{end}}' all); do \
+		go get $$m; \
+	done
+	@echo "Don't forget to run 'make vendor'"
+
 .PHONY: update
 update: $(JB_BIN)
 	cd jsonnet && $(JB_BIN) update $(COMPONENTS)
