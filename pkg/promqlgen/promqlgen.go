@@ -20,7 +20,7 @@ import (
 
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	promql "github.com/prometheus/prometheus/promql/parser"
 )
 

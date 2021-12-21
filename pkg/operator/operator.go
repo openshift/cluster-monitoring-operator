@@ -295,7 +295,7 @@ func New(
 	)
 	o.informerFactories = append(o.informerFactories, kubeInformersOperatorNS)
 
-	controllerRef, err := events.GetControllerReferenceForCurrentPod(o.client.KubernetesInterface(), namespace, nil)
+	controllerRef, err := events.GetControllerReferenceForCurrentPod(ctx, o.client.KubernetesInterface(), namespace, nil)
 	if err != nil {
 		klog.Warningf("unable to get owner reference (falling back to namespace): %v", err)
 	}
@@ -307,7 +307,7 @@ func New(
 		controllerRef,
 	)
 
-	csrController := csr.NewClientCertificateController(
+	csrController, err := csr.NewClientCertificateController(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
 			SecretName:      "metrics-client-certs",
@@ -330,6 +330,9 @@ func New(
 		"OpenShiftMonitoringClientCertRequester",
 	)
 
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create client certificate controller")
+	}
 	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run)
 
 	return o, nil

@@ -477,7 +477,7 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 			v1.Container{
 				Name: "alertmanager",
 				StartupProbe: &v1.Probe{
-					Handler: v1.Handler{
+					ProbeHandler: v1.ProbeHandler{
 						Exec: &v1.ExecAction{
 							Command: []string{
 								"sh",
