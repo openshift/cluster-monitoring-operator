@@ -21,7 +21,7 @@ func NewSimpleClientCertificateController(
 	kubeInformers informers.SharedInformerFactory,
 	kubeClient kubernetes.Interface,
 	recorder events.Recorder,
-) factory.Controller {
+) (factory.Controller, error) {
 	certOptions := ClientCertOption{
 		SecretNamespace: secretNamespace,
 		SecretName:      secretName,

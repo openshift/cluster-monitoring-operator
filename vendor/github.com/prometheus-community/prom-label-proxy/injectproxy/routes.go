@@ -24,7 +24,7 @@ import (
 
 	"github.com/efficientgo/tools/core/pkg/merrors"
 	"github.com/pkg/errors"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql/parser"
 )
 
@@ -143,7 +143,7 @@ func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error)
 		mux.Handle("/api/v1/query_range", r.enforceLabel(enforceMethods(r.query, "GET", "POST"))),
 		mux.Handle("/api/v1/alerts", r.enforceLabel(enforceMethods(r.passthrough, "GET"))),
 		mux.Handle("/api/v1/rules", r.enforceLabel(enforceMethods(r.passthrough, "GET"))),
-		mux.Handle("/api/v1/series", r.enforceLabel(enforceMethods(r.matcher, "GET"))),
+		mux.Handle("/api/v1/series", r.enforceLabel(enforceMethods(r.matcher, "GET", "POST"))),
 		mux.Handle("/api/v1/query_exemplars", r.enforceLabel(enforceMethods(r.query, "GET", "POST"))),
 	)
 
@@ -159,6 +159,7 @@ func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error)
 	errs.Add(
 		mux.Handle("/api/v2/silences", r.enforceLabel(enforceMethods(r.silences, "GET", "POST"))),
 		mux.Handle("/api/v2/silence/", r.enforceLabel(enforceMethods(r.deleteSilence, "DELETE"))),
+		mux.Handle("/api/v2/alerts/groups", r.enforceLabel(enforceMethods(r.enforceFilterParameter, "GET"))),
 	)
 
 	if err := errs.Err(); err != nil {
@@ -357,6 +358,7 @@ func (r *routes) matcher(w http.ResponseWriter, req *http.Request) {
 		Value: mustLabelValue(req.Context()),
 	}
 	q := req.URL.Query()
+
 	if err := injectMatcher(q, matcher); err != nil {
 		return
 	}

@@ -98,6 +98,7 @@ func makeStatefulSet(
 	ruleConfigMapNames []string,
 	inputHash string,
 	shard int32,
+	tlsAssetSecrets []string,
 ) (*appsv1.StatefulSet, error) {
 	// p is passed in by value, not by reference. But p contains references like
 	// to annotation map, that do not get copied on function invocation. Ensure to
@@ -144,7 +145,7 @@ func makeStatefulSet(
 		}
 	}
 
-	spec, err := makeStatefulSetSpec(p, config, shard, ruleConfigMapNames, parsedVersion)
+	spec, err := makeStatefulSetSpec(p, config, shard, ruleConfigMapNames, tlsAssetSecrets, parsedVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "make StatefulSet spec")
 	}
@@ -321,7 +322,7 @@ func makeStatefulSetService(p *monitoringv1.Prometheus, config operator.Config) 
 }
 
 func makeStatefulSetSpec(p monitoringv1.Prometheus, c *operator.Config, shard int32, ruleConfigMapNames []string,
-	version semver.Version) (*appsv1.StatefulSetSpec, error) {
+	tlsAssetSecrets []string, version semver.Version) (*appsv1.StatefulSetSpec, error) {
 	// Prometheus may take quite long to shut down to checkpoint existing data.
 	// Allow up to 10 minutes for clean termination.
 	terminationGracePeriod := int64(600)
@@ -466,6 +467,23 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *operator.Config, shard in
 		promArgs[i] = "-" + a
 	}
 
+	assetsVolume := v1.Volume{
+		Name: "tls-assets",
+		VolumeSource: v1.VolumeSource{
+			Projected: &v1.ProjectedVolumeSource{
+				Sources: []v1.VolumeProjection{},
+			},
+		},
+	}
+	for _, assetShard := range tlsAssetSecrets {
+		assetsVolume.Projected.Sources = append(assetsVolume.Projected.Sources,
+			v1.VolumeProjection{
+				Secret: &v1.SecretProjection{
+					LocalObjectReference: v1.LocalObjectReference{Name: assetShard},
+				},
+			})
+	}
+
 	volumes := []v1.Volume{
 		{
 			Name: "config",
@@ -475,14 +493,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *operator.Config, shard in
 				},
 			},
 		},
-		{
-			Name: "tls-assets",
-			VolumeSource: v1.VolumeSource{
-				Secret: &v1.SecretVolumeSource{
-					SecretName: tlsAssetsSecretName(p.Name),
-				},
-			},
-		},
+		assetsVolume,
 		{
 			Name: "config-out",
 			VolumeSource: v1.VolumeSource{
@@ -594,38 +605,50 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *operator.Config, shard in
 		})
 	}
 
-	const localProbe = `if [ -x "$(command -v curl)" ]; then exec curl %s; elif [ -x "$(command -v wget)" ]; then exec wget -q -O /dev/null %s; else exit 1; fi`
-
-	var readinessProbeHandler v1.Handler
-	{
-		readyPath := path.Clean(webRoutePrefix + "/-/ready")
+	probeHandler := func(probePath string) v1.ProbeHandler {
+		probePath = path.Clean(webRoutePrefix + probePath)
+		handler := v1.ProbeHandler{}
 		if p.Spec.ListenLocal {
-			localReadyPath := fmt.Sprintf("http://localhost:9090%s", readyPath)
-			readinessProbeHandler.Exec = &v1.ExecAction{
+			handler.Exec = &v1.ExecAction{
 				Command: []string{
 					"sh",
 					"-c",
-					fmt.Sprintf(localProbe, localReadyPath, localReadyPath),
+					fmt.Sprintf(`if [ -x "$(command -v curl)" ]; then exec curl %[1]s; elif [ -x "$(command -v wget)" ]; then exec wget -q -O /dev/null %[1]s; else exit 1; fi`, fmt.Sprintf("http://localhost:9090%s", probePath)),
 				},
 			}
 		} else {
-			readinessProbeHandler.HTTPGet = &v1.HTTPGetAction{
-				Path: readyPath,
+			handler.HTTPGet = &v1.HTTPGetAction{
+				Path: probePath,
 				Port: intstr.FromString(p.Spec.PortName),
 			}
 			if p.Spec.Web != nil && p.Spec.Web.TLSConfig != nil && version.GTE(semver.MustParse("2.24.0")) {
-				readinessProbeHandler.HTTPGet.Scheme = v1.URISchemeHTTPS
+				handler.HTTPGet.Scheme = v1.URISchemeHTTPS
 			}
 		}
+		return handler
 	}
 
-	// TODO(paulfantom): Re-add livenessProbe and add startupProbe when kubernetes 1.21 is available.
+	// The /-/ready handler returns OK only after the TSDB initialization has
+	// completed. The WAL replay can take a significant time for large setups
+	// hence we enable the startup probe with a generous failure threshold (15
+	// minutes) to ensure that the readiness probe only comes into effect once
+	// Prometheus is effectively ready.
+	// We don't want to use the /-/healthy handler here because it returns OK as
+	// soon as the web server is started (irrespective of the WAL replay).
+	startupProbe := &v1.Probe{
+		ProbeHandler:     probeHandler("/-/ready"),
+		TimeoutSeconds:   probeTimeoutSeconds,
+		PeriodSeconds:    15,
+		FailureThreshold: 60,
+	}
+
+	// TODO(paulfantom): Re-add livenessProbe when kubernetes 1.21 is available.
 	// This would be a follow-up to https://github.com/prometheus-operator/prometheus-operator/pull/3502
 	readinessProbe := &v1.Probe{
-		Handler:          readinessProbeHandler,
+		ProbeHandler:     probeHandler("/-/ready"),
 		TimeoutSeconds:   probeTimeoutSeconds,
 		PeriodSeconds:    5,
-		FailureThreshold: 120, // Allow up to 10m on startup for data recovery
+		FailureThreshold: 3,
 	}
 
 	podAnnotations := map[string]string{}
@@ -851,6 +874,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *operator.Config, shard in
 			Ports:                    ports,
 			Args:                     promArgs,
 			VolumeMounts:             promVolumeMounts,
+			StartupProbe:             startupProbe,
 			ReadinessProbe:           readinessProbe,
 			Resources:                p.Spec.Resources,
 			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
