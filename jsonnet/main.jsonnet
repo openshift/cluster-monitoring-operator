@@ -333,6 +333,7 @@ local inCluster =
             namespaceSelector: $.values.common.mixinNamespaceSelector,
             cpuThrottlingSelector: $.values.common.mixinNamespaceSelector,
             kubeletPodLimit: 250,
+            pvExcludedSelector: 'label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"',
           },
         },
       },
