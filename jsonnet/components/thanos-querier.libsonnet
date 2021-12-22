@@ -504,7 +504,13 @@ function(params)
                   '--tls-private-key-file=/etc/tls/private/tls.key',
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                   '--logtostderr=true',
-                  '--allow-paths=/api/v1/query,/api/v1/query_range,/api/v1/labels,/api/v1/label/*/values',
+                  '--allow-paths=' + std.join(',', [
+                    '/api/v1/query',
+                    '/api/v1/query_range',
+                    '/api/v1/labels',
+                    '/api/v1/label/*/values',
+                    '/api/v1/series',
+                  ]),
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [

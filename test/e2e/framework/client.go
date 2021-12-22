@@ -216,7 +216,7 @@ func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
 	return body, nil
 }
 
-// PrometheusRules runs an HTTP GET request against the Prometheus label API and returns
+// PrometheusLabel runs an HTTP GET request against the Prometheus label API and returns
 // the response body.
 func (c *PrometheusClient) PrometheusLabel(label string) ([]byte, error) {
 	resp, err := c.Do("GET", fmt.Sprintf("/api/v1/label/%s/values", url.QueryEscape(label)), nil)
