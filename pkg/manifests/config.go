@@ -491,18 +491,21 @@ type UserWorkloadConfiguration struct {
 }
 
 type PrometheusRestrictedConfig struct {
-	LogLevel            string                               `json:"logLevel"`
-	Retention           string                               `json:"retention"`
-	NodeSelector        map[string]string                    `json:"nodeSelector"`
-	Tolerations         []v1.Toleration                      `json:"tolerations"`
-	Resources           *v1.ResourceRequirements             `json:"resources"`
-	ExternalLabels      map[string]string                    `json:"externalLabels"`
-	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite         []RemoteWriteSpec                    `json:"remoteWrite"`
-	EnforcedSampleLimit *uint64                              `json:"enforcedSampleLimit"`
-	EnforcedTargetLimit *uint64                              `json:"enforcedTargetLimit"`
-	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
-	QueryLogFile        string                               `json:"queryLogFile"`
+	LogLevel                      string                               `json:"logLevel"`
+	Retention                     string                               `json:"retention"`
+	NodeSelector                  map[string]string                    `json:"nodeSelector"`
+	Tolerations                   []v1.Toleration                      `json:"tolerations"`
+	Resources                     *v1.ResourceRequirements             `json:"resources"`
+	ExternalLabels                map[string]string                    `json:"externalLabels"`
+	VolumeClaimTemplate           *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	RemoteWrite                   []RemoteWriteSpec                    `json:"remoteWrite"`
+	EnforcedSampleLimit           *uint64                              `json:"enforcedSampleLimit"`
+	EnforcedTargetLimit           *uint64                              `json:"enforcedTargetLimit"`
+	EnforcedLabelLimit            *uint64                              `json:"enforcedLabelLimit"`
+	EnforcedLabelNameLengthLimit  *uint64                              `json:"enforcedLabelNameLengthLimit"`
+	EnforcedLabelValueLengthLimit *uint64                              `json:"enforcedLabelValueLengthLimit"`
+	AlertmanagerConfigs           []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
+	QueryLogFile                  string                               `json:"queryLogFile"`
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {
