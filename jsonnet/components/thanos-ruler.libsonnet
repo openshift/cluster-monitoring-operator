@@ -12,7 +12,9 @@ function(params)
 
   tr {
     mixin:: (import 'github.com/thanos-io/thanos/mixin/alerts/rule.libsonnet') {
-      targetGroups: {},
+      targetGroups: {
+        namespace: tr.config.namespace,
+      },
       rule+:: {
         selector: 'job="thanos-ruler"',
       },
