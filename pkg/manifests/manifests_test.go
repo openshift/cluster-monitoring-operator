@@ -1911,6 +1911,7 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`alertmanagerMain:
   logLevel: debug
   baseImage: quay.io/test/alertmanager
+  enableUserAlertmanagerConfig: true
   nodeSelector:
     type: worker
   tolerations:
@@ -2024,6 +2025,47 @@ ingress:
 	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
+
+	{
+
+		if a.Spec.AlertmanagerConfigSelector == nil {
+			t.Fatal("expected 'alertmanagerConfigSelector' to configure selector")
+		}
+
+		if !reflect.DeepEqual(a.Spec.AlertmanagerConfigSelector, &metav1.LabelSelector{}) {
+			t.Fatal("expected match all alertmanagerConfigSelector")
+		}
+
+		if a.Spec.AlertmanagerConfigNamespaceSelector == nil {
+			t.Fatal("expected 'enableUserAlertmanagerConfig' to configure selector")
+		}
+
+		if len(a.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions) != 2 {
+			t.Fatal("expected 'enableUserAlertmanagerConfig' to configure selector match expressions")
+		}
+
+		expectPlatformOptIn := metav1.LabelSelectorRequirement{
+			Key:      "openshift.io/cluster-monitoring",
+			Operator: metav1.LabelSelectorOpNotIn,
+			Values:   []string{"true"},
+		}
+
+		expectUWMOptIn := metav1.LabelSelectorRequirement{
+			Key:      "openshift.io/user-monitoring",
+			Operator: metav1.LabelSelectorOpNotIn,
+			Values:   []string{"false"},
+		}
+
+		gotPlatformOptIn := a.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions[0]
+		if !reflect.DeepEqual(expectPlatformOptIn, gotPlatformOptIn) {
+			t.Fatalf("unexpected result for platform labels. wanted %v but got %v", expectPlatformOptIn, gotPlatformOptIn)
+		}
+		gotUWMOptIn := a.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions[1]
+		if !reflect.DeepEqual(expectUWMOptIn, gotUWMOptIn) {
+			t.Fatalf("unexpected result for UWM labels. wanted %v but got %v", expectUWMOptIn, gotUWMOptIn)
+		}
+	}
+
 }
 
 func TestNodeExporter(t *testing.T) {
