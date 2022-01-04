@@ -94,6 +94,11 @@ spec:
       - container
     - action: labeldrop
       regex: __tmp_keep_metric
+    - action: replace
+      regex: (.+)
+      sourceLabels:
+      - __meta_kubernetes_service_annotation_openshift_io_scrape_interval
+      targetLabel: __scrape_interval__
     path: /metrics/cadvisor
     port: https-metrics
     relabelings:

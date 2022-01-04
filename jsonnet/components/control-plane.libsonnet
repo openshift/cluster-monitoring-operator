@@ -106,6 +106,13 @@ function(params)
                       action: 'labeldrop',
                       regex: '__tmp_keep_metric',
                     },
+                    // allow kubelet to dynamically change its scrape interval during runtime
+                    {
+                      action: 'replace',
+                      regex: '(.+)',
+                      sourceLabels: ['__meta_kubernetes_service_annotation_openshift_io_scrape_interval'],
+                      targetLabel: '__scrape_interval__'
+                    }
                   ],
                 }
               else
