@@ -599,6 +599,25 @@ data:
     #
     # Number of nodes using a custom TuneD profile not shipped by the Node Tuning Operator.
     - '{__name__="nto_custom_profiles:count"}'
+    # owners: (@openshift/team-build-api)
+    #
+    # openshift_csi_share_configmap measures amount of config maps shared by csi shared resource driver.
+    - '{__name__="openshift_csi_share_configmap"}'
+    #
+    # owners: (@openshift/team-build-api)
+    #
+    # openshift_csi_share_secret measures amount of secrets shared by csi shared resource driver.
+    - '{__name__="openshift_csi_share_secret"}'
+    #
+    # owners: (@openshift/team-build-api)
+    #
+    # openshift_csi_share_mount_failures_total measures amount of failed attempts to mount csi shared resources into the pods.
+    - '{__name__="openshift_csi_share_mount_failures_total"}'
+    #
+    # owners: (@openshift/team-build-api)
+    #
+    # openshift_csi_share_mount_requests_total measures total amount of attempts to mount csi shared resources into the pods.
+    - '{__name__="openshift_csi_share_mount_requests_total"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
