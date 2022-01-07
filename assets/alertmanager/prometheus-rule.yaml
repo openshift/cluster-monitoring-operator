@@ -48,6 +48,7 @@ spec:
         description: Alertmanager {{ $labels.namespace }}/{{ $labels.pod}} failed
           to send {{ $value | humanizePercentage }} of notifications to {{ $labels.integration
           }}.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/AlertmanagerFailedToSendAlerts.md
         summary: An Alertmanager instance failed to send notifications.
       expr: |
         (
@@ -64,6 +65,7 @@ spec:
         description: The minimum notification failure rate to {{ $labels.integration
           }} sent from any instance in the {{$labels.job}} cluster is {{ $value |
           humanizePercentage }}.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/AlertmanagerClusterFailedToSendAlerts.md
         summary: All Alertmanager instances in a cluster failed to send notifications
           to a critical integration.
       expr: |
