@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: Route
 metadata:
-  name: prometheus-k8s
+  name: prometheus-k8s-federate
   namespace: openshift-monitoring
 spec:
+  path: /federate
   port:
     targetPort: web
   tls:

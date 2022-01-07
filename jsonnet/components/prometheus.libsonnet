@@ -22,8 +22,8 @@ function(params)
       data: {},
     },
 
-    // OpenShift route to access the Prometheus UI.
-    route: {
+    // OpenShift route to access the Prometheus api.
+    apiRoute: {
       apiVersion: 'v1',
       kind: 'Route',
       metadata: {
@@ -35,6 +35,31 @@ function(params)
           kind: 'Service',
           name: 'prometheus-k8s',
         },
+        path: '/api',
+        port: {
+          targetPort: 'web',
+        },
+        tls: {
+          termination: 'Reencrypt',
+          insecureEdgeTerminationPolicy: 'Redirect',
+        },
+      },
+    },
+
+    // OpenShift route to access the Prometheus federate endpoint.
+    federateRoute: {
+      apiVersion: 'v1',
+      kind: 'Route',
+      metadata: {
+        name: 'prometheus-k8s-federate',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        to: {
+          kind: 'Service',
+          name: 'prometheus-k8s',
+        },
+        path: '/federate',
         port: {
           targetPort: 'web',
         },
@@ -316,6 +341,7 @@ function(params)
           'kube-rbac-proxy',
           'metrics-client-certs',
         ],
+        externalURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
         configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle', 'metrics-client-ca'],
         probeNamespaceSelector: cfg.namespaceSelector,
         podMonitorNamespaceSelector: cfg.namespaceSelector,

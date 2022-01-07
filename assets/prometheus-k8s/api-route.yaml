@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: prometheus-k8s
+  namespace: openshift-monitoring
+spec:
+  path: /api
+  port:
+    targetPort: web
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: Reencrypt
+  to:
+    kind: Service
+    name: prometheus-k8s

@@ -115,7 +115,8 @@ var (
 	PrometheusK8sProxySecret                          = "prometheus-k8s/proxy-secret.yaml"
 	PrometheusRBACProxySecret                         = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
 	PrometheusUserWorkloadRBACProxySecret             = "prometheus-user-workload/kube-rbac-proxy-secret.yaml"
-	PrometheusK8sRoute                                = "prometheus-k8s/route.yaml"
+	PrometheusK8sAPIRoute                             = "prometheus-k8s/api-route.yaml"
+	PrometheusK8sFederateRoute                        = "prometheus-k8s/federate-route.yaml"
 	PrometheusK8sHtpasswd                             = "prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sServingCertsCABundle                 = "prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle               = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
@@ -320,14 +321,6 @@ func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructu
 		assets:                a,
 		APIServerConfig:       apiServerConfig,
 		consoleConfig:         consoleConfig,
-	}
-}
-
-func (f *Factory) PrometheusExternalURL(host string) *url.URL {
-	return &url.URL{
-		Scheme: "https",
-		Host:   host,
-		Path:   "/",
 	}
 }
 
@@ -1344,8 +1337,19 @@ func (f *Factory) PrometheusK8sThanosSidecarServiceMonitor() (*monv1.ServiceMoni
 	return s, nil
 }
 
-func (f *Factory) PrometheusK8sRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(f.assets.MustNewAssetReader(PrometheusK8sRoute))
+func (f *Factory) PrometheusK8sAPIRoute() (*routev1.Route, error) {
+	r, err := f.NewRoute(f.assets.MustNewAssetReader(PrometheusK8sAPIRoute))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespace
+
+	return r, nil
+}
+
+func (f *Factory) PrometheusK8sFederateRoute() (*routev1.Route, error) {
+	r, err := f.NewRoute(f.assets.MustNewAssetReader(PrometheusK8sFederateRoute))
 	if err != nil {
 		return nil, err
 	}
@@ -1405,7 +1409,7 @@ func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
-func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
 	if err != nil {
 		return nil, err
@@ -1420,7 +1424,10 @@ func (f *Factory) PrometheusK8s(host string, grpcTLS *v1.Secret, trustedCABundle
 	}
 
 	p.Spec.Image = &f.config.Images.Prometheus
-	p.Spec.ExternalURL = f.PrometheusExternalURL(host).String()
+
+	if f.consoleConfig != nil {
+		p.Spec.ExternalURL = f.consoleConfig.Status.ConsoleURL + "/monitoring"
+	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources != nil {
 		p.Spec.Resources = *f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources
