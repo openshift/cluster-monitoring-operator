@@ -469,10 +469,18 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		// When no persistent storage is configured, add a startup probe to
 		// ensure that the Alertmanager container has time to replicate data
 		// from other peers before declaring itself as ready. This allows
-		// silences and notifications to be preserved on roll-outs. We assume
-		// that 20 seconds is enough for a full synchronization (this is twice
-		// the time Alertmanager waits before declaring that it can start
-		// sending notfications).
+		// silences and notifications to be preserved on roll-outs.
+		//
+		// On startup, Alertmanager resolves the names of the peers before
+		// initiating the web service.  To account for this, the execution of
+		// the probe is delayed by 20 seconds so that Alertmanager gets enough
+		// time for the resolution + data synchronisation before the probe
+		// returns (20s is twice the time that Alertmanager waits before
+		// declaring that it can start sending notfications).
+		//
+		// We also account for slow DNS resolvers by retrying for 40 seconds in
+		// case the endpoint isn't ready after 20s (see
+		// https://bugzilla.redhat.com/show_bug.cgi?id=2037073 for details).
 		a.Spec.Containers = append(a.Spec.Containers,
 			v1.Container{
 				Name: "alertmanager",
@@ -487,8 +495,8 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 						},
 					},
 					InitialDelaySeconds: 20,
-					PeriodSeconds:       1,
-					SuccessThreshold:    1,
+					PeriodSeconds:       10,
+					FailureThreshold:    4,
 					TimeoutSeconds:      3,
 				},
 			},
