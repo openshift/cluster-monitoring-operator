@@ -96,7 +96,7 @@ func tearDownUserApplication(t *testing.T, f *framework.Framework) {
 	f.AssertNamespaceDoesNotExist(userWorkloadTestNs)(t)
 }
 
-func deployUserApplication(t *testing.T, f *framework.Framework) error {
+func createUWMTestNsIfNotExist(t *testing.T, f *framework.Framework) error {
 	t.Helper()
 	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -111,6 +111,14 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 	}
 
 	f.AssertNamespaceExists(userWorkloadTestNs)(t)
+	return nil
+}
+
+func deployUserApplication(t *testing.T, f *framework.Framework) error {
+	t.Helper()
+	if err := createUWMTestNsIfNotExist(t, f); err != nil {
+		return err
+	}
 
 	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(ctx, &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

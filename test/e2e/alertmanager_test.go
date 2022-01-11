@@ -20,8 +20,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
+
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoringv1alpha "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 
 	"github.com/Jeffail/gabs/v2"
 	statusv1 "github.com/openshift/api/config/v1"
@@ -30,6 +34,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -554,4 +559,192 @@ func TestAlertManagerHasAdditionalAlertRelabelConfigs(t *testing.T) {
 			t.Fatalf("expected correct value for %s but got %s", expectPlatformLabel, v)
 		}
 	}
+}
+
+// This test ensures that the AlertManagerConfig CR's create in user
+// space can be reconciled and have alerts sent to platform alertmanager
+// when UWM is enabled.
+func TestAlertManagerConfigPipeline(t *testing.T) {
+	const (
+		ruleName               = "always-firing-tests-alertmanagerconfig-crd-e2e"
+		alertManagerConfigName = "always-firing-tests-alertmanagerconfig-crd-e2e"
+	)
+
+	wr, err := setupWebhookReceiver(t, f, ruleName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		wr.tearDown(t, f)
+		if err := f.OperatorClient.DeletePrometheusRuleByNamespaceAndName(ctx, userWorkloadTestNs, ruleName); err != nil {
+			t.Logf("failed to cleanup rule %s - err %v", ruleName, err)
+		}
+
+		if err := f.DeleteAlertManagerConfigByNamespaceAndName(ctx, userWorkloadTestNs, alertManagerConfigName); err != nil {
+			t.Logf("failed to cleanup alertmanager webhookReceiver %s - err %v", alertManagerConfigName, err)
+		}
+	})
+
+	// enable alertmanager and configure the operator to reconcile UWM AlertManagerConfig CR's
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      clusterMonitorConfigMapName,
+			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Data: map[string]string{
+			"config.yaml": `alertmanagerMain:
+  enableUserAlertmanagerConfig: true
+enableUserWorkload: true`,
+		},
+	}
+	f.MustCreateOrUpdateConfigMap(t, cm)
+
+	// assert we have the correct match expressions on the 'main' AlertManager
+	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		am, err := f.MonitoringClient.Alertmanagers(f.Ns).Get(ctx, "main", metav1.GetOptions{})
+		if err != nil {
+			return false, nil
+		}
+
+		if am.Spec.AlertmanagerConfigNamespaceSelector == nil {
+			return false, nil
+		}
+
+		if err := assertLabelSelectorRequirement(
+			t,
+			am.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions,
+			metav1.LabelSelectorRequirement{
+				Key:      "openshift.io/cluster-monitoring",
+				Operator: metav1.LabelSelectorOpNotIn,
+				Values:   []string{"true"},
+			},
+		); err != nil {
+			return false, nil
+		}
+
+		if err := assertLabelSelectorRequirement(
+			t,
+			am.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions,
+			metav1.LabelSelectorRequirement{
+				Key:      "openshift.io/user-monitoring",
+				Operator: metav1.LabelSelectorOpNotIn,
+				Values:   []string{"false"},
+			},
+		); err != nil {
+			return false, nil
+		}
+
+		if err := f.OperatorClient.WaitForAlertmanager(ctx, am); err != nil {
+			return false, err
+		}
+
+		return true, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := createUWMTestNsIfNotExist(t, f); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	if err := f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monitoringv1.PrometheusRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ruleName,
+			Namespace: userWorkloadTestNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Spec: monitoringv1.PrometheusRuleSpec{
+			Groups: []monitoringv1.RuleGroup{
+				{
+					Name: "test-alertmanagerconfig-crd-e2e",
+					Rules: []monitoringv1.Rule{
+						{
+							Alert: "always-firing",
+							Expr:  intstr.FromString("vector(1)"),
+						},
+					},
+				},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f.CreateOrUpdateAlertmanagerConfig(ctx, &monitoringv1alpha.AlertmanagerConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      alertManagerConfigName,
+			Namespace: userWorkloadTestNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Spec: monitoringv1alpha.AlertmanagerConfigSpec{
+			Route: &monitoringv1alpha.Route{
+				Receiver: "test-receiver",
+				Matchers: []monitoringv1alpha.Matcher{},
+				Continue: true,
+			},
+			Receivers: []monitoringv1alpha.Receiver{
+				{
+					Name: "test-receiver",
+					WebhookConfigs: []monitoringv1alpha.WebhookConfig{
+						{
+							URL: &wr.webhookURL,
+						},
+					},
+				},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	err = framework.Poll(time.Second*10, time.Minute*5, func() error {
+		alerts, err := wr.getAlertsByID("always-firing_user-workload-test")
+		if err != nil {
+			return err
+		}
+
+		if len(alerts) != 1 {
+			return fmt.Errorf("expected 1 alert but got %d", len(alerts))
+		}
+
+		if alerts[0].Status != "firing" {
+			return fmt.Errorf("expected alert to be status firing")
+		}
+
+		name, ok := alerts[0].Labels["alertname"]
+		if !ok || name != "always-firing" {
+			return fmt.Errorf("expected alert named 'always-firing' to exist")
+		}
+
+		ns, ok := alerts[0].Labels["namespace"]
+		if !ok || ns != userWorkloadTestNs {
+			return fmt.Errorf("expected namespace label on 'always-firing' to exist")
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+func assertLabelSelectorRequirement(t *testing.T, reqs []metav1.LabelSelectorRequirement, mustInclude metav1.LabelSelectorRequirement) error {
+	t.Helper()
+	for _, req := range reqs {
+		if reflect.DeepEqual(req, mustInclude) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("required label %v selector not found", mustInclude)
 }
