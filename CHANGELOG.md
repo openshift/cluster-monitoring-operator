@@ -15,6 +15,7 @@
 - [#1491](https://github.com/openshift/cluster-monitoring-operator/pull/1491) Rename alerts `AggregatedAPIErrors to KubeAggregatedAPIErrors` and `AggregatedAPIDown to KubeAggregatedAPIDown`.
 - [#1488](https://github.com/openshift/cluster-monitoring-operator/pull/1488) Removing the alert HighlyAvailableWorkloadIncorrectlySpread.
 - [#1858](https://github.com/openshift/cluster-monitoring-operator/pull/1858) Allow suppression of storage alerts via PersistentVolumeClaim label
+- [#1527](https://github.com/openshift/cluster-monitoring-operator/pull/1527) Enable user alerts via AlertManagerConfig to be forwarded to the existing Platform Alertmanager
 
 ## 4.9
 
