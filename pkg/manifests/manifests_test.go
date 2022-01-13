@@ -851,14 +851,34 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 func getContainerArgValue(containers []v1.Container, argFlag string, containerName string) string {
 	for _, container := range containers {
 		if container.Name == containerName {
-			for _, arg := range container.Args {
-				if strings.HasPrefix(arg, argFlag) {
-					return arg
-				}
+			arg, ok := getArgValue(container, argFlag)
+			if ok {
+				return arg.original
 			}
 		}
 	}
 	return ""
+}
+
+type argValue struct {
+	key      string
+	value    string
+	original string
+}
+
+// returns the value of the container arg if found or false
+func getArgValue(container v1.Container, flag string) (argValue, bool) {
+	for _, arg := range container.Args {
+		if strings.HasPrefix(arg, flag) {
+			parts := strings.Split(arg, "=")
+			return argValue{
+				key:      parts[0],
+				value:    parts[1],
+				original: arg,
+			}, true
+		}
+	}
+	return argValue{}, false
 }
 
 func TestPrometheusK8sRemoteWrite(t *testing.T) {
@@ -2301,7 +2321,8 @@ func TestThanosQuerierConfiguration(t *testing.T) {
     requests:
       cpu: 3m
       memory: 4Mi
-`)
+  logLevel: debug
+  enableRequestLogging: true`)
 
 	if err != nil {
 		t.Fatal(err)
@@ -2379,6 +2400,49 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 						t.Errorf("want %v, got %v", tc.want, got)
 					}
 				})
+			}
+
+			{
+				// test request logging config
+				const (
+					expectLoggingFlag = "--request.logging-config"
+					expectResult      = `http:
+  options:
+    level: DEBUG
+    decision:
+      log_start: false
+      log_end: true
+grpc:
+  options:
+    level: DEBUG
+    decision:
+      log_start: false
+      log_end: true`
+				)
+
+				got, ok := getArgValue(c, expectLoggingFlag)
+				if !ok {
+					t.Fatalf("expected logging flag to be set for Thanos query")
+				}
+				if got.value != expectResult {
+					t.Fatalf("unexpected flag value for Thanos query, wanted %s but got %s", expectResult, got.value)
+				}
+			}
+
+			{
+				// test log level
+				const (
+					expectLogLevelFlag = "--log.level"
+					expectResult       = "debug"
+				)
+
+				got, ok := getArgValue(c, expectLogLevelFlag)
+				if !ok {
+					t.Fatalf("expected log level flag to be set for Thanos query")
+				}
+				if got.value != expectResult {
+					t.Fatalf("unexpected flag value for Thanos query, wanted %s but got %s", expectResult, got.value)
+				}
 			}
 
 		case "oauth-proxy":
