@@ -626,6 +626,16 @@ data:
     #
     # openshift_csi_share_mount_requests_total measures total amount of attempts to mount csi shared resources into the pods.
     - '{__name__="openshift_csi_share_mount_requests_total"}'
+    #
+    # owners: (@openshift/team-openshift-oadp)
+    #
+    # velero_backup_total measures the current number of existent backups
+    - '{__name__="velero_backup_total"}'
+    #
+    # owners: (@openshift/team-openshift-oadp)
+    #
+    # velero_restore_total measures the current number of existent restores
+    - '{__name__="velero_restore_total"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
