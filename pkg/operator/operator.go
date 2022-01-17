@@ -147,6 +147,7 @@ type Operator struct {
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
 	lastKnownApiServerConfig     *manifests.APIServerConfig
+	lastKnownConsoleConfig       *configv1.Console
 
 	client *client.Client
 
@@ -267,6 +268,18 @@ func New(
 	informer = cache.NewSharedIndexInformer(
 		o.client.ApiServersListWatchForResource(ctx, clusterResourceName),
 		&configv1.APIServer{}, resyncPeriod, cache.Indexers{},
+	)
+
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) {
+			o.handleEvent(newObj)
+		},
+	})
+	o.informers = append(o.informers, informer)
+
+	informer = cache.NewSharedIndexInformer(
+		o.client.ConsoleListWatch(ctx),
+		&configv1.Console{}, resyncPeriod, cache.Indexers{},
 	)
 
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -571,7 +584,12 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		return err
 	}
 
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(ctx), proxyConfig, o.assets, apiServerConfig)
+	consoleConfig, err := o.loadConsoleConfig(ctx)
+	if err != nil {
+		klog.Warningf("Fail to load ConsoleConfig, AlertManager's externalURL may be outdated")
+	}
+
+	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(ctx), proxyConfig, o.assets, apiServerConfig, consoleConfig)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
@@ -722,6 +740,14 @@ func (o *Operator) loadApiServerConfig(ctx context.Context) (*manifests.APIServe
 		o.lastKnownApiServerConfig = manifests.NewAPIServerConfig(config)
 	}
 	return o.lastKnownApiServerConfig, nil
+}
+
+func (o *Operator) loadConsoleConfig(ctx context.Context) (*configv1.Console, error) {
+	config, err := o.client.GetConsoleConfig(ctx, "cluster")
+	if err == nil {
+		o.lastKnownConsoleConfig = config
+	}
+	return o.lastKnownConsoleConfig, err
 }
 
 func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, error) {

@@ -59,7 +59,7 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "creating Alertmanager Route failed")
 	}
 
-	host, err := t.client.WaitForRouteReady(ctx, r)
+	_, err = t.client.WaitForRouteReady(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Alertmanager Route to become ready failed")
 	}
@@ -173,7 +173,7 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
 		}
 
-		a, err := t.factory.AlertmanagerMain(host, trustedCA)
+		a, err := t.factory.AlertmanagerMain(trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "initializing Alertmanager object failed")
 		}
@@ -328,7 +328,7 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 
 		}
 
-		a, err := t.factory.AlertmanagerMain("", trustedCA)
+		a, err := t.factory.AlertmanagerMain(trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "initializing Alertmanager object failed")
 		}

@@ -258,6 +258,19 @@ func (c *Client) ApiServersListWatchForResource(ctx context.Context, resource st
 	}
 }
 
+func (c *Client) ConsoleListWatch(ctx context.Context) *cache.ListWatch {
+	consoleInterface := c.oscclient.ConfigV1().Consoles()
+
+	return &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			return consoleInterface.List(ctx, metav1.ListOptions{})
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return consoleInterface.Watch(ctx, options)
+		},
+	}
+}
+
 func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
 	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
 		_, err := c.mclient.MonitoringV1().Prometheuses(c.namespace).List(ctx, metav1.ListOptions{})
@@ -370,6 +383,10 @@ func (c *Client) GetInfrastructure(ctx context.Context, name string) (*configv1.
 
 func (c *Client) GetAPIServerConfig(ctx context.Context, name string) (*configv1.APIServer, error) {
 	return c.oscclient.ConfigV1().APIServers().Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *Client) GetConsoleConfig(ctx context.Context, name string) (*configv1.Console, error) {
+	return c.oscclient.ConfigV1().Consoles().Get(ctx, name, metav1.GetOptions{})
 }
 
 func (c *Client) GetConfigmap(ctx context.Context, namespace, name string) (*v1.ConfigMap, error) {
