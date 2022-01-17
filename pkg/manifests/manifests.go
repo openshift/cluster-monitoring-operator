@@ -461,6 +461,25 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 		a.Spec.Resources = *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources
 	}
 
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.EnableUserAlertManagerConfig {
+		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{}
+
+		a.Spec.AlertmanagerConfigNamespaceSelector = &metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      "openshift.io/cluster-monitoring",
+					Operator: metav1.LabelSelectorOpNotIn,
+					Values:   []string{"true"},
+				},
+				{
+					Key:      "openshift.io/user-monitoring",
+					Operator: metav1.LabelSelectorOpNotIn,
+					Values:   []string{"false"},
+				},
+			},
+		}
+	}
+
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate != nil {
 		a.Spec.Storage = &monv1.StorageSpec{
 			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate,

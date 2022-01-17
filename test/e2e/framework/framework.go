@@ -28,28 +28,30 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/client-go/rest"
-
-	"k8s.io/client-go/tools/portforward"
-	"k8s.io/client-go/transport/spdy"
-
-	v1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
-	schedulingv1client "k8s.io/client-go/kubernetes/typed/scheduling/v1"
-	"k8s.io/client-go/tools/clientcmd"
-
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 
-	"github.com/pkg/errors"
+	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	monClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
-	admissionclient "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
-	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
+	monAlphaClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1"
 
+	"github.com/imdario/mergo"
+	"github.com/pkg/errors"
+
+	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	admissionclient "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
+	schedulingv1client "k8s.io/client-go/kubernetes/typed/scheduling/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
+	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
@@ -75,6 +77,7 @@ type Framework struct {
 	kubeConfigPath        string
 
 	MonitoringClient             *monClient.MonitoringV1Client
+	MonitoringAlphaClient        *monAlphaClient.MonitoringV1alpha1Client
 	Ns, UserWorkloadMonitoringNs string
 }
 
@@ -107,6 +110,11 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	mClient, err := monClient.NewForConfig(config)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating monitoring client failed")
+	}
+
+	mAlphaClient, err := monAlphaClient.NewForConfig(config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating monitoring alpha client failed")
 	}
 
 	operatorClient, err := client.NewForConfig(config, "", namespaceName, userWorkloadNamespaceName)
@@ -144,6 +152,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		AdmissionClient:          admissionClient,
 		MetricsClient:            metricsClient,
 		MonitoringClient:         mClient,
+		MonitoringAlphaClient:    mAlphaClient,
 		Ns:                       namespaceName,
 		UserWorkloadMonitoringNs: userWorkloadNamespaceName,
 		kubeConfigPath:           kubeConfigPath,
@@ -520,4 +529,61 @@ func (f *Framework) StartPortForward(scheme string, name string, ns string, port
 
 	<-readyChan
 	return nil
+}
+
+func (f *Framework) CreateOrUpdateAlertmanagerConfig(ctx context.Context, a *v1alpha1.AlertmanagerConfig) error {
+	client := f.MonitoringAlphaClient.AlertmanagerConfigs(a.GetNamespace())
+	existing, err := client.Get(ctx, a.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := client.Create(ctx, a, metav1.CreateOptions{})
+		return errors.Wrap(err, "creating AlertmanagerConfig object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving AlertmanagerConfig object failed")
+	}
+
+	required := a.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	required.ResourceVersion = existing.ResourceVersion
+
+	_, err = client.Update(ctx, required, metav1.UpdateOptions{})
+	return errors.Wrap(err, "updating AlertmanagerConfig object failed")
+}
+
+func (f *Framework) DeleteAlertManagerConfigByNamespaceAndName(ctx context.Context, namespace, name string) error {
+	client := f.MonitoringAlphaClient.AlertmanagerConfigs(namespace)
+
+	err := client.Delete(ctx, name, metav1.DeleteOptions{})
+	// if the object does not exist then everything is good here
+	if err != nil && !apierrors.IsNotFound(err) {
+		return errors.Wrap(err, "deleting AlertManagerConfig object failed")
+	}
+
+	return nil
+}
+
+const (
+	metadataPrefix = "monitoring.openshift.io/"
+)
+
+// mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
+// over `existing` keys and values. Additionally function performs filtering of labels and annotations from `exiting` map
+// where keys starting from string defined in `metadataPrefix` are deleted. This prevents issues with preserving stale
+// metadata defined by the operator
+func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {
+	for k := range existing.Annotations {
+		if strings.HasPrefix(k, metadataPrefix) {
+			delete(existing.Annotations, k)
+		}
+	}
+
+	for k := range existing.Labels {
+		if strings.HasPrefix(k, metadataPrefix) {
+			delete(existing.Labels, k)
+		}
+	}
+
+	mergo.Merge(&required.Annotations, existing.Annotations)
+	mergo.Merge(&required.Labels, existing.Labels)
 }

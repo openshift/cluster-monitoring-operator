@@ -213,12 +213,13 @@ type TLSConfig struct {
 }
 
 type AlertmanagerMainConfig struct {
-	Enabled             *bool                                `json:"enabled"`
-	LogLevel            string                               `json:"logLevel"`
-	NodeSelector        map[string]string                    `json:"nodeSelector"`
-	Tolerations         []v1.Toleration                      `json:"tolerations"`
-	Resources           *v1.ResourceRequirements             `json:"resources"`
-	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+	Enabled                      *bool                                `json:"enabled"`
+	EnableUserAlertManagerConfig bool                                 `json:"enableUserAlertmanagerConfig"`
+	LogLevel                     string                               `json:"logLevel"`
+	NodeSelector                 map[string]string                    `json:"nodeSelector"`
+	Tolerations                  []v1.Toleration                      `json:"tolerations"`
+	Resources                    *v1.ResourceRequirements             `json:"resources"`
+	VolumeClaimTemplate          *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
 }
 
 func (a AlertmanagerMainConfig) IsEnabled() bool {
