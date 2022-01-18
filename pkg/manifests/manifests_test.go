@@ -673,11 +673,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ClusterMonitoringOperatorService()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.ClusterMonitoringOperatorServiceMonitor()
 	if err != nil {
 		t.Fatal(err)

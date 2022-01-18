@@ -193,7 +193,6 @@ var (
 	GrafanaServiceMonitor        = "grafana/service-monitor.yaml"
 	GrafanaTrustedCABundle       = "grafana/trusted-ca-bundle.yaml"
 
-	ClusterMonitoringOperatorService            = "cluster-monitoring-operator/service.yaml"
 	ClusterMonitoringOperatorServiceMonitor     = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView            = "cluster-monitoring-operator/cluster-role-view.yaml"
 	ClusterMonitoringAlertmanagerEditRole       = "cluster-monitoring-operator/monitoring-alertmanager-edit-role.yaml"
@@ -2735,17 +2734,6 @@ func (f *Factory) ClusterMonitoringAlertManagerEditRole() (*rbacv1.Role, error) 
 	}
 
 	return cr, nil
-}
-
-func (f *Factory) ClusterMonitoringOperatorService() (*v1.Service, error) {
-	s, err := f.NewService(f.assets.MustNewAssetReader(ClusterMonitoringOperatorService))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
 }
 
 func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {

@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -43,16 +44,6 @@ func NewClusterMonitoringOperatorTask(
 }
 
 func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
-	svc, err := t.factory.ClusterMonitoringOperatorService()
-	if err != nil {
-		return errors.Wrap(err, "initializing Cluster Monitoring Operator Service failed")
-	}
-
-	err = t.client.CreateOrUpdateService(ctx, svc)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Cluster Monitoring Operator Service failed")
-	}
-
 	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
 		"cluster-monitoring-view": t.factory.ClusterMonitoringClusterRoleView,
 		"monitoring-rules-edit":   t.factory.ClusterMonitoringRulesEditClusterRole,
