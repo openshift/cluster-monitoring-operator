@@ -74,26 +74,6 @@ function(params) {
     data: {},
   },
 
-  service: {
-    apiVersion: 'v1',
-    kind: 'Service',
-    metadata: {
-      name: cfg.name,
-      namespace: cfg.namespace,
-      labels: { 'app.kubernetes.io/name': cfg.name },
-      annotations: {
-        'service.beta.openshift.io/serving-cert-secret-name': 'cluster-monitoring-operator-tls',
-      },
-    },
-    spec: {
-      ports: [
-        { name: 'https', targetPort: 'https', port: 8443 },
-      ],
-      selector: { 'app.kubernetes.io/name': cfg.name },
-      clusterIP: 'None',
-    },
-  },
-
   serviceMonitor: {
     apiVersion: 'monitoring.coreos.com/v1',
     kind: 'ServiceMonitor',
@@ -106,7 +86,7 @@ function(params) {
     },
     spec: {
       selector: {
-        matchLabels: cmo.service.metadata.labels,
+        matchLabels: { 'app.kubernetes.io/name': cfg.name },
       },
       endpoints: [
         {
