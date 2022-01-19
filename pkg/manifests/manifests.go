@@ -2453,22 +2453,18 @@ type GrafanaDatasources struct {
 	Datasources []*GrafanaDatasource `json:"datasources"`
 }
 
-type SecureJSONData struct {
-	BasicAuthPassword string `json:"basicAuthPassword"`
-}
-
 type GrafanaDatasource struct {
-	Access         string           `json:"access"`
-	BasicAuth      bool             `json:"basicAuth"`
-	SecureJSONData SecureJSONData   `json:"secureJsonData"`
-	BasicAuthUser  string           `json:"basicAuthUser"`
-	Editable       bool             `json:"editable"`
-	JsonData       *GrafanaJsonData `json:"jsonData"`
-	Name           string           `json:"name"`
-	OrgId          int              `json:"orgId"`
-	Type           string           `json:"type"`
-	Url            string           `json:"url"`
-	Version        int              `json:"version"`
+	Access            string           `json:"access"`
+	BasicAuth         bool             `json:"basicAuth"`
+	BasicAuthPassword string           `json:"basicAuthPassword"`
+	BasicAuthUser     string           `json:"basicAuthUser"`
+	Editable          bool             `json:"editable"`
+	JsonData          *GrafanaJsonData `json:"jsonData"`
+	Name              string           `json:"name"`
+	OrgId             int              `json:"orgId"`
+	Type              string           `json:"type"`
+	Url               string           `json:"url"`
+	Version           int              `json:"version"`
 }
 
 type GrafanaJsonData struct {
@@ -2486,7 +2482,7 @@ func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
 	if err != nil {
 		return nil, err
 	}
-	d.Datasources[0].SecureJSONData.BasicAuthPassword, err = GeneratePassword(255)
+	d.Datasources[0].BasicAuthPassword, err = GeneratePassword(255)
 	if err != nil {
 		return nil, err
 	}
