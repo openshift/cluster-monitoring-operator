@@ -115,7 +115,7 @@ func (t *GrafanaTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, sds)
+	err = t.client.CreateOrUpdateSecret(ctx, sds)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana Datasources Secret failed")
 	}
