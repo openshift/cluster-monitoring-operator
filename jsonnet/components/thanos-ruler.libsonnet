@@ -40,6 +40,9 @@ function(params)
         namespace: tr.config.namespace,
       },
       spec: {
+        // restrict to Thanos Rule API endpoint only
+        // ref: https://github.com/thanos-io/thanos/blob/v0.24.0/cmd/thanos/rule.go#L657
+        path: '/api',
         to: {
           kind: 'Service',
           name: tr.config.name,
