@@ -1,0 +1,151 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: alertoverrides.monitoring.openshift.io
+spec:
+  group: monitoring.openshift.io
+  names:
+    kind: AlertOverrides
+    listKind: AlertOverridesList
+    plural: alertoverrides
+    singular: alertoverrides
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: "AlertOverrides ... TODO(bison) \n Compatibility level 4: No
+          compatibility is provided, the API can change at any point for any reason.
+          These capabilities should not be used by applications needing long term
+          support."
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: spec describes the desired state of this AlertOverrides object.
+            properties:
+              overrides:
+                description: overrides ... TODO(bison)
+                items:
+                  description: AlertOverride ... TOOD(bison)
+                  properties:
+                    action:
+                      description: action ... TODO(bison)
+                      type: string
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    expr:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      x-kubernetes-int-or-string: true
+                    for:
+                      type: string
+                    labels:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    selector:
+                      description: selector ... TODO(bison)
+                      properties:
+                        alert:
+                          description: alert is the name of the targeted alerting
+                            rule.
+                          type: string
+                        matchLabels:
+                          additionalProperties:
+                            type: string
+                          description: matchLabels is the set of labels that must
+                            match the *static* labels of the targeted alert.  This
+                            is optional, but overrides can only target a single alerting
+                            rule, so the slector must find a unique match.  If this
+                            is omitted, the given alert name must be unique.
+                          type: object
+                      required:
+                      - alert
+                      type: object
+                  required:
+                  - action
+                  - selector
+                  type: object
+                type: array
+              rules:
+                description: rules ... TODO(bison)
+                items:
+                  description: AlertOverride ... TOOD(bison)
+                  properties:
+                    alert:
+                      type: string
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    expr:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      x-kubernetes-int-or-string: true
+                    for:
+                      type: string
+                    labels:
+                      additionalProperties:
+                        type: string
+                      type: object
+                  required:
+                  - alert
+                  type: object
+                type: array
+            type: object
+          status:
+            description: status describes the current state of this AlertOverrides
+              object.
+            properties:
+              conditions:
+                description: conditions is a list of conditions and their status
+                items:
+                  description: AlertOverridesCondition ... TODO(bison)
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
