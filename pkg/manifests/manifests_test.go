@@ -668,6 +668,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.ClusterMonitoringAlertingEditClusterRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.ClusterMonitoringEditUserWorkloadConfigRole()
 	if err != nil {
 		t.Fatal(err)
