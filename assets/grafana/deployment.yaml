@@ -21,7 +21,7 @@ spec:
       annotations:
         checksum/grafana-config: 28b9b36ac4d235c1c5f2f9ca81714d1c
         checksum/grafana-dashboardproviders: 9ac0e8fe144a3a59f7ab62b4e733f22d
-        checksum/grafana-datasources: 0817debaf3d8ef0b64e766cefc9f8d84
+        checksum/grafana-datasources: 58dfbb3df9951f2ac8acf4c625c7173c
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: grafana
@@ -178,7 +178,7 @@ spec:
         name: grafana-storage
       - name: grafana-datasources
         secret:
-          secretName: grafana-datasources
+          secretName: grafana-datasources-v2
       - configMap:
           name: grafana-dashboards
         name: grafana-dashboards
