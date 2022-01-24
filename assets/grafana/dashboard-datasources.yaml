@@ -16,7 +16,6 @@ stringData:
             {
                 "access": "proxy",
                 "basicAuth": true,
-                "basicAuthPassword": "",
                 "basicAuthUser": "internal",
                 "editable": false,
                 "jsonData": {
@@ -24,6 +23,9 @@ stringData:
                 },
                 "name": "prometheus",
                 "orgId": 1,
+                "secureJsonData": {
+                    "basicAuthPassword": ""
+                },
                 "type": "prometheus",
                 "url": "https://prometheus-k8s.openshift-monitoring.svc:9091",
                 "version": 1
