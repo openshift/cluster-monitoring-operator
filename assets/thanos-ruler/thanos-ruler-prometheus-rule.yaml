@@ -57,6 +57,7 @@ spec:
       annotations:
         description: Thanos Rule {{$labels.instance}} in {{$labels.namespace}} has
           higher evaluation latency than interval for {{$labels.rule_group}}.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/ThanosRuleRuleEvaluationLatencyHigh.md
         summary: Thanos Rule has high rule evaluation latency.
       expr: |
         (
