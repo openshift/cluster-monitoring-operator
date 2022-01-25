@@ -351,6 +351,7 @@ local includeRunbooks = {
   NodeRAIDDegraded: openShiftRunbookCMO('NodeRAIDDegraded.md'),
   PrometheusTargetSyncFailure: openShiftRunbookCMO('PrometheusTargetSyncFailure.md'),
   ThanosRuleQueueIsDroppingAlerts: openShiftRunbookCMO('ThanosRuleQueueIsDroppingAlerts.md'),
+  ThanosRuleRuleEvaluationLatencyHigh: openShiftRunbookCMO('ThanosRuleRuleEvaluationLatencyHigh.md'),
 };
 
 local addRunbookUrl(rule) = rule {
