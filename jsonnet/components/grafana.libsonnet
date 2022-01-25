@@ -184,6 +184,11 @@ function(params)
       }],
     },
 
+    dashboardDatasources+: {
+      metadata+: {
+        name: 'grafana-datasources-v2',
+      },
+    },
     // These patches inject the oauth proxy as a sidecar and configures it with
     // TLS.
 

@@ -1871,7 +1871,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-cluster-total
   namespace: openshift-config-managed
@@ -3237,7 +3237,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-etcd
   namespace: openshift-config-managed
@@ -6320,7 +6320,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-cluster
   namespace: openshift-config-managed
@@ -9112,7 +9112,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-namespace
@@ -10134,7 +10134,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-node
   namespace: openshift-config-managed
@@ -12598,7 +12598,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-pod
@@ -14618,7 +14618,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-workload
@@ -16803,7 +16803,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-workloads-namespace
@@ -18263,7 +18263,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-namespace-by-pod
   namespace: openshift-config-managed
@@ -19321,7 +19321,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-cluster-rsrc-use
   namespace: openshift-config-managed
@@ -20405,7 +20405,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-rsrc-use
   namespace: openshift-config-managed
@@ -21628,7 +21628,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-pod-total
   namespace: openshift-config-managed
@@ -22858,7 +22858,7 @@ metadata:
     app.kubernetes.io/component: grafana
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 7.5.11
+    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-prometheus
   namespace: openshift-config-managed

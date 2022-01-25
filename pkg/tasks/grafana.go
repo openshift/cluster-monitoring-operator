@@ -17,10 +17,15 @@ package tasks
 import (
 	"context"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 )
+
+var grafanaLegacyDataSourceSecretName = "grafana-datasources"
 
 type GrafanaTask struct {
 	client  *client.Client
@@ -118,6 +123,16 @@ func (t *GrafanaTask) create(ctx context.Context) error {
 	err = t.client.CreateIfNotExistSecret(ctx, sds)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Grafana Datasources Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      grafanaLegacyDataSourceSecretName,
+			Namespace: sds.GetNamespace(),
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "deleting legacy Grafana Datasources secret failed")
 	}
 
 	cmdds, err := t.factory.GrafanaDashboardDefinitions()
