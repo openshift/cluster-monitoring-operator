@@ -28,6 +28,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
+	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
@@ -67,6 +68,7 @@ type Client struct {
 	namespace             string
 	userWorkloadNamespace string
 	kclient               kubernetes.Interface
+	osmclient             openshiftmonitoringclientset.Interface
 	oscclient             openshiftconfigclientset.Interface
 	ossclient             openshiftsecurityclientset.Interface
 	osrclient             openshiftrouteclientset.Interface
@@ -89,6 +91,11 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	eclient, err := apiextensionsclient.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating apiextensions client")
+	}
+
+	osmclient, err := openshiftmonitoringclientset.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating openshift monitoring client")
 	}
 
 	oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
@@ -121,6 +128,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 		namespace,
 		userWorkloadNamespace,
 		KubernetesClient(kclient),
+		OpenshiftMonitoringClient(osmclient),
 		OpenshiftConfigClient(oscclient),
 		OpenshiftSecurityClient(ossclient),
 		OpenshiftRouteClient(osrclient),
@@ -135,6 +143,12 @@ type Option = func(*Client)
 func KubernetesClient(kclient kubernetes.Interface) Option {
 	return func(c *Client) {
 		c.kclient = kclient
+	}
+}
+
+func OpenshiftMonitoringClient(osmclient openshiftmonitoringclientset.Interface) Option {
+	return func(c *Client) {
+		c.osmclient = osmclient
 	}
 }
 
@@ -188,6 +202,10 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 	return c
 }
 
+func (c *Client) OpenShiftMonitoring() openshiftmonitoringclientset.Interface {
+	return c.osmclient
+}
+
 func (c *Client) KubernetesInterface() kubernetes.Interface {
 	return c.kclient
 }
@@ -211,6 +229,10 @@ func (c *Client) PlatformNamespacesListWatch() *cache.ListWatch {
 	)
 }
 
+func (c *Client) PrometheusRuleListWatchForNamespace(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(c.mclient.MonitoringV1().RESTClient(), "prometheusrules", ns, fields.Everything())
+}
+
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
@@ -221,6 +243,29 @@ func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 
 func (c *Client) PersistentVolumeClaimListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "persistentvolumeclaims", ns, fields.Everything())
+}
+
+func (c *Client) AlertOverridesListWatchForResource(ctx context.Context, ns, resource string) *cache.ListWatch {
+	alertoverrides := c.osmclient.MonitoringV1alpha1().AlertOverrides(ns)
+
+	return &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			return alertoverrides.List(
+				ctx,
+				metav1.ListOptions{
+					FieldSelector: fields.OneTermEqualSelector("metadata.name", resource).String(),
+				},
+			)
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return alertoverrides.Watch(
+				ctx,
+				metav1.ListOptions{
+					FieldSelector: fields.OneTermEqualSelector("metadata.name", resource).String(),
+				},
+			)
+		},
+	}
 }
 
 func (c *Client) InfrastructureListWatchForResource(ctx context.Context, resource string) *cache.ListWatch {
