@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"reflect"
 	"strings"
@@ -707,6 +708,58 @@ func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
 	return err
 }
 
+func (c *Client) validatePromethuesPodState(ctx context.Context, p *monv1.Prometheus) error {
+
+	status, _, err := prometheusoperator.Status(ctx, c.kclient.(*kubernetes.Clientset), p)
+	if err != nil {
+		klog.V(4).ErrorS(err, "validatePrometheusPodState: failed to get Prometheus status")
+		return err
+	}
+
+	// return early if the state seems okay
+	expected := *p.Spec.Replicas
+	if status.UpdatedReplicas == expected || status.AvailableReplicas >= expected {
+		return nil
+	}
+
+	// the state of the pods do not match the expectation; figure out why
+
+	// TODO(sthaha) fix prometheusoperator.Status which currently does not return
+	// pods that are not running (e.g. in PodPending state) although it  match
+	// the ListOption, thus we have to iterate all pods again
+
+	// FIXME(sthaha): this assumes that the p.Spec.Shard is nil which is the case in OCP
+	pods, err := c.kclient.CoreV1().Pods(p.Namespace).List(ctx, prometheusoperator.ListOptions(p.Name))
+	if err != nil {
+		return errors.Wrap(err, "failed to list prometheus pods")
+	}
+
+	for _, pod := range pods.Items {
+		nsName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
+
+		switch pod.Status.Phase {
+		// ignore those in running state
+		case v1.PodRunning:
+			continue
+
+		case v1.PodFailed, v1.PodSucceeded:
+			// we expect pods to be running all the time
+			return errors.Errorf("prometheus pod %s ran to completion", nsName)
+
+		case v1.PodPending:
+			for _, cond := range pod.Status.Conditions {
+				if cond.Status != v1.ConditionFalse {
+					continue
+				}
+				return errors.Errorf("prometheus pod %s is %s: %s", nsName, cond.Reason, cond.Message)
+			}
+		}
+	}
+	// catch all error; probably those pods in Unknown State (which is deprecated)
+	return errors.Errorf("expected %d replicas, got %d replicas",
+		*p.Spec.Replicas, status.AvailableReplicas)
+}
+
 func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) error {
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
@@ -716,22 +769,9 @@ func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) err
 			klog.V(4).ErrorS(err, "WaitForPrometheus: failed to get Prometheus object")
 			return false, nil
 		}
-		status, _, err := prometheusoperator.Status(ctx, c.kclient.(*kubernetes.Clientset), p)
-		if err != nil {
-			lastErr = err
-			klog.V(4).ErrorS(err, "WaitForPrometheus: failed to get Prometheus status")
-			return false, nil
-		}
 
-		expectedReplicas := *p.Spec.Replicas
-		if expectedReplicas != status.UpdatedReplicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
-				expectedReplicas, status.UpdatedReplicas)
-			return false, nil
-		}
-		if status.AvailableReplicas < expectedReplicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
-				expectedReplicas, status.AvailableReplicas)
+		if err := c.validatePromethuesPodState(ctx, p); err != nil {
+			lastErr = err
 			return false, nil
 		}
 		return true, nil
