@@ -22,7 +22,7 @@ function(params)
         namespace: cfg.namespace,
       },
       spec: {
-        path: '/api/v2',
+        path: '/api',
         to: {
           kind: 'Service',
           name: 'alertmanager-main',

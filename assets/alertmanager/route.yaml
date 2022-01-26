@@ -4,7 +4,7 @@ metadata:
   name: alertmanager-main
   namespace: openshift-monitoring
 spec:
-  path: /api/v2
+  path: /api
   port:
     targetPort: web
   tls:
