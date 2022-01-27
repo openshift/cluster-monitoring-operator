@@ -1,0 +1,20 @@
+---
+apiVersion: monitoring.openshift.io/v1alpha1
+kind: AlertOverrides
+metadata:
+  name: alert-overrides
+  namespace: openshift-monitoring
+spec:
+  overrides:
+  - selector:
+      alert: "Watchdog"
+    action: "patch"
+    labels:
+      patched: "true"
+
+  rules:
+  - alert: "UserDefinedAlert"
+    expr: "vector(1)"
+    for: "1m"
+    labels:
+      custom: "true"
