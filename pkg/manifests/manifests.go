@@ -28,6 +28,7 @@ import (
 
 	"github.com/openshift/library-go/pkg/crypto"
 
+	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
@@ -293,6 +294,7 @@ type Factory struct {
 	proxy                 ProxyReader
 	assets                *Assets
 	APIServerConfig       *APIServerConfig
+	consoleConfig         *configv1.Console
 }
 
 // InfrastructureReader has methods to describe the cluster infrastructure.
@@ -308,7 +310,7 @@ type ProxyReader interface {
 	NoProxy() string
 }
 
-func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructure InfrastructureReader, proxy ProxyReader, a *Assets, apiServerConfig *APIServerConfig) *Factory {
+func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructure InfrastructureReader, proxy ProxyReader, a *Assets, apiServerConfig *APIServerConfig, consoleConfig *configv1.Console) *Factory {
 	return &Factory{
 		namespace:             namespace,
 		namespaceUserWorkload: namespaceUserWorkload,
@@ -317,6 +319,7 @@ func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructu
 		proxy:                 proxy,
 		assets:                a,
 		APIServerConfig:       apiServerConfig,
+		consoleConfig:         consoleConfig,
 	}
 }
 
@@ -442,7 +445,7 @@ func (f *Factory) injectProxyVariables(container *v1.Container) {
 	}
 }
 
-func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
+func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(f.assets.MustNewAssetReader(AlertmanagerMain))
 	if err != nil {
 		return nil, err
@@ -450,7 +453,9 @@ func (f *Factory) AlertmanagerMain(host string, trustedCABundleCM *v1.ConfigMap)
 
 	a.Spec.Image = &f.config.Images.Alertmanager
 
-	a.Spec.ExternalURL = f.AlertmanagerExternalURL(host).String()
+	if f.consoleConfig != nil {
+		a.Spec.ExternalURL = f.consoleConfig.Status.ConsoleURL + "/monitoring"
+	}
 
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel != "" {
 		a.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel

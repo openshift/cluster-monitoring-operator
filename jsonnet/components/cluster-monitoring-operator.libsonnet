@@ -174,6 +174,11 @@ function(params) {
         verbs: ['get', 'update', 'create'],
       },
       {
+        apiGroups: ['config.openshift.io'],
+        resources: ['consoles'],
+        verbs: ['get', 'list', 'watch'],
+      },
+      {
         apiGroups: ['certificates.k8s.io'],
         resources: ['certificatesigningrequests'],
         verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],

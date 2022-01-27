@@ -105,6 +105,14 @@ rules:
   - update
   - create
 - apiGroups:
+  - config.openshift.io
+  resources:
+  - consoles
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - certificates.k8s.io
   resources:
   - certificatesigningrequests

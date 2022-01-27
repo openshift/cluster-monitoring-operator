@@ -28,6 +28,7 @@ import (
 	monitoringv1alpha "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 
 	"github.com/Jeffail/gabs/v2"
+	configv1 "github.com/openshift/api/config/v1"
 	statusv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
@@ -40,7 +41,7 @@ import (
 
 func TestAlertmanagerTrustedCA(t *testing.T) {
 	var (
-		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath), &manifests.APIServerConfig{})
+		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath), &manifests.APIServerConfig{}, &configv1.Console{})
 		newCM   *v1.ConfigMap
 		lastErr error
 	)
