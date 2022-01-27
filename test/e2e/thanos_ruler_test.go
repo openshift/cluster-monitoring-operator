@@ -49,7 +49,6 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 				{"assert thanos ruler rollout", assertThanosRulerDeployment},
 				{"create additional alertmanager", createAlertmanager},
 				{"create alerting rule that always fires", createPrometheusRule},
-				{"start alertmanager port forward", startAlertmanagerPortForward},
 				{"verify alertmanager received the alert", verifyAlertmanagerAlertReceived},
 			},
 		},
@@ -117,20 +116,16 @@ func createPrometheusRule(t *testing.T) {
 	}
 }
 
-func startAlertmanagerPortForward(t *testing.T) {
-	if err := f.StartPortForward(
-		"https",
-		"alertmanager-alertmanager-e2e-test-0",
-		f.UserWorkloadMonitoringNs,
-		"9093",
-	); err != nil {
+func verifyAlertmanagerAlertReceived(t *testing.T) {
+
+	host, cleanUp, err := f.ForwardPort(t, "alertmanager-operated", 9093)
+	if err != nil {
 		t.Fatal(err)
 	}
-}
+	t.Cleanup(cleanUp)
 
-func verifyAlertmanagerAlertReceived(t *testing.T) {
-	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		resp, err := http.Get("http://localhost:9093/api/v2/alerts")
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+		resp, err := http.Get(fmt.Sprintf("http://%s/api/v2/alerts", host))
 		if err != nil {
 			return err
 		}

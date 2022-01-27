@@ -4,6 +4,7 @@ metadata:
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring
 spec:
+  path: /api
   port:
     targetPort: web
   tls:

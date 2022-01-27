@@ -37,6 +37,7 @@ function(params)
         labels: tq.config.commonLabels,
       },
       spec: {
+        path: '/api',
         to: {
           kind: 'Service',
           name: 'thanos-querier',
