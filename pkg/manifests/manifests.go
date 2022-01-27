@@ -200,6 +200,7 @@ var (
 	ClusterMonitoringRulesEditClusterRole       = "cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
 	ClusterMonitoringRulesViewClusterRole       = "cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
 	ClusterMonitoringEditClusterRole            = "cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
+	ClusterMonitoringEditAlertingClusterRole    = "cluster-monitoring-operator/alerting-edit-cluster-role.yaml"
 	ClusterMonitoringEditUserWorkloadConfigRole = "cluster-monitoring-operator/user-workload-config-edit-role.yaml"
 	ClusterMonitoringGrpcTLSSecret              = "cluster-monitoring-operator/grpc-tls-secret.yaml"
 	ClusterMonitoringOperatorPrometheusRule     = "cluster-monitoring-operator/prometheus-rule.yaml"
@@ -2716,6 +2717,15 @@ func (f *Factory) ClusterMonitoringRulesViewClusterRole() (*rbacv1.ClusterRole, 
 
 func (f *Factory) ClusterMonitoringEditClusterRole() (*rbacv1.ClusterRole, error) {
 	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringEditClusterRole))
+	if err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func (f *Factory) ClusterMonitoringAlertingEditClusterRole() (*rbacv1.ClusterRole, error) {
+	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringEditAlertingClusterRole))
 	if err != nil {
 		return nil, err
 	}

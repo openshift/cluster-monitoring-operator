@@ -347,4 +347,17 @@ function(params) {
       verbs: ['*'],
     }],
   },
+
+  alertingEditClusterRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'ClusterRole',
+    metadata: {
+      name: 'alert-routing-edit',
+    },
+    rules: [{
+      apiGroups: ['monitoring.coreos.com'],
+      resources: ['alertmanagerconfigs'],
+      verbs: ['*'],
+    }],
+  },
 }
