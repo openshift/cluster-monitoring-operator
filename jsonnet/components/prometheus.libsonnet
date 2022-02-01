@@ -215,9 +215,11 @@ function(params)
 
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
 
-    // this secret allows us to identify alerts that
-    // are coming from platform monitoring
-    additionalAlertManagerRelabellingSecret: {
+    // This secret contains alert relabel configs.  The default config
+    // labels alerts to identify them as coming from the platform
+    // monitoring stack, but additional configs may be added at
+    // runtime to enable user-defined alert overrides.
+    alertRabelConfigsSecret: {
       apiVersion: 'v1',
       kind: 'Secret',
       metadata: {
