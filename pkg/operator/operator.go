@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
@@ -166,6 +167,8 @@ type Operator struct {
 	assets *manifests.Assets
 
 	rebalancer *rebalancer.Rebalancer
+
+	relabeler *alert.Relabeler
 }
 
 func New(
@@ -178,6 +181,11 @@ func New(
 	a *manifests.Assets,
 ) (*Operator, error) {
 	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload)
+	if err != nil {
+		return nil, err
+	}
+
+	relabeler, err := alert.NewRelabler(c, a)
 	if err != nil {
 		return nil, err
 	}
@@ -198,6 +206,7 @@ func New(
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
 		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
+		relabeler:                 relabeler,
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -587,6 +596,12 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	consoleConfig, err := o.loadConsoleConfig(ctx)
 	if err != nil {
 		klog.Warningf("Fail to load ConsoleConfig, AlertManager's externalURL may be outdated")
+	}
+
+	klog.Info("Writing alert relabel configs secret...")
+	if _, err := o.relabeler.WriteSecret(); err != nil {
+		o.reportError(ctx, err, "AlertRelabelConfigError")
+		return err
 	}
 
 	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(ctx), proxyConfig, o.assets, apiServerConfig, consoleConfig)
