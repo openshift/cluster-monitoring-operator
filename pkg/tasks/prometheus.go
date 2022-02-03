@@ -64,19 +64,34 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "creating kubelet serving CA Bundle ConfigMap failed")
 	}
 
-	r, err := t.factory.PrometheusK8sRoute()
+	r, err := t.factory.PrometheusK8sAPIRoute()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Route failed")
+		return errors.Wrap(err, "initializing Prometheus API Route failed")
 	}
 
 	err = t.client.CreateRouteIfNotExists(ctx, r)
 	if err != nil {
-		return errors.Wrap(err, "creating Prometheus Route failed")
+		return errors.Wrap(err, "creating Prometheus API Route failed")
 	}
 
-	host, err := t.client.WaitForRouteReady(ctx, r)
+	_, err = t.client.WaitForRouteReady(ctx, r)
 	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus Route to become ready failed")
+		return errors.Wrap(err, "waiting for Prometheus API Route to become ready failed")
+	}
+
+	fr, err := t.factory.PrometheusK8sFederateRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Federate Route failed")
+	}
+
+	err = t.client.CreateRouteIfNotExists(ctx, fr)
+	if err != nil {
+		return errors.Wrap(err, "creating Prometheus Federate Route failed")
+	}
+
+	_, err = t.client.WaitForRouteReady(ctx, fr)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Prometheus Federate Route to become ready failed")
 	}
 
 	ps, err := t.factory.PrometheusK8sProxySecret()
@@ -365,7 +380,7 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		}
 
 		klog.V(4).Info("initializing Prometheus object")
-		p, err := t.factory.PrometheusK8s(host, s, trustedCA)
+		p, err := t.factory.PrometheusK8s(s, trustedCA)
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus object failed")
 		}

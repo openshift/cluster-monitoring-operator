@@ -161,6 +161,7 @@ spec:
         memory: 10Mi
   enableFeatures: []
   externalLabels: {}
+  externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
   image: quay.io/prometheus/prometheus:v2.32.1
   listenLocal: true
   nodeSelector:
