@@ -24,33 +24,15 @@ spec:
         topologyKey: kubernetes.io/hostname
   containers:
   - args:
-    - -provider=openshift
-    - -https-address=:9095
-    - -http-address=
-    - -email-domain=*
-    - -upstream=http://localhost:9093
-    - '-openshift-sar=[{"resource": "namespaces", "verb": "get"}, {"resource": "alertmanagers",
-      "resourceAPIGroup": "monitoring.coreos.com", "namespace": "openshift-monitoring",
-      "verb": "patch", "resourceName": "non-existant"}]'
-    - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}, "/":
-      {"resource":"alertmanagers", "group": "monitoring.coreos.com", "namespace":
-      "openshift-monitoring", "verb": "patch", "name": "non-existant"}}'
-    - -tls-cert=/etc/tls/private/tls.crt
-    - -tls-key=/etc/tls/private/tls.key
-    - -client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token
-    - -cookie-secret-file=/etc/proxy/secrets/session_secret
-    - -openshift-service-account=alertmanager-main
-    - -openshift-ca=/etc/pki/tls/cert.pem
-    - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    env:
-    - name: HTTP_PROXY
-      value: ""
-    - name: HTTPS_PROXY
-      value: ""
-    - name: NO_PROXY
-      value: ""
-    image: quay.io/openshift/oauth-proxy:latest
-    name: alertmanager-proxy
+    - --secure-listen-address=0.0.0.0:9095
+    - --upstream=http://127.0.0.1:9093
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - --logtostderr=true
+    image: quay.io/brancz/kube-rbac-proxy:v0.11.0
+    name: kube-rbac-proxy-web
     ports:
     - containerPort: 9095
       name: web
@@ -60,10 +42,10 @@ spec:
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-alertmanager-kube-rbac-proxy-web
     - mountPath: /etc/tls/private
       name: secret-alertmanager-main-tls
-    - mountPath: /etc/proxy/secrets
-      name: secret-alertmanager-main-proxy
   - args:
     - --secure-listen-address=0.0.0.0:9092
     - --upstream=http://127.0.0.1:9096
@@ -150,9 +132,9 @@ spec:
       memory: 40Mi
   secrets:
   - alertmanager-main-tls
-  - alertmanager-main-proxy
   - alertmanager-kube-rbac-proxy
   - alertmanager-kube-rbac-proxy-metric
+  - alertmanager-kube-rbac-proxy-web
   securityContext:
     fsGroup: 65534
     runAsNonRoot: true

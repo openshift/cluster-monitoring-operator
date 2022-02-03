@@ -96,6 +96,16 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "creating Alertmanager RBAC proxy Secret failed")
 	}
 
+	rsw, err := t.factory.AlertmanagerRBACProxyWebSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager RBAC proxy web Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ctx, rsw)
+	if err != nil {
+		return errors.Wrap(err, "creating Alertmanager RBAC proxy web Secret failed")
+	}
+
 	rsm, err := t.factory.AlertmanagerRBACProxyMetricSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager RBAC proxy metric Secret failed")
@@ -136,16 +146,6 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Alertmanager ServiceAccount failed")
 	}
 
-	ps, err := t.factory.AlertmanagerProxySecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager proxy Secret failed")
-	}
-
-	err = t.client.CreateIfNotExistSecret(ctx, ps)
-	if err != nil {
-		return errors.Wrap(err, "creating Alertmanager proxy Secret failed")
-	}
-
 	svc, err := t.factory.AlertmanagerService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager Service failed")
@@ -157,23 +157,8 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 	}
 
 	{
-		// Create trusted CA bundle ConfigMap.
-		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
-		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager CA bundle ConfigMap failed")
-		}
 
-		cbs := &caBundleSyncer{
-			client:  t.client,
-			factory: t.factory,
-			prefix:  "alertmanager",
-		}
-		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
-		if err != nil {
-			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
-		}
-
-		a, err := t.factory.AlertmanagerMain(trustedCA)
+		a, err := t.factory.AlertmanagerMain()
 		if err != nil {
 			return errors.Wrap(err, "initializing Alertmanager object failed")
 		}
@@ -202,7 +187,19 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
-	return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
+	if err != nil {
+		return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
+	}
+
+	// todo: remove this deletion of the secret "alertmanager-main-proxy" in 4.13
+	err = t.client.DeleteSecretByNamespaceAndName(ctx, t.client.Namespace(), "alertmanager-main-proxy")
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager proxy Secret failed")
+	}
+
+	// todo: remove this deletion of secret "alertmanager-trusted-ca-bundle" in 4.13
+	err = t.client.DeleteSecretByNamespaceAndName(ctx, t.client.Namespace(), "alertmanager-trusted-ca-bundle")
+	return errors.Wrap(err, "deleting Alertmanager trusted CA bundle Secret failed")
 }
 
 func (t *AlertmanagerTask) destroy(ctx context.Context) error {
@@ -234,6 +231,16 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "deleting Alertmanager RBAC proxy Secret failed")
+	}
+
+	rsw, err := t.factory.AlertmanagerRBACProxyWebSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager RBAC proxy web Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, rsw)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager RBAC proxy web Secret failed")
 	}
 
 	rsm, err := t.factory.AlertmanagerRBACProxyMetricSecret()
@@ -276,16 +283,6 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		return errors.Wrap(err, "deleting Alertmanager ServiceAccount failed")
 	}
 
-	ps, err := t.factory.AlertmanagerProxySecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager proxy Secret failed")
-	}
-
-	err = t.client.DeleteSecret(ctx, ps)
-	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager proxy Secret failed")
-	}
-
 	svc, err := t.factory.AlertmanagerService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager Service failed")
@@ -309,18 +306,7 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 	}
 
 	{
-		// Create trusted CA bundle ConfigMap.
-		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
-		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager CA bundle ConfigMap failed")
-		}
-
-		if err := t.client.DeleteConfigMap(ctx, trustedCA); err != nil {
-			return errors.Wrap(err, "deleting Alertmanager trusted CA bundle failed")
-
-		}
-
-		a, err := t.factory.AlertmanagerMain(trustedCA)
+		a, err := t.factory.AlertmanagerMain()
 		if err != nil {
 			return errors.Wrap(err, "initializing Alertmanager object failed")
 		}

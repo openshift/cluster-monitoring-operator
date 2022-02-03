@@ -28,9 +28,7 @@ import (
 	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 
 	"github.com/Jeffail/gabs/v2"
-	configv1 "github.com/openshift/api/config/v1"
 	statusv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -38,47 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
-
-func TestAlertmanagerTrustedCA(t *testing.T) {
-	var (
-		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath), &manifests.APIServerConfig{}, &configv1.Console{})
-		newCM   *v1.ConfigMap
-		lastErr error
-	)
-
-	cm := f.MustGetConfigMap(t, "alertmanager-trusted-ca-bundle", f.Ns)
-	newCM, err := factory.HashTrustedCA(cm, "alertmanager")
-	if err != nil {
-		t.Fatal(errors.Wrap(err, "no trusted CA bundle data available"))
-	}
-
-	// Wait for the new hashed trusted CA bundle ConfigMap to be created
-	f.AssertConfigmapExists(newCM.Name, f.Ns)(t)
-
-	// Get Alertmanager StatefulSet and make sure it has a volume mounted.
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		ss := f.MustGetStatefulSet(t, "alertmanager-main", f.Ns)
-
-		if len(ss.Spec.Template.Spec.Containers[0].VolumeMounts) == 0 {
-			return false, errors.New("Could not find any VolumeMounts, expected at least 1")
-		}
-
-		for _, mount := range ss.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if mount.Name == "alertmanager-trusted-ca-bundle" {
-				return true, nil
-			}
-		}
-
-		lastErr = fmt.Errorf("no volume %s mounted", newCM.Name)
-		return false, nil
-	})
-	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
-	}
-}
 
 // TestAlertmanagerTenancyAPI ensures that the Alertmanager API exposed on the
 // tenancy port enforces the namespace value.
@@ -143,7 +100,6 @@ enableUserWorkload: true`,
 			t.Cleanup(func() {
 				f.MustDeleteConfigMap(t, uwmConfigMap)
 			})
-
 			testAlertmanagerReady(t, tc.amName, tc.amNamespace)
 
 			// The tenancy port (9092) is only exposed in-cluster so we need to use
@@ -200,7 +156,7 @@ func testAlertmanagerTenancyAPI(t *testing.T, host string) {
 			},
 		},
 	}
-	ns, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -555,7 +511,6 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		{name: "assert route does not exist", assertion: f.AssertRouteDoesNotExist("alertmanager-main", f.Ns)},
 		{name: "assert alertmanager main config does not exist", assertion: f.AssertSecretDoesNotExist("alertmanager-main", f.Ns)},
 		{name: "assert kube-rbac-proxy secret does not exist", assertion: f.AssertSecretDoesNotExist("alertmanager-kube-rbac-proxy", f.Ns)},
-		{name: "assert proxy secret does not exist", assertion: f.AssertSecretDoesNotExist("alertmanager-main-proxy", f.Ns)},
 		{name: "assert service alertmanager-main does not exist", assertion: f.AssertServiceDoesNotExist("alertmanager-main", f.Ns)},
 		{name: "assert service alertmanager-operated does not exist", assertion: f.AssertServiceDoesNotExist("alertmanager-operated", f.Ns)},
 		{name: "assert serviceaccount alertmanager-main does not exist", assertion: f.AssertServiceAccountDoesNotExist("alertmanager-main", f.Ns)},
@@ -590,7 +545,6 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		{name: "assert route exists", assertion: f.AssertRouteExists("alertmanager-main", f.Ns)},
 		{name: "assert alertmanager main config exists", assertion: f.AssertSecretExists("alertmanager-main", f.Ns)},
 		{name: "assert kube-rbac-proxy secret exists", assertion: f.AssertSecretExists("alertmanager-kube-rbac-proxy", f.Ns)},
-		{name: "assert proxy secret exists", assertion: f.AssertSecretExists("alertmanager-main-proxy", f.Ns)},
 		{name: "assert service alertmanager-main exists", assertion: f.AssertServiceExists("alertmanager-main", f.Ns)},
 		{name: "assert service alertmanager-operated exists", assertion: f.AssertServiceExists("alertmanager-operated", f.Ns)},
 		{name: "assert serviceaccount alertmanager exists", assertion: f.AssertServiceAccountExists("alertmanager-main", f.Ns)},
@@ -600,7 +554,7 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		{name: "assert rolebinding alertmanager-thanos-ruler exists", assertion: f.AssertRoleBindingExists("alertmanager-thanos-ruler", "openshift-monitoring")},
 		{name: "assert clusterrole alertmanager-main exists", assertion: f.AssertClusterRoleExists("alertmanager-main")},
 		{name: "assert clusterrolebinding alertmanager-main exists", assertion: f.AssertClusterRoleBindingExists("alertmanager-main")},
-		{name: "assert trusted-ca-bundle exists", assertion: f.AssertConfigmapExists("alertmanager-trusted-ca-bundle", f.Ns)},
+		{name: "assert trusted-ca-bundle does not exist", assertion: f.AssertConfigmapDoesNotExist("alertmanager-trusted-ca-bundle", f.Ns)},
 		{name: "assert prometheus rule exists", assertion: f.AssertPrometheusRuleExists("alertmanager-main-rules", f.Ns)},
 		{name: "assert service monitor exists", assertion: f.AssertServiceMonitorExists("alertmanager-main", f.Ns)},
 		{name: "assert old service monitor does not exists", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager", f.Ns)},

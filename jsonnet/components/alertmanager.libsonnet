@@ -10,8 +10,6 @@ function(params)
   };
 
   alertmanager(cfg) {
-    trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'alertmanager-trusted-ca-bundle'),
-
     // OpenShift route to access the Alertmanager UI.
 
     route: {
@@ -37,16 +35,7 @@ function(params)
       },
     },
 
-    // The ServiceAccount needs this annotation, to signify the identity
-    // provider, that when a users it doing the oauth flow through the oauth
-    // proxy, that it should redirect to the alertmanager-main route on
-    // successful authentication.
     serviceAccount+: {
-      metadata+: {
-        annotations+: {
-          'serviceaccounts.openshift.io/oauth-redirectreference.alertmanager-main': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"alertmanager-main"}}',
-        },
-      },
       // automountServiceAccountToken is set to true as kube-rbac-proxy sidecar
       // requires connection to kubernetes API
       automountServiceAccountToken: true,
@@ -89,19 +78,6 @@ function(params)
         ],
         type: 'ClusterIP',
       },
-    },
-
-    // The proxy secret is there to encrypt session created by the oauth proxy.
-    proxySecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'alertmanager-main-proxy',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'alertmanager-main' },
-      },
-      type: 'Opaque',
-      data: {},
     },
 
     // In order for the oauth proxy to perform a TokenReview and
@@ -154,6 +130,52 @@ function(params)
         name: 'alertmanager-main',
         namespace: cfg.namespace,
       }],
+    },
+
+    kubeRbacProxyWebSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'alertmanager-kube-rbac-proxy-web',
+        namespace: cfg.namespace,
+        labels: { 'app.kubernetes.io/name': 'alertmanager-main' },
+      },
+      type: 'Opaque',
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            static: [
+              {
+                // allow prometheus-k8s to get/post queries from/to AlertManager
+                user: {
+                  name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
+                },
+                resourceRequest: true,
+              },
+              {
+                // allow prometheus-user-workload to get/post queries from/to AlertManager
+                user: {
+                  name: 'system:serviceaccount:openshift-user-workload-monitoring:prometheus-user-workload',
+                },
+                resourceRequest: true,
+              },
+              {
+                // allow thanos-ruler to get/post queries from/to AlertManager
+                user: {
+                  name: 'system:serviceaccount:openshift-user-workload-monitoring:thanos-ruler',
+                },
+                resourceRequest: true,
+              },
+            ],
+            resourceAttributes: {
+              apiGroup: 'monitoring.coreos.com',
+              resource: 'alertmanagers',
+              namespace: cfg.namespace,
+              verbs: ['create', 'get', 'patch', 'update', 'delete'],
+            },
+          },
+        }),
+      },
     },
 
     kubeRbacProxySecret: {
@@ -221,9 +243,9 @@ function(params)
         priorityClassName: 'system-cluster-critical',
         secrets: [
           'alertmanager-main-tls',
-          'alertmanager-main-proxy',
           $.kubeRbacProxySecret.metadata.name,
           $.kubeRbacProxyMetricSecret.metadata.name,
+          $.kubeRbacProxyWebSecret.metadata.name,
         ],
         listenLocal: true,
         resources: {
@@ -234,59 +256,38 @@ function(params)
         },
         containers: [
           {
-            name: 'alertmanager-proxy',
-            image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
-            ports: [
-              {
-                containerPort: 9095,
-                name: 'web',
-              },
-            ],
-            env: [
-              {
-                name: 'HTTP_PROXY',
-                value: '',
-              },
-              {
-                name: 'HTTPS_PROXY',
-                value: '',
-              },
-              {
-                name: 'NO_PROXY',
-                value: '',
-              },
-            ],
-            args: [
-              '-provider=openshift',
-              '-https-address=:9095',
-              '-http-address=',
-              '-email-domain=*',
-              '-upstream=http://localhost:9093',
-              '-openshift-sar=[{"resource": "namespaces", "verb": "get"}, {"resource": "alertmanagers", "resourceAPIGroup": "monitoring.coreos.com", "namespace": "openshift-monitoring", "verb": "patch", "resourceName": "non-existant"}]',
-              '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}, "/": {"resource":"alertmanagers", "group": "monitoring.coreos.com", "namespace": "openshift-monitoring", "verb": "patch", "name": "non-existant"}}',
-              '-tls-cert=/etc/tls/private/tls.crt',
-              '-tls-key=/etc/tls/private/tls.key',
-              '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
-              '-cookie-secret-file=/etc/proxy/secrets/session_secret',
-              '-openshift-service-account=alertmanager-main',
-              '-openshift-ca=/etc/pki/tls/cert.pem',
-              '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-            ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
+            name: 'kube-rbac-proxy-web',
+            image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
                 cpu: '1m',
                 memory: '20Mi',
               },
             },
+            ports: [
+              {
+                containerPort: 9095,
+                name: 'web',
+              },
+            ],
+            args: [
+              '--secure-listen-address=0.0.0.0:9095',
+              '--upstream=http://127.0.0.1:9093',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+              '--logtostderr=true',
+            ],
+            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
+              },
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-alertmanager-main-tls',
-              },
-              {
-                mountPath: '/etc/proxy/secrets',
-                name: 'secret-alertmanager-main-proxy',
               },
             ],
           },

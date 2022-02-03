@@ -249,7 +249,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.AlertmanagerMain(nil)
+	_, err = f.AlertmanagerMain()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -704,11 +704,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.TelemeterTrustedCABundle()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.AlertmanagerTrustedCABundle()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2579,9 +2574,7 @@ func TestAlertmanagerMainStartupProbe(t *testing.T) {
 				t.Fatal(err)
 			}
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-			a, err := f.AlertmanagerMain(
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-			)
+			a, err := f.AlertmanagerMain()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2643,9 +2636,7 @@ ingress:
 	})
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	a, err := f.AlertmanagerMain(
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-	)
+	a, err := f.AlertmanagerMain()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3363,9 +3354,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 		{
 			name: "Alertmanager",
 			getSpec: func(f *Factory) (spec, error) {
-				a, err := f.AlertmanagerMain(
-					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				)
+				a, err := f.AlertmanagerMain()
 				if err != nil {
 					return spec{}, err
 				}

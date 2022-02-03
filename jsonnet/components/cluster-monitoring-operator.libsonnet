@@ -314,14 +314,16 @@ function(params) {
     metadata: {
       name: 'cluster-monitoring-view',
     },
-    rules: [{
-      apiGroups: [''],
-      resources: ['namespaces'],
-      verbs: ['get'],
-    }],
+    rules: [
+      {
+        apiGroups: [''],
+        resources: ['namespaces'],
+        verbs: ['get'],
+      },
+    ],
   },
 
-  // This role enables access to the Alertmanager APIs and UIs through OAuth proxy.
+  // This role enables access to the Alertmanager APIs through kube-rbac-proxy
   monitoringAlertmanagerEditRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
@@ -332,8 +334,7 @@ function(params) {
     rules: [{
       apiGroups: ['monitoring.coreos.com'],
       resources: ['alertmanagers'],
-      verbs: ['patch'],
-      resourceNames: ['non-existant'],
+      verbs: ['*'],
     }],
   },
 

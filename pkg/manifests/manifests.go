@@ -68,16 +68,15 @@ const (
 var (
 	AlertmanagerConfig                = "alertmanager/secret.yaml"
 	AlertmanagerService               = "alertmanager/service.yaml"
-	AlertmanagerProxySecret           = "alertmanager/proxy-secret.yaml"
 	AlertmanagerMain                  = "alertmanager/alertmanager.yaml"
 	AlertmanagerServiceAccount        = "alertmanager/service-account.yaml"
 	AlertmanagerClusterRoleBinding    = "alertmanager/cluster-role-binding.yaml"
 	AlertmanagerClusterRole           = "alertmanager/cluster-role.yaml"
 	AlertmanagerRBACProxySecret       = "alertmanager/kube-rbac-proxy-secret.yaml"
+	AlertmanagerRBACProxyWebSecret    = "alertmanager/kube-rbac-proxy-web-secret.yaml"
 	AlertmanagerRBACProxyMetricSecret = "alertmanager/kube-rbac-proxy-metric-secret.yaml"
 	AlertmanagerRoute                 = "alertmanager/route.yaml"
 	AlertmanagerServiceMonitor        = "alertmanager/service-monitor.yaml"
-	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
 	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
 	AlertmanagerPodDisruptionBudget   = "alertmanager/pod-disruption-budget.yaml"
 
@@ -371,22 +370,6 @@ func (f *Factory) AlertmanagerUserWorkloadSecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadSecret))
 }
 
-func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerProxySecret))
-	if err != nil {
-		return nil, err
-	}
-
-	p, err := GeneratePassword(43)
-	if err != nil {
-		return nil, err
-	}
-	s.Data["session_secret"] = []byte(p)
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
 func (f *Factory) AlertmanagerService() (*v1.Service, error) {
 	s, err := f.NewService(f.assets.MustNewAssetReader(AlertmanagerService))
 	if err != nil {
@@ -462,15 +445,6 @@ func (f *Factory) AlertmanagerUserWorkloadServiceMonitor() (*monv1.ServiceMonito
 	sm.Namespace = f.namespaceUserWorkload
 
 	return sm, nil
-}
-
-func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(AlertmanagerTrustedCABundle))
-	if err != nil {
-		return nil, err
-	}
-
-	return cm, nil
 }
 
 func (f *Factory) AlertmanagerUserWorkloadTrustedCABundle() (*v1.ConfigMap, error) {
@@ -617,7 +591,7 @@ func setupStartupProbe(a *monv1.Alertmanager) {
 	)
 }
 
-func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
+func (f *Factory) AlertmanagerMain() (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(f.assets.MustNewAssetReader(AlertmanagerMain))
 	if err != nil {
 		return nil, err
@@ -675,26 +649,7 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
-		case "alertmanager-proxy":
-			a.Spec.Containers[i].Image = f.config.Images.OauthProxy
-
-			f.injectProxyVariables(&a.Spec.Containers[i])
-
-			if trustedCABundleCM != nil {
-				volumeName := "alertmanager-trusted-ca-bundle"
-				a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
-				volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
-				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-					Key:  TrustedCABundleKey,
-					Path: "tls-ca-bundle.pem",
-				})
-				a.Spec.Volumes = append(a.Spec.Volumes, volume)
-				a.Spec.Containers[i].VolumeMounts = append(
-					a.Spec.Containers[i].VolumeMounts,
-					trustedCABundleVolumeMount(volumeName),
-				)
-			}
-		case "kube-rbac-proxy", "kube-rbac-proxy-metric":
+		case "kube-rbac-proxy", "kube-rbac-proxy-metric", "kube-rbac-proxy-web":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "prom-label-proxy":
@@ -720,6 +675,17 @@ func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
 
 func (f *Factory) AlertmanagerUserWorkloadRBACProxyTenancySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxyTenancySecret))
+}
+
+func (f *Factory) AlertmanagerRBACProxyWebSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxyWebSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) AlertmanagerRBACProxyMetricSecret() (*v1.Secret, error) {
