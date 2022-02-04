@@ -278,7 +278,6 @@ var (
 
 	TrustedCABundleKey = "ca-bundle.crt"
 
-	AlertmanagerLegacyServiceMonitorName                = "alertmanager"
 	AdditionalAlertmanagerConfigSecretKey               = "alertmanager-configs.yaml"
 	PrometheusK8sAdditionalAlertmanagerConfigSecretName = "prometheus-k8s-additional-alertmanager-configs"
 	PrometheusUWAdditionalAlertmanagerConfigSecretName  = "prometheus-user-workload-additional-alertmanager-configs"
