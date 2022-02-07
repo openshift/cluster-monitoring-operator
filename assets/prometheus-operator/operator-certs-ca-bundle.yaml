@@ -1,8 +1,0 @@
-apiVersion: v1
-data: {}
-kind: ConfigMap
-metadata:
-  annotations:
-    service.beta.openshift.io/inject-cabundle: "true"
-  name: operator-certs-ca-bundle
-  namespace: openshift-monitoring

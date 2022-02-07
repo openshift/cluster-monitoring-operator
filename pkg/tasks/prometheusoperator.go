@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -34,16 +35,6 @@ func NewPrometheusOperatorTask(client *client.Client, factory *manifests.Factory
 }
 
 func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
-	cacm, err := t.factory.PrometheusOperatorCertsCABundle()
-	if err != nil {
-		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
-	}
-
-	_, err = t.client.CreateIfNotExistConfigMap(ctx, cacm)
-	if err != nil {
-		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
-	}
-
 	sa, err := t.factory.PrometheusOperatorServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Operator ServiceAccount failed")
@@ -82,16 +73,6 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Operator Service failed")
-	}
-
-	rs, err := t.factory.PrometheusOperatorRBACProxySecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Operator RBAC proxy Secret failed")
-	}
-
-	err = t.client.CreateIfNotExistSecret(ctx, rs)
-	if err != nil {
-		return errors.Wrap(err, "creating Prometheus Operator RBAC proxy Secret failed")
 	}
 
 	d, err := t.factory.PrometheusOperatorDeployment()

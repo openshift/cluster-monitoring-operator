@@ -167,10 +167,8 @@ var (
 	PrometheusOperatorDeployment            = "prometheus-operator/deployment.yaml"
 	PrometheusOperatorService               = "prometheus-operator/service.yaml"
 	PrometheusOperatorServiceMonitor        = "prometheus-operator/service-monitor.yaml"
-	PrometheusOperatorCertsCABundle         = "prometheus-operator/operator-certs-ca-bundle.yaml"
 	PrometheusOperatorRuleValidatingWebhook = "prometheus-operator/prometheus-rule-validating-webhook.yaml"
 	PrometheusOperatorPrometheusRule        = "prometheus-operator/prometheus-rule.yaml"
-	PrometheusOperatorKubeRbacProxySecret   = "prometheus-operator/kube-rbac-proxy-secret.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount      = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole         = "prometheus-operator-user-workload/cluster-role.yaml"
@@ -1315,17 +1313,6 @@ func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*
 	return c, nil
 }
 
-func (f *Factory) PrometheusOperatorCertsCABundle() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusOperatorCertsCABundle))
-	if err != nil {
-		return nil, err
-	}
-
-	c.Namespace = f.namespace
-
-	return c, nil
-}
-
 func (f *Factory) PrometheusK8sThanosSidecarServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sThanosSidecarServiceMonitor))
 	if err != nil {
@@ -2200,17 +2187,6 @@ func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAcc
 	}
 
 	s.Namespace = f.namespaceUserWorkload
-
-	return s, nil
-}
-
-func (f *Factory) PrometheusOperatorRBACProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusOperatorKubeRbacProxySecret))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
 
 	return s, nil
 }

@@ -1,15 +1,9 @@
 local tlsVolumeName = 'prometheus-operator-tls';
-local certsCAVolumeName = 'operator-certs-ca-bundle';
-
-local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
-
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
-local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
   local cfg = params;
   operator(cfg) + {
-    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'prometheus-operator-kube-rbac-proxy-config'),
     deployment+: {
       metadata+: {
         labels+: {
@@ -35,7 +29,8 @@ function(params)
             securityContext: {},
             priorityClassName: 'system-cluster-critical',
             containers:
-              std.map(
+              std.filterMap(
+                function(c) c.name != 'kube-rbac-proxy',
                 function(c)
                   if c.name == 'prometheus-operator' then
                     c {
@@ -46,8 +41,10 @@ function(params)
                         '--config-reloader-cpu-limit=0',
                         '--config-reloader-memory-limit=0',
                         '--web.enable-tls=true',
+                        '--web.listen-address=:8443',
                         '--web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
                         '--web.tls-min-version=VersionTLS12',
+                        '--web.client-ca-file=/etc/tls/client/client-ca.crt',
                       ],
                       securityContext: {},
                       resources: {
@@ -57,35 +54,10 @@ function(params)
                         },
                       },
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts+: [{
-                        mountPath: '/etc/tls/private',
-                        name: tlsVolumeName,
-                        readOnly: false,
-                      }],
-                    }
-                  else if c.name == 'kube-rbac-proxy' then
-                    c {
-                      args: [
-                        '--logtostderr',
-                        '--secure-listen-address=:8443',
-                        '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-                        '--upstream=https://prometheus-operator.openshift-monitoring.svc:8080/',
-                        '--tls-cert-file=/etc/tls/private/tls.crt',
-                        '--tls-private-key-file=/etc/tls/private/tls.key',
-                        '--client-ca-file=/etc/tls/client/client-ca.crt',
-                        '--upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt',
-                        '--config-file=/etc/kube-rbac-policy/config.yaml',
-                      ],
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts: [
+                      volumeMounts+: [
                         {
                           mountPath: '/etc/tls/private',
                           name: tlsVolumeName,
-                          readOnly: false,
-                        },
-                        {
-                          mountPath: '/etc/configmaps/operator-cert-ca-bundle',
-                          name: certsCAVolumeName,
                           readOnly: false,
                         },
                         {
@@ -93,22 +65,15 @@ function(params)
                           name: 'metrics-client-ca',
                           readOnly: false,
                         },
+                      ],
+                      ports: [
                         {
-                          mountPath: '/etc/kube-rbac-policy',
-                          name: 'prometheus-operator-kube-rbac-proxy-config',
-                          readOnly: true,
+                          containerPort: 8443,
+                          name: 'https',
                         },
                       ],
-                      securityContext: {},
-                      resources: {
-                        requests: {
-                          memory: '15Mi',
-                          cpu: '1m',
-                        },
-                      },
                     }
-                  else
-                    c,
+                  else c,
                 super.containers,
               ),
             volumes+: [
@@ -118,13 +83,6 @@ function(params)
                   secretName: 'prometheus-operator-tls',
                 },
 
-              },
-              generateCertInjection.SCOCaBundleVolume(certsCAVolumeName),
-              {
-                name: 'prometheus-operator-kube-rbac-proxy-config',
-                secret: {
-                  secretName: 'prometheus-operator-kube-rbac-proxy-config',
-                },
               },
               {
                 name: 'metrics-client-ca',
@@ -143,9 +101,6 @@ function(params)
         annotations+: {
           'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-tls',
         },
-      },
-      spec+: {
-        ports+: [{ name: 'web', port: 8080, targetPort: 8080 }],
       },
     },
 
@@ -167,8 +122,6 @@ function(params)
         ],
       },
     },
-
-    operatorCertsCaBundle: generateCertInjection.SCOCaBundleCM(cfg.namespace, certsCAVolumeName),
 
     prometheusRuleValidatingWebhook: {
       apiVersion: 'admissionregistration.k8s.io/v1',

@@ -723,11 +723,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	_, err = f.PrometheusOperatorRBACProxySecret()
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestSharingConfig(t *testing.T) {
@@ -785,8 +780,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	prometheusReloaderFound := false
 	prometheusWebTLSCipherSuitesArg := ""
 	prometheusWebTLSVersionArg := ""
-	kubeRbacProxyTLSCipherSuitesArg := ""
-	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
 		switch container.Name {
 		case "prometheus-operator":
@@ -799,12 +792,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 			}
 			prometheusWebTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
 			prometheusWebTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
-		case "kube-rbac-proxy":
-			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
-				t.Fatalf("%s image incorrectly configured", container.Name)
-			}
-			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
-			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
 	}
 
@@ -823,20 +810,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		PrometheusOperatorWebTLSMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
 	if expectedPrometheusWebTLSVersionArg != prometheusWebTLSVersionArg {
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", prometheusWebTLSVersionArg, expectedPrometheusWebTLSVersionArg)
-	}
-
-	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		KubeRbacProxyTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
-
-	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
-	}
-
-	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
-		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
-	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
-		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 
 	d2, err := f.PrometheusOperatorDeployment()
