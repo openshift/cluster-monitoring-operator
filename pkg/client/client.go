@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 
 	configv1 "github.com/openshift/api/config/v1"
+	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
@@ -423,6 +424,10 @@ func (c *Client) GetRouteURL(ctx context.Context, r *routev1.Route) (*url.URL, e
 	}
 
 	return u, nil
+}
+
+func (c *Client) GetAlertOverrides(ctx context.Context, namespace, name string) (*osmv1alpha1.AlertOverrides, error) {
+	return c.osmclient.MonitoringV1alpha1().AlertOverrides(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 func (c *Client) GetClusterVersion(ctx context.Context, name string) (*configv1.ClusterVersion, error) {

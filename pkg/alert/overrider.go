@@ -83,11 +83,8 @@ func NewOverrider(ctx context.Context, client *client.Client, relabeler *Relabel
 		cache.Indexers{},
 	)
 
-	// We watch all namespaces for PrometheusRule objects, but the name-severity
-	// indexer only indexes rules from platform namespaces.
-	//
-	// TODO(bison): Need to add event handlers to reconcile overrides when the
-	// overriden alerting rules change, not just when our resource changes.
+	// We watch all namespaces for PrometheusRule objects, but the
+	// custom indexer only indexes rules from platform namespaces.
 	ruleInformer := cache.NewSharedIndexInformer(
 		client.PrometheusRuleListWatchForNamespace(metav1.NamespaceAll),
 		&monv1.PrometheusRule{},
@@ -112,11 +109,16 @@ func NewOverrider(ctx context.Context, client *client.Client, relabeler *Relabel
 	}
 
 	overridesInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    overrider.processOverrides,
-		DeleteFunc: overrider.deleteOverrides,
-		UpdateFunc: func(_, newObj interface{}) {
-			overrider.processOverrides(newObj)
-		},
+		AddFunc:    func(_ interface{}) { overrider.processOverrides() },
+		DeleteFunc: func(_ interface{}) { overrider.deleteOverrides() },
+		UpdateFunc: func(_, _ interface{}) { overrider.processOverrides() },
+	})
+
+	// Overrides should also be processed when PrometheusRules change.
+	ruleInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(_ interface{}) { overrider.processOverrides() },
+		DeleteFunc: func(_ interface{}) { overrider.processOverrides() },
+		UpdateFunc: func(_, _ interface{}) { overrider.processOverrides() },
 	})
 
 	ruleInformer.AddIndexers(cache.Indexers{
@@ -239,7 +241,7 @@ func (o *Overrider) alertRelabelConfigs(selectors []osmv1alpha1.AlertSelector) (
 
 // deleteOverrides removes the generated alert relabel configs, and removes the
 // generated PrometheusRule object containing overrides and user-defined rules.
-func (o *Overrider) deleteOverrides(_ interface{}) {
+func (o *Overrider) deleteOverrides() {
 	o.relabeler.DeleteGroup(relabelGroupName)
 
 	if _, err := o.relabeler.WriteSecret(); err != nil {
@@ -261,10 +263,10 @@ func (o *Overrider) deleteOverrides(_ interface{}) {
 // new user-defined alerting rules, and updates the alert relabel configs.
 //
 // TODO(bison): Should we actually be putting these into a workqueue?
-func (o *Overrider) processOverrides(obj interface{}) {
-	overrides, ok := obj.(*osmv1alpha1.AlertOverrides)
-	if !ok {
-		klog.Errorf("Overrides config has type %T, not AlertOverrides", obj)
+func (o *Overrider) processOverrides() {
+	overrides, err := o.client.GetAlertOverrides(o.ctx, o.client.Namespace(), overridesName)
+	if err != nil {
+		klog.Errorf("Error fetching alert overrides: %v", err)
 		return
 	}
 
