@@ -12,40 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package operator
+package namespace
 
 import (
 	"context"
 	"sync"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 )
 
-// PlatformNamespaceWatcher watches all namespace objects and
-// maintains an up-to-date set of namespaces that have opted in to
-// platform monitoring.
-type PlatformNamespaceWatcher struct {
+// TODO(bison): Allow adding custom handlers.
+
+// Watcher watches namespace objects and maintains an up-to-date set of
+// namespace names returned by the ListerWatcher used.
+type Watcher struct {
 	namespaces sets.String
 	informer   cache.SharedIndexInformer
 
 	sync.RWMutex
 }
 
-// NewPlatformNamespaceWatcher returns a new PlatformNamespaceWatcher.
-func NewPlatformNamespaceWatcher(client *client.Client) *PlatformNamespaceWatcher {
+// NewWatcher returns a new namespace watcher using the given ListerWatcher.
+func NewWatcher(resync time.Duration, lw cache.ListerWatcher) *Watcher {
 	informer := cache.NewSharedIndexInformer(
-		client.PlatformNamespacesListWatch(),
+		lw,
 		&corev1.Namespace{},
-		resyncPeriod,
+		resync,
 		cache.Indexers{},
 	)
 
-	watcher := &PlatformNamespaceWatcher{
+	watcher := &Watcher{
 		informer:   informer,
 		namespaces: sets.NewString(),
 	}
@@ -59,29 +59,28 @@ func NewPlatformNamespaceWatcher(client *client.Client) *PlatformNamespaceWatche
 }
 
 // Run starts the controller and blocks until the context is canceled.
-func (p *PlatformNamespaceWatcher) Run(ctx context.Context, workers int) {
-	p.informer.Run(ctx.Done())
+func (w *Watcher) Run(ctx context.Context, workers int) {
+	w.informer.Run(ctx.Done())
 }
 
 // Namespaces returns a copy of the set of namespaces at the time the
 // method is called.  The set will not be kept up-to-date.
-func (p *PlatformNamespaceWatcher) Namespaces() sets.String {
-	p.RLock()
-	defer p.RUnlock()
+func (w *Watcher) Namespaces() sets.String {
+	w.RLock()
+	defer w.RUnlock()
 
-	return sets.NewString(p.namespaces.UnsortedList()...)
+	return sets.NewString(w.namespaces.UnsortedList()...)
 }
 
-// IsPlatformNamespace returns true if the given namespace is in the
-// set of platform namespaces.
-func (p *PlatformNamespaceWatcher) IsPlatformNamespace(ns string) bool {
-	p.RLock()
-	defer p.RUnlock()
+// Has returns true if the given namespace is in the set of namespaces.
+func (w *Watcher) Has(ns string) bool {
+	w.RLock()
+	defer w.RUnlock()
 
-	return p.namespaces.Has(ns)
+	return w.namespaces.Has(ns)
 }
 
-func (p *PlatformNamespaceWatcher) add(obj interface{}) {
+func (w *Watcher) add(obj interface{}) {
 	ns, ok := obj.(*corev1.Namespace)
 	if !ok {
 		klog.Errorf("namespace watcher got non-namespace object with type %T", obj)
@@ -90,12 +89,12 @@ func (p *PlatformNamespaceWatcher) add(obj interface{}) {
 
 	klog.V(4).Infof("Found new platform namespace: %s", ns.GetName())
 
-	p.Lock()
-	p.namespaces.Insert(ns.GetName())
-	p.Unlock()
+	w.Lock()
+	w.namespaces.Insert(ns.GetName())
+	w.Unlock()
 }
 
-func (p *PlatformNamespaceWatcher) remove(obj interface{}) {
+func (w *Watcher) remove(obj interface{}) {
 	ns, ok := obj.(*corev1.Namespace)
 	if !ok {
 		klog.Errorf("namespace watcher got non-namespace object with type %T", obj)
@@ -104,7 +103,7 @@ func (p *PlatformNamespaceWatcher) remove(obj interface{}) {
 
 	klog.V(4).Infof("Removing platform namespace: %s", ns.GetName())
 
-	p.Lock()
-	p.namespaces.Delete(ns.GetName())
-	p.Unlock()
+	w.Lock()
+	w.namespaces.Delete(ns.GetName())
+	w.Unlock()
 }
