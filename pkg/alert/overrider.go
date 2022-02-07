@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package operator
+package alert
 
 import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -25,50 +26,51 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/pkg/namespace"
+
 	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
+	osmclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/relabel"
-
-	osmclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
-// AlertOverrideLabel is the label added to patched rules to identify them as
+// OverrideLabel is the label added to patched rules to identify them as
 // overrides.  The original rules must not have this label, because its absence
 // is used in the alert_relabel_configs to drop the original alert.
-const AlertOverrideLabel = "monitoring_openshift_io__alert_override"
+const OverrideLabel = "monitoring_openshift_io__alert_override"
 
 const (
 	alertIdxName       = "alert-name"
 	overridesName      = "alert-overrides"
 	prometheusRuleName = "alert-overrides"
 	relabelGroupName   = "050-alert-overrides"
+
+	resyncPeriod = 15 * time.Minute
 )
 
-// AlertOverrider is a controller that applies user-supplied overrides to
-// platform alerting rules.
-type AlertOverrider struct {
+// Overrider is a controller that applies user-supplied overrides to platform
+// alerting rules, and creates new user-defined alerting rules.
+type Overrider struct {
 	ctx               context.Context
 	osmclient         osmclientset.Interface
 	client            *client.Client
 	assets            *manifests.Assets
-	nsWatcher         *PlatformNamespaceWatcher
-	relabeler         *alert.Relabeler
+	nsWatcher         *namespace.Watcher
+	relabeler         *Relabeler
 	overridesInformer cache.SharedIndexInformer
 	ruleInformer      cache.SharedIndexInformer
 	ruleIndexer       cache.Indexer
 }
 
-// NewAlertOverrider returns a new AlertOverrider instance.  You must then call
+// NewOverrider returns a new Overrider controller instance.  You must then call
 // Run() to start the controller.
 //
 // TODO(bison): Should we take a context here or just create one?
-func NewAlertOverrider(ctx context.Context, client *client.Client, relabeler *alert.Relabeler) *AlertOverrider {
+func NewOverrider(ctx context.Context, client *client.Client, relabeler *Relabeler) *Overrider {
 	// Only watching the single "alert-overrides" AlertOverrides resource.
 	overridesInformer := cache.NewSharedIndexInformer(
 		client.AlertOverridesListWatchForResource(
@@ -96,14 +98,16 @@ func NewAlertOverrider(ctx context.Context, client *client.Client, relabeler *al
 	// TODO(bison): Should we add event handlers to the namespace watcher? If
 	// the platform-monitoring label is removed from a namespace, but the
 	// PrometheusRule still exists should any override then be removed?
-	overrider := &AlertOverrider{
+	nsWatcher := namespace.NewWatcher(resyncPeriod, client.PlatformNamespacesListWatch())
+
+	overrider := &Overrider{
 		ctx:               ctx,
 		client:            client,
+		nsWatcher:         nsWatcher,
 		relabeler:         relabeler,
 		overridesInformer: overridesInformer,
 		ruleInformer:      ruleInformer,
 		ruleIndexer:       ruleInformer.GetIndexer(),
-		nsWatcher:         NewPlatformNamespaceWatcher(client),
 		osmclient:         client.OpenShiftMonitoring(),
 	}
 
@@ -123,27 +127,27 @@ func NewAlertOverrider(ctx context.Context, client *client.Client, relabeler *al
 }
 
 // Run starts all informers and blocks until the context is closed.
-func (a *AlertOverrider) Run(ctx context.Context, workers int) {
+func (o *Overrider) Run(ctx context.Context, workers int) {
 	klog.Info("Starting alert overrides controller")
 
 	// TODO(bison): Should we wait for these to sync here, or provide a method
 	// for the caller to wait after calling run()?
-	go a.nsWatcher.Run(ctx, workers)
-	go a.overridesInformer.Run(ctx.Done())
-	go a.ruleInformer.Run(ctx.Done())
+	go o.nsWatcher.Run(ctx, workers)
+	go o.overridesInformer.Run(ctx.Done())
+	go o.ruleInformer.Run(ctx.Done())
 
 	<-ctx.Done()
 }
 
 // findRule takes an AlertSelector and returns the matching rule from the index,
 // if and only if a unique match is found.  Otherwise and error is returned.
-func (a *AlertOverrider) findRule(selector *osmv1alpha1.AlertSelector) (*monv1.Rule, error) {
-	if !a.ruleInformer.HasSynced() {
+func (o *Overrider) findRule(selector *osmv1alpha1.AlertSelector) (*monv1.Rule, error) {
+	if !o.ruleInformer.HasSynced() {
 		return nil, fmt.Errorf("PrometheusRule informer has not yet synced")
 	}
 
 	// Find all PrometheusRule objects with the selected rule name.
-	objs, err := a.ruleIndexer.ByIndex(alertIdxName, selector.Alert)
+	objs, err := o.ruleIndexer.ByIndex(alertIdxName, selector.Alert)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +161,7 @@ func (a *AlertOverrider) findRule(selector *osmv1alpha1.AlertSelector) (*monv1.R
 			continue
 		}
 
-		if pr.GetNamespace() == a.client.Namespace() &&
+		if pr.GetNamespace() == o.client.Namespace() &&
 			pr.GetName() == prometheusRuleName {
 			// Don't return rules in the generated overrides object.
 			//
@@ -187,8 +191,8 @@ func (a *AlertOverrider) findRule(selector *osmv1alpha1.AlertSelector) (*monv1.R
 
 // patchRule attempts to find the rule targeted by the given override, and
 // returns a new rule with the overrides applied.
-func (a *AlertOverrider) patchRule(override *osmv1alpha1.AlertOverride) (*monv1.Rule, error) {
-	rule, err := a.findRule(&override.Selector)
+func (o *Overrider) patchRule(override *osmv1alpha1.AlertOverride) (*monv1.Rule, error) {
+	rule, err := o.findRule(&override.Selector)
 	if err != nil {
 		return nil, err
 	}
@@ -209,14 +213,14 @@ func (a *AlertOverrider) patchRule(override *osmv1alpha1.AlertOverride) (*monv1.
 		rule.Annotations = labels.Merge(rule.Annotations, override.Annotations)
 	}
 
-	rule.Labels[AlertOverrideLabel] = "true"
+	rule.Labels[OverrideLabel] = "true"
 
 	return rule, nil
 }
 
 // alertRelabelConfigs returns a secret with the default alert relabel configs
 // along with any generated for patched or dropped alerting rules.
-func (a *AlertOverrider) alertRelabelConfigs(selectors []osmv1alpha1.AlertSelector) ([]relabel.Config, error) {
+func (o *Overrider) alertRelabelConfigs(selectors []osmv1alpha1.AlertSelector) ([]relabel.Config, error) {
 	var configs []relabel.Config
 
 	for _, s := range selectors {
@@ -235,16 +239,16 @@ func (a *AlertOverrider) alertRelabelConfigs(selectors []osmv1alpha1.AlertSelect
 
 // deleteOverrides removes the generated alert relabel configs, and removes the
 // generated PrometheusRule object containing overrides and user-defined rules.
-func (a *AlertOverrider) deleteOverrides(_ interface{}) {
-	a.relabeler.DeleteGroup(relabelGroupName)
+func (o *Overrider) deleteOverrides(_ interface{}) {
+	o.relabeler.DeleteGroup(relabelGroupName)
 
-	if _, err := a.relabeler.WriteSecret(); err != nil {
+	if _, err := o.relabeler.WriteSecret(); err != nil {
 		klog.Errorf("Error removing alert override relabel configs: %v", err)
 	}
 
-	err := a.client.DeletePrometheusRuleByNamespaceAndName(
-		a.ctx,
-		a.client.Namespace(),
+	err := o.client.DeletePrometheusRuleByNamespaceAndName(
+		o.ctx,
+		o.client.Namespace(),
 		prometheusRuleName,
 	)
 	if err != nil {
@@ -257,7 +261,7 @@ func (a *AlertOverrider) deleteOverrides(_ interface{}) {
 // new user-defined alerting rules, and updates the alert relabel configs.
 //
 // TODO(bison): Should we actually be putting these into a workqueue?
-func (a *AlertOverrider) processOverrides(obj interface{}) {
+func (o *Overrider) processOverrides(obj interface{}) {
 	overrides, ok := obj.(*osmv1alpha1.AlertOverrides)
 	if !ok {
 		klog.Errorf("Overrides config has type %T, not AlertOverrides", obj)
@@ -273,7 +277,7 @@ func (a *AlertOverrider) processOverrides(obj interface{}) {
 		switch override.Action {
 
 		case osmv1alpha1.PatchActionType:
-			patched, err := a.patchRule(&override)
+			patched, err := o.patchRule(&override)
 			if err != nil {
 				klog.Errorf("Error patching rule: %v", err)
 
@@ -307,7 +311,7 @@ func (a *AlertOverrider) processOverrides(obj interface{}) {
 		})
 	}
 
-	relabelConfigs, err := a.alertRelabelConfigs(dropRules)
+	relabelConfigs, err := o.alertRelabelConfigs(dropRules)
 	if err != nil {
 		// TODO(bison): Should we return early here?
 		klog.Errorf("Error generating alert_relabel_configs for overrides: %v", err)
@@ -317,7 +321,7 @@ func (a *AlertOverrider) processOverrides(obj interface{}) {
 	promRule := &monv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      prometheusRuleName,
-			Namespace: a.client.Namespace(),
+			Namespace: o.client.Namespace(),
 		},
 		Spec: monv1.PrometheusRuleSpec{
 			Groups: []monv1.RuleGroup{
@@ -333,22 +337,22 @@ func (a *AlertOverrider) processOverrides(obj interface{}) {
 		},
 	}
 
-	if err := a.client.CreateOrUpdatePrometheusRule(a.ctx, promRule); err != nil {
+	if err := o.client.CreateOrUpdatePrometheusRule(o.ctx, promRule); err != nil {
 		// TODO(bison): Same as above, should we return early here?
 		klog.Errorf("Error creating alert overrides PrometheusRule: %v", err)
 	}
 
-	a.relabeler.UpdateGroup(relabelGroupName, relabelConfigs)
-	if _, err := a.relabeler.WriteSecret(); err != nil {
+	o.relabeler.UpdateGroup(relabelGroupName, relabelConfigs)
+	if _, err := o.relabeler.WriteSecret(); err != nil {
 		// TODO(bison): Same as above, should we return early here?
 		klog.Errorf("Error creating alert relabel configs secret: %v", err)
 	}
 
-	overridesClient := a.osmclient.MonitoringV1alpha1().AlertOverrides(a.client.Namespace())
+	overridesClient := o.osmclient.MonitoringV1alpha1().AlertOverrides(o.client.Namespace())
 	overrides.Status = osmv1alpha1.AlertOverridesStatus{Conditions: conditions}
 
 	// TODO(bison): Need to add +kubebuilder:subresource:status in the API.
-	if _, err := overridesClient.UpdateStatus(a.ctx, overrides, metav1.UpdateOptions{}); err != nil {
+	if _, err := overridesClient.UpdateStatus(o.ctx, overrides, metav1.UpdateOptions{}); err != nil {
 		klog.Errorf("Error updating AlertOverrides status: %v", err)
 	}
 
@@ -356,14 +360,15 @@ func (a *AlertOverrider) processOverrides(obj interface{}) {
 }
 
 // indexByAlertName indexes PrometheusRule objects by alerting rule names.
-func (a *AlertOverrider) indexByAlertName(obj interface{}) ([]string, error) {
+func (o *Overrider) indexByAlertName(obj interface{}) ([]string, error) {
 	pr, ok := obj.(*monv1.PrometheusRule)
 	if !ok {
 		klog.Warningf("Object in cache is %T, not PrometheusRule", obj)
 		return []string{}, nil
 	}
 
-	if !a.nsWatcher.IsPlatformNamespace(pr.GetNamespace()) {
+	// Don't index PrometheusRule objects in non-platform namespaces.
+	if !o.nsWatcher.Has(pr.GetNamespace()) {
 		klog.V(4).Infof("Not indexing PrometheusRule from non-platform namespace: %s/%s",
 			pr.GetNamespace(), pr.GetName())
 		return []string{}, nil
@@ -438,7 +443,7 @@ func relabelConfig(selector osmv1alpha1.AlertSelector) (relabel.Config, error) {
 				selector.Alert, err)
 	}
 
-	sourceLabels := model.LabelNames{AlertOverrideLabel, "alertname"}
+	sourceLabels := model.LabelNames{OverrideLabel, "alertname"}
 	for _, k := range matchLabelKeys.List() {
 		sourceLabels = append(sourceLabels, model.LabelName(k))
 	}

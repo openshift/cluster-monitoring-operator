@@ -170,7 +170,7 @@ type Operator struct {
 
 	relabeler *alert.Relabeler
 
-	alertOverrider *AlertOverrider
+	alertOverrider *alert.Overrider
 }
 
 func New(
@@ -209,7 +209,7 @@ func New(
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
 		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
 		relabeler:                 relabeler,
-		alertOverrider:            NewAlertOverrider(ctx, c, relabeler),
+		alertOverrider:            alert.NewOverrider(ctx, c, relabeler),
 	}
 
 	informer := cache.NewSharedIndexInformer(
