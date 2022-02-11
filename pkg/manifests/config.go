@@ -98,7 +98,6 @@ type ClusterMonitoringConfiguration struct {
 	AlertmanagerMainConfig   *AlertmanagerMainConfig      `json:"alertmanagerMain"`
 	KubeStateMetricsConfig   *KubeStateMetricsConfig      `json:"kubeStateMetrics"`
 	OpenShiftMetricsConfig   *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics"`
-	GrafanaConfig            *GrafanaConfig               `json:"grafana"`
 	EtcdConfig               *EtcdConfig                  `json:"-"`
 	HTTPConfig               *HTTPConfig                  `json:"http"`
 	TelemeterClientConfig    *TelemeterClientConfig       `json:"telemeterClient"`
@@ -243,22 +242,6 @@ type ThanosQuerierConfig struct {
 	EnableRequestLogging bool                     `json:"enableRequestLogging"`
 }
 
-type GrafanaConfig struct {
-	Enabled      *bool             `json:"enabled"`
-	NodeSelector map[string]string `json:"nodeSelector"`
-	Tolerations  []v1.Toleration   `json:"tolerations"`
-}
-
-// IsEnabled returns the underlying value of the `Enabled` boolean pointer.  It
-// defaults to TRUE if the pointer is nil because Grafana should be enabled by
-// default.
-func (g *GrafanaConfig) IsEnabled() bool {
-	if g.Enabled == nil {
-		return true
-	}
-	return *g.Enabled
-}
-
 type KubeStateMetricsConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector"`
 	Tolerations  []v1.Toleration   `json:"tolerations"`
@@ -366,9 +349,6 @@ func (c *Config) applyDefaults() {
 	}
 	if c.ClusterMonitoringConfiguration.ThanosQuerierConfig == nil {
 		c.ClusterMonitoringConfiguration.ThanosQuerierConfig = &ThanosQuerierConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.GrafanaConfig == nil {
-		c.ClusterMonitoringConfiguration.GrafanaConfig = &GrafanaConfig{}
 	}
 	if c.ClusterMonitoringConfiguration.KubeStateMetricsConfig == nil {
 		c.ClusterMonitoringConfiguration.KubeStateMetricsConfig = &KubeStateMetricsConfig{}

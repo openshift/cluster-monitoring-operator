@@ -61,20 +61,6 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 		}
 	}
 
-	var grafanaURL *url.URL
-
-	if t.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
-		grafanaRoute, err := t.factory.GrafanaRoute()
-		if err != nil {
-			return errors.Wrap(err, "initializing Grafana Route failed")
-		}
-
-		grafanaURL, err = t.client.GetRouteURL(ctx, grafanaRoute)
-		if err != nil {
-			return errors.Wrap(err, "failed to retrieve Grafana host")
-		}
-	}
-
 	thanosRoute, err := t.factory.ThanosQuerierRoute()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier Route failed")
@@ -85,7 +71,7 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
 	}
 
-	cm := t.factory.SharingConfig(promURL, amURL, grafanaURL, thanosURL)
+	cm := t.factory.SharingConfig(promURL, amURL, thanosURL)
 	err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 	if err != nil {
 		return errors.Wrapf(err, "reconciling %s/%s Config ConfigMap failed", cm.Namespace, cm.Name)

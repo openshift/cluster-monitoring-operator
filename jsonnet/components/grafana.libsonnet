@@ -1,3 +1,4 @@
+//TODO: this file can be removed in 4.12.
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local grafana = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/grafana.libsonnet';
 

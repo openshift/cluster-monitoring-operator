@@ -42,7 +42,6 @@ func TestPrometheusMetrics(t *testing.T) {
 		"kube-state-metrics":            2, // one for the kube metrics + one for the metrics of the process itself.
 		"openshift-state-metrics":       2, // ditto.
 		"telemeter-client":              1,
-		"grafana":                       1,
 	} {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(

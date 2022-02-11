@@ -16,8 +16,6 @@ package tasks
 
 import (
 	"context"
-	"encoding/json"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -71,37 +69,6 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 	err = t.client.CreateIfNotExistSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Querier OAuth Cookie Secret failed")
-	}
-
-	// If Grafana is enabled, create the basic auth secret.
-	if t.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
-		gs, err := t.factory.GrafanaDatasources()
-		if err != nil {
-			return errors.Wrap(err, "initializing Grafana Datasources Secret failed")
-		}
-
-		gs, err = t.client.WaitForSecret(ctx, gs)
-		if err != nil {
-			return errors.Wrap(err, "waiting for Grafana Datasources Secret failed")
-		}
-
-		d := &manifests.GrafanaDatasources{}
-		err = json.Unmarshal(gs.Data["prometheus.yaml"], d)
-		if err != nil {
-			return errors.Wrap(err, "unmarshalling grafana datasource failed")
-		}
-
-		basicAuthPassword := d.Datasources[0].SecureJSONData.BasicAuthPassword
-
-		htpasswdSecret, err := t.factory.ThanosQuerierHtpasswdSecret(basicAuthPassword)
-		if err != nil {
-			return errors.Wrap(err, "initializing Thanos Querier htpasswd Secret failed")
-		}
-
-		err = t.client.CreateOrUpdateSecret(ctx, htpasswdSecret)
-		if err != nil {
-			return errors.Wrap(err, "creating Thanos Querier htpasswd Secret failed")
-		}
 	}
 
 	rs, err := t.factory.ThanosQuerierRBACProxySecret()
