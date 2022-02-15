@@ -2,7 +2,7 @@ apiVersion: apiregistration.k8s.io/v1
 kind: APIService
 metadata:
   annotations:
-    service.alpha.openshift.io/inject-cabundle: "true"
+    service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/component: metrics-adapter
     app.kubernetes.io/name: prometheus-adapter
