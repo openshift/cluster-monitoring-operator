@@ -191,6 +191,8 @@ function(params)
                           memory: '32Mi',
                         },
                       },
+                      // TODO(slashpai) node-exporter has issue in rolling out overriding till issue fixed
+                      securityContext: {},
                     },
                 super.containers,
               ),

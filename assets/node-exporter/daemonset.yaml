@@ -46,14 +46,7 @@ spec:
           requests:
             cpu: 8m
             memory: 32Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            add:
-            - SYS_TIME
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
+        securityContext: {}
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /host/sys
