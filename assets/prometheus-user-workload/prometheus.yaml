@@ -115,11 +115,6 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
-  - name: config-reloader
-    resources:
-      requests:
-        cpu: 1m
-        memory: 10Mi
   enableFeatures: []
   enforcedNamespaceLabel: namespace
   externalLabels: {}
