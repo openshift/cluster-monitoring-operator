@@ -47,7 +47,7 @@ function(params)
           'serviceaccounts.openshift.io/oauth-redirectreference.alertmanager-main': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"alertmanager-main"}}',
         },
       },
-      // automountServiceAccountToken is set to true on Pod level as kube-rbac-proxy sidecar
+      // automountServiceAccountToken is set to true as kube-rbac-proxy sidecar
       // requires connection to kubernetes API
       automountServiceAccountToken: true,
     },
