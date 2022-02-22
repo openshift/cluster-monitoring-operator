@@ -73,6 +73,8 @@ function(params)
                         '--thanos-ruler-instance-namespaces=' + cfg.namespace,
                         '--config-reloader-cpu-limit=0',
                         '--config-reloader-memory-limit=0',
+                        '--config-reloader-cpu-request=1m',
+                        '--config-reloader-memory-request=10Mi',
                       ],
                       securityContext: {},
                       resources: {
