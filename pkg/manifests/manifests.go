@@ -188,6 +188,7 @@ var (
 	GrafanaDashboardSources      = "grafana/dashboard-sources.yaml"
 	GrafanaDeployment            = "grafana/deployment.yaml"
 	GrafanaRBACProxyMetricSecret = "grafana/kube-rbac-proxy-metric-secret.yaml"
+	GrafanaPrometheusRule        = "grafana/prometheus-rule.yaml"
 	GrafanaProxySecret           = "grafana/proxy-secret.yaml"
 	GrafanaRoute                 = "grafana/route.yaml"
 	GrafanaServiceAccount        = "grafana/service-account.yaml"
@@ -2624,6 +2625,17 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 
 func (f *Factory) GrafanaRBACProxyMetricSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaRBACProxyMetricSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) GrafanaPrometheusRule() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaPrometheusRule))
 	if err != nil {
 		return nil, err
 	}

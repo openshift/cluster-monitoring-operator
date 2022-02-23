@@ -41,6 +41,7 @@ spec:
             namespaces:
             - openshift-monitoring
             topologyKey: kubernetes.io/hostname
+      automountServiceAccountToken: true
       containers:
       - args:
         - --prometheus-auth-config=/etc/prometheus-config/prometheus-config.yaml
@@ -58,6 +59,12 @@ spec:
           requests:
             cpu: 1m
             memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp

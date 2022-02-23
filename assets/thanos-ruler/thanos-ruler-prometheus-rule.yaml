@@ -125,9 +125,8 @@ spec:
         severity: warning
     - alert: ThanosRuleNoEvaluationFor10Intervals
       annotations:
-        description: Thanos Rule {{$labels.job}} in {{$labels.namespace}} has {{$value
-          | humanize}}% rule groups that did not evaluate for at least 10x of their
-          expected interval.
+        description: Thanos Rule {{$labels.job}} in {{$labels.namespace}} has rule
+          groups that did not evaluate for at least 10x of their expected interval.
         summary: Thanos Rule has rule groups that did not evaluate for 10 intervals.
       expr: |
         time() -  max by (namespace, job, instance, group) (prometheus_rule_group_last_evaluation_timestamp_seconds{job="thanos-ruler"})

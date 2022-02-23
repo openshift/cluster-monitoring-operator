@@ -206,6 +206,9 @@ function(params)
             },
           },
           spec+: {
+            // automountServiceAccountToken is set to true on Pod level as kube-rbac-proxy sidecar
+            // requires connection to kubernetes API
+            automountServiceAccountToken: true,
             containers: [
               super.containers[0] {
                 args+: [

@@ -161,8 +161,17 @@ spec:
                     of Prometheus configuration. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs'
                   properties:
                     action:
+                      default: replace
                       description: Action to perform based on regex matching. Default
                         is 'replace'
+                      enum:
+                      - replace
+                      - keep
+                      - drop
+                      - hashmod
+                      - labelmap
+                      - labeldrop
+                      - labelkeep
                       type: string
                     modulus:
                       description: Modulus to take of the hash of the source label
@@ -188,6 +197,9 @@ spec:
                         and matched against the configured regular expression for
                         the replace, keep, and drop actions.
                       items:
+                        description: LabelName is a valid Prometheus label name which
+                          may only contain ASCII letters, numbers, as well as underscores.
+                        pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
                         type: string
                       type: array
                     targetLabel:
@@ -347,8 +359,17 @@ spec:
                             configuration. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs'
                           properties:
                             action:
+                              default: replace
                               description: Action to perform based on regex matching.
                                 Default is 'replace'
+                              enum:
+                              - replace
+                              - keep
+                              - drop
+                              - hashmod
+                              - labelmap
+                              - labeldrop
+                              - labelkeep
                               type: string
                             modulus:
                               description: Modulus to take of the hash of the source
@@ -374,6 +395,10 @@ spec:
                                 separator and matched against the configured regular
                                 expression for the replace, keep, and drop actions.
                               items:
+                                description: LabelName is a valid Prometheus label
+                                  name which may only contain ASCII letters, numbers,
+                                  as well as underscores.
+                                pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
                                 type: string
                               type: array
                             targetLabel:
@@ -449,8 +474,17 @@ spec:
                             configuration. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs'
                           properties:
                             action:
+                              default: replace
                               description: Action to perform based on regex matching.
                                 Default is 'replace'
+                              enum:
+                              - replace
+                              - keep
+                              - drop
+                              - hashmod
+                              - labelmap
+                              - labeldrop
+                              - labelkeep
                               type: string
                             modulus:
                               description: Modulus to take of the hash of the source
@@ -476,6 +510,10 @@ spec:
                                 separator and matched against the configured regular
                                 expression for the replace, keep, and drop actions.
                               items:
+                                description: LabelName is a valid Prometheus label
+                                  name which may only contain ASCII letters, numbers,
+                                  as well as underscores.
+                                pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
                                 type: string
                               type: array
                             targetLabel:

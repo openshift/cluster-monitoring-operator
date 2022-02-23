@@ -191,6 +191,9 @@ function(params)
                           memory: '32Mi',
                         },
                       },
+                      // node-exporter has issue in rolling out with security context
+                      // changes in kube-prometheus hence overidding the changes
+                      securityContext: {},
                     },
                 super.containers,
               ),

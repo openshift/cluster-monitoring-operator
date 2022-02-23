@@ -28,6 +28,7 @@ local excludedRules = [
     name: 'general.rules',
     rules: [
       { alert: 'TargetDown' },
+      { alert: 'InfoInhibitor' },
     ],
   },
   {

@@ -67,6 +67,7 @@ spec:
             fieldRef:
               fieldPath: status.hostIP
         image: quay.io/thanos/thanos:v0.23.1
+        imagePullPolicy: IfNotPresent
         name: thanos-query
         ports:
         - containerPort: 9090

@@ -47,6 +47,9 @@ function(params)
           'serviceaccounts.openshift.io/oauth-redirectreference.alertmanager-main': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"alertmanager-main"}}',
         },
       },
+      // automountServiceAccountToken is set to true as kube-rbac-proxy sidecar
+      // requires connection to kubernetes API
+      automountServiceAccountToken: true,
     },
 
     // Adding the serving certs annotation causes the serving certs controller
