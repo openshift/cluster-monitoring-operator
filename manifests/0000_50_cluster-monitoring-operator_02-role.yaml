@@ -8,6 +8,12 @@ metadata:
   name: cluster-monitoring-operator
 rules:
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - roles
