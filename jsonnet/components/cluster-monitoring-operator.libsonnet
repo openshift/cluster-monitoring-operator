@@ -121,6 +121,16 @@ function(params) {
       },
     },
     rules: [
+      // The permissions mixed-in in main.jsonnet don't seem to include GET
+      // access on these, but the operator needs them when fetching
+      // OwnerReferences.
+      //
+      // See: https://bugzilla.redhat.com/show_bug.cgi?id=2057403
+      {
+        apiGroups: ['apps'],
+        resources: ['replicasets'],
+        verbs: ['get'],
+      },
       {
         apiGroups: ['rbac.authorization.k8s.io'],
         resources: ['roles', 'rolebindings', 'clusterroles', 'clusterrolebindings'],
