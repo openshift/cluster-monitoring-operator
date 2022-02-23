@@ -154,11 +154,6 @@ spec:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
   - name: prometheus
-  - name: config-reloader
-    resources:
-      requests:
-        cpu: 1m
-        memory: 10Mi
   enableFeatures: []
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091

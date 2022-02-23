@@ -36,6 +36,8 @@ spec:
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
         - --config-reloader-cpu-limit=0
         - --config-reloader-memory-limit=0
+        - --config-reloader-cpu-request=1m
+        - --config-reloader-memory-request=10Mi
         image: quay.io/prometheus-operator/prometheus-operator:v0.53.1
         name: prometheus-operator
         ports:

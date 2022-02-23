@@ -534,15 +534,6 @@ function(params)
           {
             name: 'prometheus',
           },
-          {
-            name: 'config-reloader',
-            resources: {
-              requests: {
-                cpu: '1m',
-                memory: '10Mi',
-              },
-            },
-          },
         ],
       },
     },

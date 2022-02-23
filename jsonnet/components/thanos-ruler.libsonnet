@@ -452,17 +452,6 @@ function(params)
               },
             ],
           },
-          {
-            // Note: this is performing strategic-merge-patch for config-reloader container.
-            // Remainder of the container configuration is managed by prometheus-operator based on $.thanosRuler.spec
-            name: 'config-reloader',
-            resources: {
-              requests: {
-                cpu: '1m',
-                memory: '10Mi',
-              },
-            },
-          },
         ],
       },
     },

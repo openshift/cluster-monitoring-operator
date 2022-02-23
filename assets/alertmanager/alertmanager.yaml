@@ -129,11 +129,6 @@ spec:
         cpu: 1m
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
-  - name: config-reloader
-    resources:
-      requests:
-        cpu: 1m
-        memory: 10Mi
   image: quay.io/prometheus/alertmanager:v0.23.0
   listenLocal: true
   nodeSelector:
