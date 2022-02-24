@@ -117,6 +117,7 @@ var (
 	PrometheusK8sService                              = "prometheus-k8s/service.yaml"
 	PrometheusK8sServiceThanosSidecar                 = "prometheus-k8s/service-thanos-sidecar.yaml"
 	PrometheusK8sProxySecret                          = "prometheus-k8s/proxy-secret.yaml"
+	PrometheusRBACMetricsProxySecret                  = "prometheus-k8s/kube-rbac-proxy-metric-secret.yaml"
 	PrometheusRBACProxySecret                         = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
 	PrometheusUserWorkloadRBACProxyMetricsSecret      = "prometheus-user-workload/kube-rbac-proxy-metrics-secret.yaml"
 	PrometheusUserWorkloadRBACProxyFederateSecret     = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
@@ -1243,6 +1244,17 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) PrometheusRBACMetricsProxySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusRBACMetricsProxySecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusRBACProxySecret))
 	if err != nil {
@@ -1595,8 +1607,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 			p.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
 			f.injectProxyVariables(&p.Spec.Containers[i])
-
 		case "kube-rbac-proxy":
+			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
+		case "kube-rbac-proxy-metrics":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "kube-rbac-proxy-thanos":

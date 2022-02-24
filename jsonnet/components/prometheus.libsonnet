@@ -213,7 +213,30 @@ function(params)
       data: {},
     },
 
-    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
+    kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy-metric'),
+
+    kubeRbacProxySecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'kube-rbac-proxy',
+        namespace: cfg.namespace,
+        labels: cfg.commonLabels,
+      },
+      type: 'Opaque',
+      data: {},
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            resourceAttributes: {
+              apiVersion: 'v1',
+              resource: 'namespaces',
+              verbs: 'get',
+            },
+          },
+        },),
+      },
+    },
 
     // this secret allows us to identify alerts that
     // are coming from platform monitoring
@@ -338,8 +361,9 @@ function(params)
           'prometheus-k8s-tls',
           'prometheus-k8s-proxy',
           'prometheus-k8s-thanos-sidecar-tls',
-          'kube-rbac-proxy',
+          'kube-rbac-proxy-metric',
           'metrics-client-certs',
+          'kube-rbac-proxy',
         ],
         externalURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
         configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle', 'metrics-client-ca'],
@@ -354,71 +378,7 @@ function(params)
         additionalAlertRelabelConfigs: cfg.additionalRelabelConfigs,
         containers: [
           {
-            name: 'prometheus-proxy',
-            image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
-            resources: {
-              requests: {
-                memory: '20Mi',
-                cpu: '1m',
-              },
-            },
-            ports: [
-              {
-                containerPort: 9091,
-                name: 'web',
-              },
-            ],
-            env: [
-              {
-                name: 'HTTP_PROXY',
-                value: '',
-              },
-              {
-                name: 'HTTPS_PROXY',
-                value: '',
-              },
-              {
-                name: 'NO_PROXY',
-                value: '',
-              },
-            ],
-            args: [
-              // NOTE: The following is injected at runtime if Grafana is enabled:
-              // '-htpasswd-file=/etc/proxy/htpasswd/auth'
-              '-provider=openshift',
-              '-https-address=:9091',
-              '-http-address=',
-              '-email-domain=*',
-              '-upstream=http://localhost:9090',
-              '-openshift-service-account=prometheus-k8s',
-              '-openshift-sar={"resource": "namespaces", "verb": "get"}',
-              '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
-              '-tls-cert=/etc/tls/private/tls.crt',
-              '-tls-key=/etc/tls/private/tls.key',
-              '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
-              '-cookie-secret-file=/etc/proxy/secrets/session_secret',
-              '-openshift-ca=/etc/pki/tls/cert.pem',
-              '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-            ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
-            volumeMounts: [
-              // NOTE: The following is injected at runtime if Grafana is enabled:
-              // {
-              //   mountPath: '/etc/proxy/htpasswd',
-              //   name: 'secret-prometheus-k8s-htpasswd',
-              // },
-              {
-                mountPath: '/etc/tls/private',
-                name: 'secret-prometheus-k8s-tls',
-              },
-              {
-                mountPath: '/etc/proxy/secrets',
-                name: 'secret-prometheus-k8s-proxy',
-              },
-            ],
-          },
-          {
-            name: 'kube-rbac-proxy',
+            name: 'kube-rbac-proxy-metrics',
             image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
@@ -457,7 +417,7 @@ function(params)
               },
               {
                 mountPath: '/etc/kube-rbac-proxy',
-                name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+                name: 'secret-' + $.kubeRbacProxyMetricSecret.metadata.name,
               },
             ],
           },
@@ -500,6 +460,48 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-prometheus-k8s-thanos-sidecar-tls',
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxyMetricSecret.metadata.name,
+              },
+            ],
+          },
+          {
+            name: 'kube-rbac-proxy',
+            image: cfg.kubeRbacProxyImage,
+            resources: {
+              requests: {
+                memory: '10Mi',
+                cpu: '1m',
+              },
+            },
+            ports: [
+              {
+                containerPort: 9091,
+                name: 'web',
+              },
+            ],
+            args: [
+              '--secure-listen-address=0.0.0.0:9091',
+              '--upstream=http://127.0.0.1:9090',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+              '--logtostderr=true',
+            ],
+            terminationMessagePolicy: 'FallbackToLogsOnError',
+            volumeMounts: [
+              {
+                mountPath: '/etc/tls/private',
+                name: 'secret-prometheus-k8s-tls',
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'configmap-metrics-client-ca',
+                readOnly: true,
               },
               {
                 mountPath: '/etc/kube-rbac-proxy',
