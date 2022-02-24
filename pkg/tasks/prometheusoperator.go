@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -117,6 +118,16 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdateValidatingWebhookConfiguration(ctx, w)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Rule Validating Webhook failed")
+	}
+
+	aw, err := t.factory.AlertManagerConfigValidatingWebhook()
+	if err != nil {
+		return errors.Wrap(err, "initializing AlertManagerConfig Validating Webhook failed")
+	}
+
+	err = t.client.CreateOrUpdateValidatingWebhookConfiguration(ctx, aw)
+	if err != nil {
+		return errors.Wrap(err, "reconciling AlertManagerConfig Validating Webhook failed")
 	}
 
 	pr, err := t.factory.PrometheusOperatorPrometheusRule()
