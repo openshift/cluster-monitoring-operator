@@ -40,6 +40,7 @@ rules:
   - admissionregistration.k8s.io
   resourceNames:
   - prometheusrules.openshift.io
+  - alertmanagerconfigs.openshift.io
   resources:
   - validatingwebhookconfigurations
   verbs:
