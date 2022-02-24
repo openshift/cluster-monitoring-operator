@@ -102,12 +102,23 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "creating Prometheus proxy Secret failed")
 	}
 
-	rs, err := t.factory.PrometheusRBACProxySecret()
+	rs, err := t.factory.PrometheusRBACMetricsProxySecret()
+
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus RBAC metrics proxy Secret failed")
+	}
+
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "creating or updating Prometheus RBAC metrics proxy Secret failed")
+	}
+
+	ras, err := t.factory.PrometheusRBACProxySecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus RBAC proxy Secret failed")
 	}
 
-	err = t.client.CreateOrUpdateSecret(ctx, rs)
+	err = t.client.CreateOrUpdateSecret(ctx, ras)
 	if err != nil {
 		return errors.Wrap(err, "creating or updating Prometheus RBAC proxy Secret failed")
 	}
