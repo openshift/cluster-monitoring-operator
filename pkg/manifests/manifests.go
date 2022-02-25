@@ -23,6 +23,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
@@ -448,7 +449,7 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 	a.Spec.Image = &f.config.Images.Alertmanager
 
 	if f.consoleConfig != nil {
-		a.Spec.ExternalURL = f.consoleConfig.Status.ConsoleURL + "/monitoring"
+		a.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
 	}
 
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel != "" {
@@ -1427,7 +1428,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	p.Spec.Image = &f.config.Images.Prometheus
 
 	if f.consoleConfig != nil {
-		p.Spec.ExternalURL = f.consoleConfig.Status.ConsoleURL + "/monitoring"
+		p.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources != nil {
