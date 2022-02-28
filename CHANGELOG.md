@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+# 4.11
+
+- [#1567](https://github.com/openshift/cluster-monitoring-operator/pull/1567) Enable validating webhook for AlertmanagerConfig customer resources
+
 ## 4.10
 
 - [#1509](https://github.com/openshift/cluster-monitoring-operator/pull/1509) add NLB usage metrics for network edge
