@@ -243,6 +243,13 @@ rules:
   - list
   - watch
 - apiGroups:
+    - autoscaling.k8s.io
+  resources:
+    - verticalpodautoscalers
+  verbs:
+    - list
+    - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
