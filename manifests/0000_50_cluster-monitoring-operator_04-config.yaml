@@ -355,6 +355,10 @@ data:
     # 99th percentile of the backend commit duration.
     - '{__name__="instance:etcd_disk_backend_commit_duration_seconds:histogram_quantile",quantile="0.99"}'
     #
+    # owners: (@openshift/openshift-performance-and-latency-sensitive-application-platform)
+    #
+    # Number of nodes using a custom TuneD profile not shipped by the Node Tuning Operator.
+    - '{__name__="nto_custom_profiles:count"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
