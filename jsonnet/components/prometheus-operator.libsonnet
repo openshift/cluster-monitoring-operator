@@ -171,46 +171,4 @@ function(params)
     },
 
     operatorCertsCaBundle: generateCertInjection.SCOCaBundleCM(cfg.namespace, certsCAVolumeName),
-
-    prometheusRuleValidatingWebhook: {
-      apiVersion: 'admissionregistration.k8s.io/v1',
-      kind: 'ValidatingWebhookConfiguration',
-      metadata: {
-        name: 'prometheusrules.openshift.io',
-        labels: {
-          'app.kubernetes.io/component': 'controller',
-          'app.kubernetes.io/name': 'prometheus-operator',
-          //'app.kubernetes.io/version': $._config.versions.prometheusOperator, //FIXME(paulfantom)
-        },
-        annotations: {
-          'service.beta.openshift.io/inject-cabundle': true,
-        },
-      },
-      webhooks: [
-        {
-          name: 'prometheusrules.openshift.io',
-          rules: [
-            {
-              apiGroups: ['monitoring.coreos.com'],
-              apiVersions: ['v1'],
-              operations: ['CREATE', 'UPDATE'],
-              resources: ['prometheusrules'],
-              scope: 'Namespaced',
-            },
-          ],
-          clientConfig: {
-            service: {
-              namespace: 'openshift-monitoring',
-              name: 'prometheus-operator',
-              port: 8080,
-              path: '/admission-prometheusrules/validate',
-            },
-          },
-          admissionReviewVersions: ['v1'],
-          sideEffects: 'None',
-          timeoutSeconds: 5,
-          failurePolicy: 'Ignore',
-        },
-      ],
-    },
   }
