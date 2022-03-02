@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: prometheus-operator-admission-webhook
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.54.1
+  name: prometheus-operator-admission-webhook
+  namespace: openshift-monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-operator-admission-webhook
+      app.kubernetes.io/part-of: openshift-monitoring
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: prometheus-operator-admission-webhook
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        app.kubernetes.io/managed-by: cluster-monitoring-operator
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+        app.kubernetes.io/part-of: openshift-monitoring
+        app.kubernetes.io/version: 0.54.1
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args: []
+        image: quay.io/prometheus-operator/prometheus-admission-webhook:v0.54.1
+        name: prometheus-operator-admission-webhook
+        ports:
+        - containerPort: 8443
+          name: https
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: prometheus-admission-webhook-tls
+          readOnly: false
+      image: docker.io/philipgough/prometheus-admission-webhook:b0db7b7ec
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      priorityClassName: system-cluster-critical
+      securityContext: {}
+      serviceAccountName: prometheus-operator-admission-webhook
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      volumes:
+      - name: prometheus-admission-webhook-tls
+        secret:
+          secretName: prometheus-admission-webhook-tls
