@@ -93,6 +93,7 @@ func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConf
 }
 
 type ClusterMonitoringConfiguration struct {
+	AdmissionWebhookConfig   *AdmissionWebhookConfig      `json:"admissionWebhookConfig"`
 	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
 	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`
 	AlertmanagerMainConfig   *AlertmanagerMainConfig      `json:"alertmanagerMain"`
@@ -108,6 +109,7 @@ type ClusterMonitoringConfiguration struct {
 }
 
 type Images struct {
+	AdmissionWebhook         string
 	K8sPrometheusAdapter     string
 	PromLabelProxy           string
 	PrometheusOperator       string
@@ -326,6 +328,12 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	return true
 }
 
+type AdmissionWebhookConfig struct {
+	LogLevel     string            `json:"logLevel"`
+	NodeSelector map[string]string `json:"nodeSelector"`
+	Tolerations  []v1.Toleration   `json:"tolerations"`
+}
+
 func NewConfig(content io.Reader) (*Config, error) {
 	c := Config{}
 	cmc := ClusterMonitoringConfiguration{}
@@ -403,6 +411,7 @@ func (c *Config) applyDefaults() {
 func (c *Config) SetImages(images map[string]string) {
 	c.Images.PrometheusOperator = images["prometheus-operator"]
 	c.Images.PrometheusConfigReloader = images["prometheus-config-reloader"]
+	c.Images.AdmissionWebhook = images["prometheus-admission-webhook"]
 	c.Images.Prometheus = images["prometheus"]
 	c.Images.Alertmanager = images["alertmanager"]
 	c.Images.Grafana = images["grafana"]

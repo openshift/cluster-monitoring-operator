@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -107,16 +108,6 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	err = t.client.AssurePrometheusOperatorCRsExist(ctx)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Prometheus Operator CRs to become available failed")
-	}
-
-	w, err := t.factory.PrometheusRuleValidatingWebhook()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Rule Validating Webhook failed")
-	}
-
-	err = t.client.CreateOrUpdateValidatingWebhookConfiguration(ctx, w)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Rule Validating Webhook failed")
 	}
 
 	pr, err := t.factory.PrometheusOperatorPrometheusRule()

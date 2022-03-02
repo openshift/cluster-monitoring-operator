@@ -58,6 +58,12 @@ const (
 )
 
 var (
+	AdmissionWebhookServiceAccount = "admission-webhook/service-account.yaml"
+	AdmissionWebhookDeployment     = "admission-webhook/deployment.yaml"
+	AdmissionWebhookService        = "admission-webhook/service.yaml"
+	AdmissionWebhookServiceMonitor = "admission-webhook/service-monitor.yaml"
+	AdmissionWebhookPrometheusRule = "admission-webhook/prometheus-rule-validating-webhook.yaml"
+
 	AlertmanagerConfig                = "alertmanager/secret.yaml"
 	AlertmanagerService               = "alertmanager/service.yaml"
 	AlertmanagerProxySecret           = "alertmanager/proxy-secret.yaml"
@@ -162,16 +168,15 @@ var (
 	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
 	PrometheusAdapterServiceAccount                     = "prometheus-adapter/service-account.yaml"
 
-	PrometheusOperatorClusterRoleBinding    = "prometheus-operator/cluster-role-binding.yaml"
-	PrometheusOperatorClusterRole           = "prometheus-operator/cluster-role.yaml"
-	PrometheusOperatorServiceAccount        = "prometheus-operator/service-account.yaml"
-	PrometheusOperatorDeployment            = "prometheus-operator/deployment.yaml"
-	PrometheusOperatorService               = "prometheus-operator/service.yaml"
-	PrometheusOperatorServiceMonitor        = "prometheus-operator/service-monitor.yaml"
-	PrometheusOperatorCertsCABundle         = "prometheus-operator/operator-certs-ca-bundle.yaml"
-	PrometheusOperatorRuleValidatingWebhook = "prometheus-operator/prometheus-rule-validating-webhook.yaml"
-	PrometheusOperatorPrometheusRule        = "prometheus-operator/prometheus-rule.yaml"
-	PrometheusOperatorKubeRbacProxySecret   = "prometheus-operator/kube-rbac-proxy-secret.yaml"
+	PrometheusOperatorClusterRoleBinding  = "prometheus-operator/cluster-role-binding.yaml"
+	PrometheusOperatorClusterRole         = "prometheus-operator/cluster-role.yaml"
+	PrometheusOperatorServiceAccount      = "prometheus-operator/service-account.yaml"
+	PrometheusOperatorDeployment          = "prometheus-operator/deployment.yaml"
+	PrometheusOperatorService             = "prometheus-operator/service.yaml"
+	PrometheusOperatorServiceMonitor      = "prometheus-operator/service-monitor.yaml"
+	PrometheusOperatorCertsCABundle       = "prometheus-operator/operator-certs-ca-bundle.yaml"
+	PrometheusOperatorPrometheusRule      = "prometheus-operator/prometheus-rule.yaml"
+	PrometheusOperatorKubeRbacProxySecret = "prometheus-operator/kube-rbac-proxy-secret.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount      = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole         = "prometheus-operator-user-workload/cluster-role.yaml"
@@ -324,6 +329,72 @@ func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructu
 		APIServerConfig:       apiServerConfig,
 		consoleConfig:         consoleConfig,
 	}
+}
+
+func (f *Factory) AdmissionDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(AdmissionWebhookDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	for i, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "prometheus-operator-admission-webhook":
+			var args []string
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.AdmissionWebhook
+			if f.config.ClusterMonitoringConfiguration.AdmissionWebhookConfig.LogLevel != "" {
+				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.AdmissionWebhookConfig.LogLevel))
+			}
+
+			args = f.setTLSSecurityConfiguration(args, PrometheusOperatorWebTLSCipherSuitesFlag, PrometheusOperatorWebTLSMinTLSVersionFlag)
+			d.Spec.Template.Spec.Containers[i].Args = args
+		}
+	}
+	d.Namespace = f.namespace
+
+	return d, nil
+}
+
+// AdmissionService generates a new Service for admission webhook server.
+func (f *Factory) AdmissionService() (*v1.Service, error) {
+	s, err := f.NewService(f.assets.MustNewAssetReader(AdmissionWebhookService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+// AdmissionServiceAccount generates a new ServiceAccount for admission webhook server.
+func (f *Factory) AdmissionServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(AdmissionWebhookServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) AdmissionPrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
+	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(AdmissionWebhookPrometheusRule))
+	if err != nil {
+		return nil, err
+	}
+	return wc, nil
+}
+
+func (f *Factory) AdmissionServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(AdmissionWebhookServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespace
+	return sm, nil
 }
 
 func (f *Factory) AlertmanagerExternalURL(host string) *url.URL {
@@ -2338,14 +2409,6 @@ func setArg(args []string, argName string, argValue string) []string {
 	}
 
 	return args
-}
-
-func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
-	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(PrometheusOperatorRuleValidatingWebhook))
-	if err != nil {
-		return nil, err
-	}
-	return wc, nil
 }
 
 func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
