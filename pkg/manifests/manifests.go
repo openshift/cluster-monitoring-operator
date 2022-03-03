@@ -448,7 +448,7 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 
 	a.Spec.Image = &f.config.Images.Alertmanager
 
-	if f.consoleConfig != nil {
+	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
 		a.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
 	}
 
@@ -1427,7 +1427,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 
 	p.Spec.Image = &f.config.Images.Prometheus
 
-	if f.consoleConfig != nil {
+	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
 		p.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
 	}
 
