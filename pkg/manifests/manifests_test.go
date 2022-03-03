@@ -25,6 +25,8 @@ import (
 
 	"github.com/openshift/library-go/pkg/crypto"
 
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+
 	configv1 "github.com/openshift/api/config/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -882,7 +884,162 @@ func getArgValue(container v1.Container, flag string) (argValue, bool) {
 	return argValue{}, false
 }
 
-func TestPrometheusK8sRemoteWrite(t *testing.T) {
+func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
+	for _, tc := range []struct {
+		name                              string
+		config                            func() *Config
+		expectedRemoteWriteRelabelConfigs [][]monv1.RelabelConfig
+	}{
+		{
+			name: "simple remote write",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
+
+				return c
+			},
+
+			expectedRemoteWriteRelabelConfigs: [][]monv1.RelabelConfig{
+				{
+					{
+						TargetLabel: "__tmp_openshift_cluster_id__",
+						Replacement: "",
+					},
+				},
+			},
+		},
+		{
+			name: "simple remote write with relabel config",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{
+					{
+						URL: "http://custom",
+						WriteRelabelConfigs: []monv1.RelabelConfig{
+							{
+								SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+								TargetLabel:  "cluster",
+							},
+						},
+					},
+				}
+
+				return c
+			},
+
+			expectedRemoteWriteRelabelConfigs: [][]monv1.RelabelConfig{
+				{
+					{
+						TargetLabel: "__tmp_openshift_cluster_id__",
+						Replacement: "",
+					},
+					{
+						SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+						TargetLabel:  "cluster",
+					},
+				},
+			},
+		},
+		{
+			name: "multiple remote write with relabel config",
+
+			config: func() *Config {
+				c, err := NewConfigFromString("")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{
+					{
+						URL: "http://custom",
+						WriteRelabelConfigs: []monv1.RelabelConfig{
+							{
+								SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+								TargetLabel:  "cluster",
+							},
+						},
+					},
+					{
+						URL: "http://other_custom",
+						WriteRelabelConfigs: []monv1.RelabelConfig{
+							{
+								SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+								TargetLabel:  "some_other_label",
+							},
+							{
+								TargetLabel: "unrelated_to_cluster_id",
+								Replacement: "some_value",
+							},
+						},
+					},
+				}
+
+				return c
+			},
+
+			expectedRemoteWriteRelabelConfigs: [][]monv1.RelabelConfig{
+				{
+					{
+						TargetLabel: "__tmp_openshift_cluster_id__",
+						Replacement: "",
+					},
+					{
+						SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+						TargetLabel:  "cluster",
+					},
+				},
+				{
+					{
+						TargetLabel: "__tmp_openshift_cluster_id__",
+						Replacement: "",
+					},
+					{
+						SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+						TargetLabel:  "some_other_label",
+					},
+					{
+						TargetLabel: "unrelated_to_cluster_id",
+						Replacement: "some_value",
+					},
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := tc.config()
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got [][]monv1.RelabelConfig
+			for _, rw := range p.Spec.RemoteWrite {
+				got = append(got, rw.WriteRelabelConfigs)
+			}
+
+			if !reflect.DeepEqual(got, tc.expectedRemoteWriteRelabelConfigs) {
+				t.Errorf("want remote write relabel config %v, got %v", tc.expectedRemoteWriteRelabelConfigs, got)
+			}
+		})
+	}
+}
+
+func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 	for _, tc := range []struct {
 		name                    string
 		config                  func() *Config

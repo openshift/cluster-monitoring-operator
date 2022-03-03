@@ -1458,6 +1458,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	}
 
 	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
+	clusterID := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID
 	if telemetryEnabled && f.config.RemoteWrite {
 
 		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
@@ -1466,7 +1467,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		}
 
 		compositeToken, err := json.Marshal(map[string]string{
-			"cluster_id":          f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
+			"cluster_id":          clusterID,
 			"authorization_token": f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Token,
 		})
 
@@ -1497,7 +1498,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 				*selectorRelabelConfig,
 				{
 					TargetLabel: "_id",
-					Replacement: f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
+					Replacement: clusterID,
 				},
 				// relabeling the `ALERTS` series to `alerts` allows us to make
 				// a distinction between the series produced in-cluster and out
@@ -1519,7 +1520,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	}
 
 	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = addRemoteWriteConfigs(p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
+		p.Spec.RemoteWrite = addRemoteWriteConfigs(clusterID, p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
 	}
 
 	for _, rw := range p.Spec.RemoteWrite {
@@ -1736,7 +1737,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	}
 
 	if len(f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite) > 0 {
-		p.Spec.RemoteWrite = addRemoteWriteConfigs(p.Spec.RemoteWrite, f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite...)
+		p.Spec.RemoteWrite = addRemoteWriteConfigs(
+			f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
+			p.Spec.RemoteWrite,
+			f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite...)
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit != nil {
@@ -4158,7 +4162,14 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 	}, nil
 }
 
-func addRemoteWriteConfigs(rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteSpec) []monv1.RemoteWriteSpec {
+func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteSpec) []monv1.RemoteWriteSpec {
+	clusterIDRelabelConfig := []monv1.RelabelConfig{
+		{
+			TargetLabel: "__tmp_openshift_cluster_id__",
+			Replacement: clusterID,
+		},
+	}
+
 	for _, target := range rwTargets {
 		rwConf := monv1.RemoteWriteSpec{
 			URL:                 target.URL,
@@ -4166,7 +4177,7 @@ func addRemoteWriteConfigs(rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteS
 			RemoteTimeout:       target.RemoteTimeout,
 			Headers:             target.Headers,
 			QueueConfig:         target.QueueConfig,
-			WriteRelabelConfigs: target.WriteRelabelConfigs,
+			WriteRelabelConfigs: append(clusterIDRelabelConfig, target.WriteRelabelConfigs...),
 			BasicAuth:           target.BasicAuth,
 			BearerTokenFile:     target.BearerTokenFile,
 			ProxyURL:            target.ProxyURL,
