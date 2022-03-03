@@ -10,6 +10,7 @@
 - [#1617](https://github.com/openshift/cluster-monitoring-operator/pull/1617) Add Oauth2 setting to PrometheusK8s remoteWrite config
 - [#1598](https://github.com/openshift/cluster-monitoring-operator/pull/1598) Expose Authorization settings for remote write in the CMO configuration
 - [#1638](https://github.com/openshift/cluster-monitoring-operator/pull/1638) Expose sigv4 setting to Prometheus remoteWrite
+- [#1579](https://github.com/openshift/cluster-monitoring-operator/pull/1579) Expose retention size settings for Platform Prometheus
 
 ## 4.10
 

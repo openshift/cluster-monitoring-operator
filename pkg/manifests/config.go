@@ -175,6 +175,7 @@ type RemoteWriteSpec struct {
 type PrometheusK8sConfig struct {
 	LogLevel            string                               `json:"logLevel"`
 	Retention           string                               `json:"retention"`
+	RetentionSize       string                               `json:"retentionSize"`
 	NodeSelector        map[string]string                    `json:"nodeSelector"`
 	Tolerations         []v1.Toleration                      `json:"tolerations"`
 	Resources           *v1.ResourceRequirements             `json:"resources"`
@@ -343,7 +344,7 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" {
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" && c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = DefaultRetentionValue
 	}
 	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {

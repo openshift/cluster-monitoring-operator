@@ -1676,6 +1676,74 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 	}
 }
 
+func TestPrometheusRetentionConfigs(t *testing.T) {
+	for _, tc := range []struct {
+		name                  string
+		retention             string
+		retentionSize         string
+		expectedRetention     string
+		expectedRetentionSize string
+	}{
+		{
+			name:                  "both retention and retentionSize defined",
+			retention:             "30d",
+			retentionSize:         "15GiB",
+			expectedRetention:     "30d",
+			expectedRetentionSize: "15GiB",
+		},
+		{
+			name:                  "only retention defined",
+			retention:             "45d",
+			expectedRetention:     "45d",
+			expectedRetentionSize: "",
+		},
+		{
+			name:                  "only retentionSize defined",
+			retentionSize:         "25GB",
+			expectedRetention:     "",
+			expectedRetentionSize: "25GB",
+		},
+		{
+			name:                  "both retention and retentionSize empty",
+			expectedRetention:     "15d",
+			expectedRetentionSize: "",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := NewDefaultConfig()
+			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = tc.retention
+			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize = tc.retentionSize
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
+
+			if err != nil {
+				t.Fatalf("Unexpected error occured %v", err)
+				return
+			}
+
+			if tc.retention == "" && tc.retentionSize == "" {
+				if p.Spec.Retention != "15d" && p.Spec.RetentionSize != "" {
+					t.Fatal("Default Retention is not configured correctly")
+				}
+				return
+			}
+
+			if p.Spec.Retention != tc.expectedRetention {
+				t.Fatal("Retention is not configured correctly")
+			}
+
+			if p.Spec.RetentionSize != tc.expectedRetentionSize {
+				t.Fatal("RetentionSize is not configured correctly")
+			}
+		})
+	}
+}
+
 func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	testCases := []struct {
 		name           string
