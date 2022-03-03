@@ -168,6 +168,29 @@ function(params)
       },
     },
 
+    kubeRbacProxyWebSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'thanos-querier-kube-rbac-proxy-web',
+        namespace: cfg.namespace,
+        labels: { 'app.kubernetes.io/name': 'thanos-query' },
+      },
+      type: 'Opaque',
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            resourceAttributes:
+              {
+                apiGroup: '',  // empty string implies the core API group
+                resource: 'namespaces',
+                verbs: ['get'],
+              },
+          },
+        }),
+      },
+    },
+
     kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'thanos-querier-kube-rbac-proxy-metrics') + {
       metadata+: {
         labels: { 'app.kubernetes.io/name': 'thanos-query' },
@@ -357,6 +380,12 @@ function(params)
                 },
               },
               {
+                name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
+                secret: {
+                  secretName: $.kubeRbacProxyWebSecret.metadata.name,
+                },
+              },
+              {
                 name: 'metrics-client-ca',
                 configMap: {
                   name: 'metrics-client-ca',
@@ -411,22 +440,33 @@ function(params)
                 ],
               },
               {
-                name: 'oauth-proxy',
-                image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
+                name: 'kube-rbac-proxy-web',
+                image: cfg.kubeRbacProxyImage,
                 resources: {
                   requests: {
                     memory: '20Mi',
                     cpu: '1m',
                   },
                 },
-                ports: [{
-                  containerPort: 9091,
-                  name: 'web',
-                }],
-                env: [
-                  { name: 'HTTP_PROXY', value: '' },
-                  { name: 'HTTPS_PROXY', value: '' },
-                  { name: 'NO_PROXY', value: '' },
+                ports: [
+                  {
+                    containerPort: 9091,
+                    name: 'web',
+                  },
+                ],
+                args: [
+                  '--secure-listen-address=0.0.0.0:9091',
+                  '--upstream=http://127.0.0.1:9090',
+                  '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                  '--tls-cert-file=/etc/tls/private/tls.crt',
+                  '--tls-private-key-file=/etc/tls/private/tls.key',
+                  '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                  '--logtostderr=true',
+                  '--ignore-paths=' + std.join(',', [
+                    '/-/healthy',
+                    '/-/ready',
+                  ]),
+                  '--v=10',
                 ],
                 livenessProbe: {
                   httpGet: {
@@ -448,39 +488,15 @@ function(params)
                   periodSeconds: 5,
                   failureThreshold: 20,
                 },
-                args: [
-                  // NOTE: The following is injected at runtime if Grafana is enabled:
-                  // '-htpasswd-file=/etc/proxy/htpasswd/auth'
-                  '-provider=openshift',
-                  '-https-address=:9091',
-                  '-http-address=',
-                  '-email-domain=*',
-                  '-upstream=http://localhost:9090',
-                  '-openshift-service-account=thanos-querier',
-                  '-openshift-sar={"resource": "namespaces", "verb": "get"}',
-                  '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
-                  '-tls-cert=/etc/tls/private/tls.crt',
-                  '-tls-key=/etc/tls/private/tls.key',
-                  '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
-                  '-cookie-secret-file=/etc/proxy/secrets/session_secret',
-                  '-openshift-ca=/etc/pki/tls/cert.pem',
-                  '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-                  '-bypass-auth-for=^/-/(healthy|ready)$',
-                ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
-                  // NOTE: The following is injected at runtime if Grafana is enabled:
-                  // {
-                  //   mountPath: '/etc/proxy/htpasswd',
-                  //   name: 'secret-thanos-querier-oauth-htpasswd',
-                  // },
                   {
                     mountPath: '/etc/tls/private',
                     name: 'secret-thanos-querier-tls',
                   },
                   {
-                    mountPath: '/etc/proxy/secrets',
-                    name: 'secret-thanos-querier-oauth-cookie',
+                    mountPath: '/etc/kube-rbac-proxy',
+                    name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
                   },
                 ],
                 securityContext: {

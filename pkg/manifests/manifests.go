@@ -261,6 +261,7 @@ var (
 	ThanosQuerierRBACProxySecret        = "thanos-querier/kube-rbac-proxy-secret.yaml"
 	ThanosQuerierRBACProxyRulesSecret   = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
 	ThanosQuerierRBACProxyMetricsSecret = "thanos-querier/kube-rbac-proxy-metric-secret.yaml"
+	ThanosQuerierRBACProxyWebSecret     = "thanos-querier/kube-rbac-proxy-web-secret.yaml"
 	ThanosQuerierServiceAccount         = "thanos-querier/service-account.yaml"
 	ThanosQuerierClusterRole            = "thanos-querier/cluster-role.yaml"
 	ThanosQuerierClusterRoleBinding     = "thanos-querier/cluster-role-binding.yaml"
@@ -1473,6 +1474,17 @@ func (f *Factory) ThanosQuerierRBACProxyRulesSecret() (*v1.Secret, error) {
 
 func (f *Factory) ThanosQuerierRBACProxyMetricsSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyMetricsSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ThanosQuerierRBACProxyWebSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyWebSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -3592,26 +3604,6 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 
 	for i, c := range d.Spec.Template.Spec.Containers {
 		switch c.Name {
-		case "oauth-proxy":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OauthProxy
-
-			f.injectProxyVariables(&d.Spec.Template.Spec.Containers[i])
-
-			if trustedCA != nil {
-				volumeName := "thanos-querier-trusted-ca-bundle"
-				d.Spec.Template.Spec.Containers[i].VolumeMounts = append(
-					d.Spec.Template.Spec.Containers[i].VolumeMounts,
-					trustedCABundleVolumeMount(volumeName),
-				)
-
-				volume := trustedCABundleVolume(trustedCA.Name, volumeName)
-				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-					Key:  TrustedCABundleKey,
-					Path: "tls-ca-bundle.pem",
-				})
-				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
-			}
-
 		case "thanos-query":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.Thanos
 
@@ -3646,7 +3638,7 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		case "prom-label-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 
-		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics":
+		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics", "kube-rbac-proxy-web":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
