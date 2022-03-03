@@ -621,13 +621,13 @@ data:
     #
     # owners: (@openshift/team-openshift-oadp)
     #
-    # velero_backup_total measures the current number of existent backups
-    - '{__name__="velero_backup_total"}'
+    # cluster:velero_backup_total:max measures the current number of existent backups
+    - '{__name__="cluster:velero_backup_total:max"}'
     #
     # owners: (@openshift/team-openshift-oadp)
     #
-    # velero_restore_total measures the current number of existent restores
-    - '{__name__="velero_restore_total"}'
+    # cluster:velero_restore_total:max measures the current number of existent restores
+    - '{__name__="cluster:velero_restore_total:max"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
