@@ -91,26 +91,10 @@ spec:
         - --ignore-paths=/-/healthy,/-/ready
         - --v=10
         image: quay.io/brancz/kube-rbac-proxy:v0.11.0
-        livenessProbe:
-          failureThreshold: 4
-          httpGet:
-            path: /-/healthy
-            port: 9091
-            scheme: HTTPS
-          initialDelaySeconds: 5
-          periodSeconds: 30
         name: kube-rbac-proxy-web
         ports:
         - containerPort: 9091
           name: web
-        readinessProbe:
-          failureThreshold: 20
-          httpGet:
-            path: /-/ready
-            port: 9091
-            scheme: HTTPS
-          initialDelaySeconds: 5
-          periodSeconds: 5
         resources:
           requests:
             cpu: 1m
