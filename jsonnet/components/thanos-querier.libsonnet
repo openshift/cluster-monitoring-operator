@@ -186,6 +186,26 @@ function(params)
                 resource: 'namespaces',
                 verbs: ['get'],
               },
+            static: [
+              {
+                // allow thanos ruler to post rules into thanos querier
+                user: {
+                  name: 'system:serviceaccount:openshift-user-workload-monitoring:thanos-ruler',
+                },
+                verb: 'create',
+                resourceRequest: false,
+                path: '/api/v1/rules',
+              },
+              {
+                // allow thanos ruler to post rules into thanos querier
+                user: {
+                  name: 'system:serviceaccount:openshift-user-workload-monitoring:thanos-ruler',
+                },
+                verb: 'get',
+                resourceRequest: false,
+                path: '/api/v1/rules',
+              },
+            ],
           },
         }),
       },
