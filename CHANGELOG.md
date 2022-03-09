@@ -15,6 +15,7 @@
 - [#1404](https://github.com/openshift/cluster-monitoring-operator/pull/1404) Drop pod-centric cAdvisor metrics that are available at slice level.
 - [#1299](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose expose /api/v1/labels endpoint for Thanos query.
 - [#1529](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose /api/v1/series endpoint on the Thanos query tenancy port.
+- [#1584](https://github.com/openshift/cluster-monitoring-operator/pull/1584) Removing one of the AlertManagerClusterFailedToSendAlert alert
 
 ## 4.8
 
