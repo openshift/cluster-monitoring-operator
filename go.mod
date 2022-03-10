@@ -7,7 +7,7 @@ require (
 	github.com/Jeffail/gabs/v2 v2.6.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/imdario/mergo v0.3.12
-	github.com/openshift/api v0.0.0-20211217221424-8779abfbd571
+	github.com/openshift/api v0.0.0-20220409151926-43bbec6227d5
 	github.com/openshift/client-go v0.0.0-20211209144617-7385dd6338e3
 	github.com/openshift/library-go v0.0.0-20211220195323-eca2c467c492
 	github.com/pkg/errors v0.9.1
@@ -29,6 +29,8 @@ require (
 	k8s.io/kubectl v0.23.1
 	k8s.io/metrics v0.23.1
 )
+
+require k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -133,7 +135,6 @@ require (
 	k8s.io/cli-runtime v0.23.1 // indirect
 	k8s.io/component-base v0.23.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
-	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704 // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
 	sigs.k8s.io/kustomize/api v0.10.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.0 // indirect
@@ -142,3 +143,7 @@ require (
 )
 
 replace k8s.io/client-go => k8s.io/client-go v0.23.1
+
+replace github.com/openshift/api => github.com/bison/openshift-api v0.0.0-20220413105410-c56cad9d6d90
+
+replace github.com/openshift/client-go => github.com/bison/openshift-client-go v0.0.0-20220413112803-7776da255c26

@@ -279,17 +279,21 @@ github.com/oklog/ulid
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
-# github.com/openshift/api v0.0.0-20211217221424-8779abfbd571
+# github.com/openshift/api v0.0.0-20220409151926-43bbec6227d5 => github.com/bison/openshift-api v0.0.0-20220413105410-c56cad9d6d90
 ## explicit; go 1.16
 github.com/openshift/api/config/v1
+github.com/openshift/api/monitoring/v1alpha1
 github.com/openshift/api/operator/v1
 github.com/openshift/api/route/v1
 github.com/openshift/api/security/v1
-# github.com/openshift/client-go v0.0.0-20211209144617-7385dd6338e3
+# github.com/openshift/client-go v0.0.0-20211209144617-7385dd6338e3 => github.com/bison/openshift-client-go v0.0.0-20220413112803-7776da255c26
 ## explicit; go 1.16
 github.com/openshift/client-go/config/clientset/versioned
 github.com/openshift/client-go/config/clientset/versioned/scheme
 github.com/openshift/client-go/config/clientset/versioned/typed/config/v1
+github.com/openshift/client-go/monitoring/clientset/versioned
+github.com/openshift/client-go/monitoring/clientset/versioned/scheme
+github.com/openshift/client-go/monitoring/clientset/versioned/typed/monitoring/v1alpha1
 github.com/openshift/client-go/route/clientset/versioned
 github.com/openshift/client-go/route/clientset/versioned/scheme
 github.com/openshift/client-go/route/clientset/versioned/typed/route/v1
@@ -1199,3 +1203,5 @@ sigs.k8s.io/structured-merge-diff/v4/value
 ## explicit; go 1.12
 sigs.k8s.io/yaml
 # k8s.io/client-go => k8s.io/client-go v0.23.1
+# github.com/openshift/api => github.com/bison/openshift-api v0.0.0-20220413105410-c56cad9d6d90
+# github.com/openshift/client-go => github.com/bison/openshift-client-go v0.0.0-20220413112803-7776da255c26

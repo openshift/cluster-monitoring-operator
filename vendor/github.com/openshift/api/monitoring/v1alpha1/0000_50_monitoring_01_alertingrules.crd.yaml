@@ -1,0 +1,115 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: alertingrules.monitoring.openshift.io
+spec:
+  group: monitoring.openshift.io
+  names:
+    kind: AlertingRule
+    listKind: AlertingRuleList
+    plural: alertingrules
+    singular: alertingrule
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: "AlertingRule represents a set of user-defined Prometheus rule groups containing alerting rules -- recording rules are not allowed. \n Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support."
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: spec describes the desired state of this AlertingRule object.
+              type: object
+              required:
+                - groups
+              properties:
+                groups:
+                  description: groups is a list of grouped alerting rules.
+                  type: array
+                  minItems: 1
+                  items:
+                    description: RuleGroup is a list of sequentially evaluated alerting rules.
+                    type: object
+                    required:
+                      - name
+                      - rules
+                    properties:
+                      interval:
+                        description: 'interval is how often rules in the group are evaluated.  If not specified, it defaults to the global.evaluation_interval configured in Prometheus, which itself defaults to 1 minute.  This is represented as a Prometheus duration, for details on the format see: - https://prometheus.io/docs/prometheus/latest/configuration/configuration/#duration'
+                        type: string
+                        pattern: ((([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?|0)
+                      name:
+                        description: name is the name of the group.
+                        type: string
+                      rules:
+                        description: rules is a list of sequentially evaluated alerting rules.
+                        type: array
+                        minItems: 1
+                        items:
+                          description: 'Rule describes an alerting rule. See Prometheus documentation: - https://www.prometheus.io/docs/prometheus/latest/configuration/alerting_rules'
+                          type: object
+                          required:
+                            - alert
+                            - expr
+                          properties:
+                            alert:
+                              description: alert is the name of the alert. Must be a valid label value, i.e. only contain ASCII letters, numbers, and underscores.
+                              type: string
+                              pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
+                            annotations:
+                              description: annotations to add to each alert.
+                              type: object
+                              additionalProperties:
+                                type: string
+                            expr:
+                              description: expr is the PromQL expression to evaluate. Every evaluation cycle this is evaluated at the current time, and all resultant time series become pending/firing alerts.
+                              anyOf:
+                                - type: integer
+                                - type: string
+                              x-kubernetes-int-or-string: true
+                            for:
+                              description: 'for is the time period after which alerts are considered firing after first returning results.  Alerts which have not yet fired for long enough are considered pending. This is represented as a Prometheus duration, for details on the format see: - https://prometheus.io/docs/prometheus/latest/configuration/configuration/#duration'
+                              type: string
+                              pattern: ((([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?|0)
+                            labels:
+                              description: labels to add or overwrite for each alert.
+                              type: object
+                              additionalProperties:
+                                type: string
+                  x-kubernetes-list-map-keys:
+                    - name
+                  x-kubernetes-list-type: map
+            status:
+              description: status describes the current state of this AlertOverrides object.
+              type: object
+              properties:
+                observedGeneration:
+                  description: observedGeneration is the last generation change you've dealt with.
+                  type: integer
+                  format: int64
+                prometheusRule:
+                  description: prometheusRule is the generated PrometheusRule for this AlertingRule.
+                  type: string
+      served: true
+      storage: true
+      subresources:
+        status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

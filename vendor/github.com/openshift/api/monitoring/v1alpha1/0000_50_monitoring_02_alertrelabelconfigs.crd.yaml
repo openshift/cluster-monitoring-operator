@@ -1,0 +1,121 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: alertrelabelconfigs.monitoring.openshift.io
+spec:
+  group: monitoring.openshift.io
+  names:
+    kind: AlertRelabelConfig
+    listKind: AlertRelabelConfigList
+    plural: alertrelabelconfigs
+    singular: alertrelabelconfig
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: "AlertRelabelConfig defines a set of relabel configs for alerts. \n Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support."
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: spec describes the desired state of this AlertRelabelConfig object.
+              type: object
+              required:
+                - configs
+              properties:
+                configs:
+                  description: configs is a list of sequentially evaluated alert relabel configs.
+                  type: array
+                  minItems: 1
+                  items:
+                    description: 'RelabelConfig allows dynamic rewriting of label sets for alerts. See Prometheus documentation: - https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs - https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config'
+                    type: object
+                    properties:
+                      action:
+                        description: 'action to perform based on regex matching. Must be one of: replace, keep, drop, hashmod, labelmap, labeldrop, or labelkeep.  Default is: ''replace'''
+                        type: string
+                        default: Replace
+                        enum:
+                          - Replace
+                          - Keep
+                          - Drop
+                          - HashMod
+                          - LabelMap
+                          - LabelDrop
+                          - LabelKeep
+                      modulus:
+                        description: modulus to take of the hash of the source label values.  This can be combined with the 'hashmod' action to set 'target_label' to the 'modulus' of a hash of the concatenated 'source_labels'.
+                        type: integer
+                        format: int64
+                      regex:
+                        description: 'regex against which the extracted value is matched. Default is: ''(.*)'''
+                        type: string
+                      replacement:
+                        description: 'replacement value against which a regex replace is performed if the regular expression matches. This is required if the action is ''replace'' or ''labelmap''. Regex capture groups are available. Default is: ''$1'''
+                        type: string
+                      separator:
+                        description: separator placed between concatenated source label values. When omitted, Prometheus will use its default value of ';'.
+                        type: string
+                      sourceLabels:
+                        description: sourceLabels select values from existing labels. Their content is concatenated using the configured separator and matched against the configured regular expression for the replace, keep, and drop actions.
+                        type: array
+                        items:
+                          description: LabelName is a valid Prometheus label name which may only contain ASCII letters, numbers, and underscores.
+                          type: string
+                          pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
+                      targetLabel:
+                        description: targetLabel to which the resulting value is written in a replace action. It is mandatory for 'replace' and 'hashmod' actions. Regex capture groups are available.
+                        type: string
+            status:
+              description: status describes the current state of this AlertRelabelConfig object.
+              type: object
+              properties:
+                conditions:
+                  description: conditions contains details on the state of the AlertRelabelConfig, may be empty.
+                  type: array
+                  items:
+                    description: AlertRelabelConfigCondition details a status condition of an AlertRelabelConfig.
+                    type: object
+                    required:
+                      - status
+                      - type
+                    properties:
+                      lastTransitionTime:
+                        description: RFC 3339 date and time when this condition last transitioned.
+                        type: string
+                        format: date-time
+                      message:
+                        description: message is a human readable message indicating details about the last transition.
+                        type: string
+                      reason:
+                        description: reason for the condition's last transition. Usually a machine and human readable constant.
+                        type: string
+                      status:
+                        description: status is the status of the condition. May be True, False, or Unknown.
+                        type: string
+                      type:
+                        description: type is the type of the condition.
+                        type: string
+      served: true
+      storage: true
+      subresources:
+        status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
