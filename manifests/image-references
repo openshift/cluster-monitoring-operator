@@ -14,10 +14,10 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-prometheus-config-reloader:latest
-  - name: admission-webhook
+  - name: prometheus-admission-webhook
     from:
       kind: DockerImage
-      name: quay.io/openshift/origin-prometheus-admission-webhook:latest
+      name: quay.io/prometheus-operator/admission-webhook:v0.55.0
   - name: configmap-reloader
     from:
       kind: DockerImage

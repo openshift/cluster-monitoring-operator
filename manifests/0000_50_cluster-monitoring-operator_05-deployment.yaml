@@ -80,7 +80,7 @@ spec:
         - "-v=2"
         - "-images=prometheus-operator=quay.io/openshift/origin-prometheus-operator:latest"
         - "-images=prometheus-config-reloader=quay.io/openshift/origin-prometheus-config-reloader:latest"
-        - "-images=prometheus-admission-webhook=quay.io/openshift/origin-prometheus-admission-webhook:latest"
+        - "-images=prometheus-admission-webhook=quay.io/prometheus-operator/admission-webhook:v0.55.0"
         - "-images=configmap-reloader=quay.io/openshift/origin-configmap-reloader:latest"
         - "-images=prometheus=quay.io/openshift/origin-prometheus:latest"
         - "-images=alertmanager=quay.io/openshift/origin-prometheus-alertmanager:latest"
