@@ -197,13 +197,22 @@ function(params)
                 path: '/api/v1/rules',
               },
               {
-                // allow thanos ruler to post rules into thanos querier
+                // allow thanos ruler to get rules from thanos querier
                 user: {
                   name: 'system:serviceaccount:openshift-user-workload-monitoring:thanos-ruler',
                 },
                 verb: 'get',
                 resourceRequest: false,
                 path: '/api/v1/rules',
+              },
+              {
+                // allow thanos ruler to post queries to thanos querier
+                user: {
+                  name: 'system:serviceaccount:openshift-user-workload-monitoring:thanos-ruler',
+                },
+                verb: 'create',
+                resourceRequest: false,
+                path: '/api/v1/query',
               },
             ],
           },
