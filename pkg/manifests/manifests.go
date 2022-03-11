@@ -1454,7 +1454,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile != "" {
-		p.Spec.QueryLogFile = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile
+		p.Spec.QueryLogFile, err = f.queryLogFileConfig(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
@@ -1659,6 +1662,30 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	return p, nil
 }
 
+func (f *Factory) queryLogFileConfig(p *monv1.Prometheus, queryLogFile string) (string, error) {
+	if strings.HasPrefix(queryLogFile, "/") && !(strings.HasPrefix(queryLogFile, "/dev") || strings.HasPrefix(queryLogFile, "/prometheus")) {
+		if strings.Count(queryLogFile, "/") == 1 {
+			return "", errors.Wrap(ErrConfigValidation, "attempting to mount query log file on root \"/\"")
+		}
+		p.Spec.Volumes = append(
+			p.Spec.Volumes,
+			v1.Volume{
+				Name: "query-log-file",
+				VolumeSource: v1.VolumeSource{
+					EmptyDir: p.Spec.Storage.EmptyDir,
+				},
+			})
+
+		p.Spec.VolumeMounts = append(
+			p.Spec.VolumeMounts,
+			v1.VolumeMount{
+				Name:      "query-log-file",
+				MountPath: queryLogFile,
+			})
+	}
+	return queryLogFile, nil
+}
+
 func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
@@ -1752,7 +1779,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile != "" {
-		p.Spec.QueryLogFile = f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile
+		p.Spec.QueryLogFile, err = f.queryLogFileConfig(p, f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for i, container := range p.Spec.Containers {
