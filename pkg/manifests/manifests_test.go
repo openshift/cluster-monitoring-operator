@@ -1194,6 +1194,74 @@ ingress:
 	}
 }
 
+func TestPrometheusQueryLogFileConfig(t *testing.T) {
+	testCases := []struct {
+		name             string
+		queryLogFilePath string
+		expected         string
+		errString        string
+	}{
+		{
+			name:             "basic config",
+			queryLogFilePath: "/tmp/query.log",
+			expected:         "/tmp/query.log",
+			errString:        "",
+		},
+		{
+			name:             "basic config",
+			queryLogFilePath: "/dev/query.log",
+			expected:         "/dev/query.log",
+			errString:        "",
+		},
+		{
+			name:             "basic config",
+			queryLogFilePath: "/prometheus/query.log",
+			expected:         "/prometheus/query.log",
+			errString:        "",
+		},
+		{
+			name:             "basic config",
+			queryLogFilePath: "/query.log",
+			expected:         "",
+			errString:        "attempting to mount query log file on root",
+		},
+	}
+	for _, tt := range testCases {
+		// We need to initialize the volumeClaimTemplate otherwise we will
+		// get a SIGSEGV when creating the EmptyDir volume
+		c, err := NewConfigFromString(`prometheusK8s:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: 15Gi
+`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tt.queryLogFilePath
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		p, err := f.PrometheusK8s(
+			&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		)
+		if err != nil {
+			if tt.errString == "" {
+				t.Fatal(err)
+			}
+			if !strings.HasPrefix(err.Error(), tt.errString) {
+				t.Fatal("Not expected error got: ", err, "Expected: ", tt.errString)
+			}
+		} else {
+			if p.Spec.QueryLogFile != tt.expected {
+				t.Fatal("Prometheus query log is not configured correctly")
+			}
+		}
+	}
+
+}
+
 func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	testCases := []struct {
 		name           string

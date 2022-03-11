@@ -1,8 +1,5 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
-## 4.11
-- [#1587](https://github.com/openshift/cluster-monitoring-operator/pull/1589) Added support for full-path query log file
-
 ## 4.10
 
 - [#1509](https://github.com/openshift/cluster-monitoring-operator/pull/1509) add NLB usage metrics for network edge
