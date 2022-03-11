@@ -13,6 +13,8 @@
 - [#1310](https://github.com/openshift/cluster-monitoring-operator/pull/1310) Update Alert Configs, fewer critical alerts with more accurate triggering condition.
 - [#1324](https://github.com/openshift/cluster-monitoring-operator/pull/1324) Allow filtering by job in 'Prometheus/Overview' dashboard.
 - [#1404](https://github.com/openshift/cluster-monitoring-operator/pull/1404) Drop pod-centric cAdvisor metrics that are available at slice level.
+- [#1299](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose expose /api/v1/labels endpoint for Thanos query.
+- [#1529](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose /api/v1/series endpoint on the Thanos query tenancy port.
 
 ## 4.8
 

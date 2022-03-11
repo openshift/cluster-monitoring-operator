@@ -479,7 +479,13 @@ function(params)
                   '--tls-private-key-file=/etc/tls/private/tls.key',
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                   '--logtostderr=true',
-                  '--allow-paths=/api/v1/query,/api/v1/query_range',
+                  '--allow-paths=' + std.join(',', [
+                    '/api/v1/query',
+                    '/api/v1/query_range',
+                    '/api/v1/labels',
+                    '/api/v1/label/*/values',
+                    '/api/v1/series',
+                  ]),
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
@@ -500,6 +506,7 @@ function(params)
                   '--insecure-listen-address=127.0.0.1:9095',
                   '--upstream=http://127.0.0.1:9090',
                   '--label=namespace',
+                  '--enable-label-apis',
                 ],
                 resources: {
                   requests: {
