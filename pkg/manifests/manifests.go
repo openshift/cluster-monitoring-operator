@@ -24,6 +24,7 @@ import (
 	"net"
 	"net/url"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -1663,26 +1664,29 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 }
 
 func (f *Factory) queryLogFileConfig(p *monv1.Prometheus, queryLogFile string) (string, error) {
-	if strings.HasPrefix(queryLogFile, "/") && !(strings.HasPrefix(queryLogFile, "/dev") || strings.HasPrefix(queryLogFile, "/prometheus")) {
-		if strings.Count(queryLogFile, "/") == 1 {
-			return "", errors.Wrap(ErrConfigValidation, "attempting to mount query log file on root \"/\"")
-		}
-		p.Spec.Volumes = append(
-			p.Spec.Volumes,
-			v1.Volume{
-				Name: "query-log-file",
-				VolumeSource: v1.VolumeSource{
-					EmptyDir: p.Spec.Storage.EmptyDir,
-				},
-			})
-
-		p.Spec.VolumeMounts = append(
-			p.Spec.VolumeMounts,
-			v1.VolumeMount{
-				Name:      "query-log-file",
-				MountPath: queryLogFile,
-			})
+	dirPath := filepath.Dir(queryLogFile)
+	if dirPath == "/" {
+		return "", errors.Wrap(ErrConfigValidation, `attempting to mount query log file on root "/"`)
 	}
+	if dirPath == "/prometheus" || dirPath == "/dev" {
+		return queryLogFile, nil
+	}
+
+	p.Spec.Volumes = append(
+		p.Spec.Volumes,
+		v1.Volume{
+			Name: "query-log-file",
+			VolumeSource: v1.VolumeSource{
+				EmptyDir: p.Spec.Storage.EmptyDir,
+			},
+		})
+
+	p.Spec.VolumeMounts = append(
+		p.Spec.VolumeMounts,
+		v1.VolumeMount{
+			Name:      "query-log-file",
+			MountPath: queryLogFile,
+		})
 	return queryLogFile, nil
 }
 
