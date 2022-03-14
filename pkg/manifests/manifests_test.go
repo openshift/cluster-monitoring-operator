@@ -1096,10 +1096,10 @@ ingress:
 				t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
 			}
 			volumeName := "prometheus-trusted-ca-bundle"
-			if !trustedCABundleVolumeConfigured(p.Spec.Volumes, volumeName) {
+			if !volumeConfigured(p.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
-			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
 
@@ -1116,10 +1116,10 @@ ingress:
 			}
 		case "prometheus":
 			volumeName := "prometheus-trusted-ca-bundle"
-			if !trustedCABundleVolumeConfigured(p.Spec.Volumes, volumeName) {
+			if !volumeConfigured(p.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
-			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
 		}
@@ -1199,47 +1199,47 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 		name             string
 		queryLogFilePath string
 		expected         string
-		errString        string
+		errExpected      bool
+		volumeExpected   bool
 	}{
 		{
 			name:             "basic config",
 			queryLogFilePath: "/tmp/query.log",
 			expected:         "/tmp/query.log",
-			errString:        "",
+			errExpected:      false,
+			volumeExpected:   true,
 		},
 		{
-			name:             "basic config",
-			queryLogFilePath: "/dev/query.log",
-			expected:         "/dev/query.log",
-			errString:        "",
-		},
-		{
-			name:             "basic config",
+			name:             "query log file on the TSDB storage volume",
 			queryLogFilePath: "/prometheus/query.log",
 			expected:         "/prometheus/query.log",
-			errString:        "",
+			errExpected:      false,
+			volumeExpected:   false,
 		},
 		{
-			name:             "basic config",
+			name:             "query log file on the TSDB storage volume",
+			queryLogFilePath: "/dev/stdout",
+			expected:         "/dev/stdout",
+			errExpected:      false,
+			volumeExpected:   false,
+		},
+		{
+			name:             "invalid path",
 			queryLogFilePath: "/query.log",
 			expected:         "",
-			errString:        "attempting to mount query log file on root",
+			errExpected:      true,
+			volumeExpected:   false,
+		},
+		{
+			name:             "invalid file under dev",
+			queryLogFilePath: "/dev/query.log",
+			expected:         "",
+			errExpected:      true,
+			volumeExpected:   false,
 		},
 	}
 	for _, tt := range testCases {
-		// We need to initialize the volumeClaimTemplate otherwise we will
-		// get a SIGSEGV when creating the EmptyDir volume
-		c, err := NewConfigFromString(`prometheusK8s:
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 15Gi
-`)
-		if err != nil {
-			t.Fatal(err)
-		}
-
+		c := NewDefaultConfig()
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tt.queryLogFilePath
 		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 		p, err := f.PrometheusK8s(
@@ -1247,19 +1247,30 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		)
 		if err != nil {
-			if tt.errString == "" {
-				t.Fatal(err)
+			if !tt.errExpected {
+				t.Fatalf("Expecting no error but got %v", err)
 			}
-			if !strings.HasPrefix(err.Error(), tt.errString) {
-				t.Fatal("Not expected error got: ", err, "Expected: ", tt.errString)
+			return
+		}
+		if tt.errExpected {
+			t.Fatalf("Expected query log file %s to give an error, but err is nil", tt.queryLogFilePath)
+		}
+
+		if p.Spec.QueryLogFile != tt.expected {
+			t.Fatal("Prometheus query log is not configured correctly")
+		}
+
+		if tt.volumeExpected {
+			volumeName := "query-log-file"
+			if !volumeConfigured(p.Spec.Volumes, volumeName) {
+				t.Fatal("Query log file volume is not configured correctly")
 			}
-		} else {
-			if p.Spec.QueryLogFile != tt.expected {
-				t.Fatal("Prometheus query log is not configured correctly")
+			if !volumeMountsConfigured(p.Spec.VolumeMounts, volumeName) {
+				t.Fatal("Query log file volume mount is not configured correctly")
 			}
 		}
-	}
 
+	}
 }
 
 func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
@@ -2084,10 +2095,10 @@ ingress:
 		volumeName := "alertmanager-trusted-ca-bundle"
 		switch container.Name {
 		case "prometheus-proxy", "prometheus":
-			if !trustedCABundleVolumeConfigured(a.Spec.Volumes, volumeName) {
+			if !volumeConfigured(a.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
-			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
 		case "kube-rbac-proxy", "kube-rbac-proxy-metric":
@@ -2553,10 +2564,10 @@ grpc:
 
 		case "oauth-proxy":
 			volumeName := "thanos-querier-trusted-ca-bundle"
-			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
+			if !volumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", c.Name)
 			}
-			if !trustedCABundleVolumeMountsConfigured(c.VolumeMounts, volumeName) {
+			if !volumeMountsConfigured(c.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", c.Name)
 			}
 
@@ -2597,10 +2608,10 @@ func TestGrafanaConfiguration(t *testing.T) {
 		switch container.Name {
 		case "grafana-proxy":
 			volumeName := "grafana-trusted-ca-bundle"
-			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
+			if !volumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
-			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
 		case "kube-rbac-proxy-metrics":
@@ -2640,10 +2651,10 @@ func TestTelemeterConfiguration(t *testing.T) {
 		switch container.Name {
 		case "telemeter-client":
 			volumeName := "telemeter-trusted-ca-bundle"
-			if !trustedCABundleVolumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
+			if !volumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
-			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
 		case "kube-rbac-proxy":
@@ -2686,10 +2697,10 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	for _, container := range tr.Spec.Containers {
 		if container.Name == "thanos-ruler-proxy" {
 			volumeName := "thanos-ruler-trusted-ca-bundle"
-			if !trustedCABundleVolumeConfigured(tr.Spec.Volumes, volumeName) {
+			if !volumeConfigured(tr.Spec.Volumes, volumeName) {
 				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
 			}
-			if !trustedCABundleVolumeMountsConfigured(container.VolumeMounts, volumeName) {
+			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 			}
 		}
@@ -3006,7 +3017,7 @@ enableUserWorkload: true
 	}
 }
 
-func trustedCABundleVolumeConfigured(volumes []v1.Volume, volumeName string) bool {
+func volumeConfigured(volumes []v1.Volume, volumeName string) bool {
 	for _, volume := range volumes {
 		if volume.Name == volumeName {
 			return true
@@ -3015,7 +3026,7 @@ func trustedCABundleVolumeConfigured(volumes []v1.Volume, volumeName string) boo
 	return false
 }
 
-func trustedCABundleVolumeMountsConfigured(volumeMounts []v1.VolumeMount, volumeName string) bool {
+func volumeMountsConfigured(volumeMounts []v1.VolumeMount, volumeName string) bool {
 	for _, volumeMount := range volumeMounts {
 		if volumeMount.Name == volumeName {
 			return true

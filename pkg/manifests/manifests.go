@@ -1454,11 +1454,8 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		}
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile != "" {
-		p.Spec.QueryLogFile, err = f.queryLogFileConfig(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile)
-		if err != nil {
-			return nil, err
-		}
+	if err := f.setupQueryLogFile(p); err != nil {
+		return nil, err
 	}
 
 	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
@@ -1663,13 +1660,26 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	return p, nil
 }
 
-func (f *Factory) queryLogFileConfig(p *monv1.Prometheus, queryLogFile string) (string, error) {
+func (f *Factory) setupQueryLogFile(p *monv1.Prometheus) error {
+	queryLogFile := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile
+	if queryLogFile == "" {
+		return nil
+	}
 	dirPath := filepath.Dir(queryLogFile)
 	if dirPath == "/" {
-		return "", errors.Wrap(ErrConfigValidation, `attempting to mount query log file on root "/"`)
+		return errors.Wrap(ErrConfigValidation, `query log file can't be stored on the root directory`)
 	}
-	if dirPath == "/prometheus" || dirPath == "/dev" {
-		return queryLogFile, nil
+
+	p.Spec.QueryLogFile = queryLogFile
+	if dirPath == "/prometheus" {
+		return nil
+	}
+	if dirPath == "/dev" {
+		base := filepath.Base(p.Spec.QueryLogFile)
+		if base != "stdout" && base != "stderr" && base != "null" {
+			return errors.Wrap(ErrConfigValidation, `query log file can't be stored on a new file on the dev directory`)
+		}
+		return nil
 	}
 
 	p.Spec.Volumes = append(
@@ -1677,7 +1687,7 @@ func (f *Factory) queryLogFileConfig(p *monv1.Prometheus, queryLogFile string) (
 		v1.Volume{
 			Name: "query-log-file",
 			VolumeSource: v1.VolumeSource{
-				EmptyDir: p.Spec.Storage.EmptyDir,
+				EmptyDir: &v1.EmptyDirVolumeSource{},
 			},
 		})
 
@@ -1687,7 +1697,7 @@ func (f *Factory) queryLogFileConfig(p *monv1.Prometheus, queryLogFile string) (
 			Name:      "query-log-file",
 			MountPath: queryLogFile,
 		})
-	return queryLogFile, nil
+	return nil
 }
 
 func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
@@ -1782,11 +1792,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	if f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile != "" {
-		p.Spec.QueryLogFile, err = f.queryLogFileConfig(p, f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile)
-		if err != nil {
-			return nil, err
-		}
+	if err := f.setupQueryLogFile(p); err != nil {
+		return nil, err
 	}
 
 	for i, container := range p.Spec.Containers {
