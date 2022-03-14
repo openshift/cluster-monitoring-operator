@@ -25,9 +25,11 @@ import (
 	"github.com/pkg/errors"
 
 	configv1 "github.com/openshift/api/config/v1"
+	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
+	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
@@ -67,6 +69,7 @@ type Client struct {
 	namespace             string
 	userWorkloadNamespace string
 	kclient               kubernetes.Interface
+	osmclient             openshiftmonitoringclientset.Interface
 	oscclient             openshiftconfigclientset.Interface
 	ossclient             openshiftsecurityclientset.Interface
 	osrclient             openshiftrouteclientset.Interface
@@ -89,6 +92,11 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	eclient, err := apiextensionsclient.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating apiextensions client")
+	}
+
+	osmclient, err := openshiftmonitoringclientset.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating openshift monitoring client")
 	}
 
 	oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
@@ -121,6 +129,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 		namespace,
 		userWorkloadNamespace,
 		KubernetesClient(kclient),
+		OpenshiftMonitoringClient(osmclient),
 		OpenshiftConfigClient(oscclient),
 		OpenshiftSecurityClient(ossclient),
 		OpenshiftRouteClient(osrclient),
@@ -135,6 +144,12 @@ type Option = func(*Client)
 func KubernetesClient(kclient kubernetes.Interface) Option {
 	return func(c *Client) {
 		c.kclient = kclient
+	}
+}
+
+func OpenshiftMonitoringClient(osmclient openshiftmonitoringclientset.Interface) Option {
+	return func(c *Client) {
+		c.osmclient = osmclient
 	}
 }
 
@@ -200,6 +215,15 @@ func (c *Client) UserWorkloadNamespace() string {
 	return c.userWorkloadNamespace
 }
 
+func (c *Client) AlertRelabelConfigListWatchForNamespace(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.osmclient.MonitoringV1alpha1().RESTClient(),
+		"alertrelabelconfigs",
+		ns,
+		fields.Everything(),
+	)
+}
+
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
@@ -210,6 +234,15 @@ func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 
 func (c *Client) PersistentVolumeClaimListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "persistentvolumeclaims", ns, fields.Everything())
+}
+
+func (c *Client) SecretListWatchForResource(namespace, name string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.kclient.CoreV1().RESTClient(),
+		"secrets",
+		namespace,
+		fields.OneTermEqualSelector("metadata.name", name),
+	)
 }
 
 func (c *Client) InfrastructureListWatchForResource(ctx context.Context, resource string) *cache.ListWatch {
@@ -298,6 +331,26 @@ func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
 
 		return true, nil
 	})
+}
+
+func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv1alpha1.AlertRelabelConfig) error {
+	arcClient := c.osmclient.MonitoringV1alpha1().AlertRelabelConfigs(arc.GetNamespace())
+	existing, err := arcClient.Get(ctx, arc.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := arcClient.Create(ctx, arc, metav1.CreateOptions{})
+		return errors.Wrap(err, "creating AlertRelabelConfig object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving AlertRelabelConfig object failed")
+	}
+
+	required := arc.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	required.ResourceVersion = existing.ResourceVersion
+
+	_, err = arcClient.Update(ctx, required, metav1.UpdateOptions{})
+	return errors.Wrap(err, "updating AlertRelabelConfig object failed")
 }
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
