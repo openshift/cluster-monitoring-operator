@@ -151,7 +151,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 	data := fmt.Sprintf(`prometheusK8s:
   logLevel: debug
   retention: 10h
-  queryLogFile: /tmp/test.log
+  queryLogFile: /dev/stdout
   tolerations:
     - operator: "Exists"
   externalLabels:
@@ -202,7 +202,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		},
 		{
 			name:      "assert query log file value is set and correct",
-			assertion: assertQueryLogValueEquals(f.Ns, crName, "/tmp/test.log"),
+			assertion: assertQueryLogValueEquals(f.Ns, crName, "/dev/stdout"),
 		},
 		{
 			name:      "assert rule for Thanos sidecar exists",
@@ -528,7 +528,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
   enforcedTargetLimit: 10
   logLevel: debug
   retention: 10h
-  queryLogFile: /tmp/test.log
+  queryLogFile: /dev/stdout
   tolerations:
     - operator: "Exists"
   externalLabels:
@@ -585,7 +585,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		},
 		{
 			name:      "assert query log file value is set and correct",
-			assertion: assertQueryLogValueEquals(f.UserWorkloadMonitoringNs, crName, "/tmp/test.log"),
+			assertion: assertQueryLogValueEquals(f.UserWorkloadMonitoringNs, crName, "/dev/stdout"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
