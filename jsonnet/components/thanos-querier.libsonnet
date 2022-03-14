@@ -182,26 +182,23 @@ function(params)
           authorization: {
             resourceAttributes:
               {
-                apiGroup: '',  // empty string implies the core API group
+                apiGroup: '',
                 resource: 'namespaces',
                 verbs: ['get'],
               },
             static: [
               {
-                // allow thanos ruler to post rules into thanos querier
+                // allow prometheus-k8s to get/post queries from/to thanos querier
                 user: {
-                  name: 'system:serviceaccount:openshift-user-workload-monitoring:thanos-ruler',
+                  name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
                 },
-                verb: 'create',
-                resourceRequest: false,
-                path: '/api/v1/rules',
+                resourceRequest: true,
               },
               {
-                // allow thanos ruler to get rules from thanos querier
+                // allow thanos ruler to get/post rules from/to thanos querier
                 user: {
                   name: 'system:serviceaccount:openshift-user-workload-monitoring:thanos-ruler',
                 },
-                verb: 'get',
                 resourceRequest: false,
                 path: '/api/v1/rules',
               },
@@ -210,7 +207,6 @@ function(params)
                 user: {
                   name: 'system:serviceaccount:openshift-user-workload-monitoring:thanos-ruler',
                 },
-                verb: 'create',
                 resourceRequest: false,
                 path: '/api/v1/query',
               },
