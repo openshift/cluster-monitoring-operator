@@ -528,7 +528,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
   enforcedTargetLimit: 10
   logLevel: debug
   retention: 10h
-  queryLogFile: /tmp/test.log
+  queryLogFile: test.log
   tolerations:
     - operator: "Exists"
   externalLabels:
@@ -585,7 +585,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		},
 		{
 			name:      "assert query log file value is set and correct",
-			assertion: assertQueryLogValueEquals(f.UserWorkloadMonitoringNs, crName, "/tmp/test.log"),
+			assertion: assertQueryLogValueEquals(f.UserWorkloadMonitoringNs, crName, "/var/log/prometheus/test.log"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
