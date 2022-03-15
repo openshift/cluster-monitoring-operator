@@ -1454,7 +1454,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		}
 	}
 
-	if err := f.setupQueryLogFile(p); err != nil {
+	if err := f.setupQueryLogFile(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile); err != nil {
 		return nil, err
 	}
 
@@ -1660,8 +1660,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	return p, nil
 }
 
-func (f *Factory) setupQueryLogFile(p *monv1.Prometheus) error {
-	queryLogFile := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile
+func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) error {
 	if queryLogFile == "" {
 		return nil
 	}
@@ -1797,7 +1796,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	if err := f.setupQueryLogFile(p); err != nil {
+	if err := f.setupQueryLogFile(p, f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile); err != nil {
 		return nil, err
 	}
 
