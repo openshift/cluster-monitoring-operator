@@ -23,6 +23,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
@@ -454,8 +455,8 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 
 	a.Spec.Image = &f.config.Images.Alertmanager
 
-	if f.consoleConfig != nil {
-		a.Spec.ExternalURL = f.consoleConfig.Status.ConsoleURL + "/monitoring"
+	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
+		a.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
 	}
 
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel != "" {
