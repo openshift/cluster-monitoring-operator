@@ -1670,10 +1670,15 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus) error {
 		return errors.Wrap(ErrConfigValidation, `query log file can't be stored on the root directory`)
 	}
 
+	// /prometheus it is not necesssary to mount a volume since this is
+	// the location where prometheus will store TSDB
 	p.Spec.QueryLogFile = queryLogFile
 	if dirPath == "/prometheus" {
 		return nil
 	}
+
+	// /dev it is not necesssary to mount a volume if the user configured
+	// the query log file to be one of the preexisting linux output streams
 	if dirPath == "/dev" {
 		base := filepath.Base(p.Spec.QueryLogFile)
 		if base != "stdout" && base != "stderr" && base != "null" {
