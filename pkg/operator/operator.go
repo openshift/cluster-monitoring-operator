@@ -475,6 +475,12 @@ func (o *Operator) handleEvent(obj interface{}) {
 		return
 	}
 
+	if _, ok := obj.(*configv1.Console); ok {
+		klog.Info("Triggering update due to a console update")
+		o.enqueue(cmoConfigMap)
+		return
+	}
+
 	key, ok := o.keyFunc(obj)
 	if !ok {
 		return
