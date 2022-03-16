@@ -103,6 +103,14 @@ spec:
         ports:
         - containerPort: 9091
           name: web
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 9091
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 5
         resources:
           requests:
             cpu: 1m

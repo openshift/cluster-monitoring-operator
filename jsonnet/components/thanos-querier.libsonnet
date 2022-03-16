@@ -494,16 +494,16 @@ function(params)
                   periodSeconds: 30,
                   failureThreshold: 4,
                 },
-                // readinessProbe: {
-                //   httpGet: {
-                //     path: '/-/ready',
-                //     port: 9091,
-                //     scheme: 'HTTPS',
-                //   },
-                //   initialDelaySeconds: 5,
-                //   periodSeconds: 5,
-                //   failureThreshold: 20,
-                // },
+                readinessProbe: {
+                  httpGet: {
+                    path: '/-/ready',
+                    port: 9091,
+                    scheme: 'HTTPS',
+                  },
+                  initialDelaySeconds: 5,
+                  periodSeconds: 5,
+                  failureThreshold: 20,
+                },
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
                   {
