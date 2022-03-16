@@ -7,7 +7,7 @@ require (
 	github.com/Jeffail/gabs/v2 v2.6.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/imdario/mergo v0.3.12
-	github.com/openshift/api v0.0.0-20211217221424-8779abfbd571
+	github.com/openshift/api v0.0.0-20220409151926-43bbec6227d5
 	github.com/openshift/client-go v0.0.0-20211209144617-7385dd6338e3
 	github.com/openshift/library-go v0.0.0-20211220195323-eca2c467c492
 	github.com/pkg/errors v0.9.1
@@ -28,6 +28,11 @@ require (
 	k8s.io/kube-aggregator v0.23.1
 	k8s.io/kubectl v0.23.1
 	k8s.io/metrics v0.23.1
+)
+
+require (
+	github.com/prometheus/common v0.32.1
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
 require (
@@ -102,7 +107,6 @@ require (
 	github.com/prometheus-community/prom-label-proxy v0.4.1-0.20211215142838-1eac0933d512 // indirect
 	github.com/prometheus/alertmanager v0.23.1-0.20210914172521-e35efbddb66a // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
@@ -129,7 +133,6 @@ require (
 	google.golang.org/grpc v1.40.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/cli-runtime v0.23.1 // indirect
 	k8s.io/component-base v0.23.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
@@ -142,3 +145,7 @@ require (
 )
 
 replace k8s.io/client-go => k8s.io/client-go v0.23.1
+
+replace github.com/openshift/api => github.com/bison/openshift-api v0.0.0-20220413105410-c56cad9d6d90
+
+replace github.com/openshift/client-go => github.com/bison/openshift-client-go v0.0.0-20220413112803-7776da255c26
