@@ -1261,7 +1261,7 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 		}
 
 		if tt.volumeExpected {
-			volumeName := "query-log-file"
+			volumeName := "query-log"
 			if !volumeConfigured(p.Spec.Volumes, volumeName) {
 				t.Fatal("Query log file volume is not configured correctly")
 			}

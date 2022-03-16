@@ -1689,7 +1689,7 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 	p.Spec.Volumes = append(
 		p.Spec.Volumes,
 		v1.Volume{
-			Name: "query-log-file",
+			Name: "query-log",
 			VolumeSource: v1.VolumeSource{
 				EmptyDir: &v1.EmptyDirVolumeSource{},
 			},
@@ -1698,8 +1698,8 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 	p.Spec.VolumeMounts = append(
 		p.Spec.VolumeMounts,
 		v1.VolumeMount{
-			Name:      "query-log-file",
-			MountPath: queryLogFile,
+			Name:      "query-log",
+			MountPath: dirPath,
 		})
 	return nil
 }
