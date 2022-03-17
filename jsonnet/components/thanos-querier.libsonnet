@@ -482,7 +482,6 @@ function(params)
                     '/-/healthy',
                     '/-/ready',
                   ]),
-                  '--v=10',
                 ],
                 livenessProbe: {
                   httpGet: {
