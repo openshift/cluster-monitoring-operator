@@ -24,6 +24,7 @@ import (
 	"net"
 	"net/url"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -1454,8 +1455,8 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		}
 	}
 
-	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile != "" {
-		p.Spec.QueryLogFile = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile
+	if err := f.setupQueryLogFile(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile); err != nil {
+		return nil, err
 	}
 
 	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
@@ -1660,6 +1661,50 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	return p, nil
 }
 
+func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) error {
+	if queryLogFile == "" {
+		return nil
+	}
+	dirPath := filepath.Dir(queryLogFile)
+	if dirPath == "/" {
+		return errors.Wrap(ErrConfigValidation, `query log file can't be stored on the root directory`)
+	}
+
+	// /prometheus is where Prometheus will store the TSDB so it is
+	// already mounted inside the pod (either from a persistent volume claim or from an empty dir).
+	p.Spec.QueryLogFile = queryLogFile
+	if dirPath == "/prometheus" {
+		return nil
+	}
+
+	// It is not necesssary to mount a volume if the user configured
+	// the query log file to be one of the preexisting linux output streams.
+	if dirPath == "/dev" {
+		base := filepath.Base(p.Spec.QueryLogFile)
+		if base != "stdout" && base != "stderr" && base != "null" {
+			return errors.Wrap(ErrConfigValidation, `query log file can't be stored on a new file on the dev directory`)
+		}
+		return nil
+	}
+
+	p.Spec.Volumes = append(
+		p.Spec.Volumes,
+		v1.Volume{
+			Name: "query-log",
+			VolumeSource: v1.VolumeSource{
+				EmptyDir: &v1.EmptyDirVolumeSource{},
+			},
+		})
+
+	p.Spec.VolumeMounts = append(
+		p.Spec.VolumeMounts,
+		v1.VolumeMount{
+			Name:      "query-log",
+			MountPath: dirPath,
+		})
+	return nil
+}
+
 func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
@@ -1752,8 +1797,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	if f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile != "" {
-		p.Spec.QueryLogFile = f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile
+	if err := f.setupQueryLogFile(p, f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile); err != nil {
+		return nil, err
 	}
 
 	for i, container := range p.Spec.Containers {
