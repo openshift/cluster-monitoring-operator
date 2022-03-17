@@ -53,7 +53,7 @@ clean:
 
 .PHONY: run-local
 run-local: build
-	KUBECONFIG=$(KUBECONFIG) ./hack/local-cmo.sh
+	PATH="$(PATH):$(BIN_DIR)" KUBECONFIG=$(KUBECONFIG) ./hack/local-cmo.sh
 
 .PHONY: build
 build: operator
