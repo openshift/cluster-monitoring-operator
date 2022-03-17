@@ -143,7 +143,7 @@ function(params) {
       },
       {
         apiGroups: ['admissionregistration.k8s.io'],
-        resourceNames: ['prometheusrules.openshift.io'],
+        resourceNames: ['prometheusrules.openshift.io', 'alertmanagerconfigs.openshift.io'],
         resources: ['validatingwebhookconfigurations'],
         verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
       },

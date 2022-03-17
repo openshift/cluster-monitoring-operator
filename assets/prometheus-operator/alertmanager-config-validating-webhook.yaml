@@ -1,0 +1,33 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: true
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: prometheus-operator
+  name: alertmanagerconfigs.openshift.io
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: prometheus-operator
+      namespace: openshift-monitoring
+      path: /admission-alertmanagerconfigs/validate
+      port: 8080
+  failurePolicy: Ignore
+  name: alertmanagerconfigs.openshift.io
+  rules:
+  - apiGroups:
+    - monitoring.coreos.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - alertmanagerconfigs
+    scope: Namespaced
+  sideEffects: None
+  timeoutSeconds: 5

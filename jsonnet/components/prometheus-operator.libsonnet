@@ -213,4 +213,45 @@ function(params)
         },
       ],
     },
+
+    alertmanagerConfigValidatingWebhook: {
+      apiVersion: 'admissionregistration.k8s.io/v1',
+      kind: 'ValidatingWebhookConfiguration',
+      metadata: {
+        name: 'alertmanagerconfigs.openshift.io',
+        labels: {
+          'app.kubernetes.io/component': 'controller',
+          'app.kubernetes.io/name': 'prometheus-operator',
+        },
+        annotations: {
+          'service.beta.openshift.io/inject-cabundle': true,
+        },
+      },
+      webhooks: [
+        {
+          name: 'alertmanagerconfigs.openshift.io',
+          rules: [
+            {
+              apiGroups: ['monitoring.coreos.com'],
+              apiVersions: ['v1alpha1'],
+              operations: ['CREATE', 'UPDATE'],
+              resources: ['alertmanagerconfigs'],
+              scope: 'Namespaced',
+            },
+          ],
+          clientConfig: {
+            service: {
+              namespace: 'openshift-monitoring',
+              name: 'prometheus-operator',
+              port: 8080,
+              path: '/admission-alertmanagerconfigs/validate',
+            },
+          },
+          admissionReviewVersions: ['v1'],
+          sideEffects: 'None',
+          timeoutSeconds: 5,
+          failurePolicy: 'Ignore',
+        },
+      ],
+    },
   }

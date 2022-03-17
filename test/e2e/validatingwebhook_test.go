@@ -22,11 +22,13 @@ import (
 	yaml "github.com/ghodss/yaml"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoringv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	webhookName = "prometheusrules.openshift.io"
+	prometheusRuleWebhookName     = "prometheusrules.openshift.io"
+	alertmanagerConfigWebhookName = "alertmanagerconfigs.openshift.io"
 )
 
 var (
@@ -59,12 +61,60 @@ spec:
     - record: invalid_rule
       expr: this+/(fails
 `, framework.E2eTestLabel)
+
+	validAmConf = fmt.Sprintf(`---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: valid-test-config
+  labels:
+    %s
+spec:
+  route:
+    groupBy: ['job']
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 12h
+    receiver: 'webhook'
+  receivers:
+  - name: 'webhook'
+    webhookConfigs:
+    - url: 'https://example.com'
+`, framework.E2eTestLabel)
+
+	invalidAmConf = fmt.Sprintf(`---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: invalid-test-config
+  labels:
+    %s
+spec:
+  route:
+    groupBy: ['job']
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 12h
+    receiver: 'webhook'
+  receivers:
+  - name: 'webhook'
+    webhookConfigs:
+    - url: 'https://example.com'
+  receivers:
+  - name: wechat-example
+    wechatConfigs:
+    - apiURL: https://<>wechatserver:8080/
+      corpID: wechat-corpid
+      apiSecret:
+        name: wechat-config
+        key: apiSecret
+`, framework.E2eTestLabel)
 )
 
 func TestPrometheusRuleValidatingWebhook(t *testing.T) {
 	ctx := context.Background()
 
-	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(ctx, webhookName, metav1.GetOptions{})
+	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(ctx, prometheusRuleWebhookName, metav1.GetOptions{})
 	if err != nil {
 		t.Fatal("unable to get prometheus rules validating webhook", err)
 	}
@@ -89,4 +139,33 @@ func TestPrometheusRuleValidatingWebhook(t *testing.T) {
 		t.Fatal("invalid rule was accepted by validatingwebhook")
 	}
 
+}
+
+func TestAlertManagerConfigValidatingWebhook(t *testing.T) {
+	ctx := context.Background()
+
+	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(ctx, alertmanagerConfigWebhookName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatal("unable to get alertmanagerconfig validating webhook", err)
+	}
+
+	validConf := monitoringv1alpha1.AlertmanagerConfig{}
+	err = yaml.Unmarshal([]byte(validAmConf), &validConf)
+	if err != nil {
+		t.Fatal("unable to unmarshal alertmanagerconfig", err)
+	}
+	_, err = f.MonitoringAlphaClient.AlertmanagerConfigs(f.Ns).Create(ctx, &validConf, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatal("unable to create alertmanagerconfig", err)
+	}
+
+	invalidConf := monitoringv1alpha1.AlertmanagerConfig{}
+	err = yaml.Unmarshal([]byte(invalidAmConf), &invalidConf)
+	if err != nil {
+		t.Fatal("unable to unmarshal alertmanagerconfig", err)
+	}
+	_, err = f.MonitoringAlphaClient.AlertmanagerConfigs(f.Ns).Create(ctx, &invalidConf, metav1.CreateOptions{})
+	if err == nil {
+		t.Fatal("invalid alertmanagerconfig was accepted by validatingwebhook")
+	}
 }

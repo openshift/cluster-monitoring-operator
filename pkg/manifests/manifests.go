@@ -162,16 +162,17 @@ var (
 	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
 	PrometheusAdapterServiceAccount                     = "prometheus-adapter/service-account.yaml"
 
-	PrometheusOperatorClusterRoleBinding    = "prometheus-operator/cluster-role-binding.yaml"
-	PrometheusOperatorClusterRole           = "prometheus-operator/cluster-role.yaml"
-	PrometheusOperatorServiceAccount        = "prometheus-operator/service-account.yaml"
-	PrometheusOperatorDeployment            = "prometheus-operator/deployment.yaml"
-	PrometheusOperatorService               = "prometheus-operator/service.yaml"
-	PrometheusOperatorServiceMonitor        = "prometheus-operator/service-monitor.yaml"
-	PrometheusOperatorCertsCABundle         = "prometheus-operator/operator-certs-ca-bundle.yaml"
-	PrometheusOperatorRuleValidatingWebhook = "prometheus-operator/prometheus-rule-validating-webhook.yaml"
-	PrometheusOperatorPrometheusRule        = "prometheus-operator/prometheus-rule.yaml"
-	PrometheusOperatorKubeRbacProxySecret   = "prometheus-operator/kube-rbac-proxy-secret.yaml"
+	PrometheusOperatorClusterRoleBinding                  = "prometheus-operator/cluster-role-binding.yaml"
+	PrometheusOperatorClusterRole                         = "prometheus-operator/cluster-role.yaml"
+	PrometheusOperatorServiceAccount                      = "prometheus-operator/service-account.yaml"
+	PrometheusOperatorDeployment                          = "prometheus-operator/deployment.yaml"
+	PrometheusOperatorService                             = "prometheus-operator/service.yaml"
+	PrometheusOperatorServiceMonitor                      = "prometheus-operator/service-monitor.yaml"
+	PrometheusOperatorCertsCABundle                       = "prometheus-operator/operator-certs-ca-bundle.yaml"
+	PrometheusOperatorRuleValidatingWebhook               = "prometheus-operator/prometheus-rule-validating-webhook.yaml"
+	PrometheusOperatorAlertmanagerConfigValidatingWebhook = "prometheus-operator/alertmanager-config-validating-webhook.yaml"
+	PrometheusOperatorPrometheusRule                      = "prometheus-operator/prometheus-rule.yaml"
+	PrometheusOperatorKubeRbacProxySecret                 = "prometheus-operator/kube-rbac-proxy-secret.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount      = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole         = "prometheus-operator-user-workload/cluster-role.yaml"
@@ -2342,6 +2343,14 @@ func setArg(args []string, argName string, argValue string) []string {
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
 	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(PrometheusOperatorRuleValidatingWebhook))
+	if err != nil {
+		return nil, err
+	}
+	return wc, nil
+}
+
+func (f *Factory) AlertManagerConfigValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
+	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(PrometheusOperatorAlertmanagerConfigValidatingWebhook))
 	if err != nil {
 		return nil, err
 	}
