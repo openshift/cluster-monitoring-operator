@@ -115,6 +115,7 @@ func (r *StatusReporter) setConditions(ctx context.Context, co *v1.ClusterOperat
 }
 
 func (r *StatusReporter) SetRollOutDone(ctx context.Context, degradedConditionMessage string, degradedConditionReason string) error {
+
 	co, err := r.getOrCreateClusterOperator(ctx)
 	if err != nil {
 		return err
@@ -159,6 +160,40 @@ func (r *StatusReporter) SetRollOutInProgress(ctx context.Context) error {
 	time := metav1.Now()
 	conditions := newConditions(co.Status, r.version, metav1.Now())
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", "RollOutInProgress", time)
+
+	return r.setConditions(ctx, co, conditions)
+}
+
+func (r *StatusReporter) SetUnavailable(ctx context.Context, statusErr error, reason string) error {
+	co, err := r.getOrCreateClusterOperator(ctx)
+	if err != nil {
+		return err
+	}
+	time := metav1.Now()
+	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
+	reason = cmostr.ToPascalCase(reason)
+
+	conditions := newConditions(co.Status, r.version, time)
+	msg := fmt.Sprintf("Monitoring Stack is Unavailable. Error: %v", statusErr)
+	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, msg, reason, time)
+
+	return r.setConditions(ctx, co, conditions)
+}
+
+func (r *StatusReporter) SetDegraded(ctx context.Context, statusErr error, reason string) error {
+	co, err := r.getOrCreateClusterOperator(ctx)
+	if err != nil {
+		return err
+	}
+
+	time := metav1.Now()
+	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
+	reason = cmostr.ToPascalCase(reason)
+
+	conditions := newConditions(co.Status, r.version, time)
+	msg := fmt.Sprintf("Monitoring Stack has Degraded. Error: %v", statusErr)
+	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, msg, reason, time)
+	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, unavailableMessage, reason, time)
 
 	return r.setConditions(ctx, co, conditions)
 }

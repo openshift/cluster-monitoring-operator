@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -35,7 +36,11 @@ func NewControlPlaneTask(client *client.Client, factory *manifests.Factory, conf
 	}
 }
 
-func (t *ControlPlaneTask) Run(ctx context.Context) error {
+func (t *ControlPlaneTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *ControlPlaneTask) create(ctx context.Context) error {
 	pr, err := t.factory.ControlPlanePrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing kubernetes mixin rules PrometheusRule failed")

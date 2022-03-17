@@ -60,7 +60,7 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 
 	t.Log("asserting that CMO goes degraded after an invalid configuration is pushed")
 	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
-	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 	// Check that the previous setup hasn't been reverted
 	f.AssertStatefulsetExists("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 

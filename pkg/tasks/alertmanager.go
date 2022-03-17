@@ -40,12 +40,12 @@ func NewAlertmanagerTask(
 	}
 }
 
-func (t *AlertmanagerTask) Run(ctx context.Context) error {
+func (t *AlertmanagerTask) Run(ctx context.Context) *StateError {
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
-		return t.create(ctx)
+		return degradedError(t.create(ctx))
 	}
 
-	return t.destroy(ctx)
+	return degradedError(t.destroy(ctx))
 }
 
 func (t *AlertmanagerTask) create(ctx context.Context) error {

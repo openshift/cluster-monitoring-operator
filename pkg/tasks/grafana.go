@@ -37,8 +37,8 @@ func NewGrafanaTask(client *client.Client, factory *manifests.Factory, config *m
 	}
 }
 
-func (t *GrafanaTask) Run(ctx context.Context) error {
-	return t.cleanup(ctx)
+func (t *GrafanaTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.cleanup(ctx))
 }
 
 func (t *GrafanaTask) cleanup(ctx context.Context) error {

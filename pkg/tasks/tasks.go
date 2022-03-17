@@ -17,10 +17,11 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/klog/v2"
-	"strings"
 )
 
 // TaskRunner manages lists of task groups. Through the RunAll method task groups are
@@ -69,7 +70,7 @@ func (tg *TaskGroup) RunConcurrently(ctx context.Context) TaskGroupErrors {
 			err := ts.Task.Run(ctx)
 			if err != nil {
 				klog.Warningf("task %d of %d: %v failed: %v", i+1, tgLength, ts.Name, err)
-				errChan <- TaskErr{Err: err, Name: ts.Name}
+				errChan <- TaskErr{StateError: err, Name: ts.Name}
 			} else {
 				klog.V(2).Infof("ran task %d of %d: %v", i+1, tgLength, ts.Name)
 			}
@@ -112,24 +113,65 @@ type TaskSpec struct {
 	Task Task
 }
 
-type Task interface {
-	Run(ctx context.Context) error
+type StateError = client.StateError
+
+var mergeErrors = client.MergeStateErrors
+
+// degradedError returns a StateError with State Degraded set given the err is not nil
+func degradedError(err error) *StateError {
+	if err == nil {
+		return nil
+	}
+	return client.NewDegradedError(err.Error())
 }
 
+// TaskErr wraps a StateError and adds a Name of the Task failed
 type TaskErr struct {
-	Err  error
+	*StateError
 	Name string
 }
 
-type TaskGroupErrors []TaskErr
+type Task interface {
+	Run(ctx context.Context) *StateError
+}
+
+type (
+	TaskGroupErrors []TaskErr
+)
+
+func (te *TaskErr) Error() string {
+	if te == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%s: %s", strings.ToLower(te.Name), te.StateError.Error())
+}
 
 func (tge TaskGroupErrors) Error() string {
 	if len(tge) == 0 {
 		return ""
 	}
+
 	messages := make([]string, 0, len(tge))
 	for _, err := range tge {
-		messages = append(messages, fmt.Sprintf("%v: %v", strings.ToLower(err.Name), err.Err))
+		messages = append(messages, err.Error())
 	}
 	return strings.Join(messages, "\n")
+}
+
+func (tge TaskGroupErrors) ToConsolidatedTaskError() *TaskErr {
+	if len(tge) == 0 {
+		return nil
+	}
+
+	if len(tge) == 1 {
+		return &tge[0]
+	}
+
+	stErr := client.NewStateError()
+	for _, terr := range tge {
+		stErr.Merge(terr.StateError)
+	}
+
+	return &TaskErr{StateError: stErr, Name: "MultipleTasks"}
 }

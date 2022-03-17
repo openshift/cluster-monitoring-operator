@@ -43,7 +43,11 @@ func NewClusterMonitoringOperatorTask(
 	}
 }
 
-func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
+func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *ClusterMonitoringOperatorTask) create(ctx context.Context) error {
 	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
 		"cluster-monitoring-view": t.factory.ClusterMonitoringClusterRoleView,
 		"monitoring-rules-edit":   t.factory.ClusterMonitoringRulesEditClusterRole,

@@ -16,16 +16,19 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/klog/v2"
 )
 
 type PrometheusTask struct {
-	client  *client.Client
-	factory *manifests.Factory
-	config  *manifests.Config
+	client     *client.Client
+	factory    *manifests.Factory
+	config     *manifests.Config
+	prometheus *monv1.Prometheus
 }
 
 func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *PrometheusTask {
@@ -36,7 +39,14 @@ func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config
 	}
 }
 
-func (t *PrometheusTask) Run(ctx context.Context) error {
+func (t *PrometheusTask) Run(ctx context.Context) *StateError {
+	createErr := degradedError(t.create(ctx))
+	validationErr := t.validate(ctx)
+
+	return client.MergeStateErrors(createErr, validationErr)
+}
+
+func (t *PrometheusTask) create(ctx context.Context) error {
 	cacm, err := t.factory.PrometheusK8sServingCertsCABundle()
 	if err != nil {
 		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
@@ -351,17 +361,12 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus object failed")
 		}
+		t.prometheus = p
 
 		klog.V(4).Info("reconciling Prometheus object")
 		err = t.client.CreateOrUpdatePrometheus(ctx, p)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Prometheus object failed")
-		}
-
-		klog.V(4).Info("waiting for Prometheus object changes")
-		err = t.client.WaitForPrometheus(ctx, p)
-		if err != nil {
-			return errors.Wrap(err, "waiting for Prometheus object changes failed")
 		}
 	}
 
@@ -386,4 +391,9 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (t *PrometheusTask) validate(ctx context.Context) *StateError {
+	klog.V(4).Info("validate Prometheus object")
+	return t.client.ValidatePrometheus(ctx, t.prometheus)
 }

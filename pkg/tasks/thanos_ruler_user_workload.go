@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -35,12 +36,12 @@ func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Fa
 	}
 }
 
-func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) error {
+func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) *StateError {
 	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		return t.create(ctx)
+		return degradedError(t.create(ctx))
 	}
 
-	return t.destroy(ctx)
+	return degradedError(t.destroy(ctx))
 }
 
 func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {

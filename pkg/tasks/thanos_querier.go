@@ -35,7 +35,11 @@ func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory, cfg
 	}
 }
 
-func (t *ThanosQuerierTask) Run(ctx context.Context) error {
+func (t *ThanosQuerierTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *ThanosQuerierTask) create(ctx context.Context) error {
 	svc, err := t.factory.ThanosQuerierService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier Service failed")

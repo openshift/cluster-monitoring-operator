@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"reflect"
 	"strings"
@@ -33,10 +34,12 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
+	"github.com/prometheus-operator/prometheus-operator/pkg/k8sutil"
 	prometheusoperator "github.com/prometheus-operator/prometheus-operator/pkg/prometheus"
 	"github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	thanosoperator "github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -759,6 +762,99 @@ func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) err
 		return errors.Wrapf(err, "waiting for Prometheus %s/%s", p.GetNamespace(), p.GetName())
 	}
 	return nil
+}
+
+func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Prometheus) *StateError {
+
+	status, _, err := prometheusoperator.Status(ctx, c.kclient.(*kubernetes.Clientset), p)
+	if err != nil {
+		klog.V(4).ErrorS(err, "validatePrometheusPodState: failed to get Prometheus status")
+		return NewDegradedError("failed to get prometheus status", err.Error())
+	}
+
+	required := *p.Spec.Replicas
+	available := status.AvailableReplicas
+
+	if available >= required {
+		// All pods are upto date and nothing to do; see reason above
+		//   -- OR --
+		// all pods need to be updated but they are running, in which case, we
+		// treat it as valid and the next reconciliation loop will tell us if the
+		// states are okay or not
+		return nil
+	}
+
+	// some or all  pods are NOT running, find the reason
+	// FIXME(sthaha): this assumes that the p.Spec.Shard is nil which is the case in OCP
+	pods, err := c.kclient.CoreV1().Pods(p.Namespace).List(ctx, prometheusoperator.ListOptions(p.Name))
+	if err != nil {
+		se := newUnkownStateError(Unavailable, fmt.Sprintf("listing prometheus pods failed: %s", err))
+		return se
+	}
+
+	// Add reason for failure to appropriate state - Degraded/Unavailable
+	se := NewStateError()
+	addReason := se.State(Degraded).AddReasons
+	if available == 0 {
+		se.State(Degraded).AddReasons("None of the prometheus pods are running")
+		addReason = se.State(Unavailable).AddReasons
+	}
+
+	for _, pod := range pods.Items {
+		ready, err := k8sutil.PodRunningAndReady(pod)
+		// skip those that are running & ready (includes those that require updation)
+		if err == nil && ready {
+			continue
+		}
+
+		nsName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
+
+		switch pod.Status.Phase {
+		// ignore those in running state even if they aren't ready since the
+		// next iteration will tell us the right status
+		case v1.PodRunning:
+			// these are running but not ready (yet)
+			continue
+
+		case v1.PodFailed, v1.PodSucceeded:
+			// we expect pods to be running & ready all the time
+			msg := fmt.Sprintf("prometheus pod %s has terminated", nsName)
+			addReason(msg)
+
+		case v1.PodPending:
+			for _, cond := range pod.Status.Conditions {
+				if cond.Status != v1.ConditionFalse {
+					continue
+				}
+
+				msg := fmt.Sprintf("prometheus pod %s is pending due to %s: %s", nsName, cond.Reason, cond.Message)
+				addReason(msg)
+			}
+
+			// NOTE: case v1.PodUnknown: shouldn't occur
+			// PodUnknown means that for some reason the state of the pod could not be obtained,
+			// typically due to an error in communicating with the host of the pod.
+			// Deprecated: It isn't being set since 2015 (74da3b14b0c0f658b3bb8d2def5094686d0e9095)
+		}
+	}
+	klog.V(4).ErrorS(se, "validatePrometheusPodState: failed")
+
+	return se
+}
+
+func (c *Client) ValidatePrometheus(ctx context.Context, p *monv1.Prometheus) *StateError {
+	var se *StateError
+
+	_ = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+		if err := c.validatePrometheusPodState(ctx, p); err != nil {
+			se = err
+			return false, nil
+		}
+
+		return true, nil
+	})
+
+	return se
 }
 
 func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {

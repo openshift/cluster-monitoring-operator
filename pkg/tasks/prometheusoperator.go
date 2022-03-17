@@ -34,7 +34,11 @@ func NewPrometheusOperatorTask(client *client.Client, factory *manifests.Factory
 	}
 }
 
-func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
+func (t *PrometheusOperatorTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *PrometheusOperatorTask) create(ctx context.Context) error {
 	cacm, err := t.factory.PrometheusOperatorCertsCABundle()
 	if err != nil {
 		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
