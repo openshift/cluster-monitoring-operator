@@ -1217,7 +1217,7 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			volumeExpected:   false,
 		},
 		{
-			name:             "query log file on the TSDB storage volume",
+			name:             "log to stdout",
 			queryLogFilePath: "/dev/stdout",
 			expected:         "/dev/stdout",
 			errExpected:      false,
