@@ -31,6 +31,7 @@ import (
 	"github.com/openshift/library-go/pkg/crypto"
 
 	configv1 "github.com/openshift/api/config/v1"
+	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
@@ -103,34 +104,34 @@ var (
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
 
-	PrometheusK8sClusterRoleBinding                   = "prometheus-k8s/cluster-role-binding.yaml"
-	PrometheusK8sRoleBindingConfig                    = "prometheus-k8s/role-binding-config.yaml"
-	PrometheusK8sRoleBindingList                      = "prometheus-k8s/role-binding-specific-namespaces.yaml"
-	PrometheusK8sClusterRole                          = "prometheus-k8s/cluster-role.yaml"
-	PrometheusK8sRoleConfig                           = "prometheus-k8s/role-config.yaml"
-	PrometheusK8sRoleList                             = "prometheus-k8s/role-specific-namespaces.yaml"
-	PrometheusK8sPrometheusRule                       = "prometheus-k8s/prometheus-rule.yaml"
-	PrometheusK8sThanosSidecarPrometheusRule          = "prometheus-k8s/prometheus-rule-thanos-sidecar.yaml"
-	PrometheusK8sServiceAccount                       = "prometheus-k8s/service-account.yaml"
-	PrometheusK8s                                     = "prometheus-k8s/prometheus.yaml"
-	PrometheusK8sPrometheusServiceMonitor             = "prometheus-k8s/service-monitor.yaml"
-	PrometheusK8sService                              = "prometheus-k8s/service.yaml"
-	PrometheusK8sServiceThanosSidecar                 = "prometheus-k8s/service-thanos-sidecar.yaml"
-	PrometheusK8sProxySecret                          = "prometheus-k8s/proxy-secret.yaml"
-	PrometheusRBACProxySecret                         = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
-	PrometheusUserWorkloadRBACProxyMetricsSecret      = "prometheus-user-workload/kube-rbac-proxy-metrics-secret.yaml"
-	PrometheusUserWorkloadRBACProxyFederateSecret     = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
-	PrometheusK8sAPIRoute                             = "prometheus-k8s/api-route.yaml"
-	PrometheusK8sFederateRoute                        = "prometheus-k8s/federate-route.yaml"
-	PrometheusK8sHtpasswd                             = "prometheus-k8s/htpasswd-secret.yaml"
-	PrometheusK8sServingCertsCABundle                 = "prometheus-k8s/serving-certs-ca-bundle.yaml"
-	PrometheusK8sKubeletServingCABundle               = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
-	PrometheusK8sGrpcTLSSecret                        = "prometheus-k8s/grpc-tls-secret.yaml"
-	PrometheusK8sTrustedCABundle                      = "prometheus-k8s/trusted-ca-bundle.yaml"
-	PrometheusK8sThanosSidecarServiceMonitor          = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
-	PrometheusK8sTAlertmanagerRoleBinding             = "prometheus-k8s/alertmanager-role-binding.yaml"
-	PrometheusK8sPodDisruptionBudget                  = "prometheus-k8s/pod-disruption-budget.yaml"
-	PrometheusK8sAdditionalAlertManagerRelabelConfigs = "prometheus-k8s/additional-alert-manager-relabelling-secret.yaml"
+	PrometheusK8sClusterRoleBinding               = "prometheus-k8s/cluster-role-binding.yaml"
+	PrometheusK8sRoleBindingConfig                = "prometheus-k8s/role-binding-config.yaml"
+	PrometheusK8sRoleBindingList                  = "prometheus-k8s/role-binding-specific-namespaces.yaml"
+	PrometheusK8sClusterRole                      = "prometheus-k8s/cluster-role.yaml"
+	PrometheusK8sRoleConfig                       = "prometheus-k8s/role-config.yaml"
+	PrometheusK8sRoleList                         = "prometheus-k8s/role-specific-namespaces.yaml"
+	PrometheusK8sPrometheusRule                   = "prometheus-k8s/prometheus-rule.yaml"
+	PrometheusK8sThanosSidecarPrometheusRule      = "prometheus-k8s/prometheus-rule-thanos-sidecar.yaml"
+	PrometheusK8sServiceAccount                   = "prometheus-k8s/service-account.yaml"
+	PrometheusK8s                                 = "prometheus-k8s/prometheus.yaml"
+	PrometheusK8sPrometheusServiceMonitor         = "prometheus-k8s/service-monitor.yaml"
+	PrometheusK8sService                          = "prometheus-k8s/service.yaml"
+	PrometheusK8sServiceThanosSidecar             = "prometheus-k8s/service-thanos-sidecar.yaml"
+	PrometheusK8sProxySecret                      = "prometheus-k8s/proxy-secret.yaml"
+	PrometheusRBACProxySecret                     = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
+	PrometheusUserWorkloadRBACProxyMetricsSecret  = "prometheus-user-workload/kube-rbac-proxy-metrics-secret.yaml"
+	PrometheusUserWorkloadRBACProxyFederateSecret = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
+	PrometheusK8sAPIRoute                         = "prometheus-k8s/api-route.yaml"
+	PrometheusK8sFederateRoute                    = "prometheus-k8s/federate-route.yaml"
+	PrometheusK8sHtpasswd                         = "prometheus-k8s/htpasswd-secret.yaml"
+	PrometheusK8sServingCertsCABundle             = "prometheus-k8s/serving-certs-ca-bundle.yaml"
+	PrometheusK8sKubeletServingCABundle           = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
+	PrometheusK8sGrpcTLSSecret                    = "prometheus-k8s/grpc-tls-secret.yaml"
+	PrometheusK8sTrustedCABundle                  = "prometheus-k8s/trusted-ca-bundle.yaml"
+	PrometheusK8sThanosSidecarServiceMonitor      = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
+	PrometheusK8sTAlertmanagerRoleBinding         = "prometheus-k8s/alertmanager-role-binding.yaml"
+	PrometheusK8sPodDisruptionBudget              = "prometheus-k8s/pod-disruption-budget.yaml"
+	PrometheusK8sDefaultAlertRelabelConfigs       = "prometheus-k8s/default-alert-relabel-configs.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
@@ -2487,14 +2488,14 @@ func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1.PodDisruptionBud
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusK8sPodDisruptionBudget))
 }
 
-func (f *Factory) PrometheusK8sAdditionalAlertRelabelConfigs() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sAdditionalAlertManagerRelabelConfigs))
+func (f *Factory) PrometheusK8sDefaultAlertRelabelConfigs() (*osmv1alpha1.AlertRelabelConfig, error) {
+	arc, err := f.NewAlertRelabelConfig(f.assets.MustNewAssetReader(PrometheusK8sDefaultAlertRelabelConfigs))
 	if err != nil {
 		return nil, err
 	}
 
-	s.Namespace = f.namespace
-	return s, nil
+	arc.Namespace = f.namespace
+	return arc, nil
 }
 
 func (f *Factory) PrometheusUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
@@ -2981,6 +2982,19 @@ func IsMissingPortInAddressError(err error) bool {
 		}
 	}
 	return false
+}
+
+func (f *Factory) NewAlertRelabelConfig(manifest io.Reader) (*osmv1alpha1.AlertRelabelConfig, error) {
+	arc, err := NewAlertRelabelConfig(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	if arc.GetNamespace() == "" {
+		arc.SetNamespace(f.namespace)
+	}
+
+	return arc, nil
 }
 
 func (f *Factory) NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
@@ -3904,6 +3918,16 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 			})
 		}
 	}
+}
+
+func NewAlertRelabelConfig(manifest io.Reader) (*osmv1alpha1.AlertRelabelConfig, error) {
+	arc := osmv1alpha1.AlertRelabelConfig{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&arc)
+	if err != nil {
+		return nil, err
+	}
+
+	return &arc, nil
 }
 
 func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
