@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -188,7 +189,7 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "error creating UserWorkload Prometheus Client GRPC TLS secret")
 	}
 
-	rs, err := t.factory.PrometheusUserWorkloadRBACProxySecret()
+	rs, err := t.factory.PrometheusUserWorkloadRBACProxyMetricsSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC proxy Secret failed")
 	}
@@ -196,6 +197,16 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "creating or updating UserWorkload Prometheus RBAC proxy Secret failed")
+	}
+
+	fs, err := t.factory.PrometheusUserWorkloadRBACProxyFederateSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC federate endpoint Secret failed")
+	}
+
+	err = t.client.CreateOrUpdateSecret(ctx, fs)
+	if err != nil {
+		return errors.Wrap(err, "creating or updating UserWorkload Prometheus RBAC federate endpoint Secret failed")
 	}
 
 	secret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
@@ -429,7 +440,7 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		return errors.Wrap(err, "initializing UserWorkload serving certs CA Bundle ConfigMap failed")
 	}
 
-	rs, err := t.factory.PrometheusUserWorkloadRBACProxySecret()
+	rs, err := t.factory.PrometheusUserWorkloadRBACProxyMetricsSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC proxy Secret failed")
 	}
