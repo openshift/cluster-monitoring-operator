@@ -13,6 +13,7 @@
 - [#1638](https://github.com/openshift/cluster-monitoring-operator/pull/1638) Expose sigv4 setting to Prometheus remoteWrite
 - [#1579](https://github.com/openshift/cluster-monitoring-operator/pull/1579) Expose retention size settings for Platform Prometheus
 - [#1630](https://github.com/openshift/cluster-monitoring-operator/pull/1630) Expose retention size settings for UWM Prometheus
+- [#1596](https://github.com/openshift/cluster-monitoring-operator/pull/1596) Add support for user-defined alert relabel configs via AlertRelabelConfig resources.
 
 ## 4.10
 
