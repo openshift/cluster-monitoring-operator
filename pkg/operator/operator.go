@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
@@ -166,6 +167,8 @@ type Operator struct {
 	assets *manifests.Assets
 
 	rebalancer *rebalancer.Rebalancer
+
+	relabelController *alert.RelabelConfigController
 }
 
 func New(
@@ -198,6 +201,7 @@ func New(
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
 		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
+		relabelController:         alert.NewRelabelConfigController(c),
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -346,7 +350,7 @@ func New(
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create client certificate controller")
 	}
-	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run)
+	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run, o.relabelController.Run)
 
 	return o, nil
 }
