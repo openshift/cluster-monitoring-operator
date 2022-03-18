@@ -203,6 +203,52 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "assert remote write temporary cluster id label is dropped",
+			rwSpec: `
+  - url: https://%[1]s/api/v1/write
+    tlsConfig:
+      ca:
+        secret:
+          name: %[2]s
+          key: ca.crt
+`,
+			expected: []remoteWriteTest{
+				{
+					query:       `absent(prometheus_remote_storage_samples_pending{__tmp_openshift_cluster_id__=~".+"})`,
+					expected:    func(v int) bool { return v == 1 },
+					description: "Expected to find 0 time series of metric prometheus_remote_storage_samples_pending with the temporary cluster_id label",
+				},
+			},
+		},
+		{
+			name: "assert remote write cluster_id relabel config works",
+			rwSpec: `
+  - url: https://%[1]s/api/v1/write
+    tlsConfig:
+      ca:
+        secret:
+          name: %[2]s
+          key: ca.crt
+    writeRelabelConfigs:
+    - sourceLabels:
+        - __tmp_openshift_cluster_id__
+      targetLabel: cluster_id
+      action: replace
+`,
+			expected: []remoteWriteTest{
+				{
+					query:       `count(prometheus_remote_storage_samples_pending{cluster_id!=""})`,
+					expected:    func(v int) bool { return v == 4 },
+					description: "Expected to find 4 time series of metric prometheus_remote_storage_samples_pending with the cluster_id label",
+				},
+				{
+					query:       `absent(prometheus_remote_storage_samples_pending{__tmp_openshift_cluster_id__=~".+"})`,
+					expected:    func(v int) bool { return v == 1 },
+					description: "Expected to find 0 time series of metric prometheus_remote_storage_samples_pending with the temporary cluster_id label",
+				},
+			},
+		},
 	} {
 		rw := fmt.Sprintf(tc.rwSpec, prometheusReceiverURL, tlsSecret.Name)
 
