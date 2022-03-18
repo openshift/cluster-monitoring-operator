@@ -15,19 +15,15 @@
 package e2e
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	osConfigv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
@@ -94,51 +90,30 @@ func TestAntiAffinity(t *testing.T) {
 	}
 }
 
+type remoteWriteTest struct {
+	query       string
+	expected    func(int) bool
+	description string
+}
+
 func TestPrometheusRemoteWrite(t *testing.T) {
 	ctx := context.Background()
 
-	name := "remote-write-e2e-test"
+	name := "rwe2e"
 
 	// deploy a service for our remote write target
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
-				"group":                    name,
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-			Namespace: f.Ns,
-		},
-		Spec: v1.ServiceSpec{
-			Type: v1.ServiceTypeLoadBalancer,
-			Ports: []v1.ServicePort{
-				{
-					Name: "web",
-					Port: 8080,
-				},
-				{
-					Name: "mtls",
-					Port: 8081,
-				},
-			},
-			Selector: map[string]string{
-				"group": name,
-			},
-		},
-	}
+	svc := f.MakePrometheusService(f.Ns, name, name, v1.ServiceTypeClusterIP)
 
 	if err := f.OperatorClient.CreateOrUpdateService(ctx, svc); err != nil {
 		t.Fatal(err)
 	}
-	deployedService, err := f.KubeClient.CoreV1().Services(f.Ns).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	prometheusReceiverURL := svc.Name + "." + svc.Namespace + ".svc.cluster.local"
 
 	// setup a self-signed ca and store the artifacts in a secret
+	secName := fmt.Sprintf("selfsigned-%s-bundle", name)
 	tlsSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "selfsigned-mtls-bundle",
+			Name:      secName,
 			Namespace: f.Ns,
 			Labels: map[string]string{
 				"group":                    name,
@@ -146,173 +121,129 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			},
 		},
 		Data: map[string][]byte{
-			"client-cert-name": []byte("test-client"),
-			"serving-cert-url": []byte(deployedService.Spec.ClusterIP),
+			"client-cert-name": []byte("remoteWrite-client"),
+			"serving-cert-url": []byte(prometheusReceiverURL),
 		},
 	}
 	if err := createSelfSignedMTLSArtifacts(tlsSecret); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.OperatorClient.CreateOrUpdateSecret(ctx, tlsSecret); err != nil {
+	if err := f.OperatorClient.CreateIfNotExistSecret(ctx, tlsSecret); err != nil {
 		t.Fatal(err)
 	}
 
-	// deploy remote write target
-	targetDeployment := fmt.Sprintf(`apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: instrumented-sample-app
-  namespace: openshift-monitoring
-  labels:
-    group: %[1]s
-    %[2]s
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      group: %[1]s
-  template:
-    metadata:
-      labels:
-        group: %[1]s
-    spec:
-      containers:
-      - name: example-app
-        args:
-        - --cert-path=/etc/certs
-        image: quay.io/coreos/instrumented-sample-app:0.2.0-bearer-mtls-1
-        imagePullPolicy: IfNotPresent
-        ports:
-        - name: web
-          containerPort: 8080
-        - name: mtls
-          containerPort: 8081
-        volumeMounts:
-        - mountPath: /etc/certs
-          name: certs
-      volumes:
-      - name: certs
-        secret:
-          secretName: selfsigned-mtls-bundle
-          items:
-          - key: server-ca.pem
-            path: cert.pem
-          - key: server.key
-            path: key.pem
-`, name, framework.E2eTestLabel)
-	rwTestDeployment, err := manifests.NewDeployment(bytes.NewReader([]byte(targetDeployment)))
+	route := f.MakePrometheusServiceRoute(svc)
+	if err := f.OperatorClient.CreateRouteIfNotExists(ctx, route); err != nil {
+		t.Fatal(err)
+	}
+
+	prometheusReceiveClient, err := framework.NewPrometheusClientFromRoute(
+		ctx,
+		f.OpenShiftRouteClient,
+		route.Namespace,
+		route.Name,
+		"")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := f.OperatorClient.CreateOrUpdateDeployment(ctx, rwTestDeployment); err != nil {
-		t.Fatal(err)
-	}
-	for _, scenario := range []struct {
-		name   string
-		port   string
-		rwSpec string
+	for _, tc := range []struct {
+		name     string
+		rwSpec   string
+		expected []remoteWriteTest
 	}{
-		// check remote write logs
 		{
-			name: "assert remote write to http works",
-			port: "8080",
+			name: "assert remote write without authorization works",
 			rwSpec: `
-  - url: http://%s`,
-		},
-		{
-			name: "assert mtls remote write works",
-			port: "8081",
-			rwSpec: `
-  - url: https://%s
+  - url: https://%[1]s/api/v1/write
     tlsConfig:
       ca:
         secret:
-          name: selfsigned-mtls-bundle
+          name: %[2]s
+          key: ca.crt`,
+			expected: []remoteWriteTest{
+				{
+					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-0"),
+					expected:    func(v int) bool { return v != 0 },
+					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
+				},
+				{
+					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-1"),
+					expected:    func(v int) bool { return v != 0 },
+					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
+				},
+			},
+		},
+		{
+			name: "assert remote write with mtls authorization works",
+			rwSpec: `
+  - url: https://%[1]s/api/v1/write
+    tlsConfig:
+      ca:
+        secret:
+          name: %[2]s
           key: ca.crt
       cert:
         secret:
-          name: selfsigned-mtls-bundle
+          name: %[2]s
           key: client.crt
       keySecret:
-        name: selfsigned-mtls-bundle
+        name: %[2]s
         key: client.key
 `,
+			expected: []remoteWriteTest{
+				{
+					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-0"),
+					expected:    func(v int) bool { return v != 0 },
+					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
+				},
+				{
+					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-1"),
+					expected:    func(v int) bool { return v != 0 },
+					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
+				},
+			},
 		},
 	} {
-		rw := fmt.Sprintf(scenario.rwSpec, deployedService.Spec.ClusterIP+":"+scenario.port)
+		rw := fmt.Sprintf(tc.rwSpec, prometheusReceiverURL, tlsSecret.Name)
 
 		cmoConfigMap := fmt.Sprintf(`prometheusK8s:
   logLevel: debug
   remoteWrite: %s
 `, rw)
-		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, cmoConfigMap))
 
-		f.AssertOperatorCondition(osConfigv1.OperatorDegraded, osConfigv1.ConditionFalse)
-		f.AssertOperatorCondition(osConfigv1.OperatorProgressing, osConfigv1.ConditionTrue)
+		t.Run(tc.name, func(t *testing.T) {
+			// deploy remote write target
+			prometheusReceiver := f.MakePrometheusWithWebTLSRemoteReceive(name, secName)
+			if err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
+				t.Fatal(err)
+			}
+			if err := f.OperatorClient.WaitForPrometheus(ctx, prometheusReceiver); err != nil {
+				t.Fatal(err)
+			}
 
-		t.Run(scenario.name, checkRemoteWrite(name, ctx))
+			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, cmoConfigMap))
+
+			f.AssertOperatorCondition(osConfigv1.OperatorDegraded, osConfigv1.ConditionFalse)(t)
+			f.AssertOperatorCondition(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
+			f.AssertOperatorCondition(osConfigv1.OperatorAvailable, osConfigv1.ConditionTrue)(t)
+
+			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
+
+			if err := f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
-func checkRemoteWrite(rwEndpointName string, ctx context.Context) func(*testing.T) {
-	return func(t *testing.T) {
-		remoteWriteCheckLogs(ctx, rwEndpointName, t)
-
-		remoteWriteCheckMetrics(ctx, t)
-	}
-}
-
-func remoteWriteCheckLogs(ctx context.Context, rwEndpointName string, t *testing.T) {
-	promLogs0, err := f.GetLogs(f.Ns, "prometheus-k8s-0", "prometheus")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	promLogs1, err := f.GetLogs(f.Ns, "prometheus-k8s-1", "prometheus")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var promLogs strings.Builder
-	promLogErr := "prometheus logs are empty, expected to find log messages"
-	if i, _ := promLogs.WriteString(promLogs0); i == 0 {
-		t.Fatal(promLogErr)
-	}
-	if i, _ := promLogs.WriteString(promLogs1); i == 0 {
-		t.Fatal(promLogErr)
-	}
-
-	rwEndpointOpts := metav1.ListOptions{LabelSelector: labels.FormatLabels(map[string]string{"group": rwEndpointName})}
-
-	rwEndpointPodList, err := f.KubeClient.CoreV1().Pods(f.Ns).List(ctx, rwEndpointOpts)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rwEndpointLogs, err := f.GetLogs(f.Ns, rwEndpointPodList.Items[0].ObjectMeta.Name, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if strings.Contains(promLogs.String(), `msg="Failed to send batch, retrying`) {
-		t.Fatal("unexpected prometheus log message, failed to send batch to remote write endpoint")
-	}
-	if strings.Contains(rwEndpointLogs, "remote error: tls: bad certificate") {
-		t.Fatal("remote write tls endpoint sees bad or no certificate")
-	}
-}
-
-func remoteWriteCheckMetrics(ctx context.Context, t *testing.T) {
-	time.Sleep(1 * time.Minute)
-	for _, pod := range []string{
-		"prometheus-k8s-0",
-		"prometheus-k8s-1",
-	} {
-		f.ThanosQuerierClient.WaitForQueryReturn(
-			t, 1*time.Minute, fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%s"}[1m]))`, pod),
+func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *framework.PrometheusClient, tests []remoteWriteTest) {
+	for _, test := range tests {
+		promClient.WaitForQueryReturn(
+			t, 2*time.Minute, test.query,
 			func(v int) error {
-				if v == 0 {
-					return fmt.Errorf("prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta")
+				if !test.expected(v) {
+					return fmt.Errorf(test.description)
 				}
-
 				return nil
 			},
 		)
