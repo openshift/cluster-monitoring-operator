@@ -13,6 +13,7 @@ spec:
   additionalAlertRelabelConfigs:
     key: config.yaml
     name: alert-relabel-configs
+    optional: true
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
