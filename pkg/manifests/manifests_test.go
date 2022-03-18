@@ -733,20 +733,43 @@ func TestUnconfiguredManifests(t *testing.T) {
 }
 
 func TestSharingConfig(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	u, err := url.Parse("http://example.com/")
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, tc := range []struct {
+		name string
+		url  string
+	}{
+		{
+			name: "simple url",
+			url:  "http://example.com/",
+		},
+		{
+			name: "assert path component is dropped",
+			url:  "http://example.com/some/path",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			u, err := url.Parse("http://example.com/")
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	cm := f.SharingConfig(u, u, u)
-	if cm.Namespace == "openshift-monitoring" {
-		t.Fatalf("expecting namespace other than %q", "openshift-monitoring")
-	}
-	for k := range cm.Data {
-		if !strings.Contains(k, "Public") {
-			t.Fatalf("expecting key %q to contain 'Public'", k)
-		}
+			cm := f.SharingConfig(u, u, u)
+			if cm.Namespace == "openshift-monitoring" {
+				t.Fatalf("expecting namespace other than %q", "openshift-monitoring")
+			}
+			for k, v := range cm.Data {
+				if !strings.Contains(k, "Public") {
+					t.Fatalf("expecting key %q to contain 'Public'", k)
+				}
+				publicURL, err := url.Parse(v)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if v != fmt.Sprintf("%s://%s", publicURL.Scheme, publicURL.Host) {
+					t.Fatalf("expecting public URLs on only contain <scheme>://<host>, got %s", v)
+				}
+			}
+		})
 	}
 }
 

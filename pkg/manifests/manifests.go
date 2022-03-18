@@ -1380,15 +1380,15 @@ func (f *Factory) SharingConfig(promHost, amHost, thanosHost *url.URL) *v1.Confi
 	// Configmap keys need to include "public" to indicate that they are public values.
 	// See https://bugzilla.redhat.com/show_bug.cgi?id=1807100.
 	if promHost != nil {
-		data["prometheusPublicURL"] = promHost.String()
+		data["prometheusPublicURL"] = fmt.Sprintf("%s://%s", promHost.Scheme, promHost.Host)
 	}
 
 	if amHost != nil {
-		data["alertmanagerPublicURL"] = amHost.String()
+		data["alertmanagerPublicURL"] = fmt.Sprintf("%s://%s", amHost.Scheme, amHost.Host)
 	}
 
 	if thanosHost != nil {
-		data["thanosPublicURL"] = thanosHost.String()
+		data["thanosPublicURL"] = fmt.Sprintf("%s://%s", thanosHost.Scheme, thanosHost.Host)
 	}
 
 	return &v1.ConfigMap{
