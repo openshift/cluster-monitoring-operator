@@ -307,16 +307,14 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 	}
 
 	{
-		relabelConfigSecret, err := t.factory.PrometheusK8sAdditionalAlertRelabelConfigs()
+		defaultRelabelConfigs, err := t.factory.PrometheusK8sDefaultAlertRelabelConfigs()
 		if err != nil {
-			return errors.Wrap(err, "initializing Prometheus AdditionalAlertRelabelConfigs secret failed")
+			return errors.Wrap(err, "initializing Prometheus default AlertRelabelConfig failed")
 		}
 
-		if relabelConfigSecret != nil {
-			err = t.client.CreateOrUpdateSecret(ctx, relabelConfigSecret)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Prometheus AdditionalAlertRelabelConfigs secret failed")
-			}
+		if defaultRelabelConfigs != nil {
+			err = t.client.CreateOrUpdateAlertRelabelConfig(ctx, defaultRelabelConfigs)
+			return errors.Wrap(err, "reconciling Prometheus default AlertRelabelConfig failed")
 		}
 	}
 
