@@ -739,7 +739,7 @@ func TestSharingConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cm := f.SharingConfig(u, u, u, u)
+	cm := f.SharingConfig(u, u, u)
 	if cm.Namespace == "openshift-monitoring" {
 		t.Fatalf("expecting namespace other than %q", "openshift-monitoring")
 	}

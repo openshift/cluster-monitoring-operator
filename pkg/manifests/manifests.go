@@ -1374,7 +1374,7 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 	return r, nil
 }
 
-func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.URL) *v1.ConfigMap {
+func (f *Factory) SharingConfig(promHost, amHost, thanosHost *url.URL) *v1.ConfigMap {
 	data := map[string]string{}
 
 	// Configmap keys need to include "public" to indicate that they are public values.
@@ -1385,10 +1385,6 @@ func (f *Factory) SharingConfig(promHost, amHost, grafanaHost, thanosHost *url.U
 
 	if amHost != nil {
 		data["alertmanagerPublicURL"] = amHost.String()
-	}
-
-	if grafanaHost != nil {
-		data["grafanaPublicURL"] = grafanaHost.String()
 	}
 
 	if thanosHost != nil {
@@ -1559,27 +1555,6 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 			p.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
 			f.injectProxyVariables(&p.Spec.Containers[i])
-
-			// If Grafana is enabled, inject the necessary bits for basic-auth.
-			if f.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
-				volumeName := "secret-prometheus-k8s-htpasswd"
-				secretName := "prometheus-k8s-htpasswd"
-
-				p.Spec.Containers[i].Args = append(
-					p.Spec.Containers[i].Args,
-					htpasswdArg,
-				)
-
-				p.Spec.Containers[i].VolumeMounts = append(
-					p.Spec.Containers[i].VolumeMounts,
-					htpasswdVolumeMount(volumeName),
-				)
-
-				p.Spec.Volumes = append(
-					p.Spec.Volumes,
-					htpasswdVolume(secretName, volumeName),
-				)
-			}
 
 		case "kube-rbac-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
@@ -2669,14 +2644,6 @@ func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Depl
 		}
 	}
 
-	if f.config.ClusterMonitoringConfiguration.GrafanaConfig.NodeSelector != nil {
-		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.GrafanaConfig.NodeSelector
-	}
-
-	if len(f.config.ClusterMonitoringConfiguration.GrafanaConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.GrafanaConfig.Tolerations
-	}
-
 	d.Namespace = f.namespace
 
 	return d, nil
@@ -3323,27 +3290,6 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 					Path: "tls-ca-bundle.pem",
 				})
 				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
-			}
-
-			// If Grafana is enabled, inject the necessary bits for basic-auth.
-			if f.config.ClusterMonitoringConfiguration.GrafanaConfig.IsEnabled() {
-				volumeName := "secret-thanos-querier-oauth-htpasswd"
-				secretName := "thanos-querier-oauth-htpasswd"
-
-				d.Spec.Template.Spec.Containers[i].Args = append(
-					d.Spec.Template.Spec.Containers[i].Args,
-					htpasswdArg,
-				)
-
-				d.Spec.Template.Spec.Containers[i].VolumeMounts = append(
-					d.Spec.Template.Spec.Containers[i].VolumeMounts,
-					htpasswdVolumeMount(volumeName),
-				)
-
-				d.Spec.Template.Spec.Volumes = append(
-					d.Spec.Template.Spec.Volumes,
-					htpasswdVolume(secretName, volumeName),
-				)
 			}
 
 		case "thanos-query":

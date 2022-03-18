@@ -3,6 +3,7 @@
 # 4.11
 
 - [#1567](https://github.com/openshift/cluster-monitoring-operator/pull/1567) Enable validating webhook for AlertmanagerConfig customer resources
+- [#1557](https://github.com/openshift/cluster-monitoring-operator/pull/1557) Removing grafana from monitoring stack
 
 ## 4.10
 

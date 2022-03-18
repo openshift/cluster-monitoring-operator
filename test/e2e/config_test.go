@@ -71,39 +71,6 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 }
 
-func TestGrafanaConfiguration(t *testing.T) {
-	config := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-monitoring-config",
-			Namespace: f.Ns,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": "grafana: { enabled: false }",
-		},
-	}
-	f.MustCreateOrUpdateConfigMap(t, config)
-
-	// Wait for Grafana deployment to disappear.
-	f.AssertDeploymentDoesNotExist("grafana", f.Ns)(t)
-
-	t.Log("asserting that CMO is healthy after disabling Grafana")
-	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-
-	// Push a default configuration that re-enables Grafana.
-	config.Data["config.yaml"] = "grafana: { enabled: true }"
-	f.MustCreateOrUpdateConfigMap(t, config)
-	// Wait for Grafana deployment to appear.
-	f.AssertDeploymentExists("grafana", f.Ns)(t)
-
-	t.Log("asserting that CMO is healthy after re-enabling Grafana")
-	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-}
-
 func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 	const (
 		containerName = "prometheus-operator"
@@ -317,34 +284,6 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
 			assertion: f.AssertPodConfiguration(
 				f.Ns,
 				"k8s-app=openshift-state-metrics",
-				[]framework.PodAssertion{
-					expectCatchAllToleration(),
-				},
-			),
-		},
-	} {
-		t.Run(tc.name, tc.assertion)
-	}
-}
-
-func TestClusterMonitorGrafanaConfig(t *testing.T) {
-	const deploymentName = "grafana"
-	data := `grafana:
-  tolerations:
-    - operator: "Exists"
-`
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
-
-	for _, tc := range []scenario{
-		{
-			name:      "test the grafana deployment is rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
-		},
-		{
-			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
-				f.Ns,
-				"app.kubernetes.io/component=grafana",
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
