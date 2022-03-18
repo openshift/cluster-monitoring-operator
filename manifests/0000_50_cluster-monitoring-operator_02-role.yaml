@@ -214,9 +214,30 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - networking.k8s.io
+  - ''
   resources:
-  - networkpolicies
+  - configmaps
+  - endpoints
+  - limitranges
+  - namespaces
+  - nodes
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  - replicationcontrollers
+  - resourcequotas
+  - secrets
+  - services
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - daemonsets
+  - deployments
+  - ingresses
+  - replicasets
   verbs:
   - list
   - watch
@@ -231,12 +252,31 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
+  - batch
   resources:
-  - daemonsets
-  - deployments
-  - ingresses
-  - replicasets
+  - cronjobs
+  - jobs
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
   verbs:
   - list
   - watch
@@ -257,49 +297,9 @@ rules:
   - list
   - watch
 - apiGroups:
-  - autoscaling
+  - networking.k8s.io
   resources:
-  - horizontalpodautoscalers
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - cronjobs
-  - jobs
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - policy
-  resources:
-  - poddisruptionbudgets
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - ''
-  resources:
-  - configmaps
-  - endpoints
-  - limitranges
-  - namespaces
-  - nodes
-  - persistentvolumeclaims
-  - persistentvolumes
-  - pods
-  - replicationcontrollers
-  - resourcequotas
-  - secrets
-  - services
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests
+  - networkpolicies
   verbs:
   - list
   - watch
@@ -312,9 +312,9 @@ rules:
   verbs:
   - use
 - apiGroups:
-  - user.openshift.io
+  - apps.openshift.io
   resources:
-  - groups
+  - deploymentconfigs
   verbs:
   - list
   - watch
@@ -327,6 +327,13 @@ rules:
   - list
   - watch
 - apiGroups:
+  - quota.openshift.io
+  resources:
+  - clusterresourcequotas
+  verbs:
+  - list
+  - watch
+- apiGroups:
   - route.openshift.io
   resources:
   - routes
@@ -334,16 +341,9 @@ rules:
   - list
   - watch
 - apiGroups:
-  - apps.openshift.io
+  - user.openshift.io
   resources:
-  - deploymentconfigs
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - quota.openshift.io
-  resources:
-  - clusterresourcequotas
+  - groups
   verbs:
   - list
   - watch
@@ -424,39 +424,16 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - ''
+  - apps
   resources:
-  - nodes
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - ''
-  resources:
-  - configmaps
-  - secrets
+  - statefulsets
   verbs:
   - '*'
 - apiGroups:
   - ''
   resources:
-  - namespaces
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingresses
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
+  - configmaps
+  - secrets
   verbs:
   - '*'
 - apiGroups:
@@ -477,6 +454,29 @@ rules:
   - delete
   - get
   - update
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
