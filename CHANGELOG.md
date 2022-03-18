@@ -8,6 +8,7 @@
 - [#1350](https://github.com/openshift/cluster-monitoring-operator/pull/1350) Support label scrape limits in user-workload monitoring
 - [#1601](https://github.com/openshift/cluster-monitoring-operator/pull/1601) Expose the /federate endpoint of UWM Prometheus as a service
 - [#1617](https://github.com/openshift/cluster-monitoring-operator/pull/1617) Add Oauth2 setting to PrometheusK8s remoteWrite config
+- [#1598](https://github.com/openshift/cluster-monitoring-operator/pull/1598) Expose Authorization settings for remote write in the CMO configuration
 
 ## 4.10
 
