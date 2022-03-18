@@ -4226,6 +4226,7 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 			WriteRelabelConfigs: writeRelabelConfigs,
 			BasicAuth:           target.BasicAuth,
 			BearerTokenFile:     target.BearerTokenFile,
+			Authorization:       target.Authorization,
 			ProxyURL:            target.ProxyURL,
 			MetadataConfig:      target.MetadataConfig,
 			OAuth2:              target.OAuth2,

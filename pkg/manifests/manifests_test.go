@@ -1317,6 +1317,11 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
     datacenter: eu-west
   remoteWrite:
   - url: "https://test.remotewrite.com/api/write"
+    Authorization:
+      type: Bearer
+      credentials:
+        name: credentials
+        key: token
   queryLogFile: /tmp/test
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
@@ -1449,6 +1454,16 @@ ingress:
 
 	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
 		t.Fatal("Prometheus remote-write is not configured correctly")
+	}
+
+    if p.Spec.RemoteWrite[0].Authorization.Type != "Bearer" {
+		t.Fatal("Prometheus remote-write authorization type is not configured correctly")
+	}
+	if p.Spec.RemoteWrite[0].Authorization.Credentials.Name != "credentials" {
+		t.Fatal("Prometheus remote-write authorization credentials name is not configured correctly")
+	}
+	if p.Spec.RemoteWrite[0].Authorization.Credentials.Key != "token" {
+		t.Fatal("Prometheus remote-write authorization credentials token is not configured correctly")
 	}
 
 	if p.Spec.QueryLogFile != "/tmp/test" {
@@ -1753,6 +1768,9 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 			)
+            if err != nil{
+                t.Fatal(err)
+            }
 
 			secrets := make(map[string]struct{})
 			for _, s := range p.Spec.Secrets {
