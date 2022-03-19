@@ -933,6 +933,10 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 						TargetLabel: "__tmp_openshift_cluster_id__",
 						Replacement: "",
 					},
+					{
+						Regex:  "__tmp_openshift_cluster_id__",
+						Action: "labeldrop",
+					},
 				},
 			},
 		},
@@ -969,6 +973,10 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 					{
 						SourceLabels: []string{"__tmp_openshift_cluster_id__"},
 						TargetLabel:  "cluster",
+					},
+					{
+						Regex:  "__tmp_openshift_cluster_id__",
+						Action: "labeldrop",
 					},
 				},
 			},
@@ -1020,6 +1028,10 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 						SourceLabels: []string{"__tmp_openshift_cluster_id__"},
 						TargetLabel:  "cluster",
 					},
+					{
+						Regex:  "__tmp_openshift_cluster_id__",
+						Action: "labeldrop",
+					},
 				},
 				{
 					{
@@ -1033,6 +1045,10 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 					{
 						TargetLabel: "unrelated_to_cluster_id",
 						Replacement: "some_value",
+					},
+					{
+						Regex:  "__tmp_openshift_cluster_id__",
+						Action: "labeldrop",
 					},
 				},
 			},

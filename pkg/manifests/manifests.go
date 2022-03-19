@@ -56,6 +56,8 @@ const (
 
 	htpasswdArg = "-htpasswd-file=/etc/proxy/htpasswd/auth"
 	clientCAArg = "--client-ca-file=/etc/tls/client/client-ca.crt"
+
+	tmpClusterIDLabelName = "__tmp_openshift_cluster_id__"
 )
 
 var (
@@ -4165,19 +4167,27 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteSpec) []monv1.RemoteWriteSpec {
 	clusterIDRelabelConfig := []monv1.RelabelConfig{
 		{
-			TargetLabel: "__tmp_openshift_cluster_id__",
+			TargetLabel: tmpClusterIDLabelName,
 			Replacement: clusterID,
 		},
 	}
+	tmpRelabelDrop := monv1.RelabelConfig{
+		Regex:  tmpClusterIDLabelName,
+		Action: "labeldrop",
+	}
 
 	for _, target := range rwTargets {
+		// prepend our temporary cluster id label
+		writeRelabelConfigs := append(clusterIDRelabelConfig, target.WriteRelabelConfigs...)
+		// and append the drop rule for our temporary cluster id
+		writeRelabelConfigs = append(writeRelabelConfigs, tmpRelabelDrop)
 		rwConf := monv1.RemoteWriteSpec{
 			URL:                 target.URL,
 			Name:                target.Name,
 			RemoteTimeout:       target.RemoteTimeout,
 			Headers:             target.Headers,
 			QueueConfig:         target.QueueConfig,
-			WriteRelabelConfigs: append(clusterIDRelabelConfig, target.WriteRelabelConfigs...),
+			WriteRelabelConfigs: writeRelabelConfigs,
 			BasicAuth:           target.BasicAuth,
 			BearerTokenFile:     target.BearerTokenFile,
 			ProxyURL:            target.ProxyURL,
