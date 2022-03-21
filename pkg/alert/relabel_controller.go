@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +29,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+
+	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/relabel"
 
 	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -43,6 +46,15 @@ const (
 	secretName = "alert-relabel-configs"
 	secretKey  = "config.yaml"
 )
+
+// defaultRelabelConfig is the default relabel config that is always appended to
+// the generated configs.  It ensures there is a label indicating the source of
+// platform alerts.
+var defaultRelabelConfig = &osmv1alpha1.RelabelConfig{
+	Action:      "replace",
+	Replacement: "platform",
+	TargetLabel: "openshift_io_alert_source",
+}
 
 // RelabelConfigController is a controller for AlertRelabelConfig resources.
 type RelabelConfigController struct {
@@ -114,6 +126,12 @@ func (c *RelabelConfigController) Run(ctx context.Context, workers int) {
 	)
 
 	go c.worker(ctx)
+
+	// Trigger an initial sync.  This ensures the default config is created even
+	// if there are no AlertRelabelConfig resources in the cluster.  The enqueued
+	// key isn't actually used in the sync() method, so it can just be a
+	// descriptive string.
+	c.enqueue("initial-sync")
 
 	<-ctx.Done()
 }
@@ -262,15 +280,32 @@ func (c *RelabelConfigController) sync(ctx context.Context, key string) error {
 
 	sort.Strings(relabelConfigKeys)
 
-	var yamlConfigs []yaml.MapSlice
+	var yamlConfigs []*yaml.Node
 
 	// Build a slice of YAML configs in lexicographical order.
 	for _, k := range relabelConfigKeys {
 		klog.V(4).Infof("Marshaling AlertRelabelConfig to YAML: %s", k)
 
 		for _, c := range relabelConfigs[k].Spec.Configs {
-			yamlConfigs = append(yamlConfigs, generateRelabelConfig(&c))
+			yamlNode, err := generateRelabelConfig(&c)
+			if err != nil {
+				klog.Errorf("Error encoding AlertRelabelConfig %q as YAML: %v", k, err)
+				continue
+			}
+
+			yamlNode.HeadComment = fmt.Sprintf("Source AlertRelabelConfig: %s", k)
+			yamlConfigs = append(yamlConfigs, yamlNode)
 		}
+	}
+
+	// Always append the default config as the last item.
+	defaultRelabelConfigYaml, err := generateRelabelConfig(defaultRelabelConfig)
+	if err != nil {
+		klog.Errorf("Error encoding default alert relabel config as YAML: %v", err)
+		// TODO(bison): Is this a fatal error?  I guess it should never happen...
+	} else {
+		defaultRelabelConfigYaml.HeadComment = "Source: default configuration"
+		yamlConfigs = append(yamlConfigs, defaultRelabelConfigYaml)
 	}
 
 	outBytes, err := yaml.Marshal(yamlConfigs)
@@ -288,40 +323,37 @@ func (c *RelabelConfigController) sync(ctx context.Context, key string) error {
 		},
 	}
 
+	// TODO(bison): Update status information on AlertRelabelConfig objects.
+
 	return c.client.CreateOrUpdateSecret(ctx, secret)
 }
 
-// generateRelabelConfig converts an osmv1alpha1.RelabelConfig to a yaml.MapSlice.
-func generateRelabelConfig(c *osmv1alpha1.RelabelConfig) yaml.MapSlice {
-	relabeling := yaml.MapSlice{}
-
-	if len(c.SourceLabels) > 0 {
-		relabeling = append(relabeling, yaml.MapItem{Key: "source_labels", Value: c.SourceLabels})
+// generateRelabelConfig converts an osmv1alpha1.RelabelConfig to a yaml.Node.
+func generateRelabelConfig(c *osmv1alpha1.RelabelConfig) (*yaml.Node, error) {
+	var sourceLabels model.LabelNames
+	for _, l := range c.SourceLabels {
+		sourceLabels = append(sourceLabels, model.LabelName(l))
 	}
 
-	if c.Separator != "" {
-		relabeling = append(relabeling, yaml.MapItem{Key: "separator", Value: c.Separator})
+	regex, err := relabel.NewRegexp(c.Regex)
+	if err != nil {
+		return nil, err
 	}
 
-	if c.TargetLabel != "" {
-		relabeling = append(relabeling, yaml.MapItem{Key: "target_label", Value: c.TargetLabel})
+	relabelConfig := &relabel.Config{
+		SourceLabels: sourceLabels,
+		Regex:        regex,
+		Separator:    c.Separator,
+		TargetLabel:  c.TargetLabel,
+		Modulus:      c.Modulus,
+		Replacement:  c.Replacement,
+		Action:       relabel.Action(c.Action),
 	}
 
-	if c.Regex != "" {
-		relabeling = append(relabeling, yaml.MapItem{Key: "regex", Value: c.Regex})
+	relabelConfigYaml := &yaml.Node{}
+	if err := relabelConfigYaml.Encode(relabelConfig); err != nil {
+		return nil, err
 	}
 
-	if c.Modulus != uint64(0) {
-		relabeling = append(relabeling, yaml.MapItem{Key: "modulus", Value: c.Modulus})
-	}
-
-	if c.Replacement != "" {
-		relabeling = append(relabeling, yaml.MapItem{Key: "replacement", Value: c.Replacement})
-	}
-
-	if c.Action != "" {
-		relabeling = append(relabeling, yaml.MapItem{Key: "action", Value: c.Action})
-	}
-
-	return relabeling
+	return relabelConfigYaml, nil
 }
