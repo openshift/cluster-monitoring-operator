@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -302,18 +303,6 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 			if err != nil {
 				return errors.Wrap(err, "reconciling Prometheus PodDisruptionBudget object failed")
 			}
-		}
-	}
-
-	{
-		defaultRelabelConfigs, err := t.factory.PrometheusK8sDefaultAlertRelabelConfigs()
-		if err != nil {
-			return errors.Wrap(err, "initializing Prometheus default AlertRelabelConfig failed")
-		}
-
-		if defaultRelabelConfigs != nil {
-			err = t.client.CreateOrUpdateAlertRelabelConfig(ctx, defaultRelabelConfigs)
-			return errors.Wrap(err, "reconciling Prometheus default AlertRelabelConfig failed")
 		}
 	}
 
