@@ -307,18 +307,6 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 	}
 
 	{
-		defaultRelabelConfigs, err := t.factory.PrometheusK8sDefaultAlertRelabelConfigs()
-		if err != nil {
-			return errors.Wrap(err, "initializing Prometheus default AlertRelabelConfig failed")
-		}
-
-		if defaultRelabelConfigs != nil {
-			err = t.client.CreateOrUpdateAlertRelabelConfig(ctx, defaultRelabelConfigs)
-			return errors.Wrap(err, "reconciling Prometheus default AlertRelabelConfig failed")
-		}
-	}
-
-	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.PrometheusK8sTrustedCABundle()
 		if err != nil {

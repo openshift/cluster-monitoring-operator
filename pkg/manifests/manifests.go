@@ -31,7 +31,6 @@ import (
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
-	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
@@ -148,7 +147,6 @@ var (
 	PrometheusK8sThanosSidecarServiceMonitor      = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
 	PrometheusK8sTAlertmanagerRoleBinding         = "prometheus-k8s/alertmanager-role-binding.yaml"
 	PrometheusK8sPodDisruptionBudget              = "prometheus-k8s/pod-disruption-budget.yaml"
-	PrometheusK8sDefaultAlertRelabelConfigs       = "prometheus-k8s/default-alert-relabel-configs.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
@@ -2765,16 +2763,6 @@ func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1.PodDisruptionBud
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusK8sPodDisruptionBudget))
 }
 
-func (f *Factory) PrometheusK8sDefaultAlertRelabelConfigs() (*osmv1alpha1.AlertRelabelConfig, error) {
-	arc, err := f.NewAlertRelabelConfig(f.assets.MustNewAssetReader(PrometheusK8sDefaultAlertRelabelConfigs))
-	if err != nil {
-		return nil, err
-	}
-
-	arc.Namespace = f.namespace
-	return arc, nil
-}
-
 func (f *Factory) PrometheusUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusUserWorkloadPodDisruptionBudget))
 }
@@ -3259,19 +3247,6 @@ func IsMissingPortInAddressError(err error) bool {
 		}
 	}
 	return false
-}
-
-func (f *Factory) NewAlertRelabelConfig(manifest io.Reader) (*osmv1alpha1.AlertRelabelConfig, error) {
-	arc, err := NewAlertRelabelConfig(manifest)
-	if err != nil {
-		return nil, err
-	}
-
-	if arc.GetNamespace() == "" {
-		arc.SetNamespace(f.namespace)
-	}
-
-	return arc, nil
 }
 
 func (f *Factory) NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
@@ -4191,16 +4166,6 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 			})
 		}
 	}
-}
-
-func NewAlertRelabelConfig(manifest io.Reader) (*osmv1alpha1.AlertRelabelConfig, error) {
-	arc := osmv1alpha1.AlertRelabelConfig{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&arc)
-	if err != nil {
-		return nil, err
-	}
-
-	return &arc, nil
 }
 
 func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
