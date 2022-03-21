@@ -1269,8 +1269,14 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 
 }
 func TestRemoteWriteAuthorizationConfig(t *testing.T) {
-	c, err := NewConfigFromString(`prometheusK8s:
-JoaoBraveCoding marked this conversation as resolved.
+	for _, tc := range []struct {
+		name    string
+		config  string
+		checkFn func(*testing.T, monv1.RemoteWriteSpec)
+	}{
+		{
+			name: "basic authentication configuration",
+			config: `prometheusK8s:
   remoteWrite:
   - url: "https://basicAuth.remotewrite.com/api/write"
     basicAuth:
@@ -1280,53 +1286,66 @@ JoaoBraveCoding marked this conversation as resolved.
       password:
         name: remoteWriteAuth
         key: password
+`,
+			checkFn: func(t *testing.T, target monv1.RemoteWriteSpec) {
+				if target.BasicAuth.Username.Name != "remoteWriteAuth" && target.BasicAuth.Username.Key != "user" {
+					t.Fatal("Username section not correct in RemoteWriteSpec.BasicAuth")
+				}
+				if target.BasicAuth.Password.Name != "remoteWriteAuth" && target.BasicAuth.Password.Key != "password" {
+					t.Fatal("Password section not correct in RemoteWriteSpec.BasicAuth")
+				}
+			},
+		},
+		{
+			name: "bearerTokenFile authentication configuration",
+			config: `prometheusK8s:
+  remoteWrite:
   - url: "https://bearerTokenFile.remotewrite.com/api/write"
     bearerTokenFile: "/secret/remoteWriteAuth"
+`,
+			checkFn: func(t *testing.T, target monv1.RemoteWriteSpec) {
+				if target.BearerTokenFile != "/secret/remoteWriteAuth" {
+					t.Fatal("BearerTokenFile section not correct in RemoteWriteSpec")
+				}
+			},
+		},
+		{
+			name: "authorization authentication configuration",
+			config: `prometheusK8s:
+  remoteWrite:
   - url: "https://authorization.remotewrite.com/api/write"
     authorization:
       type: Bearer
       credentials:
         name: remoteWriteAuth
         key: token
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	p, err := f.PrometheusK8s(
-		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, target := range p.Spec.RemoteWrite {
-		if target.URL == "https://basicAuth.remotewrite.com/api/write" {
-			if target.BasicAuth.Username.Name != "remoteWriteAuth" && target.BasicAuth.Username.Key != "user" {
-				t.Fatal("Username section not correct in RemoteWriteSpec.BasicAuth")
-			}
-			if target.BasicAuth.Password.Name != "remoteWriteAuth" && target.BasicAuth.Password.Key != "password" {
-				t.Fatal("Password section not correct in RemoteWriteSpec.BasicAuth")
-			}
-			continue
+`,
+			checkFn: func(t *testing.T, target monv1.RemoteWriteSpec) {
+				if target.Authorization.Type != "Bearer" {
+					t.Fatal("Bearer section not correct in RemoteWriteSpec.Authorization")
+				}
+				if target.Authorization.Credentials.Name != "remoteWriteAuth" && target.Authorization.Credentials.Name != "token" {
+					t.Fatal("Credentials section not correct in RemoteWriteSpec.Authorization")
+				}
+			},
+		},
+	} {
+		c, err := NewConfigFromString(tc.config)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if target.URL == "https://bearerTokenFile.remotewrite.com/api/write" {
-			if target.BearerTokenFile != "/secret/remoteWriteAuth" {
-				t.Fatal("BearerTokenFile section not correct in RemoteWriteSpec")
-			}
-			continue
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		p, err := f.PrometheusK8s(
+			&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if target.URL == "https://authorization.remotewrite.com/api/write" {
-			if target.Authorization.Type != "Bearer" {
-				t.Fatal("Bearer section not correct in RemoteWriteSpec.Authorization")
-			}
-			if target.Authorization.Credentials.Name != "remoteWriteAuth" && target.Authorization.Credentials.Name != "token" {
-				t.Fatal("Credentials section not correct in RemoteWriteSpec.Authorization")
-			}
-			continue
+		for _, target := range p.Spec.RemoteWrite {
+			tc.checkFn(t, target)
 		}
 	}
-
 }
 
 func TestPrometheusK8sConfiguration(t *testing.T) {
