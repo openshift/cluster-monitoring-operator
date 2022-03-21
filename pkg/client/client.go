@@ -271,6 +271,11 @@ func (c *Client) ConsoleListWatch(ctx context.Context) *cache.ListWatch {
 	}
 }
 
+func (c *Client) EnsurePrometheusUserWorkloadConfigMapExists(ctx context.Context, cm *v1.ConfigMap) error {
+	_, err := c.CreateIfNotExistConfigMap(ctx, cm)
+	return errors.Wrapf(err, "creating empty  ConfigMap object fauled")
+}
+
 func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
 	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
 		_, err := c.mclient.MonitoringV1().Prometheuses(c.namespace).List(ctx, metav1.ListOptions{})
