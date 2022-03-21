@@ -16,12 +16,15 @@ package alert
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -30,7 +33,6 @@ import (
 
 	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/namespace"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 )
@@ -40,51 +42,37 @@ const (
 	queueBaseDelay = 50 * time.Millisecond
 	queueMaxDelay  = 3 * time.Minute
 
-	alertSourceLabel = "openshift_io_alert_source"
-	alertSourceValue = "platform/user"
+	alertSourceLabel = "openshift_io_user_alert"
+	alertSourceValue = "true"
 )
 
 // RuleController is a controller for OpenShift AlertingRule objects.
 type RuleController struct {
 	version          string
 	client           *client.Client
-	namespaces       namespace.Watcher
 	queue            workqueue.RateLimitingInterface
 	promRuleInformer cache.SharedIndexInformer
 	ruleInformer     cache.SharedIndexInformer
 }
 
-// TODO(bison): Should the controller wait until the CRDs are ready in Run(), or
-// is that the job of the higher-level operator that starts the controller?
-
 // NewRuleController returns a new AlertingRule controller instance.
 func NewRuleController(client *client.Client, version string) *RuleController {
-	// Watching for AlertingRule resources in all namespaces, but any in
-	// non-platform namespaces will be ignored.
+	// AlertingRule resources are only allowed in the operator namespace.
 	ruleInformer := cache.NewSharedIndexInformer(
-		client.AlertingRuleListWatchForNamespace(metav1.NamespaceAll),
+		client.AlertingRuleListWatchForNamespace(client.Namespace()),
 		&osmv1alpha1.AlertingRule{},
 		resyncPeriod,
 		cache.Indexers{},
 	)
 
-	// All generated PrometheusRule objects go into the platform namespace, so we
-	// only need to watch those here.
+	// All generated PrometheusRule objects go into the platform namespace as
+	// well, so we only need to watch those here.
 	promRuleInformer := cache.NewSharedIndexInformer(
 		client.PrometheusRuleListWatchForNamespace(client.Namespace()),
 		&monv1.PrometheusRule{},
 		resyncPeriod,
 		cache.Indexers{},
 	)
-
-	// The namespace watcher keeps an up-to-date list of platform namespaces,
-	// i.e. namespaces labeled with `openshift.io/cluster-monitoring=true` so that
-	// the controller can ignore resources in non-platform namespaces.
-	//
-	// TODO(bison): Should we add event handlers to the namespace watcher? If the
-	// platform-monitoring label is removed from a namespace, but AlertingRule
-	// objects still exist, what is the correct action?
-	namespaces := namespace.NewWatcher(resyncPeriod, client.PlatformNamespacesListWatch())
 
 	queue := workqueue.NewNamedRateLimitingQueue(
 		workqueue.NewItemExponentialFailureRateLimiter(queueBaseDelay, queueMaxDelay),
@@ -94,7 +82,6 @@ func NewRuleController(client *client.Client, version string) *RuleController {
 	rc := &RuleController{
 		version:          version,
 		client:           client,
-		namespaces:       namespaces,
 		ruleInformer:     ruleInformer,
 		promRuleInformer: promRuleInformer,
 		queue:            queue,
@@ -122,14 +109,12 @@ func (rc *RuleController) Run(ctx context.Context, workers int) {
 
 	defer rc.queue.ShutDown()
 
-	go rc.namespaces.Run(ctx, workers)
 	go rc.promRuleInformer.Run(ctx.Done())
 	go rc.ruleInformer.Run(ctx.Done())
 
 	cache.WaitForNamedCacheSync("AlertingRule controller", ctx.Done(),
 		rc.promRuleInformer.HasSynced,
 		rc.ruleInformer.HasSynced,
-		rc.namespaces.HasSynced,
 	)
 
 	go rc.worker(ctx)
@@ -166,27 +151,10 @@ func (rc *RuleController) enqueue(obj interface{}) {
 	rc.queue.Add(key)
 }
 
-// inPlatformNamespace returns true if the given object, which must satisfy the
-// metav1.Object interface, is in a platform monitoring namespace.
-func (rc *RuleController) inPlatformNamespace(obj interface{}) bool {
-	metaObj, ok := obj.(metav1.Object)
-	if !ok {
-		klog.Errorf("Expected metav1.Object, but got %T", obj)
-		return false
-	}
-
-	return rc.namespaces.Has(metaObj.GetNamespace())
-}
-
 // handleAlertingRuleAdd handles add events for the AlertingRule informer.
 func (rc *RuleController) handleAlertingRuleAdd(obj interface{}) {
 	key, ok := rc.keyFunc(obj)
 	if !ok {
-		return
-	}
-
-	if !rc.inPlatformNamespace(obj) {
-		klog.V(4).Infof("Ignoring add of AlertingRule %q in non-platform namespace", key)
 		return
 	}
 
@@ -201,27 +169,12 @@ func (rc *RuleController) handleAlertingRuleDelete(obj interface{}) {
 		return
 	}
 
-	if !rc.inPlatformNamespace(obj) {
-		klog.V(4).Infof("Ignoring deletion of AlertingRule %q in non-platform namespace", key)
-		return
-	}
-
 	klog.V(4).Infof("AlertingRule deleted: %s", key)
 	rc.enqueue(key)
 }
 
 // handleAlertingRuleUpdate handles update events for the AlertingRule informer.
 func (rc *RuleController) handleAlertingRuleUpdate(oldObj, newObj interface{}) {
-	key, ok := rc.keyFunc(newObj)
-	if !ok {
-		return
-	}
-
-	if !rc.inPlatformNamespace(newObj) {
-		klog.V(4).Infof("Ignoring update of AlertingRule %q in non-platform namespace", key)
-		return
-	}
-
 	// If the ResourceVersion hasn't changed, there's nothing to do.
 	if oldObj.(*osmv1alpha1.AlertingRule).ResourceVersion == newObj.(*osmv1alpha1.AlertingRule).ResourceVersion {
 		klog.V(4).Info("Skipping AlertingRule update due to identical ResourceVersion (%s)",
@@ -233,6 +186,11 @@ func (rc *RuleController) handleAlertingRuleUpdate(oldObj, newObj interface{}) {
 	if oldObj.(*osmv1alpha1.AlertingRule).Generation == newObj.(*osmv1alpha1.AlertingRule).Generation {
 		klog.V(4).Infof("Skipping AlertingRule update due to identical Generation (%d)",
 			newObj.(*osmv1alpha1.AlertingRule).Generation)
+		return
+	}
+
+	key, ok := rc.keyFunc(newObj)
+	if !ok {
 		return
 	}
 
@@ -298,7 +256,7 @@ func (rc *RuleController) sync(ctx context.Context, key string) error {
 	// Generate the new or updated PrometheusRule object.
 	promRule := &monv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rc.promRuleName(namespace, name),
+			Name:      rc.promRuleName(rule.Namespace, rule.Name, rule.UID),
 			Namespace: rc.client.Namespace(),
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -337,9 +295,13 @@ func (rc *RuleController) sync(ctx context.Context, key string) error {
 }
 
 // promRuleName returns the name of PrometheusRule to be generated for the given
-// AlertingRule namespace and name.
-func (rc *RuleController) promRuleName(namespace, name string) string {
-	return fmt.Sprintf("alerts-%s-%s", namespace, name)
+// AlertingRule namespace, name, and UID.
+func (rc *RuleController) promRuleName(namespace, name string, uid types.UID) string {
+	data := fmt.Sprintf("%s-%s-%s", namespace, name, uid)
+	hash := md5.Sum([]byte(data))
+	hexString := hex.EncodeToString(hash[:])
+
+	return fmt.Sprintf("%s-%s", name, hexString[:6])
 }
 
 // convertRuleGroups converts the given OpenShift Monitoring RuleGroups to their
@@ -366,8 +328,7 @@ func (rc *RuleController) convertRuleGroups(groups []osmv1alpha1.RuleGroup) []mo
 				monv1Rule.Labels = make(map[string]string)
 			}
 
-			// Set a static label indicating this rule comes from
-			// platform-monitoring, but is user defined.
+			// Set a static label indicating this rule is user-defined.
 			monv1Rule.Labels[alertSourceLabel] = alertSourceValue
 			monv1Group.Rules[j] = monv1Rule
 		}
