@@ -206,6 +206,7 @@ spec:
       annotations:
         description: Clock on {{ $labels.instance }} is not synchronising. Ensure
           NTP is configured on this host.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeClockNotSynchronising.md
         summary: Clock not synchronising.
       expr: |
         min_over_time(node_timex_sync_status[5m]) == 0
@@ -213,7 +214,7 @@ spec:
         node_timex_maxerror_seconds >= 16
       for: 10m
       labels:
-        severity: warning
+        severity: critical
     - alert: NodeRAIDDegraded
       annotations:
         description: RAID array '{{ $labels.device }}' on {{ $labels.instance }} is

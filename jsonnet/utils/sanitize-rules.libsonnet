@@ -351,6 +351,7 @@ local includeRunbooks = {
   NodeFilesystemAlmostOutOfSpace: openShiftRunbookCMO('NodeFilesystemAlmostOutOfSpace.md'),
   NodeFilesystemFilesFillingUp: openShiftRunbookCMO('NodeFilesystemFilesFillingUp.md'),
   NodeFilesystemSpaceFillingUp: openShiftRunbookCMO('NodeFilesystemSpaceFillingUp.md'),
+  NodeClockNotSynchronising: openShiftRunbookCMO('NodeClockNotSynchronising.md'),
   NodeRAIDDegraded: openShiftRunbookCMO('NodeRAIDDegraded.md'),
   PrometheusTargetSyncFailure: openShiftRunbookCMO('PrometheusTargetSyncFailure.md'),
   ThanosRuleQueueIsDroppingAlerts: openShiftRunbookCMO('ThanosRuleQueueIsDroppingAlerts.md'),
