@@ -62,14 +62,14 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "waiting for Thanos Querier Route to become ready failed")
 	}
 
-	s, err := t.factory.ThanosQuerierOauthCookieSecret()
+	err = t.client.DeleteSecretByNamespaceAndName(ctx, t.client.Namespace(), "thanos-querier-oauth-cookie")
 	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Querier OAuth Cookie Secret failed")
+		return errors.Wrap(err, "deleting Thanos Querier Oauth Cookie Secret failed")
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, s)
+	err = t.client.DeleteSecretByNamespaceAndName(ctx, t.client.Namespace(), "thanos-querier-oauth-htpasswd")
 	if err != nil {
-		return errors.Wrap(err, "creating Thanos Querier OAuth Cookie Secret failed")
+		return errors.Wrap(err, "deleting Thanos Querier Oauth Htpasswd Secret failed")
 	}
 
 	rs, err := t.factory.ThanosQuerierRBACProxySecret()
@@ -152,7 +152,7 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "waiting for Thanos Querier GRPC secret failed")
 	}
 
-	s, err = t.factory.ThanosQuerierGrpcTLSSecret()
+	s, err := t.factory.ThanosQuerierGrpcTLSSecret()
 	if err != nil {
 		return errors.Wrap(err, "error initializing Thanos Querier Client GRPC TLS secret")
 	}

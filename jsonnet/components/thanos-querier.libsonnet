@@ -104,35 +104,6 @@ function(params)
       data: {},
     },
 
-    // holds the secret which is used encrypt/decrypt cookies
-    // issued by the oauth proxy.
-    oauthCookieSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'thanos-querier-oauth-cookie',
-        namespace: cfg.namespace,
-        labels: tq.config.commonLabels,
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
-    // holds the htpasswd configuration
-    // which includes a static secret used to authenticate/authorize
-    // requests originating from grafana.
-    oauthHtpasswdSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'thanos-querier-oauth-htpasswd',
-        namespace: cfg.namespace,
-        labels: tq.config.commonLabels,
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
     // holds the kube-rbac-proxy configuration as a secret.
     // It configures to template the request in flight
     // to extract a "namespace" query parameter
@@ -369,12 +340,6 @@ function(params)
                 name: 'secret-thanos-querier-tls',
                 secret: {
                   secretName: 'thanos-querier-tls',
-                },
-              },
-              {
-                name: 'secret-thanos-querier-oauth-cookie',
-                secret: {
-                  secretName: 'thanos-querier-oauth-cookie',
                 },
               },
               {

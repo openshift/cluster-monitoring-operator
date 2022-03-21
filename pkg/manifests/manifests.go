@@ -256,8 +256,6 @@ var (
 	ThanosQuerierServiceMonitor         = "thanos-querier/service-monitor.yaml"
 	ThanosQuerierPrometheusRule         = "thanos-querier/prometheus-rule.yaml"
 	ThanosQuerierRoute                  = "thanos-querier/route.yaml"
-	ThanosQuerierOauthCookieSecret      = "thanos-querier/oauth-cookie-secret.yaml"
-	ThanosQuerierHtpasswdSecret         = "thanos-querier/oauth-htpasswd-secret.yaml"
 	ThanosQuerierRBACProxySecret        = "thanos-querier/kube-rbac-proxy-secret.yaml"
 	ThanosQuerierRBACProxyRulesSecret   = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
 	ThanosQuerierRBACProxyMetricsSecret = "thanos-querier/kube-rbac-proxy-metric-secret.yaml"
@@ -1297,37 +1295,8 @@ func (f *Factory) ThanosQuerierGrpcTLSSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) ThanosQuerierOauthCookieSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierOauthCookieSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	p, err := GeneratePassword(43)
-	if err != nil {
-		return nil, err
-	}
-	s.Data["session_secret"] = []byte(p)
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
 func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sHtpasswd))
-	if err != nil {
-		return nil, err
-	}
-
-	err = f.generateHtpasswdSecret(s, password)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-func (f *Factory) ThanosQuerierHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierHtpasswdSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -4540,24 +4509,6 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 		rw = append(rw, rwConf)
 	}
 	return rw
-}
-
-func htpasswdVolumeMount(name string) v1.VolumeMount {
-	return v1.VolumeMount{
-		Name:      name,
-		MountPath: "/etc/proxy/htpasswd",
-	}
-}
-
-func htpasswdVolume(secretName, volumeName string) v1.Volume {
-	return v1.Volume{
-		Name: volumeName,
-		VolumeSource: v1.VolumeSource{
-			Secret: &v1.SecretVolumeSource{
-				SecretName: secretName,
-			},
-		},
-	}
 }
 
 func trustedCABundleVolumeMount(name string) v1.VolumeMount {

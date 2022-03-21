@@ -824,6 +824,14 @@ func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
 	return err
 }
 
+func (c *Client) DeleteSecretByNamespaceAndName(ctx context.Context, namespace, name string) error {
+	err := c.kclient.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
 func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) error {
 	var lastErr error
 	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {

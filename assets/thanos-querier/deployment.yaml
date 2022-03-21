@@ -247,9 +247,6 @@ spec:
       - name: secret-thanos-querier-tls
         secret:
           secretName: thanos-querier-tls
-      - name: secret-thanos-querier-oauth-cookie
-        secret:
-          secretName: thanos-querier-oauth-cookie
       - name: secret-thanos-querier-kube-rbac-proxy
         secret:
           secretName: thanos-querier-kube-rbac-proxy

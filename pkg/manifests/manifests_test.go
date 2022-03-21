@@ -214,16 +214,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ThanosQuerierOauthCookieSecret()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.ThanosQuerierHtpasswdSecret("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.ThanosQuerierRBACProxySecret()
 	if err != nil {
 		t.Fatal(err)
