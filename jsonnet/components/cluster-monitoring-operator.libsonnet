@@ -354,7 +354,7 @@ function(params) {
       apiGroups: [''],
       resourceNames: ['user-workload-monitoring-config'],
       resources: ['configmaps'],
-      verbs: ['*'],
+      verbs: ['get', 'list', 'watch', 'patch', 'update'],
     }],
   },
 
