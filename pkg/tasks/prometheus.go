@@ -41,9 +41,8 @@ func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config
 
 func (t *PrometheusTask) Run(ctx context.Context) *StateError {
 	createErr := degradedError(t.create(ctx))
-	validationErr := t.validate(ctx)
-
-	return client.MergeStateErrors(createErr, validationErr)
+	validate := NewPrometheusValidationTask(t.client, t.prometheus)
+	return client.MergeStateErrors(createErr, validate.Run(ctx))
 }
 
 func (t *PrometheusTask) create(ctx context.Context) error {
