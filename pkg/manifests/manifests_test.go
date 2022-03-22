@@ -1272,7 +1272,7 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
 		config  string
-		checkFn func(*testing.T, monv1.RemoteWriteSpec)
+		checkFn []func(*testing.T, monv1.RemoteWriteSpec)
 	}{
 		{
 			name: "basic authentication configuration",
@@ -1287,13 +1287,21 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
         name: remoteWriteAuth
         key: password
 `,
-			checkFn: func(t *testing.T, target monv1.RemoteWriteSpec) {
-				if target.BasicAuth.Username.Name != "remoteWriteAuth" && target.BasicAuth.Username.Key != "user" {
-					t.Fatal("Username section not correct in RemoteWriteSpec.BasicAuth")
-				}
-				if target.BasicAuth.Password.Name != "remoteWriteAuth" && target.BasicAuth.Password.Key != "password" {
-					t.Fatal("Password section not correct in RemoteWriteSpec.BasicAuth")
-				}
+			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
+				func(t *testing.T, target monv1.RemoteWriteSpec) {
+					if target.BasicAuth.Username.Name != "remoteWriteAuth" {
+						t.Fatalf("Name field not correct in section RemoteWriteSpec.BasicAuth.Username expected 'remoteWriteAuth', got %s", target.BasicAuth.Username.Name)
+					}
+					if target.BasicAuth.Username.Key != "user" {
+						t.Fatalf("Key field not correct in section RemoteWriteSpec.BasicAuth.Username expected 'user', got %s", target.BasicAuth.Username.Key)
+					}
+					if target.BasicAuth.Password.Name != "remoteWriteAuth" {
+						t.Fatalf("Name field not correct in section RemoteWriteSpec.BasicAuth.Password expected 'remoteWriteAuth', got %s", target.BasicAuth.Password.Name)
+					}
+					if target.BasicAuth.Password.Key != "password" {
+						t.Fatalf("Key field not correct in section RemoteWriteSpec.BasicAuth.Password expected 'password', got %s", target.BasicAuth.Password.Key)
+					}
+				},
 			},
 		},
 		{
@@ -1303,10 +1311,12 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
   - url: "https://bearerTokenFile.remotewrite.com/api/write"
     bearerTokenFile: "/secret/remoteWriteAuth"
 `,
-			checkFn: func(t *testing.T, target monv1.RemoteWriteSpec) {
-				if target.BearerTokenFile != "/secret/remoteWriteAuth" {
-					t.Fatal("BearerTokenFile section not correct in RemoteWriteSpec")
-				}
+			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
+				func(t *testing.T, target monv1.RemoteWriteSpec) {
+					if target.BearerTokenFile != "/secret/remoteWriteAuth" {
+						t.Fatalf("BearerTokenFile field not correct in section RemoteWriteSpec expected '/secret/remoteWriteAuth', got %s", target.BearerTokenFile)
+					}
+				},
 			},
 		},
 		{
@@ -1320,13 +1330,18 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
         name: remoteWriteAuth
         key: token
 `,
-			checkFn: func(t *testing.T, target monv1.RemoteWriteSpec) {
-				if target.Authorization.Type != "Bearer" {
-					t.Fatal("Bearer section not correct in RemoteWriteSpec.Authorization")
-				}
-				if target.Authorization.Credentials.Name != "remoteWriteAuth" && target.Authorization.Credentials.Name != "token" {
-					t.Fatal("Credentials section not correct in RemoteWriteSpec.Authorization")
-				}
+			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
+				func(t *testing.T, target monv1.RemoteWriteSpec) {
+					if target.Authorization.Type != "Bearer" {
+						t.Fatalf("Bearer field not correct in section RemoteWriteSpec expected 'Bearer', got %s", target.Authorization.Type)
+					}
+					if target.Authorization.Credentials.Name != "remoteWriteAuth" {
+						t.Fatalf("Name field not correct in section RemoteWriteSpec.Authorization.Credentials expected 'remoteWriteAuth', got %s", target.Authorization.Credentials.Name)
+					}
+					if target.Authorization.Credentials.Key != "token" {
+						t.Fatalf("Key field not correct in section RemoteWriteSpec.Authorization.Credentials expected 'token', got %s", target.Authorization.Credentials.Key)
+					}
+				},
 			},
 		},
 	} {
@@ -1342,9 +1357,16 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, target := range p.Spec.RemoteWrite {
-			tc.checkFn(t, target)
+		if len(p.Spec.RemoteWrite) != len(tc.checkFn) {
+			t.Fatalf("The number of RemoteWrite targets is different from the number of check functions for test case %s", tc.name)
 		}
+
+		t.Run(tc.name, func(t *testing.T) {
+			for i, target := range p.Spec.RemoteWrite {
+				tc.checkFn[i](t, target)
+			}
+		})
+
 	}
 }
 
