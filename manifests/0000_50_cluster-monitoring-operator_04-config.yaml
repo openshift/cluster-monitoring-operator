@@ -67,6 +67,13 @@ data:
     #
     # owners: (@openshift/openshift-team-cincinnati)
     #
+    # cluster_version_capability reports the names of enabled and available
+    # cluster capabilities.  This is used to gauge the popularity of optional
+    # components and exposure to any component-specific issues.
+    - '{__name__="cluster_version_capability"}'
+    #
+    # owners: (@openshift/openshift-team-cincinnati)
+    #
     # cluster_operator_up reports the health status of the core cluster
     # operators - like up, an upgrade that fails due to a configuration value
     # on the cluster will help narrow down which component is affected.
