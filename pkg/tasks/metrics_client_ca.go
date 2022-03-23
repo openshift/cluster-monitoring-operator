@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -26,7 +27,11 @@ func NewMetricsClientCATask(client *client.Client, factory *manifests.Factory, c
 	}
 }
 
-func (t *MetricsClientCATask) Run(ctx context.Context) error {
+func (t *MetricsClientCATask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *MetricsClientCATask) create(ctx context.Context) error {
 	apiAuthConfigmap, err := t.client.GetConfigmap(ctx, "kube-system", "extension-apiserver-authentication")
 	if err != nil {
 		return errors.Wrap(err, "failed to load kube-system/extension-apiserver-authentication configmap")

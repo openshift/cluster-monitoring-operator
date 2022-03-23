@@ -36,8 +36,11 @@ func NewConfigSharingTask(client *client.Client, factory *manifests.Factory, con
 		config:  config,
 	}
 }
+func (t *ConfigSharingTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
 
-func (t *ConfigSharingTask) Run(ctx context.Context) error {
+func (t *ConfigSharingTask) create(ctx context.Context) error {
 	promRoute, err := t.factory.PrometheusK8sAPIRoute()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Route failed")

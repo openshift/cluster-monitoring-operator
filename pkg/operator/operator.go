@@ -120,6 +120,9 @@ func (pc *ProxyConfig) NoProxy() string {
 const (
 	resyncPeriod = 15 * time.Minute
 
+	maxDegradedCount    = 2
+	maxUnavailableCount = 2
+
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
 	kubeletServingCAConfigMap     = "openshift-config-managed/kubelet-serving-ca"
@@ -161,7 +164,8 @@ type Operator struct {
 	reconcileAttempts prometheus.Counter
 	reconcileStatus   prometheus.Gauge
 
-	failedReconcileAttempts int
+	degradedCount    int
+	unavailableCount int
 
 	assets *manifests.Assets
 
@@ -568,7 +572,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	config, err := o.Config(ctx, key)
 	if err != nil {
-		o.reportError(ctx, err, "InvalidConfiguration")
+		o.reportDegraded(ctx, err, "InvalidConfiguration")
 		return err
 	}
 	config.SetImages(o.images)
@@ -586,7 +590,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	apiServerConfig, err = o.loadApiServerConfig(ctx)
 
 	if err != nil {
-		o.reportError(ctx, err, "APIServerConfigError")
+		o.reportDegraded(ctx, err, "APIServerConfigError")
 		return err
 	}
 
@@ -641,14 +645,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	taskErrors := tl.RunAll(ctx)
 	if len(taskErrors) > 0 {
-		var failedTask string
-		if len(taskErrors) == 1 {
-			failedTask = cmostr.ToPascalCase(taskErrors[0].Name + "Failed")
-		} else {
-			failedTask = "MultipleTasksFailed"
-		}
-
-		o.reportError(ctx, taskErrors, failedTask)
+		failedTask := o.reportTaskGroupErrors(ctx, taskErrors)
 		return errors.Errorf("cluster monitoring update failed (reason: %s)", failedTask)
 	}
 
@@ -659,7 +656,9 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	}
 
 	klog.Info("Updating ClusterOperator status to done.")
-	o.failedReconcileAttempts = 0
+
+	o.resetCounters()
+
 	err = o.client.StatusReporter().SetRollOutDone(ctx, degradedConditionMessage, degradedConditionReason)
 	if err != nil {
 		klog.Errorf("error occurred while setting status to done: %v", err)
@@ -678,18 +677,58 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	return nil
 }
 
-func (o *Operator) reportError(ctx context.Context, err error, failedTaskReason string) {
-	klog.Infof("ClusterOperator reconciliation failed (attempt %d), retrying. ", o.failedReconcileAttempts+1)
-	if o.failedReconcileAttempts >= 2 {
-		// Only update the ClusterOperator status after 3 retries have been attempted to avoid flapping status.
-		klog.Warningf("Updating ClusterOperator status to failed after %d attempts.", o.failedReconcileAttempts+1)
+func (o *Operator) resetCounters() {
+	o.degradedCount = 0
+	o.unavailableCount = 0
+}
 
-		reportErr := o.client.StatusReporter().SetFailed(ctx, err, failedTaskReason)
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
-		}
+func (o *Operator) reportTaskGroupErrors(ctx context.Context, errs tasks.TaskGroupErrors) string {
+
+	taskErr := errs.ToConsolidatedTaskError()
+	failedTask := cmostr.ToPascalCase(taskErr.Name + "Failed")
+
+	if taskErr.IsDegraded() {
+		o.reportDegraded(ctx, taskErr, failedTask)
 	}
-	o.failedReconcileAttempts++
+
+	if taskErr.IsUnavailable() {
+		o.reportUnavailable(ctx, taskErr, failedTask)
+	}
+	return failedTask
+}
+
+func (o *Operator) reportUnavailable(ctx context.Context, err error, failedTask string) {
+
+	o.unavailableCount++
+	klog.Infof("ClusterOperator reconciliation unavailable (attempt %d).", o.unavailableCount)
+	if o.unavailableCount < maxUnavailableCount {
+		klog.Info("ClusterOperator status is not set %d attempts.", o.unavailableCount)
+		return
+	}
+
+	// Only update the ClusterOperator status after maxUnavailableCount retries
+	// have been attempted to avoid flapping status.
+	klog.Warningf("Updating ClusterOperator status to unavailable after %d attempts.", o.unavailableCount)
+
+	if err := o.client.StatusReporter().SetUnavailable(ctx, err, failedTask); err != nil {
+		klog.Errorf("error occurred while setting status to unavailable: %v", err)
+	}
+}
+
+func (o *Operator) reportDegraded(ctx context.Context, err error, failedTask string) {
+
+	o.degradedCount++
+	klog.Infof("ClusterOperator reconciliation degraded (attempt %d).", o.degradedCount)
+	if o.degradedCount < maxDegradedCount {
+		return
+	}
+	// Only update the ClusterOperator status after maxDegradedCount retries
+	// have been attempted to avoid flapping status.
+	klog.Warningf("Updating ClusterOperator status to degraded after %d attempts.", o.degradedCount)
+
+	if err := o.client.StatusReporter().SetDegraded(ctx, err, failedTask); err != nil {
+		klog.Errorf("error occurred while setting status to degraded: %v", err)
+	}
 }
 
 func (o *Operator) loadInfrastructureConfig(ctx context.Context) *InfrastructureConfig {

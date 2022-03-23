@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -33,7 +34,11 @@ func NewNodeExporterTask(client *client.Client, factory *manifests.Factory) *Nod
 	}
 }
 
-func (t *NodeExporterTask) Run(ctx context.Context) error {
+func (t *NodeExporterTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *NodeExporterTask) create(ctx context.Context) error {
 	scc, err := t.factory.NodeExporterSecurityContextConstraints()
 	if err != nil {
 		return errors.Wrap(err, "initializing node-exporter SecurityContextConstraints failed")

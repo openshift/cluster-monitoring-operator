@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -33,7 +34,11 @@ func NewOpenShiftStateMetricsTask(client *client.Client, factory *manifests.Fact
 	}
 }
 
-func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) error {
+func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *OpenShiftStateMetricsTask) create(ctx context.Context) error {
 	sa, err := t.factory.OpenShiftStateMetricsServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing openshift-state-metrics Service failed")

@@ -34,7 +34,11 @@ func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) 
 	}
 }
 
-func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
+func (t *KubeStateMetricsTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *KubeStateMetricsTask) create(ctx context.Context) error {
 	sa, err := t.factory.KubeStateMetricsServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing kube-state-metrics Service failed")

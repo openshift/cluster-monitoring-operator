@@ -25,7 +25,11 @@ func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *cli
 	}
 }
 
-func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
+func (t *PrometheusAdapterTask) Run(ctx context.Context) *StateError {
+	return degradedError(t.create(ctx))
+}
+
+func (t *PrometheusAdapterTask) create(ctx context.Context) error {
 	{
 		cr, err := t.factory.PrometheusAdapterClusterRole()
 		if err != nil {
