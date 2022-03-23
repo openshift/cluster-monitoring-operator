@@ -1391,7 +1391,7 @@ ingress:
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
-	testCases := []struct {
+	for _, tc := range []struct {
 		name             string
 		queryLogFilePath string
 		expected         string
@@ -1440,30 +1440,29 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			errExpected:      true,
 			volumeExpected:   false,
 		},
-	}
-	for _, tt := range testCases {
+	} {
 		c := NewDefaultConfig()
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tt.queryLogFilePath
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tc.queryLogFilePath
 		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 		p, err := f.PrometheusK8s(
 			&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 			&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		)
 		if err != nil {
-			if !tt.errExpected {
+			if !tc.errExpected {
 				t.Fatalf("Expecting no error but got %v", err)
 			}
 			return
 		}
-		if tt.errExpected {
-			t.Fatalf("Expected query log file %s to give an error, but err is nil", tt.queryLogFilePath)
+		if tc.errExpected {
+			t.Fatalf("Expected query log file %s to give an error, but err is nil", tc.queryLogFilePath)
 		}
 
-		if p.Spec.QueryLogFile != tt.expected {
+		if p.Spec.QueryLogFile != tc.expected {
 			t.Fatal("Prometheus query log is not configured correctly")
 		}
 
-		if tt.volumeExpected {
+		if tc.volumeExpected {
 			volumeName := "query-log"
 			if !volumeConfigured(p.Spec.Volumes, volumeName) {
 				t.Fatal("Query log file volume is not configured correctly")
