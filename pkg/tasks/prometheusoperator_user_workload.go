@@ -120,6 +120,16 @@ func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 		}
 	}
 
+	userCM, err := t.factory.PrometheusUserWorkloadConfigMap()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload ConfigMap failed")
+	}
+
+	_, err = t.client.CreateIfNotExistConfigMap(ctx, userCM)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload ConfigMap failed")
+	}
+
 	// The CRs will be created externally,
 	// but we still have to wait for them here.
 	err = t.client.AssurePrometheusOperatorCRsExist(ctx)

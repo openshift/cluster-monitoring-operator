@@ -147,6 +147,7 @@ var (
 	PrometheusUserWorkloadThanosSidecarServiceMonitor = "prometheus-user-workload/service-monitor-thanos-sidecar.yaml"
 	PrometheusUserWorkloadAlertmanagerRoleBinding     = "prometheus-user-workload/alertmanager-role-binding.yaml"
 	PrometheusUserWorkloadPodDisruptionBudget         = "prometheus-user-workload/pod-disruption-budget.yaml"
+	PrometheusUserWorkloadConfigMap                   = "prometheus-user-workload/config-map.yaml"
 
 	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
@@ -1293,6 +1294,18 @@ func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
 	}
 
 	c.Namespace = f.namespace
+
+	return c, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadConfigMap() (*v1.ConfigMap, error) {
+
+	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusUserWorkloadConfigMap))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Namespace = f.namespaceUserWorkload
 
 	return c, nil
 }

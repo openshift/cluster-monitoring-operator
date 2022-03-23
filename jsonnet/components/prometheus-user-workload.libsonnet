@@ -32,6 +32,16 @@ function(params)
       data: {},
     },
 
+    configMap: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: 'user-workload-monitoring-config',
+        namespace: cfg.namespace,
+      },
+      data: {},
+    },
+
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
     // specified secret.

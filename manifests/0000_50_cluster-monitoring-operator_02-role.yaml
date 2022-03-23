@@ -187,7 +187,11 @@ rules:
   resources:
   - configmaps
   verbs:
-  - '*'
+  - get
+  - list
+  - watch
+  - patch
+  - update
 - apiGroups:
   - authentication.k8s.io
   resources:
