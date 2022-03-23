@@ -55,7 +55,7 @@ data:
     # flake.
     - '{__name__="count:up1"}'
     #
-    # owners: (@openshift/openshift-team-installer)
+    # owners: (@openshift/openshift-team-cincinnati)
     #
     # cluster_version reports what payload and version the cluster is being
     # configured to and is used to identify what versions are on a cluster that
@@ -64,7 +64,7 @@ data:
     # consumers: (@openshift/openshift-team-cluster-manager)
     - '{__name__="cluster_version"}'
     #
-    # owners: (@openshift/openshift-team-installer)
+    # owners: (@openshift/openshift-team-cincinnati)
     #
     # cluster_version_available_updates reports the channel and version server
     # the cluster is configured to use and how many updates are available. This
@@ -73,7 +73,7 @@ data:
     # consumers: (@openshift/openshift-team-cluster-manager)
     - '{__name__="cluster_version_available_updates"}'
     #
-    # owners: (@openshift/openshift-team-installer)
+    # owners: (@openshift/openshift-team-cincinnati)
     #
     # cluster_operator_up reports the health status of the core cluster
     # operators - like up, an upgrade that fails due to a configuration value
@@ -82,7 +82,7 @@ data:
     # consumers: (@openshift/openshift-team-olm, @openshift/openshift-team-cluster-manager)
     - '{__name__="cluster_operator_up"}'
     #
-    # owners: (@openshift/openshift-team-installer)
+    # owners: (@openshift/openshift-team-cincinnati)
     #
     # cluster_operator_conditions exposes the status conditions cluster
     # operators report for debugging. The condition and status are reported.
@@ -90,7 +90,7 @@ data:
     # consumers: (@openshift/openshift-team-olm, @openshift/openshift-team-cluster-manager)
     - '{__name__="cluster_operator_conditions"}'
     #
-    # owners: (@openshift/openshift-team-installer)
+    # owners: (@openshift/openshift-team-cincinnati)
     #
     # cluster_version_payload captures how far through a payload the cluster
     # version operator has progressed and can be used to identify whether
@@ -99,9 +99,8 @@ data:
     # consumers: (@openshift/openshift-team-cluster-manager)
     - '{__name__="cluster_version_payload"}'
     #
-    # owners: (@openshift/openshift-team-installer)
+    # owners: (@openshift/openshift-team-installer, @openshift/openshift-team-cincinnati)
     #
-    # owners: (@openshift/openshift-team-olm)
     # cluster_installer reports what installed the cluster, along with its
     # version number and invoker.
     #
