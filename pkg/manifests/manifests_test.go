@@ -1440,6 +1440,13 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			errExpected:      true,
 			volumeExpected:   false,
 		},
+		{
+			name:             "filename only",
+			queryLogFilePath: "query.log",
+			expected:         "query.log",
+			errExpected:      false,
+			volumeExpected:   false,
+		},
 	} {
 		c := NewDefaultConfig()
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tc.queryLogFilePath
