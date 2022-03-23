@@ -1345,23 +1345,23 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 			},
 		},
 	} {
-		c, err := NewConfigFromString(tc.config)
-		if err != nil {
-			t.Fatal(err)
-		}
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-		p, err := f.PrometheusK8s(
-			&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-			&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(p.Spec.RemoteWrite) != len(tc.checkFn) {
-			t.Fatalf("The number of RemoteWrite targets is different from the number of check functions for test case %s", tc.name)
-		}
-
 		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(p.Spec.RemoteWrite) != len(tc.checkFn) {
+				t.Fatalf("got %d check functions but only %d RemoteWrite targets", len(tc.checkFn), len(p.Spec.RemoteWrite))
+			}
+
 			for i, target := range p.Spec.RemoteWrite {
 				tc.checkFn[i](t, target)
 			}
