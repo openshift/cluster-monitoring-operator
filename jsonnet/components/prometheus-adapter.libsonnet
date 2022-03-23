@@ -139,6 +139,26 @@ function(params)
                             cpu: '1m',
                           },
                         },
+                        livenessProbe: {
+                          httpGet: {
+                            path: '/healthz',
+                            port: 'https',
+                            scheme: 'HTTPS',
+                          },
+                          initialDelaySeconds: 5,
+                          periodSeconds: 30,
+                          failureThreshold: 5,
+                        },
+                        readinessProbe: {
+                          httpGet: {
+                            path: '/healthz',
+                            port: 'https',
+                            scheme: 'HTTPS',
+                          },
+                          initialDelaySeconds: 5,
+                          periodSeconds: 5,
+                          failureThreshold: 5,
+                        },
                       }
                     else
                       c,
