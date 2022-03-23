@@ -1420,7 +1420,7 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			volumeExpected:   false,
 		},
 		{
-			name:             "invalid path",
+			name:             "invalid path, query log on root",
 			queryLogFilePath: "/query.log",
 			expected:         "",
 			errExpected:      true,
@@ -1429,6 +1429,13 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 		{
 			name:             "invalid file under dev",
 			queryLogFilePath: "/dev/query.log",
+			expected:         "",
+			errExpected:      true,
+			volumeExpected:   false,
+		},
+		{
+			name:             "invalid path, relative path",
+			queryLogFilePath: "./dev/query.log",
 			expected:         "",
 			errExpected:      true,
 			volumeExpected:   false,
