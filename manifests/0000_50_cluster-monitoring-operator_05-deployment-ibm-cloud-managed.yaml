@@ -55,7 +55,6 @@ spec:
         - -images=configmap-reloader=quay.io/openshift/origin-configmap-reloader:latest
         - -images=prometheus=quay.io/openshift/origin-prometheus:latest
         - -images=alertmanager=quay.io/openshift/origin-prometheus-alertmanager:latest
-        - -images=grafana=quay.io/openshift/origin-grafana:latest
         - -images=oauth-proxy=quay.io/openshift/origin-oauth-proxy:latest
         - -images=node-exporter=quay.io/openshift/origin-prometheus-node-exporter:latest
         - -images=kube-state-metrics=quay.io/openshift/origin-kube-state-metrics:latest
