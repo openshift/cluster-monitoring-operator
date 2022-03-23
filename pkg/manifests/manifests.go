@@ -1657,7 +1657,7 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 		return nil
 	}
 	dirPath := filepath.Dir(queryLogFile)
-	if strings.HasPrefix(dirPath, ".") {
+	if dirPath != "." && strings.HasPrefix(dirPath, ".") {
 		return errors.Wrap(ErrConfigValidation, `relative paths to query log file are not supported`)
 	}
 	if dirPath == "/" {
