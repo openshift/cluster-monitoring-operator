@@ -113,7 +113,7 @@ type TaskSpec struct {
 	Task Task
 }
 
-type StateError = client.StateError
+type StateErrors = client.StateErrors
 
 var mergeErrors = client.MergeStateErrors
 
@@ -127,12 +127,12 @@ func degradedError(err error) *StateError {
 
 // TaskErr wraps a StateError and adds a Name of the Task failed
 type TaskErr struct {
-	*StateError
+	StateErrors
 	Name string
 }
 
 type Task interface {
-	Run(ctx context.Context) *StateError
+	Run(ctx context.Context) StateErrors
 }
 
 type (

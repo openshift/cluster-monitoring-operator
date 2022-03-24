@@ -38,9 +38,11 @@ func NewPrometheusValidationTask(client *client.Client, prometheus *monv1.Promet
 	}
 }
 
-func (t *PrometheusValidationTask) Run(ctx context.Context) *StateError {
+func (t *PrometheusValidationTask) Run(ctx context.Context) StateErrors {
+
 	if t.prometheus == nil {
-		klog.Warningf("PrometheusValidationTask not run since Prometheus set to nil")
+		klog.V(3).Info("validate prometheus object")
+		klog.Warning("PrometheusValidationTask not run since Prometheus set to nil")
 		return nil
 	}
 
