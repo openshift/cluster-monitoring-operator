@@ -26,10 +26,6 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-prometheus-alertmanager:latest
-  - name: grafana
-    from:
-      kind: DockerImage
-      name: quay.io/openshift/origin-grafana:latest
   - name: oauth-proxy
     from:
       kind: DockerImage
