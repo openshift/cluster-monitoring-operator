@@ -36,12 +36,12 @@ func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Fa
 	}
 }
 
-func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) *StateError {
+func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) StateErrors {
 	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		return degradedError(t.create(ctx))
+		return toStateErrors(t.create(ctx))
 	}
 
-	return degradedError(t.destroy(ctx))
+	return toStateErrors(t.destroy(ctx))
 }
 
 func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {

@@ -37,12 +37,12 @@ func NewPrometheusOperatorUserWorkloadTask(client *client.Client, factory *manif
 	}
 }
 
-func (t *PrometheusOperatorUserWorkloadTask) Run(ctx context.Context) *StateError {
+func (t *PrometheusOperatorUserWorkloadTask) Run(ctx context.Context) StateErrors {
 	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		return degradedError(t.create(ctx))
+		return toStateErrors(t.create(ctx))
 	}
 
-	return degradedError(t.destroy(ctx))
+	return toStateErrors(t.destroy(ctx))
 }
 
 func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {

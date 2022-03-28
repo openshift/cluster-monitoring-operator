@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -35,8 +36,8 @@ func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory, cfg
 	}
 }
 
-func (t *ThanosQuerierTask) Run(ctx context.Context) *StateError {
-	return degradedError(t.create(ctx))
+func (t *ThanosQuerierTask) Run(ctx context.Context) StateErrors {
+	return toStateErrors(t.create(ctx))
 }
 
 func (t *ThanosQuerierTask) create(ctx context.Context) error {

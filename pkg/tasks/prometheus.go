@@ -42,10 +42,10 @@ func (t *PrometheusTask) Run(ctx context.Context) StateErrors {
 	b := &client.StateErrorBuilder{}
 
 	prometheus, err := t.create(ctx)
-	b.AddError(client.Degraded, err)
+	b.AddError(client.DegradedState, err)
 
 	if prometheus == nil {
-		klog.V(4).Info("PrometheusTask: failed to create prometheus")
+		klog.V(4).ErrorS(err, "PrometheusTask: failed to create prometheus")
 		return b.Errors()
 	}
 
@@ -84,7 +84,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	r, err := t.factory.PrometheusK8sAPIRoute()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus API Route failed")
+		return nil, errors.Wrap(err, "initializing Prometheus API Route failed")
 	}
 
 	err = t.client.CreateRouteIfNotExists(ctx, r)
@@ -94,7 +94,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	_, err = t.client.WaitForRouteReady(ctx, r)
 	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus API Route to become ready failed")
+		return nil, errors.Wrap(err, "waiting for Prometheus API Route to become ready failed")
 	}
 
 	fr, err := t.factory.PrometheusK8sFederateRoute()
@@ -104,7 +104,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	err = t.client.CreateRouteIfNotExists(ctx, fr)
 	if err != nil {
-		return errors.Wrap(err, "creating Prometheus Federate Route failed")
+		return nil, errors.Wrap(err, "creating Prometheus Federate Route failed")
 	}
 
 	_, err = t.client.WaitForRouteReady(ctx, fr)
@@ -114,7 +114,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	ps, err := t.factory.PrometheusK8sProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus proxy Secret failed")
+		return nil, errors.Wrap(err, "initializing Prometheus proxy Secret failed")
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, ps)
@@ -124,7 +124,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	rs, err := t.factory.PrometheusRBACProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus RBAC proxy Secret failed")
+		return nil, errors.Wrap(err, "initializing Prometheus RBAC proxy Secret failed")
 	}
 
 	err = t.client.CreateOrUpdateSecret(ctx, rs)
@@ -134,7 +134,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	sa, err := t.factory.PrometheusK8sServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus ServiceAccount failed")
+		return nil, errors.Wrap(err, "initializing Prometheus ServiceAccount failed")
 	}
 
 	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
@@ -144,7 +144,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	cr, err := t.factory.PrometheusK8sClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus ClusterRole failed")
+		return nil, errors.Wrap(err, "initializing Prometheus ClusterRole failed")
 	}
 
 	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
@@ -154,7 +154,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	crb, err := t.factory.PrometheusK8sClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus ClusterRoleBinding failed")
+		return nil, errors.Wrap(err, "initializing Prometheus ClusterRoleBinding failed")
 	}
 
 	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
@@ -164,7 +164,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	amrb, err := t.factory.PrometheusK8sAlertmanagerRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Alertmanager RoleBinding failed")
+		return nil, errors.Wrap(err, "initializing Prometheus Alertmanager RoleBinding failed")
 	}
 
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
@@ -173,7 +173,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 		}
 	} else {
 		if err = t.client.DeleteRoleBinding(ctx, amrb); err != nil {
-			return errors.Wrap(err, "deleting Prometheus Alertmanager RoleBinding failed")
+			return nil, errors.Wrap(err, "deleting Prometheus Alertmanager RoleBinding failed")
 		}
 	}
 
@@ -184,7 +184,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	err = t.client.CreateOrUpdateRole(ctx, rc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Role config failed")
+		return nil, errors.Wrap(err, "reconciling Prometheus Role config failed")
 	}
 
 	rl, err := t.factory.PrometheusK8sRoleList()
@@ -195,7 +195,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 	for _, r := range rl.Items {
 		err = t.client.CreateOrUpdateRole(ctx, &r)
 		if err != nil {
-			return errors.Wrapf(err, "reconciling Prometheus Role %q failed", r.Name)
+			return nil, errors.Wrapf(err, "reconciling Prometheus Role %q failed", r.Name)
 		}
 	}
 
@@ -207,7 +207,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 	for _, rb := range rbl.Items {
 		err = t.client.CreateOrUpdateRoleBinding(ctx, &rb)
 		if err != nil {
-			return errors.Wrapf(err, "reconciling Prometheus RoleBinding %q failed", rb.Name)
+			return nil, errors.Wrapf(err, "reconciling Prometheus RoleBinding %q failed", rb.Name)
 		}
 	}
 
@@ -218,7 +218,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	err = t.client.CreateOrUpdateRoleBinding(ctx, rbc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus config RoleBinding failed")
+		return nil, errors.Wrap(err, "reconciling Prometheus config RoleBinding failed")
 	}
 
 	pm, err := t.factory.PrometheusK8sPrometheusRule()
@@ -228,7 +228,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, pm)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus rules PrometheusRule failed")
+		return nil, errors.Wrap(err, "reconciling Prometheus rules PrometheusRule failed")
 	}
 
 	tsRule, err := t.factory.PrometheusK8sThanosSidecarPrometheusRule()
@@ -238,7 +238,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, tsRule)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Thanos Sidecar rules PrometheusRule failed")
+		return nil, errors.Wrap(err, "reconciling Thanos Sidecar rules PrometheusRule failed")
 	}
 
 	svc, err := t.factory.PrometheusK8sService()
@@ -248,7 +248,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Service failed")
+		return nil, errors.Wrap(err, "reconciling Prometheus Service failed")
 	}
 
 	svc, err = t.factory.PrometheusK8sServiceThanosSidecar()
@@ -258,7 +258,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Thanos sidecar Service failed")
+		return nil, errors.Wrap(err, "reconciling Thanos sidecar Service failed")
 	}
 
 	// There is no need to hash metrics client certs as Prometheus does that in-process.
@@ -269,7 +269,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	metricsCerts, err = t.client.WaitForSecret(ctx, metricsCerts)
 	if err != nil {
-		return errors.Wrap(err, "waiting for Metrics Client Certs secret failed")
+		return nil, errors.Wrap(err, "waiting for Metrics Client Certs secret failed")
 	}
 
 	grpcTLS, err := t.factory.GRPCSecret()
@@ -279,7 +279,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 	grpcTLS, err = t.client.WaitForSecret(ctx, grpcTLS)
 	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus GRPC secret failed")
+		return nil, errors.Wrap(err, "waiting for Prometheus GRPC secret failed")
 	}
 
 	s, err := t.factory.PrometheusK8sGrpcTLSSecret()
@@ -293,7 +293,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 		"server.key", string(grpcTLS.Data["prometheus-server.key"]),
 	)
 	if err != nil {
-		return errors.Wrap(err, "error hashing Prometheus Client GRPC TLS secret")
+		return nil, errors.Wrap(err, "error hashing Prometheus Client GRPC TLS secret")
 	}
 
 	err = t.client.CreateOrUpdateSecret(ctx, s)
@@ -308,7 +308,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 		string(s.Labels["monitoring.openshift.io/hash"]),
 	)
 	if err != nil {
-		return errors.Wrap(err, "error creating Prometheus Client GRPC TLS secret")
+		return nil, errors.Wrap(err, "error creating Prometheus Client GRPC TLS secret")
 	}
 
 	{
@@ -320,7 +320,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 		if pdb != nil {
 			err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
 			if err != nil {
-				return errors.Wrap(err, "reconciling Prometheus PodDisruptionBudget object failed")
+				return nil, errors.Wrap(err, "reconciling Prometheus PodDisruptionBudget object failed")
 			}
 		}
 	}
@@ -334,7 +334,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 		if relabelConfigSecret != nil {
 			err = t.client.CreateOrUpdateSecret(ctx, relabelConfigSecret)
 			if err != nil {
-				return errors.Wrap(err, "reconciling Prometheus AdditionalAlertRelabelConfigs secret failed")
+				return nil, errors.Wrap(err, "reconciling Prometheus AdditionalAlertRelabelConfigs secret failed")
 			}
 		}
 	}
@@ -354,7 +354,7 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 		}
 		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
 		if err != nil {
-			return errors.Wrap(err, "syncing Prometheus trusted CA bundle ConfigMap failed")
+			return nil, errors.Wrap(err, "syncing Prometheus trusted CA bundle ConfigMap failed")
 		}
 
 		secret, err := t.factory.PrometheusK8sAdditionalAlertManagerConfigsSecret()
@@ -364,20 +364,21 @@ func (t *PrometheusTask) create(ctx context.Context) (*monv1.Prometheus, error) 
 
 		klog.V(4).Info("reconciling Prometheus additionalAlertmanagerConfigs secret")
 		if err = t.client.CreateOrUpdateSecret(ctx, secret); err != nil {
-			return errors.Wrap(err, "reconciling Prometheus additionalAlertmanagerConfigs secret failed")
+			return nil, errors.Wrap(err, "reconciling Prometheus additionalAlertmanagerConfigs secret failed")
 		}
 
 		klog.V(4).Info("initializing Prometheus object")
-		prometheus, err := t.factory.PrometheusK8s(s, trustedCA)
+		prom, err := t.factory.PrometheusK8s(s, trustedCA)
 		if err != nil {
 			return nil, errors.Wrap(err, "initializing Prometheus object failed")
 		}
 
 		klog.V(4).Info("reconciling Prometheus object")
-		err = t.client.CreateOrUpdatePrometheus(ctx, prometheus)
+		err = t.client.CreateOrUpdatePrometheus(ctx, prom)
 		if err != nil {
 			return nil, errors.Wrap(err, "reconciling Prometheus object failed")
 		}
+		prometheus = prom
 	}
 
 	smp, err := t.factory.PrometheusK8sPrometheusServiceMonitor()

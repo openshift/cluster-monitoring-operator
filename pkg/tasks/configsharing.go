@@ -36,8 +36,8 @@ func NewConfigSharingTask(client *client.Client, factory *manifests.Factory, con
 		config:  config,
 	}
 }
-func (t *ConfigSharingTask) Run(ctx context.Context) *StateError {
-	return degradedError(t.create(ctx))
+func (t *ConfigSharingTask) Run(ctx context.Context) StateErrors {
+	return toStateErrors(t.create(ctx))
 }
 
 func (t *ConfigSharingTask) create(ctx context.Context) error {

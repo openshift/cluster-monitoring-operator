@@ -682,25 +682,91 @@ func (o *Operator) resetCounters() {
 	o.unavailableCount = 0
 }
 
-func (o *Operator) reportTaskGroupErrors(ctx context.Context, errs tasks.TaskGroupErrors) string {
+type StateErrorReport struct {
+	err    *client.StateError
+	reason string
+}
 
-	taskErr := errs.ToConsolidatedTaskError()
-	failedTask := cmostr.ToPascalCase(taskErr.Name + "Failed")
+func (s *StateErrorReport) State() client.State {
+	return s.err.State
+}
+func (s *StateErrorReport) IsUnknown() bool {
+	return s.err.Unknown
+}
 
-	if taskErr.IsDegraded() {
-		o.reportDegraded(ctx, taskErr, failedTask)
+func (s *StateErrorReport) Description() string {
+	return s.err.Reason
+}
+func (s *StateErrorReport) Reason() string {
+	return s.reason
+}
+
+func NewStateErrorReport(serr client.StateError, reason string) *StateErrorReport {
+	return &StateErrorReport{err: &serr, reason: reason}
+}
+
+type TaskResult struct {
+	degraded    *client.StateError
+	unavailable *client.StateError
+	Name        string
+}
+
+func consolidateTaskErrors(tge tasks.TaskGroupErrors) TaskResult {
+	ret := TaskResult{Name: tge[0].Name}
+
+	if len(tge) > 1 {
+		ret.Name = "MultipleTasks"
 	}
 
-	if taskErr.IsUnavailable() {
-		o.reportUnavailable(ctx, taskErr, failedTask)
+	degraded := &client.StateError{State: client.DegradedState}
+	degradedReasons := []string{}
+
+	unavailable := &client.StateError{State: client.UnavailableState}
+	unavailableReasons := []string{}
+
+	for _, err := range tge.StateErrors() {
+		switch err.State {
+		case client.DegradedState:
+			degradedReasons = append(degradedReasons, err.Reason)
+			degraded.Unknown = degraded.Unknown || err.Unknown
+
+		case client.UnavailableState:
+			unavailableReasons = append(unavailableReasons, err.Reason)
+			unavailable.Unknown = unavailable.Unknown || err.Unknown
+		}
+	}
+
+	if len(degradedReasons) > 0 {
+		degraded.Reason = strings.Join(degradedReasons, ", ")
+		ret.degraded = degraded
+	}
+
+	if len(unavailableReasons) > 0 {
+		unavailable.Reason = strings.Join(unavailableReasons, ", ")
+		ret.unavailable = unavailable
+	}
+	return ret
+}
+
+func (o *Operator) reportTaskGroupErrors(ctx context.Context, tge tasks.TaskGroupErrors) string {
+	result := consolidateTaskErrors(tge)
+	failedTask := cmostr.ToPascalCase(result.Name + "Failed")
+
+	if result.degraded != nil {
+		o.reportDegraded(ctx, result.degraded, failedTask)
+	}
+
+	if result.unavailable != nil {
+		o.reportUnavailable(ctx, result.unavailable, failedTask)
 	}
 	return failedTask
 }
 
 func (o *Operator) reportUnavailable(ctx context.Context, err error, failedTask string) {
-
 	o.unavailableCount++
 	klog.Infof("ClusterOperator reconciliation unavailable (attempt %d).", o.unavailableCount)
+
+	// TODO(sthaha): should Unavailable be delayed?
 	if o.unavailableCount < maxUnavailableCount {
 		klog.Info("ClusterOperator status is not set %d attempts.", o.unavailableCount)
 		return
@@ -710,25 +776,32 @@ func (o *Operator) reportUnavailable(ctx context.Context, err error, failedTask 
 	// have been attempted to avoid flapping status.
 	klog.Warningf("Updating ClusterOperator status to unavailable after %d attempts.", o.unavailableCount)
 
-	if err := o.client.StatusReporter().SetUnavailable(ctx, err, failedTask); err != nil {
+	serr := client.ToStateError(client.UnavailableState, err)
+	report := NewStateErrorReport(*serr, failedTask)
+	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
 		klog.Errorf("error occurred while setting status to unavailable: %v", err)
 	}
+	// TODO(sthaha): should the counter be reset after setting the state ?
 }
 
 func (o *Operator) reportDegraded(ctx context.Context, err error, failedTask string) {
-
 	o.degradedCount++
 	klog.Infof("ClusterOperator reconciliation degraded (attempt %d).", o.degradedCount)
+
 	if o.degradedCount < maxDegradedCount {
 		return
 	}
+
 	// Only update the ClusterOperator status after maxDegradedCount retries
 	// have been attempted to avoid flapping status.
 	klog.Warningf("Updating ClusterOperator status to degraded after %d attempts.", o.degradedCount)
 
-	if err := o.client.StatusReporter().SetDegraded(ctx, err, failedTask); err != nil {
+	serr := client.ToStateError(client.UnavailableState, err)
+	report := NewStateErrorReport(*serr, failedTask)
+	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
 		klog.Errorf("error occurred while setting status to degraded: %v", err)
 	}
+	// TODO(sthaha): should the counter be reset after setting the state ?
 }
 
 func (o *Operator) loadInfrastructureConfig(ctx context.Context) *InfrastructureConfig {

@@ -34,8 +34,8 @@ func NewOpenShiftStateMetricsTask(client *client.Client, factory *manifests.Fact
 	}
 }
 
-func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) *StateError {
-	return degradedError(t.create(ctx))
+func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) StateErrors {
+	return toStateErrors(t.create(ctx))
 }
 
 func (t *OpenShiftStateMetricsTask) create(ctx context.Context) error {

@@ -766,9 +766,8 @@ func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) err
 
 func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Prometheus) StateErrors {
 
-	status, _, err := prometheusoperator.Status(ctx, c.kclient.(*kubernetes.Clientset), p)
+	status, _, err := prometheusoperator.Status(ctx, c.kclient, p)
 	if err != nil {
-		klog.V(4).ErrorS(err, "validatePrometheusPodState: failed to get Prometheus status")
 		return ToStateErrors(NewDegradedError(
 			fmt.Sprintf("failed to get prometheus status: %s", err),
 		))
@@ -793,7 +792,7 @@ func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Promet
 		klog.V(4).ErrorS(err, "listing prometheus pods failed")
 
 		return ToStateErrors(&StateError{
-			State:   Degraded,
+			State:   DegradedState,
 			Unknown: true,
 			Reason:  fmt.Sprintf("listing prometheus pods failed: %s", err),
 		})
@@ -850,9 +849,9 @@ func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Promet
 func (c *Client) ValidatePrometheus(ctx context.Context, p *monv1.Prometheus) []*StateError {
 	var serrs StateErrors
 
-	_ = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
-		if errs := c.validatePrometheusPodState(ctx, p); errs != nil {
-			serrs = errs
+	_ = wait.Poll(5*time.Second, 15*time.Second, func() (bool, error) {
+		if serrs = c.validatePrometheusPodState(ctx, p); serrs != nil {
+			klog.V(4).ErrorS(serrs, "ValidatePrometheus: failed")
 			return false, nil
 		}
 

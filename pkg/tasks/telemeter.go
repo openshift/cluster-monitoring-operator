@@ -39,13 +39,13 @@ func NewTelemeterClientTask(client *client.Client, factory *manifests.Factory, c
 	}
 }
 
-func (t *TelemeterClientTask) Run(ctx context.Context) *StateError {
+func (t *TelemeterClientTask) Run(ctx context.Context) StateErrors {
 	if t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && !t.config.RemoteWrite {
-		return degradedError(t.create(ctx))
+		return toStateErrors(t.create(ctx))
 	}
 
 	if !t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() || t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite {
-		return degradedError(t.destroy(ctx))
+		return toStateErrors(t.destroy(ctx))
 	}
 
 	return nil

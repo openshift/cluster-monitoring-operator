@@ -70,7 +70,7 @@ func (tg *TaskGroup) RunConcurrently(ctx context.Context) TaskGroupErrors {
 			err := ts.Task.Run(ctx)
 			if err != nil {
 				klog.Warningf("task %d of %d: %v failed: %v", i+1, tgLength, ts.Name, err)
-				errChan <- TaskErr{StateError: err, Name: ts.Name}
+				errChan <- TaskErr{StateErrors: err, Name: ts.Name}
 			} else {
 				klog.V(2).Infof("ran task %d of %d: %v", i+1, tgLength, ts.Name)
 			}
@@ -115,14 +115,10 @@ type TaskSpec struct {
 
 type StateErrors = client.StateErrors
 
-var mergeErrors = client.MergeStateErrors
-
-// degradedError returns a StateError with State Degraded set given the err is not nil
-func degradedError(err error) *StateError {
-	if err == nil {
-		return nil
-	}
-	return client.NewDegradedError(err.Error())
+func toStateErrors(err error) StateErrors {
+	b := client.StateErrorBuilder{}
+	b.AddError(client.DegradedState, err)
+	return b.Errors()
 }
 
 // TaskErr wraps a StateError and adds a Name of the Task failed
@@ -135,16 +131,29 @@ type Task interface {
 	Run(ctx context.Context) StateErrors
 }
 
-type (
-	TaskGroupErrors []TaskErr
-)
-
 func (te *TaskErr) Error() string {
 	if te == nil {
 		return ""
 	}
 
-	return fmt.Sprintf("%s: %s", strings.ToLower(te.Name), te.StateError.Error())
+	messages := make([]string, 0, len(te.StateErrors))
+	for _, err := range te.StateErrors {
+		messages = append(messages, err.Error())
+	}
+
+	return fmt.Sprintf("%s: %s", strings.ToLower(te.Name), strings.Join(messages, "\n"))
+}
+
+type (
+	TaskGroupErrors []TaskErr
+)
+
+func (tge TaskGroupErrors) StateErrors() StateErrors {
+	b := client.StateErrorBuilder{}
+	for _, te := range tge {
+		b.AddStateErrors(te.StateErrors)
+	}
+	return b.Errors()
 }
 
 func (tge TaskGroupErrors) Error() string {
@@ -157,21 +166,4 @@ func (tge TaskGroupErrors) Error() string {
 		messages = append(messages, err.Error())
 	}
 	return strings.Join(messages, "\n")
-}
-
-func (tge TaskGroupErrors) ToConsolidatedTaskError() *TaskErr {
-	if len(tge) == 0 {
-		return nil
-	}
-
-	if len(tge) == 1 {
-		return &tge[0]
-	}
-
-	stErr := client.NewStateError()
-	for _, terr := range tge {
-		stErr.Merge(terr.StateError)
-	}
-
-	return &TaskErr{StateError: stErr, Name: "MultipleTasks"}
 }

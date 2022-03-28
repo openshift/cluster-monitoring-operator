@@ -27,8 +27,8 @@ func NewMetricsClientCATask(client *client.Client, factory *manifests.Factory, c
 	}
 }
 
-func (t *MetricsClientCATask) Run(ctx context.Context) *StateError {
-	return degradedError(t.create(ctx))
+func (t *MetricsClientCATask) Run(ctx context.Context) StateErrors {
+	return toStateErrors(t.create(ctx))
 }
 
 func (t *MetricsClientCATask) create(ctx context.Context) error {
