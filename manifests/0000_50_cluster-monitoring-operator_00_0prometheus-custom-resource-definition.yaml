@@ -2681,6 +2681,7 @@ spec:
                   monitors and probes. This is an experimental feature, this behaviour
                   could change or be removed in the future. Only valid in Prometheus
                   versions 2.28.0 and newer.'
+                pattern: (^0|([0-9]*[.])?[0-9]+((K|M|G|T|E|P)i?)?B)$
                 type: string
               enforcedLabelLimit:
                 description: Per-scrape limit on number of labels that will be accepted
@@ -2735,6 +2736,42 @@ spec:
               evaluationInterval:
                 description: 'Interval between consecutive evaluations. Default: `1m`'
                 type: string
+              excludedFromEnforcement:
+                description: List of references to PodMonitor, ServiceMonitor, Probe
+                  and PrometheusRule objects to be excluded from enforcing a namespace
+                  label of origin. Applies only if enforcedNamespaceLabel set to true.
+                items:
+                  description: ObjectReference references a PodMonitor, ServiceMonitor,
+                    Probe or PrometheusRule object.
+                  properties:
+                    group:
+                      default: monitoring.coreos.com
+                      description: Group of the referent. When not specified, it defaults
+                        to `monitoring.coreos.com`
+                      enum:
+                      - monitoring.coreos.com
+                      type: string
+                    name:
+                      description: Name of the referent. When not set, all resources
+                        are matched.
+                      type: string
+                    namespace:
+                      description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                      minLength: 1
+                      type: string
+                    resource:
+                      description: Resource of the referent.
+                      enum:
+                      - prometheusrules
+                      - servicemonitors
+                      - podmonitors
+                      - probes
+                      type: string
+                  required:
+                  - namespace
+                  - resource
+                  type: object
+                type: array
               externalLabels:
                 additionalProperties:
                   type: string
@@ -4268,10 +4305,11 @@ spec:
                   will _not_ be added when value is set to empty string (`""`).
                 type: string
               prometheusRulesExcludedFromEnforce:
-                description: PrometheusRulesExcludedFromEnforce - list of prometheus
+                description: 'PrometheusRulesExcludedFromEnforce - list of prometheus
                   rules to be excluded from enforcing of adding namespace labels.
                   Works only if enforcedNamespaceLabel set to true. Make sure both
-                  ruleNamespace and ruleName are set for each pair
+                  ruleNamespace and ruleName are set for each pair. Deprecated: use
+                  excludedFromEnforcement instead.'
                 items:
                   description: PrometheusRuleExcludeConfig enables users to configure
                     excluded PrometheusRule names and their namespaces to be ignored
@@ -5195,8 +5233,8 @@ spec:
                   hours days weeks years).
                 type: string
               retentionSize:
-                description: 'Maximum amount of disk space used by blocks. Supported
-                  units: B, KB, MB, GB, TB, PB, EB. Ex: `512MB`.'
+                description: Maximum amount of disk space used by blocks.
+                pattern: (^0|([0-9]*[.])?[0-9]+((K|M|G|T|E|P)i?)?B)$
                 type: string
               routePrefix:
                 description: The route prefix Prometheus registers HTTP handlers for.
