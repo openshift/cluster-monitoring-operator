@@ -7,6 +7,7 @@
 - [1578](https://github.com/openshift/cluster-monitoring-operator/pull/1578) Add temporary cluster id label to remote write relabel configs.
 - [#1350](https://github.com/openshift/cluster-monitoring-operator/pull/1350) Support label scrape limits in user-workload monitoring
 - [#1601](https://github.com/openshift/cluster-monitoring-operator/pull/1601) Expose the /federate endpoint of UWM Prometheus as a service
+- [#1617](https://github.com/openshift/cluster-monitoring-operator/pull/1617) Add Oauth2 setting to PrometheusK8s remoteWrite config
 
 ## 4.10
 

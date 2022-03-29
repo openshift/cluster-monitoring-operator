@@ -1227,6 +1227,72 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 	}
 }
 
+func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
+	expectedOauth2Config := monv1.OAuth2{
+		ClientID: monv1.SecretOrConfigMap{
+			Secret: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: "oauth2-credentials",
+				},
+				Key: "id",
+			},
+		},
+		ClientSecret: v1.SecretKeySelector{
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: "oauth2-credentials",
+			},
+			Key: "secret",
+		},
+		TokenURL: "https://example.com/oauth2/token",
+		Scopes:   []string{"scope1", "scope2"},
+		EndpointParams: map[string]string{
+			"param1": "value1",
+			"param2": "value2",
+		},
+	}
+	c, err := NewConfigFromString(`prometheusK8s:
+  remoteWrite:
+    - url: https://test.remotewrite.com/api/write
+      remoteTimeout: 30s
+      oauth2:
+        clientId:
+          secret:
+            name: oauth2-credentials
+            key: id
+        clientSecret:
+          name: oauth2-credentials
+          key: secret
+        tokenUrl: https://example.com/oauth2/token
+        scopes:
+          - scope1
+          - scope2
+        endpointParams:
+          param1: value1
+          param2: value2
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	p, err := f.PrometheusK8s(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
+		t.Errorf("want remote write URL https://test.remotewrite.com/api/write, got %v", p.Spec.RemoteWrite[0].URL)
+	}
+
+	if !reflect.DeepEqual(p.Spec.RemoteWrite[0].OAuth2, &expectedOauth2Config) {
+		t.Errorf("want OAuth2 config %v, got %v", expectedOauth2Config, p.Spec.RemoteWrite[0].OAuth2)
+	}
+
+}
+
 func TestPrometheusK8sConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusK8s:
   retention: 25h
