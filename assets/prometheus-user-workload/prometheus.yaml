@@ -196,10 +196,10 @@ spec:
       - "false"
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/thanos/thanos:v0.25.1
+    image: quay.io/thanos/thanos:v0.25.2
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: 0.25.1
+    version: 0.25.2
   version: 2.34.0

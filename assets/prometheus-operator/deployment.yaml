@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.55.0
+    app.kubernetes.io/version: 0.55.1
   name: prometheus-operator
   namespace: openshift-monitoring
 spec:
@@ -26,13 +26,13 @@ spec:
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: prometheus-operator
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 0.55.0
+        app.kubernetes.io/version: 0.55.1
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.55.0
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.55.1
         - --prometheus-instance-namespaces=openshift-monitoring
         - --thanos-ruler-instance-namespaces=openshift-monitoring
         - --alertmanager-instance-namespaces=openshift-monitoring
@@ -43,7 +43,7 @@ spec:
         - --web.enable-tls=true
         - --web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --web.tls-min-version=VersionTLS12
-        image: quay.io/prometheus-operator/prometheus-operator:v0.55.0
+        image: quay.io/prometheus-operator/prometheus-operator:v0.55.1
         name: prometheus-operator
         ports:
         - containerPort: 8080
