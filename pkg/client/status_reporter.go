@@ -34,11 +34,15 @@ const (
 	StorageNotConfiguredReason         = "PrometheusDataPersistenceNotConfigured"
 )
 
-type StateReport interface {
-	State() State
-	IsUnknown() bool
-	Description() string
+type StateInfo interface {
 	Reason() string
+	Message() string
+	IsUnknown() bool
+}
+
+type StatesReport interface {
+	Degraded() StateInfo
+	Unavailable() StateInfo
 }
 
 type StatusReporter struct {
@@ -172,7 +176,7 @@ func (r *StatusReporter) SetRollOutInProgress(ctx context.Context) error {
 	return r.setConditions(ctx, co, conditions)
 }
 
-func (r *StatusReporter) ReportState(ctx context.Context, report StateReport) error {
+func (r *StatusReporter) ReportState(ctx context.Context, report StatesReport) error {
 	co, err := r.getOrCreateClusterOperator(ctx)
 	if err != nil {
 		return err
@@ -180,31 +184,33 @@ func (r *StatusReporter) ReportState(ctx context.Context, report StateReport) er
 
 	time := metav1.Now()
 	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
-	reason := cmostr.ToPascalCase(report.Reason())
 
 	conditions := newConditions(co.Status, r.version, time)
 
-	switch report.State() {
-	case DegradedState:
+	degraded := report.Degraded()
+	if degraded != nil {
 		status := v1.ConditionTrue
-		if report.IsUnknown() {
+		if degraded.IsUnknown() {
 			status = v1.ConditionUnknown
 		}
+		reason := cmostr.ToPascalCase(degraded.Reason())
 
-		msg := fmt.Sprintf("Monitoring Stack has Degraded. %s", report.Description())
+		msg := fmt.Sprintf("Monitoring Stack has Degraded. %s", degraded.Message())
 		conditions.setCondition(v1.OperatorDegraded, status, msg, reason, time)
-		conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, msg, reason, time)
+	}
 
-	case UnavailableState:
-		status := v1.ConditionFalse //available condition is False
-		if report.IsUnknown() {
+	unavailable := report.Degraded()
+	if unavailable != nil {
+		status := v1.ConditionTrue
+		if unavailable.IsUnknown() {
 			status = v1.ConditionUnknown
 		}
+		reason := cmostr.ToPascalCase(unavailable.Reason())
 
-		msg := fmt.Sprintf("Monitoring Stack is Unavailable. %s", report.Description())
+		msg := "Monitoring Stack is Unavailable. " + unavailable.Message()
 		conditions.setCondition(v1.OperatorAvailable, status, msg, reason, time)
-		conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, msg, reason, time)
 	}
+
 	return r.setConditions(ctx, co, conditions)
 }
 

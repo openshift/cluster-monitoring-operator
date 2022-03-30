@@ -25,8 +25,8 @@ func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *cli
 	}
 }
 
-func (t *PrometheusAdapterTask) Run(ctx context.Context) StateErrors {
-	return toStateErrors(t.create(ctx))
+func (t *PrometheusAdapterTask) Run(ctx context.Context) client.StateErrors {
+	return stateErrors(t.create(ctx))
 }
 
 func (t *PrometheusAdapterTask) create(ctx context.Context) error {

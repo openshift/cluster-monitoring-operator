@@ -113,9 +113,7 @@ type TaskSpec struct {
 	Task Task
 }
 
-type StateErrors = client.StateErrors
-
-func toStateErrors(err error) StateErrors {
+func stateErrors(err error) client.StateErrors {
 	b := client.StateErrorBuilder{}
 	b.AddError(client.DegradedState, err)
 	return b.Errors()
@@ -123,12 +121,12 @@ func toStateErrors(err error) StateErrors {
 
 // TaskErr wraps a StateError and adds a Name of the Task failed
 type TaskErr struct {
-	StateErrors
+	client.StateErrors
 	Name string
 }
 
 type Task interface {
-	Run(ctx context.Context) StateErrors
+	Run(ctx context.Context) client.StateErrors
 }
 
 func (te *TaskErr) Error() string {
@@ -148,7 +146,7 @@ type (
 	TaskGroupErrors []TaskErr
 )
 
-func (tge TaskGroupErrors) StateErrors() StateErrors {
+func (tge TaskGroupErrors) StateErrors() client.StateErrors {
 	b := client.StateErrorBuilder{}
 	for _, te := range tge {
 		b.AddStateErrors(te.StateErrors)

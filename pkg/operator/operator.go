@@ -682,75 +682,9 @@ func (o *Operator) resetCounters() {
 	o.unavailableCount = 0
 }
 
-type StateErrorReport struct {
-	err    *client.StateError
-	reason string
-}
-
-func (s *StateErrorReport) State() client.State {
-	return s.err.State
-}
-func (s *StateErrorReport) IsUnknown() bool {
-	return s.err.Unknown
-}
-
-func (s *StateErrorReport) Description() string {
-	return s.err.Reason
-}
-func (s *StateErrorReport) Reason() string {
-	return s.reason
-}
-
-func NewStateErrorReport(serr client.StateError, reason string) *StateErrorReport {
-	return &StateErrorReport{err: &serr, reason: reason}
-}
-
-type TaskResult struct {
-	degraded    *client.StateError
-	unavailable *client.StateError
-	Name        string
-}
-
-func consolidateTaskErrors(tge tasks.TaskGroupErrors) TaskResult {
-	ret := TaskResult{Name: tge[0].Name}
-
-	if len(tge) > 1 {
-		ret.Name = "MultipleTasks"
-	}
-
-	degraded := &client.StateError{State: client.DegradedState}
-	degradedReasons := []string{}
-
-	unavailable := &client.StateError{State: client.UnavailableState}
-	unavailableReasons := []string{}
-
-	for _, err := range tge.StateErrors() {
-		switch err.State {
-		case client.DegradedState:
-			degradedReasons = append(degradedReasons, err.Reason)
-			degraded.Unknown = degraded.Unknown || err.Unknown
-
-		case client.UnavailableState:
-			unavailableReasons = append(unavailableReasons, err.Reason)
-			unavailable.Unknown = unavailable.Unknown || err.Unknown
-		}
-	}
-
-	if len(degradedReasons) > 0 {
-		degraded.Reason = strings.Join(degradedReasons, ", ")
-		ret.degraded = degraded
-	}
-
-	if len(unavailableReasons) > 0 {
-		unavailable.Reason = strings.Join(unavailableReasons, ", ")
-		ret.unavailable = unavailable
-	}
-	return ret
-}
-
 func (o *Operator) reportTaskGroupErrors(ctx context.Context, tge tasks.TaskGroupErrors) string {
-	result := consolidateTaskErrors(tge)
-	failedTask := cmostr.ToPascalCase(result.Name + "Failed")
+	result := generateRunReport(tge)
+	failedTask := cmostr.ToPascalCase(result.name + "Failed")
 
 	if result.degraded != nil {
 		o.reportDegraded(ctx, result.degraded, failedTask)
@@ -776,8 +710,10 @@ func (o *Operator) reportUnavailable(ctx context.Context, err error, failedTask 
 	// have been attempted to avoid flapping status.
 	klog.Warningf("Updating ClusterOperator status to unavailable after %d attempts.", o.unavailableCount)
 
-	serr := client.ToStateError(client.UnavailableState, err)
-	report := NewStateErrorReport(*serr, failedTask)
+	report := &runReport{
+		unavailable: client.ToStateError(client.UnavailableState, err),
+		name:        failedTask,
+	}
 	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
 		klog.Errorf("error occurred while setting status to unavailable: %v", err)
 	}
@@ -796,8 +732,10 @@ func (o *Operator) reportDegraded(ctx context.Context, err error, failedTask str
 	// have been attempted to avoid flapping status.
 	klog.Warningf("Updating ClusterOperator status to degraded after %d attempts.", o.degradedCount)
 
-	serr := client.ToStateError(client.UnavailableState, err)
-	report := NewStateErrorReport(*serr, failedTask)
+	report := &runReport{
+		degraded: client.ToStateError(client.UnavailableState, err),
+		name:     failedTask,
+	}
 	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
 		klog.Errorf("error occurred while setting status to degraded: %v", err)
 	}
@@ -1065,4 +1003,78 @@ func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
 		)
 	}
 	return workloads
+}
+
+func generateRunReport(tge tasks.TaskGroupErrors) runReport {
+	ret := runReport{name: tge[0].Name}
+
+	if len(tge) > 1 {
+		ret.name = "MultipleTasks"
+	}
+
+	degraded := &client.StateError{State: client.DegradedState}
+	degradedReasons := []string{}
+
+	unavailable := &client.StateError{State: client.UnavailableState}
+	unavailableReasons := []string{}
+
+	for _, err := range tge.StateErrors() {
+		switch err.State {
+		case client.DegradedState:
+			degradedReasons = append(degradedReasons, err.Reason)
+			degraded.Unknown = degraded.Unknown || err.Unknown
+
+		case client.UnavailableState:
+			unavailableReasons = append(unavailableReasons, err.Reason)
+			unavailable.Unknown = unavailable.Unknown || err.Unknown
+		}
+	}
+
+	if len(degradedReasons) > 0 {
+		degraded.Reason = strings.Join(degradedReasons, ", ")
+		ret.degraded = degraded
+	}
+
+	if len(unavailableReasons) > 0 {
+		unavailable.Reason = strings.Join(unavailableReasons, ", ")
+		ret.unavailable = unavailable
+	}
+	return ret
+}
+
+type stateInfo struct {
+	err    *client.StateError
+	reason string
+}
+
+func (s *stateInfo) State() client.State {
+	return s.err.State
+}
+
+func (s *stateInfo) IsUnknown() bool {
+	return s.err.Unknown
+}
+
+func (s *stateInfo) Message() string {
+	return s.err.Reason
+}
+
+func (s *stateInfo) Reason() string {
+	return s.reason
+}
+
+type runReport struct {
+	degraded    *client.StateError
+	unavailable *client.StateError
+	name        string
+}
+
+var _ client.StatesReport = (*runReport)(nil)
+
+func (s *runReport) Unavailable() client.StateInfo {
+	return &stateInfo{err: s.unavailable, reason: s.name}
+}
+
+func (s *runReport) Degraded() client.StateInfo {
+	return &stateInfo{err: s.degraded, reason: s.name}
 }

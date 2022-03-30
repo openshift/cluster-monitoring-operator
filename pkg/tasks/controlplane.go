@@ -36,8 +36,8 @@ func NewControlPlaneTask(client *client.Client, factory *manifests.Factory, conf
 	}
 }
 
-func (t *ControlPlaneTask) Run(ctx context.Context) StateErrors {
-	return toStateErrors(t.create(ctx))
+func (t *ControlPlaneTask) Run(ctx context.Context) client.StateErrors {
+	return stateErrors(t.create(ctx))
 }
 
 func (t *ControlPlaneTask) create(ctx context.Context) error {

@@ -36,8 +36,8 @@ func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory, cfg
 	}
 }
 
-func (t *ThanosQuerierTask) Run(ctx context.Context) StateErrors {
-	return toStateErrors(t.create(ctx))
+func (t *ThanosQuerierTask) Run(ctx context.Context) client.StateErrors {
+	return stateErrors(t.create(ctx))
 }
 
 func (t *ThanosQuerierTask) create(ctx context.Context) error {

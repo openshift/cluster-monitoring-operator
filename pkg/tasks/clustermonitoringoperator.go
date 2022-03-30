@@ -43,8 +43,8 @@ func NewClusterMonitoringOperatorTask(
 	}
 }
 
-func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) StateErrors {
-	return toStateErrors(t.create(ctx))
+func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) client.StateErrors {
+	return stateErrors(t.create(ctx))
 }
 
 func (t *ClusterMonitoringOperatorTask) create(ctx context.Context) error {

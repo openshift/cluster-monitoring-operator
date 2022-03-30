@@ -34,8 +34,8 @@ func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) 
 	}
 }
 
-func (t *KubeStateMetricsTask) Run(ctx context.Context) StateErrors {
-	return toStateErrors(t.create(ctx))
+func (t *KubeStateMetricsTask) Run(ctx context.Context) client.StateErrors {
+	return stateErrors(t.create(ctx))
 }
 
 func (t *KubeStateMetricsTask) create(ctx context.Context) error {

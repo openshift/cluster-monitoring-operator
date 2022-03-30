@@ -38,7 +38,7 @@ func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config
 	}
 }
 
-func (t *PrometheusTask) Run(ctx context.Context) StateErrors {
+func (t *PrometheusTask) Run(ctx context.Context) client.StateErrors {
 	b := &client.StateErrorBuilder{}
 
 	prometheus, err := t.create(ctx)

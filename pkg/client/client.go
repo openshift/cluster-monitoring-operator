@@ -768,9 +768,9 @@ func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Promet
 
 	status, _, err := prometheusoperator.Status(ctx, c.kclient, p)
 	if err != nil {
-		return ToStateErrors(NewDegradedError(
-			fmt.Sprintf("failed to get prometheus status: %s", err),
-		))
+		return ToStateErrors(
+			NewDegradedError("failed to get prometheus status:" + err.Error()),
+		)
 	}
 
 	required := *p.Spec.Replicas

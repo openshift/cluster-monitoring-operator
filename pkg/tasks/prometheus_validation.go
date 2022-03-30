@@ -38,7 +38,7 @@ func NewPrometheusValidationTask(client *client.Client, prometheus *monv1.Promet
 	}
 }
 
-func (t *PrometheusValidationTask) Run(ctx context.Context) StateErrors {
+func (t *PrometheusValidationTask) Run(ctx context.Context) client.StateErrors {
 
 	if t.prometheus == nil {
 		klog.V(3).Info("validate prometheus object")

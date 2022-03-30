@@ -34,8 +34,8 @@ func NewPrometheusOperatorTask(client *client.Client, factory *manifests.Factory
 	}
 }
 
-func (t *PrometheusOperatorTask) Run(ctx context.Context) StateErrors {
-	return toStateErrors(t.create(ctx))
+func (t *PrometheusOperatorTask) Run(ctx context.Context) client.StateErrors {
+	return stateErrors(t.create(ctx))
 }
 
 func (t *PrometheusOperatorTask) create(ctx context.Context) error {
