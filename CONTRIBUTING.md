@@ -5,7 +5,7 @@ This document outlines some of the conventions on development workflow, commit m
 
 # Certificate of Origin
 
-By contributing to this project you agree to the Developer Certificate of Origin (DCO). 
+By contributing to this project you agree to the Developer Certificate of Origin (DCO).
 This document was created by the Linux Kernel community and is a simple statement that you, as a contributor, have the legal right to make the contribution. See the [DCO](DCO) file for details.
 
 # Notes
@@ -109,6 +109,29 @@ At this point, you should follow a standard git workflow:
 - In case you have problems with `make generate` due to problems with system-wide tooling, you can use slower
 `make generate-in-docker` target which will install necessary tools in containerized environment and will generate assets.
 This targets needs `docker` to be installed on host and was not tested with other container runtime environments.
+
+## Testing
+
+Supposing $KUBECONFIOG is set to the config file of a Kubernetes cluster running the codes to test. We can run all tests by using this command `make test`.
+
+The testing consist of 3 aspects:
+- unit tests, can be run seperately by `make test-unit`.
+- Prometheus rule tests, can be run seperately by `make test-rules`.
+- end to end tests, can be run seperately by `make test-e2e`.
+
+If we need to run a specific test case of the E2E test, we can use the following command.
+```bash
+go test -v -timeout=120m ./test/e2e/ --kubeconfig $KUBECONFIG -run TestBodySizeLimit
+```
+Attention that we have to pass a valid $KUBECONFIG explicitly `--kubeconfig $KUBECONFIG` even if ~/.kube/config exists.
+
+To run a specific test case of unit tests, we can use the command `go test -v $PACKAGE_DIR -run $TEST_FUNC_NAME`.
+The `$PACKAGE_DIR` is where the source files of a Go package lives. The `$TEST_FUNC_NAME` is the test function whose name always starts with "Test" (regex pattern `TEST\w+`).
+For example, we have a test function `TestImageParsing` in package `manifests`.The source file `./pkg/manifests/image_test.go` and other source code files of this package lives in `./pkg/manifests`. So we can use the following commnad to run the test function `TestImageParsing` in package `manifests`.
+```bash
+go test -v ./pkg/manifests -run TestImageParsing
+```
+
 
 ## Coding Style
 
