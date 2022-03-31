@@ -331,14 +331,6 @@ func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructu
 	}
 }
 
-func (f *Factory) AlertmanagerExternalURL(host string) *url.URL {
-	return &url.URL{
-		Scheme: "https",
-		Host:   host,
-		Path:   "/",
-	}
-}
-
 func (f *Factory) AlertmanagerConfig() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerConfig))
 	if err != nil {
