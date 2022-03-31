@@ -1657,14 +1657,20 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 		return nil
 	}
 	dirPath := filepath.Dir(queryLogFile)
+	// queryLogFile is not an absolute path nor a simple filename
+	if !filepath.IsAbs(queryLogFile) && dirPath != "." {
+		return errors.Wrap(ErrConfigValidation, `relative paths to query log file are not supported`)
+	}
 	if dirPath == "/" {
 		return errors.Wrap(ErrConfigValidation, `query log file can't be stored on the root directory`)
 	}
 
 	// /prometheus is where Prometheus will store the TSDB so it is
 	// already mounted inside the pod (either from a persistent volume claim or from an empty dir).
+	// When queryLogFile is a simple filename the prometheus-operator will take
+	// care of mounting an emptyDir under /var/log/prometheus
 	p.Spec.QueryLogFile = queryLogFile
-	if dirPath == "/prometheus" {
+	if dirPath == "/prometheus" || dirPath == "." {
 		return nil
 	}
 

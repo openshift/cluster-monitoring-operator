@@ -1391,7 +1391,7 @@ ingress:
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
-	testCases := []struct {
+	for _, tc := range []struct {
 		name             string
 		queryLogFilePath string
 		expected         string
@@ -1420,7 +1420,7 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			volumeExpected:   false,
 		},
 		{
-			name:             "invalid path",
+			name:             "invalid path, query log on root",
 			queryLogFilePath: "/query.log",
 			expected:         "",
 			errExpected:      true,
@@ -1433,39 +1433,61 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			errExpected:      true,
 			volumeExpected:   false,
 		},
-	}
-	for _, tt := range testCases {
-		c := NewDefaultConfig()
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tt.queryLogFilePath
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-		p, err := f.PrometheusK8s(
-			&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-			&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		)
-		if err != nil {
-			if !tt.errExpected {
-				t.Fatalf("Expecting no error but got %v", err)
+		{
+			name:             "invalid path, relative path",
+			queryLogFilePath: "./dev/query.log",
+			expected:         "",
+			errExpected:      true,
+			volumeExpected:   false,
+		},
+		{
+			name:             "filename only",
+			queryLogFilePath: "query.log",
+			expected:         "query.log",
+			errExpected:      false,
+			volumeExpected:   false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := NewDefaultConfig()
+			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tc.queryLogFilePath
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
+			if err != nil {
+				if !tc.errExpected {
+					t.Fatalf("Expecting no error but got %v", err)
+				}
+				return
 			}
-			return
-		}
-		if tt.errExpected {
-			t.Fatalf("Expected query log file %s to give an error, but err is nil", tt.queryLogFilePath)
-		}
-
-		if p.Spec.QueryLogFile != tt.expected {
-			t.Fatal("Prometheus query log is not configured correctly")
-		}
-
-		if tt.volumeExpected {
-			volumeName := "query-log"
-			if !volumeConfigured(p.Spec.Volumes, volumeName) {
-				t.Fatal("Query log file volume is not configured correctly")
+			if tc.errExpected {
+				t.Fatalf("Expected query log file %s to give an error, but err is nil", tc.queryLogFilePath)
 			}
-			if !volumeMountsConfigured(p.Spec.VolumeMounts, volumeName) {
-				t.Fatal("Query log file volume mount is not configured correctly")
-			}
-		}
 
+			if p.Spec.QueryLogFile != tc.expected {
+				t.Fatal("Prometheus query log is not configured correctly")
+			}
+
+			if tc.volumeExpected {
+				volumeName := "query-log"
+				if !volumeConfigured(p.Spec.Volumes, volumeName) {
+					t.Fatal("Query log file volume is not configured correctly")
+				}
+				if !volumeMountsConfigured(p.Spec.VolumeMounts, volumeName) {
+					t.Fatal("Query log file volume mount is not configured correctly")
+				}
+			} else {
+				volumeName := "query-log"
+				if volumeConfigured(p.Spec.Volumes, volumeName) {
+					t.Fatal("Query log file volume is configured, but it should not as prometheus-operator will take care of it")
+				}
+				if volumeMountsConfigured(p.Spec.VolumeMounts, volumeName) {
+					t.Fatal("Query log file volume is configured, but it should not as prometheus-operator will take care of it")
+				}
+			}
+		})
 	}
 }
 
