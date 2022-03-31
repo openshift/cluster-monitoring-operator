@@ -184,6 +184,17 @@ spec:
       for: 12h
       labels:
         severity: warning
+    - alert: KubeCronJobFailed
+      annotations:
+        description: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to
+          complete. Running the failed job after investigation should clear this alert.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeCronJobFailed.md
+        summary: Job failed to complete.
+      expr: |
+        max by (namespace, owner_name)(kube_job_status_completion_time {namespace=~"(openshift-.*|kube-.*|default)"} * on (job_name) group_left(owner_name) max by(namespace, owner_name, job_name)(kube_job_owner{owner_kind="CronJob"}))- max by(namespace, owner_name)(kube_job_status_start_time {namespace=~"(openshift-.*|kube-.*|default)"} * on(job_name) group_left(owner_name)max by (namespace, owner_name, job_name)(kube_job_owner{owner_kind="CronJob"}))<0 unless max by (namespace, owner_name) (kube_cronjob_status_active{namespace=~"(openshift-.*|kube-.*|default)"})
+      for: 15m
+      labels:
+        severity: warning    
     - alert: KubeJobFailed
       annotations:
         description: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to
