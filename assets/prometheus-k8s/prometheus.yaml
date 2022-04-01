@@ -154,7 +154,8 @@ spec:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
   - name: prometheus
-  enableFeatures: []
+  enableFeatures:
+  - extra-scrape-metrics
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
   image: quay.io/prometheus/prometheus:v2.34.0

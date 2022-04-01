@@ -305,6 +305,7 @@ function(params)
     // disabled, these things are not injected.
     prometheus+: {
       spec+: {
+        enableFeatures: ['extra-scrape-metrics'],
         alerting+: {
           alertmanagers:
             std.map(
