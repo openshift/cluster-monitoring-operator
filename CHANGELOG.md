@@ -4,6 +4,7 @@
 
 - [#1567](https://github.com/openshift/cluster-monitoring-operator/pull/1567) Enable validating webhook for AlertmanagerConfig customer resources
 - [#1557](https://github.com/openshift/cluster-monitoring-operator/pull/1557) Removing grafana from monitoring stack
+- [1578](https://github.com/openshift/cluster-monitoring-operator/pull/1578) Add temporary cluster id label to remote write relabel configs.
 
 ## 4.10
 
