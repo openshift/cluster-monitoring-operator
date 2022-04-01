@@ -604,6 +604,16 @@ data:
     # Number of jaeger instances used certain agent strategy
     - '{__name__="jaeger_operator_instances_agent_strategies"}'
     #
+    # owners: (@tracing-team)
+    #
+    # Number of jaeger instances used autoprovisioning feature
+    - '{__name__="jaeger_operator_instances_autoprovisioning"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of jaeger instances managed by other tool
+    - '{__name__="jaeger_operator_instances_managed"}'
+    #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
     #
     # The current amount of CPU used by Application Services products, aggregated by product name.
