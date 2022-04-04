@@ -528,7 +528,7 @@ function(params) {
           record: 'namespace_job:scrape_samples_post_metric_relabeling:topk3',
         },
         {
-          expr: 'sum by(exported_service) (rate(haproxy_server_http_responses_total{exported_namespace="openshift-monitoring", exported_service=~"alertmanager-main|grafana|prometheus-k8s"}[5m]))',
+          expr: 'sum by(exported_service) (rate(haproxy_server_http_responses_total{exported_namespace="openshift-monitoring", exported_service=~"alertmanager-main|prometheus-k8s"}[5m]))',
           record: 'monitoring:haproxy_server_http_responses_total:sum',
         },
         {
