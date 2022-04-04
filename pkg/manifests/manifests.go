@@ -1785,6 +1785,18 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.EnforcedTargetLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedTargetLimit
 	}
 
+	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelLimit != nil {
+		p.Spec.EnforcedLabelLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelLimit
+	}
+
+	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelNameLengthLimit != nil {
+		p.Spec.EnforcedLabelNameLengthLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelNameLengthLimit
+	}
+
+	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelValueLengthLimit != nil {
+		p.Spec.EnforcedLabelValueLengthLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelValueLengthLimit
+	}
+
 	if f.config.Images.Thanos != "" {
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}

@@ -465,6 +465,9 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		Data: map[string]string{
 			"config.yaml": fmt.Sprintf(`prometheus:
   enforcedTargetLimit: 10
+  enforcedLabelLimit: 500
+  enforcedLabelNameLengthLimit: 50
+  enforcedLabelValueLengthLimit: 600
   logLevel: debug
   retention: 10h
   queryLogFile: /tmp/test.log
@@ -521,6 +524,18 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert enforced target limit is configured",
 			assertion: assertEnforcedTargetLimit(10),
+		},
+		{
+			name:      "assert enforced label limit is configured",
+			assertion: assertEnforcedLabelLimit(500),
+		},
+		{
+			name:      "assert enforced label name length limit is configured",
+			assertion: assertEnforcedLabelNameLengthLimit(50),
+		},
+		{
+			name:      "assert enforced label value length limit",
+			assertion: assertEnforcedLabelValueLengthLimit(600),
 		},
 		{
 			name:      "assert query log file value is set and correct",
@@ -759,6 +774,78 @@ func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 
 		if err != nil {
 			t.Fatalf("Timed out waiting for EnforcedTargetLimit configuration: %v", err)
+		}
+	}
+}
+
+func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if prom.Spec.EnforcedLabelLimit == nil {
+				return errors.New("EnforcedLabelLimit not set")
+			} else if *prom.Spec.EnforcedLabelLimit != limit {
+				return fmt.Errorf("expected EnforcedLabelLimit to be %d, but got %d", limit, *prom.Spec.EnforcedLabelLimit)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for EnforcedLabelLimit configuration: %v", err)
+		}
+	}
+}
+
+func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if prom.Spec.EnforcedLabelNameLengthLimit == nil {
+				return errors.New("EnforcedLabelNameLengthLimit not set")
+			} else if *prom.Spec.EnforcedLabelNameLengthLimit != limit {
+				return fmt.Errorf("expected EnforcedLabelNameLengthLimit to be %d, but got %d", limit, *prom.Spec.EnforcedLabelNameLengthLimit)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for EnforcedLabelNameLengthLimit configuration: %v", err)
+		}
+	}
+}
+
+func assertEnforcedLabelValueLengthLimit(limit uint64) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if prom.Spec.EnforcedLabelValueLengthLimit == nil {
+				return errors.New("EnforcedLabelValueLengthLimit not set")
+			} else if *prom.Spec.EnforcedLabelValueLengthLimit != limit {
+				return fmt.Errorf("expected EnforcedLabelValueLengthLimit to be %d, but got %d", limit, *prom.Spec.EnforcedLabelValueLengthLimit)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for EnforcedLabelValueLengthLimit configuration: %v", err)
 		}
 	}
 }
