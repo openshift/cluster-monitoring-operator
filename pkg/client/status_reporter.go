@@ -27,11 +27,23 @@ import (
 )
 
 const (
+	partiallyAvailable          string = "Rollout of the monitoring stack failed but is Available. Please investigate the degrades status error."
 	unavailableMessage          string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
 	asExpectedReason            string = "AsExpected"
 	StorageNotConfiguredMessage        = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.8/monitoring/configuring-the-monitoring-stack.html"
 	StorageNotConfiguredReason         = "PrometheusDataPersistenceNotConfigured"
 )
+
+type StateInfo interface {
+	Reason() string
+	Message() string
+	IsUnknown() bool
+}
+
+type StatesReport interface {
+	Degraded() StateInfo
+	Unavailable() StateInfo
+}
 
 type StatusReporter struct {
 	client                clientv1.ClusterOperatorInterface
@@ -115,6 +127,7 @@ func (r *StatusReporter) setConditions(ctx context.Context, co *v1.ClusterOperat
 }
 
 func (r *StatusReporter) SetRollOutDone(ctx context.Context, degradedConditionMessage string, degradedConditionReason string) error {
+
 	co, err := r.getOrCreateClusterOperator(ctx)
 	if err != nil {
 		return err
@@ -159,6 +172,44 @@ func (r *StatusReporter) SetRollOutInProgress(ctx context.Context) error {
 	time := metav1.Now()
 	conditions := newConditions(co.Status, r.version, metav1.Now())
 	conditions.setCondition(v1.OperatorProgressing, v1.ConditionTrue, "Rolling out the stack.", "RollOutInProgress", time)
+
+	return r.setConditions(ctx, co, conditions)
+}
+
+func (r *StatusReporter) ReportState(ctx context.Context, report StatesReport) error {
+	co, err := r.getOrCreateClusterOperator(ctx)
+	if err != nil {
+		return err
+	}
+
+	time := metav1.Now()
+	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
+
+	conditions := newConditions(co.Status, r.version, time)
+
+	degraded := report.Degraded()
+	if degraded != nil {
+		status := v1.ConditionTrue
+		if degraded.IsUnknown() {
+			status = v1.ConditionUnknown
+		}
+		reason := cmostr.ToPascalCase(degraded.Reason())
+
+		msg := fmt.Sprintf("Monitoring Stack has Degraded. %s", degraded.Message())
+		conditions.setCondition(v1.OperatorDegraded, status, msg, reason, time)
+	}
+
+	unavailable := report.Degraded()
+	if unavailable != nil {
+		status := v1.ConditionTrue
+		if unavailable.IsUnknown() {
+			status = v1.ConditionUnknown
+		}
+		reason := cmostr.ToPascalCase(unavailable.Reason())
+
+		msg := "Monitoring Stack is Unavailable. " + unavailable.Message()
+		conditions.setCondition(v1.OperatorAvailable, status, msg, reason, time)
+	}
 
 	return r.setConditions(ctx, co, conditions)
 }

@@ -17,10 +17,11 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/klog/v2"
-	"strings"
 )
 
 // TaskRunner manages lists of task groups. Through the RunAll method task groups are
@@ -69,6 +70,7 @@ func (tg *TaskGroup) RunConcurrently(ctx context.Context) TaskGroupErrors {
 			err := ts.Task.Run(ctx)
 			if err != nil {
 				klog.Warningf("task %d of %d: %v failed: %v", i+1, tgLength, ts.Name, err)
+
 				errChan <- TaskErr{Err: err, Name: ts.Name}
 			} else {
 				klog.V(2).Infof("ran task %d of %d: %v", i+1, tgLength, ts.Name)
@@ -121,15 +123,24 @@ type TaskErr struct {
 	Name string
 }
 
+func (te *TaskErr) Error() string {
+	if te == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%s: %s", strings.ToLower(te.Name), te.Err.Error())
+}
+
 type TaskGroupErrors []TaskErr
 
 func (tge TaskGroupErrors) Error() string {
 	if len(tge) == 0 {
 		return ""
 	}
+
 	messages := make([]string, 0, len(tge))
 	for _, err := range tge {
-		messages = append(messages, fmt.Sprintf("%v: %v", strings.ToLower(err.Name), err.Err))
+		messages = append(messages, err.Error())
 	}
 	return strings.Join(messages, "\n")
 }
