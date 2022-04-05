@@ -4226,7 +4226,6 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 			WriteRelabelConfigs: writeRelabelConfigs,
 			BasicAuth:           target.BasicAuth,
 			BearerTokenFile:     target.BearerTokenFile,
-			Authorization:       target.Authorization,
 			ProxyURL:            target.ProxyURL,
 			MetadataConfig:      target.MetadataConfig,
 			OAuth2:              target.OAuth2,
@@ -4234,6 +4233,11 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 		if target.TLSConfig != nil {
 			rwConf.TLSConfig = &monv1.TLSConfig{
 				SafeTLSConfig: *target.TLSConfig,
+			}
+		}
+		if target.Authorization != nil {
+			rwConf.Authorization = &monv1.Authorization{
+				SafeAuthorization: *target.Authorization,
 			}
 		}
 		rw = append(rw, rwConf)

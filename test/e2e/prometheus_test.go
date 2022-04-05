@@ -254,7 +254,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 
 		cmoConfigMap := fmt.Sprintf(`prometheusK8s:
   logLevel: debug
-  remoteWrite: %s
+  remoteWrite:%s
 `, rw)
 
 		t.Run(tc.name, func(t *testing.T) {

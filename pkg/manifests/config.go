@@ -157,7 +157,7 @@ type RemoteWriteSpec struct {
 	// Bearer token for remote write.
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
 	// Authorization section for remote write
-	Authorization *monv1.Authorization `json:"authorization,omitempty"`
+	Authorization *monv1.SafeAuthorization `json:"authorization,omitempty"`
 	// TLS Config to use for remote write.
 	TLSConfig *monv1.SafeTLSConfig `json:"tlsConfig,omitempty"`
 	// Optional ProxyURL
