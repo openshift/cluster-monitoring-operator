@@ -500,6 +500,7 @@ type UserWorkloadConfiguration struct {
 type PrometheusRestrictedConfig struct {
 	LogLevel                      string                               `json:"logLevel"`
 	Retention                     string                               `json:"retention"`
+	RetentionSize                 string                               `json:"retentionSize"`
 	NodeSelector                  map[string]string                    `json:"nodeSelector"`
 	Tolerations                   []v1.Toleration                      `json:"tolerations"`
 	Resources                     *v1.ResourceRequirements             `json:"resources"`

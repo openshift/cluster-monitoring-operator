@@ -1762,6 +1762,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Retention = f.config.UserWorkloadConfiguration.Prometheus.Retention
 	}
 
+	if f.config.UserWorkloadConfiguration.Prometheus.RetentionSize != "" {
+		p.Spec.RetentionSize = f.config.UserWorkloadConfiguration.Prometheus.RetentionSize
+	}
+
 	p.Spec.Image = &f.config.Images.Prometheus
 
 	if f.config.UserWorkloadConfiguration.Prometheus.Resources != nil {

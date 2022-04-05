@@ -472,6 +472,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
   enforcedLabelValueLengthLimit: 600
   logLevel: debug
   retention: 10h
+  retentionSize: 15GB
   queryLogFile: /tmp/test.log
   tolerations:
     - operator: "Exists"
@@ -512,6 +513,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
+					expectContainerArg("--storage.tsdb.retention.size=15GB", containerName),
 				},
 			),
 		},
