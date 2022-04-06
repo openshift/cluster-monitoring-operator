@@ -174,14 +174,15 @@ spec:
       for: 15m
       labels:
         severity: warning
-    - alert: KubeJobCompletion
+    - alert: KubeJobNotCompleted
       annotations:
         description: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking
-          more than 12 hours to complete.
+          more than {{ "43200" | humanizeDuration }} to complete.
         summary: Job did not complete in time
       expr: |
-        kube_job_spec_completions{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} - kube_job_status_succeeded{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}  > 0
-      for: 12h
+        time() - max by(namespace, job_name) (kube_job_status_start_time{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+          and
+        kube_job_status_active{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} > 0) > 43200
       labels:
         severity: warning
     - alert: KubeJobFailed

@@ -1,6 +1,7 @@
 local removeLimits = (import './utils/remove-limits.libsonnet').removeLimits;
 local addAnnotations = (import './utils/add-annotations.libsonnet').addAnnotations;
 local sanitizeAlertRules = (import './utils/sanitize-rules.libsonnet').sanitizeAlertRules;
+local removeNetworkPolicy = (import './utils/remove-network-policy.libsonnet').removeNetworkPolicy;
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local grafana = import './components/grafana.libsonnet';
@@ -439,7 +440,7 @@ local userWorkload =
   {};  // Including empty object to simplify adding and removing imports during development
 
 // Manifestation
-sanitizeAlertRules(addAnnotations(removeLimits(
+sanitizeAlertRules(addAnnotations(removeLimits(removeNetworkPolicy(
   { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
   { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
   { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
@@ -458,4 +459,4 @@ sanitizeAlertRules(addAnnotations(removeLimits(
   { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
   { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
   {}
-)))
+))))

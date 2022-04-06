@@ -16,6 +16,8 @@ spec:
     kind: Alertmanager
     listKind: AlertmanagerList
     plural: alertmanagers
+    shortNames:
+    - am
     singular: alertmanager
   scope: Namespaced
   versions:
