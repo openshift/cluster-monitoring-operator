@@ -874,6 +874,71 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 }
 
+func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
+	c, err := NewConfigFromString(`prometheusOperator:
+  nodeSelector:
+    type: master
+`)
+
+	c.SetImages(map[string]string{
+		"prometheus-operator-admission-webhook": "docker.io/openshift/origin-prometheus-operator-admission-webhook:latest",
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	d, err := f.PrometheusOperatorAdmissionWebhookDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(d.Spec.Template.Spec.NodeSelector) == 0 {
+		t.Fatal("expected node selector to be present, got none")
+	}
+
+	if got := d.Spec.Template.Spec.NodeSelector["type"]; got != "master" {
+		t.Fatalf("expected node selector to be master, got %q", got)
+	}
+
+	webTLSCipherSuitesArg := ""
+	webTLSVersionArg := ""
+	for _, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "prometheus-operator-admission-webhook":
+			if container.Image != "docker.io/openshift/origin-prometheus-operator-admission-webhook:latest" {
+				t.Fatalf("%s image incorrectly configured", container.Name)
+			}
+
+			webTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
+			webTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
+		}
+	}
+
+	expectedPrometheusWebTLSCipherSuitesArg := fmt.Sprintf("%s%s",
+		PrometheusOperatorWebTLSCipherSuitesFlag,
+		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
+	if expectedPrometheusWebTLSCipherSuitesArg != webTLSCipherSuitesArg {
+		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", webTLSCipherSuitesArg, expectedPrometheusWebTLSCipherSuitesArg)
+	}
+
+	expectedPrometheusWebTLSVersionArg := fmt.Sprintf("%s%s",
+		PrometheusOperatorWebTLSMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
+	if expectedPrometheusWebTLSVersionArg != webTLSVersionArg {
+		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", webTLSVersionArg, expectedPrometheusWebTLSVersionArg)
+	}
+
+	d2, err := f.PrometheusOperatorAdmissionWebhookDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(d, d2) {
+		t.Fatal("expected PrometheusOperatorDeployment to be an idempotent function")
+	}
+}
+
 func getContainerArgValue(containers []v1.Container, argFlag string, containerName string) string {
 	for _, container := range containers {
 		if container.Name == containerName {

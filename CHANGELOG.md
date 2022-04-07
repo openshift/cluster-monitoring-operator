@@ -12,6 +12,7 @@
 - [#1638](https://github.com/openshift/cluster-monitoring-operator/pull/1638) Expose sigv4 setting to Prometheus remoteWrite
 - [#1579](https://github.com/openshift/cluster-monitoring-operator/pull/1579) Expose retention size settings for Platform Prometheus
 - [#1630](https://github.com/openshift/cluster-monitoring-operator/pull/1630) Expose retention size settings for UWM Prometheus
+- [#1640](https://github.com/openshift/cluster-monitoring-operator/pull/1640) Deploy standalone admission webhook for HA.
 
 ## 4.10
 

@@ -38,6 +38,9 @@ function(params)
               std.map(
                 function(c)
                   if c.name == 'prometheus-operator' then
+                    // TODO(simonpasquier): add readiness/liveness probes once upstream
+                    // supports /healthz endpoint without requiring client TLS
+                    // authentication.
                     c {
                       args+: [
                         '--prometheus-instance-namespaces=' + cfg.namespace,
@@ -48,7 +51,7 @@ function(params)
                         '--config-reloader-cpu-request=1m',
                         '--config-reloader-memory-request=10Mi',
                         '--web.enable-tls=true',
-                        '--web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
+                        '--web.tls-cipher-suites=' + cfg.tlsCipherSuites,
                         '--web.tls-min-version=VersionTLS12',
                       ],
                       securityContext: {},
@@ -66,6 +69,9 @@ function(params)
                       }],
                     }
                   else if c.name == 'kube-rbac-proxy' then
+                    // TODO(simonpasquier): remove kube-rbac-proxy in OCP 4.12
+                    // and configure the proper client CA for the prometheus
+                    // operator container.
                     c {
                       args: [
                         '--logtostderr',
@@ -171,87 +177,4 @@ function(params)
     },
 
     operatorCertsCaBundle: generateCertInjection.SCOCaBundleCM(cfg.namespace, certsCAVolumeName),
-
-    prometheusRuleValidatingWebhook: {
-      apiVersion: 'admissionregistration.k8s.io/v1',
-      kind: 'ValidatingWebhookConfiguration',
-      metadata: {
-        name: 'prometheusrules.openshift.io',
-        labels: {
-          'app.kubernetes.io/component': 'controller',
-          'app.kubernetes.io/name': 'prometheus-operator',
-          //'app.kubernetes.io/version': $._config.versions.prometheusOperator, //FIXME(paulfantom)
-        },
-        annotations: {
-          'service.beta.openshift.io/inject-cabundle': true,
-        },
-      },
-      webhooks: [
-        {
-          name: 'prometheusrules.openshift.io',
-          rules: [
-            {
-              apiGroups: ['monitoring.coreos.com'],
-              apiVersions: ['v1'],
-              operations: ['CREATE', 'UPDATE'],
-              resources: ['prometheusrules'],
-              scope: 'Namespaced',
-            },
-          ],
-          clientConfig: {
-            service: {
-              namespace: 'openshift-monitoring',
-              name: 'prometheus-operator',
-              port: 8080,
-              path: '/admission-prometheusrules/validate',
-            },
-          },
-          admissionReviewVersions: ['v1'],
-          sideEffects: 'None',
-          timeoutSeconds: 5,
-          failurePolicy: 'Ignore',
-        },
-      ],
-    },
-
-    alertmanagerConfigValidatingWebhook: {
-      apiVersion: 'admissionregistration.k8s.io/v1',
-      kind: 'ValidatingWebhookConfiguration',
-      metadata: {
-        name: 'alertmanagerconfigs.openshift.io',
-        labels: {
-          'app.kubernetes.io/component': 'controller',
-          'app.kubernetes.io/name': 'prometheus-operator',
-        },
-        annotations: {
-          'service.beta.openshift.io/inject-cabundle': true,
-        },
-      },
-      webhooks: [
-        {
-          name: 'alertmanagerconfigs.openshift.io',
-          rules: [
-            {
-              apiGroups: ['monitoring.coreos.com'],
-              apiVersions: ['v1alpha1'],
-              operations: ['CREATE', 'UPDATE'],
-              resources: ['alertmanagerconfigs'],
-              scope: 'Namespaced',
-            },
-          ],
-          clientConfig: {
-            service: {
-              namespace: 'openshift-monitoring',
-              name: 'prometheus-operator',
-              port: 8080,
-              path: '/admission-alertmanagerconfigs/validate',
-            },
-          },
-          admissionReviewVersions: ['v1'],
-          sideEffects: 'None',
-          timeoutSeconds: 5,
-          failurePolicy: 'Ignore',
-        },
-      ],
-    },
   }

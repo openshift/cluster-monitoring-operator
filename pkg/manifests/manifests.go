@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"crypto/md5"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -28,12 +29,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openshift/library-go/pkg/crypto"
-
 	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
+	"github.com/openshift/library-go/pkg/crypto"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"golang.org/x/crypto/bcrypt"
@@ -167,17 +167,22 @@ var (
 	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
 	PrometheusAdapterServiceAccount                     = "prometheus-adapter/service-account.yaml"
 
-	PrometheusOperatorClusterRoleBinding                  = "prometheus-operator/cluster-role-binding.yaml"
-	PrometheusOperatorClusterRole                         = "prometheus-operator/cluster-role.yaml"
-	PrometheusOperatorServiceAccount                      = "prometheus-operator/service-account.yaml"
-	PrometheusOperatorDeployment                          = "prometheus-operator/deployment.yaml"
-	PrometheusOperatorService                             = "prometheus-operator/service.yaml"
-	PrometheusOperatorServiceMonitor                      = "prometheus-operator/service-monitor.yaml"
-	PrometheusOperatorCertsCABundle                       = "prometheus-operator/operator-certs-ca-bundle.yaml"
-	PrometheusOperatorRuleValidatingWebhook               = "prometheus-operator/prometheus-rule-validating-webhook.yaml"
-	PrometheusOperatorAlertmanagerConfigValidatingWebhook = "prometheus-operator/alertmanager-config-validating-webhook.yaml"
-	PrometheusOperatorPrometheusRule                      = "prometheus-operator/prometheus-rule.yaml"
-	PrometheusOperatorKubeRbacProxySecret                 = "prometheus-operator/kube-rbac-proxy-secret.yaml"
+	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
+	AdmissionWebhookAlertmanagerConfigValidatingWebhook = "admission-webhook/alertmanager-config-validating-webhook.yaml"
+	AdmissionWebhookDeployment                          = "admission-webhook/deployment.yaml"
+	AdmissionWebhookPodDisruptionBudget                 = "admission-webhook/pod-disruption-budget.yaml"
+	AdmissionWebhookService                             = "admission-webhook/service.yaml"
+	AdmissionWebhookServiceAccount                      = "admission-webhook/service-account.yaml"
+
+	PrometheusOperatorClusterRoleBinding  = "prometheus-operator/cluster-role-binding.yaml"
+	PrometheusOperatorClusterRole         = "prometheus-operator/cluster-role.yaml"
+	PrometheusOperatorServiceAccount      = "prometheus-operator/service-account.yaml"
+	PrometheusOperatorDeployment          = "prometheus-operator/deployment.yaml"
+	PrometheusOperatorService             = "prometheus-operator/service.yaml"
+	PrometheusOperatorServiceMonitor      = "prometheus-operator/service-monitor.yaml"
+	PrometheusOperatorCertsCABundle       = "prometheus-operator/operator-certs-ca-bundle.yaml"
+	PrometheusOperatorPrometheusRule      = "prometheus-operator/prometheus-rule.yaml"
+	PrometheusOperatorKubeRbacProxySecret = "prometheus-operator/kube-rbac-proxy-secret.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount      = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole         = "prometheus-operator-user-workload/cluster-role.yaml"
@@ -2287,6 +2292,75 @@ func (f *Factory) PrometheusOperatorRBACProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) PrometheusOperatorAdmissionWebhookServiceAccount() (*v1.ServiceAccount, error) {
+	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(AdmissionWebhookServiceAccount))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusOperatorAdmissionWebhookService() (*v1.Service, error) {
+	s, err := f.NewService(f.assets.MustNewAssetReader(AdmissionWebhookService))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusOperatorAdmissionWebhookPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AdmissionWebhookPodDisruptionBudget))
+}
+
+func (f *Factory) PrometheusOperatorAdmissionWebhookDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(AdmissionWebhookDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.NodeSelector) > 0 {
+		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.NodeSelector
+	}
+
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Tolerations) > 0 {
+		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Tolerations
+	}
+
+	for i, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "prometheus-operator-admission-webhook":
+			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusOperatorAdmissionWebhook
+
+			args := d.Spec.Template.Spec.Containers[i].Args
+			if f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel != "" {
+				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel))
+			}
+
+			// The admission webhook supports only TLS versions >= 1.2.
+			tlsVersionEnforcer := &minTLVersionEnforcer{
+				atLeast: tls.VersionTLS12,
+				inner:   f.APIServerConfig,
+			}
+			args = f.setTLSSecurityConfigurationWithMinTLSVersion(
+				args,
+				PrometheusOperatorWebTLSCipherSuitesFlag,
+				PrometheusOperatorWebTLSMinTLSVersionFlag,
+				tlsVersionEnforcer,
+			)
+			d.Spec.Template.Spec.Containers[i].Args = args
+		}
+	}
+	d.Namespace = f.namespace
+
+	return d, nil
+}
+
 func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorDeployment))
 	if err != nil {
@@ -2385,14 +2459,36 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment
 	return d, nil
 }
 
-func (f *Factory) setTLSSecurityConfiguration(args []string, tlsCipherSuitesArg string, minTLSversionArg string) []string {
-	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.GetTLSCiphers()), ",")
+type minTLSVersioner interface {
+	MinTLSVersion() string
+}
+
+type minTLVersionEnforcer struct {
+	atLeast uint16
+	inner   minTLSVersioner
+}
+
+func (m *minTLVersionEnforcer) MinTLSVersion() string {
+	v := m.inner.MinTLSVersion()
+	if crypto.TLSVersionOrDie(v) < m.atLeast {
+		return crypto.TLSVersionToNameOrDie(m.atLeast)
+	}
+
+	return v
+}
+
+func (f *Factory) setTLSSecurityConfigurationWithMinTLSVersion(args []string, tlsCipherSuitesArg string, minTLSversionArg string, versioner minTLSVersioner) []string {
+	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers()), ",")
 	args = setArg(args, tlsCipherSuitesArg, cipherSuites)
 
-	minTLSVersion := f.APIServerConfig.GetMinTLSVersion()
+	minTLSVersion := versioner.MinTLSVersion()
 	args = setArg(args, minTLSversionArg, string(minTLSVersion))
 
 	return args
+}
+
+func (f *Factory) setTLSSecurityConfiguration(args []string, tlsCipherSuitesArg string, minTLSversionArg string) []string {
+	return f.setTLSSecurityConfigurationWithMinTLSVersion(args, tlsCipherSuitesArg, minTLSversionArg, f.APIServerConfig)
 }
 
 func setArg(args []string, argName string, argValue string) []string {
@@ -2412,7 +2508,7 @@ func setArg(args []string, argName string, argValue string) []string {
 }
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
-	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(PrometheusOperatorRuleValidatingWebhook))
+	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(AdmissionWebhookRuleValidatingWebhook))
 	if err != nil {
 		return nil, err
 	}
@@ -2420,7 +2516,7 @@ func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebh
 }
 
 func (f *Factory) AlertManagerConfigValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
-	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(PrometheusOperatorAlertmanagerConfigValidatingWebhook))
+	wc, err := f.NewValidatingWebhook(f.assets.MustNewAssetReader(AdmissionWebhookAlertmanagerConfigValidatingWebhook))
 	if err != nil {
 		return nil, err
 	}

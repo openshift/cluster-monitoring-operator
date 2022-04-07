@@ -11,6 +11,7 @@ local controlPlane = import './components/control-plane.libsonnet';
 local nodeExporter = import './components/node-exporter.libsonnet';
 local prometheusAdapter = import './components/prometheus-adapter.libsonnet';
 local prometheusOperator = import './components/prometheus-operator.libsonnet';
+local admissionWebhook = import './components/admission-webhook.libsonnet';
 local prometheusOperatorUserWorkload = import './components/prometheus-operator-user-workload.libsonnet';
 local prometheus = import './components/prometheus.libsonnet';
 local prometheusUserWorkload = import './components/prometheus-user-workload.libsonnet';
@@ -63,6 +64,7 @@ local commonConfig = {
     prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions.prometheusAdapter,
     prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions.prometheusOperator,
     prometheusOperatorReloader: 'quay.io/prometheus-operator/prometheus-config-reloader:v' + $.versions.prometheusOperator,
+    prometheusOperatorAdmissionWebhook: 'quay.io/prometheus-operator/admission-webhook:v' + $.versions.prometheusOperator,
     promLabelProxy: 'quay.io/prometheuscommunity/prom-label-proxy:v' + $.versions.promLabelProxy,
     telemeter: '',
     thanos: 'quay.io/thanos/thanos:v' + $.versions.thanos,
@@ -274,6 +276,16 @@ local inCluster =
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
+      admissionWebhook: {
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.prometheusOperator,
+        image: $.values.common.images.prometheusOperatorAdmissionWebhook,
+        commonLabels+: $.values.common.commonLabels,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
+        resources: {
+          requests: { cpu: '5m', memory: '30Mi' },
+        },
+      },
       prometheusOperator: {
         namespace: $.values.common.namespace,
         version: $.values.common.versions.prometheusOperator,
@@ -373,6 +385,7 @@ local inCluster =
     nodeExporter: nodeExporter($.values.nodeExporter),
     prometheus: prometheus($.values.prometheus),
     prometheusAdapter: prometheusAdapter($.values.prometheusAdapter),
+    admissionWebhook: admissionWebhook($.values.admissionWebhook),
     prometheusOperator: prometheusOperator($.values.prometheusOperator),
     controlPlane: controlPlane($.values.controlPlane),
 
@@ -470,6 +483,7 @@ sanitizeAlertRules(addAnnotations(removeLimits(removeNetworkPolicy(
     { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
     { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +
     { ['prometheus-k8s/' + name]: inCluster.prometheus[name] for name in std.objectFields(inCluster.prometheus) } +
+    { ['admission-webhook/' + name]: inCluster.admissionWebhook[name] for name in std.objectFields(inCluster.admissionWebhook) } +
     { ['prometheus-operator/' + name]: inCluster.prometheusOperator[name] for name in std.objectFields(inCluster.prometheusOperator) } +
     { ['prometheus-operator-user-workload/' + name]: userWorkload.prometheusOperator[name] for name in std.objectFields(userWorkload.prometheusOperator) } +
     { ['prometheus-user-workload/' + name]: userWorkload.prometheus[name] for name in std.objectFields(userWorkload.prometheus) } +

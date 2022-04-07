@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: prometheus-operator-admission-webhook
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.55.1
+  name: prometheus-operator-admission-webhook
+  namespace: openshift-monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-operator-admission-webhook
+      app.kubernetes.io/part-of: openshift-monitoring
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: prometheus-operator-admission-webhook
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        app.kubernetes.io/managed-by: cluster-monitoring-operator
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+        app.kubernetes.io/part-of: openshift-monitoring
+        app.kubernetes.io/version: 0.55.1
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: prometheus-operator-admission-webhook
+                app.kubernetes.io/part-of: openshift-monitoring
+            topologyKey: kubernetes.io/hostname
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --web.enable-tls=true
+        - --web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - --web.tls-min-version=VersionTLS12
+        - --web.cert-file=/etc/tls/private/tls.crt
+        - --web.key-file=/etc/tls/private/tls.key
+        image: quay.io/prometheus-operator/admission-webhook:v0.55.1
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: https
+            scheme: HTTPS
+        name: prometheus-operator-admission-webhook
+        ports:
+        - containerPort: 8443
+          name: https
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: https
+            scheme: HTTPS
+        resources:
+          requests:
+            cpu: 5m
+            memory: 30Mi
+        securityContext: {}
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: tls-certificates
+          readOnly: true
+      priorityClassName: system-cluster-critical
+      securityContext: {}
+      serviceAccountName: prometheus-operator-admission-webhook
+      volumes:
+      - name: tls-certificates
+        secret:
+          items:
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+          secretName: prometheus-operator-admission-webhook-tls

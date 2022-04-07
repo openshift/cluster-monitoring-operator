@@ -29,6 +29,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func atLeastVersionTLS12(v string) string {
+	if crypto.TLSVersionOrDie(v) < crypto.TLSVersionOrDie("VersionTLS12") {
+		return "VersionTLS12"
+	}
+
+	return v
+}
+
 func TestTLSSecurityProfileConfiguration(t *testing.T) {
 	testCases := []struct {
 		name                  string
@@ -86,6 +94,11 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			setTLSSecurityProfile(t, tt.profile)
+			// The admission webhook supports only TLS versions >= 1.2.
+			assertCorrectTLSConfiguration(t, "prometheus-operator-admission-webhook", "deployment",
+				manifests.PrometheusOperatorWebTLSCipherSuitesFlag,
+				manifests.PrometheusOperatorWebTLSMinTLSVersionFlag, tt.expectedCipherSuite,
+				atLeastVersionTLS12(tt.expectedMinTLSVersion))
 			assertCorrectTLSConfiguration(t, "prometheus-operator", "deployment",
 				manifests.PrometheusOperatorWebTLSCipherSuitesFlag,
 				manifests.PrometheusOperatorWebTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)

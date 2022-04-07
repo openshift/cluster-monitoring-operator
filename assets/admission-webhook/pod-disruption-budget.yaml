@@ -1,0 +1,15 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/name: prometheus-operator-admission-webhook
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.55.1
+  name: prometheus-operator-admission-webhook
+  namespace: openshift-monitoring
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-operator-admission-webhook
+      app.kubernetes.io/part-of: openshift-monitoring

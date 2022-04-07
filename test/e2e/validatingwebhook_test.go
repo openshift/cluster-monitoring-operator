@@ -95,19 +95,11 @@ spec:
     groupWait: 30s
     groupInterval: 5m
     repeatInterval: 12h
-    receiver: 'webhook'
+    receiver: 'missing-ref'
   receivers:
   - name: 'webhook'
     webhookConfigs:
     - url: 'https://example.com'
-  receivers:
-  - name: wechat-example
-    wechatConfigs:
-    - apiURL: https://<>wechatserver:8080/
-      corpID: wechat-corpid
-      apiSecret:
-        name: wechat-config
-        key: apiSecret
 `, framework.E2eTestLabel)
 )
 
