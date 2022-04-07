@@ -118,7 +118,8 @@ var (
 	PrometheusK8sServiceThanosSidecar                 = "prometheus-k8s/service-thanos-sidecar.yaml"
 	PrometheusK8sProxySecret                          = "prometheus-k8s/proxy-secret.yaml"
 	PrometheusRBACProxySecret                         = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
-	PrometheusUserWorkloadRBACProxySecret             = "prometheus-user-workload/kube-rbac-proxy-secret.yaml"
+	PrometheusUserWorkloadRBACProxyMetricsSecret      = "prometheus-user-workload/kube-rbac-proxy-metrics-secret.yaml"
+	PrometheusUserWorkloadRBACProxyFederateSecret     = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
 	PrometheusK8sAPIRoute                             = "prometheus-k8s/api-route.yaml"
 	PrometheusK8sFederateRoute                        = "prometheus-k8s/federate-route.yaml"
 	PrometheusK8sHtpasswd                             = "prometheus-k8s/htpasswd-secret.yaml"
@@ -1236,8 +1237,19 @@ func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) PrometheusUserWorkloadRBACProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadRBACProxySecret))
+func (f *Factory) PrometheusUserWorkloadRBACProxyMetricsSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadRBACProxyMetricsSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadRBACProxyFederateSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadRBACProxyFederateSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1806,7 +1818,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	}
 
 	for i, container := range p.Spec.Containers {
-		if container.Name == "kube-rbac-proxy" || container.Name == "kube-rbac-proxy-thanos" {
+		switch container.Name {
+		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-federate", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}

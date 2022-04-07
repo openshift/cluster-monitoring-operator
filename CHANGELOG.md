@@ -6,6 +6,7 @@
 - [#1557](https://github.com/openshift/cluster-monitoring-operator/pull/1557) Removing grafana from monitoring stack
 - [1578](https://github.com/openshift/cluster-monitoring-operator/pull/1578) Add temporary cluster id label to remote write relabel configs.
 - [#1350](https://github.com/openshift/cluster-monitoring-operator/pull/1350) Support label scrape limits in user-workload monitoring
+- [#1601](https://github.com/openshift/cluster-monitoring-operator/pull/1601) Expose the /federate endpoint of UWM Prometheus as a service
 
 ## 4.10
 
