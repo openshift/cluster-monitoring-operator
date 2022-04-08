@@ -164,6 +164,8 @@ type RemoteWriteSpec struct {
 	QueueConfig *monv1.QueueConfig `json:"queueConfig,omitempty"`
 	// MetadataConfig configures the sending of series metadata to remote storage.
 	MetadataConfig *monv1.MetadataConfig `json:"metadataConfig,omitempty"`
+	// OAuth2 configures OAuth2 authentication for remote write.
+	OAuth2 *monv1.OAuth2 `json:"oauth2,omitempty"`
 }
 
 type PrometheusK8sConfig struct {
