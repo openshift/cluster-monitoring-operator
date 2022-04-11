@@ -897,6 +897,7 @@ func assertTenancyForRules(t *testing.T) {
 }
 
 func assertUWMFederateEndpoint(t *testing.T) {
+	ctx := context.Background()
 	const testAccount = "test-uwm-federate"
 
 	err := framework.Poll(2*time.Second, 10*time.Second, func() error {
@@ -927,6 +928,36 @@ func assertUWMFederateEndpoint(t *testing.T) {
 
 	// check /federate endpoint
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		federate := func(host string) error {
+			client := framework.NewPrometheusClient(
+				host,
+				token,
+				&framework.QueryParameterInjector{
+					Name:  "match[]",
+					Value: `up`,
+				},
+			)
+
+			resp, err := client.Do("GET", "/federate", nil)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+			}
+
+			if !strings.Contains(string(b), "up") {
+				return fmt.Errorf("'up' metric is missing, got (%s)", framework.ClampMax(b))
+			}
+
+			return nil
+		}
 		// The federate port (9092) is only exposed in-cluster so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "prometheus-user-workload", 9092)
@@ -935,31 +966,24 @@ func assertUWMFederateEndpoint(t *testing.T) {
 		}
 		defer cleanUp()
 
-		client := framework.NewPrometheusClient(
-			host,
-			token,
-			&framework.QueryParameterInjector{
-				Name:  "match[]",
-				Value: `up`,
-			},
-		)
-
-		resp, err := client.Do("GET", "/federate", nil)
+		err = federate(host)
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		r, err := f.OpenShiftRouteClient.Routes(f.UserWorkloadMonitoringNs).Get(ctx, "federate", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		route, err := f.OperatorClient.GetRouteURL(ctx, r)
+		if err != nil {
+			return err
 		}
-
-		if !strings.Contains(string(b), "up") {
-			return fmt.Errorf("'up' metric is missing, got (%s)", framework.ClampMax(b))
+		// Test the same through OpenShift Route.
+		federateHost := fmt.Sprintf("%s:%s", route.Hostname(), route.Port())
+		err = federate(federateHost)
+		if err != nil {
+			return err
 		}
 
 		return nil

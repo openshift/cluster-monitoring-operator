@@ -70,6 +70,30 @@ function(params)
       },
     },
 
+    federateRoute: {
+      apiVersion: 'v1',
+      kind: 'Route',
+      metadata: {
+        name: 'federate',
+        namespace: cfg.namespace,
+        labels: cfg.commonLabels,
+      },
+      spec: {
+        path: '/federate',
+        to: {
+          kind: 'Service',
+          name: $.service.metadata.name,
+        },
+        port: {
+          targetPort: 'federate',
+        },
+        tls: {
+          termination: 'Reencrypt',
+          insecureEdgeTerminationPolicy: 'Redirect',
+        },
+      },
+    },
+
     servingCertsCaBundle+: generateCertInjection.SCOCaBundleCM(cfg.namespace, 'serving-certs-ca-bundle'),
 
     // As Prometheus is protected by the kube-rbac-proxy it requires the
