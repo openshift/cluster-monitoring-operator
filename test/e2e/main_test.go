@@ -124,6 +124,7 @@ func TestTargetsUp(t *testing.T) {
 		"prometheus-k8s",
 		"prometheus-operator",
 		"alertmanager-main",
+		"cluster-monitoring-operator",
 	}
 
 	for _, target := range targets {
