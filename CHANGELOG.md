@@ -16,6 +16,7 @@
 - [#1640](https://github.com/openshift/cluster-monitoring-operator/pull/1640) Deploy standalone admission webhook for HA.
 - [#1651](https://github.com/openshift/cluster-monitoring-operator/pull/1651) Allow retention to be configurable for Thanos-Ruler in UWM
 - [#1467](https://github.com/openshift/cluster-monitoring-operator/pull/1467) Add bodysize limit for metric scraping
+- [#1631](https://github.com/openshift/cluster-monitoring-operator/pull/1631) Replace oauth-proxy with kube-rbac-proxy in prometheus
 
 ## 4.10
 
