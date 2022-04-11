@@ -730,13 +730,17 @@ func (c *Client) DeletePrometheusRuleByNamespaceAndName(ctx context.Context, nam
 	return nil
 }
 
-func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
-	err := c.kclient.CoreV1().Secrets(s.Namespace).Delete(ctx, s.GetName(), metav1.DeleteOptions{})
+func (c *Client) DeleteSecretByNamespaceAndName(ctx context.Context, namespace, name string) error {
+	err := c.kclient.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
 
 	return err
+}
+
+func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
+	return c.DeleteSecretByNamespaceAndName(ctx, s.Namespace, s.GetName())
 }
 
 func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) error {

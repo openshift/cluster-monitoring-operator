@@ -70,19 +70,6 @@ function(params)
       },
     },
 
-
-    // The ServiceAccount needs this annotation, to signify the identity
-    // provider, that when a users it doing the oauth flow through the
-    // oauth proxy, that it should redirect to the prometheus-k8s route on
-    // successful authentication.
-    serviceAccount+: {
-      metadata+: {
-        annotations+: {
-          'serviceaccounts.openshift.io/oauth-redirectreference.prometheus-k8s': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"prometheus-k8s"}}',
-        },
-      },
-    },
-
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
     // specified secret.
@@ -91,7 +78,7 @@ function(params)
     // cluster-monitoring-operator, that when reconciling this service the
     // cluster IP needs to be retained.
     //
-    // The ports are overridden, as due to the port binding of the oauth proxy
+    // The ports are overridden, as due to the port binding of the kube rbac proxy
     // the serving port is 9091 instead of the 9090 default.
     service+: {
       metadata+: {
@@ -133,7 +120,7 @@ function(params)
       data: {},
     },
 
-    // As Prometheus is protected by the oauth proxy it requires the
+    // As Prometheus is protected by the kube-rbac-proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.
     // Additionally in order to authenticate with the Alertmanager it
     // requires `get` method on all `namespaces`, which is the
@@ -186,31 +173,6 @@ function(params)
         name: 'prometheus-' + cfg.name,
         namespace: cfg.namespace,
       }],
-    },
-
-    // The proxy secret is there to encrypt session created by the oauth proxy.
-    proxySecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'prometheus-k8s-proxy',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
-    htpasswdSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'prometheus-k8s-htpasswd',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
-      },
-      type: 'Opaque',
-      data: {},
     },
 
     kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy-metric'),
@@ -316,16 +278,9 @@ function(params)
       },
     },
 
-    // These patches inject the oauth proxy as a sidecar and configures it with
+    // These patches inject the kube-rbac-proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and
     // authZ it requires some additonal configuration.
-    //
-    // Note that Grafana is enabled by default, but may be explicitly disabled
-    // by the user.  We need to inject an htpasswd file for the oauth-proxy when
-    // it is enabled, so by default the operator also adds a few things at
-    // runtime: a volume and volume-mount for the secret, and an argument to the
-    // proxy container pointing to the mounted htpasswd file.  If Grafana is
-    // disabled, these things are not injected.
     prometheus+: {
       spec+: {
         alerting+: {
@@ -355,11 +310,8 @@ function(params)
           runAsUser: 65534,
         },
         secrets+: [
-          // NOTE: The following is injected at runtime if Grafana is enabled:
-          // 'prometheus-k8s-htpasswd'
           'kube-etcd-client-certs',  //TODO(paulfantom): move it to etcd addon
           'prometheus-k8s-tls',
-          'prometheus-k8s-proxy',
           'prometheus-k8s-thanos-sidecar-tls',
           'kube-rbac-proxy-metric',
           'metrics-client-certs',

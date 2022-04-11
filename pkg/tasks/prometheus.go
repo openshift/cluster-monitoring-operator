@@ -93,16 +93,6 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "waiting for Prometheus Federate Route to become ready failed")
 	}
 
-	ps, err := t.factory.PrometheusK8sProxySecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus proxy Secret failed")
-	}
-
-	err = t.client.CreateIfNotExistSecret(ctx, ps)
-	if err != nil {
-		return errors.Wrap(err, "creating Prometheus proxy Secret failed")
-	}
-
 	rs, err := t.factory.PrometheusRBACMetricsProxySecret()
 
 	if err != nil {
@@ -395,6 +385,20 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smt)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Prometheus Thanos sidecar ServiceMonitor failed")
+	}
+
+	// TODO: This can be removed after 4.11 release.
+	// Remove unused secrets which are related to oauth-proxy.
+	err = t.client.DeleteSecretByNamespaceAndName(ctx, t.client.Namespace(), "prometheus-k8s-proxy")
+	if err != nil {
+		return errors.Wrap(err, "cleaning up of prometheus-k8s-proxy secret failed")
+	}
+
+	// TODO: This can be removed after 4.11 release.
+	// Remove unused secrets which are related to grafana.
+	err = t.client.DeleteSecretByNamespaceAndName(ctx, t.client.Namespace(), "prometheus-k8s-htpasswd")
+	if err != nil {
+		return errors.Wrap(err, "cleaning up of prometheus-k8s-htpasswd secret failed")
 	}
 
 	return nil
