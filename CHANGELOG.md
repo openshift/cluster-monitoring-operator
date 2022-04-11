@@ -9,6 +9,7 @@
 - [#1601](https://github.com/openshift/cluster-monitoring-operator/pull/1601) Expose the /federate endpoint of UWM Prometheus as a service
 - [#1617](https://github.com/openshift/cluster-monitoring-operator/pull/1617) Add Oauth2 setting to PrometheusK8s remoteWrite config
 - [#1598](https://github.com/openshift/cluster-monitoring-operator/pull/1598) Expose Authorization settings for remote write in the CMO configuration
+- [#1633](https://github.com/openshift/cluster-monitoring-operator/pull/1633) Expose the /federate endpoint of UWM Prometheus as a route
 - [#1638](https://github.com/openshift/cluster-monitoring-operator/pull/1638) Expose sigv4 setting to Prometheus remoteWrite
 
 ## 4.10
