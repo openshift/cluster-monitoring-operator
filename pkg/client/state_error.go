@@ -51,6 +51,10 @@ func NewUnavailableError(reason string) *StateError {
 	return &StateError{State: UnavailableState, Unknown: false, Reason: reason}
 }
 
+func NewUnknownStateError(s State, reason string) *StateError {
+	return &StateError{State: s, Unknown: true, Reason: reason}
+}
+
 // ToStateError converts an error to a StateError if error itself isn't a StateError
 func ToStateError(s State, err error) *StateError {
 	if err == nil {
@@ -61,10 +65,6 @@ func ToStateError(s State, err error) *StateError {
 	if errors.As(err, &serr) {
 		return serr
 	}
-	// serr, ok := err.(*StateError)
-	// if ok {
-	//   return serr
-	// }
 
 	return &StateError{State: s, Reason: err.Error()}
 }
@@ -72,6 +72,11 @@ func ToStateError(s State, err error) *StateError {
 type StateErrors []*StateError
 
 func (serrs StateErrors) Error() string {
+	if len(serrs) == 0 {
+		// return the same output as a nil error
+		return fmt.Sprint((error)(nil))
+	}
+
 	degradedUnknown := false
 	degradedReasons := []string{}
 
@@ -90,22 +95,26 @@ func (serrs StateErrors) Error() string {
 		}
 	}
 
-	isUnavailable := len(unavailableReasons) > 0
-	isDegraded := len(degradedReasons) > 0
-
 	sb := strings.Builder{}
 	sb.WriteString("state: ")
-	switch {
-	case isUnavailable && isDegraded:
-		sb.WriteString("unavailable, degraded")
-	case isDegraded:
-		sb.WriteString("degraded")
-	case isUnavailable:
+
+	if len(unavailableReasons) > 0 {
 		sb.WriteString("unavailable")
+		if unavailableUnknown {
+			sb.WriteString("(unknown)")
+		}
+	}
+
+	if len(degradedReasons) > 0 {
+		sb.WriteString("degraded")
+		if degradedUnknown {
+			sb.WriteString("(unknown)")
+		}
 	}
 
 	sb.WriteString("; reasons: ")
 	sb.WriteString(strings.Join(unavailableReasons, ", "))
+	sb.WriteString("; ")
 	sb.WriteString(strings.Join(degradedReasons, ", "))
 	return sb.String()
 }
@@ -114,48 +123,74 @@ type StateErrorBuilder struct {
 	errors StateErrors
 }
 
-func (b *StateErrorBuilder) add(s State, unknown bool, reason string) *StateErrorBuilder {
+func (b *StateErrorBuilder) add(s State, unknown bool, reason string) {
 	b.errors = append(b.errors, &StateError{State: s, Unknown: unknown, Reason: reason})
-	return b
 }
 
-func (b *StateErrorBuilder) AddUnknown(s State, reason string) *StateErrorBuilder {
-	return b.add(s, true, reason)
+func (b *StateErrorBuilder) AddUnknown(s State, reason string) {
+	b.add(s, true, reason)
 }
 
-func (b *StateErrorBuilder) AddDegraded(reason string) *StateErrorBuilder {
-	return b.add(DegradedState, false, reason)
+func (b *StateErrorBuilder) AddDegraded(reason string) {
+	b.add(DegradedState, false, reason)
 
 }
-func (b *StateErrorBuilder) AddUnavailable(reason string) *StateErrorBuilder {
-	return b.add(UnavailableState, false, reason)
+func (b *StateErrorBuilder) AddUnavailable(reason string) {
+	b.add(UnavailableState, false, reason)
 }
 
-func (b *StateErrorBuilder) AddError(err error, s State) *StateErrorBuilder {
+func (b *StateErrorBuilder) AddError(err error, s State) {
 	if err == nil {
-		return b
+		return
 	}
 
 	var serrs StateErrors
 	if errors.As(err, &serrs) {
-		return b.AddStateErrors(serrs)
+		b.AddStateErrors(serrs)
+		return
 	}
 
 	var se *StateError
 	if errors.As(err, &se) {
-		return b.AddStateError(se)
+		b.AddStateError(se)
+		return
 	}
 
-	return b.add(s, false, err.Error())
+	b.add(s, false, err.Error())
 }
 
-func (b *StateErrorBuilder) AddStateError(serr *StateError) *StateErrorBuilder {
+func (b *StateErrorBuilder) MustAddStateError(err error) {
+	if err == nil {
+		return
+	}
+
+	var se *StateError
+	if !errors.As(err, &se) {
+		panic(fmt.Sprintf("%v is not a StateError", err))
+	}
+
+	b.AddStateError(se)
+}
+
+func (b *StateErrorBuilder) MustAddStateErrors(err error) {
+	if err == nil {
+		return
+	}
+
+	serrs := StateErrors{}
+	if !errors.As(err, &serrs) {
+		panic(fmt.Sprintf("%v is not StateErrors", err))
+	}
+
+	b.errors = append(b.errors, serrs...)
+}
+
+func (b *StateErrorBuilder) AddStateError(serr *StateError) {
 	if serr == nil {
-		return b
+		return
 	}
 
 	b.errors = append(b.errors, serr)
-	return b
 }
 
 func (b *StateErrorBuilder) AddStateErrors(serrs StateErrors) *StateErrorBuilder {
@@ -167,7 +202,22 @@ func (b *StateErrorBuilder) AddStateErrors(serrs StateErrors) *StateErrorBuilder
 	return b
 }
 
-func (b *StateErrorBuilder) Errors() StateErrors {
+func (b *StateErrorBuilder) StateErrors() StateErrors {
+	if len(b.errors) == 0 {
+		return nil
+	}
+
+	return b.errors
+}
+
+func (b *StateErrorBuilder) ToError() error {
+	if len(b.errors) == 0 {
+		return nil
+	}
+	if len(b.errors) == 1 {
+		return b.errors[0]
+	}
+
 	return b.errors
 }
 

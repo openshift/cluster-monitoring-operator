@@ -18,38 +18,48 @@ import (
 	"context"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 )
 
 type PrometheusValidationTask struct {
-	client     *client.Client
-	prometheus *metav1.ObjectMeta
+	client  *client.Client
+	factory *manifests.Factory
 }
 
-func NewPrometheusValidationTask(client *client.Client, metadata *metav1.ObjectMeta) *PrometheusValidationTask {
-	if metadata == nil {
-		klog.Warning("PrometheusValidationTask created with Prometheus set to nil")
-	}
-
+func NewPrometheusValidationTask(client *client.Client, factory *manifests.Factory) *PrometheusValidationTask {
 	return &PrometheusValidationTask{
-		client:     client,
-		prometheus: metadata,
+		client:  client,
+		factory: factory,
 	}
 }
 
 func (t *PrometheusValidationTask) Run(ctx context.Context) error {
+	b := client.StateErrorBuilder{}
 
-	if t.prometheus == nil {
-		klog.Warning("PrometheusValidationTask not run since Prometheus set to nil")
-		return nil
-	}
-
-	p, err := t.client.WaitForPrometheusByNsName(ctx, t.prometheus)
+	// NOTE: if prometheus object can't be created, use the default prometheus
+	prom, err := t.factory.NewPrometheusK8s()
 	if err != nil {
-		return err
+		b.AddUnknown(client.DegradedState, err.Error())
+		return b.ToError()
 	}
 
-	klog.V(4).Info("validate prometheus object")
-	return t.client.ValidatePrometheus(ctx, p)
+	promNsName := types.NamespacedName{
+		Name:      prom.Name,
+		Namespace: prom.Namespace,
+	}
+
+	p, err := t.client.GetPrometheusByNsName(ctx, promNsName)
+	if err != nil {
+		klog.V(4).Info("validate prometheus failed to get prometheus: ", err)
+		b.AddError(err, client.UnavailableState)
+		return b.ToError()
+	}
+
+	if err := t.client.ValidatePrometheus(ctx, p); err != nil {
+		klog.V(4).ErrorS(err, "prometheus validation failed")
+		b.AddError(err, client.DegradedState)
+	}
+	return b.ToError()
 }

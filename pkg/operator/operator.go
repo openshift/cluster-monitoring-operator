@@ -118,11 +118,12 @@ func (pc *ProxyConfig) NoProxy() string {
 }
 
 const (
-	resyncPeriod = 2 * time.Minute
+	resyncPeriod = 90 * time.Second
+	// TODO(sthaha): reset these
 	// resyncPeriod = 3 * time.Minute
 
-	maxDegradedCount    = 2
-	maxUnavailableCount = 2
+	maxDegradedCount    = 1
+	maxUnavailableCount = 1
 
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
@@ -615,21 +616,21 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 			}),
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
-				tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
-				tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config)),
-				// TODO the grafana task needs to be removed in 4.12
-				tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory, config)),
+				// tasks.NewTaskSpec("Updating user workload Prometheus Operator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
+				// tasks.NewTaskSpec("Updating Cluster Monitoring Operator", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config)),
+				// // TODO the grafana task needs to be removed in 4.12
+				// tasks.NewTaskSpec("Updating Grafana", tasks.NewGrafanaTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating Prometheus-k8s", tasks.NewPrometheusTask(o.client, factory, config)),
-				tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
-				tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory, config)),
-				tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
-				tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
-				tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, factory)),
-				tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
-				tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
-				tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
-				tasks.NewTaskSpec("Updating Control Plane components", tasks.NewControlPlaneTask(o.client, factory, config)),
+				// tasks.NewTaskSpec("Updating Prometheus-user-workload", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
+				// tasks.NewTaskSpec("Updating Alertmanager", tasks.NewAlertmanagerTask(o.client, factory, config)),
+				// tasks.NewTaskSpec("Updating node-exporter", tasks.NewNodeExporterTask(o.client, factory)),
+				// tasks.NewTaskSpec("Updating kube-state-metrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
+				// tasks.NewTaskSpec("Updating openshift-state-metrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
+				// tasks.NewTaskSpec("Updating prometheus-adapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, factory)),
+				// tasks.NewTaskSpec("Updating Telemeter client", tasks.NewTelemeterClientTask(o.client, factory, config)),
+				// tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
+				// tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
+				// tasks.NewTaskSpec("Updating Control Plane components", tasks.NewControlPlaneTask(o.client, factory, config)),
 			}),
 		// The shared configmap depends on resources being created by the previous tasks hence run it last.
 		tasks.NewTaskGroup(
@@ -684,41 +685,32 @@ func (o *Operator) resetCounters() {
 }
 
 func (o *Operator) reportTaskGroupErrors(ctx context.Context, tge tasks.TaskGroupErrors) string {
+
+	klog.Infof("ClusterOperator reportTaskGroupErrors unavailable (attempt %d) degraded (attempt %d).", o.unavailableCount, o.degradedCount)
+
 	result := generateRunReport(tge)
 	failedTask := cmostr.ToPascalCase(result.name + "Failed")
 
 	if result.degraded != nil {
-		o.reportDegraded(ctx, result.degraded, failedTask)
+		o.degradedCount++
 	}
 
 	if result.unavailable != nil {
-		o.reportUnavailable(ctx, result.unavailable, failedTask)
+		o.unavailableCount++
 	}
+
+	// report if any of the counter is more than the threshold
+	if o.degradedCount < maxDegradedCount && o.unavailableCount < maxUnavailableCount {
+		klog.Infof("ClusterOperator reconciliation unavailable (attempt %d) degraded (attempt %d) - skipping update",
+			o.unavailableCount, o.degradedCount)
+		return failedTask
+	}
+
+	if err := o.client.StatusReporter().ReportState(ctx, result); err != nil {
+		klog.ErrorS(err, "failed to update cluster operator status")
+	}
+
 	return failedTask
-}
-
-func (o *Operator) reportUnavailable(ctx context.Context, err error, failedTask string) {
-	o.unavailableCount++
-	klog.Infof("ClusterOperator reconciliation unavailable (attempt %d).", o.unavailableCount)
-
-	// TODO(sthaha): should Unavailable be delayed?
-	if o.unavailableCount < maxUnavailableCount {
-		klog.Info("ClusterOperator status is not set %d attempts.", o.unavailableCount)
-		return
-	}
-
-	// Only update the ClusterOperator status after maxUnavailableCount retries
-	// have been attempted to avoid flapping status.
-	klog.Warningf("Updating ClusterOperator status to unavailable after %d attempts.", o.unavailableCount)
-
-	report := &runReport{
-		unavailable: client.ToStateError(client.UnavailableState, err),
-		name:        failedTask,
-	}
-	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
-		klog.Errorf("error occurred while setting status to unavailable: %v", err)
-	}
-	// TODO(sthaha): should the counter be reset after setting the state ?
 }
 
 func (o *Operator) reportDegraded(ctx context.Context, err error, failedTask string) {
@@ -734,13 +726,15 @@ func (o *Operator) reportDegraded(ctx context.Context, err error, failedTask str
 	klog.Warningf("Updating ClusterOperator status to degraded after %d attempts.", o.degradedCount)
 
 	report := &runReport{
-		degraded: client.ToStateError(client.UnavailableState, err),
-		name:     failedTask,
+		degraded:    client.NewDegradedError(err.Error()),
+		unavailable: client.NewUnknownStateError(client.UnavailableState, err.Error()),
+		name:        failedTask,
 	}
+
 	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
 		klog.Errorf("error occurred while setting status to degraded: %v", err)
 	}
-	// TODO(sthaha): should the counter be reset after setting the state ?
+
 }
 
 func (o *Operator) loadInfrastructureConfig(ctx context.Context) *InfrastructureConfig {
@@ -1006,6 +1000,7 @@ func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
 	return workloads
 }
 
+// taskGroupErrorsToStateErrors converts all taskErrors to StateErrors
 func taskGroupErrorsToStateErrors(tge tasks.TaskGroupErrors) client.StateErrors {
 	b := client.StateErrorBuilder{}
 
@@ -1013,11 +1008,11 @@ func taskGroupErrorsToStateErrors(tge tasks.TaskGroupErrors) client.StateErrors 
 		b.AddError(te.Err, client.DegradedState)
 	}
 
-	return b.Errors()
+	return b.StateErrors()
 }
 
-func generateRunReport(tge tasks.TaskGroupErrors) runReport {
-	ret := runReport{name: tge[0].Name}
+func generateRunReport(tge tasks.TaskGroupErrors) *runReport {
+	ret := &runReport{name: tge[0].Name}
 
 	if len(tge) > 1 {
 		ret.name = "MultipleTasks"
@@ -1055,15 +1050,21 @@ func generateRunReport(tge tasks.TaskGroupErrors) runReport {
 
 type stateInfo struct {
 	err    *client.StateError
+	status client.Status
 	reason string
 }
+
+var _ (client.StateInfo) = (*stateInfo)(nil)
 
 func (s *stateInfo) State() client.State {
 	return s.err.State
 }
 
-func (s *stateInfo) IsUnknown() bool {
-	return s.err.Unknown
+func (s *stateInfo) Status() client.Status {
+	if s.err.Unknown {
+		return client.UnknownStatus
+	}
+	return s.status
 }
 
 func (s *stateInfo) Message() string {
@@ -1074,6 +1075,28 @@ func (s *stateInfo) Reason() string {
 	return s.reason
 }
 
+// expectedStatus is a StateInfo which can returned when the state
+// of the system is as expected after the task-groups are run
+type expectedStatus client.Status
+
+func (*expectedStatus) Message() string {
+	return ""
+}
+
+func (s *expectedStatus) Status() client.Status {
+	return client.Status(*s)
+}
+
+func (*expectedStatus) Reason() string {
+	return "AsExpected"
+}
+
+func asExpected(s client.Status) *expectedStatus {
+	ret := expectedStatus(s)
+	return &ret
+
+}
+
 type runReport struct {
 	degraded    *client.StateError
 	unavailable *client.StateError
@@ -1082,10 +1105,19 @@ type runReport struct {
 
 var _ client.StatesReport = (*runReport)(nil)
 
-func (s *runReport) Unavailable() client.StateInfo {
-	return &stateInfo{err: s.unavailable, reason: s.name}
+func (s *runReport) Available() client.StateInfo {
+	if s.unavailable == nil {
+		return asExpected(client.TrueStatus)
+	}
+
+	return &stateInfo{err: s.unavailable, reason: s.name, status: client.FalseStatus}
 }
 
 func (s *runReport) Degraded() client.StateInfo {
-	return &stateInfo{err: s.degraded, reason: s.name}
+	if s.degraded == nil {
+		var degraded = expectedStatus(client.FalseStatus)
+		return &degraded
+	}
+
+	return &stateInfo{err: s.degraded, reason: s.name, status: client.TrueStatus}
 }

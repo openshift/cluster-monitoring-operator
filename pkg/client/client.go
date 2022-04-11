@@ -50,6 +50,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -732,13 +733,32 @@ func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
 	return err
 }
 
-func (c *Client) WaitForPrometheusByNsName(ctx context.Context, metadata *metav1.ObjectMeta) (*monv1.Prometheus, error) {
+func (c *Client) GetPrometheusByNsName(ctx context.Context, prom types.NamespacedName) (*monv1.Prometheus, error) {
 	var lastErr error
-	var p *monv1.Prometheus
+	var ret *monv1.Prometheus
 
-	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+	if err := wait.Poll(time.Second*10, time.Minute*1, func() (bool, error) {
 		var err error
-		p, err = c.mclient.MonitoringV1().Prometheuses(metadata.GetNamespace()).Get(ctx, metadata.GetName(), metav1.GetOptions{})
+		ret, err = c.mclient.MonitoringV1().Prometheuses(prom.Namespace).Get(ctx, prom.Name, metav1.GetOptions{})
+		if err != nil {
+			lastErr = err
+			klog.V(4).ErrorS(err, "GetPrometheusByNsName: failed to get Prometheus object")
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return nil, errors.Wrapf(err, "waiting for Prometheus %s", prom)
+	}
+	return ret, nil
+}
+
+func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) error {
+	var lastErr error
+	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+		p, err := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace()).Get(ctx, p.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
 			klog.V(4).ErrorS(err, "WaitForPrometheus: failed to get Prometheus object")
@@ -767,30 +787,20 @@ func (c *Client) WaitForPrometheusByNsName(ctx context.Context, metadata *metav1
 		if err == wait.ErrWaitTimeout && lastErr != nil {
 			err = lastErr
 		}
-		return nil, errors.Wrapf(err, "waiting for Prometheus %s/%s", metadata.GetNamespace(), metadata.GetName())
+		return errors.Wrapf(err, "waiting for Prometheus %s/%s", p.GetNamespace(), p.GetName())
 	}
-	return p, nil
+	return nil
 }
 
-func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) error {
-
-	var err error
-	p, err = c.WaitForPrometheusByNsName(ctx, p.ObjectMeta.DeepCopy())
-	return err
-}
-
-func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Prometheus) StateErrors {
+func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Prometheus) error {
 
 	status, _, err := prometheusoperator.Status(ctx, c.kclient, p)
 	if err != nil {
-		return ToStateErrors(
-			NewDegradedError("failed to get prometheus status:" + err.Error()),
-		)
+		return NewDegradedError("failed to get prometheus status: " + err.Error())
 	}
 
 	required := *p.Spec.Replicas
 	available := status.AvailableReplicas
-
 	if available >= required {
 		// All pods are upto date and nothing to do; see reason above
 		//   -- OR --
@@ -805,12 +815,7 @@ func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Promet
 	pods, err := c.kclient.CoreV1().Pods(p.Namespace).List(ctx, prometheusoperator.ListOptions(p.Name))
 	if err != nil {
 		klog.V(4).ErrorS(err, "listing prometheus pods failed")
-
-		return ToStateErrors(&StateError{
-			State:   DegradedState,
-			Unknown: true,
-			Reason:  fmt.Sprintf("listing prometheus pods failed: %s", err),
-		})
+		return NewUnknownStateError(DegradedState, fmt.Sprintf("listing prometheus pods failed: %s", err))
 	}
 
 	// Add reason for failure to appropriate state - Degraded/Unavailable
@@ -822,6 +827,7 @@ func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Promet
 	}
 
 	for _, pod := range pods.Items {
+
 		ready, err := k8sutil.PodRunningAndReady(pod)
 		// skip those that are running & ready (includes those that require updation)
 		if err == nil && ready {
@@ -849,6 +855,7 @@ func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Promet
 
 				msg := fmt.Sprintf("prometheus pod %s is pending due to %s: %s", nsName, cond.Reason, cond.Message)
 				addError(msg)
+				klog.V(4).Info("validate prometheus pod Pending: ", b.ToError().Error())
 			}
 
 			// NOTE: case v1.PodUnknown: shouldn't occur
@@ -858,22 +865,30 @@ func (c *Client) validatePrometheusPodState(ctx context.Context, p *monv1.Promet
 		}
 	}
 
-	return b.Errors()
+	return b.ToError()
 }
 
-func (c *Client) ValidatePrometheus(ctx context.Context, p *monv1.Prometheus) StateErrors {
-	var serrs StateErrors
+func (c *Client) ValidatePrometheus(ctx context.Context, p *monv1.Prometheus) error {
+	var validateError error
 
-	_ = wait.Poll(5*time.Second, 15*time.Second, func() (bool, error) {
-		if serrs = c.validatePrometheusPodState(ctx, p); serrs != nil {
-			klog.V(4).ErrorS(serrs, "ValidatePrometheus: failed")
+	// TODO(sthaha): reset the wait timeout
+	pollErr := wait.Poll(5*time.Second, 15*time.Second, func() (bool, error) {
+
+		validateError = c.validatePrometheusPodState(ctx, p)
+		if validateError != nil {
+			klog.V(4).ErrorS(validateError, "ValidatePrometheusPod: failed")
 			return false, nil
 		}
 
 		return true, nil
 	})
 
-	return serrs
+	b := StateErrorBuilder{}
+	if pollErr == wait.ErrWaitTimeout {
+		b.AddError(validateError, DegradedState)
+	}
+
+	return b.ToError()
 }
 
 func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
