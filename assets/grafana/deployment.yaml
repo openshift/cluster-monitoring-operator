@@ -60,6 +60,9 @@ spec:
         - mountPath: /etc/grafana/provisioning/dashboards
           name: grafana-dashboards
           readOnly: false
+        - mountPath: /tmp
+          name: tmp-plugins
+          readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/cluster-total
           name: grafana-dashboard-cluster-total
           readOnly: false
@@ -101,9 +104,6 @@ spec:
           readOnly: false
         - mountPath: /etc/grafana
           name: grafana-config
-          readOnly: false
-        - mountPath: /tmp
-          name: tmp-plugins
           readOnly: false
       - args:
         - -provider=openshift
@@ -192,6 +192,9 @@ spec:
       - configMap:
           name: grafana-dashboards
         name: grafana-dashboards
+      - emptyDir:
+          medium: Memory
+        name: tmp-plugins
       - configMap:
           name: grafana-dashboard-cluster-total
         name: grafana-dashboard-cluster-total
@@ -234,8 +237,6 @@ spec:
       - name: grafana-config
         secret:
           secretName: grafana-config
-      - emptyDir: {}
-        name: tmp-plugins
       - name: secret-grafana-tls
         secret:
           secretName: grafana-tls
