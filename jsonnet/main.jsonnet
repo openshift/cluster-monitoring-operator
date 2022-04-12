@@ -1,6 +1,7 @@
 local removeLimits = (import './utils/remove-limits.libsonnet').removeLimits;
 local addAnnotations = (import './utils/add-annotations.libsonnet').addAnnotations;
 local sanitizeAlertRules = (import './utils/sanitize-rules.libsonnet').sanitizeAlertRules;
+local addBearerTokenToServiceMonitors = (import './utils/add-bearer-token-to-service-monitors.libsonnet').addBearerTokenToServiceMonitors;
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local grafana = import './components/grafana.libsonnet';
@@ -440,22 +441,44 @@ local userWorkload =
 
 // Manifestation
 sanitizeAlertRules(addAnnotations(removeLimits(
-  { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
-  { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
-  { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
-  { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
-  { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
-  { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +
-  { ['prometheus-k8s/' + name]: inCluster.prometheus[name] for name in std.objectFields(inCluster.prometheus) } +
-  { ['prometheus-operator/' + name]: inCluster.prometheusOperator[name] for name in std.objectFields(inCluster.prometheusOperator) } +
-  { ['prometheus-operator-user-workload/' + name]: userWorkload.prometheusOperator[name] for name in std.objectFields(userWorkload.prometheusOperator) } +
-  { ['prometheus-user-workload/' + name]: userWorkload.prometheus[name] for name in std.objectFields(userWorkload.prometheus) } +
-  { ['prometheus-adapter/' + name]: inCluster.prometheusAdapter[name] for name in std.objectFields(inCluster.prometheusAdapter) } +
-  // needs to be removed once remote-write is allowed for sending telemetry
-  { ['telemeter-client/' + name]: inCluster.telemeterClient[name] for name in std.objectFields(inCluster.telemeterClient) } +
-  { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
-  { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
-  { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
-  { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
-  {}
+  // When the TLS certificate used for authentication gets rotated, Prometheus
+  // doesn't pick up the new certificate until the connection to the target is
+  // re-established. Because Prometheus uses keep-alive HTTP connections, the
+  // consequence is that the scrapes start failing after about 1 day and the
+  // TargetDown alert fires. To resolve the alert, the cluster admin has to
+  // restart the pods being reported as down.
+  //
+  // To workaround the issue (and until Prometheus properly handles certificate
+  // rotation), patch the service monitors in the openshift-monitoring and
+  // openshift-user-workload-monitoring namespaces with fall-back authentication
+  // method using the service account bearer token.
+  //
+  // Details in:
+  // https://github.com/prometheus/prometheus/issues/9512 (upstream)
+  // https://bugzilla.redhat.com/show_bug.cgi?id=2033575
+  //
+  // TODO(simonpasquier): once Prometheus issue #9512 is fixed downstream,
+  // replace addBearerTokenToServiceMonitors() by
+  // removeBearerTokenFromServiceMonitors() to ensure that all service monitors
+  // use only TLS for authentication.
+  addBearerTokenToServiceMonitors(
+    { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
+    { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
+    { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
+    { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
+    { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
+    { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +
+    { ['prometheus-k8s/' + name]: inCluster.prometheus[name] for name in std.objectFields(inCluster.prometheus) } +
+    { ['prometheus-operator/' + name]: inCluster.prometheusOperator[name] for name in std.objectFields(inCluster.prometheusOperator) } +
+    { ['prometheus-operator-user-workload/' + name]: userWorkload.prometheusOperator[name] for name in std.objectFields(userWorkload.prometheusOperator) } +
+    { ['prometheus-user-workload/' + name]: userWorkload.prometheus[name] for name in std.objectFields(userWorkload.prometheus) } +
+    { ['prometheus-adapter/' + name]: inCluster.prometheusAdapter[name] for name in std.objectFields(inCluster.prometheusAdapter) } +
+    // needs to be removed once remote-write is allowed for sending telemetry
+    { ['telemeter-client/' + name]: inCluster.telemeterClient[name] for name in std.objectFields(inCluster.telemeterClient) } +
+    { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
+    { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
+    { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
+    { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
+    {}
+  )
 )))
