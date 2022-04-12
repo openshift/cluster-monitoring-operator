@@ -1088,11 +1088,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "default config",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
-
+				c := NewDefaultConfig()
 				return c
 			},
 
@@ -1102,11 +1098,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "legacy telemetry",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
-
+				c := NewDefaultConfig()
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
 
@@ -1119,11 +1111,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "legacy telemetry and custom remote write",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
-
+				c := NewDefaultConfig()
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
@@ -1139,11 +1127,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "remote write telemetry",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
-
+				c := NewDefaultConfig()
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
@@ -1159,11 +1143,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "remote write telemetry and custom remote write",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
-
+				c := NewDefaultConfig()
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
@@ -1181,11 +1161,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "remote write telemetry with custom url and custom remote write",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
-
+				c := NewDefaultConfig()
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
@@ -1291,6 +1267,107 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 		t.Errorf("want OAuth2 config %v, got %v", expectedOauth2Config, p.Spec.RemoteWrite[0].OAuth2)
 	}
 
+}
+func TestRemoteWriteAuthorizationConfig(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		config  string
+		checkFn []func(*testing.T, monv1.RemoteWriteSpec)
+	}{
+		{
+			name: "basic authentication configuration",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: "https://basicAuth.remotewrite.com/api/write"
+    basicAuth:
+      username:
+        name: remoteWriteAuth
+        key: user
+      password:
+        name: remoteWriteAuth
+        key: password
+`,
+			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
+				func(t *testing.T, target monv1.RemoteWriteSpec) {
+					if target.BasicAuth.Username.Name != "remoteWriteAuth" {
+						t.Fatalf("Name field not correct in section RemoteWriteSpec.BasicAuth.Username expected 'remoteWriteAuth', got %s", target.BasicAuth.Username.Name)
+					}
+					if target.BasicAuth.Username.Key != "user" {
+						t.Fatalf("Key field not correct in section RemoteWriteSpec.BasicAuth.Username expected 'user', got %s", target.BasicAuth.Username.Key)
+					}
+					if target.BasicAuth.Password.Name != "remoteWriteAuth" {
+						t.Fatalf("Name field not correct in section RemoteWriteSpec.BasicAuth.Password expected 'remoteWriteAuth', got %s", target.BasicAuth.Password.Name)
+					}
+					if target.BasicAuth.Password.Key != "password" {
+						t.Fatalf("Key field not correct in section RemoteWriteSpec.BasicAuth.Password expected 'password', got %s", target.BasicAuth.Password.Key)
+					}
+				},
+			},
+		},
+		{
+			name: "bearerTokenFile authentication configuration",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: "https://bearerTokenFile.remotewrite.com/api/write"
+    bearerTokenFile: "/secret/remoteWriteAuth"
+`,
+			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
+				func(t *testing.T, target monv1.RemoteWriteSpec) {
+					if target.BearerTokenFile != "/secret/remoteWriteAuth" {
+						t.Fatalf("BearerTokenFile field not correct in section RemoteWriteSpec expected '/secret/remoteWriteAuth', got %s", target.BearerTokenFile)
+					}
+				},
+			},
+		},
+		{
+			name: "authorization authentication configuration",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: "https://authorization.remotewrite.com/api/write"
+    authorization:
+      type: Bearer
+      credentials:
+        name: remoteWriteAuth
+        key: token
+`,
+			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
+				func(t *testing.T, target monv1.RemoteWriteSpec) {
+					if target.Authorization.Type != "Bearer" {
+						t.Fatalf("Bearer field not correct in section RemoteWriteSpec expected 'Bearer', got %s", target.Authorization.Type)
+					}
+					if target.Authorization.Credentials.Name != "remoteWriteAuth" {
+						t.Fatalf("Name field not correct in section RemoteWriteSpec.Authorization.Credentials expected 'remoteWriteAuth', got %s", target.Authorization.Credentials.Name)
+					}
+					if target.Authorization.Credentials.Key != "token" {
+						t.Fatalf("Key field not correct in section RemoteWriteSpec.Authorization.Credentials expected 'token', got %s", target.Authorization.Credentials.Key)
+					}
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(p.Spec.RemoteWrite) != len(tc.checkFn) {
+				t.Fatalf("got %d check functions but only %d RemoteWrite targets", len(tc.checkFn), len(p.Spec.RemoteWrite))
+			}
+
+			for i, target := range p.Spec.RemoteWrite {
+				tc.checkFn[i](t, target)
+			}
+		})
+
+	}
 }
 
 func TestPrometheusK8sConfiguration(t *testing.T) {
@@ -1753,6 +1830,9 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 			)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			secrets := make(map[string]struct{})
 			for _, s := range p.Spec.Secrets {

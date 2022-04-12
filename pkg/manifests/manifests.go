@@ -4235,6 +4235,11 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 				SafeTLSConfig: *target.TLSConfig,
 			}
 		}
+		if target.Authorization != nil {
+			rwConf.Authorization = &monv1.Authorization{
+				SafeAuthorization: *target.Authorization,
+			}
+		}
 		rw = append(rw, rwConf)
 	}
 	return rw
