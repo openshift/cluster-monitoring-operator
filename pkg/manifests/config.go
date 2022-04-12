@@ -158,6 +158,8 @@ type RemoteWriteSpec struct {
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
 	// Authorization section for remote write
 	Authorization *monv1.SafeAuthorization `json:"authorization,omitempty"`
+	// Sigv4 allows to configures AWS's Signature Verification 4
+	Sigv4 *monv1.Sigv4 `json:"sigv4,omitempty"`
 	// TLS Config to use for remote write.
 	TLSConfig *monv1.SafeTLSConfig `json:"tlsConfig,omitempty"`
 	// Optional ProxyURL

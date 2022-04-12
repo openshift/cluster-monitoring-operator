@@ -1344,6 +1344,48 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "sigv4 authentication configuration",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: "https://authorization.remotewrite.com/api/write"
+    sigv4:
+      region: eu
+      accessKey:
+        name: aws-credentials
+        key: access
+      secretKey:
+        name: aws-credentials
+        key: secret
+      profile: "SomeProfile"
+      roleArn: "SomeRoleArn"
+`,
+			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
+				func(t *testing.T, target monv1.RemoteWriteSpec) {
+					if target.Sigv4.Region != "eu" {
+						t.Fatalf("Region field not correct in section RemoteWriteSpec.Sigv4 expected 'eu', got %s", target.Sigv4)
+					}
+					if target.Sigv4.AccessKey.Name != "aws-credentials" {
+						t.Fatalf("Name field not correct in section RemoteWriteSpec.Sigv4.AccessKey expected 'aws-credentials', got %s", target.Sigv4.AccessKey.Name)
+					}
+					if target.Sigv4.AccessKey.Key != "access" {
+						t.Fatalf("Key field not correct in section RemoteWriteSpec.Sigv4.AccessKey expected 'access', got %s", target.Sigv4.AccessKey.Key)
+					}
+					if target.Sigv4.SecretKey.Name != "aws-credentials" {
+						t.Fatalf("Name field not correct in section RemoteWriteSpec.Sigv4.SecretKey expected 'aws-credentials', got %s", target.Sigv4.SecretKey.Name)
+					}
+					if target.Sigv4.SecretKey.Key != "secret" {
+						t.Fatalf("Key field not correct in section RemoteWriteSpec.Sigv4.SecretKey expected 'secret', got %s", target.Sigv4.SecretKey.Key)
+					}
+					if target.Sigv4.Profile != "SomeProfile" {
+						t.Fatalf("Profile field not correct in section RemoteWriteSpec.Sigv4 expected 'SomeProfile', got %s", target.Sigv4.Profile)
+					}
+					if target.Sigv4.RoleArn != "SomeRoleArn" {
+						t.Fatalf("RoleArn field not correct in section RemoteWriteSpec.Sigv4 expected 'SomeRoleArn', got %s", target.Sigv4.RoleArn)
+					}
+				},
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.config)
