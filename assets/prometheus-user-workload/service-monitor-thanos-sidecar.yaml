@@ -11,7 +11,8 @@ metadata:
   namespace: openshift-user-workload-monitoring
 spec:
   endpoints:
-  - interval: 30s
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
     port: thanos-proxy
     scheme: https
     tlsConfig:
