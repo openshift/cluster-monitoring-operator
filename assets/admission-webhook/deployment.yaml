@@ -32,6 +32,8 @@ spec:
               matchLabels:
                 app.kubernetes.io/name: prometheus-operator-admission-webhook
                 app.kubernetes.io/part-of: openshift-monitoring
+            namespaces:
+            - openshift-monitoring
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: false
       containers:
