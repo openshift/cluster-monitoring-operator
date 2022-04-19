@@ -1442,6 +1442,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		p.Spec.Retention = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention
 	}
 
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize != "" {
+		p.Spec.RetentionSize = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize
+	}
+
 	p.Spec.Image = &f.config.Images.Prometheus
 
 	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
