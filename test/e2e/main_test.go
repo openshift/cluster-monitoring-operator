@@ -121,10 +121,15 @@ func TestTargetsUp(t *testing.T) {
 	targets := []string{
 		"node-exporter",
 		"kube-state-metrics",
+		"kubelet",
 		"prometheus-k8s",
+		"prometheus-k8s-thanos-sidecar",
 		"prometheus-operator",
 		"alertmanager-main",
 		"cluster-monitoring-operator",
+		"openshift-state-metrics",
+		"telemeter-client",
+		"thanos-querier",
 	}
 
 	for _, target := range targets {
