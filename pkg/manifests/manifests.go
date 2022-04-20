@@ -3745,6 +3745,10 @@ func (f *Factory) ThanosRulerCustomResource(
 		t.Spec.Tolerations = f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations
 	}
 
+	if f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels != nil {
+		t.Spec.Labels = f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels
+	}
+
 	for i, container := range t.Spec.Containers {
 		switch container.Name {
 		case "thanos-ruler-proxy":
