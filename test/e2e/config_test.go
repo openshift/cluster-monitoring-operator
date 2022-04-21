@@ -522,6 +522,10 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 			assertion: assertExternalLabelExists(f.UserWorkloadMonitoringNs, crName, "datacenter", "eu-west"),
 		},
 		{
+			name:      "assert external labels are present on the ThanosRuler CR",
+			assertion: assertExternalLabelExistsThanosRuler(f.UserWorkloadMonitoringNs, crName, "datacenter", "eu-west"),
+		},
+		{
 			name:      "assert remote write url value in set in CR",
 			assertion: assertRemoteWriteWasSet(f.UserWorkloadMonitoringNs, crName, "https://test.remotewrite.com/api/write"),
 		},
@@ -718,6 +722,34 @@ func assertExternalLabelExists(namespace, crName, expectKey, expectValue string)
 			}
 
 			gotValue, ok := prom.Spec.ExternalLabels[expectKey]
+			if !ok {
+				return fmt.Errorf("expected key %s is missing", expectKey)
+			}
+
+			if gotValue != expectValue {
+				return fmt.Errorf("expected value %s but got %s", expectValue, gotValue)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func assertExternalLabelExistsThanosRuler(namespace, crName, expectKey, expectValue string) func(t *testing.T) {
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, time.Minute*5, func() error {
+			tr, err := f.MonitoringClient.ThanosRulers(namespace).Get(context.Background(), crName, metav1.GetOptions{})
+			if err != nil {
+				t.Fatal("failed to get required thanos ruler cr", err)
+			}
+
+			if tr.Spec.Labels == nil {
+				return fmt.Errorf("external labels map is nil")
+			}
+
+			gotValue, ok := tr.Spec.Labels[expectKey]
 			if !ok {
 				return fmt.Errorf("expected key %s is missing", expectKey)
 			}
