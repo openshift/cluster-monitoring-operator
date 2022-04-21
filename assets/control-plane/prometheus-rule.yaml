@@ -370,6 +370,51 @@ spec:
       for: 1h
       labels:
         severity: warning
+    - alert: KubePersistentVolumeInodesFillingUp
+      annotations:
+        description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim
+          }} in Namespace {{ $labels.namespace }} only has {{ $value | humanizePercentage
+          }} free inodes.
+        summary: PersistentVolumeInodes are filling up.
+      expr: |
+        (
+          kubelet_volume_stats_inodes_free{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
+            /
+          kubelet_volume_stats_inodes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
+        ) < 0.03
+        and
+        kubelet_volume_stats_inodes_used{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"} > 0
+        unless on(namespace, persistentvolumeclaim)
+        kube_persistentvolumeclaim_access_mode{namespace=~"(openshift-.*|kube-.*|default)", access_mode="ReadOnlyMany"} == 1
+        unless on(namespace, persistentvolumeclaim)
+        kube_persistentvolumeclaim_labels{namespace=~"(openshift-.*|kube-.*|default)",label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"} == 1
+      for: 1m
+      labels:
+        severity: critical
+    - alert: KubePersistentVolumeInodesFillingUp
+      annotations:
+        description: Based on recent sampling, the PersistentVolume claimed by {{
+          $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is
+          expected to run out of inodes within four days. Currently {{ $value | humanizePercentage
+          }} of its inodes are free.
+        summary: PersistentVolumeInodes are filling up.
+      expr: |
+        (
+          kubelet_volume_stats_inodes_free{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
+            /
+          kubelet_volume_stats_inodes{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}
+        ) < 0.15
+        and
+        kubelet_volume_stats_inodes_used{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"} > 0
+        and
+        predict_linear(kubelet_volume_stats_inodes_free{namespace=~"(openshift-.*|kube-.*|default)",job="kubelet", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+        unless on(namespace, persistentvolumeclaim)
+        kube_persistentvolumeclaim_access_mode{namespace=~"(openshift-.*|kube-.*|default)", access_mode="ReadOnlyMany"} == 1
+        unless on(namespace, persistentvolumeclaim)
+        kube_persistentvolumeclaim_labels{namespace=~"(openshift-.*|kube-.*|default)",label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"} == 1
+      for: 1h
+      labels:
+        severity: warning
     - alert: KubePersistentVolumeErrors
       annotations:
         description: The persistent volume {{ $labels.persistentvolume }} has status
