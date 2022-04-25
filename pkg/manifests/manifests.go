@@ -149,6 +149,7 @@ var (
 	PrometheusUserWorkloadAlertmanagerRoleBinding     = "prometheus-user-workload/alertmanager-role-binding.yaml"
 	PrometheusUserWorkloadPodDisruptionBudget         = "prometheus-user-workload/pod-disruption-budget.yaml"
 	PrometheusUserWorkloadConfigMap                   = "prometheus-user-workload/config-map.yaml"
+	PrometheusUserWorkloadFederateRoute               = "prometheus-user-workload/federate-route.yaml"
 
 	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
@@ -1027,6 +1028,17 @@ func (f *Factory) PrometheusUserWorkloadRoleList() (*rbacv1.RoleList, error) {
 	}
 
 	return rl, nil
+}
+
+func (f *Factory) PrometheusUserWorkloadFederateRoute() (*routev1.Route, error) {
+	r, err := f.NewRoute(f.assets.MustNewAssetReader(PrometheusUserWorkloadFederateRoute))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Namespace = f.namespaceUserWorkload
+
+	return r, nil
 }
 
 func (f *Factory) PrometheusK8sPrometheusRule() (*monv1.PrometheusRule, error) {

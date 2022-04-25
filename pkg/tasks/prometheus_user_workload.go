@@ -269,6 +269,21 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling UserWorkload Thanos sidecar ServiceMonitor failed")
 	}
 
+	r, err := t.factory.PrometheusUserWorkloadFederateRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus federate Route failed")
+	}
+
+	err = t.client.CreateRouteIfNotExists(ctx, r)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload federate Route failed")
+	}
+
+	_, err = t.client.WaitForRouteReady(ctx, r)
+	if err != nil {
+		return errors.Wrap(err, "waiting for UserWorkload federate Route to become ready failed")
+	}
+
 	return nil
 }
 
@@ -450,6 +465,16 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		return errors.Wrap(err, "deleting or updating UserWorkload Prometheus RBAC proxy Secret failed")
 	}
 
+	fs, err := t.factory.PrometheusUserWorkloadRBACProxyFederateSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC federate endpoint Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, fs)
+	if err != nil {
+		return errors.Wrap(err, "deleting or updating UserWorkload Prometheus RBAC federate endpoint Secret failed")
+	}
+
 	amsSecret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
@@ -460,5 +485,18 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 	}
 
 	err = t.client.DeleteConfigMap(ctx, cacm)
-	return errors.Wrap(err, "deleting UserWorkload serving certs CA Bundle ConfigMap failed")
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload serving certs CA Bundle ConfigMap failed")
+	}
+
+	r, err := t.factory.PrometheusUserWorkloadFederateRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus federate Route failed")
+	}
+
+	err = t.client.DeleteRoute(ctx, r)
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload federate Route failed")
+	}
+	return nil
 }
