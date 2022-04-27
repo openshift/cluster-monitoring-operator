@@ -49,10 +49,25 @@ local kp = (import 'kube-prometheus/kube-prometheus.libsonnet') +
                          rules:
                            std.map(
                              function(rule)
-                               if 'alert' in rule && (rule.alert == 'PrometheusDuplicateTimestamps' || rule.alert == 'PrometheusOutOfOrderTimestamps') then
-                                 rule { 'for': '1h' }
-                               else
-                                 rule,
+                               if 'alert' in rule then
+                                 if rule.alert == 'PrometheusDuplicateTimestamps' || rule.alert == 'PrometheusOutOfOrderTimestamps' then
+                                   rule { 'for': '1h' }
+                                 else if rule.alert == 'PrometheusNotIngestingSamples' then
+                                   rule {
+                                     expr: |||
+                                       (
+                                         rate(prometheus_tsdb_head_samples_appended_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) <= 0
+                                       and
+                                         (
+                                           sum without(scrape_job) (prometheus_target_metadata_cache_entries{job=~"prometheus-k8s|prometheus-user-workload"}) > 0
+                                         or
+                                           sum without(rule_group) (prometheus_rule_group_rules{job=~"prometheus-k8s|prometheus-user-workload"}) > 0
+                                         )
+                                       )
+                                     |||,
+                                   }
+                                 else
+                                   rule,
                              ruleGroup.rules,
                            ),
                        }
