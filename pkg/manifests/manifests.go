@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
@@ -3362,7 +3363,12 @@ func (f *Factory) NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, 
 	if err != nil {
 		return nil, err
 	}
-
+	if !f.infrastructure.HighlyAvailableInfrastructure() {
+		err := doubleServiceMonitorInterval(sm)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if sm.GetNamespace() == "" {
 		sm.SetNamespace(f.namespace)
 	}
@@ -4481,4 +4487,24 @@ grpc:
     decision:
       log_start: false
       log_end: true`, logLevel, logLevel)
+}
+
+// doubleServiceMonitorInterval doubles every ServiceMonitor endpoint interval value,
+// but the maximum value is 2 minutes.
+func doubleServiceMonitorInterval(sm *monv1.ServiceMonitor) error {
+	for i := range sm.Spec.Endpoints {
+		e := &sm.Spec.Endpoints[i]
+		if e.Interval != "" {
+			intervalTime, err := time.ParseDuration(e.Interval)
+			if err != nil {
+				return err
+			}
+			updatedInterval := intervalTime * 2
+			if updatedInterval > 2*time.Minute {
+				updatedInterval = 2 * time.Minute
+			}
+			e.Interval = updatedInterval.String()
+		}
+	}
+	return nil
 }

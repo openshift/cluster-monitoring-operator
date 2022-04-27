@@ -1,7 +1,7 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
 ## 4.11
-
+- [#1652](https://github.com/openshift/cluster-monitoring-operator/pull/1652) Double scrape interval for all CMO controlled ServiceMonitors on single node deployments
 - [#1567](https://github.com/openshift/cluster-monitoring-operator/pull/1567) Enable validating webhook for AlertmanagerConfig custom resources
 - [#1557](https://github.com/openshift/cluster-monitoring-operator/pull/1557) Removing grafana from monitoring stack
 - [#1578](https://github.com/openshift/cluster-monitoring-operator/pull/1578) Add temporary cluster id label to remote write relabel configs.
