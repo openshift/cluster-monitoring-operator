@@ -236,6 +236,7 @@ func (a AlertmanagerMainConfig) IsEnabled() bool {
 type ThanosRulerConfig struct {
 	LogLevel             string                               `json:"logLevel"`
 	NodeSelector         map[string]string                    `json:"nodeSelector"`
+	Retention            string                               `json:"retention"`
 	Tolerations          []v1.Toleration                      `json:"tolerations"`
 	Resources            *v1.ResourceRequirements             `json:"resources"`
 	VolumeClaimTemplate  *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
