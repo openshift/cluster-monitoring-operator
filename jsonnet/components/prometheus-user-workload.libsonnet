@@ -75,6 +75,16 @@ function(params)
     clusterRole+: {
       rules+: [
         {
+          apiGroups: ['authentication.k8s.io'],
+          resources: ['tokenreviews'],
+          verbs: ['create'],
+        },
+        {
+          apiGroups: ['authorization.k8s.io'],
+          resources: ['subjectaccessreviews'],
+          verbs: ['create'],
+        },
+        {
           apiGroups: [''],
           resources: ['namespaces'],
           verbs: ['get'],
