@@ -2343,7 +2343,7 @@ func (f *Factory) PrometheusOperatorAdmissionWebhookDeployment() (*appsv1.Deploy
 			}
 
 			// The admission webhook supports only TLS versions >= 1.2.
-			tlsVersionEnforcer := &minTLVersionEnforcer{
+			tlsVersionEnforcer := &minTLSVersionEnforcer{
 				atLeast: tls.VersionTLS12,
 				inner:   f.APIServerConfig,
 			}
@@ -2463,12 +2463,14 @@ type minTLSVersioner interface {
 	MinTLSVersion() string
 }
 
-type minTLVersionEnforcer struct {
+// minTLSVersionEnforcer ensures that a minimal version of TLS is used.
+type minTLSVersionEnforcer struct {
 	atLeast uint16
 	inner   minTLSVersioner
 }
 
-func (m *minTLVersionEnforcer) MinTLSVersion() string {
+// MinTLSVersion implements the minTLSVersioner interface.
+func (m *minTLSVersionEnforcer) MinTLSVersion() string {
 	v := m.inner.MinTLSVersion()
 	if crypto.TLSVersionOrDie(v) < m.atLeast {
 		return crypto.TLSVersionToNameOrDie(m.atLeast)
@@ -2481,8 +2483,7 @@ func (f *Factory) setTLSSecurityConfigurationWithMinTLSVersion(args []string, tl
 	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers()), ",")
 	args = setArg(args, tlsCipherSuitesArg, cipherSuites)
 
-	minTLSVersion := versioner.MinTLSVersion()
-	args = setArg(args, minTLSversionArg, string(minTLSVersion))
+	args = setArg(args, minTLSversionArg, versioner.MinTLSVersion())
 
 	return args
 }
