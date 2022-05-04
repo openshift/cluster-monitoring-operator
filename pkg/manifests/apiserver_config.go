@@ -35,9 +35,9 @@ func NewAPIServerConfig(config *configv1.APIServer) *APIServerConfig {
 	}
 }
 
-// GetTLSCiphers returns the TLS ciphers for the
+// TLSCiphers returns the TLS ciphers for the
 // TLS security profile defined in the APIServerConfig.
-func (c *APIServerConfig) GetTLSCiphers() []string {
+func (c *APIServerConfig) TLSCiphers() []string {
 	profile := c.getTLSProfile()
 	if len(profile.Ciphers) == 0 {
 		return APIServerDefaultTLSCiphers
@@ -45,14 +45,14 @@ func (c *APIServerConfig) GetTLSCiphers() []string {
 	return profile.Ciphers
 }
 
-// GetMinTLSVersion returns the minimum TLS version for the
+// MinTLSVersion returns the minimum TLS version for the
 // TLS security profile defined in the APIServerConfig.
-func (c *APIServerConfig) GetMinTLSVersion() configv1.TLSProtocolVersion {
+func (c *APIServerConfig) MinTLSVersion() string {
 	profile := c.getTLSProfile()
 	if profile.MinTLSVersion == "" {
-		return APIServerDefaultMinTLSVersion
+		return string(APIServerDefaultMinTLSVersion)
 	}
-	return profile.MinTLSVersion
+	return string(profile.MinTLSVersion)
 }
 
 func (c *APIServerConfig) getTLSProfile() configv1.TLSProfileSpec {

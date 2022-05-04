@@ -1,5 +1,5 @@
 {
-  // this ca bundle is injected by the cluster-network-operator
+  // This CA bundle is injected by the cluster-network-operator.
   trustedCNOCaBundleCM(cfgNamespace, cfgName):: {
     apiVersion: 'v1',
     kind: 'ConfigMap',
@@ -12,7 +12,7 @@
     },
     data: {},
   },
-  // this ca bundle is injected by the service-ca-operator
+  // This CA bundle is injected by the service-ca-operator.
   SCOCaBundleCM(cfgNamespace, cfgName):: {
     apiVersion: 'v1',
     kind: 'ConfigMap',

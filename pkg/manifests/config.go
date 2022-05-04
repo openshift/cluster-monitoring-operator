@@ -107,20 +107,21 @@ type ClusterMonitoringConfiguration struct {
 }
 
 type Images struct {
-	K8sPrometheusAdapter     string
-	PromLabelProxy           string
-	PrometheusOperator       string
-	PrometheusConfigReloader string
-	Prometheus               string
-	Alertmanager             string
-	Grafana                  string
-	OauthProxy               string
-	NodeExporter             string
-	KubeStateMetrics         string
-	OpenShiftStateMetrics    string
-	KubeRbacProxy            string
-	TelemeterClient          string
-	Thanos                   string
+	K8sPrometheusAdapter               string
+	PromLabelProxy                     string
+	PrometheusOperatorAdmissionWebhook string
+	PrometheusOperator                 string
+	PrometheusConfigReloader           string
+	Prometheus                         string
+	Alertmanager                       string
+	Grafana                            string
+	OauthProxy                         string
+	NodeExporter                       string
+	KubeStateMetrics                   string
+	OpenShiftStateMetrics              string
+	KubeRbacProxy                      string
+	TelemeterClient                    string
+	Thanos                             string
 }
 
 type HTTPConfig struct {
@@ -388,6 +389,7 @@ func (c *Config) applyDefaults() {
 }
 
 func (c *Config) SetImages(images map[string]string) {
+	c.Images.PrometheusOperatorAdmissionWebhook = images["prometheus-operator-admission-webhook"]
 	c.Images.PrometheusOperator = images["prometheus-operator"]
 	c.Images.PrometheusConfigReloader = images["prometheus-config-reloader"]
 	c.Images.Prometheus = images["prometheus"]

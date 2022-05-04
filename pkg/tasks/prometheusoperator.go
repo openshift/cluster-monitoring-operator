@@ -75,6 +75,11 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Prometheus Operator ClusterRoleBinding failed")
 	}
 
+	err = t.runAdmissionWebhook(ctx)
+	if err != nil {
+		return err
+	}
+
 	svc, err := t.factory.PrometheusOperatorService()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Operator Service failed")
@@ -110,6 +115,68 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "waiting for Prometheus Operator CRs to become available failed")
 	}
 
+	pr, err := t.factory.PrometheusOperatorPrometheusRule()
+	if err != nil {
+		return errors.Wrap(err, "initializing prometheus-operator rules PrometheusRule failed")
+	}
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling prometheus-operator rules PrometheusRule failed")
+	}
+
+	smpo, err := t.factory.PrometheusOperatorServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Operator ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smpo)
+	return errors.Wrap(err, "reconciling Prometheus Operator ServiceMonitor failed")
+}
+
+func (t *PrometheusOperatorTask) runAdmissionWebhook(ctx context.Context) error {
+	// Deploy manifests for the admission webhook service.
+	sa, err := t.factory.PrometheusOperatorAdmissionWebhookServiceAccount()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Operator Admission Webhook ServiceAccount failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Operator Admission Webhook ServiceAccount failed")
+	}
+
+	svc, err := t.factory.PrometheusOperatorAdmissionWebhookService()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Operator Admission Webhook Service failed")
+	}
+
+	err = t.client.CreateOrUpdateService(ctx, svc)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Operator Admission Webhook Service failed")
+	}
+
+	pdb, err := t.factory.PrometheusOperatorAdmissionWebhookPodDisruptionBudget()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Operator Admission Webhook PodDisruptionBudget failed")
+	}
+
+	if pdb != nil {
+		err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus Operator Admission Webhook PodDisruptionBudget failed")
+		}
+	}
+
+	d, err := t.factory.PrometheusOperatorAdmissionWebhookDeployment()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus Operator Admission Webhook Deployment failed")
+	}
+
+	err = t.client.CreateOrUpdateDeployment(ctx, d)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Prometheus Operator Admission Webhook Deployment failed")
+	}
+
 	w, err := t.factory.PrometheusRuleValidatingWebhook()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus Rule Validating Webhook failed")
@@ -130,20 +197,5 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling AlertManagerConfig Validating Webhook failed")
 	}
 
-	pr, err := t.factory.PrometheusOperatorPrometheusRule()
-	if err != nil {
-		return errors.Wrap(err, "initializing prometheus-operator rules PrometheusRule failed")
-	}
-	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling prometheus-operator rules PrometheusRule failed")
-	}
-
-	smpo, err := t.factory.PrometheusOperatorServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Operator ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(ctx, smpo)
-	return errors.Wrap(err, "reconciling Prometheus Operator ServiceMonitor failed")
+	return nil
 }

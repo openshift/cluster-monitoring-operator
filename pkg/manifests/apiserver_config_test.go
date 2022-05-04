@@ -140,13 +140,13 @@ func TestGetTLSCiphers(t *testing.T) {
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actualCiphers := tt.config.GetTLSCiphers()
+			actualCiphers := tt.config.TLSCiphers()
 			if !reflect.DeepEqual(tt.expectedCiphers, actualCiphers) {
 				t.Fatalf("invalid ciphers, got %s, want %s", strings.Join(actualCiphers, ", "), strings.Join(tt.expectedCiphers, ", "))
 			}
 
-			actualTLSVersion := tt.config.GetMinTLSVersion()
-			if tt.expectedMinTLSVersion != actualTLSVersion {
+			actualTLSVersion := tt.config.MinTLSVersion()
+			if string(tt.expectedMinTLSVersion) != actualTLSVersion {
 				t.Fatalf("invalid min TLS version, got %s, want %s", actualTLSVersion, tt.expectedMinTLSVersion)
 			}
 		})
