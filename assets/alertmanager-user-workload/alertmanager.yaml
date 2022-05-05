@@ -1,0 +1,165 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Alertmanager
+metadata:
+  labels:
+    app.kubernetes.io/component: alert-router
+    app.kubernetes.io/instance: user-workload
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.24.0
+  name: user-workload
+  namespace: openshift-user-workload-monitoring
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: alert-router
+            app.kubernetes.io/instance: user-workload
+            app.kubernetes.io/name: alertmanager
+            app.kubernetes.io/part-of: openshift-monitoring
+        namespaces:
+        - openshift-user-workload-monitoring
+        topologyKey: kubernetes.io/hostname
+  containers:
+  - args:
+    - --secure-listen-address=0.0.0.0:9095
+    - --upstream=http://127.0.0.1:9093
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - --logtostderr=true
+    image: quay.io/brancz/kube-rbac-proxy:v0.11.0
+    name: alertmanager-proxy
+    ports:
+    - containerPort: 9095
+      name: web
+    resources:
+      requests:
+        cpu: 1m
+        memory: 15Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-alertmanager-user-workload-tls
+  - args:
+    - --secure-listen-address=0.0.0.0:9092
+    - --upstream=http://127.0.0.1:9096
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - --logtostderr=true
+    image: quay.io/brancz/kube-rbac-proxy:v0.11.0
+    name: tenancy-proxy
+    ports:
+    - containerPort: 9092
+      name: tenancy
+    resources:
+      requests:
+        cpu: 1m
+        memory: 15Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-alertmanager-kube-rbac-proxy-tenancy
+    - mountPath: /etc/tls/private
+      name: secret-alertmanager-user-workload-tls
+  - args:
+    - --secure-listen-address=0.0.0.0:9097
+    - --upstream=http://127.0.0.1:9093
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - --client-ca-file=/etc/tls/client/client-ca.crt
+    - --logtostderr=true
+    - --allow-paths=/metrics
+    image: quay.io/brancz/kube-rbac-proxy:v0.11.0
+    name: kube-rbac-proxy-metric
+    ports:
+    - containerPort: 9097
+      name: metrics
+    resources:
+      requests:
+        cpu: 1m
+        memory: 15Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-alertmanager-kube-rbac-proxy-metric
+      readOnly: true
+    - mountPath: /etc/tls/private
+      name: secret-alertmanager-user-workload-tls
+      readOnly: true
+    - mountPath: /etc/tls/client
+      name: metrics-client-ca
+      readOnly: true
+  - args:
+    - --insecure-listen-address=127.0.0.1:9096
+    - --upstream=http://127.0.0.1:9093
+    - --label=namespace
+    - --error-on-replace
+    image: quay.io/prometheuscommunity/prom-label-proxy:v0.4.0
+    name: prom-label-proxy
+    resources:
+      requests:
+        cpu: 1m
+        memory: 20Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+    terminationMessagePolicy: FallbackToLogsOnError
+  image: quay.io/prometheus/alertmanager:v0.24.0
+  listenLocal: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  podMetadata:
+    annotations:
+      target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+    labels:
+      app.kubernetes.io/component: alert-router
+      app.kubernetes.io/instance: user-workload
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/part-of: openshift-monitoring
+      app.kubernetes.io/version: 0.24.0
+  priorityClassName: system-cluster-critical
+  replicas: 2
+  resources:
+    requests:
+      cpu: 4m
+      memory: 40Mi
+  secrets:
+  - alertmanager-user-workload-tls
+  - alertmanager-kube-rbac-proxy-tenancy
+  - alertmanager-kube-rbac-proxy-metric
+  securityContext:
+    fsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccountName: alertmanager-user-workload
+  version: 0.24.0
+  volumes:
+  - configMap:
+      name: metrics-client-ca
+    name: metrics-client-ca

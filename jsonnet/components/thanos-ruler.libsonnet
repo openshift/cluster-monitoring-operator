@@ -80,6 +80,10 @@ function(params)
           resources: ['securitycontextconstraints'],
           verbs: ['use'],
         },
+        {
+          nonResourceURLs: ['/api/v2/alerts'],
+          verbs: ['create'],
+        },
       ],
     },
 

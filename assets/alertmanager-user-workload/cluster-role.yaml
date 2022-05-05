@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: thanos-ruler
+  name: alertmanager-user-workload
 rules:
 - apiGroups:
   - authentication.k8s.io
@@ -23,7 +23,3 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
-- nonResourceURLs:
-  - /api/v2/alerts
-  verbs:
-  - create

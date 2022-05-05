@@ -5,6 +5,7 @@ local removeNetworkPolicy = (import './utils/remove-network-policy.libsonnet').r
 local addBearerTokenToServiceMonitors = (import './utils/add-bearer-token-to-service-monitors.libsonnet').addBearerTokenToServiceMonitors;
 
 local alertmanager = import './components/alertmanager.libsonnet';
+local alertmanagerUserWorkload = import './components/alertmanager-user-workload.libsonnet';
 local grafana = import './components/grafana.libsonnet';
 local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
 local controlPlane = import './components/control-plane.libsonnet';
@@ -108,6 +109,9 @@ local inCluster =
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
+          _config+: {
+            alertmanagerSelector: 'job=~"alertmanager-main|alertmanager-user-workload"',
+          },
         },
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
@@ -408,6 +412,25 @@ local userWorkload =
       common: commonConfig {
         namespace: commonConfig.namespaceUserWorkload,
       },
+      alertmanager: {
+        name: 'user-workload',
+        namespace: $.values.common.namespace,
+        version: $.values.common.versions.alertmanager,
+        image: $.values.common.images.alertmanager,
+        commonLabels+: $.values.common.commonLabels,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
+        promLabelProxyImage: $.values.common.images.promLabelProxy,
+        config: {
+          route: {
+            group_by: ['namespace'],
+            receiver: 'Default',
+          },
+          receivers: [
+            { name: 'Default' },
+          ],
+        },
+      },
       prometheus: {
         namespace: $.values.common.namespace,
         version: $.values.common.versions.prometheus,
@@ -420,12 +443,6 @@ local userWorkload =
         },
         namespaces: [$.values.common.namespaceUserWorkload],
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
-        mixin+: {
-          ruleLabels: $.values.common.ruleLabels,
-          _config+: {
-            prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
-          },
-        },
         thanos: inCluster.values.prometheus.thanos,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
@@ -438,15 +455,10 @@ local userWorkload =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         configReloaderImage: $.values.common.images.prometheusOperatorReloader,
         commonLabels+: $.values.common.commonLabels,
-        mixin+: {
-          ruleLabels: $.values.common.ruleLabels,
-          _config+: {
-            prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
-          },
-        },
       },
     },
 
+    alertmanager: alertmanagerUserWorkload($.values.alertmanager),
     prometheus: prometheusUserWorkload($.values.prometheus),
     prometheusOperator: prometheusOperatorUserWorkload($.values.prometheusOperator),
   } +
@@ -477,6 +489,7 @@ sanitizeAlertRules(addAnnotations(removeLimits(removeNetworkPolicy(
   // use only TLS for authentication.
   addBearerTokenToServiceMonitors(
     { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
+    { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
     { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
     { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
     { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
