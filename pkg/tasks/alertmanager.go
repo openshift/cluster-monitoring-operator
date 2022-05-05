@@ -327,17 +327,20 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 
 		err = t.client.DeleteAlertmanager(ctx, a)
 		if err != nil {
-			return errors.Wrap(err, "reconciling Alertmanager object failed")
+			return errors.Wrap(err, "deleting Alertmanager object failed")
 		}
 	}
 
-	pr, err := t.factory.AlertmanagerPrometheusRule()
-	if err != nil {
-		return errors.Wrap(err, "initializing alertmanager rules PrometheusRule failed")
-	}
-	err = t.client.DeletePrometheusRule(ctx, pr)
-	if err != nil {
-		return errors.Wrap(err, "deleting alertmanager rules PrometheusRule failed")
+	// Delete the rules only if both platform and UWM Alertmanagers are disabled.
+	if !t.config.UserWorkloadConfiguration.Alertmanager.Enabled {
+		pr, err := t.factory.AlertmanagerPrometheusRule()
+		if err != nil {
+			return errors.Wrap(err, "initializing alertmanager rules PrometheusRule failed")
+		}
+		err = t.client.DeletePrometheusRule(ctx, pr)
+		if err != nil {
+			return errors.Wrap(err, "deleting alertmanager rules PrometheusRule failed")
+		}
 	}
 
 	smam, err := t.factory.AlertmanagerServiceMonitor()

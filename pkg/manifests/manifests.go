@@ -60,6 +60,9 @@ const (
 	tmpClusterIDLabelName = "__tmp_openshift_cluster_id__"
 
 	nodeSelectorMaster = "node-role.kubernetes.io/master"
+
+	platformAlertmanagerService     = "alertmanager-main"
+	userWorkloadAlertmanagerService = "alertmanager-user-workload"
 )
 
 var (
@@ -77,6 +80,18 @@ var (
 	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
 	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
 	AlertmanagerPodDisruptionBudget   = "alertmanager/pod-disruption-budget.yaml"
+
+	AlertmanagerUserWorkloadSecret                 = "alertmanager-user-workload/secret.yaml"
+	AlertmanagerUserWorkloadService                = "alertmanager-user-workload/service.yaml"
+	AlertmanagerUserWorkload                       = "alertmanager-user-workload/alertmanager.yaml"
+	AlertmanagerUserWorkloadServiceAccount         = "alertmanager-user-workload/service-account.yaml"
+	AlertmanagerUserWorkloadClusterRoleBinding     = "alertmanager-user-workload/cluster-role-binding.yaml"
+	AlertmanagerUserWorkloadClusterRole            = "alertmanager-user-workload/cluster-role.yaml"
+	AlertmanagerUserWorkloadRBACProxyTenancySecret = "alertmanager-user-workload/kube-rbac-proxy-tenancy-secret.yaml"
+	AlertmanagerUserWorkloadRBACProxyMetricSecret  = "alertmanager-user-workload/kube-rbac-proxy-metric-secret.yaml"
+	AlertmanagerUserWorkloadTrustedCABundle        = "alertmanager-user-workload/trusted-ca-bundle.yaml"
+	AlertmanagerUserWorkloadPodDisruptionBudget    = "alertmanager-user-workload/pod-disruption-budget.yaml"
+	AlertmanagerUserWorkloadServiceMonitor         = "alertmanager-user-workload/service-monitor.yaml"
 
 	KubeStateMetricsClusterRoleBinding  = "kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole         = "kube-state-metrics/cluster-role.yaml"
@@ -351,6 +366,10 @@ func (f *Factory) AlertmanagerConfig() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) AlertmanagerUserWorkloadSecret() (*v1.Secret, error) {
+	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadSecret))
+}
+
 func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerProxySecret))
 	if err != nil {
@@ -378,6 +397,10 @@ func (f *Factory) AlertmanagerService() (*v1.Service, error) {
 	return s, nil
 }
 
+func (f *Factory) AlertmanagerUserWorkloadService() (*v1.Service, error) {
+	return f.NewService(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadService))
+}
+
 func (f *Factory) AlertmanagerServiceAccount() (*v1.ServiceAccount, error) {
 	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(AlertmanagerServiceAccount))
 	if err != nil {
@@ -387,6 +410,10 @@ func (f *Factory) AlertmanagerServiceAccount() (*v1.ServiceAccount, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) AlertmanagerUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
+	return f.NewServiceAccount(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadServiceAccount))
 }
 
 func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
@@ -400,8 +427,16 @@ func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, 
 	return crb, nil
 }
 
+func (f *Factory) AlertmanagerUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadClusterRoleBinding))
+}
+
 func (f *Factory) AlertmanagerClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetReader(AlertmanagerClusterRole))
+}
+
+func (f *Factory) AlertmanagerUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadClusterRole))
 }
 
 func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -410,8 +445,20 @@ func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
 		return nil, err
 	}
 
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("%s.%s.svc", platformAlertmanagerService, f.namespace)
 	sm.Namespace = f.namespace
+
+	return sm, nil
+}
+
+func (f *Factory) AlertmanagerUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("%s.%s.svc", userWorkloadAlertmanagerService, f.namespaceUserWorkload)
+	sm.Namespace = f.namespaceUserWorkload
 
 	return sm, nil
 }
@@ -423,6 +470,10 @@ func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
 	}
 
 	return cm, nil
+}
+
+func (f *Factory) AlertmanagerUserWorkloadTrustedCABundle() (*v1.ConfigMap, error) {
+	return f.NewConfigMap(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadTrustedCABundle))
 }
 
 func setContainerEnvironmentVariable(container *v1.Container, name, value string) {
@@ -446,6 +497,124 @@ func (f *Factory) injectProxyVariables(container *v1.Container) {
 	}
 }
 
+func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
+	a, err := f.NewAlertmanager(f.assets.MustNewAssetReader(AlertmanagerUserWorkload))
+	if err != nil {
+		return nil, err
+	}
+
+	a.Spec.Image = &f.config.Images.Alertmanager
+
+	//TODO(simonpasquier): proper link to the dev console.
+	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
+		a.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
+	}
+
+	alertmanagerConfig := f.config.UserWorkloadConfiguration.Alertmanager
+
+	if alertmanagerConfig.LogLevel != "" {
+		a.Spec.LogLevel = alertmanagerConfig.LogLevel
+	}
+
+	if alertmanagerConfig.Resources != nil {
+		a.Spec.Resources = *alertmanagerConfig.Resources
+	}
+
+	if alertmanagerConfig.EnableAlertmanagerConfig {
+		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{}
+
+		a.Spec.AlertmanagerConfigNamespaceSelector = &metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      "openshift.io/cluster-monitoring",
+					Operator: metav1.LabelSelectorOpNotIn,
+					Values:   []string{"true"},
+				},
+				{
+					Key:      "openshift.io/user-monitoring",
+					Operator: metav1.LabelSelectorOpNotIn,
+					Values:   []string{"false"},
+				},
+			},
+		}
+	}
+
+	if alertmanagerConfig.VolumeClaimTemplate != nil {
+		a.Spec.Storage = &monv1.StorageSpec{
+			VolumeClaimTemplate: *alertmanagerConfig.VolumeClaimTemplate,
+		}
+	}
+
+	setupStartupProbe(a)
+
+	if alertmanagerConfig.NodeSelector != nil {
+		a.Spec.NodeSelector = alertmanagerConfig.NodeSelector
+	}
+
+	if len(alertmanagerConfig.Tolerations) > 0 {
+		a.Spec.Tolerations = alertmanagerConfig.Tolerations
+	}
+
+	for i, c := range a.Spec.Containers {
+		switch c.Name {
+		case "alertmanager-proxy", "tenancy-proxy", "kube-rbac-proxy-metric":
+			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
+		case "prom-label-proxy":
+			a.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
+		}
+	}
+
+	return a, nil
+}
+
+// setupStartupProbe configures a startup probe if necessary.
+// When no persistent storage is configured, add a startup probe to
+// ensure that the Alertmanager container has time to replicate data
+// from other peers before declaring itself as ready. This allows
+// silences and notifications to be preserved on roll-outs.
+//
+// On startup, Alertmanager resolves the names of the peers before
+// initiating the web service.  To account for this, the execution of
+// the probe is delayed by 20 seconds so that Alertmanager gets enough
+// time for the resolution + data synchronisation before the probe
+// returns (20s is twice the time that Alertmanager waits before
+// declaring that it can start sending notfications).
+//
+// We also account for slow DNS resolvers by retrying for 40 seconds in
+// case the endpoint isn't ready after 20s (see
+// https://bugzilla.redhat.com/show_bug.cgi?id=2037073 for details).
+func setupStartupProbe(a *monv1.Alertmanager) {
+	if a.Spec.Storage != nil {
+		return
+	}
+
+	if *a.Spec.Replicas < 2 {
+		return
+	}
+
+	a.Spec.Containers = append(a.Spec.Containers,
+		v1.Container{
+			Name: "alertmanager",
+			StartupProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					Exec: &v1.ExecAction{
+						Command: []string{
+							"sh",
+							"-c",
+							"exec curl http://localhost:9093/-/ready",
+						},
+					},
+				},
+				InitialDelaySeconds: 20,
+				PeriodSeconds:       10,
+				FailureThreshold:    4,
+				TimeoutSeconds:      3,
+			},
+		},
+	)
+}
+
 func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(f.assets.MustNewAssetReader(AlertmanagerMain))
 	if err != nil {
@@ -466,7 +635,8 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 		a.Spec.Resources = *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources
 	}
 
-	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.EnableUserAlertManagerConfig {
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.EnableUserAlertManagerConfig &&
+		!f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{}
 
 		a.Spec.AlertmanagerConfigNamespaceSelector = &metav1.LabelSelector{
@@ -489,43 +659,9 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 		a.Spec.Storage = &monv1.StorageSpec{
 			VolumeClaimTemplate: *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate,
 		}
-	} else if f.infrastructure.HighlyAvailableInfrastructure() {
-		// When no persistent storage is configured, add a startup probe to
-		// ensure that the Alertmanager container has time to replicate data
-		// from other peers before declaring itself as ready. This allows
-		// silences and notifications to be preserved on roll-outs.
-		//
-		// On startup, Alertmanager resolves the names of the peers before
-		// initiating the web service.  To account for this, the execution of
-		// the probe is delayed by 20 seconds so that Alertmanager gets enough
-		// time for the resolution + data synchronisation before the probe
-		// returns (20s is twice the time that Alertmanager waits before
-		// declaring that it can start sending notfications).
-		//
-		// We also account for slow DNS resolvers by retrying for 40 seconds in
-		// case the endpoint isn't ready after 20s (see
-		// https://bugzilla.redhat.com/show_bug.cgi?id=2037073 for details).
-		a.Spec.Containers = append(a.Spec.Containers,
-			v1.Container{
-				Name: "alertmanager",
-				StartupProbe: &v1.Probe{
-					ProbeHandler: v1.ProbeHandler{
-						Exec: &v1.ExecAction{
-							Command: []string{
-								"sh",
-								"-c",
-								"exec curl http://localhost:9093/-/ready",
-							},
-						},
-					},
-					InitialDelaySeconds: 20,
-					PeriodSeconds:       10,
-					FailureThreshold:    4,
-					TimeoutSeconds:      3,
-				},
-			},
-		)
 	}
+
+	setupStartupProbe(a)
 
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.NodeSelector != nil {
 		a.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.NodeSelector
@@ -580,6 +716,10 @@ func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) AlertmanagerUserWorkloadRBACProxyTenancySecret() (*v1.Secret, error) {
+	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxyTenancySecret))
+}
+
 func (f *Factory) AlertmanagerRBACProxyMetricSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxyMetricSecret))
 	if err != nil {
@@ -589,6 +729,10 @@ func (f *Factory) AlertmanagerRBACProxyMetricSecret() (*v1.Secret, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
+}
+
+func (f *Factory) AlertmanagerUserWorkloadRBACProxyMetricSecret() (*v1.Secret, error) {
+	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxyMetricSecret))
 }
 
 func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
@@ -619,6 +763,10 @@ func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBindi
 
 func (f *Factory) AlertmanagerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AlertmanagerPodDisruptionBudget))
+}
+
+func (f *Factory) AlertmanagerUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadPodDisruptionBudget))
 }
 
 func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
@@ -1219,28 +1367,42 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 	if err != nil {
 		return nil, err
 	}
-	s.Namespace = f.namespaceUserWorkload
 
-	alertmanagerEnabled := f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled()
-	amConfigs := f.config.GetThanosRulerAlertmanagerConfigs()
-	if amConfigs == nil {
-		if !alertmanagerEnabled {
-			s.StringData["alertmanagers.yaml"] = `alertmanagers: []`
-		}
-		return s, nil
-	}
-
-	thanosAmConfigs := ThanosAlertmanagerAdditionalConfigs(amConfigs)
-	additionalConfig, err := yaml2.Marshal(thanosAmConfigs)
+	var alertingConfiguration thanosAlertingConfiguration
+	err = yaml2.Unmarshal([]byte(s.StringData["alertmanagers.yaml"]), &alertingConfiguration)
 	if err != nil {
 		return nil, err
 	}
 
-	if alertmanagerEnabled {
-		s.StringData["alertmanagers.yaml"] += "\n" + string(additionalConfig)
-	} else {
-		s.StringData["alertmanagers.yaml"] = `alertmanagers:` + "\n" + string(additionalConfig)
+	if f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
+		alertingConfiguration.Alertmanagers[0].HTTPConfig.TLSConfig.ServerName = fmt.Sprintf(
+			"%s.%s.svc",
+			userWorkloadAlertmanagerService,
+			f.namespaceUserWorkload,
+		)
+		alertingConfiguration.Alertmanagers[0].StaticConfigs = []string{
+			fmt.Sprintf(
+				"dnssrv+_web._tcp.alertmanager-operated.%s.svc",
+				f.namespaceUserWorkload,
+			),
+		}
+	} else if !f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+		alertingConfiguration.Alertmanagers = []thanosAlertmanagerConfiguration{}
 	}
+
+	additionalConfigs, err := ConvertToThanosAlertmanagerConfiguration(f.config.GetThanosRulerAlertmanagerConfigs())
+	if err != nil {
+		return nil, err
+	}
+
+	alertingConfiguration.Alertmanagers = append(alertingConfiguration.Alertmanagers, additionalConfigs...)
+
+	b, err := yaml2.Marshal(alertingConfiguration)
+	if err != nil {
+		return nil, err
+	}
+
+	s.StringData["alertmanagers.yaml"] = string(b)
 
 	return s, nil
 }
@@ -1587,9 +1749,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
-	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
-	p.Namespace = f.namespace
+	setupAlerting(p, platformAlertmanagerService, f.namespace)
 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
@@ -1683,6 +1843,16 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	return p, nil
 }
 
+func setupAlerting(p *monv1.Prometheus, svcName, svcNamespace string) {
+	eps := p.Spec.Alerting.Alertmanagers[0]
+
+	eps.Name = svcName
+	eps.Namespace = svcNamespace
+	eps.TLSConfig.ServerName = fmt.Sprintf("%s.%s.svc", svcName, svcNamespace)
+
+	p.Spec.Alerting.Alertmanagers = []monv1.AlertmanagerEndpoints{eps}
+}
+
 func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) error {
 	if queryLogFile == "" {
 		return nil
@@ -1754,7 +1924,7 @@ func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret
 }
 
 func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
-	amConfigs := f.config.GetPrometheusUWAdditionalAlertmanagerConfigs()
+	amConfigs := f.config.AdditionalAlertmanagerConfigsForPrometheusUserWorkload()
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
 	config, err := yaml2.Marshal(prometheusAmConfigs)
 	if err != nil {
@@ -1855,9 +2025,12 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
-	p.Spec.Alerting.Alertmanagers[0].Namespace = f.namespace
-	p.Spec.Alerting.Alertmanagers[0].TLSConfig.ServerName = fmt.Sprintf("alertmanager-main.%s.svc", f.namespace)
-	p.Namespace = f.namespaceUserWorkload
+
+	if f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
+		setupAlerting(p, userWorkloadAlertmanagerService, f.namespaceUserWorkload)
+	} else {
+		setupAlerting(p, platformAlertmanagerService, f.namespace)
+	}
 
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
@@ -1868,8 +2041,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		},
 	})
 
-	alertManagerConfigs := f.config.GetPrometheusUWAdditionalAlertmanagerConfigs()
-	if alertManagerConfigs != nil {
+	alertManagerConfigs := f.config.AdditionalAlertmanagerConfigsForPrometheusUserWorkload()
+	if len(alertManagerConfigs) > 0 {
 		p.Spec.AdditionalAlertManagerConfigs = &v1.SecretKeySelector{
 			Key: AdditionalAlertmanagerConfigSecretKey,
 			LocalObjectReference: v1.LocalObjectReference{
@@ -4424,6 +4597,7 @@ func trustedCABundleVolume(configMapName, volumeName string) v1.Volume {
 
 func getAdditionalAlertmanagerSecrets(alertmanagerConfigs []AdditionalAlertmanagerConfig) []string {
 	secretsName := []string{}
+
 	for _, alertmanagerConfig := range alertmanagerConfigs {
 		if alertmanagerConfig.TLSConfig.CA != nil {
 			secretsName = append(secretsName, alertmanagerConfig.TLSConfig.CA.Name)
@@ -4438,11 +4612,11 @@ func getAdditionalAlertmanagerSecrets(alertmanagerConfigs []AdditionalAlertmanag
 			secretsName = append(secretsName, alertmanagerConfig.BearerToken.Name)
 		}
 	}
+
 	return removeEmptyDuplicates(secretsName)
 }
 
 func removeEmptyDuplicates(elements []string) []string {
-	// Use map to record duplicates as we find them.
 	encountered := map[string]struct{}{}
 	result := []string{}
 
@@ -4450,12 +4624,14 @@ func removeEmptyDuplicates(elements []string) []string {
 		if _, found := encountered[v]; found {
 			continue
 		}
+
 		encountered[v] = struct{}{}
 		if v != "" {
 			// Append to result slice if it is not empty
 			result = append(result, v)
 		}
 	}
+
 	// Return the new slice.
 	return result
 }

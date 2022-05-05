@@ -66,10 +66,10 @@ func (c Config) IsStorageConfigured() bool {
 	return prometheusK8sConfig.VolumeClaimTemplate != nil
 }
 
-// GetPrometheusUWAdditionalAlertmanagerConfigs returns the alertmanager configurations for
+// AdditionalAlertmanagerConfigsForPrometheusUserWorkload returns the alertmanager configurations for
 // the User Workload Monitoring Prometheus instance.
 // If no additional configurations are specified, GetPrometheusUWAdditionalAlertmanagerConfigs returns nil.
-func (c Config) GetPrometheusUWAdditionalAlertmanagerConfigs() []AdditionalAlertmanagerConfig {
+func (c Config) AdditionalAlertmanagerConfigsForPrometheusUserWorkload() []AdditionalAlertmanagerConfig {
 	if c.UserWorkloadConfiguration == nil {
 		return nil
 	}
@@ -550,9 +550,10 @@ func NewDefaultConfig() *Config {
 }
 
 type UserWorkloadConfiguration struct {
-	PrometheusOperator *PrometheusOperatorConfig   `json:"prometheusOperator"`
-	Prometheus         *PrometheusRestrictedConfig `json:"prometheus"`
-	ThanosRuler        *ThanosRulerConfig          `json:"thanosRuler"`
+	PrometheusOperator *PrometheusOperatorConfig       `json:"prometheusOperator"`
+	Prometheus         *PrometheusRestrictedConfig     `json:"prometheus"`
+	ThanosRuler        *ThanosRulerConfig              `json:"thanosRuler"`
+	Alertmanager       *AlertmanagerUserWorkloadConfig `json:"alertmanager"`
 }
 
 type PrometheusRestrictedConfig struct {
@@ -574,6 +575,17 @@ type PrometheusRestrictedConfig struct {
 	QueryLogFile                  string                               `json:"queryLogFile"`
 }
 
+// AlertmanagerUserWorkloadConfig defines the Alertmanager configuration for UWM.
+type AlertmanagerUserWorkloadConfig struct {
+	Enabled                  bool                                 `json:"enabled"`
+	EnableAlertmanagerConfig bool                                 `json:"enableAlertmanagerConfig"`
+	LogLevel                 string                               `json:"logLevel"`
+	NodeSelector             map[string]string                    `json:"nodeSelector"`
+	Tolerations              []v1.Toleration                      `json:"tolerations"`
+	Resources                *v1.ResourceRequirements             `json:"resources"`
+	VolumeClaimTemplate      *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
+}
+
 func (u *UserWorkloadConfiguration) applyDefaults() {
 	if u.PrometheusOperator == nil {
 		u.PrometheusOperator = &PrometheusOperatorConfig{}
@@ -583,6 +595,9 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 	}
 	if u.ThanosRuler == nil {
 		u.ThanosRuler = &ThanosRulerConfig{}
+	}
+	if u.Alertmanager == nil {
+		u.Alertmanager = &AlertmanagerUserWorkloadConfig{}
 	}
 }
 
