@@ -16,7 +16,7 @@ webhooks:
       namespace: openshift-monitoring
       path: /admission-alertmanagerconfigs/validate
       port: 8443
-  failurePolicy: Ignore
+  failurePolicy: Fail
   name: alertmanagerconfigs.openshift.io
   rules:
   - apiGroups:
