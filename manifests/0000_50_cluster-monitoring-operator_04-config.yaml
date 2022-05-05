@@ -740,6 +740,11 @@ data:
     # cluster:log_logged_bytes_total:sum gives total bytes logged by the containers and aggregated at each cluster level
     - '{__name__="cluster:log_logged_bytes_total:sum"}'
     #
+    # owners: (@openshift/sandboxed-containers-operator)
+    #
+    # cluster:kata_monitor_running_shim_count:sum provides the number of VM
+    # running with kata containers on the cluster
+    - '{__name__="cluster:kata_monitor_running_shim_count:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
