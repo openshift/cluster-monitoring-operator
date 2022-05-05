@@ -18,7 +18,7 @@ rules:
 - apiGroups:
   - security.openshift.io
   resourceNames:
-  - nonroot
+  - nonroot-v2
   resources:
   - securitycontextconstraints
   verbs:

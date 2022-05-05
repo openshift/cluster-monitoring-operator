@@ -365,9 +365,12 @@ function(params)
             ],
             serviceAccountName: 'thanos-querier',
             priorityClassName: 'system-cluster-critical',
-            // securityContext needs to be unset to be compatible with current OpenShift constrains for ServiceAccount
-            // OpenShift will automatically assign unprivileged context
-            securityContext:: {},
+            securityContext: {
+              runAsNonRoot: true,
+              seccompProfile: {
+                type: 'RuntimeDefault',
+              },
+            },
             containers: [
               super.containers[0] {
                 livenessProbe:: {},
@@ -480,6 +483,12 @@ function(params)
                     name: 'secret-thanos-querier-oauth-cookie',
                   },
                 ],
+                securityContext: {
+                  allowPrivilegeEscalation: false,
+                  capabilities: {
+                    drop: ['ALL'],
+                  },
+                },
               },
               {
                 name: 'kube-rbac-proxy',
@@ -523,6 +532,12 @@ function(params)
                     name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
                   },
                 ],
+                securityContext: {
+                  allowPrivilegeEscalation: false,
+                  capabilities: {
+                    drop: ['ALL'],
+                  },
+                },
               },
               {
                 name: 'prom-label-proxy',
@@ -538,6 +553,12 @@ function(params)
                   requests: {
                     memory: '15Mi',
                     cpu: '1m',
+                  },
+                },
+                securityContext: {
+                  allowPrivilegeEscalation: false,
+                  capabilities: {
+                    drop: ['ALL'],
                   },
                 },
                 terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -578,6 +599,12 @@ function(params)
                     name: 'secret-' + $.kubeRbacProxyRulesSecret.metadata.name,
                   },
                 ],
+                securityContext: {
+                  allowPrivilegeEscalation: false,
+                  capabilities: {
+                    drop: ['ALL'],
+                  },
+                },
               },
               {
                 // TODO: merge this metric proxy with tenancy proxy when the issue below is fixed:
@@ -623,6 +650,12 @@ function(params)
                     readOnly: true,
                   },
                 ],
+                securityContext: {
+                  allowPrivilegeEscalation: false,
+                  capabilities: {
+                    drop: ['ALL'],
+                  },
+                },
               },
             ],
           },

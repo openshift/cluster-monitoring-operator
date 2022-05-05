@@ -48,7 +48,11 @@ spec:
           requests:
             cpu: 1m
             memory: 17Mi
-        securityContext: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         terminationMessagePolicy: FallbackToLogsOnError
       - args:
         - --logtostderr
@@ -67,7 +71,11 @@ spec:
           requests:
             cpu: 1m
             memory: 10Mi
-        securityContext: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
@@ -80,7 +88,10 @@ spec:
         kubernetes.io/os: linux
         node-role.kubernetes.io/master: ""
       priorityClassName: openshift-user-critical
-      securityContext: {}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: prometheus-operator
       tolerations:
       - effect: NoSchedule

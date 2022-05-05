@@ -21,6 +21,11 @@ spec:
     name: thanos-ruler-alertmanagers-config
   containers:
   - name: thanos-ruler
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -60,6 +65,11 @@ spec:
       requests:
         cpu: 1m
         memory: 12Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -105,6 +115,8 @@ spec:
     fsGroup: 65534
     runAsNonRoot: true
     runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
   serviceAccountName: thanos-ruler
   volumes:
   - configmap:
