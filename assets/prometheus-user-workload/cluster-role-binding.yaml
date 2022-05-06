@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: user-workload
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.34.0
+    app.kubernetes.io/version: 2.35.0
   name: prometheus-user-workload
 roleRef:
   apiGroup: rbac.authorization.k8s.io
