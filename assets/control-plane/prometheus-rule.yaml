@@ -375,6 +375,7 @@ spec:
         description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim
           }} in Namespace {{ $labels.namespace }} only has {{ $value | humanizePercentage
           }} free inodes.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubePersistentVolumeInodesFillingUp.md
         summary: PersistentVolumeInodes are filling up.
       expr: |
         (
@@ -397,6 +398,7 @@ spec:
           $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is
           expected to run out of inodes within four days. Currently {{ $value | humanizePercentage
           }} of its inodes are free.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubePersistentVolumeInodesFillingUp.md
         summary: PersistentVolumeInodes are filling up.
       expr: |
         (
