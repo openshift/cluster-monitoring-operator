@@ -3246,6 +3246,29 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	}
 }
 
+func TestThanosRulerRetentionConfig(t *testing.T) {
+	c := NewDefaultConfig()
+	c.UserWorkloadConfiguration.ThanosRuler.Retention = "30d"
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+	tr, err := f.ThanosRulerCustomResource(
+		"",
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
+	)
+
+	if err != nil {
+		t.Fatalf("Unexpected error occured %v", err)
+		return
+	}
+
+	if tr.Spec.Retention != "30d" {
+		t.Fatal("Retention is not configured correctly")
+	}
+}
+
 func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 	type spec struct {
 		replicas int32

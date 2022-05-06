@@ -14,6 +14,7 @@
 - [#1579](https://github.com/openshift/cluster-monitoring-operator/pull/1579) Expose retention size settings for Platform Prometheus
 - [#1630](https://github.com/openshift/cluster-monitoring-operator/pull/1630) Expose retention size settings for UWM Prometheus
 - [#1640](https://github.com/openshift/cluster-monitoring-operator/pull/1640) Deploy standalone admission webhook for HA.
+- [#1651](https://github.com/openshift/cluster-monitoring-operator/pull/1651) Allow retention to be configurable for Thanos-Ruler in UWM
 
 ## 4.10
 

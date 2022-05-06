@@ -577,6 +577,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 		Data: map[string]string{
 			"config.yaml": fmt.Sprintf(`thanosRuler:
   logLevel: debug
+  retention: 15d
   tolerations:
     - operator: "Exists"
   volumeClaimTemplate:
@@ -610,6 +611,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests("*", containerName, mem, cpu),
+					expectContainerArg("--tsdb.retention=15d", containerName),
 				},
 			),
 		},
