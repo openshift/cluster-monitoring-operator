@@ -80,20 +80,118 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 	}
 }
 
-// The Alertmanager API should be protected by kube-rbac-proxy (and prom-label-proxy).
-func TestAlertmanagerKubeRbacProxy(t *testing.T) {
-	ctx := context.Background()
-	const testNs = "test-kube-rbac-proxy"
+// TestAlertmanagerTenancyAPI ensures that the Alertmanager API exposed on the
+// tenancy port enforces the namespace value.
+func TestAlertmanagerTenancyAPI(t *testing.T) {
+	for _, tc := range []struct {
+		name               string
+		config             string
+		userWorkloadConfig string
+		amName             string
+		amNamespace        string
+	}{
+		{
+			name: "platform-alertmanager",
+			config: `alertmanagerMain:
+  enableUserAlertmanagerConfig: true
+enableUserWorkload: true`,
+			userWorkloadConfig: "",
+			amName:             "main",
+			amNamespace:        f.Ns,
+		},
+		{
+			name:   "user-workload-alertmanager",
+			config: `enableUserWorkload: true`,
+			userWorkloadConfig: `alertmanager:
+  enableUserAlertmanagerConfig: true
+  enabled: true`,
+			amName:      "user-workload",
+			amNamespace: f.UserWorkloadMonitoringNs,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cm := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      clusterMonitorConfigMapName,
+					Namespace: f.Ns,
+					Labels: map[string]string{
+						framework.E2eTestLabelName: framework.E2eTestLabelValue,
+					},
+				},
+				Data: map[string]string{
+					"config.yaml": tc.config,
+				},
+			}
+			f.MustCreateOrUpdateConfigMap(t, cm)
+			t.Cleanup(func() {
+				f.MustDeleteConfigMap(t, cm)
+			})
 
-	// The tenancy port (9092) is only exposed in-cluster so we need to use
-	// port forwarding to access kube-rbac-proxy.
-	host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-main", 9092)
-	if err != nil {
+			uwmConfigMap := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      userWorkloadMonitorConfigMapName,
+					Namespace: f.UserWorkloadMonitoringNs,
+					Labels: map[string]string{
+						framework.E2eTestLabelName: framework.E2eTestLabelValue,
+					},
+				},
+				Data: map[string]string{
+					"config.yaml": tc.userWorkloadConfig,
+				},
+			}
+			f.MustCreateOrUpdateConfigMap(t, uwmConfigMap)
+			t.Cleanup(func() {
+				f.MustDeleteConfigMap(t, uwmConfigMap)
+			})
+
+			testAlertmanagerReady(t, tc.amName, tc.amNamespace)
+
+			// The tenancy port (9092) is only exposed in-cluster so we need to use
+			// port forwarding to access kube-rbac-proxy.
+			host, cleanUp, err := f.ForwardPort(t, tc.amNamespace, fmt.Sprintf("alertmanager-%s", tc.amName), 9092)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(cleanUp)
+
+			testAlertmanagerTenancyAPI(t, host)
+		})
+	}
+}
+
+func testAlertmanagerReady(t *testing.T, name, namespace string) *monitoringv1.Alertmanager {
+	t.Helper()
+
+	var (
+		am      *monitoringv1.Alertmanager
+		lastErr error
+	)
+
+	if err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		am, lastErr = f.MonitoringClient.Alertmanagers(namespace).Get(ctx, name, metav1.GetOptions{})
+		if lastErr != nil {
+			lastErr = fmt.Errorf("%s/%s: %w", namespace, name, lastErr)
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		t.Fatalf("%v: %v", err, lastErr)
+	}
+
+	if err := f.OperatorClient.WaitForAlertmanager(ctx, am); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(cleanUp)
 
-	t.Logf("creating namespace %q", testNs)
+	return am
+}
+
+func testAlertmanagerTenancyAPI(t *testing.T, host string) {
+	t.Helper()
+
+	ctx := context.Background()
+	const testNs = "tenancy-api-e2e-test"
+
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testNs,
@@ -102,12 +200,13 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 			},
 		},
 	}
-	ns, err = f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+	ns, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := f.KubeClient.CoreV1().Namespaces().Delete(ctx, testNs, metav1.DeleteOptions{}); err != nil {
+		foreground := metav1.DeletePropagationForeground
+		if err := f.KubeClient.CoreV1().Namespaces().Delete(ctx, testNs, metav1.DeleteOptions{PropagationPolicy: &foreground}); err != nil {
 			t.Logf("err deleting namespace %s: %v", testNs, err)
 		}
 	})
@@ -119,14 +218,12 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		"viewer":    "monitoring-rules-view",
 		"anonymous": "",
 	} {
-		t.Logf("creating service account %q", sa)
 		_, err = f.CreateServiceAccount(testNs, sa)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		if cr != "" {
-			t.Logf("creating role binding %q -> %q", sa, cr)
 			_, err = f.CreateRoleBindingFromClusterRole(testNs, sa, cr)
 			if err != nil {
 				t.Fatal(err)
@@ -161,30 +258,30 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		now.Add(time.Hour).Format(time.RFC3339),
 	))
 
-	assertDo := func(expectedCode int, do func() (*http.Response, error)) []byte {
+	assertDo := func(user string, expectedCode int, do func() (*http.Response, error)) []byte {
 		t.Helper()
 
 		resp, err := do()
 		if err != nil {
-			t.Fatalf("request failed: %v", err)
+			t.Fatalf("user[%s]: request failed: %v", user, err)
 		}
 		defer resp.Body.Close()
 
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			t.Fatalf("fail to read response body: %v", err)
+			t.Fatalf("user[%s]: fail to read response body: %v", user, err)
 		}
 
 		if resp.StatusCode != expectedCode {
-			t.Fatalf("expecting %d status code, got %d (%q)", expectedCode, resp.StatusCode, framework.ClampMax(b))
+			t.Fatalf("user[%s]: expecting %d status code, got %d (%q)", user, expectedCode, resp.StatusCode, framework.ClampMax(b))
 		}
 
 		return b
 	}
 
 	for _, sa := range []string{"viewer", "anonymous"} {
-		t.Logf("creating silence as %q (denied)", sa)
 		assertDo(
+			sa,
 			http.StatusForbidden,
 			func() (*http.Response, error) {
 				return clients[sa].Do("POST", "/api/v2/silences", sil)
@@ -192,8 +289,8 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		)
 	}
 
-	t.Log("creating silence as 'editor' (allowed)")
 	b := assertDo(
+		"editor",
 		http.StatusOK,
 		func() (*http.Response, error) {
 			return clients["editor"].Do("POST", "/api/v2/silences", sil)
@@ -211,23 +308,23 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		resp, err := clients["editor"].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil)
-		if err != nil || resp.Status != "200" {
+		if err != nil || resp.StatusCode != 200 {
 			t.Logf("failed to delete silence HTTP: %q err: %v", resp.Status, err)
 		}
 	})
 
-	// List silences and check that the 'namespace' label matcher has been overwritten.
-	t.Log("listing silences as 'anonymous' (denied)")
 	assertDo(
+		"anonymous",
 		http.StatusForbidden,
 		func() (*http.Response, error) {
 			return clients["anonymous"].Do("GET", "/api/v2/silences", nil)
 		},
 	)
 
+	// List silences and check that the 'namespace' label matcher has been overwritten.
 	for _, sa := range []string{"viewer", "editor"} {
-		t.Logf("listing silences as %q (allowed)", sa)
 		b = assertDo(
+			sa,
 			http.StatusOK,
 			func() (*http.Response, error) {
 				return clients[sa].Do("GET", "/api/v2/silences", nil)
@@ -236,7 +333,7 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 
 		parsed, err = gabs.ParseJSON(b)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("user[%s]: %v", sa, err)
 		}
 
 		count := 0
@@ -247,7 +344,7 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		}
 
 		if count != 1 {
-			t.Fatalf("expecting 1 silence, got %d (%q)", count, string(b))
+			t.Fatalf("user[%s]: expecting 1 silence, got %d (%q)", sa, count, string(b))
 		}
 
 		var matchers *gabs.Container
@@ -262,15 +359,15 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		for _, matcher := range matchers.Children() {
 			name, ok := matcher.Path("name").Data().(string)
 			if !ok {
-				t.Fatalf("couldn't get matcher's name from response %q", string(b))
+				t.Fatalf("user[%s]: couldn't get matcher's name from response %q", sa, string(b))
 			}
 			value, ok := matcher.Path("value").Data().(string)
 			if !ok {
-				t.Fatalf("couldn't get matcher's value from response %q", string(b))
+				t.Fatalf("user[%s]: couldn't get matcher's value from response %q", sa, string(b))
 			}
 			isRegex, ok := matcher.Path("isRegex").Data().(bool)
 			if !ok {
-				t.Fatalf("couldn't get matcher's isRegex from response %q", string(b))
+				t.Fatalf("user[%s]: couldn't get matcher's isRegex from response %q", sa, string(b))
 			}
 			if name == "namespace" && value == testNs && !isRegex {
 				found = true
@@ -278,14 +375,14 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Fatalf("failed to find namespace=%q label matcher in silence (%q)", testNs, string(b))
+			t.Fatalf("user[%s]: failed to find namespace=%q label matcher in silence (%q)", sa, testNs, string(b))
 		}
 	}
 
-	// Delete the silence.
+	// Try to delete the silence without permissions.
 	for _, sa := range []string{"viewer", "anonymous"} {
-		t.Logf("deleting silence as %q (denied)", sa)
 		assertDo(
+			sa,
 			http.StatusForbidden,
 			func() (*http.Response, error) {
 				return clients[sa].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), nil)
@@ -293,8 +390,9 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 		)
 	}
 
-	t.Log("deleting silence as 'editor' (allowed)")
+	// Delete the silence with permissions.
 	assertDo(
+		"editor",
 		http.StatusOK,
 		func() (*http.Response, error) {
 			return clients["editor"].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil)
@@ -562,90 +660,140 @@ func TestAlertManagerHasAdditionalAlertRelabelConfigs(t *testing.T) {
 	}
 }
 
-// This test ensures that the AlertManagerConfig CR's create in user
-// space can be reconciled and have alerts sent to platform alertmanager
-// when UWM is enabled.
-func TestAlertManagerConfigPipeline(t *testing.T) {
+// TestAlertmanagerConfigPipeline ensures that the AlertManagerConfig CR's
+// created in a user namespace can be reconciled and have alerts sent to the
+// correct Alertmanager (depending on whether user-defined Alertmanager is
+// enabled or not).
+func TestAlertmanagerConfigPipeline(t *testing.T) {
+	for _, tc := range []struct {
+		name               string
+		config             string
+		userWorkloadConfig string
+		amName             string
+		amNamespace        string
+	}{
+		{
+			name: "platform-alertmanager",
+			config: `alertmanagerMain:
+  enableUserAlertmanagerConfig: true
+enableUserWorkload: true`,
+			userWorkloadConfig: "",
+			amName:             "main",
+			amNamespace:        f.Ns,
+		},
+		{
+			name:   "user-workload-alertmanager",
+			config: `enableUserWorkload: true`,
+			userWorkloadConfig: `alertmanager:
+  enableAlertmanagerConfig: true
+  enabled: true`,
+			amName:      "user-workload",
+			amNamespace: f.UserWorkloadMonitoringNs,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			wr, err := setupWebhookReceiver(t, f, fmt.Sprintf("%s-webhook-e2e", tc.name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				wr.tearDown(t, f)
+			})
+
+			cm := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      clusterMonitorConfigMapName,
+					Namespace: f.Ns,
+					Labels: map[string]string{
+						framework.E2eTestLabelName: framework.E2eTestLabelValue,
+					},
+				},
+				Data: map[string]string{
+					"config.yaml": tc.config,
+				},
+			}
+			f.MustCreateOrUpdateConfigMap(t, cm)
+			t.Cleanup(func() {
+				f.MustDeleteConfigMap(t, cm)
+			})
+
+			uwmConfigMap := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      userWorkloadMonitorConfigMapName,
+					Namespace: f.UserWorkloadMonitoringNs,
+					Labels: map[string]string{
+						framework.E2eTestLabelName: framework.E2eTestLabelValue,
+					},
+				},
+				Data: map[string]string{
+					"config.yaml": tc.userWorkloadConfig,
+				},
+			}
+			f.MustCreateOrUpdateConfigMap(t, uwmConfigMap)
+			t.Cleanup(func() {
+				f.MustDeleteConfigMap(t, uwmConfigMap)
+			})
+
+			am := testAlertmanagerReady(t, tc.amName, tc.amNamespace)
+
+			testAlertmanagerConfigPipeline(t, wr, am)
+		})
+	}
+}
+
+func testAlertmanagerConfigPipeline(t *testing.T, wr *webhookReceiver, am *monitoringv1.Alertmanager) {
 	const (
 		ruleName               = "always-firing-tests-alertmanagerconfig-crd-e2e"
 		alertManagerConfigName = "always-firing-tests-alertmanagerconfig-crd-e2e"
 	)
 
-	wr, err := setupWebhookReceiver(t, f, ruleName)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Helper()
 
 	t.Cleanup(func() {
-		wr.tearDown(t, f)
 		if err := f.OperatorClient.DeletePrometheusRuleByNamespaceAndName(ctx, userWorkloadTestNs, ruleName); err != nil {
 			t.Logf("failed to cleanup rule %s - err %v", ruleName, err)
 		}
 
 		if err := f.DeleteAlertManagerConfigByNamespaceAndName(ctx, userWorkloadTestNs, alertManagerConfigName); err != nil {
-			t.Logf("failed to cleanup alertmanager webhookReceiver %s - err %v", alertManagerConfigName, err)
+			t.Logf("failed to cleanup alertmanager config %s - err %v", alertManagerConfigName, err)
 		}
 	})
 
-	// enable alertmanager and configure the operator to reconcile UWM AlertManagerConfig CR's
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `alertmanagerMain:
-  enableUserAlertmanagerConfig: true
-enableUserWorkload: true`,
-		},
-	}
-	f.MustCreateOrUpdateConfigMap(t, cm)
-
-	// assert we have the correct match expressions on the 'main' AlertManager
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		am, err := f.MonitoringClient.Alertmanagers(f.Ns).Get(ctx, "main", metav1.GetOptions{})
+	// assert we have the correct match expressions on the Alertmanager object.
+	if err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		last, err := f.MonitoringClient.Alertmanagers(am.Namespace).Get(ctx, am.Name, metav1.GetOptions{})
 		if err != nil {
-			return false, nil
+			return fmt.Errorf("%s/%s: %w", am.Namespace, am.Name, err)
 		}
 
-		if am.Spec.AlertmanagerConfigNamespaceSelector == nil {
-			return false, nil
+		if last.Spec.AlertmanagerConfigNamespaceSelector == nil {
+			return errors.New("expecting non-nil alertmanagerConfigNamespaceSelector")
 		}
 
 		if err := assertLabelSelectorRequirement(
-			t,
-			am.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions,
+			last.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions,
 			metav1.LabelSelectorRequirement{
 				Key:      "openshift.io/cluster-monitoring",
 				Operator: metav1.LabelSelectorOpNotIn,
 				Values:   []string{"true"},
 			},
 		); err != nil {
-			return false, nil
+			return err
 		}
 
 		if err := assertLabelSelectorRequirement(
-			t,
-			am.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions,
+			last.Spec.AlertmanagerConfigNamespaceSelector.MatchExpressions,
 			metav1.LabelSelectorRequirement{
 				Key:      "openshift.io/user-monitoring",
 				Operator: metav1.LabelSelectorOpNotIn,
 				Values:   []string{"false"},
 			},
 		); err != nil {
-			return false, nil
+			return err
 		}
 
-		if err := f.OperatorClient.WaitForAlertmanager(ctx, am); err != nil {
-			return false, err
-		}
-
-		return true, nil
-	})
-	if err != nil {
+		return nil
+	}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -708,7 +856,7 @@ enableUserWorkload: true`,
 		t.Fatal(err)
 	}
 
-	err = framework.Poll(time.Second*10, time.Minute*5, func() error {
+	if err := framework.Poll(time.Second*10, time.Minute*5, func() error {
 		alerts, err := wr.getAlertsByID("always-firing_user-workload-test")
 		if err != nil {
 			return err
@@ -732,20 +880,17 @@ enableUserWorkload: true`,
 			return fmt.Errorf("expected namespace label on 'always-firing' to exist")
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		t.Fatal(err)
 	}
-
 }
 
-func assertLabelSelectorRequirement(t *testing.T, reqs []metav1.LabelSelectorRequirement, mustInclude metav1.LabelSelectorRequirement) error {
-	t.Helper()
+func assertLabelSelectorRequirement(reqs []metav1.LabelSelectorRequirement, mustInclude metav1.LabelSelectorRequirement) error {
 	for _, req := range reqs {
 		if reflect.DeepEqual(req, mustInclude) {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("required label %v selector not found", mustInclude)
+	return fmt.Errorf("required label selector %v not found in %v", mustInclude, reqs)
 }
