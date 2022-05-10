@@ -44,6 +44,9 @@ function(params)
       metadata: {
         name: 'grafana',
         namespace: cfg.namespace,
+        annotations: {
+          'haproxy.router.openshift.io/timeout': cfg.grafanaTimeout + 's',
+        },
       },
       spec: {
         to: {
