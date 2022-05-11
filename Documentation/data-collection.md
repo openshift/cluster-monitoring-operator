@@ -386,6 +386,12 @@ data:
     #
     # owners: (@openshift/networking)
     #
+    # ovnkube_master_egress_routing_via_host" informs if the OVN-K cluster's gateway mode is
+    # `routingViaOVN` (0), `routingViaHost` (1) or invalid (2).
+    - '{__name__="cluster:ovnkube_master_egress_routing_via_host:max"}'
+    #
+    # owners: (@openshift/networking)
+    #
     # cluster:network_attachment_definition_instances:max" gives max no of instance
     # in the cluster that are annotated with k8s.v1.cni.cncf.io/networks, labelled by networks.
     - '{__name__="cluster:network_attachment_definition_instances:max"}'
