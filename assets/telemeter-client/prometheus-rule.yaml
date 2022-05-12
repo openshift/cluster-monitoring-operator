@@ -1,0 +1,11 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: telemetry
+  namespace: openshift-monitoring
+spec:
+  groups:
+  - name: telemeter.rules
+    rules:
+    - expr: max(federate_samples - federate_filtered_samples)
+      record: cluster:telemetry_selected_series:count
