@@ -59,6 +59,7 @@ import (
 
 const (
 	deploymentCreateTimeout = 5 * time.Minute
+	deploymentDeleteTimeout = 5 * time.Minute
 	metadataPrefix          = "monitoring.openshift.io/"
 )
 
@@ -557,7 +558,7 @@ func (c *Client) DeleteDeployment(ctx context.Context, d *appsv1.Deployment) err
 		return nil
 	}
 
-	return err
+	return c.WaitForDeploymentDeletion(ctx, d)
 }
 
 func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.PodDisruptionBudget) error {
@@ -926,6 +927,30 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for DeploymentRollout of %s/%s", dep.GetNamespace(), dep.GetName())
+	}
+	return nil
+}
+
+func (c *Client) WaitForDeploymentDeletion(ctx context.Context, dep *appsv1.Deployment) error {
+	var lastErr error
+	if err := wait.Poll(time.Second, deploymentDeleteTimeout, func() (bool, error) {
+		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(ctx, dep.GetName(), metav1.GetOptions{})
+		if !apierrors.IsNotFound(err) {
+			if err != nil {
+				lastErr = err
+			} else {
+				lastErr = errors.Errorf("got %d available replicas",
+					d.Status.AvailableReplicas)
+			}
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return errors.Wrapf(err, "waiting for deletion of Deployment %s/%s", dep.GetNamespace(), dep.GetName())
 	}
 	return nil
 }

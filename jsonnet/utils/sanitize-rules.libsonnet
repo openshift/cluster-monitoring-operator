@@ -162,6 +162,17 @@ local patchedRules = [
     ],
   },
   {
+    name: 'node-exporter',
+    rules: [
+      {
+        alert: 'NodeClockNotSynchronising',
+        labels: {
+          severity: 'critical',
+        },
+      },
+    ],
+  },
+  {
     name: 'kubernetes-apps',
     rules: [
       // Stop-gap fix for https://bugzilla.redhat.com/show_bug.cgi?id=1943667
@@ -353,6 +364,7 @@ local includeRunbooks = {
   NodeFilesystemFilesFillingUp: openShiftRunbookCMO('NodeFilesystemFilesFillingUp.md'),
   NodeFilesystemSpaceFillingUp: openShiftRunbookCMO('NodeFilesystemSpaceFillingUp.md'),
   NodeRAIDDegraded: openShiftRunbookCMO('NodeRAIDDegraded.md'),
+  NodeClockNotSynchronising: openShiftRunbookCMO('NodeClockNotSynchronising.md'),
   PrometheusTargetSyncFailure: openShiftRunbookCMO('PrometheusTargetSyncFailure.md'),
   ThanosRuleQueueIsDroppingAlerts: openShiftRunbookCMO('ThanosRuleQueueIsDroppingAlerts.md'),
   ThanosRuleRuleEvaluationLatencyHigh: openShiftRunbookCMO('ThanosRuleRuleEvaluationLatencyHigh.md'),
