@@ -63,9 +63,9 @@ import (
 )
 
 const (
-	deploymentCreateTimeout = 5 * time.Minute
-	deploymentDeleteTimeout = 5 * time.Minute
-	metadataPrefix          = "monitoring.openshift.io/"
+	pollTimeout    = 5 * time.Minute
+	pollInterval   = time.Second
+	metadataPrefix = "monitoring.openshift.io/"
 )
 
 type Client struct {
@@ -80,6 +80,10 @@ type Client struct {
 	mclient               monitoring.Interface
 	eclient               apiextensionsclient.Interface
 	aggclient             aggregatorclient.Interface
+}
+
+func poll(condition func() (bool, error)) error {
+	return wait.Poll(pollInterval, pollTimeout, condition)
 }
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string) (*Client, error) {
@@ -322,7 +326,7 @@ func (c *Client) EnsurePrometheusUserWorkloadConfigMapExists(ctx context.Context
 }
 
 func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
-	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
+	return poll(func() (bool, error) {
 		_, err := c.mclient.MonitoringV1().Prometheuses(c.namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			klog.V(4).ErrorS(err, "AssurePrometheusOperatorCRsExist: failed to list Prometheuses")
@@ -677,7 +681,8 @@ func (c *Client) DeletePrometheus(ctx context.Context, p *monv1.Prometheus) erro
 	}
 
 	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
+	// Wait up to 10 minutes which is equal to terminationGracePeriodSeconds.
+	if err := wait.Poll(pollInterval, time.Minute*10, func() (bool, error) {
 		pods, err := c.KubernetesInterface().CoreV1().Pods(p.GetNamespace()).List(ctx, prometheusoperator.ListOptions(p.GetName()))
 		if err != nil {
 			lastErr = err
@@ -709,7 +714,8 @@ func (c *Client) DeleteThanosRuler(ctx context.Context, tr *monv1.ThanosRuler) e
 	}
 
 	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
+	// Wait up to 10 minutes which is equal to terminationGracePeriodSeconds.
+	if err := wait.Poll(pollInterval, time.Minute*10, func() (bool, error) {
 		pods, err := c.KubernetesInterface().CoreV1().Pods(tr.GetNamespace()).List(ctx, thanosoperator.ListOptions(tr.GetName()))
 		if err != nil {
 			lastErr = err
@@ -829,7 +835,7 @@ func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
 
 func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) error {
 	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+	if err := poll(func() (bool, error) {
 		p, err := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace()).Get(ctx, p.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -866,7 +872,7 @@ func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) err
 
 func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
 	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+	if err := poll(func() (bool, error) {
 		a, err := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace()).Get(ctx, a.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -995,7 +1001,7 @@ func (c *Client) UpdateDeployment(ctx context.Context, dep *appsv1.Deployment) e
 
 func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deployment) error {
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	if err := wait.Poll(time.Second, pollTimeout, func() (bool, error) {
 		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(ctx, dep.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1030,7 +1036,7 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 
 func (c *Client) WaitForDeploymentDeletion(ctx context.Context, dep *appsv1.Deployment) error {
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentDeleteTimeout, func() (bool, error) {
+	if err := poll(func() (bool, error) {
 		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(ctx, dep.GetName(), metav1.GetOptions{})
 		if !apierrors.IsNotFound(err) {
 			if err != nil {
@@ -1054,7 +1060,7 @@ func (c *Client) WaitForDeploymentDeletion(ctx context.Context, dep *appsv1.Depl
 
 func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.StatefulSet) error {
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	if err := poll(func() (bool, error) {
 		s, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(ctx, sts.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1125,7 +1131,7 @@ func (c *Client) WaitForSecret(ctx context.Context, s *v1.Secret) (*v1.Secret, e
 func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (string, error) {
 	host := ""
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	if err := poll(func() (bool, error) {
 		newRoute, err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Get(ctx, r.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1206,7 +1212,7 @@ func (c *Client) UpdateDaemonSet(ctx context.Context, ds *appsv1.DaemonSet) erro
 
 func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonSet) error {
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	if err := poll(func() (bool, error) {
 		d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(ctx, ds.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1606,7 +1612,7 @@ func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apire
 }
 
 func (c *Client) WaitForCRDReady(ctx context.Context, crd *extensionsobj.CustomResourceDefinition) error {
-	return wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	return poll(func() (bool, error) {
 		return c.CRDReady(ctx, crd)
 	})
 }
