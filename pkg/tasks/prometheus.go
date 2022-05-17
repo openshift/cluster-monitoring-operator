@@ -69,9 +69,9 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Prometheus Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(ctx, r)
+	err = t.client.CreateOrUpdateRoute(ctx, r)
 	if err != nil {
-		return errors.Wrap(err, "creating Prometheus Route failed")
+		return errors.Wrap(err, "reconciling Prometheus API Route failed")
 	}
 
 	host, err := t.client.WaitForRouteReady(ctx, r)

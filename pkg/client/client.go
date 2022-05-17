@@ -340,14 +340,23 @@ func (c *Client) CreateOrUpdateSecurityContextConstraints(ctx context.Context, s
 	return errors.Wrap(err, "updating SecurityContextConstraints object failed")
 }
 
-func (c *Client) CreateRouteIfNotExists(ctx context.Context, r *routev1.Route) error {
+func (c *Client) CreateOrUpdateRoute(ctx context.Context, r *routev1.Route) error {
 	rclient := c.osrclient.RouteV1().Routes(r.GetNamespace())
-	_, err := rclient.Get(ctx, r.GetName(), metav1.GetOptions{})
+	existing, err := rclient.Get(ctx, r.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := rclient.Create(ctx, r, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Route object failed")
 	}
-	return nil
+	if err != nil {
+		return errors.Wrap(err, "retrieving Route object failed")
+	}
+
+	required := r.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+	required.ResourceVersion = existing.ResourceVersion
+
+	_, err = rclient.Update(ctx, required, metav1.UpdateOptions{})
+	return errors.Wrap(err, "updating Route object failed")
 }
 
 func (c *Client) GetRouteURL(ctx context.Context, r *routev1.Route) (*url.URL, error) {

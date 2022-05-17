@@ -54,9 +54,9 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Alertmanager Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(ctx, r)
+	err = t.client.CreateOrUpdateRoute(ctx, r)
 	if err != nil {
-		return errors.Wrap(err, "creating Alertmanager Route failed")
+		return errors.Wrap(err, "reconciling Alertmanager Route failed")
 	}
 
 	_, err = t.client.WaitForRouteReady(ctx, r)
