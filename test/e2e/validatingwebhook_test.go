@@ -22,7 +22,7 @@ import (
 	yaml "github.com/ghodss/yaml"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	monitoringv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
+	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -63,7 +63,7 @@ spec:
 `, framework.E2eTestLabel)
 
 	validAmConf = fmt.Sprintf(`---
-apiVersion: monitoring.coreos.com/v1alpha1
+apiVersion: monitoring.coreos.com/v1beta1
 kind: AlertmanagerConfig
 metadata:
   name: valid-test-config
@@ -83,7 +83,7 @@ spec:
 `, framework.E2eTestLabel)
 
 	invalidAmConf = fmt.Sprintf(`---
-apiVersion: monitoring.coreos.com/v1alpha1
+apiVersion: monitoring.coreos.com/v1beta1
 kind: AlertmanagerConfig
 metadata:
   name: invalid-test-config
@@ -141,22 +141,22 @@ func TestAlertManagerConfigValidatingWebhook(t *testing.T) {
 		t.Fatal("unable to get alertmanagerconfig validating webhook", err)
 	}
 
-	validConf := monitoringv1alpha1.AlertmanagerConfig{}
+	validConf := monitoringv1beta1.AlertmanagerConfig{}
 	err = yaml.Unmarshal([]byte(validAmConf), &validConf)
 	if err != nil {
 		t.Fatal("unable to unmarshal alertmanagerconfig", err)
 	}
-	_, err = f.MonitoringAlphaClient.AlertmanagerConfigs(f.Ns).Create(ctx, &validConf, metav1.CreateOptions{})
+	_, err = f.MonitoringBetaClient.AlertmanagerConfigs(f.Ns).Create(ctx, &validConf, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal("unable to create alertmanagerconfig", err)
 	}
 
-	invalidConf := monitoringv1alpha1.AlertmanagerConfig{}
+	invalidConf := monitoringv1beta1.AlertmanagerConfig{}
 	err = yaml.Unmarshal([]byte(invalidAmConf), &invalidConf)
 	if err != nil {
 		t.Fatal("unable to unmarshal alertmanagerconfig", err)
 	}
-	_, err = f.MonitoringAlphaClient.AlertmanagerConfigs(f.Ns).Create(ctx, &invalidConf, metav1.CreateOptions{})
+	_, err = f.MonitoringBetaClient.AlertmanagerConfigs(f.Ns).Create(ctx, &invalidConf, metav1.CreateOptions{})
 	if err == nil {
 		t.Fatal("invalid alertmanagerconfig was accepted by validatingwebhook")
 	}

@@ -25,7 +25,7 @@ import (
 	"time"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	monitoringv1alpha "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
+	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 
 	"github.com/Jeffail/gabs/v2"
 	configv1 "github.com/openshift/api/config/v1"
@@ -827,7 +827,7 @@ func testAlertmanagerConfigPipeline(t *testing.T, wr *webhookReceiver, am *monit
 		t.Fatal(err)
 	}
 
-	if err := f.CreateOrUpdateAlertmanagerConfig(ctx, &monitoringv1alpha.AlertmanagerConfig{
+	if err := f.CreateOrUpdateAlertmanagerConfig(ctx, &monitoringv1beta1.AlertmanagerConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      alertManagerConfigName,
 			Namespace: userWorkloadTestNs,
@@ -835,16 +835,16 @@ func testAlertmanagerConfigPipeline(t *testing.T, wr *webhookReceiver, am *monit
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 		},
-		Spec: monitoringv1alpha.AlertmanagerConfigSpec{
-			Route: &monitoringv1alpha.Route{
+		Spec: monitoringv1beta1.AlertmanagerConfigSpec{
+			Route: &monitoringv1beta1.Route{
 				Receiver: "test-receiver",
-				Matchers: []monitoringv1alpha.Matcher{},
+				Matchers: []monitoringv1beta1.Matcher{},
 				Continue: true,
 			},
-			Receivers: []monitoringv1alpha.Receiver{
+			Receivers: []monitoringv1beta1.Receiver{
 				{
 					Name: "test-receiver",
-					WebhookConfigs: []monitoringv1alpha.WebhookConfig{
+					WebhookConfigs: []monitoringv1beta1.WebhookConfig{
 						{
 							URL: &wr.webhookURL,
 						},

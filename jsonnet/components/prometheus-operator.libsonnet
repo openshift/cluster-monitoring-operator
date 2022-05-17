@@ -4,11 +4,18 @@ local certsCAVolumeName = 'operator-certs-ca-bundle';
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
+local conversionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/conversion.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)
   local cfg = params;
   operator(cfg) + {
+    '0alertmanagerConfigCustomResourceDefinition'+:
+      // Add v1beta1 AlertmanagerConfig version.
+      (import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/alertmanagerconfigs-v1beta1-crd.libsonnet') +
+      // Enable conversion webhook.
+      conversionWebhook(cfg.conversionWebhook),
+
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'prometheus-operator-kube-rbac-proxy-config'),
     deployment+: {
       metadata+: {
