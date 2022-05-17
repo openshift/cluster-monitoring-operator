@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -51,9 +52,9 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Thanos Querier Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(ctx, r)
+	err = t.client.CreateOrUpdateRoute(ctx, r)
 	if err != nil {
-		return errors.Wrap(err, "creating Thanos Querier Route failed")
+		return errors.Wrap(err, "reconciling Thanos Querier Route failed")
 	}
 
 	_, err = t.client.WaitForRouteReady(ctx, r)

@@ -133,7 +133,11 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 	}
 
 	route := f.MakePrometheusServiceRoute(svc)
-	if err := f.OperatorClient.CreateRouteIfNotExists(ctx, route); err != nil {
+	if err := f.OperatorClient.CreateOrUpdateRoute(ctx, route); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.OperatorClient.WaitForRouteReady(ctx, route); err != nil {
 		t.Fatal(err)
 	}
 

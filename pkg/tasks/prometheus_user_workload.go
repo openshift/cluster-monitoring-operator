@@ -274,7 +274,7 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus federate Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(ctx, r)
+	err = t.client.CreateOrUpdateRoute(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload federate Route failed")
 	}
