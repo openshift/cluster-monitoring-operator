@@ -428,7 +428,7 @@ spec:
           often on node-exporter {{ $labels.namespace }}/{{ $labels.pod }}
         summary: Network interface is often changing its status
       expr: |
-        changes(node_network_up{job="node-exporter",device!~"veth.+"}[2m]) > 2
+        changes(node_network_up{job="node-exporter",device!~"[veth.+|tunbr]"}[2m]) > 2
       for: 2m
       labels:
         severity: warning
