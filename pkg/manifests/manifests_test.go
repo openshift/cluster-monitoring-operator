@@ -15,6 +15,7 @@
 package manifests
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -1533,8 +1534,13 @@ ingress:
 		t.Fatal("Prometheus image is not configured correctly")
 	}
 
+	if p.Spec.EnforcedBodySizeLimit != "" {
+		t.Fatal("EnforcedBodySizeLimit is not set to empty by default")
+	}
+
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
+
 	for _, container := range p.Spec.Containers {
 		switch container.Name {
 		case "prometheus-proxy":
@@ -1809,6 +1815,43 @@ func TestPrometheusRetentionConfigs(t *testing.T) {
 	}
 }
 
+func TestPrometheusK8sConfigurationBodySizeLimit(t *testing.T) {
+	pcr := &fakePodCapacity{
+		capacity: 1000,
+		err:      nil,
+	}
+	ctx := context.Background()
+
+	c, err := NewConfigFromString(`
+prometheusK8s:
+    enforcedBodySizeLimit: "10MB"
+  `)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = c.LoadEnforcedBodySizeLimit(pcr, ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, nil)
+	p, err := f.PrometheusK8s(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// the body size limit value is not set at configuration parsing time.
+	if p.Spec.EnforcedBodySizeLimit != "10MB" {
+		t.Fatalf("EnforcedBodySizeLimit is not configured correctly, expected 10MB but got %v", p.Spec.EnforcedBodySizeLimit)
+	}
+
+}
 func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	testCases := []struct {
 		name           string

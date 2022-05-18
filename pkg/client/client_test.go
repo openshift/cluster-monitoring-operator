@@ -25,6 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -1835,4 +1836,51 @@ func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPodCapacity(t *testing.T) {
+	ctx := context.Background()
+	node1 := v1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "node1",
+		},
+		Status: v1.NodeStatus{
+			Capacity: v1.ResourceList{
+				v1.ResourcePods: resource.MustParse("100"),
+			},
+		},
+	}
+	node2 := v1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "node2",
+		},
+		Status: v1.NodeStatus{
+			Capacity: v1.ResourceList{
+				v1.ResourcePods: resource.MustParse("50"),
+			},
+		},
+	}
+	nodeList := v1.NodeList{
+		Items: []v1.Node{
+			node1,
+			node2,
+		},
+	}
+	t.Run("sum 2 nodes pod capacity", func(st *testing.T) {
+
+		c := Client{
+			kclient: fake.NewSimpleClientset(nodeList.DeepCopy()),
+		}
+
+		podCapacity, err := c.PodCapacity(ctx)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if podCapacity != 150 {
+			t.Fatalf("expected pods capacity 150, got %d", podCapacity)
+		}
+	})
+
 }

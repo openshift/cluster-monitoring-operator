@@ -1549,6 +1549,24 @@ func (c *Client) DeleteRole(ctx context.Context, role *rbacv1.Role) error {
 	return err
 }
 
+func (c *Client) PodCapacity(ctx context.Context) (int, error) {
+	nodes, err := c.kclient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return 0, err
+	}
+	var podCapacityTotal int64
+	for _, node := range nodes.Items {
+		podsCount, succeeded := node.Status.Capacity.Pods().AsInt64()
+		if !succeeded {
+			klog.Warningf("Cannot get pod capacity from node: %s. Error: %v", node.Name, err)
+			continue
+		}
+		podCapacityTotal += podsCount
+	}
+
+	return int(podCapacityTotal), nil
+}
+
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
 // over `existing` keys and values. Additionally function performs filtering of labels and annotations from `exiting` map
 // where keys starting from string defined in `metadataPrefix` are deleted. This prevents issues with preserving stale

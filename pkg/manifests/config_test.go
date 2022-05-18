@@ -16,6 +16,8 @@ package manifests
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -192,7 +194,7 @@ func TestHttpProxyConfig(t *testing.T) {
 	conf := `http:
   httpProxy: http://test.com
   httpsProxy: https://test.com
-  noProxy: https://example.com	
+  noProxy: https://example.com
 `
 
 	c, err := NewConfig(bytes.NewBufferString(conf))
@@ -232,5 +234,102 @@ func TestHttpProxyConfig(t *testing.T) {
 		if test.got() != test.expect {
 			t.Errorf("testcase %d: expected enabled %s, got %s", i, test.expect, test.got())
 		}
+	}
+}
+
+type fakePodCapacity struct {
+	capacity int
+	err      error
+}
+
+func (fpc *fakePodCapacity) PodCapacity(context.Context) (int, error) {
+	return fpc.capacity, fpc.err
+}
+
+func TestLoadEnforcedBodySizeLimit(t *testing.T) {
+
+	mc_10 := fakePodCapacity{capacity: 10, err: nil}
+	mc_1000 := fakePodCapacity{capacity: 1000, err: nil}
+	mc_err := fakePodCapacity{capacity: 1000, err: errors.New("error")}
+	for _, tt := range []struct {
+		name                string
+		config              string
+		expectBodySizeLimit string
+		expectError         bool
+		pcr                 PodCapacityReader
+	}{
+		{
+			name:                "empty config",
+			config:              "",
+			expectBodySizeLimit: "",
+			expectError:         false,
+			pcr:                 &mc_10,
+		},
+		{
+			name:                "disable body size limit",
+			config:              `{"prometheusK8s": {"enforcedBodySizeLimit": "0"}}`,
+			expectBodySizeLimit: "0",
+			expectError:         false,
+			pcr:                 &mc_10,
+		},
+		{
+			name:                "normal size format",
+			config:              `{"prometheusK8s": {"enforcedBodySizeLimit": "10KB"}}`,
+			expectBodySizeLimit: "10KB",
+			expectError:         false,
+			pcr:                 &mc_10,
+		},
+		{
+			name:                "invalid size format",
+			config:              `{"prometheusK8s": {"enforcedBodySizeLimit": "10EUR"}}`,
+			expectBodySizeLimit: "",
+			expectError:         true,
+			pcr:                 &mc_10,
+		},
+		{
+			name:                "automatic deduced limit: error when getting pods capacity",
+			config:              `{"prometheusK8s": {"enforcedBodySizeLimit": "automatic"}}`,
+			expectBodySizeLimit: "",
+			expectError:         true,
+			pcr:                 &mc_err,
+		},
+		{
+			name:                "automatically deduced limit: minimal 48MB",
+			config:              `{"prometheusK8s": {"enforcedBodySizeLimit": "automatic"}}`,
+			expectBodySizeLimit: "48MB",
+			expectError:         false,
+			pcr:                 &mc_10,
+		},
+		{
+			name:                "automatically deduced limit: larger than minimal 16MB",
+			config:              `{"prometheusK8s": {"enforcedBodySizeLimit": "automatic"}}`,
+			expectBodySizeLimit: "77MB",
+			expectError:         false,
+			pcr:                 &mc_1000,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tt.config)
+			if err != nil {
+				t.Fatalf("config parsing error")
+			}
+
+			err = c.LoadEnforcedBodySizeLimit(tt.pcr, context.Background())
+			if tt.expectError {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected no error, got error %v", err)
+			}
+
+			if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit != tt.expectBodySizeLimit {
+				t.Fatalf("incorrect EnforcedBodySizeLimit is set: got %s, expected %s",
+					c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit,
+					tt.expectBodySizeLimit)
+			}
+		})
 	}
 }

@@ -295,3 +295,50 @@ func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *fram
 		)
 	}
 }
+
+func TestBodySizeLimit(t *testing.T) {
+	const (
+		bodySizeLimitSmall = "1MB"
+	)
+
+	cm := f.MustGetConfigMap(t, clusterMonitorConfigMapName, f.Ns)
+	cmBackup := cm.DeepCopy()
+	cmBackup.ObjectMeta.ResourceVersion = ""
+	cmBackup.ObjectMeta.UID = ""
+	cmBackup.ObjectMeta.CreationTimestamp = metav1.Time{}
+
+	restoreConfig := func() {
+		f.MustCreateOrUpdateConfigMap(t, cmBackup)
+	}
+
+	defer restoreConfig()
+
+	f.PrometheusK8sClient.WaitForQueryReturn(
+		t, 5*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
+		func(v int) error {
+			if v > 0 {
+				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total does not increase up but got %v increase in last 5 minutes", v)
+			}
+
+			return nil
+		},
+	)
+
+	data := fmt.Sprintf(`prometheusK8s:
+  logLevel: debug
+  enforcedBodySizeLimit: %s
+`, bodySizeLimitSmall)
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+
+	f.PrometheusK8sClient.WaitForQueryReturn(
+		t, 5*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
+		func(v int) error {
+			if v == 0 {
+				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total to increase but no increase is observed in last 5 minutes")
+			}
+
+			return nil
+		},
+	)
+
+}
