@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"reflect"
 	"strings"
@@ -403,6 +404,24 @@ func (c *Client) GetSecret(ctx context.Context, namespace, name string) (*v1.Sec
 	return c.kclient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
+// PodRunningAndReady returns whether a pod is running and each container has
+// passed it's ready state.
+func PodRunningAndReady(pod v1.Pod) (bool, error) {
+	switch pod.Status.Phase {
+	case v1.PodFailed, v1.PodSucceeded:
+		return false, fmt.Errorf("pod completed")
+	case v1.PodRunning:
+		for _, cond := range pod.Status.Conditions {
+			if cond.Type != v1.PodReady {
+				continue
+			}
+			return cond.Status == v1.ConditionTrue, nil
+		}
+		return false, fmt.Errorf("pod ready condition not found")
+	}
+	return false, nil
+}
+
 func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Prometheus) error {
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
 	existing, err := pclient.Get(ctx, p.GetName(), metav1.GetOptions{})
@@ -412,6 +431,44 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Promethe
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving Prometheus object failed")
+	}
+
+	var lastErr error
+	if err := wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
+		pods, err := c.kclient.CoreV1().Pods(p.Namespace).List(ctx, prometheusoperator.ListOptions(p.Name))
+		if err != nil {
+			lastErr = errors.Wrap(err, "failed to retrieve Prometheus pods")
+			return false, nil
+		}
+
+		if len(pods.Items) != 2 {
+			lastErr = fmt.Errorf("expecting 2 replicas, got %d", len(pods.Items))
+			return false, nil
+		}
+
+		var (
+			p0Ready, p1Ready bool
+			p0Name, p1Name   string
+		)
+		for _, p := range pods.Items {
+			switch p.Name[len(p.Name)-1:] {
+			case "0":
+				p0Ready, _ = PodRunningAndReady(p)
+				p0Name = p.Name
+			case "1":
+				p1Ready, _ = PodRunningAndReady(p)
+				p1Name = p.Name
+			}
+		}
+
+		if !p0Ready && p1Ready {
+			lastErr = fmt.Errorf("update of Prometheus object %s would result in service outage (%s not ready and %s ready)", p.Name, p0Name, p1Name)
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		klog.Warningf("%v: %v", err, lastErr)
 	}
 
 	required := p.DeepCopy()
