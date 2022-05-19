@@ -19,7 +19,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/grafana-config: 28b9b36ac4d235c1c5f2f9ca81714d1c
+        checksum/grafana-config: 3d7da91f60439323422be78538e56505
         checksum/grafana-dashboardproviders: 9ac0e8fe144a3a59f7ab62b4e733f22d
         checksum/grafana-datasources: 58dfbb3df9951f2ac8acf4c625c7173c
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'

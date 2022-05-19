@@ -75,6 +75,7 @@ local commonConfig = {
   },
   // TLS Cipher suite applied to every component serving HTTPS traffic
   tlsCipherSuites: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
+  grafanaTimeout: 120,  // 2 mins
 };
 
 // objects deployed in openshift-monitoring namespace
@@ -194,10 +195,14 @@ local inCluster =
               reporting_enabled: false,
               check_for_updates: false,
             },
+            dataproxy: {
+              timeout: $.values.common.grafanaTimeout,
+            },
           },
         },
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
+        grafanaTimeout: $.values.common.grafanaTimeout,
       },
       kubeStateMetrics: {
         namespace: $.values.common.namespace,

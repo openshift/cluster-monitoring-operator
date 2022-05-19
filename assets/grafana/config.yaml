@@ -22,6 +22,8 @@ stringData:
     auto_sign_up = true
     enabled = true
     header_name = X-Forwarded-User
+    [dataproxy]
+    timeout = 120
     [paths]
     data = /var/lib/grafana
     logs = /var/lib/grafana/logs
