@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -67,9 +68,9 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Prometheus API Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(ctx, r)
+	err = t.client.CreateOrUpdateRoute(ctx, r)
 	if err != nil {
-		return errors.Wrap(err, "creating Prometheus API Route failed")
+		return errors.Wrap(err, "reconciling Prometheus API Route failed")
 	}
 
 	_, err = t.client.WaitForRouteReady(ctx, r)
@@ -82,9 +83,9 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Prometheus Federate Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(ctx, fr)
+	err = t.client.CreateOrUpdateRoute(ctx, fr)
 	if err != nil {
-		return errors.Wrap(err, "creating Prometheus Federate Route failed")
+		return errors.Wrap(err, "reconciling Prometheus Federate Route failed")
 	}
 
 	_, err = t.client.WaitForRouteReady(ctx, fr)

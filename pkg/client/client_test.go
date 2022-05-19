@@ -28,10 +28,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	routev1 "github.com/openshift/api/route/v1"
+
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
 
+	osrfake "github.com/openshift/client-go/route/clientset/versioned/fake"
 	ossfake "github.com/openshift/client-go/security/clientset/versioned/fake"
 	monfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 )
@@ -220,6 +223,116 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
 				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+			}
+		})
+	}
+}
+
+func TestCreateOrUpdateRoute(t *testing.T) {
+	ctx := context.Background()
+	testCases := []struct {
+		name                string
+		initialSpec         routev1.RouteSpec
+		initialLabels       map[string]string
+		initialAnnotations  map[string]string
+		updatedSpec         routev1.RouteSpec
+		updatedLabels       map[string]string
+		updatedAnnotations  map[string]string
+		expectedSpec        routev1.RouteSpec
+		expectedLabels      map[string]string
+		expectedAnnotations map[string]string
+	}{
+		{
+			name:        "inital labels/annotations are empty and spec change",
+			initialSpec: routev1.RouteSpec{Host: "foo.com"},
+			updatedSpec: routev1.RouteSpec{Host: "bar.com"},
+			updatedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			updatedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+			},
+			expectedSpec: routev1.RouteSpec{Host: "bar.com"},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			expectedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+			},
+		},
+		{
+			name:        "label/annotation merge and spec change",
+			initialSpec: routev1.RouteSpec{Host: "foo.com"},
+			initialLabels: map[string]string{
+				"app.kubernetes.io/name": "",
+				"label":                  "value",
+			},
+			initialAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "",
+				"monitoring.openshift.io/bar": "",
+				"annotation":                  "value",
+			},
+			updatedSpec: routev1.RouteSpec{Host: "bar.com"},
+			updatedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			updatedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+			},
+			expectedSpec: routev1.RouteSpec{Host: "bar.com"},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+				"label":                  "value",
+			},
+			expectedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+				"annotation":                  "value",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			route := &routev1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "foo-bar-route",
+					Namespace:   ns,
+					Labels:      tc.initialLabels,
+					Annotations: tc.initialAnnotations,
+				},
+				Spec: tc.initialSpec,
+			}
+
+			c := Client{
+				osrclient: osrfake.NewSimpleClientset(route.DeepCopy()),
+			}
+
+			if _, err := c.osrclient.RouteV1().Routes(ns).Get(ctx, route.Name, metav1.GetOptions{}); err != nil {
+				t.Fatal(err)
+			}
+
+			route.SetLabels(tc.updatedLabels)
+			route.SetAnnotations(tc.updatedAnnotations)
+			route.Spec = tc.updatedSpec
+			if err := c.CreateOrUpdateRoute(ctx, route); err != nil {
+				t.Fatal(err)
+			}
+
+			after, err := c.osrclient.RouteV1().Routes(ns).Get(ctx, route.Name, metav1.GetOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
+				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+			}
+
+			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
+				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+			}
+
+			if !reflect.DeepEqual(tc.expectedSpec, after.Spec) {
+				t.Errorf("expected spec %q, got %q", tc.expectedLabels, after.Labels)
 			}
 		})
 	}
