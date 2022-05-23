@@ -640,6 +640,60 @@ data:
     #
     # cluster:velero_restore_total:max measures the current number of existent restores
     - '{__name__="cluster:velero_restore_total:max"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # Number of storages types used across the fleet.
+    - '{__name__="eo_es_storage_info"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # Number of redundancy policies used across the fleet.
+    - '{__name__="eo_es_redundancy_policy_info"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # Number of namespaces deleted per policy across the fleet.
+    - '{__name__="eo_es_defined_delete_namespaces_total"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # Number of clusters with misconfigured memory resources across the fleet.
+    - '{__name__="eo_es_misconfigured_memory_resources_info"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # Number of data nodes per cluster.
+    - '{__name__="cluster:eo_es_data_nodes_total:max"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # Number of documents created per cluster.
+    - '{__name__="cluster:eo_es_documents_created_total:sum"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # Number of documents deleted per cluster.
+    - '{__name__="cluster:eo_es_documents_deleted_total:sum"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # Number of shards per cluster.
+    - '{__name__="pod:eo_es_shards_total:max"}'
+    #
+    # elasticsearch operator metrics for Telemetry
+    # owners: (@openshift/team-logging)
+    #
+    # es Management state used by the cluster.
+    - '{__name__="eo_es_cluster_management_state_info"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
