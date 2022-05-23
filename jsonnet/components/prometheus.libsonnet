@@ -195,6 +195,12 @@ function(params)
               resource: 'namespaces',
               verbs: 'get',
             },
+            static: [{
+              resourceRequest: true,
+              user: {
+                name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
+              },
+            }],
           },
         },),
       },
