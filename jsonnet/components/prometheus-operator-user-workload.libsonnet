@@ -57,7 +57,12 @@ function(params)
                 effect: 'NoSchedule',
               },
             ],
-            securityContext: {},
+            securityContext: {
+              runAsNonRoot: true,
+              seccompProfile: {
+                type: 'RuntimeDefault',
+              },
+            },
             priorityClassName: 'openshift-user-critical',
             containers:
               std.map(
@@ -76,7 +81,12 @@ function(params)
                         '--config-reloader-cpu-request=1m',
                         '--config-reloader-memory-request=10Mi',
                       ],
-                      securityContext: {},
+                      securityContext: {
+                        allowPrivilegeEscalation: false,
+                        capabilities: {
+                          drop: ['ALL'],
+                        },
+                      },
                       resources: {
                         requests: {
                           memory: '17Mi',
@@ -105,7 +115,12 @@ function(params)
                           readOnly: true,
                         },
                       ],
-                      securityContext: {},
+                      securityContext: {
+                        allowPrivilegeEscalation: false,
+                        capabilities: {
+                          drop: ['ALL'],
+                        },
+                      },
                       resources: {
                         requests: {
                           memory: '10Mi',

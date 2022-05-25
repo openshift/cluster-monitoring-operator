@@ -57,6 +57,11 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -84,6 +89,11 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -117,6 +127,11 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -139,6 +154,11 @@ spec:
       requests:
         cpu: 1m
         memory: 17Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
@@ -211,6 +231,8 @@ spec:
     fsGroup: 65534
     runAsNonRoot: true
     runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
   serviceAccountName: prometheus-user-workload
   serviceMonitorNamespaceSelector:
     matchExpressions:

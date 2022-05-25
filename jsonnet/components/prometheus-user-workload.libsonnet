@@ -136,13 +136,16 @@ function(params)
           verbs: ['get'],
         },
         {
-          // By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
-          // This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
-          // Instead, this sets the `nonroot` SCC in conjunction with a static fsGroup and runAsUser security context below
-          // to be immune against UID changes.
+          // By default authenticated service accounts are assigned to the "restricte" SCC which implies MustRunAsRange.
+          // This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are added/modified.
+          // This allows the prometheus SA to use the "nonroot-v2" SCC, which will allow the prometheus pods to
+          // run with both a static fsGroup and runAsUser making them immune against UID changes.
+          // We need to use "-v2" as the UWM namespace works under PodPolicy profile "restricte", which will require
+          // pods to run with seccompProfile "Defaul/Runtime", however pods are only allowed to specify a seccompProfile
+          // when the SA uses an SCC "-v2"
           apiGroups: ['security.openshift.io'],
           resources: ['securitycontextconstraints'],
-          resourceNames: ['nonroot'],
+          resourceNames: ['nonroot-v2'],
           verbs: ['use'],
         },
       ],
@@ -290,6 +293,9 @@ function(params)
           fsGroup: 65534,
           runAsNonRoot: true,
           runAsUser: 65534,
+          seccompProfile: {
+            type: 'RuntimeDefault',
+          },
         },
         secrets: [
           'prometheus-user-workload-tls',
@@ -347,6 +353,12 @@ function(params)
                 name: 'secret-' + $.kubeRbacProxyFederateSecret.metadata.name,
               },
             ],
+            securityContext: {
+              allowPrivilegeEscalation: false,
+              capabilities: {
+                drop: ['ALL'],
+              },
+            },
           },
           {
             name: 'kube-rbac-proxy-metrics',
@@ -389,6 +401,12 @@ function(params)
                 name: 'secret-' + $.kubeRbacProxyMetricsSecret.metadata.name,
               },
             ],
+            securityContext: {
+              allowPrivilegeEscalation: false,
+              capabilities: {
+                drop: ['ALL'],
+              },
+            },
           },
           {
             name: 'kube-rbac-proxy-thanos',
@@ -440,6 +458,12 @@ function(params)
                 name: 'secret-' + $.kubeRbacProxyMetricsSecret.metadata.name,
               },
             ],
+            securityContext: {
+              allowPrivilegeEscalation: false,
+              capabilities: {
+                drop: ['ALL'],
+              },
+            },
           },
           {
             name: 'thanos-sidecar',
@@ -464,6 +488,12 @@ function(params)
                 name: 'secret-grpc-tls',
               },
             ],
+            securityContext: {
+              allowPrivilegeEscalation: false,
+              capabilities: {
+                drop: ['ALL'],
+              },
+            },
           },
         ],
       },

@@ -76,7 +76,7 @@ function(params)
         },
         {
           apiGroups: ['security.openshift.io'],
-          resourceNames: ['nonroot'],
+          resourceNames: ['nonroot-v2'],
           resources: ['securitycontextconstraints'],
           verbs: ['use'],
         },
@@ -327,6 +327,9 @@ function(params)
           fsGroup: 65534,
           runAsNonRoot: true,
           runAsUser: 65534,
+          seccompProfile: {
+            type: 'RuntimeDefault',
+          },
         },
         replicas: cfg.replicas,
         resources: {
@@ -405,6 +408,12 @@ function(params)
                 name: 'serving-certs-ca-bundle',
               },
             ],
+            securityContext: {
+              allowPrivilegeEscalation: false,
+              capabilities: {
+                drop: ['ALL'],
+              },
+            },
           },
           {
             name: 'thanos-ruler-proxy',
@@ -451,6 +460,12 @@ function(params)
                 name: 'secret-thanos-ruler-oauth-cookie',
               },
             ],
+            securityContext: {
+              allowPrivilegeEscalation: false,
+              capabilities: {
+                drop: ['ALL'],
+              },
+            },
           },
         ],
       },
