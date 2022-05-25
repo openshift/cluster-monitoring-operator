@@ -354,7 +354,10 @@ local inCluster =
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
-            diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
+            // Temporarily commented to test upstream change https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/767
+            // diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
+            diskDeviceSelector: 'device=~"(/dev.+)|%s"' % std.join('|', ['mmcblk.p.+', 'nvme.+', 'rbd.+', 'sd.+', 'vd.+', 'xvd.+', 'dm-.+', 'dasd.+']),
+            hostNetworkInterfaceSelector: 'device!~"veth.+"',
             kubeSchedulerSelector: 'job="scheduler"',
             namespaceSelector: $.values.common.mixinNamespaceSelector,
             cpuThrottlingSelector: $.values.common.mixinNamespaceSelector,
