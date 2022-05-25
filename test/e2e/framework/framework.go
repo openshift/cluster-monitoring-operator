@@ -284,7 +284,7 @@ func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (clea
 func (f *Framework) GetServiceAccountToken(namespace, name string) (string, error) {
 	ctx := context.Background()
 	var token string
-	err := Poll(5*time.Second, time.Minute, func() error {
+	err := PollImmediate(time.Second, time.Minute, func() error {
 		secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return err
@@ -489,9 +489,23 @@ func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string,
 // If a timeout occurs, the last observed error is returned
 // or wait.ErrWaitTimeout if no error occurred.
 func Poll(interval, timeout time.Duration, f func() error) error {
+	return poll(wait.Poll, interval, timeout, f)
+}
+
+// PollImmediate calls the given function f every given interval
+// until it returns no error or the given timeout occurs.
+// If a timeout occurs, the last observed error is returned
+// or wait.ErrWaitTimeout if no error occurred.
+// Unlike Poll, PollImmediate always calls the function before waiting for the
+// interval.
+func PollImmediate(interval, timeout time.Duration, f func() error) error {
+	return poll(wait.PollImmediate, interval, timeout, f)
+}
+
+func poll(poller func(time.Duration, time.Duration, wait.ConditionFunc) error, interval, timeout time.Duration, f func() error) error {
 	var lastErr error
 
-	err := wait.Poll(interval, timeout, func() (bool, error) {
+	err := poller(interval, timeout, func() (bool, error) {
 		lastErr = f()
 		if lastErr != nil {
 			return false, nil

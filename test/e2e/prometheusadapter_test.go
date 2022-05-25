@@ -61,23 +61,18 @@ func isAPIServiceAvailable(conditions []apiservicesv1.APIServiceCondition) bool 
 
 func TestMetricsAPIAvailability(t *testing.T) {
 	ctx := context.Background()
-	var lastErr error
-	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+
+	err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		metricsService, err := f.APIServicesClient.ApiregistrationV1().APIServices().Get(ctx, "v1beta1.metrics.k8s.io", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting metrics APIService failed")
 		if err != nil {
-			return false, nil
+			return errors.Wrap(err, "getting metrics APIService failed")
 		}
 		if !isAPIServiceAvailable(metricsService.Status.Conditions) {
-			lastErr = errors.New("v1beta1.metrics.k8s.io apiservice is not available")
-			return false, nil
+			return errors.New("v1beta1.metrics.k8s.io apiservice is not available")
 		}
-		return true, nil
+		return nil
 	})
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
 		t.Fatal(err)
 	}
 }
@@ -173,7 +168,7 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 
 	hasRule := func(apiGroup, resource, verb string) checkFunc {
 		return func(clusterRole string) error {
-			return framework.Poll(time.Second, 5*time.Minute, func() error {
+			return framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 				viewRole, err := f.KubeClient.RbacV1().ClusterRoles().Get(ctx, clusterRole, metav1.GetOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "getting %s cluster role failed", clusterRole)
@@ -265,7 +260,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 
 	// Wait for the new secret to be deployed
 	var newSecret corev1.Secret
-	err = framework.Poll(5*time.Second, 15*time.Minute, func() error {
+	err = framework.Poll(time.Second, 15*time.Minute, func() error {
 		secrets, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").List(ctx, metav1.ListOptions{
 			LabelSelector: "monitoring.openshift.io/name=prometheus-adapter,monitoring.openshift.io/hash!=" + adapterSecret.Labels["monitoring.openshift.io/hash"],
 		})
@@ -290,7 +285,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 	}
 
 	// Wait for prometheus-adapter deployment to reference new secret
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-adapter", metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "getting prometheus-adapter deployment failed")

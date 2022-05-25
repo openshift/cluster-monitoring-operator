@@ -28,7 +28,7 @@ func TestKSMMetricsSuppression(t *testing.T) {
 
 	suppressedPattern, _ := regexp.Compile("kube_.*_annotations")
 
-	err := framework.Poll(5*time.Second, time.Minute, func() error {
+	err := framework.PollImmediate(time.Second, time.Minute, func() error {
 
 		client := f.PrometheusK8sClient
 

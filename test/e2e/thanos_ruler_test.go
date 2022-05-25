@@ -124,7 +124,7 @@ func verifyAlertmanagerAlertReceived(t *testing.T) {
 	}
 	t.Cleanup(cleanUp)
 
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		resp, err := http.Get(fmt.Sprintf("http://%s/api/v2/alerts", host))
 		if err != nil {
 			return err

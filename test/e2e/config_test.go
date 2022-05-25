@@ -713,7 +713,7 @@ func expectVolumeMountsInContainer(containerName, mountName string) framework.Po
 
 func assertExternalLabelExists(namespace, crName, expectKey, expectValue string) func(t *testing.T) {
 	return func(t *testing.T) {
-		err := framework.Poll(time.Second, time.Minute*5, func() error {
+		err := framework.PollImmediate(time.Second, time.Minute*5, func() error {
 			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(context.Background(), crName, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal("failed to get required prometheus cr", err)
@@ -741,7 +741,7 @@ func assertExternalLabelExists(namespace, crName, expectKey, expectValue string)
 
 func assertExternalLabelExistsThanosRuler(namespace, crName, expectKey, expectValue string) func(t *testing.T) {
 	return func(t *testing.T) {
-		err := framework.Poll(time.Second, time.Minute*5, func() error {
+		err := framework.PollImmediate(time.Second, time.Minute*5, func() error {
 			tr, err := f.MonitoringClient.ThanosRulers(namespace).Get(context.Background(), crName, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal("failed to get required thanos ruler cr", err)
@@ -769,7 +769,7 @@ func assertExternalLabelExistsThanosRuler(namespace, crName, expectKey, expectVa
 
 func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing.T) {
 	return func(t *testing.T) {
-		err := framework.Poll(time.Second, time.Minute*5, func() error {
+		err := framework.PollImmediate(time.Second, time.Minute*5, func() error {
 			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(context.Background(), crName, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal("failed to get required prometheus cr", err)
@@ -795,7 +795,7 @@ func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing
 func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
 			if err != nil {
 				return err
@@ -819,7 +819,7 @@ func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
 			if err != nil {
 				return err
@@ -843,7 +843,7 @@ func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
 func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
 			if err != nil {
 				return err
@@ -867,7 +867,7 @@ func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
 func assertEnforcedLabelValueLengthLimit(limit uint64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
-		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
 			if err != nil {
 				return err
@@ -890,7 +890,7 @@ func assertEnforcedLabelValueLengthLimit(limit uint64) func(*testing.T) {
 
 func assertQueryLogValueEquals(namespace, crName, value string) func(t *testing.T) {
 	return func(t *testing.T) {
-		err := framework.Poll(time.Second, time.Minute*5, func() error {
+		err := framework.PollImmediate(time.Second, time.Minute*5, func() error {
 			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(context.Background(), crName, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal("failed to get required prometheus cr", err)

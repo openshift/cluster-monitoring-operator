@@ -318,7 +318,7 @@ type PodAssertion func(pod v1.Pod) error
 // Each pod in the returned list will be run through the list of provided assertions
 func (f *Framework) AssertPodConfiguration(namespace, labelSelector string, assertions []PodAssertion) func(*testing.T) {
 	return func(t *testing.T) {
-		err := Poll(time.Second, 5*time.Minute, func() error {
+		err := PollImmediate(time.Second, 5*time.Minute, func() error {
 			pods, err := f.KubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 				LabelSelector: labelSelector,
 				FieldSelector: "status.phase=Running"},
@@ -347,7 +347,7 @@ func (f *Framework) AssertPodConfiguration(namespace, labelSelector string, asse
 func (f *Framework) AssertOperatorCondition(conditionType configv1.ClusterStatusConditionType, conditionStatus configv1.ConditionStatus) func(t *testing.T) {
 	return func(t *testing.T) {
 		reporter := f.OperatorClient.StatusReporter()
-		err := Poll(time.Second, 5*time.Minute, func() error {
+		err := PollImmediate(time.Second, 5*time.Minute, func() error {
 			co, err := reporter.Get(ctx)
 			if err != nil {
 				t.Fatal(err)
@@ -370,18 +370,34 @@ func (f *Framework) AssertOperatorCondition(conditionType configv1.ClusterStatus
 
 func (f *Framework) AssertValueInConfigMapEquals(name, namespace, key, compareWith string) func(t *testing.T) {
 	return func(t *testing.T) {
-		cm := f.MustGetConfigMap(t, name, namespace)
-		if cm.Data[key] != compareWith {
-			t.Fatalf("wanted value %s for key %s but got %s", compareWith, key, cm.Data[key])
+		if err := PollImmediate(time.Second, 5*time.Minute, func() error {
+			t.Helper()
+
+			cm := f.MustGetConfigMap(t, name, namespace)
+			if cm.Data[key] != compareWith {
+				return fmt.Errorf("wanted value %s for key %s but got %s", compareWith, key, cm.Data[key])
+			}
+
+			return nil
+		}); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
 
 func (f *Framework) AssertValueInConfigMapNotEquals(name, namespace, key, compareWith string) func(t *testing.T) {
 	return func(t *testing.T) {
-		cm := f.MustGetConfigMap(t, name, namespace)
-		if cm.Data[key] == compareWith {
-			t.Fatalf("did not want value %s for key %s", compareWith, key)
+		if err := PollImmediate(time.Second, 5*time.Minute, func() error {
+			t.Helper()
+
+			cm := f.MustGetConfigMap(t, name, namespace)
+			if cm.Data[key] == compareWith {
+				return fmt.Errorf("did not want value %s for key %s", compareWith, key)
+			}
+
+			return nil
+		}); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
@@ -389,7 +405,7 @@ func (f *Framework) AssertValueInConfigMapNotEquals(name, namespace, key, compar
 type getResourceFunc func() (metav1.Object, error)
 
 func assertResourceExists(t *testing.T, getResource getResourceFunc) {
-	if err := Poll(5*time.Second, 10*time.Minute, func() error {
+	if err := PollImmediate(time.Second, 10*time.Minute, func() error {
 		_, err := getResource()
 		return err
 	}); err != nil {
@@ -398,7 +414,7 @@ func assertResourceExists(t *testing.T, getResource getResourceFunc) {
 }
 
 func assertResourceDoesNotExists(t *testing.T, getResource getResourceFunc) {
-	if err := Poll(5*time.Second, 10*time.Minute, func() error {
+	if err := PollImmediate(time.Second, 10*time.Minute, func() error {
 		_, err := getResource()
 		if err == nil {
 			return fmt.Errorf("expected resource to not exist")

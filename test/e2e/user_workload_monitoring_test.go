@@ -33,7 +33,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/cert"
 )
 
@@ -323,7 +322,7 @@ func createSelfSignedCertificateSecret(secretName string) error {
 
 func assertThanosRulerDeployment(t *testing.T) {
 	ctx := context.Background()
-	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+	err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		_, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "thanos-ruler-user-workload", metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -432,14 +431,14 @@ func assertUserWorkloadMetrics(t *testing.T) {
 		var body []byte
 
 		// assert that the same metric is not scraped by the cluster monitoring stack
-		err := wait.PollImmediate(time.Second, time.Minute, func() (done bool, err error) {
+		err := framework.PollImmediate(time.Second, time.Minute, func() error {
+			var err error
 			body, err = f.PrometheusK8sClient.PrometheusQuery(fmt.Sprintf(`version{namespace="%s"}`, userWorkloadTestNs))
 			if err != nil {
-				t.Logf("PrometheusQuery failed: %v", err)
-				return false, nil
+				return err
 			}
 
-			return true, nil
+			return nil
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -462,7 +461,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 
 	// assert that the user workload monitoring Prometheus instance is successfully scraped
 	// by the cluster monitoring Prometheus instance.
-	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
+	err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		var (
 			body []byte
 			v    int
@@ -487,7 +486,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="VersionAlert"`,
 			"active", "true",
@@ -541,7 +540,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	)
 
 	// Assert that recording rule is not present in thanos ruler.
-	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		var (
 			body []byte
 			v    int
@@ -580,7 +579,7 @@ func assertUserWorkloadRules(t *testing.T) {
 func assertTenancyForMetrics(t *testing.T) {
 	const testAccount = "test-metrics"
 
-	err := framework.Poll(2*time.Second, 10*time.Second, func() error {
+	err := framework.PollImmediate(time.Second, 10*time.Second, func() error {
 		_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
 		return err
 	})
@@ -589,7 +588,7 @@ func assertTenancyForMetrics(t *testing.T) {
 	}
 
 	// Grant enough permissions to the account so it can read metrics.
-	err = framework.Poll(2*time.Second, 10*time.Second, func() error {
+	err = framework.PollImmediate(time.Second, 10*time.Second, func() error {
 		_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "admin")
 		return err
 	})
@@ -598,7 +597,7 @@ func assertTenancyForMetrics(t *testing.T) {
 	}
 
 	var token string
-	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
 		if err != nil {
 			return err
@@ -633,7 +632,7 @@ func assertTenancyForMetrics(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Logf("Running query %q", tc.query)
 
-			err = framework.Poll(5*time.Second, time.Minute, func() error {
+			err = framework.PollImmediate(time.Second, time.Minute, func() error {
 				// The tenancy port (9092) is only exposed in-cluster so we need to use
 				// port forwarding to access kube-rbac-proxy.
 				host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
@@ -700,7 +699,7 @@ func assertTenancyForMetrics(t *testing.T) {
 	}
 
 	// Check that the account doesn't have to access the rules endpoint.
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
@@ -756,7 +755,7 @@ func assertTenancyForRules(t *testing.T) {
 	}
 
 	var token string
-	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
 		if err != nil {
 			return err
@@ -784,7 +783,7 @@ func assertTenancyForRules(t *testing.T) {
 		},
 	)
 
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, time.Minute, func() error {
 		resp, err := client.Do("GET", "/api/v1/rules", nil)
 		if err != nil {
 			return err
@@ -872,7 +871,7 @@ func assertTenancyForRules(t *testing.T) {
 
 	// Check that the account doesn't have to access the query endpoints.
 	for _, path := range []string{"/api/v1/range?query=up", "/api/v1/query_range?query=up&start=0&end=0&step=1s"} {
-		err = framework.Poll(5*time.Second, time.Minute, func() error {
+		err = framework.PollImmediate(time.Second, time.Minute, func() error {
 			resp, err := client.Do("GET", path, nil)
 			if err != nil {
 				return err
@@ -900,7 +899,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 	ctx := context.Background()
 	const testAccount = "test-uwm-federate"
 
-	err := framework.Poll(2*time.Second, 10*time.Second, func() error {
+	err := framework.PollImmediate(time.Second, 10*time.Second, func() error {
 		_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
 		return err
 	})
@@ -909,7 +908,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 	}
 
 	// Grant enough permissions to invoke /federate endpoint which is protected by kube-rbac-proxy.
-	err = framework.Poll(2*time.Second, 10*time.Second, func() error {
+	err = framework.PollImmediate(time.Second, 10*time.Second, func() error {
 		_, err = f.CreateClusterRoleBinding(userWorkloadTestNs, testAccount, "admin")
 		return err
 	})
@@ -918,7 +917,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 	}
 
 	var token string
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, time.Minute, func() error {
 		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
 		return err
 	})
@@ -927,7 +926,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 	}
 
 	// check /federate endpoint
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, time.Minute, func() error {
 		federate := func(host string) error {
 			client := framework.NewPrometheusClient(
 				host,
@@ -997,7 +996,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 func assertTenancyForSeriesMetadata(t *testing.T) {
 	const testAccount = "test-labels"
 
-	err := framework.Poll(2*time.Second, 10*time.Second, func() error {
+	err := framework.PollImmediate(time.Second, 10*time.Second, func() error {
 		_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
 		return err
 	})
@@ -1006,7 +1005,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	// Grant enough permissions to read labels.
-	err = framework.Poll(2*time.Second, 10*time.Second, func() error {
+	err = framework.PollImmediate(time.Second, 10*time.Second, func() error {
 		_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "admin")
 		return err
 	})
@@ -1015,7 +1014,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	var token string
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, time.Minute, func() error {
 		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
 		return err
 	})
@@ -1024,7 +1023,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	// check /api/v1/labels endpoint
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
@@ -1078,7 +1077,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	// Check the /api/v1/series endpoint.
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
@@ -1132,7 +1131,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	// Check that /api/v1/label/{namespace}/values returns a single value.
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
@@ -1185,7 +1184,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 	countGRPCSecrets := func(ns string) int {
 		t.Helper()
 		var result int
-		err := framework.Poll(5*time.Second, time.Minute, func() error {
+		err := framework.PollImmediate(time.Second, time.Minute, func() error {
 			s, err := f.KubeClient.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{LabelSelector: "monitoring.openshift.io/hash"})
 			if err != nil {
 				return err
@@ -1240,7 +1239,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 	// and verifying if the force-rotation annotation has been removed.
 	const expectedGRPCSecretCount = 4
 
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+	err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		s, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(ctx, "grpc-tls", metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("error loading grpc-tls secret: %v", err)

@@ -25,7 +25,6 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -66,12 +65,12 @@ func testMain(m *testing.M) error {
 	}
 
 	// Wait for Prometheus operator.
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		_, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-operator", metav1.GetOptions{})
 		if err != nil {
-			return false, nil
+			return err
 		}
-		return true, nil
+		return nil
 	})
 	if err != nil {
 		return err
@@ -79,29 +78,26 @@ func testMain(m *testing.M) error {
 
 	// Wait for Prometheus.
 	var loopErr error
-	err = wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
+	err = framework.Poll(time.Second, 1*time.Minute, func() error {
 		var (
 			body []byte
 			v    int
 		)
 		body, loopErr = f.ThanosQuerierClient.PrometheusQuery("count(last_over_time(up{job=\"prometheus-k8s\"}[2m]))")
 		if loopErr != nil {
-			loopErr = errors.Wrap(loopErr, "error executing prometheus query")
-			return false, nil
+			return errors.Wrap(loopErr, "error executing prometheus query")
 		}
 
 		v, loopErr = framework.GetFirstValueFromPromQuery(body)
 		if loopErr != nil {
-			loopErr = errors.Wrapf(loopErr, "error getting first value from prometheus response %q", string(body))
-			return false, nil
+			return errors.Wrapf(loopErr, "error getting first value from prometheus response %q", string(body))
 		}
 
 		if v != 2 {
-			loopErr = fmt.Errorf("expected 2 Prometheus instances but got: %v", v)
-			return false, nil
+			return fmt.Errorf("expected 2 Prometheus instances but got: %v", v)
 		}
 
-		return true, nil
+		return nil
 	})
 	if err != nil {
 		return errors.Wrapf(err, "wait for prometheus-k8s: %v", loopErr)

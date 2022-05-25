@@ -36,14 +36,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestAlertmanagerTrustedCA(t *testing.T) {
 	var (
 		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath), &manifests.APIServerConfig{}, &configv1.Console{})
 		newCM   *v1.ConfigMap
-		lastErr error
 	)
 
 	cm := f.MustGetConfigMap(t, "alertmanager-trusted-ca-bundle", f.Ns)
@@ -56,26 +54,22 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 	f.AssertConfigmapExists(newCM.Name, f.Ns)(t)
 
 	// Get Alertmanager StatefulSet and make sure it has a volume mounted.
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+	err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		ss := f.MustGetStatefulSet(t, "alertmanager-main", f.Ns)
 
 		if len(ss.Spec.Template.Spec.Containers[0].VolumeMounts) == 0 {
-			return false, errors.New("Could not find any VolumeMounts, expected at least 1")
+			return errors.New("Could not find any VolumeMounts, expected at least 1")
 		}
 
 		for _, mount := range ss.Spec.Template.Spec.Containers[0].VolumeMounts {
 			if mount.Name == "alertmanager-trusted-ca-bundle" {
-				return true, nil
+				return nil
 			}
 		}
 
-		lastErr = fmt.Errorf("no volume %s mounted", newCM.Name)
-		return false, nil
+		return fmt.Errorf("no volume %s mounted", newCM.Name)
 	})
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
 		t.Fatal(err)
 	}
 }
@@ -162,21 +156,18 @@ enableUserWorkload: true`,
 func testAlertmanagerReady(t *testing.T, name, namespace string) *monitoringv1.Alertmanager {
 	t.Helper()
 
-	var (
-		am      *monitoringv1.Alertmanager
-		lastErr error
-	)
+	var am *monitoringv1.Alertmanager
 
-	if err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		am, lastErr = f.MonitoringClient.Alertmanagers(namespace).Get(ctx, name, metav1.GetOptions{})
-		if lastErr != nil {
-			lastErr = fmt.Errorf("%s/%s: %w", namespace, name, lastErr)
-			return false, nil
+	if err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		var err error
+		am, err = f.MonitoringClient.Alertmanagers(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("%s/%s: %w", namespace, name, err)
 		}
 
-		return true, nil
+		return nil
 	}); err != nil {
-		t.Fatalf("%v: %v", err, lastErr)
+		t.Fatal(err)
 	}
 
 	if err := f.OperatorClient.WaitForAlertmanager(ctx, am); err != nil {
@@ -230,7 +221,7 @@ func testAlertmanagerTenancyAPI(t *testing.T, host string) {
 			}
 		}
 
-		err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		err = framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 			token, err := f.GetServiceAccountToken(testNs, sa)
 			if err != nil {
 				return err
@@ -417,7 +408,7 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 		now.Format(time.RFC3339),
 		now.Add(time.Hour).Format(time.RFC3339),
 	))
-	err := framework.Poll(5*time.Second, time.Minute, func() error {
+	err := framework.PollImmediate(time.Second, time.Minute, func() error {
 		resp, err := f.AlertmanagerClient.Do("POST", "/api/v2/silences", sil)
 		if err != nil {
 			return err
@@ -470,7 +461,7 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 	}
 
 	// Ensure that the silence has been preserved.
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(time.Second, time.Minute, func() error {
 		body, err := f.AlertmanagerClient.GetAlertmanagerSilences(
 			"filter", fmt.Sprintf(`%s="%s"`, silenceLabelName, silenceLabelValue),
 		)
@@ -500,7 +491,7 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 
 // The Alertmanager API should be protected by the OAuth proxy.
 func TestAlertmanagerOAuthProxy(t *testing.T) {
-	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
+	err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="Watchdog"`,
 			"active", "true",
@@ -627,7 +618,7 @@ func TestAlertManagerHasAdditionalAlertRelabelConfigs(t *testing.T) {
 
 	var alerts Alerts
 
-	err := framework.Poll(5*time.Second, time.Minute, func() error {
+	err := framework.PollImmediate(time.Second, time.Minute, func() error {
 		resp, err := f.AlertmanagerClient.Do("GET", "/api/v2/alerts", nil)
 		if err != nil {
 			return err
@@ -856,7 +847,7 @@ func testAlertmanagerConfigPipeline(t *testing.T, wr *webhookReceiver, am *monit
 		t.Fatal(err)
 	}
 
-	if err := framework.Poll(time.Second*10, time.Minute*5, func() error {
+	if err := framework.Poll(time.Second, time.Minute*5, func() error {
 		alerts, err := wr.getAlertsByID("always-firing_user-workload-test")
 		if err != nil {
 			return err

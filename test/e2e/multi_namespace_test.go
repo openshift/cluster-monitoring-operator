@@ -26,7 +26,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestMultinamespacePrometheusRule(t *testing.T) {
@@ -78,21 +77,16 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var lastErr error
 	// wait for proxies bootstrap
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		_, err := f.ThanosQuerierClient.Do("GET", "/-/ready", nil)
-		lastErr = errors.Wrap(err, "establishing connection to thanos proxy failed")
 		if err != nil {
-			return false, nil
+			return errors.Wrap(err, "establishing connection to thanos proxy failed")
 		}
-		return true, nil
+		return nil
 	})
 
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
 		t.Fatal(err)
 	}
 

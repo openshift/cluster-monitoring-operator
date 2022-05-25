@@ -134,7 +134,7 @@ func assertCorrectTLSConfiguration(t *testing.T, componentName, objectType, tlsC
 	ctx := context.Background()
 	var containers []v1.Container
 
-	if err := framework.Poll(5*time.Second, 5*time.Minute, func() (err error) {
+	if err := framework.PollImmediate(time.Second, 5*time.Minute, func() (err error) {
 		switch objectType {
 		case "deployment":
 			d, err := f.KubeClient.AppsV1().Deployments("openshift-monitoring").Get(ctx, componentName, metav1.GetOptions{})

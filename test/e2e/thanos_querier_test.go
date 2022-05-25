@@ -25,7 +25,6 @@ import (
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestThanosQuerierTrustedCA(t *testing.T) {
@@ -33,29 +32,23 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 	var (
 		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath), &manifests.APIServerConfig{}, &configv1.Console{})
 		newCM   *v1.ConfigMap
-		lastErr error
 	)
 
 	// Wait for the new ConfigMap to be created
-	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+	err := framework.PollImmediate(time.Second, 5*time.Minute, func() error {
 		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, "thanos-querier-trusted-ca-bundle", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting new trusted CA ConfigMap failed")
 		if err != nil {
-			return false, nil
+			return errors.Wrap(err, "getting new trusted CA ConfigMap failed")
 		}
 
 		newCM, err = factory.HashTrustedCA(cm, "thanos-querier")
-		lastErr = errors.Wrap(err, "no trusted CA bundle data available")
 		if err != nil {
-			return false, nil
+			return errors.Wrap(err, "no trusted CA bundle data available")
 		}
 
-		return true, nil
+		return nil
 	})
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
 		t.Fatal(err)
 	}
 

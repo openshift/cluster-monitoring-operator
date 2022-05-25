@@ -360,7 +360,7 @@ func (c *PrometheusClient) WaitForQueryReturnOne(t *testing.T, timeout time.Dura
 func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duration, query string, validate func(int) error) {
 	t.Helper()
 
-	err := Poll(5*time.Second, timeout, func() error {
+	err := PollImmediate(time.Second, timeout, func() error {
 		body, err := c.PrometheusQuery(query)
 		if err != nil {
 			return errors.Wrapf(err, "error getting response for query %q", query)
@@ -388,7 +388,7 @@ func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duratio
 func (c *PrometheusClient) WaitForRulesReturn(t *testing.T, timeout time.Duration, validate func([]byte) error) {
 	t.Helper()
 
-	err := Poll(5*time.Second, timeout, func() error {
+	err := PollImmediate(time.Second, timeout, func() error {
 		body, err := c.PrometheusRules()
 		if err != nil {
 			return errors.Wrap(err, "error getting rules")
@@ -411,7 +411,7 @@ func (c *PrometheusClient) WaitForRulesReturn(t *testing.T, timeout time.Duratio
 func (c *PrometheusClient) WaitForTargetsReturn(t *testing.T, timeout time.Duration, validate func([]byte) error) {
 	t.Helper()
 
-	err := Poll(5*time.Second, timeout, func() error {
+	err := PollImmediate(time.Second, timeout, func() error {
 		body, err := c.PrometheusTargets()
 		if err != nil {
 			return errors.Wrap(err, "error getting targets")
