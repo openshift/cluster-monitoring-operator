@@ -704,6 +704,42 @@ data:
     #
     # imageregistry:operations_count:sum is the total number of image pushes and pulls executed in the internal registry.
     - '{__name__="imageregistry:operations_count:sum"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # log_logging_info gives cluster-logging-operator version, managedStatus, healthStatus specific info.
+    - '{__name__="log_logging_info"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # log_collector_error_count_total gives cluster-logging-operator deployed collector's (e.g. default collector fluentd) total number of failures in standing it up part of logging pipeline.
+    - '{__name__="log_collector_error_count_total"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # log_forwarder_pipeline_info gives cluster-logging-operator deployed logging pipelines info - healthStatus and pipelineInfo as no of total logging pipelines deployed.
+    - '{__name__="log_forwarder_pipeline_info"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # log_forwarder_input_info gives cluster-logging-operator logging pipelines input types info - namely application, infra, audit type of log sources input.
+    - '{__name__="log_forwarder_input_info"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # log_forwarder_output_info gives cluster-logging-operator logging pipelines output types info - namely to which output end point logs are being directed for further pushing them to a persistent storage.
+    - '{__name__="log_forwarder_output_info"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # cluster:log_collected_bytes_total:sum gives total bytes collected by the collector and aggregated at each cluster level
+    - '{__name__="cluster:log_collected_bytes_total:sum"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # cluster:log_logged_bytes_total:sum gives total bytes logged by the containers and aggregated at each cluster level
+    - '{__name__="cluster:log_logged_bytes_total:sum"}'
+    #
 kind: ConfigMap
 metadata:
   name: telemetry-config
