@@ -342,7 +342,7 @@ local inCluster =
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
             diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
-            hostNetworkInterfaceSelector: 'device!~"veth.+"',
+            hostNetworkInterfaceSelector: 'device!~"veth.+|tunbr"',
             kubeSchedulerSelector: 'job="scheduler"',
             namespaceSelector: $.values.common.mixinNamespaceSelector,
             cpuThrottlingSelector: $.values.common.mixinNamespaceSelector,
