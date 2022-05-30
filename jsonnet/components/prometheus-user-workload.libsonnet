@@ -56,6 +56,11 @@ function(params)
             targetPort: 'metrics',
           },
           {
+            name: 'federate',
+            port: 9092,
+            targetPort: 'federate',
+          },
+          {
             name: 'thanos-proxy',
             port: 10902,
             targetPort: 'thanos-proxy',
@@ -65,13 +70,34 @@ function(params)
       },
     },
 
+    federateRoute: {
+      apiVersion: 'v1',
+      kind: 'Route',
+      metadata: {
+        name: 'federate',
+        namespace: cfg.namespace,
+        labels: cfg.commonLabels,
+      },
+      spec: {
+        path: '/federate',
+        to: {
+          kind: 'Service',
+          name: $.service.metadata.name,
+        },
+        port: {
+          targetPort: 'federate',
+        },
+        tls: {
+          termination: 'Reencrypt',
+          insecureEdgeTerminationPolicy: 'Redirect',
+        },
+      },
+    },
+
     servingCertsCaBundle+: generateCertInjection.SCOCaBundleCM(cfg.namespace, 'serving-certs-ca-bundle'),
 
     // As Prometheus is protected by the kube-rbac-proxy it requires the
     // ability to create TokenReview and SubjectAccessReview requests.
-    // Additionally in order to authenticate with the Alertmanager it
-    // requires `get` method on all `namespaces`, which is the
-    // SubjectAccessReview required by the Alertmanager instances.
     clusterRole+: {
       rules+: [
         {
@@ -185,7 +211,30 @@ function(params)
       },
     },
 
-    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
+    kubeRbacProxyMetricsSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy-metrics'),
+
+    kubeRbacProxyFederateSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'kube-rbac-proxy-federate',
+        namespace: cfg.namespace,
+        labels: cfg.commonLabels,
+      },
+      type: 'Opaque',
+      data: {},
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            resourceAttributes: {
+              apiVersion: 'v1',
+              resource: 'namespaces',
+              verb: 'get',
+            },
+          },
+        }),
+      },
+    },
 
     prometheus+: {
       spec+: {
@@ -235,7 +284,8 @@ function(params)
         secrets: [
           'prometheus-user-workload-tls',
           'prometheus-user-workload-thanos-sidecar-tls',
-          $.kubeRbacProxySecret.metadata.name,
+          $.kubeRbacProxyMetricsSecret.metadata.name,
+          $.kubeRbacProxyFederateSecret.metadata.name,
         ],
         configMaps: ['serving-certs-ca-bundle', 'metrics-client-ca'],
         probeNamespaceSelector: cfg.namespaceSelector,
@@ -247,7 +297,49 @@ function(params)
         priorityClassName: 'openshift-user-critical',
         containers: [
           {
-            name: 'kube-rbac-proxy',
+            name: 'kube-rbac-proxy-federate',
+            image: cfg.kubeRbacProxyImage,
+            resources: {
+              requests: {
+                memory: '10Mi',
+                cpu: '1m',
+              },
+            },
+            ports: [
+              {
+                containerPort: 9092,
+                name: 'federate',
+              },
+            ],
+            args: [
+              '--secure-listen-address=0.0.0.0:9092',
+              '--upstream=http://127.0.0.1:9090',
+              '--allow-paths=/federate',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
+              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+            ],
+            terminationMessagePolicy: 'FallbackToLogsOnError',
+            volumeMounts: [
+              {
+                mountPath: '/etc/tls/private',
+                name: 'secret-prometheus-user-workload-tls',
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'configmap-metrics-client-ca',
+                readOnly: true,
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxyFederateSecret.metadata.name,
+              },
+            ],
+          },
+          {
+            name: 'kube-rbac-proxy-metrics',
             image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
@@ -284,7 +376,7 @@ function(params)
               },
               {
                 mountPath: '/etc/kube-rbac-proxy',
-                name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+                name: 'secret-' + $.kubeRbacProxyMetricsSecret.metadata.name,
               },
             ],
           },
@@ -335,7 +427,7 @@ function(params)
               },
               {
                 mountPath: '/etc/kube-rbac-proxy',
-                name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+                name: 'secret-' + $.kubeRbacProxyMetricsSecret.metadata.name,
               },
             ],
           },

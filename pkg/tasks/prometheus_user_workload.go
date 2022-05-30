@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -188,7 +189,7 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "error creating UserWorkload Prometheus Client GRPC TLS secret")
 	}
 
-	rs, err := t.factory.PrometheusUserWorkloadRBACProxySecret()
+	rs, err := t.factory.PrometheusUserWorkloadRBACProxyMetricsSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC proxy Secret failed")
 	}
@@ -196,6 +197,16 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "creating or updating UserWorkload Prometheus RBAC proxy Secret failed")
+	}
+
+	fs, err := t.factory.PrometheusUserWorkloadRBACProxyFederateSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC federate endpoint Secret failed")
+	}
+
+	err = t.client.CreateOrUpdateSecret(ctx, fs)
+	if err != nil {
+		return errors.Wrap(err, "creating or updating UserWorkload Prometheus RBAC federate endpoint Secret failed")
 	}
 
 	secret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
@@ -256,6 +267,21 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smt)
 	if err != nil {
 		return errors.Wrap(err, "reconciling UserWorkload Thanos sidecar ServiceMonitor failed")
+	}
+
+	r, err := t.factory.PrometheusUserWorkloadFederateRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus federate Route failed")
+	}
+
+	err = t.client.CreateRouteIfNotExists(ctx, r)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload federate Route failed")
+	}
+
+	_, err = t.client.WaitForRouteReady(ctx, r)
+	if err != nil {
+		return errors.Wrap(err, "waiting for UserWorkload federate Route to become ready failed")
 	}
 
 	return nil
@@ -429,7 +455,7 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		return errors.Wrap(err, "initializing UserWorkload serving certs CA Bundle ConfigMap failed")
 	}
 
-	rs, err := t.factory.PrometheusUserWorkloadRBACProxySecret()
+	rs, err := t.factory.PrometheusUserWorkloadRBACProxyMetricsSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC proxy Secret failed")
 	}
@@ -437,6 +463,16 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "deleting or updating UserWorkload Prometheus RBAC proxy Secret failed")
+	}
+
+	fs, err := t.factory.PrometheusUserWorkloadRBACProxyFederateSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus RBAC federate endpoint Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, fs)
+	if err != nil {
+		return errors.Wrap(err, "deleting or updating UserWorkload Prometheus RBAC federate endpoint Secret failed")
 	}
 
 	amsSecret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
@@ -449,5 +485,18 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 	}
 
 	err = t.client.DeleteConfigMap(ctx, cacm)
-	return errors.Wrap(err, "deleting UserWorkload serving certs CA Bundle ConfigMap failed")
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload serving certs CA Bundle ConfigMap failed")
+	}
+
+	r, err := t.factory.PrometheusUserWorkloadFederateRoute()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus federate Route failed")
+	}
+
+	err = t.client.DeleteRoute(ctx, r)
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload federate Route failed")
+	}
+	return nil
 }

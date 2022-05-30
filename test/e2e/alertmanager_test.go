@@ -87,7 +87,7 @@ func TestAlertmanagerKubeRbacProxy(t *testing.T) {
 
 	// The tenancy port (9092) is only exposed in-cluster so we need to use
 	// port forwarding to access kube-rbac-proxy.
-	host, cleanUp, err := f.ForwardPort(t, "alertmanager-main", 9092)
+	host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-main", 9092)
 	if err != nil {
 		t.Fatal(err)
 	}

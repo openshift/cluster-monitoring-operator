@@ -18,6 +18,7 @@
 - [#1527](https://github.com/openshift/cluster-monitoring-operator/pull/1527) Enable user alerts via AlertManagerConfig to be forwarded to the existing Platform Alertmanager
 - [#1543](https://github.com/openshift/cluster-monitoring-operator/pull/1543) Bump Grafana version to v8.3.4
 - [#1545](https://github.com/openshift/cluster-monitoring-operator/pull/1545) Add ClusterRole to allow editing of AlertManagerConfig
+- [#1657](https://github.com/openshift/cluster-monitoring-operator/pull/1657) Federation for UWM metrics
 
 ## 4.9
 

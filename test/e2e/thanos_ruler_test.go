@@ -118,7 +118,7 @@ func createPrometheusRule(t *testing.T) {
 
 func verifyAlertmanagerAlertReceived(t *testing.T) {
 
-	host, cleanUp, err := f.ForwardPort(t, "alertmanager-operated", 9093)
+	host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-operated", 9093)
 	if err != nil {
 		t.Fatal(err)
 	}

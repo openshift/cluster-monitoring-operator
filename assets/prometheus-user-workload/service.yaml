@@ -16,6 +16,9 @@ spec:
   - name: metrics
     port: 9091
     targetPort: metrics
+  - name: federate
+    port: 9092
+    targetPort: federate
   - name: thanos-proxy
     port: 10902
     targetPort: thanos-proxy
