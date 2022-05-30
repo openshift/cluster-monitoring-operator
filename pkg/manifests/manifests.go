@@ -602,7 +602,7 @@ func setupStartupProbe(a *monv1.Alertmanager) {
 						Command: []string{
 							"sh",
 							"-c",
-							"exec curl http://localhost:9093/-/ready",
+							"exec curl --fail http://localhost:9093/-/ready",
 						},
 					},
 				},
