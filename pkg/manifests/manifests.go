@@ -3737,6 +3737,10 @@ func (f *Factory) ThanosRulerCustomResource(
 		t.Spec.NodeSelector = f.config.UserWorkloadConfiguration.ThanosRuler.NodeSelector
 	}
 
+	if f.config.UserWorkloadConfiguration.ThanosRuler.Retention != "" {
+		t.Spec.Retention = f.config.UserWorkloadConfiguration.ThanosRuler.Retention
+	}
+
 	if len(f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations) > 0 {
 		t.Spec.Tolerations = f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations
 	}

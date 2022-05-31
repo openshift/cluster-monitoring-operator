@@ -19,6 +19,7 @@
 - [#1543](https://github.com/openshift/cluster-monitoring-operator/pull/1543) Bump Grafana version to v8.3.4
 - [#1545](https://github.com/openshift/cluster-monitoring-operator/pull/1545) Add ClusterRole to allow editing of AlertManagerConfig
 - [#1657](https://github.com/openshift/cluster-monitoring-operator/pull/1657) Federation for UWM metrics
+- [#1678](https://github.com/openshift/cluster-monitoring-operator/pull/1651) Allow retention to be configurable for Thanos-Ruler in UWM
 
 ## 4.9
 
