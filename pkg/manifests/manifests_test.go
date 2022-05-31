@@ -3622,6 +3622,54 @@ enableUserWorkload: true
 	}
 }
 
+func TestPrometheusOperatorNodeSelector(t *testing.T) {
+	for _, tc := range []struct {
+		name           string
+		infrastructure InfrastructureReader
+		expectedLabels map[string]string
+	}{
+		{
+			name:           "Test default topology, highly available and control plane in-cluster",
+			infrastructure: defaultInfrastructureReader(),
+			expectedLabels: map[string]string{
+				"kubernetes.io/os": "linux",
+				nodeSelectorMaster: "",
+			},
+		},
+		{
+			name:           "Test hypershift topology, highly available and control plane external",
+			infrastructure: &fakeInfrastructureReader{highlyAvailableInfrastructure: true, hostedControlPlane: true},
+			expectedLabels: map[string]string{
+				"kubernetes.io/os": "linux",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(`
+enableUserWorkload: true
+`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			d, err := f.PrometheusOperatorDeployment()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(d.Spec.Template.Spec.NodeSelector, tc.expectedLabels) {
+				t.Fatalf("prometheus-operator nodeSelector is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", d.Spec.Template.Spec.NodeSelector, tc.expectedLabels)
+			}
+			uwlDeployment, err := f.PrometheusOperatorUserWorkloadDeployment()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(uwlDeployment.Spec.Template.Spec.NodeSelector, tc.expectedLabels) {
+				t.Fatalf("user workload monitoring prometheus-operator nodeSelector is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", d.Spec.Template.Spec.NodeSelector, tc.expectedLabels)
+			}
+		})
+	}
+}
+
 func volumeConfigured(volumes []v1.Volume, volumeName string) bool {
 	for _, volume := range volumes {
 		if volume.Name == volumeName {

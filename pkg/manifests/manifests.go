@@ -58,6 +58,8 @@ const (
 	clientCAArg = "--client-ca-file=/etc/tls/client/client-ca.crt"
 
 	tmpClusterIDLabelName = "__tmp_openshift_cluster_id__"
+
+	nodeSelectorMaster = "node-role.kubernetes.io/master"
 )
 
 var (
@@ -2384,7 +2386,6 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 	}
 
 	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.NodeSelector) > 0 {
-
 		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.NodeSelector
 	}
 
@@ -3378,6 +3379,10 @@ func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) 
 
 	if d.GetNamespace() == "" {
 		d.SetNamespace(f.namespace)
+	}
+
+	if f.infrastructure.HostedControlPlane() {
+		delete(d.Spec.Template.Spec.NodeSelector, nodeSelectorMaster)
 	}
 
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
