@@ -505,7 +505,8 @@ func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*mo
 
 	a.Spec.Image = &f.config.Images.Alertmanager
 
-	//TODO(simonpasquier): proper link to the dev console.
+	// TODO(simonpasquier): link to the alerting page of the dev console. It
+	// depends on https://issues.redhat.com/browse/MON-2289.
 	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
 		a.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
 	}
