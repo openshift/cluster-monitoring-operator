@@ -702,6 +702,16 @@ data:
     #
     # es Management state used by the cluster.
     - '{__name__="eo_es_cluster_management_state_info"}'
+    #
+    # owners: (@openshift/openshift-team-image-registry)
+    #
+    # imageregistry:imagestreamtags_count:sum is the total number of existent image stream tags.
+    - '{__name__="imageregistry:imagestreamtags_count:sum"}'
+    #
+    # owners: (@openshift/openshift-team-image-registry)
+    #
+    # imageregistry:operations_count:sum is the total number of image pushes and pulls executed in the internal registry.
+    - '{__name__="imageregistry:operations_count:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
