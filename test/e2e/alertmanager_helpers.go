@@ -123,7 +123,7 @@ func setupWebhookReceiver(t *testing.T, f *framework.Framework, namespace string
 		return nil, err
 	}
 
-	if err := f.OperatorClient.CreateRouteIfNotExists(ctx, &routev1.Route{
+	route := &routev1.Route{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "e2e",
 			Labels: map[string]string{
@@ -139,19 +139,11 @@ func setupWebhookReceiver(t *testing.T, f *framework.Framework, namespace string
 			},
 			Port: &routev1.RoutePort{TargetPort: intstr.FromInt(8080)},
 		},
-	}); err != nil {
+	}
+	if err := f.OperatorClient.CreateOrUpdateRoute(ctx, route); err != nil {
 		return nil, err
 	}
-
-	var host string
-	err = framework.Poll(time.Second*10, time.Minute*2, func() error {
-		route, err := f.OpenShiftRouteClient.Routes(namespace).Get(ctx, "e2e", metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		host = route.Spec.Host
-		return nil
-	})
+	host, err := f.OperatorClient.WaitForRouteReady(ctx, route)
 	if err != nil {
 		return nil, err
 	}

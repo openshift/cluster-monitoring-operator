@@ -75,7 +75,7 @@ func (t *GrafanaTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Grafana Route failed")
 	}
 
-	err = t.client.CreateRouteIfNotExists(ctx, r)
+	err = t.client.CreateOrUpdateRoute(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "creating Grafana Route failed")
 	}
