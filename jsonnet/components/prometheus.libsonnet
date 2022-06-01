@@ -175,6 +175,26 @@ function(params)
       }],
     },
 
+    // This role enables access to the Prometheus/Thanos APIs through kube-rbac-proxy.
+    prometheusApiAccessRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'Role',
+      metadata: {
+        name: 'prometheus-api-access',
+        namespace: cfg.namespace,
+      },
+      rules: [{
+        nonResourceURLs: [
+          '/api/v1/query',
+          '/api/v1/query_range',
+          '/api/v1/series',
+          '/api/v1/labels',
+          '/api/v1/label/',
+        ],
+        verbs: ['get', 'create'],
+      }],
+    },
+
     kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy-metric'),
 
     kubeRbacProxySecret: {
@@ -190,13 +210,13 @@ function(params)
       stringData: {
         'config.yaml': std.manifestYamlDoc({
           authorization: {
-            resourceAttributes: {
-              apiVersion: 'v1',
-              resource: 'namespaces',
-              verbs: 'get',
-            },
+            // resourceAttributes: {
+            //   apiVersion: 'v1',
+            //   resource: 'namespaces',
+            //   verbs: 'get',
+            // },
             static: [{
-              resourceRequest: true,
+              resourceRequest: false,
               user: {
                 name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
               },

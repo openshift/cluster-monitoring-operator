@@ -373,6 +373,7 @@ local inCluster =
                 std.flatMap(function(role) role.rules,
                             inCluster.prometheus.roleSpecificNamespaces.items) +
                 inCluster.prometheus.roleConfig.rules +
+                inCluster.prometheus.prometheusApiAccessRole.rules +
                 inCluster.prometheusOperator.clusterRole.rules +
                 inCluster.telemeterClient.clusterRole.rules +
                 inCluster.thanosQuerier.clusterRole.rules +

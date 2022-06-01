@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: prometheus-api-access
+  namespace: openshift-monitoring
+rules:
+- nonResourceURLs:
+  - /api/v1/query
+  - /api/v1/query_range
+  - /api/v1/series
+  - /api/v1/labels
+  - /api/v1/label/
+  verbs:
+  - get
+  - create
