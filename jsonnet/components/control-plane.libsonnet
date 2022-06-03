@@ -95,12 +95,6 @@ function(params)
                       targetLabel: '__tmp_keep_metric',
                       replacement: 'true',
                     },
-                    {
-                      // these metrics are available at the slice level
-                      sourceLabels: ['__tmp_keep_metric', '__name__', 'container'],
-                      action: 'drop',
-                      regex: ';(container_fs_.*);.+',
-                    },
                     // drop the temporarily stashed metrics
                     {
                       action: 'labeldrop',
