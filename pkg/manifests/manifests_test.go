@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/openshift/library-go/pkg/crypto"
 
@@ -3423,6 +3424,153 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 	}
 }
 
+func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
+	type spec struct {
+		replicas int32
+		affinity *v1.Affinity
+	}
+
+	tests := []struct {
+		name         string
+		getEndpoints func(f *Factory) ([]monv1.Endpoint, error)
+	}{
+		{
+			name: "Prometheus Adapter Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.PrometheusAdapterServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "Alermanager Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.AlertmanagerServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "CMO Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.ClusterMonitoringOperatorServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "etcd Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.ControlPlaneEtcdServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "kubelet Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.ControlPlaneKubeletServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "Kube State Metrics Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.KubeStateMetricsServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "Node Exporter Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.NodeExporterServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "OpenShift State Metrics Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.OpenShiftStateMetricsServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "Prometheus K8s Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.PrometheusK8sPrometheusServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "Thanos Sidecar Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.PrometheusK8sThanosSidecarServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+	}
+	for _, tc := range tests {
+		nonHAFac := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: false}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		noHAEndpoints, err := tc.getEndpoints(nonHAFac)
+		if err != nil {
+			t.Error(err)
+		}
+		HAFac := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: true}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		HAEndpoints, err := tc.getEndpoints(HAFac)
+		if err != nil {
+			t.Error(err)
+		}
+
+		for i := range noHAEndpoints {
+			if noHAEndpoints[i].Interval == "" {
+				continue
+			}
+			noHAInt, err := time.ParseDuration(noHAEndpoints[i].Interval)
+			if err != nil {
+				t.Errorf("Unexpected error when parsing %s: %v", noHAEndpoints[i].Interval, err)
+			}
+			HAInt, err := time.ParseDuration(HAEndpoints[i].Interval)
+			if err != nil {
+				t.Errorf("Unexpected error when parsing %s: %v", HAEndpoints[i].Interval, err)
+			}
+
+			if HAInt*2 >= 2*time.Minute {
+				if noHAInt != 2*time.Minute {
+					t.Errorf("Unexpected value. %d should be max 2 minutes", noHAInt)
+				}
+			} else if noHAInt != HAInt*2 {
+				t.Errorf("Unexpected value. %d should be twice as big as %d", noHAInt, HAInt)
+			}
+		}
+	}
+
+}
 func TestPodDisruptionBudget(t *testing.T) {
 	tests := []struct {
 		name   string
