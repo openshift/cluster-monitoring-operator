@@ -144,8 +144,15 @@ local inCluster =
           'pod-total.json',
           'prometheus.json',
         ],
+        // This step is to delete row with titles 'Storage IO - Distribution(Containers)'
+        // and 'Storage IO - Distribution' from 'k8s-resources-pod.json' dashboard since
+        // Prometheus doesn't collect the per-container fs metrics
+        local filteredDashboards = {
+          'k8s-resources-pod.json': ['Storage IO - Distribution(Containers)', 'Storage IO - Distribution'],
+        },
+        local filterDashboard(dashboard, excludedRowTitles) = dashboard { rows: std.filter(function(row) !std.member(excludedRowTitles, row.title), dashboard.rows) },
         dashboards: {
-          [k]: allDashboards[k]
+          [k]: filterDashboard(allDashboards[k], if std.setMember(k, std.objectFields(filteredDashboards)) then filteredDashboards[k] else [])
           for k in std.objectFields(allDashboards)
           if std.setMember(k, includeDashboards)
         },
@@ -354,7 +361,7 @@ local inCluster =
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
-            // Temporarily commented to test upstream change https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/767
+            // Temporarily commented since upstream change https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/767 not merged yet
             // diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
             diskDeviceSelector: 'device=~"(/dev.+)|%s"' % std.join('|', ['mmcblk.p.+', 'nvme.+', 'rbd.+', 'sd.+', 'vd.+', 'xvd.+', 'dm-.+', 'dasd.+']),
             hostNetworkInterfaceSelector: 'device!~"veth.+"',
