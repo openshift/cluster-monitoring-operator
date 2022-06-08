@@ -43,26 +43,28 @@ type globalConfig struct {
 
 	HTTPConfig *httpClientConfig `yaml:"http_config,omitempty" json:"http_config,omitempty"`
 
-	SMTPFrom         string          `yaml:"smtp_from,omitempty" json:"smtp_from,omitempty"`
-	SMTPHello        string          `yaml:"smtp_hello,omitempty" json:"smtp_hello,omitempty"`
-	SMTPSmarthost    config.HostPort `yaml:"smtp_smarthost,omitempty" json:"smtp_smarthost,omitempty"`
-	SMTPAuthUsername string          `yaml:"smtp_auth_username,omitempty" json:"smtp_auth_username,omitempty"`
-	SMTPAuthPassword string          `yaml:"smtp_auth_password,omitempty" json:"smtp_auth_password,omitempty"`
-	SMTPAuthSecret   string          `yaml:"smtp_auth_secret,omitempty" json:"smtp_auth_secret,omitempty"`
-	SMTPAuthIdentity string          `yaml:"smtp_auth_identity,omitempty" json:"smtp_auth_identity,omitempty"`
-	SMTPRequireTLS   *bool           `yaml:"smtp_require_tls,omitempty" json:"smtp_require_tls,omitempty"`
-	SlackAPIURL      *config.URL     `yaml:"slack_api_url,omitempty" json:"slack_api_url,omitempty"`
-	SlackAPIURLFile  string          `yaml:"slack_api_url_file,omitempty" json:"slack_api_url_file,omitempty"`
-	PagerdutyURL     *config.URL     `yaml:"pagerduty_url,omitempty" json:"pagerduty_url,omitempty"`
-	HipchatAPIURL    *config.URL     `yaml:"hipchat_api_url,omitempty" json:"hipchat_api_url,omitempty"`
-	HipchatAuthToken string          `yaml:"hipchat_auth_token,omitempty" json:"hipchat_auth_token,omitempty"`
-	OpsGenieAPIURL   *config.URL     `yaml:"opsgenie_api_url,omitempty" json:"opsgenie_api_url,omitempty"`
-	OpsGenieAPIKey   string          `yaml:"opsgenie_api_key,omitempty" json:"opsgenie_api_key,omitempty"`
-	WeChatAPIURL     *config.URL     `yaml:"wechat_api_url,omitempty" json:"wechat_api_url,omitempty"`
-	WeChatAPISecret  string          `yaml:"wechat_api_secret,omitempty" json:"wechat_api_secret,omitempty"`
-	WeChatAPICorpID  string          `yaml:"wechat_api_corp_id,omitempty" json:"wechat_api_corp_id,omitempty"`
-	VictorOpsAPIURL  *config.URL     `yaml:"victorops_api_url,omitempty" json:"victorops_api_url,omitempty"`
-	VictorOpsAPIKey  string          `yaml:"victorops_api_key,omitempty" json:"victorops_api_key,omitempty"`
+	SMTPFrom           string          `yaml:"smtp_from,omitempty" json:"smtp_from,omitempty"`
+	SMTPHello          string          `yaml:"smtp_hello,omitempty" json:"smtp_hello,omitempty"`
+	SMTPSmarthost      config.HostPort `yaml:"smtp_smarthost,omitempty" json:"smtp_smarthost,omitempty"`
+	SMTPAuthUsername   string          `yaml:"smtp_auth_username,omitempty" json:"smtp_auth_username,omitempty"`
+	SMTPAuthPassword   string          `yaml:"smtp_auth_password,omitempty" json:"smtp_auth_password,omitempty"`
+	SMTPAuthSecret     string          `yaml:"smtp_auth_secret,omitempty" json:"smtp_auth_secret,omitempty"`
+	SMTPAuthIdentity   string          `yaml:"smtp_auth_identity,omitempty" json:"smtp_auth_identity,omitempty"`
+	SMTPRequireTLS     *bool           `yaml:"smtp_require_tls,omitempty" json:"smtp_require_tls,omitempty"`
+	SlackAPIURL        *config.URL     `yaml:"slack_api_url,omitempty" json:"slack_api_url,omitempty"`
+	SlackAPIURLFile    string          `yaml:"slack_api_url_file,omitempty" json:"slack_api_url_file,omitempty"`
+	PagerdutyURL       *config.URL     `yaml:"pagerduty_url,omitempty" json:"pagerduty_url,omitempty"`
+	HipchatAPIURL      *config.URL     `yaml:"hipchat_api_url,omitempty" json:"hipchat_api_url,omitempty"`
+	HipchatAuthToken   string          `yaml:"hipchat_auth_token,omitempty" json:"hipchat_auth_token,omitempty"`
+	OpsGenieAPIURL     *config.URL     `yaml:"opsgenie_api_url,omitempty" json:"opsgenie_api_url,omitempty"`
+	OpsGenieAPIKey     string          `yaml:"opsgenie_api_key,omitempty" json:"opsgenie_api_key,omitempty"`
+	OpsGenieAPIKeyFile string          `yaml:"opsgenie_api_key_file,omitempty" json:"opsgenie_api_key_file,omitempty"`
+	WeChatAPIURL       *config.URL     `yaml:"wechat_api_url,omitempty" json:"wechat_api_url,omitempty"`
+	WeChatAPISecret    string          `yaml:"wechat_api_secret,omitempty" json:"wechat_api_secret,omitempty"`
+	WeChatAPICorpID    string          `yaml:"wechat_api_corp_id,omitempty" json:"wechat_api_corp_id,omitempty"`
+	VictorOpsAPIURL    *config.URL     `yaml:"victorops_api_url,omitempty" json:"victorops_api_url,omitempty"`
+	VictorOpsAPIKey    string          `yaml:"victorops_api_key,omitempty" json:"victorops_api_key,omitempty"`
+	TelegramAPIURL     *config.URL     `yaml:"telegram_api_url,omitempty" json:"telegram_api_url,omitempty"`
 }
 
 type route struct {
@@ -96,10 +98,11 @@ type receiver struct {
 	SlackConfigs     []*slackConfig     `yaml:"slack_configs,omitempty" json:"slack_configs,omitempty"`
 	WebhookConfigs   []*webhookConfig   `yaml:"webhook_configs,omitempty" json:"webhook_configs,omitempty"`
 	WeChatConfigs    []*weChatConfig    `yaml:"wechat_configs,omitempty" json:"wechat_config,omitempty"`
-	// TODO(simonpasquier): support the following receivers with AlertmanagerConfig.
 	EmailConfigs     []*emailConfig     `yaml:"email_configs,omitempty" json:"email_configs,omitempty"`
 	PushoverConfigs  []*pushoverConfig  `yaml:"pushover_configs,omitempty" json:"pushover_configs,omitempty"`
 	VictorOpsConfigs []*victorOpsConfig `yaml:"victorops_configs,omitempty" json:"victorops_configs,omitempty"`
+	SNSConfigs       []*snsConfig       `yaml:"sns_configs,omitempty" json:"sns_configs,omitempty"`
+	TelegramConfigs  []*telegramConfig  `yaml:"telegram_configs,omitempty" json:"telegram_configs,omitempty"`
 }
 
 type webhookConfig struct {
@@ -131,6 +134,7 @@ type opsgenieConfig struct {
 	VSendResolved *bool               `yaml:"send_resolved,omitempty" json:"send_resolved,omitempty"`
 	HTTPConfig    *httpClientConfig   `yaml:"http_config,omitempty" json:"http_config,omitempty"`
 	APIKey        string              `yaml:"api_key,omitempty" json:"api_key,omitempty"`
+	APIKeyFile    string              `yaml:"api_key_file,omitempty" json:"api_key_file,omitempty"`
 	APIURL        string              `yaml:"api_url,omitempty" json:"api_url,omitempty"`
 	Message       string              `yaml:"message,omitempty" json:"message,omitempty"`
 	Description   string              `yaml:"description,omitempty" json:"description,omitempty"`
@@ -140,6 +144,9 @@ type opsgenieConfig struct {
 	Tags          string              `yaml:"tags,omitempty" json:"tags,omitempty"`
 	Note          string              `yaml:"note,omitempty" json:"note,omitempty"`
 	Priority      string              `yaml:"priority,omitempty" json:"priority,omitempty"`
+	UpdateAlerts  *bool               `yaml:"update_alerts,omitempty" json:"update_alerts,omitempty"`
+	Entity        string              `yaml:"entity,omitempty" json:"entity,omitempty"`
+	Actions       string              `yaml:"actions,omitempty" json:"actions,omitempty"`
 }
 
 type weChatConfig struct {
@@ -185,10 +192,12 @@ type slackConfig struct {
 type httpClientConfig struct {
 	Authorization   *authorization `yaml:"authorization,omitempty"`
 	BasicAuth       *basicAuth     `yaml:"basic_auth,omitempty"`
+	OAuth2          *oauth2        `yaml:"oauth2,omitempty"`
 	BearerToken     string         `yaml:"bearer_token,omitempty"`
 	BearerTokenFile string         `yaml:"bearer_token_file,omitempty"`
 	ProxyURL        string         `yaml:"proxy_url,omitempty"`
 	TLSConfig       tlsConfig      `yaml:"tls_config,omitempty"`
+	FollowRedirects *bool          `yaml:"follow_redirects,omitempty"`
 }
 
 type tlsConfig struct {
@@ -209,6 +218,17 @@ type basicAuth struct {
 	Username     string `yaml:"username"`
 	Password     string `yaml:"password,omitempty"`
 	PasswordFile string `yaml:"password_file,omitempty"`
+}
+
+type oauth2 struct {
+	ClientID         string            `yaml:"client_id"`
+	ClientSecret     string            `yaml:"client_secret"`
+	ClientSecretFile string            `yaml:"client_secret_file,omitempty"`
+	Scopes           []string          `yaml:"scopes,omitempty"`
+	TokenURL         string            `yaml:"token_url"`
+	EndpointParams   map[string]string `yaml:"endpoint_params,omitempty"`
+
+	TLSConfig *tlsConfig `yaml:"tls_config,omitempty"`
 }
 
 type pagerdutyLink struct {
@@ -283,6 +303,38 @@ type pushoverConfig struct {
 	Retry         duration          `yaml:"retry,omitempty" json:"retry,omitempty"`
 	Expire        duration          `yaml:"expire,omitempty" json:"expire,omitempty"`
 	HTML          bool              `yaml:"html,omitempty" json:"html,omitempty"`
+}
+
+type snsConfig struct {
+	VSendResolved *bool             `yaml:"send_resolved,omitempty" json:"send_resolved,omitempty"`
+	HTTPConfig    *httpClientConfig `yaml:"http_config,omitempty" json:"http_config,omitempty"`
+	APIUrl        string            `yaml:"api_url,omitempty" json:"api_url,omitempty"`
+	Sigv4         sigV4Config       `yaml:"sigv4,omitempty" json:"sigv4,omitempty"`
+	TopicARN      string            `yaml:"topic_arn,omitempty" json:"topic_arn,omitempty"`
+	PhoneNumber   string            `yaml:"phone_number,omitempty" json:"phone_number,omitempty"`
+	TargetARN     string            `yaml:"target_arn,omitempty" json:"target_arn,omitempty"`
+	Subject       string            `yaml:"subject,omitempty" json:"subject,omitempty"`
+	Message       string            `yaml:"message,omitempty" json:"message,omitempty"`
+	Attributes    map[string]string `yaml:"attributes,omitempty" json:"attributes,omitempty"`
+}
+
+type telegramConfig struct {
+	VSendResolved        *bool             `yaml:"send_resolved,omitempty" json:"send_resolved,omitempty"`
+	APIUrl               string            `yaml:"api_url,omitempty" json:"api_url,omitempty"`
+	BotToken             string            `yaml:"bot_token,omitempty" json:"bot_token,omitempty"`
+	ChatID               int64             `yaml:"chat_id,omitempty" json:"chat_id,omitempty"`
+	Message              string            `yaml:"message,omitempty" json:"message,omitempty"`
+	DisableNotifications bool              `yaml:"disable_notifications,omitempty" json:"disable_notifications,omitempty"`
+	ParseMode            string            `yaml:"parse_mode,omitempty" json:"parse_mode,omitempty"`
+	HTTPConfig           *httpClientConfig `yaml:"http_config,omitempty" json:"http_config,omitempty"`
+}
+
+type sigV4Config struct {
+	Region    string `yaml:"region,omitempty" json:"region,omitempty"`
+	AccessKey string `yaml:"access_key,omitempty" json:"access_key,omitempty"`
+	SecretKey string `yaml:"secret_key,omitempty" json:"secret_key,omitempty"`
+	Profile   string `yaml:"profile,omitempty" json:"profile,omitempty"`
+	RoleARN   string `yaml:"role_arn,omitempty" json:"role_arn,omitempty"`
 }
 
 type duration time.Duration

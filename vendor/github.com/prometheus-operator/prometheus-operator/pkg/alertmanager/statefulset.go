@@ -321,6 +321,10 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 	podLabels := map[string]string{
 		"app.kubernetes.io/version": version.String(),
 	}
+	// In cases where an existing selector label is modified, or a new one is added, new sts cannot match existing pods.
+	// We should try to avoid removing such immutable fields whenever possible since doing
+	// so forces us to enter the 'recreate cycle' and can potentially lead to downtime.
+	// The requirement to make a change here should be carefully evaluated.
 	podSelectorLabels := map[string]string{
 		"app.kubernetes.io/name":       "alertmanager",
 		"app.kubernetes.io/managed-by": "prometheus-operator",
@@ -534,6 +538,8 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 	var watchedDirectories []string
 	watchedDirectories = append(watchedDirectories, reloadWatchDirs...)
 
+	boolFalse := false
+	boolTrue := true
 	defaultContainers := []v1.Container{
 		{
 			Args:           amArgs,
@@ -544,6 +550,13 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 			LivenessProbe:  livenessProbe,
 			ReadinessProbe: readinessProbe,
 			Resources:      a.Spec.Resources,
+			SecurityContext: &v1.SecurityContext{
+				AllowPrivilegeEscalation: &boolFalse,
+				ReadOnlyRootFilesystem:   &boolTrue,
+				Capabilities: &v1.Capabilities{
+					Drop: []v1.Capability{"ALL"},
+				},
+			},
 			Env: []v1.EnvVar{
 				{
 					// Necessary for '--cluster.listen-address' flag
@@ -615,13 +628,18 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 				Tolerations:                   a.Spec.Tolerations,
 				Affinity:                      a.Spec.Affinity,
 				TopologySpreadConstraints:     a.Spec.TopologySpreadConstraints,
+				HostAliases:                   operator.MakeHostAliases(a.Spec.HostAliases),
 			},
 		},
 	}, nil
 }
 
-func defaultConfigSecretName(name string) string {
-	return prefixedName(name)
+func defaultConfigSecretName(am *monitoringv1.Alertmanager) string {
+	if am.Spec.ConfigSecret == "" {
+		return prefixedName(am.Name)
+	}
+
+	return am.Spec.ConfigSecret
 }
 
 func generatedConfigSecretName(name string) string {

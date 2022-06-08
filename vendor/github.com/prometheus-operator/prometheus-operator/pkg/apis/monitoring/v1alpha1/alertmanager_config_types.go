@@ -40,7 +40,8 @@ const (
 // across multiple namespaces configuring one Alertmanager cluster.
 // +genclient
 // +k8s:openapi-gen=true
-// +kubebuilder:resource:categories="prometheus-operator"
+// +kubebuilder:resource:categories="prometheus-operator",shortName="amcfg"
+// +kubebuilder:storageversion
 type AlertmanagerConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -165,6 +166,10 @@ type Receiver struct {
 	VictorOpsConfigs []VictorOpsConfig `json:"victoropsConfigs,omitempty"`
 	// List of Pushover configurations.
 	PushoverConfigs []PushoverConfig `json:"pushoverConfigs,omitempty"`
+	// List of SNS configurations
+	SNSConfigs []SNSConfig `json:"snsConfigs,omitempty"`
+	// List of Telegram configurations.
+	TelegramConfigs []TelegramConfig `json:"telegramConfigs,omitempty"`
 }
 
 // PagerDutyConfig configures notifications via PagerDuty.
@@ -473,6 +478,10 @@ type OpsGenieConfig struct {
 	// Priority level of alert. Possible values are P1, P2, P3, P4, and P5.
 	// +optional
 	Priority string `json:"priority,omitempty"`
+	// Whether to update message and description of the alert in OpsGenie if it already exists
+	// By default, the alert is never updated in OpsGenie, the new message only appears in activity log.
+	// +optional
+	UpdateAlerts *bool `json:"updateAlerts,omitempty"`
 	// A set of arbitrary key/value pairs that provide further detail about the incident.
 	// +optional
 	Details []KeyValue `json:"details,omitempty"`
@@ -482,6 +491,12 @@ type OpsGenieConfig struct {
 	// HTTP client configuration.
 	// +optional
 	HTTPConfig *HTTPConfig `json:"httpConfig,omitempty"`
+	// Optional field that can be used to specify which domain alert is related to.
+	// +optional
+	Entity string `json:"entity,omitempty"`
+	// Comma separated list of actions that will be available for the alert.
+	// +optional
+	Actions string `json:"actions,omitempty"`
 }
 
 // Validate ensures OpsGenieConfig is valid
@@ -508,6 +523,7 @@ type OpsGenieConfigResponder struct {
 	Username string `json:"username,omitempty"`
 	// Type of responder.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Enum=team;teams;user;escalation;schedule
 	Type string `json:"type"`
 }
 
@@ -531,6 +547,9 @@ type HTTPConfig struct {
 	// This is mutually exclusive with Authorization. If both are defined, BasicAuth takes precedence.
 	// +optional
 	BasicAuth *monitoringv1.BasicAuth `json:"basicAuth,omitempty"`
+	// OAuth2 client credentials used to fetch a token for the targets.
+	// +optional
+	OAuth2 *monitoringv1.OAuth2 `json:"oauth2,omitempty"`
 	// The secret's key that contains the bearer token to be used by the client
 	// for authentication.
 	// The secret needs to be in the same namespace as the AlertmanagerConfig
@@ -543,6 +562,9 @@ type HTTPConfig struct {
 	// Optional proxy URL.
 	// +optional
 	ProxyURL string `json:"proxyURL,omitempty"`
+	// FollowRedirects specifies whether the client should follow HTTP 3xx redirects.
+	// +optional
+	FollowRedirects *bool `json:"followRedirects,omitempty"`
 }
 
 // WeChatConfig configures notifications via WeChat.
@@ -712,6 +734,76 @@ type PushoverConfig struct {
 	// Whether notification message is HTML or plain text.
 	// +optional
 	HTML bool `json:"html,omitempty"`
+	// HTTP client configuration.
+	// +optional
+	HTTPConfig *HTTPConfig `json:"httpConfig,omitempty"`
+}
+
+// SNSConfig configures notifications via AWS SNS.
+// See https://prometheus.io/docs/alerting/latest/configuration/#sns_configs
+type SNSConfig struct {
+	// Whether or not to notify about resolved alerts.
+	// +optional
+	SendResolved *bool `json:"sendResolved,omitempty"`
+	// The SNS API URL i.e. https://sns.us-east-2.amazonaws.com.
+	// If not specified, the SNS API URL from the SNS SDK will be used.
+	// +optional
+	ApiURL string `json:"apiURL,omitempty"`
+	// Configures AWS's Signature Verification 4 signing process to sign requests.
+	// +optional
+	Sigv4 *monitoringv1.Sigv4 `json:"sigv4,omitempty"`
+	// SNS topic ARN, i.e. arn:aws:sns:us-east-2:698519295917:My-Topic
+	// If you don't specify this value, you must specify a value for the PhoneNumber or TargetARN.
+	// +optional
+	TopicARN string `json:"topicARN,omitempty"`
+	// Subject line when the message is delivered to email endpoints.
+	// +optional
+	Subject string `json:"subject,omitempty"`
+	// Phone number if message is delivered via SMS in E.164 format.
+	// If you don't specify this value, you must specify a value for the TopicARN or TargetARN.
+	// +optional
+	PhoneNumber string `json:"phoneNumber,omitempty"`
+	// The  mobile platform endpoint ARN if message is delivered via mobile notifications.
+	// If you don't specify this value, you must specify a value for the topic_arn or PhoneNumber.
+	// +optional
+	TargetARN string `json:"targetARN,omitempty"`
+	// The message content of the SNS notification.
+	// +optional
+	Message string `json:"message,omitempty"`
+	// SNS message attributes.
+	// +optional
+	Attributes map[string]string `json:"attributes,omitempty"`
+	// HTTP client configuration.
+	// +optional
+	HTTPConfig *HTTPConfig `json:"httpConfig,omitempty"`
+}
+
+// TelegramConfig configures notifications via Telegram.
+// See https://prometheus.io/docs/alerting/latest/configuration/#telegram_config
+type TelegramConfig struct {
+	// Whether to notify about resolved alerts.
+	// +optional
+	SendResolved *bool `json:"sendResolved,omitempty"`
+	// The Telegram API URL i.e. https://api.telegram.org.
+	// If not specified, default API URL will be used.
+	// +optional
+	APIURL string `json:"apiURL,omitempty"`
+	// Telegram bot token
+	// The secret needs to be in the same namespace as the AlertmanagerConfig
+	// object and accessible by the Prometheus Operator.
+	BotToken *v1.SecretKeySelector `json:"botToken,omitempty"`
+	// The Telegram chat ID.
+	ChatID int64 `json:"chatID,omitempty"`
+	// Message template
+	// +optional
+	Message string `json:"message,omitempty"`
+	// Disable telegram notifications
+	// +optional
+	DisableNotifications *bool `json:"disableNotifications,omitempty"`
+	// Parse mode for telegram message
+	//+kubebuilder:validation:Enum=MarkdownV2;Markdown;HTML
+	// +optional
+	ParseMode string `json:"parseMode,omitempty"`
 	// HTTP client configuration.
 	// +optional
 	HTTPConfig *HTTPConfig `json:"httpConfig,omitempty"`
