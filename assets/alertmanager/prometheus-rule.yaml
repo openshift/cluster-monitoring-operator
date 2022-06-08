@@ -24,7 +24,7 @@ spec:
       expr: |
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
-        max_over_time(alertmanager_config_last_reload_successful{job="alertmanager-main",namespace="openshift-monitoring"}[5m]) == 0
+        max_over_time(alertmanager_config_last_reload_successful{job=~"alertmanager-main|alertmanager-user-workload"}[5m]) == 0
       for: 10m
       labels:
         severity: critical
@@ -37,9 +37,9 @@ spec:
       expr: |
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
-          max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+          max_over_time(alertmanager_cluster_members{job=~"alertmanager-main|alertmanager-user-workload"}[5m])
         < on (namespace,service) group_left
-          count by (namespace,service) (max_over_time(alertmanager_cluster_members{job="alertmanager-main",namespace="openshift-monitoring"}[5m]))
+          count by (namespace,service) (max_over_time(alertmanager_cluster_members{job=~"alertmanager-main|alertmanager-user-workload"}[5m]))
       for: 15m
       labels:
         severity: warning
@@ -52,9 +52,9 @@ spec:
         summary: An Alertmanager instance failed to send notifications.
       expr: |
         (
-          rate(alertmanager_notifications_failed_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+          rate(alertmanager_notifications_failed_total{job=~"alertmanager-main|alertmanager-user-workload"}[5m])
         /
-          rate(alertmanager_notifications_total{job="alertmanager-main",namespace="openshift-monitoring"}[5m])
+          rate(alertmanager_notifications_total{job=~"alertmanager-main|alertmanager-user-workload"}[5m])
         )
         > 0.01
       for: 5m
@@ -70,9 +70,9 @@ spec:
           to a critical integration.
       expr: |
         min by (namespace,service, integration) (
-          rate(alertmanager_notifications_failed_total{job="alertmanager-main",namespace="openshift-monitoring", integration=~`.*`}[5m])
+          rate(alertmanager_notifications_failed_total{job=~"alertmanager-main|alertmanager-user-workload", integration=~`.*`}[5m])
         /
-          rate(alertmanager_notifications_total{job="alertmanager-main",namespace="openshift-monitoring", integration=~`.*`}[5m])
+          rate(alertmanager_notifications_total{job=~"alertmanager-main|alertmanager-user-workload", integration=~`.*`}[5m])
         )
         > 0.01
       for: 5m
@@ -85,7 +85,7 @@ spec:
         summary: Alertmanager instances within the same cluster have different configurations.
       expr: |
         count by (namespace,service) (
-          count_values by (namespace,service) ("config_hash", alertmanager_config_hash{job="alertmanager-main",namespace="openshift-monitoring"})
+          count_values by (namespace,service) ("config_hash", alertmanager_config_hash{job=~"alertmanager-main|alertmanager-user-workload"})
         )
         != 1
       for: 20m
@@ -101,11 +101,11 @@ spec:
       expr: |
         (
           count by (namespace,service) (
-            avg_over_time(up{job="alertmanager-main",namespace="openshift-monitoring"}[5m]) < 0.5
+            avg_over_time(up{job=~"alertmanager-main|alertmanager-user-workload"}[5m]) < 0.5
           )
         /
           count by (namespace,service) (
-            up{job="alertmanager-main",namespace="openshift-monitoring"}
+            up{job=~"alertmanager-main|alertmanager-user-workload"}
           )
         )
         >= 0.5

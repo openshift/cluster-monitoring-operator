@@ -2,6 +2,7 @@ package manifests
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 )
@@ -10,24 +11,29 @@ import (
 type PrometheusAdditionalAlertmanagerConfigs []AdditionalAlertmanagerConfig
 
 // PrometheusAdditionalAlertmanagerConfig is an AdditionalAlertmanagerConfig
-// which can be marshaled into a yaml string,
-// compatible with the Prometheus configuration format
-type PrometheusAdditionalAlertmanagerConfig AdditionalAlertmanagerConfig
+// which can be marshaled into a yaml string, compatible with the Prometheus
+// configuration format
+type prometheusAdditionalAlertmanagerConfig AdditionalAlertmanagerConfig
 
+// MarshalYAML implements the yaml.Marshaler interface.
 func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAML() (interface{}, error) {
 	result := make([]interface{}, len(a))
+
 	for i, item := range a {
-		promAmCfg := PrometheusAdditionalAlertmanagerConfig(item)
-		if y, err := promAmCfg.MarshalYAML(); err != nil {
+		promAmCfg := prometheusAdditionalAlertmanagerConfig(item)
+
+		y, err := promAmCfg.MarshalYAML()
+		if err != nil {
 			return nil, errors.Wrapf(err, "additional Alertmanager configuration[%d]", i)
-		} else {
-			result[i] = y
 		}
+
+		result[i] = y
 	}
 
 	return result, nil
 }
 
+// amConfigPrometheus is our internal representation of the Prometheus alerting configuration.
 type amConfigPrometheus struct {
 	Scheme        string                  `yaml:"scheme,omitempty"`
 	PathPrefix    string                  `yaml:"path_prefix,omitempty"`
@@ -54,9 +60,10 @@ type amConfigStaticConfigs struct {
 	Targets []string `yaml:"targets"`
 }
 
-// MarshalYAML marshals a PrometheusAdditionalAlertmanagerConfig into
-// a format compatible with the Prometheus configuration.
-func (a PrometheusAdditionalAlertmanagerConfig) MarshalYAML() (interface{}, error) {
+// MarshalYAML implements the yaml.Marshaler interface.
+// It marshals a PrometheusAdditionalAlertmanagerConfig into a format
+// compatible with the Prometheus configuration.
+func (a prometheusAdditionalAlertmanagerConfig) MarshalYAML() (interface{}, error) {
 	cfg := amConfigPrometheus{
 		Scheme:     a.Scheme,
 		PathPrefix: a.PathPrefix,
@@ -73,26 +80,30 @@ func (a PrometheusAdditionalAlertmanagerConfig) MarshalYAML() (interface{}, erro
 			CredentialsFile: "",
 		},
 	}
-	if caPath, err := secretPath(a.TLSConfig.CA); err != nil {
+
+	caPath, err := secretPath(a.TLSConfig.CA)
+	if err != nil {
 		return nil, err
-	} else {
-		cfg.TLSConfig.CA = caPath
 	}
-	if keyPath, err := secretPath(a.TLSConfig.Key); err != nil {
+	cfg.TLSConfig.CA = caPath
+
+	keyPath, err := secretPath(a.TLSConfig.Key)
+	if err != nil {
 		return nil, err
-	} else {
-		cfg.TLSConfig.Key = keyPath
 	}
-	if certPath, err := secretPath(a.TLSConfig.Cert); err != nil {
+	cfg.TLSConfig.Key = keyPath
+
+	certPath, err := secretPath(a.TLSConfig.Cert)
+	if err != nil {
 		return nil, err
-	} else {
-		cfg.TLSConfig.Cert = certPath
 	}
-	if bearerTokenPath, err := secretPath(a.BearerToken); err != nil {
+	cfg.TLSConfig.Cert = certPath
+
+	bearerTokenPath, err := secretPath(a.BearerToken)
+	if err != nil {
 		return nil, err
-	} else {
-		cfg.Authorization.CredentialsFile = bearerTokenPath
 	}
+	cfg.Authorization.CredentialsFile = bearerTokenPath
 
 	cfg.StaticConfigs = []amConfigStaticConfigs{
 		{
@@ -103,29 +114,13 @@ func (a PrometheusAdditionalAlertmanagerConfig) MarshalYAML() (interface{}, erro
 	return cfg, nil
 }
 
-// ThanosAlertmanagerAdditionalConfigs is a AdditionalAlertmanagerConfig slice
-type ThanosAlertmanagerAdditionalConfigs []AdditionalAlertmanagerConfig
-
-// ThanosAlertmanagerAdditionalConfig is an AdditionalAlertmanagerConfig
-// which can be marshaled into a yaml string,
-// compatible with the Thanos configuration format
-type ThanosAlertmanagerAdditionalConfig AdditionalAlertmanagerConfig
-
-func (a ThanosAlertmanagerAdditionalConfigs) MarshalYAML() (interface{}, error) {
-	result := make([]interface{}, len(a))
-	for i, item := range a {
-		promAmCfg := ThanosAlertmanagerAdditionalConfig(item)
-		if y, err := promAmCfg.MarshalYAML(); err != nil {
-			return nil, errors.Wrapf(err, "additional Alertmanager configuration[%d]", i)
-		} else {
-			result[i] = y
-		}
-	}
-
-	return result, nil
+// thanosAlertingConfiguration is our internal representation of the Thanos
+// alerting configuration.
+type thanosAlertingConfiguration struct {
+	Alertmanagers []thanosAlertmanagerConfiguration `yaml:"alertmanagers"`
 }
 
-type amConfigThanos struct {
+type thanosAlertmanagerConfiguration struct {
 	Scheme        string       `yaml:"scheme,omitempty"`
 	PathPrefix    string       `yaml:"path_prefix,omitempty"`
 	Timeout       *string      `yaml:"timeout,omitempty"`
@@ -139,49 +134,57 @@ type amHTTPConfig struct {
 	TLSConfig       amConfigTLS `yaml:"tls_config,omitempty"`
 }
 
-// MarshalYAML marshals a ThanosAlertmanagerAdditionalConfig into
-// a format compatible with the Prometheus configuration.
-func (a ThanosAlertmanagerAdditionalConfig) MarshalYAML() (interface{}, error) {
-	cfg := amConfigThanos{
-		Scheme:     a.Scheme,
-		PathPrefix: a.PathPrefix,
-		Timeout:    a.Timeout,
-		APIVersion: a.APIVersion,
-		HTTPConfig: amHTTPConfig{
-			BearerTokenFile: "",
-			TLSConfig: amConfigTLS{
-				CA:                 "",
-				Cert:               "",
-				Key:                "",
-				ServerName:         a.TLSConfig.ServerName,
-				InsecureSkipVerify: a.TLSConfig.InsecureSkipVerify,
+func ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig) ([]thanosAlertmanagerConfiguration, error) {
+	result := make([]thanosAlertmanagerConfiguration, len(ta))
+
+	for i, a := range ta {
+		cfg := thanosAlertmanagerConfiguration{
+			Scheme:     a.Scheme,
+			PathPrefix: a.PathPrefix,
+			Timeout:    a.Timeout,
+			APIVersion: a.APIVersion,
+			HTTPConfig: amHTTPConfig{
+				BearerTokenFile: "",
+				TLSConfig: amConfigTLS{
+					CA:                 "",
+					Cert:               "",
+					Key:                "",
+					ServerName:         a.TLSConfig.ServerName,
+					InsecureSkipVerify: a.TLSConfig.InsecureSkipVerify,
+				},
 			},
-		},
-	}
-	if caPath, err := secretPath(a.TLSConfig.CA); err != nil {
-		return nil, err
-	} else {
+		}
+
+		caPath, err := secretPath(a.TLSConfig.CA)
+		if err != nil {
+			return nil, err
+		}
 		cfg.HTTPConfig.TLSConfig.CA = caPath
-	}
-	if keyPath, err := secretPath(a.TLSConfig.Key); err != nil {
-		return nil, err
-	} else {
+
+		keyPath, err := secretPath(a.TLSConfig.Key)
+		if err != nil {
+			return nil, err
+		}
 		cfg.HTTPConfig.TLSConfig.Key = keyPath
-	}
-	if certPath, err := secretPath(a.TLSConfig.Cert); err != nil {
-		return nil, err
-	} else {
+
+		certPath, err := secretPath(a.TLSConfig.Cert)
+		if err != nil {
+			return nil, err
+		}
 		cfg.HTTPConfig.TLSConfig.Cert = certPath
-	}
-	if bearerTokenPath, err := secretPath(a.BearerToken); err != nil {
-		return nil, err
-	} else {
+
+		bearerTokenPath, err := secretPath(a.BearerToken)
+		if err != nil {
+			return nil, err
+		}
 		cfg.HTTPConfig.BearerTokenFile = bearerTokenPath
+
+		cfg.StaticConfigs = a.StaticConfigs
+
+		result[i] = cfg
 	}
 
-	cfg.StaticConfigs = a.StaticConfigs
-
-	return cfg, nil
+	return result, nil
 }
 
 func secretPath(s *v1.SecretKeySelector) (string, error) {
@@ -202,10 +205,11 @@ func validateSecret(s *v1.SecretKeySelector) error {
 	}
 
 	if s.Name == "" {
-		return errors.Errorf("secret %q for ca not found", s.Name)
+		return errors.Errorf("secret %q not found", s.Name)
 	}
+
 	if s.Key == "" {
-		return errors.Errorf("secret key %q for ca not found", s.Key)
+		return errors.Errorf("key %q for secret %q not found", s.Key, s.Name)
 	}
 
 	return nil

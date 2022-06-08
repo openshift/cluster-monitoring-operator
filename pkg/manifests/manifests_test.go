@@ -2086,62 +2086,83 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 
 func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	testCases := []struct {
-		name     string
-		config   string
+		name               string
+		config             string
+		userWorkloadConfig string
+
 		expected string
 	}{
 		{
-			name: "no config with alertmanager disabled",
+			name: "no config with platform alertmanager disabled",
 			config: `alertmanagerMain:
   enabled: false`,
-			expected: `alertmanagers: []`,
+			expected: `alertmanagers: []
+`,
 		},
 		{
-			name:   "no config",
-			config: ``,
-			expected: `"alertmanagers":
-- "api_version": "v2"
-  "http_config":
-    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
-    "tls_config":
-      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
-      "server_name": "alertmanager-main.openshift-monitoring.svc"
-  "scheme": "https"
-  "static_configs":
-  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"`,
+			name: "no config with UWM alertmanager disabled",
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+`,
+		},
+		{
+			name: "no config with UWM alertmanager enabled",
+			userWorkloadConfig: `alertmanager:
+    enabled: true
+`,
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-user-workload.openshift-user-workload-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-user-workload-monitoring.svc
+`,
 		},
 		{
 			name: "basic config",
-			config: `thanosRuler:
+			userWorkloadConfig: `thanosRuler:
   additionalAlertmanagerConfigs:
   - staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
 `,
-			expected: `"alertmanagers":
-- "api_version": "v2"
-  "http_config":
-    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
-    "tls_config":
-      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
-      "server_name": "alertmanager-main.openshift-monitoring.svc"
-  "scheme": "https"
-  "static_configs":
-  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
 - static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
 `,
 		},
 		{
-			name: "basic config with alertmanager disabled",
-			config: `thanosRuler:
+			name: "basic config with platform alertmanager disabled",
+			config: `alertmanagerMain:
+  enabled: false
+`,
+			userWorkloadConfig: `thanosRuler:
   additionalAlertmanagerConfigs:
   - staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
-alertmanagerMain:
-  enabled: false
 `,
 			expected: `alertmanagers:
 - static_configs:
@@ -2151,27 +2172,28 @@ alertmanagerMain:
 		},
 		{
 			name: "version, path and scheme override",
-			config: `thanosRuler:
+			userWorkloadConfig: `thanosRuler:
   additionalAlertmanagerConfigs:
-  - version: v1
+  - apiVersion: v1
     pathPrefix: /path-prefix
     scheme: ftp
     staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
 `,
-			expected: `"alertmanagers":
-- "api_version": "v2"
-  "http_config":
-    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
-    "tls_config":
-      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
-      "server_name": "alertmanager-main.openshift-monitoring.svc"
-  "scheme": "https"
-  "static_configs":
-  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
 - scheme: ftp
   path_prefix: /path-prefix
+  api_version: v1
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -2179,7 +2201,7 @@ alertmanagerMain:
 		},
 		{
 			name: "bearer token",
-			config: `thanosRuler:
+			userWorkloadConfig: `thanosRuler:
   additionalAlertmanagerConfigs:
   - bearerToken:
       key: key
@@ -2188,16 +2210,16 @@ alertmanagerMain:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
 `,
-			expected: `"alertmanagers":
-- "api_version": "v2"
-  "http_config":
-    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
-    "tls_config":
-      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
-      "server_name": "alertmanager-main.openshift-monitoring.svc"
-  "scheme": "https"
-  "static_configs":
-  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
 - http_config:
     bearer_token_file: /etc/prometheus/secrets/bearer-token/key
   static_configs:
@@ -2207,7 +2229,7 @@ alertmanagerMain:
 		},
 		{
 			name: "tls configuration token",
-			config: `thanosRuler:
+			userWorkloadConfig: `thanosRuler:
   additionalAlertmanagerConfigs:
   - tlsConfig:
       ca:
@@ -2224,16 +2246,16 @@ alertmanagerMain:
     staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com`,
-			expected: `"alertmanagers":
-- "api_version": "v2"
-  "http_config":
-    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
-    "tls_config":
-      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
-      "server_name": "alertmanager-main.openshift-monitoring.svc"
-  "scheme": "https"
-  "static_configs":
-  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
 - http_config:
     tls_config:
       ca_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
@@ -2248,7 +2270,7 @@ alertmanagerMain:
 		},
 		{
 			name: "tls configuration token",
-			config: `thanosRuler:
+			userWorkloadConfig: `thanosRuler:
   additionalAlertmanagerConfigs:
   - tlsConfig:
       ca:
@@ -2264,16 +2286,16 @@ alertmanagerMain:
     staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com`,
-			expected: `"alertmanagers":
-- "api_version": "v2"
-  "http_config":
-    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
-    "tls_config":
-      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
-      "server_name": "alertmanager-main.openshift-monitoring.svc"
-  "scheme": "https"
-  "static_configs":
-  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
 - http_config:
     tls_config:
       ca_file: /etc/prometheus/secrets/alertmanager-ca-tls/tls.ca
@@ -2287,7 +2309,7 @@ alertmanagerMain:
 		},
 		{
 			name: "full configuration",
-			config: `thanosRuler:
+			userWorkloadConfig: `thanosRuler:
   additionalAlertmanagerConfigs:
   - apiVersion: v2
     scheme: https
@@ -2308,16 +2330,16 @@ alertmanagerMain:
     staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com`,
-			expected: `"alertmanagers":
-- "api_version": "v2"
-  "http_config":
-    "bearer_token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
-    "tls_config":
-      "ca_file": "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
-      "server_name": "alertmanager-main.openshift-monitoring.svc"
-  "scheme": "https"
-  "static_configs":
-  - "dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc"
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
 - scheme: https
   api_version: v2
   http_config:
@@ -2341,11 +2363,13 @@ alertmanagerMain:
 			if err != nil {
 				t.Fatal(err)
 			}
-			uwc, err := NewUserConfigFromString(tt.config)
+
+			uwc, err := NewUserConfigFromString(tt.userWorkloadConfig)
 			if err != nil {
 				t.Fatal(err)
 			}
 			c.UserWorkloadConfiguration = uwc
+
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			s, err := f.ThanosRulerAlertmanagerConfigSecret()
@@ -3360,6 +3384,18 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 					return spec{}, err
 				}
 				return spec{*q.Spec.Replicas, q.Spec.Template.Spec.Affinity}, nil
+			},
+		},
+		{
+			name: "Alertmanager (user-workload)",
+			getSpec: func(f *Factory) (spec, error) {
+				p, err := f.AlertmanagerUserWorkload(
+					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				)
+				if err != nil {
+					return spec{}, err
+				}
+				return spec{*p.Spec.Replicas, p.Spec.Affinity}, nil
 			},
 		},
 		{

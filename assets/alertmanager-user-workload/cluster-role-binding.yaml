@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: alertmanager-user-workload
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: alertmanager-user-workload
+subjects:
+- kind: ServiceAccount
+  name: alertmanager-user-workload
+  namespace: openshift-user-workload-monitoring

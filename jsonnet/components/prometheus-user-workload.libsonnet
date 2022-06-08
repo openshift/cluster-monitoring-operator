@@ -148,8 +148,13 @@ function(params)
           resourceNames: ['nonroot-v2'],
           verbs: ['use'],
         },
+        {
+          nonResourceURLs: ['/api/v2/alerts'],
+          verbs: ['create'],
+        },
       ],
     },
+
     alertmanagerRoleBinding: {
       apiVersion: 'rbac.authorization.k8s.io/v1',
       kind: 'RoleBinding',
