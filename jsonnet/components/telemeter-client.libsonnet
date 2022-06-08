@@ -21,6 +21,7 @@ function(params) {
   },
 
   // Remapping everything as this is the only way I could think of without refactoring imported library
+  prometheusRule: tc.telemeterClient.prometheusRule,
   clusterRoleBindingView: tc.telemeterClient.clusterRoleBindingView,
   clusterRoleBinding: tc.telemeterClient.clusterRoleBinding,
   clusterRole: tc.telemeterClient.clusterRole,

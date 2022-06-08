@@ -160,12 +160,7 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 		}
 	}
 
-	rec, err := generateTelemeterWhitelistRec(t.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
-	if err != nil {
-		return errors.Wrap(err, "generating Telemeter client Prometheus Rule failed")
-	}
-
-	rule, err := t.factory.NewTelemeterPrometheusRecRuleFromString(rec)
+	rule, err := t.factory.TelemeterClientPrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client Prometheus Rule failed")
 	}

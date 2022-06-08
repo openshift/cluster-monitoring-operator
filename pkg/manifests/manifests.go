@@ -45,7 +45,6 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -250,6 +249,7 @@ var (
 	TelemeterClientServiceMonitor         = "telemeter-client/service-monitor.yaml"
 	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
 	TelemeterClientKubeRbacProxySecret    = "telemeter-client/kube-rbac-proxy-secret.yaml"
+	TelemeterClientPrometheusRule         = "telemeter-client/prometheus-rule.yaml"
 
 	ThanosQuerierDeployment             = "thanos-querier/deployment.yaml"
 	ThanosQuerierPodDisruptionBudget    = "thanos-querier/pod-disruption-budget.yaml"
@@ -3470,33 +3470,6 @@ func (f *Factory) NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, 
 	return p, nil
 }
 
-func (f *Factory) NewTelemeterPrometheusRecRuleFromString(expr string) (*monv1.PrometheusRule, error) {
-	p := &monv1.PrometheusRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "telemetry",
-		},
-		Spec: monv1.PrometheusRuleSpec{
-			Groups: []monv1.RuleGroup{
-				{
-					Name: "telemeter.rules",
-					Rules: []monv1.Rule{
-						{
-							Record: "cluster:telemetry_selected_series:count",
-							Expr:   intstr.FromString(expr),
-						},
-					},
-				},
-			},
-		},
-	}
-
-	if p.GetNamespace() == "" {
-		p.SetNamespace(f.namespace)
-	}
-
-	return p, nil
-}
-
 func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
 	a, err := NewAlertmanager(manifest)
 	if err != nil {
@@ -3816,6 +3789,16 @@ func (f *Factory) TelemeterClientKubeRbacProxySecret() (*v1.Secret, error) {
 
 	secret.Namespace = f.namespace
 	return secret, nil
+}
+
+func (f *Factory) TelemeterClientPrometheusRule() (*monv1.PrometheusRule, error) {
+	promRule, err := f.NewPrometheusRule(f.assets.MustNewAssetReader(TelemeterClientPrometheusRule))
+	if err != nil {
+		return nil, err
+	}
+
+	promRule.Namespace = f.namespace
+	return promRule, nil
 }
 
 // TelemeterClientDeployment generates a new Deployment for Telemeter client.
