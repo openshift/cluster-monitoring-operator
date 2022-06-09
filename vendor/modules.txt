@@ -301,6 +301,7 @@ github.com/opencontainers/go-digest
 # github.com/openshift/api v0.0.0-20220525145417-ee5b62754c68
 ## explicit; go 1.16
 github.com/openshift/api/config/v1
+github.com/openshift/api/monitoring/v1alpha1
 github.com/openshift/api/operator/v1
 github.com/openshift/api/route/v1
 github.com/openshift/api/security/v1
@@ -309,6 +310,9 @@ github.com/openshift/api/security/v1
 github.com/openshift/client-go/config/clientset/versioned
 github.com/openshift/client-go/config/clientset/versioned/scheme
 github.com/openshift/client-go/config/clientset/versioned/typed/config/v1
+github.com/openshift/client-go/monitoring/clientset/versioned
+github.com/openshift/client-go/monitoring/clientset/versioned/scheme
+github.com/openshift/client-go/monitoring/clientset/versioned/typed/monitoring/v1alpha1
 github.com/openshift/client-go/route/clientset/versioned
 github.com/openshift/client-go/route/clientset/versioned/fake
 github.com/openshift/client-go/route/clientset/versioned/scheme
