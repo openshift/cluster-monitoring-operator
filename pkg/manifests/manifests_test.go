@@ -1021,7 +1021,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 						URL: "http://custom",
 						WriteRelabelConfigs: []monv1.RelabelConfig{
 							{
-								SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+								SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
 								TargetLabel:  "cluster",
 							},
 						},
@@ -1038,7 +1038,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 						Replacement: "",
 					},
 					{
-						SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+						SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
 						TargetLabel:  "cluster",
 					},
 					{
@@ -1062,7 +1062,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 						URL: "http://custom",
 						WriteRelabelConfigs: []monv1.RelabelConfig{
 							{
-								SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+								SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
 								TargetLabel:  "cluster",
 							},
 						},
@@ -1071,7 +1071,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 						URL: "http://other_custom",
 						WriteRelabelConfigs: []monv1.RelabelConfig{
 							{
-								SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+								SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
 								TargetLabel:  "some_other_label",
 							},
 							{
@@ -1092,7 +1092,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 						Replacement: "",
 					},
 					{
-						SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+						SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
 						TargetLabel:  "cluster",
 					},
 					{
@@ -1106,7 +1106,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 						Replacement: "",
 					},
 					{
-						SourceLabels: []string{"__tmp_openshift_cluster_id__"},
+						SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
 						TargetLabel:  "some_other_label",
 					},
 					{
@@ -1805,11 +1805,11 @@ func TestPrometheusRetentionConfigs(t *testing.T) {
 				return
 			}
 
-			if p.Spec.Retention != tc.expectedRetention {
+			if string(p.Spec.Retention) != tc.expectedRetention {
 				t.Fatal("Retention is not configured correctly")
 			}
 
-			if p.Spec.RetentionSize != tc.expectedRetentionSize {
+			if string(p.Spec.RetentionSize) != tc.expectedRetentionSize {
 				t.Fatal("RetentionSize is not configured correctly")
 			}
 		})
@@ -3587,11 +3587,11 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 			if noHAEndpoints[i].Interval == "" {
 				continue
 			}
-			noHAInt, err := time.ParseDuration(noHAEndpoints[i].Interval)
+			noHAInt, err := time.ParseDuration(string(noHAEndpoints[i].Interval))
 			if err != nil {
 				t.Errorf("Unexpected error when parsing %s: %v", noHAEndpoints[i].Interval, err)
 			}
-			HAInt, err := time.ParseDuration(HAEndpoints[i].Interval)
+			HAInt, err := time.ParseDuration(string(HAEndpoints[i].Interval))
 			if err != nil {
 				t.Errorf("Unexpected error when parsing %s: %v", HAEndpoints[i].Interval, err)
 			}

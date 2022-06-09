@@ -34,7 +34,7 @@ func TestLabelSelectorsToRelabelConfig(t *testing.T) {
 
 	expected := &monv1.RelabelConfig{
 		Action:       "keep",
-		SourceLabels: []string{"__name__", "alertstate"},
+		SourceLabels: []monv1.LabelName{"__name__", "alertstate"},
 		Regex:        "(metric1;|ALERTS;firing|metric2;)",
 	}
 	if !reflect.DeepEqual(expected, r) {

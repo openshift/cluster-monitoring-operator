@@ -1622,11 +1622,11 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention != "" {
-		p.Spec.Retention = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention
+		p.Spec.Retention = monv1.Duration(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention)
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize != "" {
-		p.Spec.RetentionSize = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize
+		p.Spec.RetentionSize = monv1.ByteSize(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize)
 	}
 
 	p.Spec.Image = &f.config.Images.Prometheus
@@ -1708,7 +1708,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 				// a distinction between the series produced in-cluster and out
 				// of cluster.
 				{
-					SourceLabels: []string{"__name__"},
+					SourceLabels: []monv1.LabelName{"__name__"},
 					TargetLabel:  "__name__",
 					Regex:        "ALERTS",
 					Replacement:  "alerts",
@@ -1839,7 +1839,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit != "" {
-		p.Spec.EnforcedBodySizeLimit = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit
+		p.Spec.EnforcedBodySizeLimit = monv1.ByteSize(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
 	}
 
 	return p, nil
@@ -1954,11 +1954,11 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.Retention != "" {
-		p.Spec.Retention = f.config.UserWorkloadConfiguration.Prometheus.Retention
+		p.Spec.Retention = monv1.Duration(f.config.UserWorkloadConfiguration.Prometheus.Retention)
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.RetentionSize != "" {
-		p.Spec.RetentionSize = f.config.UserWorkloadConfiguration.Prometheus.RetentionSize
+		p.Spec.RetentionSize = monv1.ByteSize(f.config.UserWorkloadConfiguration.Prometheus.RetentionSize)
 	}
 
 	p.Spec.Image = &f.config.Images.Prometheus
@@ -4062,7 +4062,7 @@ func (f *Factory) ThanosRulerCustomResource(
 	}
 
 	if f.config.UserWorkloadConfiguration.ThanosRuler.Retention != "" {
-		t.Spec.Retention = f.config.UserWorkloadConfiguration.ThanosRuler.Retention
+		t.Spec.Retention = monv1.Duration(f.config.UserWorkloadConfiguration.ThanosRuler.Retention)
 	}
 
 	if len(f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations) > 0 {
@@ -4517,7 +4517,7 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 		rwConf := monv1.RemoteWriteSpec{
 			URL:                 target.URL,
 			Name:                target.Name,
-			RemoteTimeout:       target.RemoteTimeout,
+			RemoteTimeout:       monv1.Duration(target.RemoteTimeout),
 			Headers:             target.Headers,
 			QueueConfig:         target.QueueConfig,
 			WriteRelabelConfigs: writeRelabelConfigs,
@@ -4660,7 +4660,7 @@ func doubleServiceMonitorInterval(sm *monv1.ServiceMonitor) error {
 	for i := range sm.Spec.Endpoints {
 		e := &sm.Spec.Endpoints[i]
 		if e.Interval != "" {
-			intervalTime, err := time.ParseDuration(e.Interval)
+			intervalTime, err := time.ParseDuration(string(e.Interval))
 			if err != nil {
 				return err
 			}
@@ -4668,7 +4668,7 @@ func doubleServiceMonitorInterval(sm *monv1.ServiceMonitor) error {
 			if updatedInterval > 2*time.Minute {
 				updatedInterval = 2 * time.Minute
 			}
-			e.Interval = updatedInterval.String()
+			e.Interval = monv1.Duration(updatedInterval.String())
 		}
 	}
 	return nil

@@ -31,7 +31,7 @@ func LabelSelectorsToRelabelConfig(matches []string) (*monv1.RelabelConfig, erro
 	}
 
 	labelPositions := map[string]int{}
-	sourceLabels := []string{}
+	sourceLabels := []monv1.LabelName{}
 	i := 0
 	for _, ls := range labelSets {
 		for _, lm := range ls {
@@ -40,7 +40,7 @@ func LabelSelectorsToRelabelConfig(matches []string) (*monv1.RelabelConfig, erro
 				continue
 			}
 
-			sourceLabels = append(sourceLabels, lm.Name)
+			sourceLabels = append(sourceLabels, monv1.LabelName(lm.Name))
 			labelPositions[lm.Name] = i
 			i++
 		}

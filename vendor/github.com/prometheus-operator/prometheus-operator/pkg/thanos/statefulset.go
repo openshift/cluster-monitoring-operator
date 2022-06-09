@@ -169,22 +169,26 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 		return nil, errors.Wrap(err, "failed to build image path")
 	}
 
+	// TODO(slashpai): Remove this assignment after v0.57 since this is handled at CRD level
 	if tr.Spec.EvaluationInterval == "" {
 		tr.Spec.EvaluationInterval = defaultEvaluationInterval
 	}
 
+	// TODO(slashpai): Remove this validation after v0.57 since this is handled at CRD level
 	if tr.Spec.EvaluationInterval != "" {
-		if err := operator.ValidateDurationField(tr.Spec.EvaluationInterval); err != nil {
+		if err := operator.ValidateDurationField(string(tr.Spec.EvaluationInterval)); err != nil {
 			return nil, errors.Wrap(err, "invalid evaluationInterval value specified")
 		}
 	}
 
+	// TODO(slashpai): Remove this assignment after v0.57 since this is handled at CRD level
 	if tr.Spec.Retention == "" {
 		tr.Spec.Retention = defaultRetention
 	}
 
+	// TODO(slashpai): Remove this validation after v0.57 since this is handled at CRD level
 	if tr.Spec.Retention != "" {
-		if err := operator.ValidateDurationField(tr.Spec.Retention); err != nil {
+		if err := operator.ValidateDurationField(string(tr.Spec.Retention)); err != nil {
 			return nil, errors.Wrap(err, "invalid retention value specified")
 		}
 	}
@@ -380,6 +384,10 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 			}
 		}
 	}
+	// In cases where an existing selector label is modified, or a new one is added, new sts cannot match existing pods.
+	// We should try to avoid removing such immutable fields whenever possible since doing
+	// so forces us to enter the 'recreate cycle' and can potentially lead to downtime.
+	// The requirement to make a change here should be carefully evaluated.
 	podLabels["app.kubernetes.io/name"] = thanosRulerLabel
 	podLabels["app.kubernetes.io/managed-by"] = "prometheus-operator"
 	podLabels["app.kubernetes.io/instance"] = tr.Name
@@ -419,6 +427,8 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 		})
 	}
 
+	boolFalse := false
+	boolTrue := true
 	operatorContainers := append([]v1.Container{
 		{
 			Name:                     "thanos-ruler",
@@ -429,6 +439,13 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 			Resources:                tr.Spec.Resources,
 			Ports:                    ports,
 			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
+			SecurityContext: &v1.SecurityContext{
+				AllowPrivilegeEscalation: &boolFalse,
+				ReadOnlyRootFilesystem:   &boolTrue,
+				Capabilities: &v1.Capabilities{
+					Drop: []v1.Capability{"ALL"},
+				},
+			},
 		},
 	}, additionalContainers...)
 
@@ -473,6 +490,7 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 				Tolerations:                   tr.Spec.Tolerations,
 				Affinity:                      tr.Spec.Affinity,
 				TopologySpreadConstraints:     tr.Spec.TopologySpreadConstraints,
+				HostAliases:                   operator.MakeHostAliases(tr.Spec.HostAliases),
 			},
 		},
 	}, nil

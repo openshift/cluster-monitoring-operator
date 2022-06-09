@@ -296,7 +296,9 @@ func createPrometheusAlertmanagerInUserNamespace(t *testing.T, f *framework.Fram
 			},
 		},
 		Spec: monitoringv1.PrometheusSpec{
-			Replicas: toInt32(1),
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				Replicas: toInt32(1),
+			},
 		},
 	}, metav1.CreateOptions{})
 	if err != nil && !apierrors.IsAlreadyExists(err) {
