@@ -127,7 +127,7 @@ func (rc *RuleController) Run(ctx context.Context, workers int) {
 func (rc *RuleController) keyFunc(obj interface{}) (string, bool) {
 	k, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		klog.Errorf("Creating AlertingRule key failed: %v", err)
+		klog.Errorf("Creating key of AlertingRule object failed: %v", err)
 		return k, false
 	}
 
@@ -175,21 +175,31 @@ func (rc *RuleController) handleAlertingRuleDelete(obj interface{}) {
 
 // handleAlertingRuleUpdate handles update events for the AlertingRule informer.
 func (rc *RuleController) handleAlertingRuleUpdate(oldObj, newObj interface{}) {
+	oldAR, ok := oldObj.(*osmv1alpha1.AlertingRule)
+	if !ok {
+		return
+	}
+
+	newAR, ok := newObj.(*osmv1alpha1.AlertingRule)
+	if !ok {
+		return
+	}
+
 	// If the ResourceVersion hasn't changed, there's nothing to do.
-	if oldObj.(*osmv1alpha1.AlertingRule).ResourceVersion == newObj.(*osmv1alpha1.AlertingRule).ResourceVersion {
-		klog.V(4).Info("Skipping AlertingRule update due to identical ResourceVersion (%s)",
-			newObj.(*osmv1alpha1.AlertingRule).ResourceVersion)
+	if oldAR.ResourceVersion == newAR.ResourceVersion {
+		klog.V(4).Info("Ignoring AlertingRule update due to identical ResourceVersion (%s)",
+			newAR.ResourceVersion)
 		return
 	}
 
 	// If the Generation hasn't changed, the spec hasn't changed. Nothing to do.
-	if oldObj.(*osmv1alpha1.AlertingRule).Generation == newObj.(*osmv1alpha1.AlertingRule).Generation {
-		klog.V(4).Infof("Skipping AlertingRule update due to identical Generation (%d)",
-			newObj.(*osmv1alpha1.AlertingRule).Generation)
+	if oldAR.Generation == newAR.Generation {
+		klog.V(4).Infof("Ignoring AlertingRule update due to identical Generation (%d)",
+			newAR.Generation)
 		return
 	}
 
-	key, ok := rc.keyFunc(newObj)
+	key, ok := rc.keyFunc(newAR)
 	if !ok {
 		return
 	}
