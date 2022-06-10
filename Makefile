@@ -199,7 +199,12 @@ test-unit:
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
-	go test -v -timeout=120m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	go test -run='!TechPreview' -v -timeout=120m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+
+.PHONY: test-e2e-tp
+test-e2e-tp: KUBECONFIG?=$(HOME)/.kube/config
+test-e2e-tp:
+	go test -run='TechPreview' -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG)
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)

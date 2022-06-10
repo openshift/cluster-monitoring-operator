@@ -36,7 +36,7 @@ const (
 	relabelSecretKey  = "config.yaml"
 )
 
-func TestAlertRelabelConfig(t *testing.T) {
+func TestAlertRelabelConfigTechPreview(t *testing.T) {
 	ctx := context.Background()
 
 	arcName := framework.E2eTestLabelValue
