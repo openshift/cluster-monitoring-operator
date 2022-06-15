@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.4.2
+    app.kubernetes.io/version: 2.5.0
   name: kube-state-metrics
   namespace: openshift-monitoring
 spec:
@@ -26,7 +26,7 @@ spec:
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 2.4.2
+        app.kubernetes.io/version: 2.5.0
     spec:
       automountServiceAccountToken: true
       containers:
@@ -53,7 +53,7 @@ spec:
           ^kube_pod_container_status_running$,
           ^kube_pod_completion_time$,
           ^kube_pod_status_scheduled$
-        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.4.2
+        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.5.0
         name: kube-state-metrics
         resources:
           requests:
