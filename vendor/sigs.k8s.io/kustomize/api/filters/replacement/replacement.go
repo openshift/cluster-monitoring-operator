@@ -4,6 +4,7 @@
 package replacement
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"sigs.k8s.io/kustomize/api/resource"
 	"sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/kustomize/kyaml/resid"
+	kyaml_utils "sigs.k8s.io/kustomize/kyaml/utils"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
@@ -20,11 +22,11 @@ type Filter struct {
 
 // Filter replaces values of targets with values from sources
 func (f Filter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
-	for _, r := range f.Replacements {
+	for i, r := range f.Replacements {
 		if r.Source == nil || r.Targets == nil {
 			return nil, fmt.Errorf("replacements must specify a source and at least one target")
 		}
-		value, err := getReplacement(nodes, &r)
+		value, err := getReplacement(nodes, &f.Replacements[i])
 		if err != nil {
 			return nil, err
 		}
@@ -60,8 +62,8 @@ func applyReplacement(nodes []*yaml.RNode, value *yaml.RNode, targets []*types.T
 			}
 
 			// filter targets by matching resource IDs
-			for _, id := range ids {
-				if id.IsSelectedBy(t.Select.ResId) && !rejectId(t.Reject, &id) {
+			for i, id := range ids {
+				if id.IsSelectedBy(t.Select.ResId) && !rejectId(t.Reject, &ids[i]) {
 					err := applyToNode(n, value, t)
 					if err != nil {
 						return nil, err
@@ -113,10 +115,18 @@ func rejectId(rejects []*types.Selector, id *resid.ResId) bool {
 
 func applyToNode(node *yaml.RNode, value *yaml.RNode, target *types.TargetSelector) error {
 	for _, fp := range target.FieldPaths {
-		fieldPath := utils.SmarterPathSplitter(fp, ".")
+		fieldPath := kyaml_utils.SmarterPathSplitter(fp, ".")
 		var t *yaml.RNode
 		var err error
 		if target.Options != nil && target.Options.Create {
+			// create option is not supported in a wildcard matching.
+			// Because, PathMatcher is not supported create option.
+			// So, if create option is set, we fallback to PathGetter.
+			for _, f := range fieldPath {
+				if f == "*" {
+					return errors.New("cannot support create option in a multi-value target") //nolint:goerr113
+				}
+			}
 			t, err = node.Pipe(yaml.LookupCreate(value.YNode().Kind, fieldPath...))
 		} else {
 			t, err = node.Pipe(&yaml.PathMatcher{Path: fieldPath})
@@ -142,9 +152,6 @@ func applyToOneNode(options *types.FieldOptions, t *yaml.RNode, value *yaml.RNod
 	}
 
 	for _, scalarNode := range t.YNode().Content {
-		if options != nil && options.Create {
-			return fmt.Errorf("cannot use create option in a multi-value target")
-		}
 		rn := yaml.NewRNode(scalarNode)
 		if err := setTargetValue(options, rn, value); err != nil {
 			return err
@@ -193,7 +200,7 @@ func getReplacement(nodes []*yaml.RNode, r *types.Replacement) (*yaml.RNode, err
 	if r.Source.FieldPath == "" {
 		r.Source.FieldPath = types.DefaultReplacementFieldPath
 	}
-	fieldPath := utils.SmarterPathSplitter(r.Source.FieldPath, ".")
+	fieldPath := kyaml_utils.SmarterPathSplitter(r.Source.FieldPath, ".")
 
 	rn, err := source.Pipe(yaml.Lookup(fieldPath...))
 	if err != nil {

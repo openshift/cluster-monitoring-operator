@@ -8,14 +8,120 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.7.0/0.30.0] - 2022-04-28
+
+### Added
+
+- Add the `go.opentelemetry.io/otel/semconv/v1.8.0` package.
+  The package contains semantic conventions from the `v1.8.0` version of the OpenTelemetry specification. (#2763)
+- Add the `go.opentelemetry.io/otel/semconv/v1.9.0` package.
+  The package contains semantic conventions from the `v1.9.0` version of the OpenTelemetry specification. (#2792)
+- Add the `go.opentelemetry.io/otel/semconv/v1.10.0` package.
+  The package contains semantic conventions from the `v1.10.0` version of the OpenTelemetry specification. (#2842)
+- Added an in-memory exporter to metrictest to aid testing with a full SDK. (#2776)
+
+### Fixed
+
+- Globally delegated instruments are unwrapped before delegating asynchronous callbacks. (#2784)
+- Remove import of `testing` package in non-tests builds of the `go.opentelemetry.io/otel` package. (#2786)
+
+### Changed
+
+- The `WithLabelEncoder` option from the `go.opentelemetry.io/otel/exporters/stdout/stdoutmetric` package is renamed to `WithAttributeEncoder`. (#2790)
+- The `LabelFilterSelector` interface from `go.opentelemetry.io/otel/sdk/metric/processor/reducer` is renamed to `AttributeFilterSelector`.
+  The method included in the renamed interface also changed from `LabelFilterFor` to `AttributeFilterFor`. (#2790)
+- The `Metadata.Labels` method from the `go.opentelemetry.io/otel/sdk/metric/export` package is renamed to `Metadata.Attributes`.
+  Consequentially, the `Record` type from the same package also has had the embedded method renamed. (#2790)
+
+### Deprecated
+
+- The `Iterator.Label` method in the `go.opentelemetry.io/otel/attribute` package is deprecated.
+  Use the equivalent `Iterator.Attribute` method instead. (#2790)
+- The `Iterator.IndexedLabel` method in the `go.opentelemetry.io/otel/attribute` package is deprecated.
+  Use the equivalent `Iterator.IndexedAttribute` method instead. (#2790)
+- The `MergeIterator.Label` method in the `go.opentelemetry.io/otel/attribute` package is deprecated.
+  Use the equivalent `MergeIterator.Attribute` method instead. (#2790)
+
+### Removed
+
+- Removed the `Batch` type from the `go.opentelemetry.io/otel/sdk/metric/metrictest` package. (#2864)
+- Removed the `Measurement` type from the `go.opentelemetry.io/otel/sdk/metric/metrictest` package. (#2864)
+
+## [0.29.0] - 2022-04-11
+
+### Added
+
+- The metrics global package was added back into several test files. (#2764)
+- The `Meter` function is added back to the `go.opentelemetry.io/otel/metric/global` package.
+  This function is a convenience function equivalent to calling `global.MeterProvider().Meter(...)`. (#2750)
+
+### Removed
+
+- Removed module the `go.opentelemetry.io/otel/sdk/export/metric`.
+  Use the `go.opentelemetry.io/otel/sdk/metric` module instead. (#2720)
+
+### Changed
+
+- Don't panic anymore when setting a global MeterProvider to itself. (#2749)
+- Upgrade `go.opentelemetry.io/proto/otlp` in `go.opentelemetry.io/otel/exporters/otlp/otlpmetric` from `v0.12.1` to `v0.15.0`.
+  This replaces the use of the now deprecated `InstrumentationLibrary` and `InstrumentationLibraryMetrics` types and fields in the proto library with the equivalent `InstrumentationScope` and `ScopeMetrics`. (#2748)
+
+## [1.6.3] - 2022-04-07
+
+### Fixed
+
+- Allow non-comparable global `MeterProvider`, `TracerProvider`, and `TextMapPropagator` types to be set. (#2772, #2773)
+
+## [1.6.2] - 2022-04-06
+
+### Changed
+
+- Don't panic anymore when setting a global TracerProvider or TextMapPropagator to itself. (#2749)
+- Upgrade `go.opentelemetry.io/proto/otlp` in `go.opentelemetry.io/otel/exporters/otlp/otlptrace` from `v0.12.1` to `v0.15.0`.
+  This replaces the use of the now deprecated `InstrumentationLibrary` and `InstrumentationLibrarySpans` types and fields in the proto library with the equivalent `InstrumentationScope` and `ScopeSpans`. (#2748)
+
+## [1.6.1] - 2022-03-28
+
+### Fixed
+
+- The `go.opentelemetry.io/otel/schema/*` packages now use the correct schema URL for their `SchemaURL` constant.
+  Instead of using `"https://opentelemetry.io/schemas/v<version>"` they now use the correct URL without a `v` prefix, `"https://opentelemetry.io/schemas/<version>"`. (#2743, #2744)
+
+### Security
+
+- Upgrade `go.opentelemetry.io/proto/otlp` from `v0.12.0` to `v0.12.1`.
+  This includes an indirect upgrade of `github.com/grpc-ecosystem/grpc-gateway` which resolves [a vulnerability](https://nvd.nist.gov/vuln/detail/CVE-2019-11254) from `gopkg.in/yaml.v2` in version `v2.2.3`. (#2724, #2728)
+
+## [1.6.0/0.28.0] - 2022-03-23
+
 ### ⚠️ Notice ⚠️
 
 This update is a breaking change of the unstable Metrics API.
 Code instrumented with the `go.opentelemetry.io/otel/metric` will need to be modified.
 
+### Added
+
+- Add metrics exponential histogram support.
+  New mapping functions have been made available in `sdk/metric/aggregator/exponential/mapping` for other OpenTelemetry projects to take dependencies on. (#2502)
+- Add Go 1.18 to our compatibility tests. (#2679)
+- Allow configuring the Sampler with the `OTEL_TRACES_SAMPLER` and `OTEL_TRACES_SAMPLER_ARG` environment variables. (#2305, #2517)
+- Add the `metric/global` for obtaining and setting the global `MeterProvider`. (#2660)
+
 ### Changed
 
-- The metrics API has been significantly changed. (#2587)
+- The metrics API has been significantly changed to match the revised OpenTelemetry specification.
+  High-level changes include:
+
+  - Synchronous and asynchronous instruments are now handled by independent `InstrumentProvider`s.
+    These `InstrumentProvider`s are managed with a `Meter`.
+  - Synchronous and asynchronous instruments are grouped into their own packages based on value types.
+  - Asynchronous callbacks can now be registered with a `Meter`.
+
+  Be sure to check out the metric module documentation for more information on how to use the revised API. (#2587, #2660)
+
+### Fixed
+
+- Fallback to general attribute limits when span specific ones are not set in the environment. (#2675, #2677)
 
 ## [1.5.0] - 2022-03-16
 
@@ -1746,7 +1852,13 @@ It contains api and sdk for trace and meter.
 - CircleCI build CI manifest files.
 - CODEOWNERS file to track owners of this project.
 
-[Unreleased]: https://github.com/open-telemetry/opentelemetry-go/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/open-telemetry/opentelemetry-go/compare/v1.7.0...HEAD
+[1.7.0/0.30.0]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/v1.7.0
+[0.29.0]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/metric/v0.29.0
+[1.6.3]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/v1.6.3
+[1.6.2]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/v1.6.2
+[1.6.1]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/v1.6.1
+[1.6.0/0.28.0]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/v1.6.0
 [1.5.0]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/v1.5.0
 [1.4.1]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/v1.4.1
 [1.4.0]: https://github.com/open-telemetry/opentelemetry-go/releases/tag/v1.4.0
