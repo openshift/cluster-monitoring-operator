@@ -16,11 +16,14 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 	"net/url"
+
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
 )
 
 type ConfigSharingTask struct {
@@ -71,7 +74,49 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
 	}
 
-	cm := t.factory.SharingConfig(promURL, amURL, thanosURL)
+	var (
+		svc                  *v1.Service
+		webPort, tenancyPort int
+	)
+	if t.config.UserWorkloadConfiguration.Alertmanager.Enabled {
+		// User-defined alerts are routed to the UWM Alertmanager.
+		svc, err = t.factory.AlertmanagerUserWorkloadService()
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager User Workload Service failed")
+		}
+	} else {
+		// User-defined alerts are routed to the platform Alertmanager.
+		svc, err = t.factory.AlertmanagerService()
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager Service failed")
+		}
+	}
+
+	for _, port := range svc.Spec.Ports {
+		switch port.Name {
+		case "web":
+			webPort = int(port.Port)
+		case "tenancy":
+			tenancyPort = int(port.Port)
+		}
+	}
+
+	if webPort == 0 {
+		return errors.New("failed to find Alertmanager web port")
+	}
+
+	if tenancyPort == 0 {
+		return errors.New("failed to find Alertmanager tenancy port")
+	}
+
+	cm := t.factory.SharingConfig(
+		promURL,
+		amURL,
+		thanosURL,
+		fmt.Sprintf("%s.%s.svc:%d", svc.Name, svc.Namespace, webPort),
+		fmt.Sprintf("%s.%s.svc:%d", svc.Name, svc.Namespace, tenancyPort),
+	)
+
 	err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 	if err != nil {
 		return errors.Wrapf(err, "reconciling %s/%s Config ConfigMap failed", cm.Namespace, cm.Name)
