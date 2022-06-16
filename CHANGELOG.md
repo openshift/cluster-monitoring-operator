@@ -17,6 +17,7 @@
 - [#1651](https://github.com/openshift/cluster-monitoring-operator/pull/1651) Allow retention to be configurable for Thanos-Ruler in UWM
 - [#1467](https://github.com/openshift/cluster-monitoring-operator/pull/1467) Add bodysize limit for metric scraping
 - [#1661](https://github.com/openshift/cluster-monitoring-operator/pull/1661) Support deployment of dedicated Alertmanager for user-defined alerts.
+- [#1682](https://github.com/openshift/cluster-monitoring-operator/pull/1682) Support AlertmanagerConfig v1beta1.
 
 ## 4.10
 

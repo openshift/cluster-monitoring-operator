@@ -10,7 +10,6 @@ metadata:
   name: prometheus-operator-admission-webhook
   namespace: openshift-monitoring
 spec:
-  clusterIP: None
   ports:
   - name: https
     port: 8443

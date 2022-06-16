@@ -282,6 +282,7 @@ local inCluster =
         tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
       admissionWebhook: {
+        name: 'prometheus-operator-admission-webhook',
         namespace: $.values.common.namespace,
         version: $.values.common.versions.prometheusOperator,
         image: $.values.common.images.prometheusOperatorAdmissionWebhook,
@@ -298,6 +299,13 @@ local inCluster =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         configReloaderImage: $.values.common.images.prometheusOperatorReloader,
         commonLabels+: $.values.common.commonLabels,
+        conversionWebhook: {
+          name: $.values.admissionWebhook.name,
+          namespace: $.values.admissionWebhook.namespace,
+          annotations+: {
+            'service.beta.openshift.io/inject-cabundle': 'true',
+          },
+        },
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {

@@ -32,9 +32,9 @@ import (
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 
-	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 	monClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
-	monAlphaClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1"
+	monBetaClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1beta1"
 
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
@@ -77,7 +77,7 @@ type Framework struct {
 	kubeConfigPath        string
 
 	MonitoringClient             *monClient.MonitoringV1Client
-	MonitoringAlphaClient        *monAlphaClient.MonitoringV1alpha1Client
+	MonitoringBetaClient         *monBetaClient.MonitoringV1beta1Client
 	Ns, UserWorkloadMonitoringNs string
 }
 
@@ -112,9 +112,9 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating monitoring client failed")
 	}
 
-	mAlphaClient, err := monAlphaClient.NewForConfig(config)
+	mBetaClient, err := monBetaClient.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating monitoring alpha client failed")
+		return nil, nil, errors.Wrap(err, "creating monitoring beta client failed")
 	}
 
 	operatorClient, err := client.NewForConfig(config, "", namespaceName, userWorkloadNamespaceName)
@@ -152,7 +152,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		AdmissionClient:          admissionClient,
 		MetricsClient:            metricsClient,
 		MonitoringClient:         mClient,
-		MonitoringAlphaClient:    mAlphaClient,
+		MonitoringBetaClient:     mBetaClient,
 		Ns:                       namespaceName,
 		UserWorkloadMonitoringNs: userWorkloadNamespaceName,
 		kubeConfigPath:           kubeConfigPath,
@@ -531,8 +531,8 @@ func (f *Framework) StartPortForward(scheme string, name string, ns string, port
 	return nil
 }
 
-func (f *Framework) CreateOrUpdateAlertmanagerConfig(ctx context.Context, a *v1alpha1.AlertmanagerConfig) error {
-	client := f.MonitoringAlphaClient.AlertmanagerConfigs(a.GetNamespace())
+func (f *Framework) CreateOrUpdateAlertmanagerConfig(ctx context.Context, a *v1beta1.AlertmanagerConfig) error {
+	client := f.MonitoringBetaClient.AlertmanagerConfigs(a.GetNamespace())
 	existing, err := client.Get(ctx, a.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := client.Create(ctx, a, metav1.CreateOptions{})
@@ -552,7 +552,7 @@ func (f *Framework) CreateOrUpdateAlertmanagerConfig(ctx context.Context, a *v1a
 }
 
 func (f *Framework) DeleteAlertManagerConfigByNamespaceAndName(ctx context.Context, namespace, name string) error {
-	client := f.MonitoringAlphaClient.AlertmanagerConfigs(namespace)
+	client := f.MonitoringBetaClient.AlertmanagerConfigs(namespace)
 
 	err := client.Delete(ctx, name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
