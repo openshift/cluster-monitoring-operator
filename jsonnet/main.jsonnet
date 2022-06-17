@@ -277,7 +277,7 @@ local inCluster =
         namespace: $.values.common.namespace,
         version: $.values.common.versions.prometheusAdapter,
         image: $.values.common.images.prometheusAdapter,
-        prometheusURL: 'https://thanos-querier' + '.' + $.values.common.namespace + '.svc:9091',
+        prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
