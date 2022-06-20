@@ -17,7 +17,7 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "main"
+      "version": "release-0.11"
     },
     {
       "source": {
@@ -35,7 +35,7 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "master",
+      "version": "release-4.11",
       "name": "openshift-state-metrics"
     },
     {
@@ -45,7 +45,7 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "master",
+      "version": "release-4.11",
       "name": "telemeter-client"
     },
     {
@@ -55,7 +55,7 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "main"
+      "version": "v0.26.0"
     },
     {
       "source": {
@@ -64,7 +64,7 @@
           "subdir": "mixin"
         }
       },
-      "version": "main"
+      "version": "v0.26.0"
     }
   ],
   "legacyImports": true
