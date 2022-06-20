@@ -20,6 +20,8 @@ function(params) {
   local cmo = self,
   local cfg = defaults + params,
 
+  '0alertingrulesCustomResourceDefinition': std.parseYaml(importstr './../crds/alertingrules-custom-resource-definition.yaml'),
+
   prometheusRule: {
     apiVersion: 'monitoring.coreos.com/v1',
     kind: 'PrometheusRule',
