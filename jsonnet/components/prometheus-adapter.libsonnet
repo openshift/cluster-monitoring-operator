@@ -111,6 +111,7 @@ function(params)
                           '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
+                        ports: [{ containerPort: 6443, name: 'https' }],
                         volumeMounts: [
                           {
                             mountPath: '/tmp',
@@ -138,6 +139,26 @@ function(params)
                             memory: '40Mi',
                             cpu: '1m',
                           },
+                        },
+                        livenessProbe: {
+                          httpGet: {
+                            path: '/livez',
+                            port: 'https',
+                            scheme: 'HTTPS',
+                          },
+                          initialDelaySeconds: 5,
+                          periodSeconds: 30,
+                          failureThreshold: 5,
+                        },
+                        readinessProbe: {
+                          httpGet: {
+                            path: '/readyz',
+                            port: 'https',
+                            scheme: 'HTTPS',
+                          },
+                          initialDelaySeconds: 30,
+                          periodSeconds: 5,
+                          failureThreshold: 5,
                         },
                       }
                     else
