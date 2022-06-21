@@ -25,9 +25,11 @@ import (
 	"github.com/pkg/errors"
 
 	configv1 "github.com/openshift/api/config/v1"
+	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
+	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
@@ -68,6 +70,7 @@ type Client struct {
 	namespace             string
 	userWorkloadNamespace string
 	kclient               kubernetes.Interface
+	osmclient             openshiftmonitoringclientset.Interface
 	oscclient             openshiftconfigclientset.Interface
 	ossclient             openshiftsecurityclientset.Interface
 	osrclient             openshiftrouteclientset.Interface
@@ -90,6 +93,11 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	eclient, err := apiextensionsclient.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating apiextensions client")
+	}
+
+	osmclient, err := openshiftmonitoringclientset.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating openshift monitoring client")
 	}
 
 	oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
@@ -122,6 +130,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 		namespace,
 		userWorkloadNamespace,
 		KubernetesClient(kclient),
+		OpenshiftMonitoringClient(osmclient),
 		OpenshiftConfigClient(oscclient),
 		OpenshiftSecurityClient(ossclient),
 		OpenshiftRouteClient(osrclient),
@@ -136,6 +145,12 @@ type Option = func(*Client)
 func KubernetesClient(kclient kubernetes.Interface) Option {
 	return func(c *Client) {
 		c.kclient = kclient
+	}
+}
+
+func OpenshiftMonitoringClient(osmclient openshiftmonitoringclientset.Interface) Option {
+	return func(c *Client) {
+		c.osmclient = osmclient
 	}
 }
 
@@ -199,6 +214,14 @@ func (c *Client) Namespace() string {
 
 func (c *Client) UserWorkloadNamespace() string {
 	return c.userWorkloadNamespace
+}
+
+func (c *Client) AlertingRuleListWatchForNamespace(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(c.osmclient.MonitoringV1alpha1().RESTClient(), "alertingrules", ns, fields.Everything())
+}
+
+func (c *Client) PrometheusRuleListWatchForNamespace(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(c.mclient.MonitoringV1().RESTClient(), "prometheusrules", ns, fields.Everything())
 }
 
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
@@ -299,6 +322,13 @@ func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
 
 		return true, nil
 	})
+}
+
+func (c *Client) UpdateAlertingRuleStatus(ctx context.Context, rule *osmv1alpha1.AlertingRule) error {
+	ns := rule.GetNamespace()
+
+	_, err := c.osmclient.MonitoringV1alpha1().AlertingRules(ns).UpdateStatus(ctx, rule, metav1.UpdateOptions{})
+	return err
 }
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
@@ -410,6 +440,14 @@ func (c *Client) GetConfigmap(ctx context.Context, namespace, name string) (*v1.
 
 func (c *Client) GetSecret(ctx context.Context, namespace, name string) (*v1.Secret, error) {
 	return c.kclient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *Client) GetPrometheusRule(ctx context.Context, namespace, name string) (*monv1.PrometheusRule, error) {
+	return c.mclient.MonitoringV1().PrometheusRules(namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *Client) GetAlertingRule(ctx context.Context, namespace, name string) (*osmv1alpha1.AlertingRule, error) {
+	return c.osmclient.MonitoringV1alpha1().AlertingRules(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Prometheus) error {

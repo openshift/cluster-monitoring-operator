@@ -20,6 +20,8 @@ function(params) {
   local cmo = self,
   local cfg = defaults + params,
 
+  '0alertingrulesCustomResourceDefinition': std.parseYaml(importstr './../crds/alertingrules-custom-resource-definition.yaml'),
+
   prometheusRule: {
     apiVersion: 'monitoring.coreos.com/v1',
     kind: 'PrometheusRule',
@@ -272,6 +274,37 @@ function(params) {
         verbs: ['get', 'list', 'watch', 'update', 'delete'],
       },
 
+    ],
+  },
+
+  // Defines permisssions required for techpreview features. CMO needs:
+  // - get/list/watch permissions on alertingrules to detect changes requiring reconciliation.
+  // - all permissions on alertingrules/finalizers to set the `ownerReferences` field on generated prometheusrules.
+  // - all permissions on alertingrules/status to set the status of alertingrules.
+  techpreviewRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'cluster-monitoring-operator-techpreview-only',
+      namespace: cfg.namespace,
+      annotations: {
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
+        'release.openshift.io/feature-gate': 'TechPreviewNoUpgrade',
+      },
+    },
+    rules: [
+      {
+        apiGroups: ['monitoring.openshift.io'],
+        resources: ['alertingrules'],
+        verbs: ['get', 'list', 'watch'],
+      },
+      {
+        apiGroups: ['monitoring.openshift.io'],
+        resources: ['alertingrules/finalizers', 'alertingrules/status'],
+        verbs: ['*'],
+      },
     ],
   },
 

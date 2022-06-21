@@ -61,3 +61,22 @@ subjects:
 - kind: ServiceAccount
   name: cluster-monitoring-operator
   namespace: openshift-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cluster-monitoring-operator-techpreview-only
+  namespace: openshift-monitoring
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/feature-gate: "TechPreviewNoUpgrade"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cluster-monitoring-operator-techpreview-only
+subjects:
+- kind: ServiceAccount
+  name: cluster-monitoring-operator
+  namespace: openshift-monitoring

@@ -37,15 +37,17 @@ done
 grep -E -v '^apiVersion: v1|^items:|^kind: ConfigMapList' "${prefix}/grafana/console-dashboard-definitions.yaml" | sed 's/^\ \ //g;s/- apiVersion: v1/---\'$'\n''apiVersion: v1/g' > "manifests/0000_90_cluster-monitoring-operator_01-dashboards.yaml"
 rm -f "${prefix}/grafana/console-dashboard-definitions.yaml"
 
-grep -H 'kind: CustomResourceDefinition' assets/prometheus-operator/* | cut -d: -f1 | while IFS= read -r f; do
+grep -H 'kind: CustomResourceDefinition' assets/{cluster-monitoring,prometheus}-operator/* | cut -d: -f1 | while IFS= read -r f; do
   mv "$f" "manifests/0000_50_cluster-monitoring-operator_00_$(basename "$f")"
 done
 
-# Move jsonnet generated ClusterRole to manifests directory.
+# Move jsonnet generated ClusterRole and Role objects to the manifests/ directory.
 mv "${prefix}/cluster-monitoring-operator/cluster-role.yaml" \
    "${prefix}/manifests/0000_50_cluster-monitoring-operator_02-role.yaml"
 mv "${prefix}/cluster-monitoring-operator/namespaced-cluster-role.yaml" \
    "${prefix}/manifests/0000_50_cluster-monitoring-operator_02-namespaced-cluster-role.yaml"
+mv "${prefix}/cluster-monitoring-operator/techpreview-role.yaml" \
+   "${prefix}/manifests/0000_50_cluster-monitoring-operator_02-techpreview-role.yaml"
 
 # Move resulting manifests to the manifests directory
 mv assets/manifests/* manifests/
