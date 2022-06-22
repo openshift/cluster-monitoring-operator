@@ -20,7 +20,7 @@ versions:
   kubeStateMetrics: 2.5.0
   nodeExporter: 1.3.1
   promLabelProxy: 0.4.0
-  prometheus: 2.36.1
+  prometheus: 2.36.2
   prometheusAdapter: 0.9.1
   prometheusOperator: 0.57.0
   thanos: 0.26.0
