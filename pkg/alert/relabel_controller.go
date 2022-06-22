@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -342,7 +343,7 @@ func generateRelabelConfig(c *osmv1alpha1.RelabelConfig) (*yaml.Node, error) {
 		TargetLabel:  c.TargetLabel,
 		Modulus:      c.Modulus,
 		Replacement:  c.Replacement,
-		Action:       relabel.Action(c.Action),
+		Action:       relabel.Action(strings.ToLower(c.Action)),
 	}
 
 	relabelConfigYaml := &yaml.Node{}
