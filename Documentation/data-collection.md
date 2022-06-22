@@ -626,6 +626,16 @@ data:
     #
     # openshift_csi_share_mount_requests_total measures total amount of attempts to mount csi shared resources into the pods.
     - '{__name__="openshift_csi_share_mount_requests_total"}'
+    #
+    # owners: (@openshift/openshift-team-image-registry)
+    #
+    # imageregistry:imagestreamtags_count:sum is the total number of existent image stream tags.
+    - '{__name__="imageregistry:imagestreamtags_count:sum"}'
+    #
+    # owners: (@openshift/openshift-team-image-registry)
+    #
+    # imageregistry:operations_count:sum is the total number of image pushes and pulls executed in the internal registry.
+    - '{__name__="imageregistry:operations_count:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
