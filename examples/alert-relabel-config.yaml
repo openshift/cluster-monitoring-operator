@@ -10,4 +10,4 @@ spec:
     regex: "Watchdog;none"
     targetLabel: severity
     replacement: critical
-    action: replace
+    action: Replace
