@@ -18,6 +18,7 @@
 - [#1467](https://github.com/openshift/cluster-monitoring-operator/pull/1467) Add bodysize limit for metric scraping
 - [#1661](https://github.com/openshift/cluster-monitoring-operator/pull/1661) Support deployment of dedicated Alertmanager for user-defined alerts.
 - [#1682](https://github.com/openshift/cluster-monitoring-operator/pull/1682) Support AlertmanagerConfig v1beta1.
+- [#1699](https://github.com/openshift/cluster-monitoring-operator/pull/1699) Add alerts ThanosQueryOverload and PrometheusQueryOverload.
 
 ## 4.10
 

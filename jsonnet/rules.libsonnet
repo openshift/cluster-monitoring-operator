@@ -536,6 +536,30 @@ function(params) {
           labels: { workload_type: 'deploymentconfig' },
           record: 'namespace_workload_pod:kube_pod_owner:relabel',
         },
+        {
+          expr: 'thanos_query_concurrent_gate_queries_max - thanos_query_concurrent_gate_queries_in_flight < 1',
+          alert: 'ThanosQueryOverload',
+          'for': '15m',
+          annotations: {
+            description: 'Thanos Query pod {{ $labels.pod }} in {{ $labels.namespace }} namespace have been overloaded for more than 15 minutes. This may be a symptom of excessive simultanous complex requests, low performance of the Prometheus API, or failures within these components. Assess the health of the Thanos query instances, the connnected Prometheus instances, look for potential senders of these requests and then contact support.',
+            summary: 'Thanos query reaches its maximum capacity serving concurrent requests',
+          },
+          labels: {
+            severity: 'warning',
+          },
+        },
+        {
+          expr: 'prometheus_engine_queries_concurrent_max{job="prometheus-k8s"} - prometheus_engine_queries{job="prometheus-k8s"} < 1',
+          alert: 'PrometheusQueryOverload',
+          'for': '15m',
+          annotations: {
+            description: 'Prometheus pod {{ $labels.pod }} in {{ $labels.namespace }} namespace have been overloaded for more than 15 minutes. This may be a symptom of excessive simultanous complex requests, low performance of the storage backend, or failures within these components. Assess the health of the Prometheus instances, the connnected Prometheus instances, look for potential senders of these requests and then contact support.',
+            summary: 'Prometheus reaches its maximum capacity serving concurrent requests',
+          },
+          labels: {
+            severity: 'warning',
+          },
+        },
       ],
     },
     {
