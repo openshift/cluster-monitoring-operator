@@ -745,6 +745,51 @@ data:
     # cluster:kata_monitor_running_shim_count:sum provides the number of VM
     # running with kata containers on the cluster
     - '{__name__="cluster:kata_monitor_running_shim_count:sum"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # NooBaa_num_buckets_claims provides the number of OBC buckets.
+    - '{__name__="NooBaa_num_buckets_claims"}'
+    # 
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    # 
+    # NooBaa_num_namespace_buckets provides the number of namespace buckets.
+    - '{__name__="NooBaa_num_namespace_buckets"}'
+    # 
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # NooBaa_num_unhealthy_bucket_claims provides the number of unhealthy OBCs.
+    - '{__name__="NooBaa_num_unhealthy_bucket_claims"}'
+    # 
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    # 
+    # NooBaa_num_unhealthy_namespace_buckets provides the number of unhealthy namespace buckets.
+    - '{__name__="NooBaa_num_unhealthy_namespace_buckets"}'
+    # 
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    # 
+    # noobaa_accounts_num provides the number of Noobaa user accounts (linked to OBCs).
+    - '{__name__="noobaa_accounts_num"}'
+    # 
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    # 
+    # noobaa_total_usage provides the Noobaa raw capacity.
+    - '{__name__="noobaa_total_usage"}'
+    # 
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    # 
+    # odf_system_health_status provides the indication whether the Noobaa service is in an error state.
+    - '{__name__="odf_system_health_status"}'
+    # 
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    # 
+    # odf_system_iops_total_bytes provides the Noobaa IOPS.
+    - '{__name__="odf_system_iops_total_bytes"}'
+    # 
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    # 
+    # odf_system_throughput_total_bytes provides the Noobaa throughput.
+    - '{__name__="odf_system_throughput_total_bytes"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
