@@ -61,7 +61,16 @@ type RelabelConfigController struct {
 }
 
 // NewRelabelConfigController returns a new RelabelConfigController instance.
-func NewRelabelConfigController(client *client.Client) *RelabelConfigController {
+func NewRelabelConfigController(ctx context.Context, client *client.Client) (*RelabelConfigController, error) {
+	tp, err := client.TechPreviewEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !tp {
+		return &RelabelConfigController{}, nil
+	}
+
 	// Only AlertRelabelConfig resources in the operator namespace are watched.
 	relabelConfigInformer := cache.NewSharedIndexInformer(
 		client.AlertRelabelConfigListWatchForNamespace(client.Namespace()),
@@ -103,12 +112,17 @@ func NewRelabelConfigController(client *client.Client) *RelabelConfigController 
 		DeleteFunc: controller.handleSecretDelete,
 	})
 
-	return controller
+	return controller, nil
 }
 
 // Run starts the controller, and blocks until the done channel for the given
 // context is closed.
 func (c *RelabelConfigController) Run(ctx context.Context, workers int) {
+	if c.client == nil {
+		klog.V(4).Info("Not starting alert relabel config controller (tech preview not enabled)")
+		return
+	}
+
 	klog.Info("Starting alert relabel config controller")
 
 	defer c.queue.ShutDown()
