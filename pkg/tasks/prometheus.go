@@ -307,20 +307,6 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 	}
 
 	{
-		relabelConfigSecret, err := t.factory.PrometheusK8sAdditionalAlertRelabelConfigs()
-		if err != nil {
-			return errors.Wrap(err, "initializing Prometheus AdditionalAlertRelabelConfigs secret failed")
-		}
-
-		if relabelConfigSecret != nil {
-			err = t.client.CreateOrUpdateSecret(ctx, relabelConfigSecret)
-			if err != nil {
-				return errors.Wrap(err, "reconciling Prometheus AdditionalAlertRelabelConfigs secret failed")
-			}
-		}
-	}
-
-	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.PrometheusK8sTrustedCABundle()
 		if err != nil {

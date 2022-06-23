@@ -168,7 +168,8 @@ type Operator struct {
 
 	rebalancer *rebalancer.Rebalancer
 
-	ruleController *alert.RuleController
+	ruleController    *alert.RuleController
+	relabelController *alert.RelabelConfigController
 }
 
 func New(
@@ -202,6 +203,7 @@ func New(
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
 		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
 		ruleController:            alert.NewRuleController(c, version),
+		relabelController:         alert.NewRelabelConfigController(c),
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -350,7 +352,7 @@ func New(
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create client certificate controller")
 	}
-	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run, o.ruleController.Run)
+	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run, o.ruleController.Run, o.relabelController.Run)
 
 	return o, nil
 }

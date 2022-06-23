@@ -224,6 +224,15 @@ func (c *Client) PrometheusRuleListWatchForNamespace(ns string) *cache.ListWatch
 	return cache.NewListWatchFromClient(c.mclient.MonitoringV1().RESTClient(), "prometheusrules", ns, fields.Everything())
 }
 
+func (c *Client) AlertRelabelConfigListWatchForNamespace(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.osmclient.MonitoringV1alpha1().RESTClient(),
+		"alertrelabelconfigs",
+		ns,
+		fields.Everything(),
+	)
+}
+
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
@@ -234,6 +243,15 @@ func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 
 func (c *Client) PersistentVolumeClaimListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "persistentvolumeclaims", ns, fields.Everything())
+}
+
+func (c *Client) SecretListWatchForResource(namespace, name string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.kclient.CoreV1().RESTClient(),
+		"secrets",
+		namespace,
+		fields.OneTermEqualSelector("metadata.name", name),
+	)
 }
 
 func (c *Client) InfrastructureListWatchForResource(ctx context.Context, resource string) *cache.ListWatch {
@@ -329,6 +347,26 @@ func (c *Client) UpdateAlertingRuleStatus(ctx context.Context, rule *osmv1alpha1
 
 	_, err := c.osmclient.MonitoringV1alpha1().AlertingRules(ns).UpdateStatus(ctx, rule, metav1.UpdateOptions{})
 	return err
+}
+
+func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv1alpha1.AlertRelabelConfig) error {
+	arcClient := c.osmclient.MonitoringV1alpha1().AlertRelabelConfigs(arc.GetNamespace())
+	existing, err := arcClient.Get(ctx, arc.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := arcClient.Create(ctx, arc, metav1.CreateOptions{})
+		return errors.Wrap(err, "creating AlertRelabelConfig object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving AlertRelabelConfig object failed")
+	}
+
+	required := arc.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+
+	required.ResourceVersion = existing.ResourceVersion
+
+	_, err = arcClient.Update(ctx, required, metav1.UpdateOptions{})
+	return errors.Wrap(err, "updating AlertRelabelConfig object failed")
 }
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {

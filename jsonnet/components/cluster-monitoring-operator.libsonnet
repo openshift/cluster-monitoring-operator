@@ -20,7 +20,8 @@ function(params) {
   local cmo = self,
   local cfg = defaults + params,
 
-  '0alertingrulesCustomResourceDefinition': std.parseYaml(importstr './../crds/alertingrules-custom-resource-definition.yaml'),
+  '0alertingrulesCustomResourceDefinition': import './../crds/alertingrules-custom-resource-definition.json',
+  '0alertrelabelconfigsCustomResourceDefinition': import './../crds/alertrelabelconfigs-custom-resource-definition.json',
 
   prometheusRule: {
     apiVersion: 'monitoring.coreos.com/v1',
@@ -278,7 +279,7 @@ function(params) {
   },
 
   // Defines permisssions required for techpreview features. CMO needs:
-  // - get/list/watch permissions on alertingrules to detect changes requiring reconciliation.
+  // - get/list/watch permissions on alertingrules and alertrelabelconfigs to detect changes requiring reconciliation.
   // - all permissions on alertingrules/finalizers to set the `ownerReferences` field on generated prometheusrules.
   // - all permissions on alertingrules/status to set the status of alertingrules.
   techpreviewRole: {
@@ -297,7 +298,7 @@ function(params) {
     rules: [
       {
         apiGroups: ['monitoring.openshift.io'],
-        resources: ['alertingrules'],
+        resources: ['alertingrules', 'alertrelabelconfigs'],
         verbs: ['get', 'list', 'watch'],
       },
       {

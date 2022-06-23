@@ -29,6 +29,7 @@ import (
 	"time"
 
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
+	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 
@@ -76,6 +77,7 @@ type Framework struct {
 	SchedulingClient      *schedulingv1client.SchedulingV1Client
 	kubeConfigPath        string
 
+	OpenShiftMonitoringClient    openshiftmonitoringclientset.Interface
 	MonitoringClient             *monClient.MonitoringV1Client
 	MonitoringBetaClient         *monBetaClient.MonitoringV1beta1Client
 	Ns, UserWorkloadMonitoringNs string
@@ -142,21 +144,27 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "creating scheduling v1 client failed")
 	}
 
+	osmclient, err := openshiftmonitoringclientset.NewForConfig(config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating openshift monitoring client")
+	}
+
 	f := &Framework{
-		RestConfig:               config,
-		OperatorClient:           operatorClient,
-		OpenShiftConfigClient:    openshiftConfigClient,
-		OpenShiftRouteClient:     openshiftRouteClient,
-		KubeClient:               kubeClient,
-		APIServicesClient:        apiServicesClient,
-		AdmissionClient:          admissionClient,
-		MetricsClient:            metricsClient,
-		MonitoringClient:         mClient,
-		MonitoringBetaClient:     mBetaClient,
-		Ns:                       namespaceName,
-		UserWorkloadMonitoringNs: userWorkloadNamespaceName,
-		kubeConfigPath:           kubeConfigPath,
-		SchedulingClient:         schedulingClient,
+		RestConfig:                config,
+		OperatorClient:            operatorClient,
+		OpenShiftConfigClient:     openshiftConfigClient,
+		OpenShiftRouteClient:      openshiftRouteClient,
+		KubeClient:                kubeClient,
+		APIServicesClient:         apiServicesClient,
+		AdmissionClient:           admissionClient,
+		MetricsClient:             metricsClient,
+		MonitoringClient:          mClient,
+		MonitoringBetaClient:      mBetaClient,
+		Ns:                        namespaceName,
+		UserWorkloadMonitoringNs:  userWorkloadNamespaceName,
+		kubeConfigPath:            kubeConfigPath,
+		SchedulingClient:          schedulingClient,
+		OpenShiftMonitoringClient: osmclient,
 	}
 
 	cleanUp, err := f.setup()

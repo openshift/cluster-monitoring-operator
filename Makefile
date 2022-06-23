@@ -123,7 +123,7 @@ $(ASSETS): build-jsonnet
 	[ -f "$@" ] || exit 1
 
 .PHONY: build-jsonnet
-build-jsonnet: $(JSONNET_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_SRC) $(JSONNET_VENDOR) json-manifests
+build-jsonnet: $(JSONNET_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_SRC) $(JSONNET_VENDOR) json-manifests json-crds
 	./hack/build-jsonnet.sh
 
 $(JSON_MANIFESTS): $(MANIFESTS)
@@ -131,6 +131,15 @@ $(JSON_MANIFESTS): $(MANIFESTS)
 
 .PHONY: json-manifests
 json-manifests: $(JSON_MANIFESTS_DIR) $(JSON_MANIFESTS)
+
+.PHONY: json-crds
+json-crds: jsonnet/crds/alertingrules-custom-resource-definition.json jsonnet/crds/alertrelabelconfigs-custom-resource-definition.json
+
+jsonnet/crds/alertingrules-custom-resource-definition.json: vendor/github.com/openshift/api/monitoring/v1alpha1/0000_50_monitoring_01_alertingrules.crd.yaml
+	$(GOJSONTOYAML_BIN) -yamltojson < $< > $@
+
+jsonnet/crds/alertrelabelconfigs-custom-resource-definition.json: vendor/github.com/openshift/api/monitoring/v1alpha1/0000_50_monitoring_02_alertrelabelconfigs.crd.yaml
+	$(GOJSONTOYAML_BIN) -yamltojson < $< > $@
 
 .PHONY: versions
 versions: $(GOJSONTOYAML_BIN)
@@ -199,7 +208,12 @@ test-unit:
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
-	go test -v -timeout=120m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	go test -run='!TechPreview' -v -timeout=120m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+
+.PHONY: test-e2e-tp
+test-e2e-tp: KUBECONFIG?=$(HOME)/.kube/config
+test-e2e-tp:
+	go test -run='TechPreview' -v -timeout=20m ./test/e2e/ --kubeconfig $(KUBECONFIG)
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)

@@ -278,6 +278,7 @@ local inCluster =
         additionalRelabelConfigs: {
           name: 'alert-relabel-configs',
           key: 'config.yaml',
+          optional: true,
         },
       },
       prometheusAdapter: {

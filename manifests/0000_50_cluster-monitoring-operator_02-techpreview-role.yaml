@@ -13,6 +13,7 @@ rules:
   - monitoring.openshift.io
   resources:
   - alertingrules
+  - alertrelabelconfigs
   verbs:
   - get
   - list
