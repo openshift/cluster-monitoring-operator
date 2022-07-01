@@ -23,6 +23,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	configv1 "github.com/openshift/api/config/v1"
 	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/prometheus/model/relabel"
@@ -38,6 +39,15 @@ const (
 
 func TestAlertRelabelConfigTechPreview(t *testing.T) {
 	ctx := context.Background()
+
+	fg, err := f.OpenShiftConfigClient.ConfigV1().FeatureGates().Get(ctx, "cluster", metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if fg.Spec.FeatureSet != configv1.TechPreviewNoUpgrade {
+		t.Skip("TechPreview not enabled")
+	}
 
 	arcName := framework.E2eTestLabelValue
 
@@ -66,7 +76,7 @@ func TestAlertRelabelConfigTechPreview(t *testing.T) {
 	secrets := f.KubeClient.CoreV1().Secrets(f.Ns)
 
 	// Create an AlertRelabelConfig.
-	_, err := relabelConfigs.Create(ctx, arc, metav1.CreateOptions{})
+	_, err = relabelConfigs.Create(ctx, arc, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(errors.Wrap(err, "failed to create AlertRelabelConfig"))
 	}
