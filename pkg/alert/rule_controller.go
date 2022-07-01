@@ -24,8 +24,10 @@ import (
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
@@ -56,10 +58,34 @@ type RuleController struct {
 }
 
 // NewRuleController returns a new AlertingRule controller instance.
-func NewRuleController(client *client.Client, version string) *RuleController {
-	// AlertingRule resources are only allowed in the operator namespace.
+func NewRuleController(ctx context.Context, client *client.Client, version string) (*RuleController, error) {
+	tp, err := client.TechPreviewEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var lw cache.ListerWatcher
+	if tp {
+		// AlertingRule resources are only allowed in the operator namespace.
+		lw = client.AlertingRuleListWatchForNamespace(client.Namespace())
+	} else {
+		// Instantiate a fake lister/watcher that returns no items.
+		lw = &cache.ListWatch{
+			ListFunc: func(metav1.ListOptions) (runtime.Object, error) {
+				return &osmv1alpha1.AlertingRuleList{
+					TypeMeta: metav1.TypeMeta{
+						Kind: "List",
+					},
+				}, nil
+			},
+			WatchFunc: func(metav1.ListOptions) (watch.Interface, error) {
+				return watch.NewFake(), nil
+			},
+		}
+	}
+
 	ruleInformer := cache.NewSharedIndexInformer(
-		client.AlertingRuleListWatchForNamespace(client.Namespace()),
+		lw,
 		&osmv1alpha1.AlertingRule{},
 		resyncPeriod,
 		cache.Indexers{},
@@ -99,7 +125,7 @@ func NewRuleController(client *client.Client, version string) *RuleController {
 		DeleteFunc: rc.handlePrometheusRuleDelete,
 	})
 
-	return rc
+	return rc, nil
 }
 
 // Run starts the controller, and blocks until the done channel for the given
