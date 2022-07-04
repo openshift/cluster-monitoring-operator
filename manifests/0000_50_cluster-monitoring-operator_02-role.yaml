@@ -120,12 +120,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - config.openshift.io
-  resources:
-  - featuregates
-  verbs:
-  - get
-- apiGroups:
   - certificates.k8s.io
   resources:
   - certificatesigningrequests

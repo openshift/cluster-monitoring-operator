@@ -191,12 +191,6 @@ function(params) {
         resources: ['consoles'],
         verbs: ['get', 'list', 'watch'],
       },
-      // The operator needs to know whether TechPreview features are enabled or not.
-      {
-        apiGroups: ['config.openshift.io'],
-        resources: ['featuregates'],
-        verbs: ['get'],
-      },
       {
         apiGroups: ['certificates.k8s.io'],
         resources: ['certificatesigningrequests'],
