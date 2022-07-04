@@ -56,16 +56,7 @@ type RuleController struct {
 }
 
 // NewRuleController returns a new AlertingRule controller instance.
-func NewRuleController(ctx context.Context, client *client.Client, version string) (*RuleController, error) {
-	tp, err := client.TechPreviewEnabled(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !tp {
-		return &RuleController{}, nil
-	}
-
+func NewRuleController(client *client.Client, version string) *RuleController {
 	// AlertingRule resources are only allowed in the operator namespace.
 	ruleInformer := cache.NewSharedIndexInformer(
 		client.AlertingRuleListWatchForNamespace(client.Namespace()),
@@ -108,17 +99,12 @@ func NewRuleController(ctx context.Context, client *client.Client, version strin
 		DeleteFunc: rc.handlePrometheusRuleDelete,
 	})
 
-	return rc, nil
+	return rc
 }
 
 // Run starts the controller, and blocks until the done channel for the given
 // context is closed.
 func (rc *RuleController) Run(ctx context.Context, workers int) {
-	if rc.client == nil {
-		klog.V(4).Info("Not starting alerting rules controller (tech preview not enabled)")
-		return
-	}
-
 	klog.Info("Starting alerting rules controller")
 
 	defer rc.queue.ShutDown()
