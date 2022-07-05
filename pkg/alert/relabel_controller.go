@@ -20,20 +20,20 @@ import (
 	"sort"
 	"strings"
 
+	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	"github.com/pkg/errors"
+	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v3"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/model/relabel"
-
-	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 )
 
@@ -61,10 +61,35 @@ type RelabelConfigController struct {
 }
 
 // NewRelabelConfigController returns a new RelabelConfigController instance.
-func NewRelabelConfigController(client *client.Client) *RelabelConfigController {
-	// Only AlertRelabelConfig resources in the operator namespace are watched.
+func NewRelabelConfigController(ctx context.Context, client *client.Client) (*RelabelConfigController, error) {
+	tp, err := client.TechPreviewEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var lw cache.ListerWatcher
+	if tp {
+		// Only AlertRelabelConfig resources in the operator namespace are watched.
+		lw = client.AlertRelabelConfigListWatchForNamespace(client.Namespace())
+	} else {
+		// Instantiate a fake lister/watcher that returns no items. It ensures
+		// that the controller adds the default relabeling rule to the
+		// generated secret.
+		lw = &cache.ListWatch{
+			ListFunc: func(metav1.ListOptions) (runtime.Object, error) {
+				return &osmv1alpha1.AlertRelabelConfigList{
+					TypeMeta: metav1.TypeMeta{
+						Kind: "List",
+					},
+				}, nil
+			},
+			WatchFunc: func(metav1.ListOptions) (watch.Interface, error) {
+				return watch.NewFake(), nil
+			},
+		}
+	}
 	relabelConfigInformer := cache.NewSharedIndexInformer(
-		client.AlertRelabelConfigListWatchForNamespace(client.Namespace()),
+		lw,
 		&osmv1alpha1.AlertRelabelConfig{},
 		resyncPeriod,
 		cache.Indexers{},
@@ -103,7 +128,7 @@ func NewRelabelConfigController(client *client.Client) *RelabelConfigController 
 		DeleteFunc: controller.handleSecretDelete,
 	})
 
-	return controller
+	return controller, nil
 }
 
 // Run starts the controller, and blocks until the done channel for the given
