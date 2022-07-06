@@ -753,6 +753,16 @@ data:
     # cluster:kata_monitor_running_shim_count:sum provides the number of VM
     # running with kata containers on the cluster
     - '{__name__="cluster:kata_monitor_running_shim_count:sum"}'
+    #
+    # owners: (@openshift/team-hypershift-maintainers)
+    #
+    # platform:hypershift_hostedclusters:max is the total number of clusters managed by the hypershift operator by cluster platform
+    - '{__name__="platform:hypershift_hostedclusters:max"}'
+    #
+    # owners: (@openshift/team-hypershift-maintainers)
+    #
+    # platform:hypershift_nodepools:max is the total number of nodepools managed by the hypershift operator by cluster platform
+    - '{__name__="platform:hypershift_nodepools:max"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
