@@ -240,7 +240,7 @@ function(params) {
       {
         apiGroups: [''],
         resources: ['services', 'serviceaccounts', 'configmaps'],
-        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'patch', 'delete'],
       },
       {
         apiGroups: ['apps'],
