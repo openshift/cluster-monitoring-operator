@@ -78,6 +78,7 @@ function(params) {
         {
           expr: 'max without(%s) (kube_node_labels and on(node) kube_node_role{role="infra"})' % droppedKsmLabels,
           labels: {
+            label_node_role_kubernetes_io: 'infra',
             label_node_role_kubernetes_io_infra: 'true',
           },
           record: 'cluster:infra_nodes',
@@ -85,6 +86,7 @@ function(params) {
         {
           expr: 'max without(%s) (cluster:master_nodes and on(node) cluster:infra_nodes)' % droppedKsmLabels,
           labels: {
+            label_node_role_kubernetes_io: 'infra,master',
             label_node_role_kubernetes_io_master: 'true',
             label_node_role_kubernetes_io_infra: 'true',
           },
@@ -110,6 +112,14 @@ function(params) {
             sum by(label_beta_kubernetes_io_instance_type, label_node_role_kubernetes_io, label_kubernetes_io_arch, label_node_openshift_io_os_id) (
               (
                 cluster:master_nodes
+                * on(node) group_left() max by(node)
+                (
+                  kube_node_status_capacity{resource="cpu",unit="core"}
+                )
+              )
+              or on(node)
+              (
+                cluster:infra_nodes
                 * on(node) group_left() max by(node)
                 (
                   kube_node_status_capacity{resource="cpu",unit="core"}
