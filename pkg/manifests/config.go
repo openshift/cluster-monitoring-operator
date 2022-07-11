@@ -23,7 +23,6 @@ import (
 	"math"
 
 	configv1 "github.com/openshift/api/config/v1"
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -106,20 +105,6 @@ func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConf
 	return alertmanagerConfigs
 }
 
-type ClusterMonitoringConfiguration struct {
-	PrometheusOperatorConfig *PrometheusOperatorConfig    `json:"prometheusOperator"`
-	PrometheusK8sConfig      *PrometheusK8sConfig         `json:"prometheusK8s"`
-	AlertmanagerMainConfig   *AlertmanagerMainConfig      `json:"alertmanagerMain"`
-	KubeStateMetricsConfig   *KubeStateMetricsConfig      `json:"kubeStateMetrics"`
-	OpenShiftMetricsConfig   *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics"`
-	EtcdConfig               *EtcdConfig                  `json:"-"`
-	HTTPConfig               *HTTPConfig                  `json:"http"`
-	TelemeterClientConfig    *TelemeterClientConfig       `json:"telemeterClient"`
-	K8sPrometheusAdapter     *K8sPrometheusAdapter        `json:"k8sPrometheusAdapter"`
-	ThanosQuerierConfig      *ThanosQuerierConfig         `json:"thanosQuerier"`
-	UserWorkloadEnabled      *bool                        `json:"enableUserWorkload"`
-}
-
 type Images struct {
 	K8sPrometheusAdapter               string
 	PromLabelProxy                     string
@@ -144,153 +129,8 @@ type HTTPConfig struct {
 	NoProxy    string `json:"noProxy"`
 }
 
-type PrometheusOperatorConfig struct {
-	LogLevel     string            `json:"logLevel"`
-	NodeSelector map[string]string `json:"nodeSelector"`
-	Tolerations  []v1.Toleration   `json:"tolerations"`
-}
-
-// RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the
-// BearerToken field removed. In the future other fields might be added here.
-type RemoteWriteSpec struct {
-	// The URL of the endpoint to send samples to.
-	URL string `json:"url"`
-	// The name of the remote write queue, must be unique if specified. The
-	// name is used in metrics and logging in order to differentiate queues.
-	// Only valid in Prometheus versions 2.15.0 and newer.
-	Name string `json:"name,omitempty"`
-	// Timeout for requests to the remote write endpoint.
-	RemoteTimeout string `json:"remoteTimeout,omitempty"`
-	// Custom HTTP headers to be sent along with each remote write request.
-	// Be aware that headers that are set by Prometheus itself can't be overwritten.
-	// Only valid in Prometheus versions 2.25.0 and newer.
-	Headers map[string]string `json:"headers,omitempty"`
-	// The list of remote write relabel configurations.
-	WriteRelabelConfigs []monv1.RelabelConfig `json:"writeRelabelConfigs,omitempty"`
-	// BasicAuth for the URL.
-	BasicAuth *monv1.BasicAuth `json:"basicAuth,omitempty"`
-	// Bearer token for remote write.
-	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
-	// Authorization section for remote write
-	Authorization *monv1.SafeAuthorization `json:"authorization,omitempty"`
-	// Sigv4 allows to configures AWS's Signature Verification 4
-	Sigv4 *monv1.Sigv4 `json:"sigv4,omitempty"`
-	// TLS Config to use for remote write.
-	TLSConfig *monv1.SafeTLSConfig `json:"tlsConfig,omitempty"`
-	// Optional ProxyURL
-	ProxyURL string `json:"proxyUrl,omitempty"`
-	// QueueConfig allows tuning of the remote write queue parameters.
-	QueueConfig *monv1.QueueConfig `json:"queueConfig,omitempty"`
-	// MetadataConfig configures the sending of series metadata to remote storage.
-	MetadataConfig *monv1.MetadataConfig `json:"metadataConfig,omitempty"`
-	// OAuth2 configures OAuth2 authentication for remote write.
-	OAuth2 *monv1.OAuth2 `json:"oauth2,omitempty"`
-}
-
-type PrometheusK8sConfig struct {
-	LogLevel            string                               `json:"logLevel"`
-	Retention           string                               `json:"retention"`
-	RetentionSize       string                               `json:"retentionSize"`
-	NodeSelector        map[string]string                    `json:"nodeSelector"`
-	Tolerations         []v1.Toleration                      `json:"tolerations"`
-	Resources           *v1.ResourceRequirements             `json:"resources"`
-	ExternalLabels      map[string]string                    `json:"externalLabels"`
-	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite         []RemoteWriteSpec                    `json:"remoteWrite"`
-	TelemetryMatches    []string                             `json:"-"`
-	AlertmanagerConfigs []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
-	QueryLogFile        string                               `json:"queryLogFile"`
-	/* EnforcedBodySizeLimit accept 3 kind of values:
-	 * 1. empty value: no limit
-	 * 2. a value in Prometheus size format, e.g. "64MB"
-	 * 3. string "automatic", which means the limit will be automatically calculated based on cluster capacity.
-	 */
-	EnforcedBodySizeLimit     string                        `json:"enforcedBodySizeLimit,omitempty"`
-	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints"`
-}
-
-type AdditionalAlertmanagerConfig struct {
-	// The URL scheme to use when talking to Alertmanagers.
-	Scheme string `json:"scheme,omitempty"`
-	// Path prefix to add in front of the push endpoint path.
-	PathPrefix string `json:"pathPrefix,omitempty"`
-	// The timeout used when sending alerts.
-	Timeout *string `json:"timeout,omitempty"`
-	// The api version of Alertmanager.
-	APIVersion string `json:"apiVersion"`
-	// TLS Config to use for alertmanager connection.
-	TLSConfig TLSConfig `json:"tlsConfig,omitempty"`
-	// Bearer token to use when authenticating to Alertmanager.
-	BearerToken *v1.SecretKeySelector `json:"bearerToken,omitempty"`
-	// List of statically configured Alertmanagers.
-	StaticConfigs []string `json:"staticConfigs,omitempty"`
-}
-
-// TLSConfig configures the options for TLS connections.
-type TLSConfig struct {
-	// The CA cert in the Prometheus container to use for the targets.
-	CA *v1.SecretKeySelector `json:"ca,omitempty"`
-	// The client cert in the Prometheus container to use for the targets.
-	Cert *v1.SecretKeySelector `json:"cert,omitempty"`
-	// The client key in the Prometheus container to use for the targets.
-	Key *v1.SecretKeySelector `json:"key,omitempty"`
-	// Used to verify the hostname for the targets.
-	ServerName string `json:"serverName,omitempty"`
-	// Disable target certificate validation.
-	InsecureSkipVerify bool `json:"insecureSkipVerify"`
-}
-
-type AlertmanagerMainConfig struct {
-	Enabled                      *bool                                `json:"enabled"`
-	EnableUserAlertManagerConfig bool                                 `json:"enableUserAlertmanagerConfig"`
-	LogLevel                     string                               `json:"logLevel"`
-	NodeSelector                 map[string]string                    `json:"nodeSelector"`
-	Tolerations                  []v1.Toleration                      `json:"tolerations"`
-	Resources                    *v1.ResourceRequirements             `json:"resources"`
-	VolumeClaimTemplate          *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	TopologySpreadConstraints    []v1.TopologySpreadConstraint        `json:"topologySpreadConstraints"`
-}
-
 func (a AlertmanagerMainConfig) IsEnabled() bool {
 	return a.Enabled == nil || *a.Enabled
-}
-
-type ThanosRulerConfig struct {
-	LogLevel                  string                               `json:"logLevel"`
-	NodeSelector              map[string]string                    `json:"nodeSelector"`
-	Retention                 string                               `json:"retention"`
-	Tolerations               []v1.Toleration                      `json:"tolerations"`
-	Resources                 *v1.ResourceRequirements             `json:"resources"`
-	VolumeClaimTemplate       *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	AlertmanagersConfigs      []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
-	TopologySpreadConstraints []v1.TopologySpreadConstraint        `json:"topologySpreadConstraints"`
-}
-
-type ThanosQuerierConfig struct {
-	LogLevel             string                   `json:"logLevel"`
-	NodeSelector         map[string]string        `json:"nodeSelector"`
-	Tolerations          []v1.Toleration          `json:"tolerations"`
-	Resources            *v1.ResourceRequirements `json:"resources"`
-	EnableRequestLogging bool                     `json:"enableRequestLogging"`
-}
-
-type KubeStateMetricsConfig struct {
-	NodeSelector map[string]string `json:"nodeSelector"`
-	Tolerations  []v1.Toleration   `json:"tolerations"`
-}
-
-type OpenShiftStateMetricsConfig struct {
-	NodeSelector map[string]string `json:"nodeSelector"`
-	Tolerations  []v1.Toleration   `json:"tolerations"`
-}
-
-// Prometheus Adapater related configurations
-type K8sPrometheusAdapter struct {
-	NodeSelector map[string]string `json:"nodeSelector"`
-	Tolerations  []v1.Toleration   `json:"tolerations"`
-
-	// Prometheus Adapter audit logging related configuration
-	Audit *Audit `json:"audit"`
 }
 
 // Audit profile configurations
@@ -550,43 +390,6 @@ func NewDefaultConfig() *Config {
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
 	c.applyDefaults()
 	return c
-}
-
-type UserWorkloadConfiguration struct {
-	PrometheusOperator *PrometheusOperatorConfig       `json:"prometheusOperator"`
-	Prometheus         *PrometheusRestrictedConfig     `json:"prometheus"`
-	ThanosRuler        *ThanosRulerConfig              `json:"thanosRuler"`
-	Alertmanager       *AlertmanagerUserWorkloadConfig `json:"alertmanager"`
-}
-
-type PrometheusRestrictedConfig struct {
-	LogLevel                      string                               `json:"logLevel"`
-	Retention                     string                               `json:"retention"`
-	RetentionSize                 string                               `json:"retentionSize"`
-	NodeSelector                  map[string]string                    `json:"nodeSelector"`
-	Tolerations                   []v1.Toleration                      `json:"tolerations"`
-	Resources                     *v1.ResourceRequirements             `json:"resources"`
-	ExternalLabels                map[string]string                    `json:"externalLabels"`
-	VolumeClaimTemplate           *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
-	RemoteWrite                   []RemoteWriteSpec                    `json:"remoteWrite"`
-	EnforcedSampleLimit           *uint64                              `json:"enforcedSampleLimit"`
-	EnforcedTargetLimit           *uint64                              `json:"enforcedTargetLimit"`
-	EnforcedLabelLimit            *uint64                              `json:"enforcedLabelLimit"`
-	EnforcedLabelNameLengthLimit  *uint64                              `json:"enforcedLabelNameLengthLimit"`
-	EnforcedLabelValueLengthLimit *uint64                              `json:"enforcedLabelValueLengthLimit"`
-	AlertmanagerConfigs           []AdditionalAlertmanagerConfig       `json:"additionalAlertmanagerConfigs"`
-	QueryLogFile                  string                               `json:"queryLogFile"`
-}
-
-// AlertmanagerUserWorkloadConfig defines the Alertmanager configuration for UWM.
-type AlertmanagerUserWorkloadConfig struct {
-	Enabled                  bool                                 `json:"enabled"`
-	EnableAlertmanagerConfig bool                                 `json:"enableAlertmanagerConfig"`
-	LogLevel                 string                               `json:"logLevel"`
-	NodeSelector             map[string]string                    `json:"nodeSelector"`
-	Tolerations              []v1.Toleration                      `json:"tolerations"`
-	Resources                *v1.ResourceRequirements             `json:"resources"`
-	VolumeClaimTemplate      *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate"`
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {
