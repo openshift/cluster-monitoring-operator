@@ -84,8 +84,6 @@ func setupWebhookReceiver(t *testing.T, f *framework.Framework, namespace string
 		return nil, err
 	}
 
-	allowPrivilegeEscalation := false
-	runAsNonRoot := true
 	if err := f.OperatorClient.CreateOrUpdateDeployment(ctx, &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: webhookReceiverService,
@@ -111,16 +109,7 @@ func setupWebhookReceiver(t *testing.T, f *framework.Framework, namespace string
 								"--log.level=debug",
 								`--id.template={{ .CommonLabels.alertname }}_{{ .CommonLabels.namespace }}`,
 							},
-							SecurityContext: &v1.SecurityContext{
-								AllowPrivilegeEscalation: &allowPrivilegeEscalation,
-								Capabilities: &v1.Capabilities{
-									Drop: []v1.Capability{"ALL"},
-								},
-								RunAsNonRoot: &runAsNonRoot,
-								SeccompProfile: &v1.SeccompProfile{
-									Type: v1.SeccompProfileTypeRuntimeDefault,
-								},
-							},
+							SecurityContext: getSecurityContext(),
 						},
 					},
 				},

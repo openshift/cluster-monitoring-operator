@@ -141,3 +141,19 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 
 	return nil
 }
+
+func getSecurityContext() *v1.SecurityContext {
+	allowPrivilegeEscalation := false
+	runAsNonRoot := true
+
+	return &v1.SecurityContext{
+		AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+		Capabilities: &v1.Capabilities{
+			Drop: []v1.Capability{"ALL"},
+		},
+		RunAsNonRoot: &runAsNonRoot,
+		SeccompProfile: &v1.SeccompProfile{
+			Type: v1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+}

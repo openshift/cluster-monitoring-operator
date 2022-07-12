@@ -140,6 +140,7 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 						{
 							Name:  "prometheus-example-app",
 							Image: "ghcr.io/rhobs/prometheus-example-app:0.3.0",
+							SecurityContext: getSecurityContext(),
 						},
 					},
 				},
