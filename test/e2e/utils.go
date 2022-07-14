@@ -142,7 +142,7 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 	return nil
 }
 
-func getSecurityContext() *v1.SecurityContext {
+func getSecurityContextRestrictedProfile() *v1.SecurityContext {
 	allowPrivilegeEscalation := false
 	runAsNonRoot := true
 

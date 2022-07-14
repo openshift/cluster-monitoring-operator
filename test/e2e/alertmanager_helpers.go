@@ -109,7 +109,7 @@ func setupWebhookReceiver(t *testing.T, f *framework.Framework, namespace string
 								"--log.level=debug",
 								`--id.template={{ .CommonLabels.alertname }}_{{ .CommonLabels.namespace }}`,
 							},
-							SecurityContext: getSecurityContext(),
+							SecurityContext: getSecurityContextRestrictedProfile(),
 						},
 					},
 				},
