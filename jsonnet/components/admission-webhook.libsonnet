@@ -13,6 +13,12 @@ function(params)
         },
       },
       spec+: {
+        strategy+: {
+          // Apply HA conventions
+          rollingUpdate: {
+            maxUnavailable: 1,
+          },
+        },
         template+: {
           metadata+: {
             labels+: {
