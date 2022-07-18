@@ -20,7 +20,10 @@ function(params)
     consoleDashboardDefinitions: {
       apiVersion: 'v1',
       kind: 'ConfigMapList',
-      items: std.map(
+      items: std.filterMap(
+        // etcd dashboard is deployed by cluster-etcd-operator
+        // PR: https://github.com/openshift/cluster-etcd-operator/pull/837
+        function(d) d.metadata.name != 'grafana-dashboard-etcd',
         function(d)
           d {
             metadata+: {
