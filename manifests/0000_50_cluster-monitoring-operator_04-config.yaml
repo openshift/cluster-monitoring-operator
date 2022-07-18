@@ -322,6 +322,21 @@ data:
     #
     # owners: (@openshift/team-ocs-committers)
     #
+    # odf_system_raw_capacity_total_bytes gives the size of storage cluster in bytes. This is a specific OCS metric.
+    - '{__name__="odf_system_raw_capacity_total_bytes"}'
+    #
+    # owners: (@openshift/team-ocs-committers)
+    #
+    # odf_system_raw_capacity_used_bytes is the amount of storage cluster storage used in bytes.
+    - '{__name__="odf_system_raw_capacity_used_bytes"}'
+    #
+    # owners: (@openshift/team-ocs-committers)
+    #
+    # odf_system_health_status gives the storage cluster health status
+    - '{__name__="odf_system_health_status"}'
+    #
+    # owners: (@openshift/team-ocs-committers)
+    #
     # job:ceph_osd_metadata:count is the total count of osds.
     - '{__name__="job:ceph_osd_metadata:count"}'
     #
