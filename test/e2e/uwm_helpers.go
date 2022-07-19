@@ -138,8 +138,9 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{
 						{
-							Name:  "prometheus-example-app",
-							Image: "ghcr.io/rhobs/prometheus-example-app:0.3.0",
+							Name:            "prometheus-example-app",
+							Image:           "ghcr.io/rhobs/prometheus-example-app:0.3.0",
+							SecurityContext: getSecurityContextRestrictedProfile(),
 						},
 					},
 				},
