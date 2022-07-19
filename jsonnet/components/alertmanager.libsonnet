@@ -231,6 +231,19 @@ function(params)
         },
         containers: [
           {
+            name: 'alertmanager-main',
+            startupProbe+: {
+              exec: {
+                command: ['sh', '-c', 'exec curl http://localhost:9093/-/ready'],
+              },
+              failureThreshold: 10,
+              initialDelaySeconds: 20,
+              periodSeconds: 10,
+              successThreshold: 1,
+              timeoutSeconds: 3,
+            },
+          },
+          {
             name: 'alertmanager-proxy',
             image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
             ports: [
