@@ -66,6 +66,21 @@ func (c Config) IsStorageConfigured() bool {
 	return prometheusK8sConfig.VolumeClaimTemplate != nil
 }
 
+func (c Config) HasInconsistentAlertmanagerConfigurations() bool {
+	if c.ClusterMonitoringConfiguration == nil || c.UserWorkloadConfiguration == nil {
+		return false
+	}
+
+	amConfig := c.ClusterMonitoringConfiguration.AlertmanagerMainConfig
+	uwmConfig := c.UserWorkloadConfiguration.Alertmanager
+
+	if amConfig == nil || uwmConfig == nil {
+		return false
+	}
+
+	return amConfig.EnableUserAlertManagerConfig && uwmConfig.Enabled
+}
+
 // AdditionalAlertmanagerConfigsForPrometheusUserWorkload returns the alertmanager configurations for
 // the User Workload Monitoring Prometheus instance.
 // If no additional configurations are specified, GetPrometheusUWAdditionalAlertmanagerConfigs returns nil.

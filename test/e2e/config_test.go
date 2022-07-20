@@ -21,6 +21,7 @@ import (
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 
@@ -69,6 +70,129 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	t.Log("asserting that CMO goes back healthy after the configuration is fixed")
 	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
 	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+}
+
+func TestClusterMonitoringStatus(t *testing.T) {
+	const (
+		storage = "2Gi"
+	)
+	for _, tc := range []struct {
+		name               string
+		config             string
+		userWorkloadConfig string
+		assertion          func(t *testing.T)
+	}{
+		{
+			name:               "default config, no persistent storage",
+			config:             "",
+			userWorkloadConfig: "",
+			assertion: func(t *testing.T) {
+				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReason(configv1.OperatorDegraded, client.StorageNotConfiguredReason)
+				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, client.StorageNotConfiguredMessage)
+			},
+		},
+		{
+			name: "default config with presistent storage",
+			config: fmt.Sprintf(`enableUserWorkload: true
+alertmanagerMain:
+  enableUserAlertmanagerConfig: true
+prometheusK8s:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: %s
+`, storage),
+			userWorkloadConfig: "",
+			assertion: func(t *testing.T) {
+				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReason(configv1.OperatorDegraded, "")
+				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, "")
+			},
+		},
+		{
+			name: "default config with presistent storage",
+			config: fmt.Sprintf(`prometheusK8s:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: %s
+`, storage),
+			userWorkloadConfig: "",
+			assertion: func(t *testing.T) {
+				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReason(configv1.OperatorDegraded, "")
+				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, "")
+			},
+		},
+		{
+			name: "default config with presistent storage but with UserAlermanagerConfig missconfiguration",
+			config: fmt.Sprintf(`enableUserWorkload: true
+alertmanagerMain:
+  enableUserAlertmanagerConfig: true
+prometheusK8s:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: %s
+`, storage),
+			userWorkloadConfig: `alertmanager:
+  enabled: true
+`,
+			assertion: func(t *testing.T) {
+				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReason(configv1.OperatorDegraded, client.UserAlermanagerConfigMisconfiguredReason)
+				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, client.UserAlermanagerConfigMisconfiguredMessage)
+			},
+		},
+		{
+			name: "default config with presistent storage but with UserAlermanagerConfig missconfiguration",
+			config: fmt.Sprintf(`enableUserWorkload: true
+alertmanagerMain:
+  enableUserAlertmanagerConfig: true
+prometheusK8s:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: %s
+`, storage),
+			userWorkloadConfig: `alertmanager:
+  enabled: true
+  enableAlertmanagerConfig: true
+`,
+			assertion: func(t *testing.T) {
+				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReason(configv1.OperatorDegraded, "")
+				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, "")
+			},
+		},
+	} {
+		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.config))
+
+		if tc.userWorkloadConfig != "" {
+			uwmCM := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      userWorkloadMonitorConfigMapName,
+					Namespace: f.UserWorkloadMonitoringNs,
+				},
+				Data: map[string]string{
+					"config.yaml": tc.userWorkloadConfig,
+				},
+			}
+			f.MustCreateOrUpdateConfigMap(t, uwmCM)
+		}
+
+		t.Run(tc.name, tc.assertion)
+	}
 }
 
 func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
