@@ -582,9 +582,13 @@ func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*mo
 // returns (20s is twice the time that Alertmanager waits before
 // declaring that it can start sending notfications).
 //
-// We also account for slow DNS resolvers by retrying for 40 seconds in
-// case the endpoint isn't ready after 20s (see
-// https://bugzilla.redhat.com/show_bug.cgi?id=2037073 for details).
+// We also account for slow DNS resolvers by retrying for 400 seconds
+// (PeriodSeconds x FailureThreshold) thus giving AlertManager a total
+// of 7 minutes (420 seconds) in case the endpoint isn't ready after 20s.
+//
+// See bugs below for details:
+//  - https://bugzilla.redhat.com/show_bug.cgi?id=2037073
+//  - https://bugzilla.redhat.com/show_bug.cgi?id=2083226
 func setupStartupProbe(a *monv1.Alertmanager) {
 	if a.Spec.Storage != nil {
 		return
@@ -609,7 +613,7 @@ func setupStartupProbe(a *monv1.Alertmanager) {
 				},
 				InitialDelaySeconds: 20,
 				PeriodSeconds:       10,
-				FailureThreshold:    4,
+				FailureThreshold:    40,
 				TimeoutSeconds:      3,
 			},
 		},
