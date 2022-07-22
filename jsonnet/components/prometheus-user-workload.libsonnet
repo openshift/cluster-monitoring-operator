@@ -508,4 +508,10 @@ function(params)
     podDisruptionBudget+: {
       apiVersion: 'policy/v1',
     },
+
+    serviceAccount+: {
+      // service account token is managed by the operator.
+      automountServiceAccountToken: false,
+    },
+
   }

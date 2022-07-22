@@ -81,6 +81,8 @@ function(params)
           'serviceaccounts.openshift.io/oauth-redirectreference.prometheus-k8s': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"prometheus-k8s"}}',
         },
       },
+      // service account token is managed by the operator.
+      automountServiceAccountToken: false,
     },
 
     // Adding the serving certs annotation causes the serving certs controller
