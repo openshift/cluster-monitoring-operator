@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.57.0
+    app.kubernetes.io/version: 0.58.0
   name: prometheus-operator
   namespace: openshift-user-workload-monitoring
 spec:
@@ -26,12 +26,12 @@ spec:
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: prometheus-operator
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 0.57.0
+        app.kubernetes.io/version: 0.58.0
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.57.0
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.58.0
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
@@ -39,7 +39,7 @@ spec:
         - --config-reloader-memory-limit=0
         - --config-reloader-cpu-request=1m
         - --config-reloader-memory-request=10Mi
-        image: quay.io/prometheus-operator/prometheus-operator:v0.57.0
+        image: quay.io/prometheus-operator/prometheus-operator:v0.58.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
