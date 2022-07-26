@@ -289,7 +289,6 @@ var (
 
 	ControlPlanePrometheusRule        = "control-plane/prometheus-rule.yaml"
 	ControlPlaneKubeletServiceMonitor = "control-plane/service-monitor-kubelet.yaml"
-	ControlPlaneEtcdServiceMonitor    = "control-plane/service-monitor-etcd.yaml"
 )
 
 var (
@@ -3170,53 +3169,6 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 	}
 
 	return r, nil
-}
-
-func (f *Factory) ControlPlaneEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap) (*v1.Secret, error) {
-	data := make(map[string]string)
-
-	for k, v := range tlsClient.Data {
-		data[k] = string(v)
-	}
-
-	for k, v := range ca.Data {
-		data[k] = v
-	}
-
-	r := newErrMapReader(data)
-
-	var (
-		clientCA   = r.value(TrustedCABundleKey)
-		clientCert = r.value("tls.crt")
-		clientKey  = r.value("tls.key")
-	)
-
-	if r.Error() != nil {
-		return nil, errors.Wrap(r.err, "couldn't find etcd certificate data")
-	}
-
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: f.namespace,
-			Name:      "kube-etcd-client-certs",
-		},
-		StringData: map[string]string{
-			"etcd-client-ca.crt": clientCA,
-			"etcd-client.key":    clientKey,
-			"etcd-client.crt":    clientCert,
-		},
-	}, nil
-}
-
-func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {

@@ -688,11 +688,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ControlPlaneEtcdServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.ControlPlaneKubeletServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
@@ -3494,16 +3489,6 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 			name: "CMO Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
 				pt, err := f.ClusterMonitoringOperatorServiceMonitor()
-				if err != nil {
-					return nil, err
-				}
-				return pt.Spec.Endpoints, nil
-			},
-		},
-		{
-			name: "etcd Service Monitor",
-			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.ControlPlaneEtcdServiceMonitor()
 				if err != nil {
 					return nil, err
 				}
