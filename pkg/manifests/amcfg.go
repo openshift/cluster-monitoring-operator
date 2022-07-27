@@ -10,11 +10,6 @@ import (
 // PrometheusAdditionalAlertmanagerConfigs is a AdditionalAlertmanagerConfig slice
 type PrometheusAdditionalAlertmanagerConfigs []AdditionalAlertmanagerConfig
 
-// PrometheusAdditionalAlertmanagerConfig is an AdditionalAlertmanagerConfig
-// which can be marshaled into a yaml string, compatible with the Prometheus
-// configuration format
-type prometheusAdditionalAlertmanagerConfig AdditionalAlertmanagerConfig
-
 // MarshalYAML implements the yaml.Marshaler interface.
 func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAML() (interface{}, error) {
 	result := make([]interface{}, len(a))
@@ -59,6 +54,11 @@ type amConfigTLS struct {
 type amConfigStaticConfigs struct {
 	Targets []string `yaml:"targets"`
 }
+
+// prometheusAdditionalAlertmanagerConfig is an AdditionalAlertmanagerConfig
+// which can be marshaled into a yaml string, compatible with the Prometheus
+// configuration format
+type prometheusAdditionalAlertmanagerConfig AdditionalAlertmanagerConfig
 
 // MarshalYAML implements the yaml.Marshaler interface.
 // It marshals a PrometheusAdditionalAlertmanagerConfig into a format
