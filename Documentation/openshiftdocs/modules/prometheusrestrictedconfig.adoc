@@ -1,0 +1,52 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== PrometheusRestrictedConfig
+
+=== Description
+
+PrometheusRestrictedConfig defines configuration related to the Prometheus component that will monitor user-defined projects.
+
+
+
+Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|AlertmanagerConfigs holds configuration about how the Prometheus component should communicate with aditional Alertmanager instances. default: nil
+
+|enforcedLabelLimit|*uint64|EnforcedLabelLimit per-scrape limit on the number of labels accepted for a sample. If more than this number of labels are present post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0
+
+|enforcedLabelNameLengthLimit|*uint64|EnforcedLabelNameLengthLimit per-scrape limit on the length of labels name that will be accepted for a sample. If a label name is longer than this number post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0
+
+|enforcedLabelValueLengthLimit|*uint64|EnforcedLabelValueLengthLimit per-scrape limit on the length of labels value that will be accepted for a sample. If a label value is longer than this number post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0
+
+|enforcedSampleLimit|*uint64|EnforcedSampleLimit defines a global limit on the number of scraped samples that will be accepted. This overrides any SampleLimit set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to enforce the SampleLimit to keep the overall number of samples/series under the desired limit. Note that if SampleLimit is lower that value will be taken instead. default: 0
+
+|enforcedTargetLimit|*uint64|EnforcedTargetLimit defines a global limit on the number of scraped targets. This overrides any TargetLimit set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to enforce the TargetLimit to keep the overall number of targets under the desired limit. Note that if TargetLimit is lower, that value will be taken instead, except if either value is zero, in which case the non-zero value will be used. If both values are zero, no limit is enforced. default: 0
+
+|externalLabels|map[string]string|ExternalLabels defines labels to be added to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager). default: nil
+
+|logLevel|string|LogLevel defines the log level for Prometheus. Possible values are: error, warn, info, debug. default: info
+
+|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+
+|queryLogFile|string|QueryLogFile specifies the file to which PromQL queries are logged. Suports both just a filename in which case they will be saved to an emptyDir volume at /var/log/prometheus, if a full path is given an emptyDir volume will be mounted at that location. Relative paths not supported, also not supported writing to linux std streams. default: \"\"
+
+|remoteWrite|[]link:remotewritespec.adoc[RemoteWriteSpec]|RemoteWrite Holds the remote write configuration, everything from url, authorization to relabeling
+
+|resources|*v1.ResourceRequirements|Resources define resources requests and limits for single Pods.
+
+|retention|string|Retention defines the Time duration Prometheus shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d
+
+|retentionSize|string|RetentionSize defines the maximum amount of disk space used by blocks + WAL. default: nil
+
+|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to configure storageClass and size of volume.
+
+|===
+
+link:../index.adoc[Back to TOC]

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package markdown
 
 import (
 	"fmt"
@@ -50,12 +50,13 @@ func toSectionLink(name string) string {
 	return name
 }
 
-func printAPIDocs(args []string) {
-	fmt.Println(firstParagraph)
-
+func PrintAPIDocs(args []string) {
+	model.SetFormating("markdown")
 	// Build external documentation link with the
 	// KubeAPI and PrometheusOperator versions
 	model.BuildExternalDocLinks(args[0], args[1])
+
+	fmt.Println(firstParagraph)
 
 	paths := args[2:]
 	typeSetUnion := make(model.TypeSet)

@@ -74,6 +74,7 @@ AlertmanagerMainConfig defines configuration related with the main Alertmanager 
 | nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core) | Resources define resources requests and limits for single Pods. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | TopologySpreadConstraints defines the pod's topology spread constraints. |
 | volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | VolumeClaimTemplate defines persistent storage for Alertmanager. It's possible to configure storageClass and size of volume. |
 
 [Back to TOC](#table-of-contents)
@@ -189,6 +190,7 @@ PrometheusK8sConfig holds configuration related to the Prometheus component.
 | retention | string | Retention defines the Time duration Prometheus shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d |
 | retentionSize | string | RetentionSize defines the maximum amount of disk space used by blocks + WAL. default: nil |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | TopologySpreadConstraints defines the pod's topology spread constraints. |
 | volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to configure storageClass and size of volume. |
 
 [Back to TOC](#table-of-contents)
@@ -327,6 +329,7 @@ ThanosRulerConfig defines configuration for the Thanos Ruler instance for user-d
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core) | Resources define resources requests and limits for single Pods. |
 | retention | string | Retention defines the time duration Thanos Ruler shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | TopologySpreadConstraints defines the pod's topology spread constraints. |
 | volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | VolumeClaimTemplate defines persistent storage for Thanos Ruler. It's possible to configure storageClass and size of volume. |
 
 [Back to TOC](#table-of-contents)

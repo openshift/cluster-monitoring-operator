@@ -1,0 +1,27 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== PrometheusOperatorConfig
+
+=== Description
+
+PrometheusOperatorConfig holds configuration related to Prometheus Operator.
+
+
+
+Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration],
+link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|logLevel|string|LogLevel defines the log level for Prometheus Operator. Possible values are: error, warn, info, debug. default: info
+
+|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+
+|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+
+|===
+
+link:../index.adoc[Back to TOC]

@@ -1,0 +1,26 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== K8sPrometheusAdapter
+
+=== Description
+
+K8sPrometheusAdapter defines configuration related with Prometheus Adapater
+
+
+
+Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|audit|*Audit|Audit defines the audit configuration to be used by the prometheus adapter instance. Possible profile values are: \"metadata, request, requestresponse, none\". default: metadata
+
+|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+
+|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+
+|===
+
+link:../index.adoc[Back to TOC]

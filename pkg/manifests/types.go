@@ -69,8 +69,8 @@ type AlertmanagerMainConfig struct {
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Tolerations defines the Pods tolerations.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// TopologySpreadConstraints defines the pod's topology spread constraints. 
-	TopologySpreadConstraints    []v1.TopologySpreadConstraint        `json:"topologySpreadConstraints,omitempty"`
+	// TopologySpreadConstraints defines the pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// VolumeClaimTemplate defines persistent storage for Alertmanager. It's possible to
 	// configure storageClass and size of volume.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
@@ -142,8 +142,8 @@ type PrometheusK8sConfig struct {
 	TelemetryMatches []string `json:"-"`
 	// Tolerations defines the Pods tolerations.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// TopologySpreadConstraints defines the pod's topology spread constraints. 
-	TopologySpreadConstraints    []v1.TopologySpreadConstraint        `json:"topologySpreadConstraints,omitempty"`
+	// TopologySpreadConstraints defines the pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to
 	// configure storageClass and size of volume.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
@@ -317,8 +317,8 @@ type ThanosRulerConfig struct {
 	Retention string `json:"retention,omitempty"`
 	// Tolerations defines the Pods tolerations.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// TopologySpreadConstraints defines the pod's topology spread constraints. 
-	TopologySpreadConstraints    []v1.TopologySpreadConstraint        `json:"topologySpreadConstraints,omitempty"`
+	// TopologySpreadConstraints defines the pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// VolumeClaimTemplate defines persistent storage for Thanos Ruler. It's possible to
 	// configure storageClass and size of volume.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`

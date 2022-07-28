@@ -14,8 +14,20 @@
 
 package main
 
-import "os"
+import (
+	"fmt"
+	"os"
+
+	"github.com/openshift/cluster-monitoring-operator/hack/docgen/format/asciidocs"
+	"github.com/openshift/cluster-monitoring-operator/hack/docgen/format/markdown"
+)
 
 func main() {
-	printAPIDocs(os.Args[1:])
+	if os.Args[1] == "markdown" {
+		markdown.PrintAPIDocs(os.Args[2:])
+	} else if os.Args[1] == "asciidocs" {
+		asciidocs.PrintAPIDocs(os.Args[2:])
+	} else {
+		fmt.Println("No format for output was passed as the first argument, supported formats are: markdown or asciidocs")
+	}
 }

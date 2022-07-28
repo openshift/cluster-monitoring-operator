@@ -1,0 +1,24 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== KubeStateMetricsConfig
+
+=== Description
+
+KubeStateMetricsConfig defines configuration related with the kube-state-metrics agent.
+
+
+
+Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+
+|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+
+|===
+
+link:../index.adoc[Back to TOC]

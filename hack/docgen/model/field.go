@@ -18,11 +18,15 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"log"
 	"reflect"
 	"strings"
 )
 
-var externalLinks map[string]string
+var (
+	format        string
+	externalLinks map[string]string
+)
 
 // Field is a representation of a struct field.
 type Field ast.Field
@@ -182,14 +186,28 @@ func toLink(typeName string, structs map[string]*StructType) string {
 
 	s, ok := structs[typeName]
 	if ok {
-		return wrapInLink(typeName, "#"+strings.ToLower(s.Name))
+		if format == "markdown" {
+			return wrapInLink(typeName, "#"+strings.ToLower(s.Name))
+		} else if format == "asciidoc" {
+			return wrapInLink(typeName, strings.ToLower(s.Name))
+		} else {
+			log.Fatal("Unrecognized format")
+			return ""
+		}
 	}
 
 	return typeName
 }
 
 func wrapInLink(text, link string) string {
-	return fmt.Sprintf("[%s](%s)", text, link)
+	if format == "markdown" {
+		return fmt.Sprintf("[%s](%s)", text, link)
+	} else if format == "asciidoc" {
+		return fmt.Sprintf("link:%s.adoc[%s]", link, text)
+	} else {
+		log.Fatal("Unrecognized format")
+		return ""
+	}
 }
 
 func BuildExternalDocLinks(kubeAPIVersion, prometheusOperatorVersion string) {
@@ -204,4 +222,8 @@ func BuildExternalDocLinks(kubeAPIVersion, prometheusOperatorVersion string) {
 		"monv1.RelabelConfig":                 fmt.Sprintf("https://github.com/prometheus-operator/prometheus-operator/blob/%s/Documentation/api.md#relabelconfig", prometheusOperatorVersion),
 		"monv1.SafeTLSConfig":                 fmt.Sprintf("https://github.com/prometheus-operator/prometheus-operator/blob/%s/Documentation/api.md#safetlsconfig", prometheusOperatorVersion),
 	}
+}
+
+func SetFormating(desiredFormat string) {
+	format = desiredFormat
 }

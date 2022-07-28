@@ -1,0 +1,33 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== ClusterMonitoringConfiguration
+
+=== Description
+
+ClusterMonitoringConfiguration defines configuration that allows users to customise the platform monitoring stack through the cluster-monitoring-config ConfigMap in the openshift-monitoring namespace
+
+
+[options="header"]
+|===
+| Property | Type | Description 
+|alertmanagerMain|*link:alertmanagermainconfig.adoc[AlertmanagerMainConfig]|AlertmanagerMainConfig defines configuration related with the main Alertmanager instance.
+
+|enableUserWorkload|*bool|UserWorkloadEnabled boolean flag to enable monitoring for user-defined projects.
+
+|k8sPrometheusAdapter|*link:k8sprometheusadapter.adoc[K8sPrometheusAdapter]|K8sPrometheusAdapter defines configuration related with prometheus-adapter
+
+|kubeStateMetrics|*link:kubestatemetricsconfig.adoc[KubeStateMetricsConfig]|KubeStateMetricsConfig defines configuration related with kube-state-metrics agent
+
+|prometheusK8s|*link:prometheusk8sconfig.adoc[PrometheusK8sConfig]|PrometheusK8sConfig defines configuration related with prometheus
+
+|prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|PrometheusOperatorConfig defines configuration related with prometheus-operator
+
+|openshiftStateMetrics|*link:openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]|OpenShiftMetricsConfig defines configuration related with openshift-state-metrics agent
+
+|thanosQuerier|*link:thanosquerierconfig.adoc[ThanosQuerierConfig]|ThanosQuerierConfig defines configuration related with the Thanos Querier component
+
+|===
+
+link:../index.adoc[Back to TOC]

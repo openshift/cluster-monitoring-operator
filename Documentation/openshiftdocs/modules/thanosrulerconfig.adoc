@@ -1,0 +1,36 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== ThanosRulerConfig
+
+=== Description
+
+ThanosRulerConfig defines configuration for the Thanos Ruler instance for user-defined projects.
+
+
+
+Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|AlertmanagerConfigs holds configuration about how the Thanos Ruler component should communicate with aditional Alertmanager instances. default: nil
+
+|logLevel|string|LogLevel defines the log level for Thanos Ruler. Possible values are: error, warn, info, debug. default: info
+
+|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+
+|resources|*v1.ResourceRequirements|Resources define resources requests and limits for single Pods.
+
+|retention|string|Retention defines the time duration Thanos Ruler shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d
+
+|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+
+|topologySpreadConstraints|[]v1.TopologySpreadConstraint|TopologySpreadConstraints defines the pod's topology spread constraints.
+
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|VolumeClaimTemplate defines persistent storage for Thanos Ruler. It's possible to configure storageClass and size of volume.
+
+|===
+
+link:../index.adoc[Back to TOC]

@@ -1,0 +1,38 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== AdditionalAlertmanagerConfig
+
+=== Description
+
+AdditionalAlertmanagerConfig defines configuration on how a component should communicate with aditional Alertmanager instances.
+
+=== Required
+* `apiVersion`
+
+
+Appears in: link:prometheusk8sconfig.adoc[PrometheusK8sConfig],
+link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig],
+link:thanosrulerconfig.adoc[ThanosRulerConfig]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|apiVersion|string|APIVersion defines the api version of Alertmanager.
+
+|bearerToken|*v1.SecretKeySelector|BearerToken defines the bearer token to use when authenticating to Alertmanager.
+
+|pathPrefix|string|PathPrefix defines the path prefix to add in front of the push endpoint path.
+
+|scheme|string|Scheme the URL scheme to use when talking to Alertmanagers.
+
+|staticConfigs|[]string|StaticConfigs a list of statically configured Alertmanagers.
+
+|timeout|*string|Timeout defines the timeout used when sending alerts.
+
+|tlsConfig|link:tlsconfig.adoc[TLSConfig]|TLSConfig defines the TLS Config to use for alertmanager connection.
+
+|===
+
+link:../index.adoc[Back to TOC]
