@@ -41,29 +41,6 @@ function(params)
 
     trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'grafana-trusted-ca-bundle'),
 
-    // OpenShift route to access the Grafana UI.
-    route: {
-      apiVersion: 'v1',
-      kind: 'Route',
-      metadata: {
-        name: 'grafana',
-        namespace: cfg.namespace,
-      },
-      spec: {
-        to: {
-          kind: 'Service',
-          name: 'grafana',
-        },
-        port: {
-          targetPort: 'https',
-        },
-        tls: {
-          termination: 'Reencrypt',
-          insecureEdgeTerminationPolicy: 'Redirect',
-        },
-      },
-    },
-
     serviceMonitor+:
       {
         spec+: {
