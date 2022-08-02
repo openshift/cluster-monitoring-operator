@@ -103,19 +103,6 @@ function(params)
       },
     },
 
-    // The proxy secret is there to encrypt session created by the oauth proxy.
-
-    proxySecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'grafana-proxy',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'grafana' },
-      },
-      type: 'Opaque',
-      data: {},
-    },
 
     kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'grafana-kube-rbac-proxy-metric') + {
       metadata+: {
