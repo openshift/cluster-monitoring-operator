@@ -110,48 +110,6 @@ function(params)
       },
     },
 
-    // In order for the oauth proxy to perform a TokenReview and
-    // SubjectAccessReview for authN and authZ the Grafana ServiceAccount
-    // requires the `create` action on both of these.
-
-    clusterRole: {
-      apiVersion: 'rbac.authorization.k8s.io/v1',
-      kind: 'ClusterRole',
-      metadata: {
-        name: 'grafana',
-      },
-      rules: [
-        {
-          apiGroups: ['authentication.k8s.io'],
-          resources: ['tokenreviews'],
-          verbs: ['create'],
-        },
-        {
-          apiGroups: ['authorization.k8s.io'],
-          resources: ['subjectaccessreviews'],
-          verbs: ['create'],
-        },
-      ],
-    },
-
-    clusterRoleBinding: {
-      apiVersion: 'rbac.authorization.k8s.io/v1',
-      kind: 'ClusterRoleBinding',
-      metadata: {
-        name: 'grafana',
-      },
-      roleRef: {
-        apiGroup: 'rbac.authorization.k8s.io',
-        kind: 'ClusterRole',
-        name: 'grafana',
-      },
-      subjects: [{
-        kind: 'ServiceAccount',
-        name: 'grafana',
-        namespace: cfg.namespace,
-      }],
-    },
-
     dashboardDatasources+: {
       metadata+: {
         name: 'grafana-datasources-v2',

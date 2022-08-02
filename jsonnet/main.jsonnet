@@ -386,7 +386,6 @@ local inCluster =
         rules+: inCluster.alertmanager.clusterRole.rules +
                 inCluster.clusterMonitoringOperator.clusterRoleView.rules +
                 inCluster.clusterMonitoringOperator.userWorkloadConfigEditRole.rules +
-                inCluster.grafana.clusterRole.rules +
                 inCluster.kubeStateMetrics.clusterRole.rules +
                 inCluster.nodeExporter.clusterRole.rules +
                 inCluster.openshiftStateMetrics.clusterRole.rules +
