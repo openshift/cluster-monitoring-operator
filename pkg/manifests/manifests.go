@@ -241,7 +241,6 @@ var (
 	ThanosQuerierPrometheusRule         = "thanos-querier/prometheus-rule.yaml"
 	ThanosQuerierRoute                  = "thanos-querier/route.yaml"
 	ThanosQuerierOauthCookieSecret      = "thanos-querier/oauth-cookie-secret.yaml"
-	ThanosQuerierHtpasswdSecret         = "thanos-querier/oauth-htpasswd-secret.yaml"
 	ThanosQuerierRBACProxySecret        = "thanos-querier/kube-rbac-proxy-secret.yaml"
 	ThanosQuerierRBACProxyRulesSecret   = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
 	ThanosQuerierRBACProxyMetricsSecret = "thanos-querier/kube-rbac-proxy-metric-secret.yaml"
@@ -255,7 +254,6 @@ var (
 	ThanosRulerService                      = "thanos-ruler/service.yaml"
 	ThanosRulerRoute                        = "thanos-ruler/route.yaml"
 	ThanosRulerOauthCookieSecret            = "thanos-ruler/oauth-cookie-secret.yaml"
-	ThanosRulerHtpasswdSecret               = "thanos-ruler/oauth-htpasswd-secret.yaml"
 	ThanosRulerQueryConfigSecret            = "thanos-ruler/query-config-secret.yaml"
 	ThanosRulerAlertmanagerConfigSecret     = "thanos-ruler/alertmanagers-config-secret.yaml"
 	ThanosRulerServiceAccount               = "thanos-ruler/service-account.yaml"
@@ -1301,33 +1299,6 @@ func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, erro
 	if err != nil {
 		return nil, err
 	}
-	return s, nil
-}
-
-func (f *Factory) ThanosQuerierHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierHtpasswdSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	err = f.generateHtpasswdSecret(s, password)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-func (f *Factory) ThanosRulerHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerHtpasswdSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	err = f.generateHtpasswdSecret(s, password)
-	if err != nil {
-		return nil, err
-	}
-	s.Namespace = f.namespaceUserWorkload
 	return s, nil
 }
 
