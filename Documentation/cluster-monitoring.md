@@ -42,18 +42,16 @@ Create additional Prometheus instances managed by the Prometheus Operator to mon
 
 ## Accessing Prometheus and Alertmanager
 
-Cluster Monitoring ships with a Prometheus instance for cluster monitoring and a central Alertmanager cluster. In addition to Prometheus and Alertmanager, Cluster Monitoring also includes a [Grafana][grafana] instance as well as pre-built dashboards for cluster monitoring troubleshooting.
+Cluster Monitoring ships with a Prometheus instance for cluster monitoring and a central Alertmanager cluster. In addition to Prometheus and Alertmanager, Cluster Monitoring also includes pre-built dashboards for cluster monitoring troubleshooting.
 
 By default, all web UIs are exposed through Kubernetes Ingress, and accessible at the following names:
 
 - Prometheus: https://$CLUSTER-DNS/prometheus
 - Alertmanager: https://$CLUSTER-DNS/alertmanager
-- Grafana: https://$CLUSTER-DNS/grafana
 
 Authentication is performed against the OpenShift identity system, and uses the same credentials or means of authentication as is used elsewhere in OpenShift.
 
 [alertmanager]: https://prometheus.io/docs/alerting/alertmanager/
-[grafana]: https://grafana.com/
 [configure-monitoring]: user-guides/configuring-cluster-monitoring.md
 [node-exporter]: https://github.com/prometheus/node_exporter
 [kube-state]: https://github.com/kubernetes/kube-state-metrics
