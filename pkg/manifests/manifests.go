@@ -2781,33 +2781,6 @@ func (f *Factory) PrometheusUserWorkloadServiceThanosSidecar() (*v1.Service, err
 	return s, nil
 }
 
-type GrafanaDatasources struct {
-	ApiVersion  int                  `json:"apiVersion"`
-	Datasources []*GrafanaDatasource `json:"datasources"`
-}
-
-type SecureJSONData struct {
-	BasicAuthPassword string `json:"basicAuthPassword"`
-}
-
-type GrafanaDatasource struct {
-	Access         string           `json:"access"`
-	BasicAuth      bool             `json:"basicAuth"`
-	SecureJSONData SecureJSONData   `json:"secureJsonData"`
-	BasicAuthUser  string           `json:"basicAuthUser"`
-	Editable       bool             `json:"editable"`
-	JsonData       *GrafanaJsonData `json:"jsonData"`
-	Name           string           `json:"name"`
-	OrgId          int              `json:"orgId"`
-	Type           string           `json:"type"`
-	Url            string           `json:"url"`
-	Version        int              `json:"version"`
-}
-
-type GrafanaJsonData struct {
-	TlsSkipVerify bool `json:"tlsSkipVerify"`
-}
-
 func (f *Factory) ClusterMonitoringClusterRoleView() (*rbacv1.ClusterRole, error) {
 	cr, err := f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringClusterRoleView))
 	if err != nil {
