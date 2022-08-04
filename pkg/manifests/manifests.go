@@ -676,6 +676,11 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 		a.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Tolerations
 	}
 
+	if len(f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.TopologySpreadConstraints) > 0 {
+		a.Spec.TopologySpreadConstraints =
+			f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.TopologySpreadConstraints
+	}
+
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
 		case "alertmanager-proxy":
@@ -1648,6 +1653,11 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 
 	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Tolerations) > 0 {
 		p.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Tolerations
+	}
+
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TopologySpreadConstraints) > 0 {
+		p.Spec.TopologySpreadConstraints =
+			f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TopologySpreadConstraints
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels != nil {
@@ -4056,6 +4066,10 @@ func (f *Factory) ThanosRulerCustomResource(
 
 	if f.config.UserWorkloadConfiguration.ThanosRuler.Retention != "" {
 		t.Spec.Retention = monv1.Duration(f.config.UserWorkloadConfiguration.ThanosRuler.Retention)
+	}
+
+	if len(f.config.UserWorkloadConfiguration.ThanosRuler.TopologySpreadConstraints) > 0 {
+		t.Spec.TopologySpreadConstraints = f.config.UserWorkloadConfiguration.ThanosRuler.TopologySpreadConstraints
 	}
 
 	if len(f.config.UserWorkloadConfiguration.ThanosRuler.Tolerations) > 0 {

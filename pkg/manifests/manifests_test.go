@@ -1492,6 +1492,13 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
       resources:
         requests:
           storage: 15Gi
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: type
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar
   resources:
     limits:
       cpu: 200m
@@ -1622,6 +1629,14 @@ ingress:
 	}
 	if p.Spec.Tolerations[0].Operator != "Exists" {
 		t.Fatal("Prometheus toleration effect not configured correctly")
+	}
+
+	if p.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("Prometheus topology spread contraints MaxSkew not configured correctly")
+	}
+
+	if p.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("Prometheus topology spread contraints WhenUnsatisfiable not configured correctly")
 	}
 
 	if p.Spec.ExternalLabels["datacenter"] != "eu-west" {
@@ -2620,6 +2635,13 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
   tolerations:
   - effect: PreferNoSchedule
     operator: Exists
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: type
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar
   resources:
     limits:
       cpu: 20m
@@ -2688,6 +2710,14 @@ ingress:
 	}
 	if a.Spec.Tolerations[0].Operator != "Exists" {
 		t.Fatal("Prometheus toleration effect not configured correctly")
+	}
+
+	if a.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("Alertmanager main topology spread contraints MaxSkew not configured correctly")
+	}
+
+	if a.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("Alertmanager main topology spread contraints WhenUnsatisfiable not configured correctly")
 	}
 
 	storageRequest := a.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
@@ -3287,6 +3317,16 @@ func TestTelemeterConfiguration(t *testing.T) {
 
 func TestThanosRulerConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(``)
+	uwc, err := NewUserConfigFromString(`thanosRuler:
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: type
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar`)
+
+	c.UserWorkloadConfiguration = uwc
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3312,6 +3352,14 @@ func TestThanosRulerConfiguration(t *testing.T) {
 			}
 		}
 	}
+	if tr.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("Thanos ruler topology spread contraints MaxSkew not configured correctly")
+	}
+
+	if tr.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("Thanos ruler topology spread contraints WhenUnsatisfiable not configured correctly")
+	}
+
 }
 
 func TestThanosRulerRetentionConfig(t *testing.T) {
