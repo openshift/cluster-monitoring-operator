@@ -375,7 +375,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
+	_, err = f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1051,6 +1051,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -1069,23 +1070,20 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 }
 
 func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
+	telemetrySecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "telemetry",
+			Namespace: "openshift-monitoring",
+		},
+	}
 	for _, tc := range []struct {
 		name                    string
 		config                  func() *Config
+		telemetrySecret         *v1.Secret
 		expectedRemoteWriteURLs []string
 	}{
 		{
 			name: "default config",
-
-			config: func() *Config {
-				c := NewDefaultConfig()
-				return c
-			},
-
-			expectedRemoteWriteURLs: nil,
-		},
-		{
-			name: "legacy telemetry",
 
 			config: func() *Config {
 				c := NewDefaultConfig()
@@ -1102,9 +1100,9 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 			config: func() *Config {
 				c := NewDefaultConfig()
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
-				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 
 				return c
 			},
@@ -1124,6 +1122,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 				return c
 			},
+			telemetrySecret: telemetrySecret,
 
 			expectedRemoteWriteURLs: []string{
 				"https://infogw.api.openshift.com/metrics/v1/receive",
@@ -1135,12 +1134,13 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			config: func() *Config {
 				c := NewDefaultConfig()
 				c.SetRemoteWrite(true)
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
-				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 
 				return c
 			},
+			telemetrySecret: telemetrySecret,
 
 			expectedRemoteWriteURLs: []string{
 				"http://custom",
@@ -1154,12 +1154,13 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 				c := NewDefaultConfig()
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
+				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom-remote-write"}}
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
-				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom-remote-write"}}
 
 				return c
 			},
+			telemetrySecret: telemetrySecret,
 
 			expectedRemoteWriteURLs: []string{
 				"http://custom-remote-write",
@@ -1174,6 +1175,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				tc.telemetrySecret,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -1244,6 +1246,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1386,6 +1389,7 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -1452,6 +1456,7 @@ ingress:
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1655,6 +1660,7 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
 			)
 			if err != nil {
 				if !tc.errExpected {
@@ -1734,6 +1740,7 @@ func TestPrometheusRetentionConfigs(t *testing.T) {
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
 			)
 
 			if err != nil {
@@ -1785,6 +1792,7 @@ prometheusK8s:
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1991,6 +1999,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -3342,6 +3351,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 				p, err := f.PrometheusK8s(
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+					nil,
 				)
 				if err != nil {
 					return spec{}, err

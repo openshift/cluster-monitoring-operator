@@ -205,6 +205,19 @@ function(params)
 
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
 
+    // Secret holding the token to authenticate against the Telemetry server when using native remote-write.
+    telemetrySecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'telemetry-server',
+        namespace: cfg.namespace,
+        labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
+      },
+      type: 'Opaque',
+      data: {},
+    },
+
     // This changes the Prometheuses to be scraped with TLS, authN and
     // authZ, which are not present in kube-prometheus.
 
