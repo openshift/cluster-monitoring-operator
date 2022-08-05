@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"net/url"
 	"reflect"
 	"strings"
@@ -50,8 +49,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -1529,38 +1526,42 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
 	sClient := c.kclient.CoreV1().ServiceAccounts(sa.GetNamespace())
-	existing, err := sClient.Get(ctx, sa.GetName(), metav1.GetOptions{})
+	_, err := sClient.Get(ctx, sa.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := sClient.Create(ctx, sa, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ServiceAccount object failed")
 	}
-	if err != nil {
-		return errors.Wrap(err, "retrieving ServiceAccount object failed")
-	}
+	return errors.Wrap(err, "retrieving ServiceAccount object failed")
+	// TODO(JoaoBraveCoding) The code below was reverted due to
+	// https://bugzilla.redhat.com/show_bug.cgi?id=2115527 see also
+	// https://bugzilla.redhat.com/show_bug.cgi?id=2095719 for more context
+	// if err != nil {
+	// 	return errors.Wrap(err, "retrieving ServiceAccount object failed")
+	// }
 
-	required := sa.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+	// required := sa.DeepCopy()
+	// mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
-	// Why we use Patch here? ServiceAccounts get a new secret generated whenever
-	// they are updated, even if nothing has changed. This is likely due to "Update"
-	// performing a PUT call signifying, that this may be a new ServiceAccount,
-	// therefore a new token is needed.
-	oldData, err := json.Marshal(existing)
-	if err != nil {
-		return errors.Wrap(err, "marshaling existing ServiceAccount object failed")
-	}
+	// // Why we use Patch here? ServiceAccounts get a new secret generated whenever
+	// // they are updated, even if nothing has changed. This is likely due to "Update"
+	// // performing a PUT call signifying, that this may be a new ServiceAccount,
+	// // therefore a new token is needed.
+	// oldData, err := json.Marshal(existing)
+	// if err != nil {
+	// 	return errors.Wrap(err, "marshaling existing ServiceAccount object failed")
+	// }
 
-	newData, err := json.Marshal(required)
-	if err != nil {
-		return errors.Wrap(err, "marshaling updated ServiceAccount object failed")
-	}
+	// newData, err := json.Marshal(required)
+	// if err != nil {
+	// 	return errors.Wrap(err, "marshaling updated ServiceAccount object failed")
+	// }
 
-	patchBytes, patchErr := strategicpatch.CreateTwoWayMergePatch(oldData, newData, required)
-	if patchErr != nil {
-		return errors.Wrap(patchErr, "creating ServiceAccount two way merge patch failed")
-	}
-	_, err = sClient.Patch(ctx, required.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
-	return errors.Wrap(err, "patching ServiceAccount object failed")
+	// patchBytes, patchErr := strategicpatch.CreateTwoWayMergePatch(oldData, newData, required)
+	// if patchErr != nil {
+	// 	return errors.Wrap(patchErr, "creating ServiceAccount two way merge patch failed")
+	// }
+	// _, err = sClient.Patch(ctx, required.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
+	// return errors.Wrap(err, "patching ServiceAccount object failed")
 }
 
 func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.ServiceMonitor) error {
