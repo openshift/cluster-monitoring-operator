@@ -34,8 +34,8 @@ done
 
 # shellcheck disable=SC1003
 # Produce dashboard definitions in format understandable by CVO (it doesn't accept ConfigMapList)
-grep -E -v '^apiVersion: v1|^items:|^kind: ConfigMapList' "${prefix}/grafana/console-dashboard-definitions.yaml" | sed 's/^\ \ //g;s/- apiVersion: v1/---\'$'\n''apiVersion: v1/g' > "manifests/0000_90_cluster-monitoring-operator_01-dashboards.yaml"
-rm -f "${prefix}/grafana/console-dashboard-definitions.yaml"
+grep -E -v '^apiVersion: v1|^items:|^kind: ConfigMapList' "${prefix}/dashboard/console-dashboard-definitions.yaml" | sed 's/^\ \ //g;s/- apiVersion: v1/---\'$'\n''apiVersion: v1/g' > "manifests/0000_90_cluster-monitoring-operator_01-dashboards.yaml"
+rm -f "${prefix}/dashboard/console-dashboard-definitions.yaml"
 
 grep -H 'kind: CustomResourceDefinition' assets/{cluster-monitoring,prometheus}-operator/* | cut -d: -f1 | while IFS= read -r f; do
   mv "$f" "manifests/0000_50_cluster-monitoring-operator_00_$(basename "$f")"

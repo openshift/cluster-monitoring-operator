@@ -1,4 +1,4 @@
-local grafana = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/grafana.libsonnet';
+local kubernetesGrafana = import 'github.com/brancz/kubernetes-grafana/grafana/grafana.libsonnet';
 
 function(params)
   local cfg = params;
@@ -11,7 +11,7 @@ function(params)
     'grafana-dashboard-k8s-resources-workload',
   ];
 
-  local glib = grafana(cfg) {};
+  local glib = kubernetesGrafana(cfg) {};
 
   {
     consoleDashboardDefinitions: {

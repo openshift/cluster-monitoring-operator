@@ -6,7 +6,7 @@ local addBearerTokenToServiceMonitors = (import './utils/add-bearer-token-to-ser
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local alertmanagerUserWorkload = import './components/alertmanager-user-workload.libsonnet';
-local grafana = import './components/grafana.libsonnet';
+local dashboard = import './components/dashboard.libsonnet';
 local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
 local controlPlane = import './components/control-plane.libsonnet';
 local nodeExporter = import './components/node-exporter.libsonnet';
@@ -59,7 +59,6 @@ local commonConfig = {
   images: {
     alertmanager: 'quay.io/prometheus/alertmanager:v' + $.versions.alertmanager,
     prometheus: 'quay.io/prometheus/prometheus:v' + $.versions.prometheus,
-    grafana: 'grafana/grafana:v' + $.versions.grafana,
     kubeStateMetrics: 'k8s.gcr.io/kube-state-metrics/kube-state-metrics:v' + $.versions.kubeStateMetrics,
     nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions.nodeExporter,
     prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions.prometheusAdapter,
@@ -117,11 +116,12 @@ local inCluster =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
       },
-      grafana: {
+      dashboard: {
         namespace: $.values.common.namespace,
-        version: $.values.common.versions.grafana,
-        image: $.values.common.images.grafana,
-        commonLabels+: $.values.common.commonLabels,
+        commonLabels+: $.values.common.commonLabels {
+          'app.kubernetes.io/name': 'dashboard',
+          'app.kubernetes.io/component': 'dashboard',
+        },
         prometheusName: $.values.common.prometheusName,
         local allDashboards =
           $.nodeExporter.mixin.grafanaDashboards +
@@ -403,7 +403,7 @@ local inCluster =
       },
     },
     alertmanager: alertmanager($.values.alertmanager),
-    grafana: grafana($.values.grafana),
+    dashboard: dashboard($.values.dashboard),
     kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),
     nodeExporter: nodeExporter($.values.nodeExporter),
     prometheus: prometheus($.values.prometheus),
@@ -510,7 +510,7 @@ sanitizeAlertRules(addAnnotations(removeLimits(removeNetworkPolicy(
     { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
     { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
     { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
-    { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
+    { ['dashboard/' + name]: inCluster.dashboard[name] for name in std.objectFields(inCluster.dashboard) } +
     { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
     { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
     { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +

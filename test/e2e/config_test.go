@@ -316,7 +316,7 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 			name: "assert pod configuration is as expected",
 			assertion: f.AssertPodConfiguration(
 				f.Ns,
-				"app.kubernetes.io/component=grafana",
+				"app.kubernetes.io/component=dashboard",
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
