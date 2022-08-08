@@ -203,17 +203,17 @@ function(params)
           - cluster:
               certificate-authority: %s
               server: %s
-            name: prometheus-k8s
+            name: thanos-querier
           contexts:
           - context:
-              cluster: prometheus-k8s
-              user: prometheus-k8s
-            name: prometheus-k8s
-          current-context: prometheus-k8s
+              cluster: thanos-querier
+              user: thanos-querier
+            name: thanos-querier
+          current-context: thanos-querier
           kind: Config
           preferences: {}
           users:
-          - name: prometheus-k8s
+          - name: thanos-querier
             user:
               tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
         ||| % [
