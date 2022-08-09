@@ -5,10 +5,9 @@ reviewers:
 - jan--f
 - raptorsun
 - slashpai
-- prashbnair
-- arajkumar
 - sthaha
 - JoaoBraveCoding
+- juanrh
 
 approvers:
 - bparees
@@ -16,10 +15,9 @@ approvers:
 - jan--f
 - raptorsun
 - slashpai
-- prashbnair
-- arajkumar
 - sthaha
 - JoaoBraveCoding
+- juanrh
 
 emeritus_approvers:
 - brancz
@@ -33,3 +31,5 @@ emeritus_approvers:
 - fpetkovski
 - PhilipGough
 - bison
+- prashbnair
+- arajkumar
