@@ -53,8 +53,8 @@ spec:
                     action:
                       default: Replace
                       description: 'action to perform based on regex matching. Must
-                        be one of: replace, keep, drop, hashmod, labelmap, labeldrop,
-                        or labelkeep.  Default is: ''replace'''
+                        be one of: Replace, Keep, Drop, HashMod, LabelMap, LabelDrop,
+                        or LabelKeep.  Default is: ''Replace'''
                       enum:
                       - Replace
                       - Keep
@@ -66,7 +66,7 @@ spec:
                       type: string
                     modulus:
                       description: modulus to take of the hash of the source label
-                        values.  This can be combined with the 'hashmod' action to
+                        values.  This can be combined with the 'HashMod' action to
                         set 'target_label' to the 'modulus' of a hash of the concatenated
                         'source_labels'.
                       format: int64
@@ -78,7 +78,7 @@ spec:
                     replacement:
                       description: 'replacement value against which a regex replace
                         is performed if the regular expression matches. This is required
-                        if the action is ''replace'' or ''labelmap''. Regex capture
+                        if the action is ''Replace'' or ''LabelMap''. Regex capture
                         groups are available. Default is: ''$1'''
                       type: string
                     separator:
@@ -90,7 +90,7 @@ spec:
                       description: sourceLabels select values from existing labels.
                         Their content is concatenated using the configured separator
                         and matched against the configured regular expression for
-                        the replace, keep, and drop actions.
+                        the Replace, Keep, and Drop actions.
                       items:
                         description: LabelName is a valid Prometheus label name which
                           may only contain ASCII letters, numbers, and underscores.
@@ -99,7 +99,7 @@ spec:
                       type: array
                     targetLabel:
                       description: targetLabel to which the resulting value is written
-                        in a replace action. It is mandatory for 'replace' and 'hashmod'
+                        in a 'Replace' action. It is mandatory for 'Replace' and 'HashMod'
                         actions. Regex capture groups are available.
                       type: string
                   type: object
