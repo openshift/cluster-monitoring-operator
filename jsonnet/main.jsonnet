@@ -6,7 +6,7 @@ local addBearerTokenToServiceMonitors = (import './utils/add-bearer-token-to-ser
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local alertmanagerUserWorkload = import './components/alertmanager-user-workload.libsonnet';
-local dashboard = import './components/dashboard.libsonnet';
+local dashboards = import './components/dashboards.libsonnet';
 local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
 local controlPlane = import './components/control-plane.libsonnet';
 local nodeExporter = import './components/node-exporter.libsonnet';
@@ -116,7 +116,7 @@ local inCluster =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
       },
-      dashboard: {
+      dashboards: {
         namespace: $.values.common.namespace,
         commonLabels+: $.values.common.commonLabels {
           'app.kubernetes.io/name': 'dashboard',
@@ -403,7 +403,7 @@ local inCluster =
       },
     },
     alertmanager: alertmanager($.values.alertmanager),
-    dashboard: dashboard($.values.dashboard),
+    dashboards: dashboards($.values.dashboards),
     kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),
     nodeExporter: nodeExporter($.values.nodeExporter),
     prometheus: prometheus($.values.prometheus),
@@ -510,7 +510,7 @@ sanitizeAlertRules(addAnnotations(removeLimits(removeNetworkPolicy(
     { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
     { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
     { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
-    { ['dashboard/' + name]: inCluster.dashboard[name] for name in std.objectFields(inCluster.dashboard) } +
+    { ['dashboards/' + name]: inCluster.dashboards[name] for name in std.objectFields(inCluster.dashboards) } +
     { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
     { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
     { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +
