@@ -20,6 +20,8 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ThanosQuerierTask struct {
@@ -237,5 +239,22 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Thanos Querier PrometheusRule failed")
 	}
 
+	return t.cleanup(ctx)
+}
+
+// Delete unwanted objects related to Grafana
+// This can be removed after 4.12 release
+func (t *ThanosQuerierTask) cleanup(ctx context.Context) error {
+	htpasswdSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "openshift-monitoring",
+			Name:      "thanos-querier-oauth-htpasswd",
+		},
+		Type: v1.SecretTypeOpaque,
+	}
+	err := t.client.DeleteSecret(ctx, htpasswdSecret)
+	if err != nil {
+		return errors.Wrap(err, "deleting Thanos Querier Htpasswd Secret failed")
+	}
 	return nil
 }
