@@ -20,6 +20,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -151,6 +152,59 @@ func TestNewProxyConfig(t *testing.T) {
 
 			if err := tc.check(c); err != nil {
 				t.Error(err)
+			}
+		})
+	}
+}
+
+func proxyReaderEquals(p1, p2 manifests.ProxyReader) bool {
+	return p1.HTTPProxy() == p2.HTTPProxy() && p1.HTTPSProxy() == p2.HTTPSProxy() && p1.NoProxy() == p2.NoProxy()
+}
+
+func TestGetProxyReader(t *testing.T) {
+	ctx := context.Background()
+	emptyConfig := &manifests.Config{
+		ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
+			HTTPConfig: &manifests.HTTPConfig{},
+		},
+	}
+	nonEmptyConfig := &manifests.Config{
+		ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
+			HTTPConfig: &manifests.HTTPConfig{
+				HTTPProxy: "foo",
+			},
+		},
+	}
+	proxyConfig := &ProxyConfig{}
+	for _, tc := range []struct {
+		name                string
+		proxyConfigSupplier proxyConfigSupplier
+		config              *manifests.Config
+		expectedProxyReader manifests.ProxyReader
+	}{
+		{
+			name:                "A non empty CMO configmap proxy configuration should get priority over the cluster-wide proxy configuration",
+			proxyConfigSupplier: func(ctx context.Context) (*ProxyConfig, error) { return nil, nil },
+			config:              nonEmptyConfig,
+			expectedProxyReader: nonEmptyConfig,
+		},
+		{
+			name:                "An empty CMO configmap proxy configuration should not get priority over the cluster-wide proxy configuration",
+			proxyConfigSupplier: func(ctx context.Context) (*ProxyConfig, error) { return proxyConfig, nil },
+			config:              emptyConfig,
+			expectedProxyReader: proxyConfig,
+		},
+		{
+			name:                "An empty proxy configuration should be used as default if the CMO configmap proxy configuration is empty and we fail to read the cluster-wide proxy configuration",
+			proxyConfigSupplier: func(ctx context.Context) (*ProxyConfig, error) { return proxyConfig, errors.New("forced error") },
+			config:              emptyConfig,
+			expectedProxyReader: emptyConfig,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			proxyReader := getProxyReader(ctx, tc.config, tc.proxyConfigSupplier)
+			if !proxyReaderEquals(proxyReader, tc.expectedProxyReader) {
+				t.Error()
 			}
 		})
 	}
