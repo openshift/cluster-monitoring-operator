@@ -138,7 +138,6 @@ var (
 	PrometheusUserWorkloadRBACProxyFederateSecret = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
 	PrometheusK8sAPIRoute                         = "prometheus-k8s/api-route.yaml"
 	PrometheusK8sFederateRoute                    = "prometheus-k8s/federate-route.yaml"
-	PrometheusK8sHtpasswd                         = "prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sServingCertsCABundle             = "prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle           = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 	PrometheusK8sGrpcTLSSecret                    = "prometheus-k8s/grpc-tls-secret.yaml"

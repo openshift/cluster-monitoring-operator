@@ -203,18 +203,6 @@ function(params)
       data: {},
     },
 
-    htpasswdSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'prometheus-k8s-htpasswd',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
 
     // This changes the Prometheuses to be scraped with TLS, authN and
