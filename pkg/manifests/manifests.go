@@ -37,7 +37,6 @@ import (
 	"github.com/openshift/library-go/pkg/crypto"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"golang.org/x/crypto/bcrypt"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -1287,29 +1286,6 @@ func (f *Factory) ThanosQuerierOauthCookieSecret() (*v1.Secret, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
-}
-
-func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sHtpasswd))
-	if err != nil {
-		return nil, err
-	}
-
-	err = f.generateHtpasswdSecret(s, password)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-func (f *Factory) generateHtpasswdSecret(s *v1.Secret, password string) error {
-	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	if err != nil {
-		return err
-	}
-	s.Data["auth"] = []byte("internal:" + string(encryptedPassword))
-	s.Namespace = f.namespace
-	return nil
 }
 
 func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {

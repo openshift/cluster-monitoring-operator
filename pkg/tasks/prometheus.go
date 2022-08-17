@@ -20,6 +20,8 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 )
 
@@ -372,5 +374,22 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Prometheus Thanos sidecar ServiceMonitor failed")
 	}
 
+	return t.cleanup(ctx)
+}
+
+// Delete unwanted objects related to Grafana
+// This can be removed after 4.12 release
+func (t *PrometheusTask) cleanup(ctx context.Context) error {
+	htpasswdSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "openshift-monitoring",
+			Name:      "prometheus-k8s-htpasswd",
+		},
+		Type: v1.SecretTypeOpaque,
+	}
+	err := t.client.DeleteSecret(ctx, htpasswdSecret)
+	if err != nil {
+		return errors.Wrap(err, "deleting prometheus Htpasswd Secret failed")
+	}
 	return nil
 }
