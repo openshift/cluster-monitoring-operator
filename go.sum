@@ -449,6 +449,7 @@ github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3I
 github.com/opencontainers/image-spec v1.0.2 h1:9yCKha/T5XdGtO0q9Q9a6T5NUCsTn/DrBg0D7ufOcFM=
 github.com/openshift/api v0.0.0-20220908185739-e518ece6c293 h1:oqCGwpNsLTz5gXnjWK2COXkCxI5HdRwY/Aiq+P0RVdk=
 github.com/openshift/api v0.0.0-20220908185739-e518ece6c293/go.mod h1:9JWn+H7X8wEPPc9D63krigXl8r3F1Mt6/lC98brUyhQ=
+github.com/openshift/build-machinery-go v0.0.0-20211213093930-7e33a7eb4ce3/go.mod h1:b1BuldmJlbA/xYtdZvKi+7j5YGB44qJUJDZ9zwiNCfE=
 github.com/openshift/client-go v0.0.0-20220905192401-849f725bff84 h1:gYG9iZHamA68gvKynYAdFNPCIduKpDNE2fOunGR1hH8=
 github.com/openshift/client-go v0.0.0-20220905192401-849f725bff84/go.mod h1:7JJKW++yzjdBscli7ToB4Ln5HQOhkvB9po3uNFcsP34=
 github.com/openshift/library-go v0.0.0-20221111030555-73ed40c0a938 h1:/0nXRck6LdJ9vslb8R6AC73+PtFZt5Td5ANfWbSDroM=

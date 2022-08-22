@@ -33,6 +33,7 @@ import (
 	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
+	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -1614,42 +1615,27 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
 	sClient := c.kclient.CoreV1().ServiceAccounts(sa.GetNamespace())
-	_, err := sClient.Get(ctx, sa.GetName(), metav1.GetOptions{})
+	existing, err := sClient.Get(ctx, sa.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := sClient.Create(ctx, sa, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating ServiceAccount object failed")
 	}
-	return errors.Wrap(err, "retrieving ServiceAccount object failed")
-	// TODO(JoaoBraveCoding) The code below was reverted due to
-	// https://bugzilla.redhat.com/show_bug.cgi?id=2115527 see also
-	// https://bugzilla.redhat.com/show_bug.cgi?id=2095719 for more context
-	// if err != nil {
-	// 	return errors.Wrap(err, "retrieving ServiceAccount object failed")
-	// }
+	if err != nil {
+		return errors.Wrap(err, "retrieving ServiceAccount object failed")
+	}
+	modified := resourcemerge.BoolPtr(false)
+	existingCopy := existing.DeepCopy()
 
-	// required := sa.DeepCopy()
-	// mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, sa.ObjectMeta)
+	// Only update ServiceAccounts if Metadata is updated
+	if !*modified {
+		return nil
+	}
 
-	// // Why we use Patch here? ServiceAccounts get a new secret generated whenever
-	// // they are updated, even if nothing has changed. This is likely due to "Update"
-	// // performing a PUT call signifying, that this may be a new ServiceAccount,
-	// // therefore a new token is needed.
-	// oldData, err := json.Marshal(existing)
-	// if err != nil {
-	// 	return errors.Wrap(err, "marshaling existing ServiceAccount object failed")
-	// }
-
-	// newData, err := json.Marshal(required)
-	// if err != nil {
-	// 	return errors.Wrap(err, "marshaling updated ServiceAccount object failed")
-	// }
-
-	// patchBytes, patchErr := strategicpatch.CreateTwoWayMergePatch(oldData, newData, required)
-	// if patchErr != nil {
-	// 	return errors.Wrap(patchErr, "creating ServiceAccount two way merge patch failed")
-	// }
-	// _, err = sClient.Patch(ctx, required.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
-	// return errors.Wrap(err, "patching ServiceAccount object failed")
+	// Here we are using existingCopy on purpose otherwise we would generate
+	// a new SA token and dockercfg
+	_, err = sClient.Update(ctx, existingCopy, metav1.UpdateOptions{})
+	return errors.Wrap(err, "patching ServiceAccount object failed")
 }
 
 func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.ServiceMonitor) error {
