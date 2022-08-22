@@ -755,6 +755,51 @@ data:
     #
     # platform:hypershift_nodepools:max is the total number of nodepools managed by the hypershift operator by cluster platform
     - '{__name__="platform:hypershift_nodepools:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Number of unhealthy Object Bucket Claims in addon's namespace.
+    - '{__name__="namespace:noobaa_unhealthy_bucket_claims:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Number of Object Bucket Claims in addon's namespace.
+    - '{__name__="namespace:noobaa_buckets_claims:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Number of unhealthy namespace resources in addon's namespace.
+    - '{__name__="namespace:noobaa_unhealthy_namespace_resources:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Number of namespace resources in addon's namespace.
+    - '{__name__="namespace:noobaa_namespace_resources:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Number of unhealthy namespace buckets in addon's namespace.
+    - '{__name__="namespace:noobaa_unhealthy_namespace_buckets:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Number of namespace buckets in addon's namespace.
+    - '{__name__="namespace:noobaa_namespace_buckets:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Number of corresponding noobaa accounts in addon's namespace.
+    - '{__name__="namespace:noobaa_accounts:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Total usage of the noobaa system storage resources in the addon's namespace.
+    - '{__name__="namespace:noobaa_usage:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
+    #
+    # Status of the noobaa service in the addon's namespace.
+    - '{__name__="namespace:noobaa_system_health_status:max"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
