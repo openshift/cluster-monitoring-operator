@@ -156,63 +156,6 @@ local inCluster =
           for k in std.objectFields(allDashboards)
           if std.setMember(k, includeDashboards)
         },
-        datasources: [{
-          name: 'prometheus',
-          type: 'prometheus',
-          access: 'proxy',
-          orgId: 1,
-          url: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
-          version: 1,
-          editable: false,
-          basicAuth: true,
-          basicAuthUser: 'internal',
-          secureJsonData: {
-            basicAuthPassword: '',
-          },
-          jsonData: {
-            tlsSkipVerify: true,
-          },
-        }],
-        config: {
-          sections: {
-            paths: {
-              data: '/var/lib/grafana',
-              logs: '/var/lib/grafana/logs',
-              plugins: '/var/lib/grafana/plugins',
-              provisioning: '/etc/grafana/provisioning',
-            },
-            server: {
-              http_addr: '127.0.0.1',
-              http_port: '3001',
-            },
-            security: {
-              // OpenShift users are limited to 63 characters, with this we are
-              // setting the Grafana user to something that can never be created
-              // in OpenShift. This prevents users from getting proxied with an
-              // identity that has superuser permissions in Grafana.
-              admin_user: 'WHAT_YOU_ARE_DOING_IS_VOIDING_SUPPORT_0000000000000000000000000000000000000000000000000000000000000000',
-              cookie_secure: true,
-            },
-            auth: {
-              disable_login_form: true,
-              disable_signout_menu: true,
-            },
-            'auth.basic': {
-              enabled: false,
-            },
-            'auth.proxy': {
-              enabled: true,
-              header_name: 'X-Forwarded-User',
-              auto_sign_up: true,
-            },
-            analytics: {
-              reporting_enabled: false,
-              check_for_updates: false,
-            },
-          },
-        },
-        tlsCipherSuites: $.values.common.tlsCipherSuites,
-        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
       kubeStateMetrics: {
         namespace: $.values.common.namespace,
