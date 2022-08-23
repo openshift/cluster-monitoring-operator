@@ -4,7 +4,6 @@
 
 repos:
   alertmanager: openshift/prometheus-alertmanager
-  grafana: openshift/grafana
   kubeRbacProxy: openshift/kube-rbac-proxy
   kubeStateMetrics: openshift/kube-state-metrics
   nodeExporter: openshift/node_exporter
