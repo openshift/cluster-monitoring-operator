@@ -15,6 +15,8 @@
 package client
 
 import (
+	"sort"
+
 	v1 "github.com/openshift/api/config/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -102,11 +104,16 @@ func (cs *conditions) setCondition(condition v1.ClusterStatusConditionType, stat
 	cs.entryMap = entries
 }
 
+// entries returns a sorted list of status conditions from the mapped values.
+// The list is sorted by  by type ClusterStatusConditionType to ensure consistent ordering for deep equal checks.
 func (cs *conditions) entries() []v1.ClusterOperatorStatusCondition {
 	var res []v1.ClusterOperatorStatusCondition
 	for _, v := range cs.entryMap {
 		res = append(res, v)
 	}
+	sort.SliceStable(res, func(i, j int) bool {
+		return string(res[i].Type) < string(res[j].Type)
+	})
 	return res
 }
 
