@@ -800,6 +800,26 @@ data:
     #
     # Status of the noobaa service in the addon's namespace.
     - '{__name__="namespace:noobaa_system_health_status:max"}'
+    #
+    # owners: (@mt-sre, Managed Tenants SRE)
+    #
+    # Total number of Addon installations, grouped by 'available', 'paused' and 'total'
+    - '{__name__="addon_operator_addons_count"}'
+    #
+    # owners: (@mt-sre, Managed Tenants SRE)
+    #
+    # A boolean that tells if the AddonOperator is paused
+    - '{__name__="addon_operator_paused"}'
+    #
+    # owners: (@mt-sre, Managed Tenants SRE)
+    #
+    # OCM API request latencies in microseconds
+    - '{__name__="addon_operator_ocm_api_requests_durations"}'
+    #
+    # owners: (@mt-sre, Managed Tenants SRE)
+    #
+    # Addon Health information
+    - '{__name__="addon_operator_addon_health_info"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
