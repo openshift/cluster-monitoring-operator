@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"crypto/md5"
+	"crypto/sha256"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -3807,10 +3808,16 @@ func (f *Factory) TelemeterClientPrometheusRule() (*monv1.PrometheusRule, error)
 // TelemeterClientDeployment generates a new Deployment for Telemeter client.
 // If the passed ConfigMap is not empty it mounts the Trusted CA Bundle as a VolumeMount to
 // /etc/pki/ca-trust/extracted/pem/ location.
-func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Deployment, error) {
+func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap, s *v1.Secret) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetReader(TelemeterClientDeployment))
 	if err != nil {
 		return nil, err
+	}
+
+	// Set annotation on deployment to trigger redeployments
+	if s != nil {
+		hash := sha256.New()
+		d.Spec.Template.Annotations["telemeter-token-hash"] = string(hash.Sum(s.Data["token"]))
 	}
 
 	for i, container := range d.Spec.Template.Spec.Containers {
@@ -3896,7 +3903,6 @@ func (f *Factory) TelemeterClientServiceAccount() (*v1.ServiceAccount, error) {
 	return s, nil
 }
 
-// TelemeterClientSecret generates a new Secret for Telemeter client.
 func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(TelemeterClientSecret))
 	if err != nil {

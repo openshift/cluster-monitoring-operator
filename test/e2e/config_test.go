@@ -329,6 +329,50 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 	}
 }
 
+func TestTelemeterClientSecret(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		oldC         string
+		newC         string
+		tokenChanged bool
+	}{
+		{
+			name: "Existing Secret",
+			oldC: `telemeterClient:
+  token: mySecretToken
+`,
+			newC: `telemeterClient:
+  token: mySecretToken
+`,
+			tokenChanged: false,
+		},
+		{
+			name: "Existing Secret, new token",
+			oldC: `telemeterClient:
+  token: mySecretToken
+`,
+			newC: `telemeterClient:
+  token: myNewSecretToken
+`,
+			tokenChanged: true,
+		},
+	} {
+
+		t.Run(tc.name, func(t *testing.T) {
+			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.oldC))
+			oldS := f.MustGetSecret(t, "telemeter-client", f.Ns)
+			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.newC))
+			if tc.tokenChanged {
+				f.AssertValueInSecretNotEquals(oldS.GetName(), oldS.GetNamespace(), "token", string(oldS.Data["token"]))
+				f.AssertValueInSecretNotEquals(oldS.GetName(), oldS.GetNamespace(), "salt", string(oldS.Data["salt"]))
+				return
+			}
+			f.AssertValueInSecretEquals(oldS.GetName(), oldS.GetNamespace(), "token", string(oldS.Data["token"]))
+			f.AssertValueInSecretEquals(oldS.GetName(), oldS.GetNamespace(), "salt", string(oldS.Data["salt"]))
+		})
+	}
+}
+
 func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
 	const (
 		deploymentName = "prometheus-adapter"

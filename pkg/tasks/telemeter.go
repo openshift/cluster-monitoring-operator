@@ -21,6 +21,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/pkg/errors"
 )
@@ -117,6 +118,14 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Telemeter client Secret failed")
 	}
 
+	oldS, err := t.client.GetSecret(ctx, s.Namespace, s.Name)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return errors.Wrap(err, "getting Telemeter Client Secret failed")
+	}
+	if oldS != nil && string(oldS.Data["token"]) == t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Token {
+		s.Data = oldS.Data
+	}
+
 	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Telemeter client Secret failed")
@@ -149,7 +158,7 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 			return errors.Wrap(err, "syncing Telemeter client CA bundle ConfigMap failed")
 		}
 
-		dep, err := t.factory.TelemeterClientDeployment(trustedCA)
+		dep, err := t.factory.TelemeterClientDeployment(trustedCA, s)
 		if err != nil {
 			return errors.Wrap(err, "initializing Telemeter client Deployment failed")
 		}
@@ -180,7 +189,7 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 }
 
 func (t *TelemeterClientTask) destroy(ctx context.Context) error {
-	dep, err := t.factory.TelemeterClientDeployment(nil)
+	dep, err := t.factory.TelemeterClientDeployment(nil, nil)
 	if err != nil {
 		return errors.Wrap(err, "initializing Telemeter client Deployment failed")
 	}

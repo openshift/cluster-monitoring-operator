@@ -60,6 +60,25 @@ func (f *Framework) MustGetConfigMap(t *testing.T, name, namespace string) *v1.C
 	return clusterCm
 }
 
+// MustGetSecret `name` from `namespace` within 5 minutes or fail
+func (f *Framework) MustGetSecret(t *testing.T, name, namespace string) *v1.Secret {
+	t.Helper()
+	var secret *v1.Secret
+	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+		s, err := f.KubeClient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return false, nil
+		}
+
+		secret = s
+		return true, nil
+	})
+	if err != nil {
+		t.Fatalf("failed to get secret %s in namespace %s - %s", name, namespace, err.Error())
+	}
+	return secret
+}
+
 // MustGetStatefulSet `name` from `namespace` within 5 minutes or fail
 func (f *Framework) MustGetStatefulSet(t *testing.T, name, namespace string) *appsv1.StatefulSet {
 	t.Helper()
