@@ -563,6 +563,22 @@ func (o *Operator) enqueue(obj interface{}) {
 	o.queue.Add(key)
 }
 
+type proxyConfigSupplier func(context.Context) (*ProxyConfig, error)
+
+func getProxyReader(ctx context.Context, config *manifests.Config, proxyConfigSupplier proxyConfigSupplier) manifests.ProxyReader {
+	if config.HTTPProxy() != "" || config.HTTPSProxy() != "" || config.NoProxy() != "" {
+		return config
+	}
+
+	clusterProxyConfig, err := proxyConfigSupplier(ctx)
+	if err != nil {
+		klog.Warningf("Proxy config in CMO configmap is empty and fallback to cluster proxy config failed - no proxy will be used: %v", err)
+		return config
+	}
+
+	return clusterProxyConfig
+}
+
 func (o *Operator) sync(ctx context.Context, key string) error {
 	// The operator may have left some nodes as unschedulable during a previous
 	// sync in an attempt to rebalance workloads.
@@ -581,12 +597,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
 
-	var proxyConfig manifests.ProxyReader
-	proxyConfig, err = o.loadProxyConfig(ctx)
-	if err != nil {
-		klog.Warningf("using proxy config from CMO configmap: %v", err)
-		proxyConfig = config
-	}
+	var proxyConfig = getProxyReader(ctx, config, o.loadProxyConfig)
 
 	var apiServerConfig *manifests.APIServerConfig
 	apiServerConfig, err = o.loadApiServerConfig(ctx)
