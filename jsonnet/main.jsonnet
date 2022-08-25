@@ -118,7 +118,12 @@ local inCluster =
       },
       dashboards: {
         namespace: $.values.common.namespace,
-        commonLabels+: $.values.common.commonLabels {
+        commonLabels: {
+          [k]: $.values.common.commonLabels[k]
+          for k in std.objectFields($.values.common.commonLabels)
+          // CMO doesn't deploy grafana hence version label not needed anymore
+          if k != 'app.kubernetes.io/version'
+        } + {
           'app.kubernetes.io/name': 'dashboard',
           'app.kubernetes.io/component': 'dashboard',
         },

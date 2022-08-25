@@ -243,7 +243,7 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 }
 
 // Delete unwanted objects related to Grafana
-// This can be removed after 4.12 release
+// This can be removed in 4.13 release
 func (t *ThanosQuerierTask) cleanup(ctx context.Context) error {
 	htpasswdSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

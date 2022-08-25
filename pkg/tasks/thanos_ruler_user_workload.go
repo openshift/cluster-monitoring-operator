@@ -43,7 +43,7 @@ func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) error {
 		return t.create(ctx)
 	}
 
-	return t.cleanup(ctx)
+	return t.destroy(ctx)
 }
 
 func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
@@ -276,7 +276,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 	return nil
 }
 
-func (t *ThanosRulerUserWorkloadTask) cleanup(ctx context.Context) error {
+func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 	prmrl, err := t.factory.ThanosRulerPrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler PrometheusRule failed")
@@ -453,10 +453,12 @@ func (t *ThanosRulerUserWorkloadTask) cleanup(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler ServiceMonitor failed")
 	}
+	return t.cleanup(ctx)
+}
 
-	// Delete unwanted objects related to Grafana
-	// This can be removed after 4.12 release
-
+// Delete unwanted objects related to Grafana
+// This can be removed in 4.13 release
+func (t *ThanosRulerUserWorkloadTask) cleanup(ctx context.Context) error {
 	htpasswdSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "openshift-user-workload-monitoring",
@@ -465,7 +467,7 @@ func (t *ThanosRulerUserWorkloadTask) cleanup(ctx context.Context) error {
 		Type: v1.SecretTypeOpaque,
 	}
 
-	err = t.client.DeleteSecret(ctx, htpasswdSecret)
+	err := t.client.DeleteSecret(ctx, htpasswdSecret)
 	if err != nil {
 		return errors.Wrap(err, "deleting Thanos Ruler oauth Htpasswd Secret failed")
 	}
