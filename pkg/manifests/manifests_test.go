@@ -3521,6 +3521,16 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 			},
 		},
 		{
+			name: "kubelet PA dedicated Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.ControlPlaneKubeletServiceMonitorPA()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
 			name: "Kube State Metrics Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
 				pt, err := f.KubeStateMetricsServiceMonitor()
