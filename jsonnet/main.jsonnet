@@ -76,6 +76,7 @@ local commonConfig = {
   // TLS Cipher suite applied to every component serving HTTPS traffic
   tlsCipherSuites: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
   grafanaTimeout: 120,  // 2 mins
+  prometheusAdapterMetricPrefix: 'pa_',
 };
 
 // objects deployed in openshift-monitoring namespace
@@ -277,6 +278,7 @@ local inCluster =
         prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
+        prometheusAdapterMetricPrefix: $.values.common.prometheusAdapterMetricPrefix,
       },
       prometheusOperator: {
         namespace: $.values.common.namespace,
@@ -342,6 +344,7 @@ local inCluster =
             pvExcludedSelector: 'label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"',
           },
         },
+        prometheusAdapterMetricPrefix: $.values.common.prometheusAdapterMetricPrefix,
       },
     },
 

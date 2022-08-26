@@ -141,6 +141,60 @@ function(params)
       },
     },
 
+    // This adds a kubelet ServiceMonitor for special use with
+    // prometheus-adapter
+    serviceMonitorKubeletPrometheusAdapter: super.serviceMonitorKubelet + {
+      metadata+: {
+        labels+: {
+          'k8s-app': 'kubelet',
+        },
+        name: 'kubelet-for-pa',
+      },
+      spec+: {
+        jobLabel: 'k8s-app',
+        selector: {
+          matchLabels: {
+            'k8s-app': 'kubelet',
+          },
+        },
+        endpoints:
+          std.filterMap(
+            function(e)
+              'path' in e && e.path == '/metrics/cadvisor'
+            ,
+            function(e)
+              e {
+                tlsConfig+: {
+                  caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
+                  insecureSkipVerify: false,
+                  certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+                  keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
+                },
+                honorTimestamps: true,
+                // Increase the scrape timeout to match the scrape interval
+                // because the kubelet metric endpoints might take more than the default
+                // 10 seconds to reply.
+                scrapeTimeout: '30s',
+                metricRelabelings+: [
+                  {
+                    sourceLabels: ['__name__'],
+                    action: 'keep',
+                    regex: 'container_cpu_usage_seconds_total|container_memory_working_set_bytes',
+                  },
+                  {
+                    sourceLabels: ['__name__'],
+                    targetLabel: '__name__',
+                    replacement: std.format('%s$1', cfg.prometheusAdapterMetricPrefix),
+                    action: 'replace',
+                  },
+                ],
+              }
+            ,
+            super.endpoints,
+          ),
+      },
+    },
+
     // This avoids creating service monitors which are already managed by the respective operators.
     serviceMonitorApiserver:: {},
     serviceMonitorKubeScheduler:: {},
