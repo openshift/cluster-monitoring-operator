@@ -288,6 +288,12 @@ type K8sPrometheusAdapter struct {
 
 	// Prometheus Adapter audit logging related configuration
 	Audit *Audit `json:"audit"`
+
+	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors"`
+}
+
+type DedicatedServiceMonitors struct {
+	Enabled *bool `json:"enabled"`
 }
 
 // Audit profile configurations
@@ -395,6 +401,13 @@ func (c *Config) applyDefaults() {
 
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
+	}
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors == nil ||
+		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled == nil {
+		disable := false
+		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors = &DedicatedServiceMonitors{
+			Enabled: &disable,
+		}
 	}
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}

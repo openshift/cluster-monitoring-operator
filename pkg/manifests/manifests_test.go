@@ -543,7 +543,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		"requestheader-extra-headers-prefix": "",
 		"requestheader-group-headers":        "",
 		"requestheader-username-headers":     "",
-	})
+	}, "adapter-config")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2473,7 +2473,8 @@ k8sPrometheusAdapter:
 				"requestheader-extra-headers-prefix": "",
 				"requestheader-group-headers":        "",
 				"requestheader-username-headers":     "",
-			})
+			},
+				"adapter-config")
 
 			if test.err != nil || err != nil {
 				// fail only if the error isn't what is expected
@@ -2527,7 +2528,7 @@ k8sPrometheusAdapter:
 		"requestheader-extra-headers-prefix": "",
 		"requestheader-group-headers":        "",
 		"requestheader-username-headers":     "",
-	})
+	}, "adapter-config")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3434,7 +3435,8 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 						"requestheader-extra-headers-prefix": "",
 						"requestheader-group-headers":        "",
 						"requestheader-username-headers":     "",
-					})
+					},
+					"adapter-config")
 				if err != nil {
 					return spec{}, err
 				}
