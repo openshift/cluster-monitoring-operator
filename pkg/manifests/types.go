@@ -86,6 +86,12 @@ type K8sPrometheusAdapter struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Tolerations defines the Pods tolerations.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+
+	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors"`
+}
+
+type DedicatedServiceMonitors struct {
+	Enabled *bool `json:"enabled"`
 }
 
 // KubeStateMetricsConfig defines configuration related with the kube-state-metrics agent.

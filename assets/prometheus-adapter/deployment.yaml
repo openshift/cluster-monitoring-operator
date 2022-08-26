@@ -111,9 +111,6 @@ spec:
       - emptyDir: {}
         name: tmpfs
       - configMap:
-          name: adapter-config
-        name: config
-      - configMap:
           name: prometheus-adapter-prometheus-config
         name: prometheus-adapter-prometheus-config
       - configmap:

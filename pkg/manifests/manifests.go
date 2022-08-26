@@ -2153,7 +2153,7 @@ func validateAuditProfile(profile auditv1.Level) error {
 	}
 }
 
-func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string, configName string) (*appsv1.Deployment, error) {
 	dep, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusAdapterDeployment))
 	if err != nil {
 		return nil, err
@@ -2224,6 +2224,16 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
 					SecretName: apiAuthSecretName,
+				},
+			},
+		},
+		v1.Volume{
+			Name: "config",
+			VolumeSource: v1.VolumeSource{
+				ConfigMap: &v1.ConfigMapVolumeSource{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: configName,
+					},
 				},
 			},
 		},
