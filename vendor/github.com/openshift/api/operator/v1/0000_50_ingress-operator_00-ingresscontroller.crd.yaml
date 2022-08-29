@@ -1229,7 +1229,7 @@ spec:
                       value is 5s. \n Currently the minimum allowed value is 1s and
                       the maximum allowed value is 2147483647ms (24.85 days).  Both
                       are subject to change over time."
-                    pattern: ^0|([0-9]+(\.[0-9]+)?(ns|us|µs|μs|ms|s|m|h))+$
+                    pattern: ^(0|([0-9]+(\.[0-9]+)?(ns|us|µs|μs|ms|s|m|h))+)$
                     type: string
                   maxConnections:
                     description: "maxConnections defines the maximum number of simultaneous

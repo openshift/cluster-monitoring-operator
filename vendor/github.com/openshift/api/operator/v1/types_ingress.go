@@ -1404,7 +1404,7 @@ type IngressControllerTuningOptions struct {
 	// 2147483647ms (24.85 days).  Both are subject to change over time.
 	//
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Pattern=^0|([0-9]+(\.[0-9]+)?(ns|us|µs|μs|ms|s|m|h))+$
+	// +kubebuilder:validation:Pattern=^(0|([0-9]+(\.[0-9]+)?(ns|us|µs|μs|ms|s|m|h))+)$
 	// +kubebuilder:validation:Type:=string
 	// +optional
 	HealthCheckInterval *metav1.Duration `json:"healthCheckInterval,omitempty"`
