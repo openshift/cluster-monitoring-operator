@@ -350,7 +350,7 @@ func (f *Framework) AssertOperatorCondition(conditionType configv1.ClusterStatus
 		err := Poll(time.Second, 5*time.Minute, func() error {
 			co, err := reporter.Get(ctx)
 			if err != nil {
-				t.Fatal(err)
+				return err
 			}
 			for _, c := range co.Status.Conditions {
 				if c.Type == conditionType {
@@ -358,6 +358,54 @@ func (f *Framework) AssertOperatorCondition(conditionType configv1.ClusterStatus
 						return nil
 					}
 					return fmt.Errorf("expecting condition %q to be %q, got %q", conditionType, conditionStatus, c.Status)
+				}
+			}
+			return fmt.Errorf("failed to find condition %q", conditionType)
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func (f *Framework) AssertOperatorConditionReason(conditionType configv1.ClusterStatusConditionType, conditionReason string) func(t *testing.T) {
+	return func(t *testing.T) {
+		reporter := f.OperatorClient.StatusReporter()
+		err := Poll(time.Second, 5*time.Minute, func() error {
+			co, err := reporter.Get(ctx)
+			if err != nil {
+				return err
+			}
+			for _, c := range co.Status.Conditions {
+				if c.Type == conditionType {
+					if c.Reason == conditionReason {
+						return nil
+					}
+					return fmt.Errorf("expecting condition %q to have reason %q, got %q", conditionType, conditionReason, c.Reason)
+				}
+			}
+			return fmt.Errorf("failed to find condition %q", conditionType)
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func (f *Framework) AssertOperatorConditionMessage(conditionType configv1.ClusterStatusConditionType, conditionMessage string) func(t *testing.T) {
+	return func(t *testing.T) {
+		reporter := f.OperatorClient.StatusReporter()
+		err := Poll(time.Second, 5*time.Minute, func() error {
+			co, err := reporter.Get(ctx)
+			if err != nil {
+				return err
+			}
+			for _, c := range co.Status.Conditions {
+				if c.Type == conditionType {
+					if c.Message == conditionMessage {
+						return nil
+					}
+					return fmt.Errorf("expecting condition %q to have message %q, got %q", conditionType, conditionMessage, c.Message)
 				}
 			}
 			return fmt.Errorf("failed to find condition %q", conditionType)

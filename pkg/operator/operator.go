@@ -684,6 +684,9 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	if !config.IsStorageConfigured() {
 		degradedConditionMessage = client.StorageNotConfiguredMessage
 		degradedConditionReason = client.StorageNotConfiguredReason
+	} else if config.HasInconsistentAlertmanagerConfigurations() {
+		degradedConditionMessage = client.UserAlermanagerConfigMisconfiguredMessage
+		degradedConditionReason = client.UserAlermanagerConfigMisconfiguredReason
 	}
 
 	klog.Info("Updating ClusterOperator status to done.")
