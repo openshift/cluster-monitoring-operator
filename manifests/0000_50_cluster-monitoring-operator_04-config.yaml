@@ -342,8 +342,14 @@ data:
     #
     # owners: (@openshift/team-ocs-committers)
     #
-    # job:kube_pv:count is the total number of Persistent Volumes present in OCP cluster.
+    # job:kube_pv:count is the total number of Persistent Volumes created by ODF present in OCP cluster.
+    # This metric is deprecated in ODF 4.12, refer to job:odf_system_pvs:count instead.
     - '{__name__="job:kube_pv:count"}'
+    #
+    # owners: (@openshift/team-ocs-committers)
+    #
+    # job:odf_system_pvs:count is the total number of Persistent Volumes created by ODF present in OCP cluster.
+    - '{__name__="job:odf_system_pvs:count"}'
     #
     # owners: (@openshift/team-ocs-committers)
     #
