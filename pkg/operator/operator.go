@@ -186,6 +186,16 @@ func New(
 		return nil, err
 	}
 
+	ruleController, err := alert.NewRuleController(ctx, c, version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create alerting rule controller: %w", err)
+	}
+
+	relabelController, err := alert.NewRelabelConfigController(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create alert relabel config controller: %w", err)
+	}
+
 	o := &Operator{
 		images:                    images,
 		telemetryMatches:          telemetryMatches,
@@ -202,8 +212,8 @@ func New(
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
 		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
-		ruleController:            alert.NewRuleController(c, version),
-		relabelController:         alert.NewRelabelConfigController(c),
+		ruleController:            ruleController,
+		relabelController:         relabelController,
 	}
 
 	informer := cache.NewSharedIndexInformer(

@@ -472,6 +472,15 @@ func (c *Client) GetConsoleConfig(ctx context.Context, name string) (*configv1.C
 	return c.oscclient.ConfigV1().Consoles().Get(ctx, name, metav1.GetOptions{})
 }
 
+func (c *Client) TechPreviewEnabled(ctx context.Context) (bool, error) {
+	fg, err := c.oscclient.ConfigV1().FeatureGates().Get(ctx, "cluster", metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	return fg.Spec.FeatureSet == configv1.TechPreviewNoUpgrade, nil
+}
+
 func (c *Client) GetConfigmap(ctx context.Context, namespace, name string) (*v1.ConfigMap, error) {
 	return c.kclient.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
 }
