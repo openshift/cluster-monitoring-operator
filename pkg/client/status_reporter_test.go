@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -215,93 +214,197 @@ func TestStatusReporterSetInProgress(t *testing.T) {
 	}
 }
 
-func TestStatusReporterSetFailed(t *testing.T) {
+type asExpected Status
+
+func (e asExpected) Status() Status {
+	return Status(e)
+}
+func (asExpected) Reason() string {
+	return "AsExpected"
+}
+
+func (e asExpected) Message() string {
+	return "as expected" + string(e)
+}
+
+type unexpected struct {
+	err    error
+	status Status
+}
+
+func (si unexpected) Status() Status {
+	return si.status
+}
+func (unexpected) Reason() string {
+	return "Unexpected"
+}
+
+func (si unexpected) Message() string {
+	return si.err.Error()
+}
+
+type fakeStateReport struct {
+	degraded     StateInfo
+	availability StateInfo
+}
+
+func (sr fakeStateReport) Degraded() StateInfo {
+	return sr.degraded
+}
+
+func (sr fakeStateReport) Available() StateInfo {
+	return sr.availability
+}
+
+func TestStatusReporterReportState(t *testing.T) {
 	ctx := context.Background()
-	failedErr := errors.New("foo")
 
 	for _, tc := range []struct {
-		name  string
-		given givenStatusReporter
+		name string
+
+		sr           givenStatusReporter
+		degraded     StateInfo
+		availability StateInfo
+
 		when  []whenFunc
 		check []checkFunc
-	}{
-		{
-			name: "not found",
+	}{{
+		name: "normal",
 
-			given: givenStatusReporter{
-				operatorName:          "foo",
-				namespace:             "bar",
-				userWorkloadNamespace: "fred",
-				version:               "1.0",
-				err:                   failedErr,
-			},
-
-			when: []whenFunc{
-				getReturnsError(&apierrors.StatusError{
-					ErrStatus: metav1.Status{Reason: metav1.StatusReasonNotFound},
-				}),
-				createReturnsError(nil),
-				updateStatusReturnsError(nil),
-			},
-
-			check: []checkFunc{
-				hasCreated(true),
-				hasUpdatedStatus(true),
-				hasUpdatedStatusVersions(),
-				hasUpdatedStatusConditions(
-					"Available", "False",
-					"Degraded", "True",
-					"Progressing", "False",
-					"Upgradeable", "Unknown",
-				),
-				hasUnavailableMessage(),
-			},
+		sr: givenStatusReporter{
+			operatorName:          "foo",
+			namespace:             "bar",
+			userWorkloadNamespace: "fred",
+			version:               "1.0",
 		},
-		{
-			name: "found",
 
-			given: givenStatusReporter{
-				operatorName:          "foo",
-				namespace:             "bar",
-				userWorkloadNamespace: "fred",
-				version:               "1.0",
-			},
+		degraded:     asExpected(FalseStatus),
+		availability: asExpected(TrueStatus),
 
-			when: []whenFunc{
-				getReturnsClusterOperator(&v1.ClusterOperator{}),
-				updateStatusReturnsError(nil),
-			},
-
-			check: []checkFunc{
-				hasCreated(false),
-				hasUpdatedStatus(true),
-				hasUpdatedStatusVersions(),
-				hasUpdatedStatusConditions(
-					"Available", "False",
-					"Degraded", "True",
-					"Progressing", "False",
-					"Upgradeable", "Unknown",
-				),
-				hasUnavailableMessage(),
-			},
+		when: []whenFunc{
+			getReturnsClusterOperator(operatorWithConditions(
+				"Available", "Unkwown", "Degraded", "Unknown",
+				"Progressing", "False", "Upgradeable", "False",
+			)),
+			updateStatusReturnsError(nil),
 		},
+
+		check: []checkFunc{
+			hasUpdatedStatus(true),
+			hasUpdatedStatusVersions(),
+			hasUpdatedStatusConditions(
+				"Available", "True", "Degraded", "False",
+				"Progressing", "False", "Upgradeable", "False",
+			),
+		},
+	}, {
+		name: "degraded and availabilty is nil",
+
+		sr: givenStatusReporter{
+			operatorName:          "foo",
+			namespace:             "bar",
+			userWorkloadNamespace: "fred",
+			version:               "1.0",
+		},
+
+		degraded:     nil,
+		availability: nil,
+
+		when: []whenFunc{
+			getReturnsClusterOperator(operatorWithConditions(
+				"Available", "True", "Degraded", "False",
+				"Progressing", "False", "Upgradeable", "False",
+			)),
+			updateStatusReturnsError(nil),
+		},
+
+		check: []checkFunc{
+			hasUpdatedStatus(true),
+			hasUpdatedStatusVersions(),
+			hasUpdatedStatusConditions(
+				"Available", "True", "Degraded", "False",
+				"Progressing", "False", "Upgradeable", "False",
+			),
+		},
+	}, {
+		name: "degraded but availabile",
+
+		sr: givenStatusReporter{
+			operatorName:          "foo",
+			namespace:             "bar",
+			userWorkloadNamespace: "fred",
+			version:               "1.0",
+		},
+
+		degraded:     unexpected{err: fmt.Errorf("foobar"), status: TrueStatus},
+		availability: nil,
+
+		when: []whenFunc{
+			getReturnsClusterOperator(operatorWithConditions(
+				"Available", "True", "Degraded", "False",
+				"Progressing", "False", "Upgradeable", "False",
+			)),
+			updateStatusReturnsError(nil),
+		},
+
+		check: []checkFunc{
+			hasUpdatedStatus(true),
+			hasUpdatedStatusVersions(),
+			hasUpdatedStatusConditions(
+				"Available", "True", "Degraded", "True",
+				"Progressing", "False", "Upgradeable", "False",
+			),
+		},
+	}, {
+		name: "degraded and unavailabile",
+
+		sr: givenStatusReporter{
+			operatorName:          "foo",
+			namespace:             "bar",
+			userWorkloadNamespace: "fred",
+			version:               "1.0",
+		},
+
+		degraded:     unexpected{err: fmt.Errorf("foobar"), status: TrueStatus},
+		availability: unexpected{err: fmt.Errorf("foobar"), status: FalseStatus},
+
+		when: []whenFunc{
+			getReturnsClusterOperator(operatorWithConditions(
+				"Available", "True", "Degraded", "False",
+				"Progressing", "False", "Upgradeable", "False",
+			)),
+			updateStatusReturnsError(nil),
+		},
+
+		check: []checkFunc{
+			hasUpdatedStatus(true),
+			hasUpdatedStatusVersions(),
+			hasUpdatedStatusConditions(
+				"Available", "False", "Degraded", "True",
+				"Progressing", "False", "Upgradeable", "False",
+			),
+		},
+	},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			mock := &clusterOperatorMock{}
 
 			sr := NewStatusReporter(
 				mock,
-				tc.given.operatorName,
-				tc.given.namespace,
-				tc.given.userWorkloadNamespace,
-				tc.given.version,
+				tc.sr.operatorName,
+				tc.sr.namespace,
+				tc.sr.userWorkloadNamespace,
+				tc.sr.version,
 			)
 
 			for _, w := range tc.when {
 				w(mock)
 			}
 
-			got := sr.SetFailed(ctx, tc.given.err, "")
+			got := sr.ReportState(ctx, fakeStateReport{
+				degraded:     tc.degraded,
+				availability: tc.availability,
+			})
 
 			for _, check := range tc.check {
 				if err := check(mock, got); err != nil {
@@ -315,6 +418,25 @@ func TestStatusReporterSetFailed(t *testing.T) {
 type givenStatusReporter struct {
 	operatorName, namespace, userWorkloadNamespace, version string
 	err                                                     error
+	degraded, availabilty                                   error
+}
+
+func operatorWithConditions(conditions ...string) *v1.ClusterOperator {
+	c := []v1.ClusterOperatorStatusCondition{}
+
+	for i := 0; i < len(conditions); i += 2 {
+		ctype, status := conditions[i], conditions[i+1]
+		c = append(c, v1.ClusterOperatorStatusCondition{
+			Type:   v1.ClusterStatusConditionType(ctype),
+			Status: v1.ConditionStatus(status),
+		})
+	}
+
+	return &v1.ClusterOperator{
+		Status: v1.ClusterOperatorStatus{
+			Conditions: c,
+		},
+	}
 }
 
 type checkFunc func(*clusterOperatorMock, error) error

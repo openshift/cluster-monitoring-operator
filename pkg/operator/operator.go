@@ -31,7 +31,9 @@ import (
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/rest"
@@ -120,6 +122,7 @@ func (pc *ProxyConfig) NoProxy() string {
 
 const (
 	resyncPeriod = 15 * time.Minute
+	maxFailCount = 2
 
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
@@ -600,7 +603,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	config, err := o.Config(ctx, key)
 	if err != nil {
-		o.reportError(ctx, err, "InvalidConfiguration")
+		o.reportFailed(ctx, newRunReportForError("InvalidConfiguration", err))
 		return err
 	}
 	config.SetImages(o.images)
@@ -613,7 +616,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	apiServerConfig, err = o.loadApiServerConfig(ctx)
 
 	if err != nil {
-		o.reportError(ctx, err, "APIServerConfigError")
+		o.reportFailed(ctx, newRunReportForError("APIServerConfigError", err))
 		return err
 	}
 
@@ -665,16 +668,10 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		klog.Errorf("error occurred while setting status to in progress: %v", err)
 	}
 
-	taskErrors := tl.RunAll(ctx)
-	if len(taskErrors) > 0 {
-		var failedTask string
-		if len(taskErrors) == 1 {
-			failedTask = cmostr.ToPascalCase(taskErrors[0].Name + "Failed")
-		} else {
-			failedTask = "MultipleTasksFailed"
-		}
+	if taskErrors := tl.RunAll(ctx); len(taskErrors) > 0 {
 
-		o.reportError(ctx, taskErrors, failedTask)
+		report, failedTask := generateRunReportFromTaskErrors(taskErrors)
+		o.reportFailed(ctx, report)
 		return errors.Errorf("cluster monitoring update failed (reason: %s)", failedTask)
 	}
 
@@ -707,18 +704,19 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	return nil
 }
 
-func (o *Operator) reportError(ctx context.Context, err error, failedTaskReason string) {
-	klog.Infof("ClusterOperator reconciliation failed (attempt %d), retrying. ", o.failedReconcileAttempts+1)
-	if o.failedReconcileAttempts >= 2 {
-		// Only update the ClusterOperator status after 3 retries have been attempted to avoid flapping status.
-		klog.Warningf("Updating ClusterOperator status to failed after %d attempts.", o.failedReconcileAttempts+1)
-
-		reportErr := o.client.StatusReporter().SetFailed(ctx, err, failedTaskReason)
-		if reportErr != nil {
-			klog.Errorf("error occurred while setting status to failed: %v", reportErr)
-		}
-	}
+func (o *Operator) reportFailed(ctx context.Context, report runReport) {
 	o.failedReconcileAttempts++
+	klog.Infof("ClusterOperator reportFailed (attempt %d).", o.failedReconcileAttempts)
+
+	if o.failedReconcileAttempts < maxFailCount {
+		klog.Infof("ClusterOperator reconciliation %d - skipping update", o.failedReconcileAttempts)
+		return
+	}
+
+	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
+		klog.ErrorS(err, "failed to update cluster operator status")
+	}
+
 }
 
 func (o *Operator) loadInfrastructureConfig(ctx context.Context) *InfrastructureConfig {
@@ -988,4 +986,188 @@ func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
 		)
 	}
 	return workloads
+}
+
+// stateErrorOrUnavailable converts an error to Unavailable & Degraded
+// StateErrors if it is not already a StateError.
+func stateErrorOrUnavailable(err error) []*client.StateError {
+
+	// unpack aggregate before converting to state errors
+	var serr *client.StateError
+	if errors.As(err, &serr) {
+		return []*client.StateError{serr}
+	}
+
+	// convert any generic error to 2 state-errors -> Unavailable & Degraded
+	return []*client.StateError{
+		client.NewAvailabilityError(err.Error()),
+		client.NewDegradedError(err.Error()),
+	}
+}
+
+func toStateErrors(err error) []*client.StateError {
+
+	serrs := []*client.StateError{}
+
+	var aggregate apiutilerrors.Aggregate
+	if errors.As(err, &aggregate) {
+		// unpack aggregate before converting to state errors
+		errs := apiutilerrors.Flatten(aggregate).Errors()
+		for _, err := range errs {
+			serrs = append(serrs, stateErrorOrUnavailable(err)...)
+		}
+	} else {
+		serrs = append(serrs, stateErrorOrUnavailable(err)...)
+	}
+	return serrs
+}
+
+func generateRunReportFromTaskErrors(tge tasks.TaskGroupErrors) (runReport, string) {
+
+	failedTask := cmostr.ToPascalCase(tge[0].Name) + "Failed"
+	if len(tge) > 1 {
+		failedTask = "MultipleTasksFailed"
+	}
+
+	degraded := &stateInfo{reason: failedTask, status: client.UnknownStatus}
+	available := &stateInfo{reason: failedTask, status: client.UnknownStatus}
+
+	for _, terr := range tge {
+
+		// each task can return a single or multiple errors (as an Aggregate)
+		// each error can be a StateError or a generic error (fmt.Errorf)
+
+		for _, serr := range toStateErrors(terr.Err) {
+
+			switch serr.State {
+			case client.DegradedState:
+				degraded.messages = append(degraded.messages, serr.Reason)
+				if !serr.Unknown {
+					degraded.status = client.TrueStatus
+				}
+
+			case client.UnavailableState:
+				available.messages = append(available.messages, serr.Reason)
+				if !serr.Unknown {
+					available.status = client.FalseStatus
+				}
+			}
+		}
+	}
+
+	rpt := runReport{}
+
+	if len(degraded.messages) != 0 {
+		rpt.degraded = degraded
+	} else {
+		rpt.degraded = asExpected(client.FalseStatus)
+	}
+
+	if len(available.messages) != 0 {
+		rpt.available = available
+	} else {
+		rpt.available = asExpected(client.TrueStatus)
+	}
+
+	return rpt, failedTask
+}
+
+// stateInfo satifies a client.StateInfo
+type stateInfo struct {
+	status   client.Status
+	reason   string
+	messages []string
+}
+
+var _ client.StateInfo = (*stateInfo)(nil)
+
+func (si stateInfo) Status() client.Status {
+	return si.status
+}
+
+func (si stateInfo) Message() string {
+	return strings.Join(si.messages, ", ")
+}
+
+func (si stateInfo) Reason() string {
+	return si.reason
+}
+
+// expectedStatus is a client.StateInfo which is returned when the state
+// of the system is as expected.
+type expectedStatus client.Status
+
+var _ client.StateInfo = (*expectedStatus)(nil)
+
+func (expectedStatus) Message() string {
+	return ""
+}
+
+func (s expectedStatus) Status() client.Status {
+	return client.Status(s)
+}
+
+func (expectedStatus) Reason() string {
+	return "AsExpected"
+}
+
+func asExpected(s client.Status) *expectedStatus {
+	ret := expectedStatus(s)
+	return &ret
+}
+
+type runReport struct {
+	degraded  client.StateInfo
+	available client.StateInfo
+}
+
+var _ client.StatesReport = (*runReport)(nil)
+
+func newRunReportForError(reason string, err error) runReport {
+	return runReport{
+		degraded: &stateInfo{
+			status:   client.TrueStatus,
+			reason:   reason,
+			messages: []string{err.Error()},
+		},
+		available: &stateInfo{
+			status:   client.FalseStatus,
+			reason:   reason,
+			messages: []string{err.Error()},
+		},
+	}
+}
+func (r runReport) isDegraded() bool {
+	if isNilOrAsExpected(r.degraded) {
+		return false
+	}
+	return true
+}
+
+func (r runReport) isUnavailable() bool {
+	if isNilOrAsExpected(r.available) {
+		return false
+	}
+	return true
+}
+
+func (r runReport) Available() client.StateInfo {
+	return r.available
+}
+
+func (r runReport) Degraded() client.StateInfo {
+	return r.degraded
+}
+
+func isNilOrAsExpected(s client.StateInfo) bool {
+	if s == nil {
+		return true
+	}
+
+	switch s.(type) {
+	case *expectedStatus:
+		return true
+	default:
+		return false
+	}
 }

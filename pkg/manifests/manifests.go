@@ -1557,8 +1557,12 @@ func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
+func (f *Factory) NewPrometheusK8s() (*monv1.Prometheus, error) {
+	return f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
+}
+
 func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
-	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
+	p, err := f.NewPrometheusK8s()
 	if err != nil {
 		return nil, err
 	}

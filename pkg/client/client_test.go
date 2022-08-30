@@ -27,6 +27,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	routev1 "github.com/openshift/api/route/v1"
 
@@ -1996,4 +1997,146 @@ func TestPodCapacity(t *testing.T) {
 		}
 	})
 
+}
+
+func TestValidatePrometheusAbsent(t *testing.T) {
+	ctx := context.Background()
+
+	c := Client{
+		mclient: monfake.NewSimpleClientset(),
+	}
+
+	prom := types.NamespacedName{Namespace: ns, Name: "k8s"}
+	stop, errs := c.validatePrometheusResource(ctx, prom)
+	if stop {
+		t.Errorf("Expected prometheus missing to return stop = false but got %v", stop)
+	}
+
+	if len(errs) != 2 {
+		t.Errorf("Expected prometheus missing to return 2 errors but not %d", len(errs))
+	}
+}
+
+func TestValidatePrometheus(t *testing.T) {
+	ctx := context.Background()
+	testCases := []struct {
+		name   string
+		status monv1.PrometheusStatus
+		errs   []error
+		stop   bool
+	}{
+		{
+			name: "prometheus missing conditions",
+			// status: nil,
+			errs: []error{
+				NewUnknownAvailabiltyError("prometheus: missing condition type - Available"),
+				NewUnknownDegradedError("prometheus: missing condition type - Available"),
+			},
+		}, {
+			name: "prometheus availabe but missing reconciled",
+			status: monv1.PrometheusStatus{
+				Conditions: []monv1.PrometheusCondition{
+					{
+						Type:   monv1.PrometheusAvailable,
+						Status: monv1.PrometheusConditionTrue,
+					},
+				},
+			},
+			errs: []error{
+				NewUnknownDegradedError("prometheus: missing condition type - Reconciled"),
+			},
+		}, {
+			name: "prometheus availabe but not reconciled",
+			status: monv1.PrometheusStatus{
+				Conditions: []monv1.PrometheusCondition{
+					{
+						Type:   monv1.PrometheusAvailable,
+						Status: monv1.PrometheusConditionTrue,
+					}, {
+						Type:    monv1.PrometheusReconciled,
+						Status:  monv1.PrometheusConditionUnknown,
+						Reason:  "reason",
+						Message: "human readable message",
+					},
+				},
+			},
+			errs: []error{
+				NewDegradedError("reason: human readable message"),
+			},
+		}, {
+			name: "prometheus not availabe",
+			status: monv1.PrometheusStatus{
+				Conditions: []monv1.PrometheusCondition{
+					{
+						Type:    monv1.PrometheusAvailable,
+						Status:  monv1.PrometheusConditionFalse,
+						Reason:  "reason",
+						Message: "human readable message",
+					},
+				},
+			},
+			errs: []error{
+				NewDegradedError("reason: human readable message"),
+				NewAvailabilityError("reason: human readable message"),
+			},
+		}, {
+			name: "prometheus availabe and reconciled",
+			stop: true,
+			status: monv1.PrometheusStatus{
+				Conditions: []monv1.PrometheusCondition{
+					{
+						Type:   monv1.PrometheusAvailable,
+						Status: monv1.PrometheusConditionTrue,
+					}, {
+						Type:   monv1.PrometheusReconciled,
+						Status: monv1.PrometheusConditionTrue,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			prom := types.NamespacedName{Namespace: ns, Name: "k8s"}
+
+			prometheus := &monv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{Name: prom.Name, Namespace: prom.Namespace},
+				Status:     tc.status,
+			}
+			c := Client{
+				mclient: monfake.NewSimpleClientset(prometheus),
+			}
+
+			stop, errs := c.validatePrometheusResource(ctx, prom)
+			if stop != tc.stop {
+				t.Errorf("expected stop to be %v but got %v", tc.stop, stop)
+			}
+
+			assertErrorsMatch(t, tc.errs, errs)
+
+		})
+	}
+}
+
+func assertErrorsMatch(t *testing.T, want, got []error) {
+	t.Helper()
+	if len(want) != len(got) {
+		t.Errorf(`expected: %d errors but got: %d
+		want: %s
+		got : %s`, len(want), len(got), want, got)
+	}
+
+	for i, w := range want {
+		if i >= len(got) {
+			return
+		}
+
+		g := got[i]
+		if w.Error() != g.Error() {
+			t.Errorf(`Error [%d / %d] does not match
+			want: %q
+			got : %q`, i+1, len(want), w, g)
+		}
+	}
 }
