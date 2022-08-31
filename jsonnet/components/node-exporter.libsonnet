@@ -177,6 +177,11 @@ function(params)
                               // https://bugzilla.redhat.com/show_bug.cgi?id=1972076
                               // https://github.com/prometheus/node_exporter/issues/1880
                               '--no-collector.cpufreq',
+
+                              // The netclass collector is causing high CPU load on an
+                              // environment where network stack is frequently changing.
+                              // https://bugzilla.redhat.com/show_bug.cgi?id=2097712
+                              '--no-collector.netclass',
                             ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts+: [{

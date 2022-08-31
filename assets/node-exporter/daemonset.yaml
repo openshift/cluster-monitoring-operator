@@ -40,6 +40,7 @@ spec:
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
         - --no-collector.cpufreq
+        - --no-collector.netclass
         image: quay.io/prometheus/node-exporter:v1.3.1
         name: node-exporter
         resources:
