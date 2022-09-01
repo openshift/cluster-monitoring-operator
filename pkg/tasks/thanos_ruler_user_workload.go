@@ -273,7 +273,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		}
 	}
 
-	return nil
+	return t.cleanup(ctx)
 }
 
 func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
