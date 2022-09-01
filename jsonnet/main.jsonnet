@@ -121,11 +121,8 @@ local inCluster =
         commonLabels: {
           [k]: $.values.common.commonLabels[k]
           for k in std.objectFields($.values.common.commonLabels)
-          // CMO doesn't deploy grafana hence version label not needed anymore
-          if k != 'app.kubernetes.io/version'
-        } + {
-          'app.kubernetes.io/name': 'dashboard',
-          'app.kubernetes.io/component': 'dashboard',
+          // CMO doesn't deploy grafana these labels not needed anymore
+          if k != 'app.kubernetes.io/version' && k != 'app.kubernetes.io/name' && k != 'app.kubernetes.io/component'
         },
         prometheusName: $.values.common.prometheusName,
         local allDashboards =

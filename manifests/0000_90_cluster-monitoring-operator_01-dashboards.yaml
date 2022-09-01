@@ -1868,8 +1868,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-cluster-total
@@ -4950,8 +4948,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-cluster
@@ -7741,8 +7737,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
@@ -8762,8 +8756,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-node
@@ -10726,8 +10718,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
@@ -12745,8 +12735,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
@@ -14929,8 +14917,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
@@ -16388,8 +16374,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-namespace-by-pod
@@ -17445,8 +17429,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-cluster-rsrc-use
@@ -18528,8 +18510,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-rsrc-use
@@ -19750,8 +19730,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-pod-total
@@ -20979,8 +20957,6 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: dashboard
-    app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-prometheus
