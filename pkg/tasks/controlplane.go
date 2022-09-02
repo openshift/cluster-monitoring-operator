@@ -58,18 +58,18 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 
 	smkpa, err := t.factory.ControlPlaneKubeletServiceMonitorPA()
 	if err != nil {
-		return errors.Wrap(err, "initializing prometheus-adapater dedicated control-plane kubelet ServiceMonitor failed")
+		return errors.Wrap(err, "initializing prometheus-adapter dedicated kubelet ServiceMonitor failed")
 	}
 
-	if *t.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
+	if t.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
 		err = t.client.CreateOrUpdateServiceMonitor(ctx, smkpa)
 		if err != nil {
-			return errors.Wrap(err, "reconcilin prometheus-adapater dedicatedg control-plane kubelet ServiceMonitor failed")
+			return errors.Wrap(err, "reconciling prometheus-adapter dedicated kubelet ServiceMonitor failed")
 		}
 	} else {
 		err = t.client.DeleteServiceMonitor(ctx, smkpa)
 		if err != nil {
-			return errors.Wrap(err, "deleting prometheus-adapater dedicated control-plane etcd ServiceMonitor failed")
+			return errors.Wrap(err, "deleting prometheus-adapter dedicated kubelet ServiceMonitor failed")
 		}
 	}
 
