@@ -26,70 +26,6 @@ function(params)
       windowsExporter: '4m',
       metricPrefix: cfg.prometheusAdapterMetricPrefix,
     },
-
-    resourceRules: {
-      cpu: {
-        containerQuery: |||
-          sum by (<<.GroupBy>>) (
-            irate (
-                %(metricPrefix)scontainer_cpu_usage_seconds_total{<<.LabelMatchers>>,container!="",pod!=""}[%(kubelet)s]
-            )
-          )
-        ||| % $.resourceRuleConfig,
-        nodeQuery: |||
-          sum by (<<.GroupBy>>) (
-            1 - irate(
-              node_cpu_seconds_total{mode="idle"}[%(nodeExporter)s]
-            )
-            * on(namespace, pod) group_left(node) (
-              node_namespace_pod:kube_pod_info:{<<.LabelMatchers>>}
-            )
-          )
-          or sum by (<<.GroupBy>>) (
-            1 - irate(
-              windows_cpu_time_total{mode="idle",
-              job="windows-exporter",<<.LabelMatchers>>}[%(windowsExporter)s]
-            )
-          )
-        ||| % $.resourceRuleConfig,
-        resources: {
-          overrides: {
-            node: { resource: 'node' },
-            namespace: { resource: 'namespace' },
-            pod: { resource: 'pod' },
-          },
-        },
-        containerLabel: 'container',
-      },
-      memory: {
-        containerQuery: |||
-          sum by (<<.GroupBy>>) (
-            %(metricPrefix)scontainer_memory_working_set_bytes{<<.LabelMatchers>>,container!="",pod!=""}
-          )
-        ||| % $.resourceRuleConfig,
-        nodeQuery: |||
-          sum by (<<.GroupBy>>) (
-            node_memory_MemTotal_bytes{job="node-exporter",<<.LabelMatchers>>}
-            -
-            node_memory_MemAvailable_bytes{job="node-exporter",<<.LabelMatchers>>}
-          )
-          or sum by (<<.GroupBy>>) (
-            windows_cs_physical_memory_bytes{job="windows-exporter",<<.LabelMatchers>>}
-            -
-            windows_memory_available_bytes{job="windows-exporter",<<.LabelMatchers>>}
-          )
-        ||| % $.resourceRuleConfig,
-        resources: {
-          overrides: {
-            instance: { resource: 'node' },
-            namespace: { resource: 'namespace' },
-            pod: { resource: 'pod' },
-          },
-        },
-        containerLabel: 'container',
-      },
-      window: '5m',
-    },
   };
 
   pa {
@@ -99,7 +35,18 @@ function(params)
       metadata: pa._metadata {
         name: 'adapter-config-dedicated-sm',
       },
-      data: { 'config.yaml': std.manifestYamlDoc(config) },
+      data: {
+        'config.yaml': std.manifestYamlDoc(pa._config.config {
+          resourceRules+: {
+            cpu+: {
+              containerQuery: std.strReplace(pa._config.config.resourceRules.cpu.containerQuery, 'container_cpu_usage_seconds_total', cfg.prometheusAdapterMetricPrefix + 'container_cpu_usage_seconds_total'),
+            },
+            memory+: {
+              containerQuery: std.strReplace(pa._config.config.resourceRules.memory.containerQuery, 'container_memory_working_set_bytes', cfg.prometheusAdapterMetricPrefix + 'container_memory_working_set_bytes'),
+            },
+          },
+        }),
+      },
     },
 
     clusterRoleAggregatedMetricsReader+:

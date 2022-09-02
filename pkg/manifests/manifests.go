@@ -290,7 +290,7 @@ var (
 
 	ControlPlanePrometheusRule          = "control-plane/prometheus-rule.yaml"
 	ControlPlaneKubeletServiceMonitor   = "control-plane/service-monitor-kubelet.yaml"
-	ControlPlaneKubeletServiceMonitorPA = "control-plane/service-monitor-kubelet-prometheus-adapter.yaml"
+	ControlPlaneKubeletServiceMonitorPA = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
 	ControlPlaneEtcdServiceMonitor      = "control-plane/service-monitor-etcd.yaml"
 )
 
