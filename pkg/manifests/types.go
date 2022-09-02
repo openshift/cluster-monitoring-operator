@@ -91,7 +91,7 @@ type K8sPrometheusAdapter struct {
 }
 
 type DedicatedServiceMonitors struct {
-	Enabled *bool `json:"enabled"`
+	Enabled bool `json:"enabled"`
 }
 
 // KubeStateMetricsConfig defines configuration related with the kube-state-metrics agent.

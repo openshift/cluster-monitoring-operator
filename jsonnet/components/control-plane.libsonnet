@@ -143,20 +143,11 @@ function(params)
 
     // This adds a kubelet ServiceMonitor for special use with
     // prometheus-adapter
-    serviceMonitorKubeletPrometheusAdapter: super.serviceMonitorKubelet + {
+    serviceMonitorKubeletResourceMetrics: self.serviceMonitorKubelet {
       metadata+: {
-        labels+: {
-          'k8s-app': 'kubelet',
-        },
-        name: 'kubelet-for-pa',
+        name: 'kubelet-resource-metrics',
       },
       spec+: {
-        jobLabel: 'k8s-app',
-        selector: {
-          matchLabels: {
-            'k8s-app': 'kubelet',
-          },
-        },
         endpoints:
           std.filterMap(
             function(e)

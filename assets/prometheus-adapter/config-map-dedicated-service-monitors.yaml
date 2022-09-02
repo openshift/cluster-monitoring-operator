@@ -21,8 +21,7 @@ data:
           )
           or sum by (<<.GroupBy>>) (
             1 - irate(
-              windows_cpu_time_total{mode="idle",
-              job="windows-exporter",<<.LabelMatchers>>}[4m]
+              windows_cpu_time_total{mode="idle", job="windows-exporter",<<.LabelMatchers>>}[4m]
             )
           )
         "resources":

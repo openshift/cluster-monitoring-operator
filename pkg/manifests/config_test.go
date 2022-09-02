@@ -195,21 +195,21 @@ func TestPromAdapterDedicatedSMsDefaultsToDisabled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
 		t.Error("an empty configuration should have prometheus-adapter dedicated ServiceMonitors dislabled")
 	}
 	c, err = NewConfigFromString(`{"k8sPrometheusAdapter":{}}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
 		t.Error("an empty k8sPrometheusAdapter configuration should have prometheus-adapter dedicated ServiceMonitors dislabled")
 	}
 	c, err = NewConfigFromString(`{"k8sPrometheusAdapter":{"dedicatedServiceMonitors":{}}}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
 		t.Error("an empty dedicatedSericeMonitors configuration should have prometheus-adapter dedicated ServiceMonitors dislabled")
 	}
 }

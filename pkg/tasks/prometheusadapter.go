@@ -158,7 +158,7 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter ConfigMap failed")
 		}
-		if *t.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
+		if t.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
 			err = t.client.CreateOrUpdateConfigMap(ctx, cmD)
 			if err != nil {
 				return errors.Wrap(err, "reconciling PrometheusAdapter ConfigMap for dedicated ServiceMonitors failed")
