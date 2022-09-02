@@ -131,6 +131,3 @@ spec:
   - name: secret-thanos-ruler-oauth-cookie
     secret:
       secretName: thanos-ruler-oauth-cookie
-  - name: secret-thanos-ruler-oauth-htpasswd
-    secret:
-      secretName: thanos-ruler-oauth-htpasswd

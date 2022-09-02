@@ -118,21 +118,6 @@ function(params)
       data: {},
     },
 
-    // holds the htpasswd configuration
-    // which includes a static secret used to authenticate/authorize
-    // requests originating from grafana.
-    oauthHtpasswdSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'thanos-querier-oauth-htpasswd',
-        namespace: cfg.namespace,
-        labels: tq.config.commonLabels,
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
     // holds the kube-rbac-proxy configuration as a secret.
     // It configures to template the request in flight
     // to extract a "namespace" query parameter
@@ -273,12 +258,6 @@ function(params)
         },
       },
 
-    // Note that Grafana is enabled by default, but may be explicitly disabled
-    // by the user.  We need to inject an htpasswd file for the oauth-proxy when
-    // it is enabled, so by default the operator also adds a few things at
-    // runtime: a volume and volume-mount for the secret, and an argument to the
-    // proxy container pointing to the mounted htpasswd file.  If Grafana is
-    // disabled, these things are not injected.
     deployment+: {
       metadata+: {
         labels+: {
@@ -319,13 +298,6 @@ function(params)
               },
             },
             volumes+: [
-              // NOTE: If Grafana is enabled, the following is injected at runtime:
-              // {
-              //   name: 'secret-thanos-querier-oauth-htpasswd',
-              //   secret: {
-              //     secretName: 'thanos-querier-oauth-htpasswd',
-              //   },
-              // },
               {
                 name: 'secret-thanos-querier-tls',
                 secret: {
@@ -449,8 +421,6 @@ function(params)
                   failureThreshold: 20,
                 },
                 args: [
-                  // NOTE: The following is injected at runtime if Grafana is enabled:
-                  // '-htpasswd-file=/etc/proxy/htpasswd/auth'
                   '-provider=openshift',
                   '-https-address=:9091',
                   '-http-address=',
@@ -469,11 +439,6 @@ function(params)
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
-                  // NOTE: The following is injected at runtime if Grafana is enabled:
-                  // {
-                  //   mountPath: '/etc/proxy/htpasswd',
-                  //   name: 'secret-thanos-querier-oauth-htpasswd',
-                  // },
                   {
                     mountPath: '/etc/tls/private',
                     name: 'secret-thanos-querier-tls',

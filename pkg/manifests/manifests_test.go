@@ -219,11 +219,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ThanosQuerierHtpasswdSecret("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.ThanosQuerierRBACProxySecret()
 	if err != nil {
 		t.Fatal(err)
@@ -584,71 +579,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.PrometheusK8sService()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaClusterRoleBinding()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaClusterRole()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaDatasources()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaDashboardDefinitions()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaDashboardSources()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaTrustedCABundle()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaDeployment(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaProxySecret()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaRoute()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaServiceAccount()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaService()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.GrafanaServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3021,46 +2951,6 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 	}
 }
 
-func TestEtcdGrafanaDashboardFiltered(t *testing.T) {
-	enabled := false
-	c := NewDefaultConfig()
-	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-
-	cms, err := f.GrafanaDashboardDefinitions()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, cm := range cms.Items {
-		if cm.Name == "grafana-dashboard-etcd" {
-			t.Fatal("etcd dashboard found, even if etcd is disabled")
-		}
-	}
-}
-
-func TestEtcdGrafanaDashboard(t *testing.T) {
-	enabled := true
-	c := NewDefaultConfig()
-	c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &enabled
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-
-	cms, err := f.GrafanaDashboardDefinitions()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	found := false
-	for _, cm := range cms.Items {
-		if cm.Name == "grafana-dashboard-etcd" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatal("etcd dashboard not found, even if etcd is enabled")
-	}
-}
-
 func TestThanosQuerierConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`thanosQuerier:
   nodeSelector:
@@ -3211,49 +3101,6 @@ grpc:
 		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics":
 			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, c.Name)
 			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, c.Name)
-		}
-	}
-	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		KubeRbacProxyTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
-
-	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
-	}
-
-	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
-		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
-	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
-		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
-	}
-}
-
-func TestGrafanaConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(``)
-	if err != nil {
-		t.Fatal(err)
-	}
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.GrafanaDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	kubeRbacProxyTLSCipherSuitesArg := ""
-	kubeRbacProxyMinTLSVersionArg := ""
-	for _, container := range d.Spec.Template.Spec.Containers {
-		switch container.Name {
-		case "grafana-proxy":
-			volumeName := "grafana-trusted-ca-bundle"
-			if !volumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
-				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
-			}
-			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
-				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
-			}
-		case "kube-rbac-proxy-metrics":
-			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
-			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
 	}
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",

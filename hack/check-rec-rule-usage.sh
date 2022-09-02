@@ -32,7 +32,7 @@ tmp/bin/gojsontoyaml -yamltojson <manifests/*-config.yaml | jq '.data."metrics.y
 tmp/bin/gojsontoyaml -yamltojson <manifests/*-config.yaml | jq '.data."metrics.yaml"' | sed "s;\\\\n;\n;g" | grep "^-\s'{__name__=~\\\\\"" | sed -e "s/^- '{__name__=~\\\\\"//" | sed -e "s/\\\\\"[^}]*}'//" | sort | uniq >"$TMP/used-rules-regex"
 # The first grep outputs all recording rules that are used neither in alerts nor telemetry metrics
 # and then greps for the remaining rules in the dashboard defs and outputs the ones that are not found
-grep -Fxvf "$TMP/used-rules" "$TMP/rec-rules" | while read -r r; do grep "$r" assets/grafana/dashboard-definitions.yaml -q || echo "$r"; done >"$TMP/unused-rules-fixstr"
+grep -Fxvf "$TMP/used-rules" "$TMP/rec-rules" | while read -r r; do grep "$r" assets/dashboards/dashboard-definitions.yaml -q || echo "$r"; done >"$TMP/unused-rules-fixstr"
 grep -Exvf "$TMP/used-rules-regex" "$TMP/unused-rules-fixstr" >"$TMP/unused-rules-cmo"
 
 # Find out the rules used in console. The console TypeScript codes contain reference to rule names by exact text matching.

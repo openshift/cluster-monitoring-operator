@@ -62,8 +62,6 @@ data:
       baseImage: ${INTERNAL_REGISTRY}/ose-kube-rbac-proxy
     kubeStateMetrics:
       baseImage: ${INTERNAL_REGISTRY}/ose-kube-state-metrics
-    grafana:
-      baseImage: ${INTERNAL_REGISTRY}/ose-grafana
     auth:
       baseImage: ${INTERNAL_REGISTRY}/oauth-proxy
     etcd:
@@ -108,7 +106,6 @@ spec:
         - "-tags=config-reloader=${TAG}"
         #- "-tags=prometheus=${TAG}"
         #- "-tags=alertmanager=${TAG}"
-        #- "-tags=grafana=${TAG}"
         #- "-tags=oauth-proxy=${TAG}"
         #- "-tags=node-exporter=${TAG}"
         - "-tags=kube-state-metrics=${TAG}"

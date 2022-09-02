@@ -1868,10 +1868,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-cluster-total
   namespace: openshift-config-managed
@@ -4951,10 +4948,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-cluster
   namespace: openshift-config-managed
@@ -7743,10 +7737,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-namespace
@@ -8765,10 +8756,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-k8s-resources-node
   namespace: openshift-config-managed
@@ -10730,10 +10718,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-pod
@@ -12750,10 +12735,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-workload
@@ -14935,10 +14917,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
   name: grafana-dashboard-k8s-resources-workloads-namespace
@@ -16395,10 +16374,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-namespace-by-pod
   namespace: openshift-config-managed
@@ -17453,10 +17429,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-cluster-rsrc-use
   namespace: openshift-config-managed
@@ -18537,10 +18510,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-node-rsrc-use
   namespace: openshift-config-managed
@@ -19760,10 +19730,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-pod-total
   namespace: openshift-config-managed
@@ -20990,10 +20957,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
-    app.kubernetes.io/component: grafana
-    app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 8.3.4
     console.openshift.io/dashboard: "true"
   name: grafana-dashboard-prometheus
   namespace: openshift-config-managed

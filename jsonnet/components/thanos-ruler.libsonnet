@@ -172,23 +172,6 @@ function(params)
       data: {},
     },
 
-    // holds the htpasswd configuration
-    // which includes a static secret used to authenticate/authorize
-    // requests originating from grafana.
-    oauthHtpasswdSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'thanos-ruler-oauth-htpasswd',
-        namespace: tr.config.namespace,
-        labels: {
-          'app.kubernetes.io/name': tr.config.name,
-        },
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
     // alertmanager config holds the http configuration
     // for communication between thanos ruler and alertmanager.
     alertmanagersConfigSecret: {
@@ -381,12 +364,6 @@ function(params)
             name: 'secret-thanos-ruler-oauth-cookie',
             secret: {
               secretName: $.oauthCookieSecret.metadata.name,
-            },
-          },
-          {
-            name: 'secret-thanos-ruler-oauth-htpasswd',
-            secret: {
-              secretName: $.oauthHtpasswdSecret.metadata.name,
             },
           },
         ],

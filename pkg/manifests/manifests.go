@@ -37,7 +37,6 @@ import (
 	"github.com/openshift/library-go/pkg/crypto"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"golang.org/x/crypto/bcrypt"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -139,7 +138,6 @@ var (
 	PrometheusUserWorkloadRBACProxyFederateSecret = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
 	PrometheusK8sAPIRoute                         = "prometheus-k8s/api-route.yaml"
 	PrometheusK8sFederateRoute                    = "prometheus-k8s/federate-route.yaml"
-	PrometheusK8sHtpasswd                         = "prometheus-k8s/htpasswd-secret.yaml"
 	PrometheusK8sServingCertsCABundle             = "prometheus-k8s/serving-certs-ca-bundle.yaml"
 	PrometheusK8sKubeletServingCABundle           = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
 	PrometheusK8sGrpcTLSSecret                    = "prometheus-k8s/grpc-tls-secret.yaml"
@@ -209,22 +207,6 @@ var (
 	PrometheusOperatorUserWorkloadServiceMonitor      = "prometheus-operator-user-workload/service-monitor.yaml"
 	PrometheusOperatorUserWorkloadKubeRbacProxySecret = "prometheus-operator-user-workload/kube-rbac-proxy-secret.yaml"
 
-	GrafanaClusterRoleBinding    = "grafana/cluster-role-binding.yaml"
-	GrafanaClusterRole           = "grafana/cluster-role.yaml"
-	GrafanaConfigSecret          = "grafana/config.yaml"
-	GrafanaDatasourcesSecret     = "grafana/dashboard-datasources.yaml"
-	GrafanaDashboardDefinitions  = "grafana/dashboard-definitions.yaml"
-	GrafanaDashboardSources      = "grafana/dashboard-sources.yaml"
-	GrafanaDeployment            = "grafana/deployment.yaml"
-	GrafanaRBACProxyMetricSecret = "grafana/kube-rbac-proxy-metric-secret.yaml"
-	GrafanaPrometheusRule        = "grafana/prometheus-rule.yaml"
-	GrafanaProxySecret           = "grafana/proxy-secret.yaml"
-	GrafanaRoute                 = "grafana/route.yaml"
-	GrafanaServiceAccount        = "grafana/service-account.yaml"
-	GrafanaService               = "grafana/service.yaml"
-	GrafanaServiceMonitor        = "grafana/service-monitor.yaml"
-	GrafanaTrustedCABundle       = "grafana/trusted-ca-bundle.yaml"
-
 	ClusterMonitoringOperatorServiceMonitor     = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView            = "cluster-monitoring-operator/cluster-role-view.yaml"
 	ClusterMonitoringAlertmanagerEditRole       = "cluster-monitoring-operator/monitoring-alertmanager-edit-role.yaml"
@@ -257,7 +239,6 @@ var (
 	ThanosQuerierPrometheusRule         = "thanos-querier/prometheus-rule.yaml"
 	ThanosQuerierRoute                  = "thanos-querier/route.yaml"
 	ThanosQuerierOauthCookieSecret      = "thanos-querier/oauth-cookie-secret.yaml"
-	ThanosQuerierHtpasswdSecret         = "thanos-querier/oauth-htpasswd-secret.yaml"
 	ThanosQuerierRBACProxySecret        = "thanos-querier/kube-rbac-proxy-secret.yaml"
 	ThanosQuerierRBACProxyRulesSecret   = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
 	ThanosQuerierRBACProxyMetricsSecret = "thanos-querier/kube-rbac-proxy-metric-secret.yaml"
@@ -271,7 +252,6 @@ var (
 	ThanosRulerService                      = "thanos-ruler/service.yaml"
 	ThanosRulerRoute                        = "thanos-ruler/route.yaml"
 	ThanosRulerOauthCookieSecret            = "thanos-ruler/oauth-cookie-secret.yaml"
-	ThanosRulerHtpasswdSecret               = "thanos-ruler/oauth-htpasswd-secret.yaml"
 	ThanosRulerQueryConfigSecret            = "thanos-ruler/query-config-secret.yaml"
 	ThanosRulerAlertmanagerConfigSecret     = "thanos-ruler/alertmanagers-config-secret.yaml"
 	ThanosRulerServiceAccount               = "thanos-ruler/service-account.yaml"
@@ -1310,56 +1290,6 @@ func (f *Factory) ThanosQuerierOauthCookieSecret() (*v1.Secret, error) {
 	s.Namespace = f.namespace
 
 	return s, nil
-}
-
-func (f *Factory) PrometheusK8sHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sHtpasswd))
-	if err != nil {
-		return nil, err
-	}
-
-	err = f.generateHtpasswdSecret(s, password)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-func (f *Factory) ThanosQuerierHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierHtpasswdSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	err = f.generateHtpasswdSecret(s, password)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-func (f *Factory) ThanosRulerHtpasswdSecret(password string) (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerHtpasswdSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	err = f.generateHtpasswdSecret(s, password)
-	if err != nil {
-		return nil, err
-	}
-	s.Namespace = f.namespaceUserWorkload
-	return s, nil
-}
-
-func (f *Factory) generateHtpasswdSecret(s *v1.Secret, password string) error {
-	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	if err != nil {
-		return err
-	}
-	s.Data["auth"] = []byte("internal:" + string(encryptedPassword))
-	s.Namespace = f.namespace
-	return nil
 }
 
 func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {
@@ -2803,269 +2733,6 @@ func (f *Factory) PrometheusUserWorkloadServiceThanosSidecar() (*v1.Service, err
 	}
 
 	s.Namespace = f.namespaceUserWorkload
-
-	return s, nil
-}
-
-func (f *Factory) GrafanaClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	crb, err := f.NewClusterRoleBinding(f.assets.MustNewAssetReader(GrafanaClusterRoleBinding))
-	if err != nil {
-		return nil, err
-	}
-
-	crb.Subjects[0].Namespace = f.namespace
-
-	return crb, nil
-}
-
-func (f *Factory) GrafanaClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(GrafanaClusterRole))
-}
-
-func (f *Factory) GrafanaConfig() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaConfigSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-type GrafanaDatasources struct {
-	ApiVersion  int                  `json:"apiVersion"`
-	Datasources []*GrafanaDatasource `json:"datasources"`
-}
-
-type SecureJSONData struct {
-	BasicAuthPassword string `json:"basicAuthPassword"`
-}
-
-type GrafanaDatasource struct {
-	Access         string           `json:"access"`
-	BasicAuth      bool             `json:"basicAuth"`
-	SecureJSONData SecureJSONData   `json:"secureJsonData"`
-	BasicAuthUser  string           `json:"basicAuthUser"`
-	Editable       bool             `json:"editable"`
-	JsonData       *GrafanaJsonData `json:"jsonData"`
-	Name           string           `json:"name"`
-	OrgId          int              `json:"orgId"`
-	Type           string           `json:"type"`
-	Url            string           `json:"url"`
-	Version        int              `json:"version"`
-}
-
-type GrafanaJsonData struct {
-	TlsSkipVerify bool `json:"tlsSkipVerify"`
-}
-
-func (f *Factory) GrafanaDatasources() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaDatasourcesSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	d := &GrafanaDatasources{}
-	err = json.Unmarshal([]byte(s.StringData["datasources.yaml"]), d)
-	if err != nil {
-		return nil, err
-	}
-	d.Datasources[0].SecureJSONData.BasicAuthPassword, err = GeneratePassword(255)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := json.MarshalIndent(d, "", "    ")
-	if err != nil {
-		return nil, err
-	}
-	s.StringData["prometheus.yaml"] = string(b)
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) GrafanaDashboardDefinitions() (*v1.ConfigMapList, error) {
-	cl, err := f.NewConfigMapList(f.assets.MustNewAssetReader(GrafanaDashboardDefinitions))
-	if err != nil {
-		return nil, err
-	}
-
-	configmaps := []v1.ConfigMap{}
-	for _, c := range cl.Items {
-		c.Namespace = f.namespace
-		if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-			if c.GetName() != "grafana-dashboard-etcd" {
-				configmaps = append(configmaps, c)
-			}
-		} else {
-			configmaps = append(configmaps, c)
-		}
-	}
-	cl.Items = configmaps
-
-	return cl, nil
-}
-
-func (f *Factory) GrafanaDashboardSources() (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(GrafanaDashboardSources))
-	if err != nil {
-		return nil, err
-	}
-
-	c.Namespace = f.namespace
-
-	return c, nil
-}
-
-func (f *Factory) GrafanaTrustedCABundle() (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(GrafanaTrustedCABundle))
-	if err != nil {
-		return nil, err
-	}
-
-	return cm, nil
-}
-
-// GrafanaDeployment generates a new Deployment for Grafana.
-// If the passed ConfigMap is not empty it mounts the Trusted CA Bundle as a VolumeMount to
-// /etc/pki/ca-trust/extracted/pem/ location.
-func (f *Factory) GrafanaDeployment(proxyCABundleCM *v1.ConfigMap) (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(GrafanaDeployment))
-	if err != nil {
-		return nil, err
-	}
-
-	for i, container := range d.Spec.Template.Spec.Containers {
-		switch container.Name {
-		case "grafana":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.Grafana
-
-			if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-				vols := []v1.Volume{}
-				volMounts := []v1.VolumeMount{}
-				for _, v := range d.Spec.Template.Spec.Volumes {
-					if v.Name != "grafana-dashboard-etcd" {
-						vols = append(vols, v)
-					}
-				}
-				for _, vm := range d.Spec.Template.Spec.Containers[i].VolumeMounts {
-					if vm.Name != "grafana-dashboard-etcd" {
-						volMounts = append(volMounts, vm)
-					}
-				}
-
-				d.Spec.Template.Spec.Volumes = vols
-				d.Spec.Template.Spec.Containers[i].VolumeMounts = volMounts
-			}
-
-		case "grafana-proxy":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OauthProxy
-
-			f.injectProxyVariables(&d.Spec.Template.Spec.Containers[i])
-
-			if proxyCABundleCM != nil {
-				volumeName := "grafana-trusted-ca-bundle"
-				d.Spec.Template.Spec.Containers[i].VolumeMounts = append(d.Spec.Template.Spec.Containers[i].VolumeMounts, trustedCABundleVolumeMount(volumeName))
-				volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
-				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-					Key:  TrustedCABundleKey,
-					Path: "tls-ca-bundle.pem",
-				})
-				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
-			}
-		case "kube-rbac-proxy-metrics":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
-		}
-	}
-
-	d.Namespace = f.namespace
-
-	return d, nil
-}
-
-func (f *Factory) GrafanaRBACProxyMetricSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaRBACProxyMetricSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) GrafanaPrometheusRule() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaPrometheusRule))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) GrafanaProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(GrafanaProxySecret))
-	if err != nil {
-		return nil, err
-	}
-
-	p, err := GeneratePassword(43)
-	if err != nil {
-		return nil, err
-	}
-	s.Data["session_secret"] = []byte(p)
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) GrafanaRoute() (*routev1.Route, error) {
-	r, err := f.NewRoute(f.assets.MustNewAssetReader(GrafanaRoute))
-	if err != nil {
-		return nil, err
-	}
-
-	r.Namespace = f.namespace
-
-	return r, nil
-}
-
-func (f *Factory) GrafanaServiceAccount() (*v1.ServiceAccount, error) {
-	s, err := f.NewServiceAccount(f.assets.MustNewAssetReader(GrafanaServiceAccount))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) GrafanaService() (*v1.Service, error) {
-	s, err := f.NewService(f.assets.MustNewAssetReader(GrafanaService))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) GrafanaServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(GrafanaServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("grafana.%s.svc", f.namespace)
-	s.Namespace = f.namespace
 
 	return s, nil
 }

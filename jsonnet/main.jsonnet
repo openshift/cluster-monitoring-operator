@@ -6,7 +6,7 @@ local addBearerTokenToServiceMonitors = (import './utils/add-bearer-token-to-ser
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local alertmanagerUserWorkload = import './components/alertmanager-user-workload.libsonnet';
-local grafana = import './components/grafana.libsonnet';
+local dashboards = import './components/dashboards.libsonnet';
 local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
 local controlPlane = import './components/control-plane.libsonnet';
 local nodeExporter = import './components/node-exporter.libsonnet';
@@ -59,7 +59,6 @@ local commonConfig = {
   images: {
     alertmanager: 'quay.io/prometheus/alertmanager:v' + $.versions.alertmanager,
     prometheus: 'quay.io/prometheus/prometheus:v' + $.versions.prometheus,
-    grafana: 'grafana/grafana:v' + $.versions.grafana,
     kubeStateMetrics: 'k8s.gcr.io/kube-state-metrics/kube-state-metrics:v' + $.versions.kubeStateMetrics,
     nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions.nodeExporter,
     prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions.prometheusAdapter,
@@ -117,11 +116,14 @@ local inCluster =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
       },
-      grafana: {
+      dashboards: {
         namespace: $.values.common.namespace,
-        version: $.values.common.versions.grafana,
-        image: $.values.common.images.grafana,
-        commonLabels+: $.values.common.commonLabels,
+        commonLabels: {
+          [k]: $.values.common.commonLabels[k]
+          for k in std.objectFields($.values.common.commonLabels)
+          // CMO doesn't deploy grafana these labels not needed anymore
+          if k != 'app.kubernetes.io/version' && k != 'app.kubernetes.io/name' && k != 'app.kubernetes.io/component'
+        },
         prometheusName: $.values.common.prometheusName,
         local allDashboards =
           $.nodeExporter.mixin.grafanaDashboards +
@@ -156,63 +158,6 @@ local inCluster =
           for k in std.objectFields(allDashboards)
           if std.setMember(k, includeDashboards)
         },
-        datasources: [{
-          name: 'prometheus',
-          type: 'prometheus',
-          access: 'proxy',
-          orgId: 1,
-          url: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
-          version: 1,
-          editable: false,
-          basicAuth: true,
-          basicAuthUser: 'internal',
-          secureJsonData: {
-            basicAuthPassword: '',
-          },
-          jsonData: {
-            tlsSkipVerify: true,
-          },
-        }],
-        config: {
-          sections: {
-            paths: {
-              data: '/var/lib/grafana',
-              logs: '/var/lib/grafana/logs',
-              plugins: '/var/lib/grafana/plugins',
-              provisioning: '/etc/grafana/provisioning',
-            },
-            server: {
-              http_addr: '127.0.0.1',
-              http_port: '3001',
-            },
-            security: {
-              // OpenShift users are limited to 63 characters, with this we are
-              // setting the Grafana user to something that can never be created
-              // in OpenShift. This prevents users from getting proxied with an
-              // identity that has superuser permissions in Grafana.
-              admin_user: 'WHAT_YOU_ARE_DOING_IS_VOIDING_SUPPORT_0000000000000000000000000000000000000000000000000000000000000000',
-              cookie_secure: true,
-            },
-            auth: {
-              disable_login_form: true,
-              disable_signout_menu: true,
-            },
-            'auth.basic': {
-              enabled: false,
-            },
-            'auth.proxy': {
-              enabled: true,
-              header_name: 'X-Forwarded-User',
-              auto_sign_up: true,
-            },
-            analytics: {
-              reporting_enabled: false,
-              check_for_updates: false,
-            },
-          },
-        },
-        tlsCipherSuites: $.values.common.tlsCipherSuites,
-        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
       kubeStateMetrics: {
         namespace: $.values.common.namespace,
@@ -386,7 +331,6 @@ local inCluster =
         rules+: inCluster.alertmanager.clusterRole.rules +
                 inCluster.clusterMonitoringOperator.clusterRoleView.rules +
                 inCluster.clusterMonitoringOperator.userWorkloadConfigEditRole.rules +
-                inCluster.grafana.clusterRole.rules +
                 inCluster.kubeStateMetrics.clusterRole.rules +
                 inCluster.nodeExporter.clusterRole.rules +
                 inCluster.openshiftStateMetrics.clusterRole.rules +
@@ -404,7 +348,7 @@ local inCluster =
       },
     },
     alertmanager: alertmanager($.values.alertmanager),
-    grafana: grafana($.values.grafana),
+    dashboards: dashboards($.values.dashboards),
     kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),
     nodeExporter: nodeExporter($.values.nodeExporter),
     prometheus: prometheus($.values.prometheus),
@@ -511,7 +455,7 @@ sanitizeAlertRules(addAnnotations(removeLimits(removeNetworkPolicy(
     { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
     { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
     { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
-    { ['grafana/' + name]: inCluster.grafana[name] for name in std.objectFields(inCluster.grafana) } +
+    { ['dashboards/' + name]: inCluster.dashboards[name] for name in std.objectFields(inCluster.dashboards) } +
     { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
     { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
     { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +

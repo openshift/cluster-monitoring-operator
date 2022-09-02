@@ -4,7 +4,6 @@
 
 repos:
   alertmanager: openshift/prometheus-alertmanager
-  grafana: openshift/grafana
   kubeRbacProxy: openshift/kube-rbac-proxy
   kubeStateMetrics: openshift/kube-state-metrics
   nodeExporter: openshift/node_exporter
@@ -15,7 +14,6 @@ repos:
   thanos: openshift/thanos
 versions:
   alertmanager: 0.24.0
-  grafana: 8.3.4
   kubeRbacProxy: 0.11.0
   kubeStateMetrics: 2.5.0
   nodeExporter: 1.3.1

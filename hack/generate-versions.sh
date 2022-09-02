@@ -20,11 +20,7 @@ PATH="${TMP_BIN}:${PATH}"
 : "${INTERACTIVE:=true}"
 
 version_from_remote() {
-	if [ "$1" = "openshift/grafana" ]; then
-		curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/master/package.json" | jq -r '.version'
-	else
-		curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/master/VERSION"
-	fi
+	curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/master/VERSION"
 }
 
 # Fallback mechanism when VERSION file is empty or not found

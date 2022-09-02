@@ -20,6 +20,8 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ThanosRulerUserWorkloadTask struct {
@@ -271,7 +273,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		}
 	}
 
-	return nil
+	return t.cleanup(ctx)
 }
 
 func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
@@ -448,5 +450,26 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 	}
 
 	err = t.client.DeleteServiceMonitor(ctx, trsm)
-	return errors.Wrap(err, "deleting Thanos Ruler ServiceMonitor failed")
+	if err != nil {
+		return errors.Wrap(err, "deleting Thanos Ruler ServiceMonitor failed")
+	}
+	return t.cleanup(ctx)
+}
+
+// Delete unwanted objects related to Grafana
+// This can be removed in 4.13 release
+func (t *ThanosRulerUserWorkloadTask) cleanup(ctx context.Context) error {
+	htpasswdSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "openshift-user-workload-monitoring",
+			Name:      "thanos-ruler-oauth-htpasswd",
+		},
+		Type: v1.SecretTypeOpaque,
+	}
+
+	err := t.client.DeleteSecret(ctx, htpasswdSecret)
+	if err != nil {
+		return errors.Wrap(err, "deleting Thanos Ruler oauth Htpasswd Secret failed")
+	}
+	return nil
 }
