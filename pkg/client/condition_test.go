@@ -39,6 +39,16 @@ func TestConditions(t *testing.T) {
 		}
 	}
 
+	hasSortedConditions := func(want []configv1.ClusterOperatorStatusCondition) checkFunc {
+		return func(cs *conditions) error {
+			got := cs.entries()
+			if !reflect.DeepEqual(got, want) {
+				return fmt.Errorf("got conditions\n%+v\nwant\n%+v", got, want)
+			}
+			return nil
+		}
+	}
+
 	allUnknown := hasConditions([]configv1.ClusterOperatorStatusCondition{
 		{
 			Type:               configv1.OperatorProgressing,
@@ -658,6 +668,67 @@ func TestConditions(t *testing.T) {
 					Type:               configv1.OperatorUpgradeable,
 					Status:             configv1.ConditionUnknown,
 					LastTransitionTime: v1.Time{},
+					Message:            "",
+					Reason:             "",
+				},
+			}),
+		}, {
+			name: "progressing, previously available, different version",
+			conditions: func() *conditions {
+				cs := newConditions(
+					configv1.ClusterOperatorStatus{
+						Versions: []configv1.OperandVersion{{Version: "1.0"}},
+						Conditions: []configv1.ClusterOperatorStatusCondition{
+							{
+								Type:   configv1.OperatorDegraded,
+								Status: configv1.ConditionFalse,
+							},
+							{
+								Type:   configv1.OperatorAvailable,
+								Status: configv1.ConditionTrue,
+							},
+							{
+								Type:   configv1.OperatorProgressing,
+								Status: configv1.ConditionFalse,
+							},
+							{
+								Type:   configv1.OperatorUpgradeable,
+								Status: configv1.ConditionTrue,
+							},
+						},
+					},
+					"1.1", v1.Time{},
+				)
+				cs.setCondition(configv1.OperatorProgressing, configv1.ConditionTrue, "", "", v1.Unix(0, 0))
+				cs.setCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse, "", "", v1.Unix(0, 0))
+				return cs
+			},
+			check: hasSortedConditions([]configv1.ClusterOperatorStatusCondition{
+				{
+					Type:               configv1.OperatorAvailable,
+					Status:             configv1.ConditionTrue,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+					Reason:             "",
+				},
+				{
+					Type:               configv1.OperatorDegraded,
+					Status:             configv1.ConditionFalse,
+					LastTransitionTime: v1.Time{},
+					Message:            "",
+					Reason:             "",
+				},
+				{
+					Type:               configv1.OperatorProgressing,
+					Status:             configv1.ConditionTrue,
+					LastTransitionTime: v1.Unix(0, 0),
+					Message:            "",
+					Reason:             "",
+				},
+				{
+					Type:               configv1.OperatorUpgradeable,
+					Status:             configv1.ConditionFalse,
+					LastTransitionTime: v1.Unix(0, 0),
 					Message:            "",
 					Reason:             "",
 				},

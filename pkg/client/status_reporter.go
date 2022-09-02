@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
@@ -24,6 +25,7 @@ import (
 	clientv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -109,9 +111,14 @@ func (r *StatusReporter) newClusterOperator() *v1.ClusterOperator {
 }
 
 func (r *StatusReporter) setConditions(ctx context.Context, co *v1.ClusterOperator, conditions *conditions) error {
-	co.Status.Conditions = conditions.entries()
-	co.Status.RelatedObjects = r.relatedObjects()
-
+	updatedStatus := co.Status.DeepCopy()
+	updatedStatus.Conditions = conditions.entries()
+	updatedStatus.RelatedObjects = r.relatedObjects()
+	if reflect.DeepEqual(co.Status, *updatedStatus) {
+		klog.V(4).Infof("No status update necessary, objects are identical")
+		return nil
+	}
+	co.Status = *updatedStatus
 	_, err := r.client.UpdateStatus(ctx, co, metav1.UpdateOptions{})
 	return err
 }
