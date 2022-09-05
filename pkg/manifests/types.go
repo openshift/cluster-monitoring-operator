@@ -90,6 +90,14 @@ type K8sPrometheusAdapter struct {
 	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors"`
 }
 
+// Dedicated Service Monitors configuration
+// When Enabled is set to true, CMO will deploy and scrape a dedicated
+// Service Monitor, that exposes the kubelet /metrics/resource endpoint. This
+// Service Monitor sets honorTimestamps: true and only keeps metrics that are
+// relevant for the pod resource queries of prometheus-adapter.
+// Additionally prometheus-adapter is configured to use these dedicated metrics.
+// Overall this will improve the consistency of prometheus-adapter based CPU
+// usage measurements used by for example the oc adm top pod command or HPAs.
 type DedicatedServiceMonitors struct {
 	Enabled bool `json:"enabled"`
 }
