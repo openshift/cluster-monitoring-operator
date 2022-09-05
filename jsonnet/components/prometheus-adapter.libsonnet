@@ -19,20 +19,9 @@ function(params)
   local cfg = params;
   local pa = prometheusAdapter(cfg);
 
-  local config = {
-    resourceRuleConfig:: {
-      kubelet: '4m',
-      nodeExporter: '4m',
-      windowsExporter: '4m',
-      metricPrefix: cfg.prometheusAdapterMetricPrefix,
-    },
-  };
-
   pa {
-    configMapDedicatedServiceMonitors: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata: pa._metadata {
+    configMapDedicatedServiceMonitors: pa.configMap {
+      metadata+: {
         name: 'adapter-config-dedicated-sm',
       },
       data: {

@@ -156,17 +156,7 @@ function(params)
             function(e)
               e {
                 path: '/metrics/resource',
-                tlsConfig+: {
-                  caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
-                  insecureSkipVerify: false,
-                  certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
-                  keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
-                },
                 honorTimestamps: true,
-                // Increase the scrape timeout to match the scrape interval
-                // because the kubelet metric endpoints might take more than the default
-                // 10 seconds to reply.
-                scrapeTimeout: '30s',
                 metricRelabelings: [
                   {
                     sourceLabels: ['__name__'],

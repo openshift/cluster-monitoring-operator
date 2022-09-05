@@ -149,6 +149,9 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 			return errors.Wrap(err, "reconciling PrometheusAdapter Service failed")
 		}
 	}
+	// Intermediate variable to hold on to the config map name that the
+	// prometheus-adapter deployment should target.
+	var cmName string
 	{
 		cmD, err := t.factory.PrometheusAdapterConfigMapDedicated()
 		if err != nil {
@@ -167,10 +170,7 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 			if err != nil {
 				return errors.Wrap(err, "deleting PrometheusAdapter ConfigMap failed")
 			}
-			// set cm the the Dedicated ConfigMap so that the
-			// deployment gets updated with the new ConfigMap name
-			// and the pods are restarted.
-			cm = cmD
+			cmName = cmD.Name
 		} else {
 			err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 			if err != nil {
@@ -180,6 +180,7 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 			if err != nil {
 				return errors.Wrap(err, "deleting PrometheusAdapter ConfigMap for dedicated ServiceMonitors failed")
 			}
+			cmName = cm.Name
 		}
 
 		tlsSecret, err := t.client.GetSecret(ctx, t.namespace, "prometheus-adapter-tls")
@@ -207,7 +208,7 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 			return errors.Wrap(err, "reconciling PrometheusAdapter Secret failed")
 		}
 
-		dep, err := t.factory.PrometheusAdapterDeployment(secret.Name, apiAuthConfigmap.Data, cm.Name)
+		dep, err := t.factory.PrometheusAdapterDeployment(secret.Name, apiAuthConfigmap.Data, cmName)
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter Deployment failed")
 		}
