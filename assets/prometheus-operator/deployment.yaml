@@ -68,7 +68,7 @@ spec:
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt
         - --config-file=/etc/kube-rbac-policy/config.yaml
-        image: quay.io/brancz/kube-rbac-proxy:v0.11.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.13.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
