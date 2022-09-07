@@ -361,12 +361,24 @@ data:
     # owners: (@openshift/team-ocs-committers)
     #
     # job:noobaa_bucket_count:sum is the total number of noobaa buckets.
+    # This metric is deprecated in ODF 4.12, refer to odf_system_bucket_count instead.
     - '{__name__="job:noobaa_bucket_count:sum"}'
     #
     # owners: (@openshift/team-ocs-committers)
     #
     # job:noobaa_total_object_count:sum is the total number of noobaa objects.
+    # This metric is deprecated in ODF 4.12, refer to odf_system_objects_total instead.
     - '{__name__="job:noobaa_total_object_count:sum"}'
+    #
+    # owners: (@openshift/team-ocs-committers)
+    #
+    # odf_system_bucket_count is the total number of buckets in ODF system
+    - '{__name__="odf_system_bucket_count", system_type="OCS", system_vendor="Red Hat"}'
+    #
+    # owners: (@openshift/team-ocs-committers)
+    #
+    # odf_system_objects_total is the total number of objects in ODF system
+    - '{__name__="odf_system_objects_total", system_type="OCS", system_vendor="Red Hat"}'
     #
     # owners: (@openshift/team-ocs-committers)
     #
