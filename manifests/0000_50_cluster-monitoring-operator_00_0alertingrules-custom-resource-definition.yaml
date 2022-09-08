@@ -7,7 +7,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    release.openshift.io/feature-gate: TechPreviewNoUpgrade
+    release.openshift.io/feature-set: TechPreviewNoUpgrade
   name: alertingrules.monitoring.openshift.io
 spec:
   group: monitoring.openshift.io
@@ -111,11 +111,11 @@ spec:
                             description: "annotations to add to each alert.  These
                               are values that can be used to store longer additional
                               information that you won't query on, such as alert descriptions
-                              or runbook links, e.g.: \n   annotations:     summary:
-                              HAProxy reload failure     description: |       This
-                              alert fires when HAProxy fails to reload its       configuration,
-                              which will result in the router not picking up       recently
-                              created or modified routes."
+                              or runbook links, e.g.: \n annotations: summary: HAProxy
+                              reload failure description: | This alert fires when
+                              HAProxy fails to reload its configuration, which will
+                              result in the router not picking up recently created
+                              or modified routes."
                             type: object
                           expr:
                             anyOf:
@@ -125,7 +125,7 @@ spec:
                               Every evaluation cycle this is evaluated at the current
                               time, and all resultant time series become pending or
                               firing alerts.  This is most often a string representing
-                              a PromQL expression, e.g.: \n   mapi_current_pending_csr
+                              a PromQL expression, e.g.: \n mapi_current_pending_csr
                               > mapi_max_pending_csr \n In rare cases this could be
                               a simple integer, e.g. a simple \"1\" if the intent
                               is to create an alert that is always firing.  This is
@@ -151,7 +151,7 @@ spec:
                               label here wins and overwrites the previous value.  These
                               should typically be short identifying values that may
                               be useful to query against.  A common example is the
-                              alert severity: \n   labels:     severity: warning"
+                              alert severity: \n labels: severity: warning"
                             type: object
                         required:
                         - alert

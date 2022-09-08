@@ -373,6 +373,22 @@ spec:
                   description: migration enables and configures the cluster network migration. The migration procedure allows to change the network type and the MTU.
                   type: object
                   properties:
+                    features:
+                      description: features contains the features migration configuration. Set this to migrate feature configuration when changing the cluster default network provider. if unset, the default operation is to migrate all the configuration of supported features.
+                      type: object
+                      properties:
+                        egressFirewall:
+                          description: egressFirewall specifies whether or not the Egress Firewall configuration is migrated automatically when changing the cluster default network provider. If unset, this property defaults to 'true' and Egress Firewall configure is migrated.
+                          type: boolean
+                          default: true
+                        egressIP:
+                          description: egressIP specifies whether or not the Egress IP configuration is migrated automatically when changing the cluster default network provider. If unset, this property defaults to 'true' and Egress IP configure is migrated.
+                          type: boolean
+                          default: true
+                        multicast:
+                          description: multicast specifies whether or not the multicast configuration is migrated automatically when changing the cluster default network provider. If unset, this property defaults to 'true' and multicast configure is migrated.
+                          type: boolean
+                          default: true
                     mtu:
                       description: mtu contains the MTU migration configuration. Set this to allow changing the MTU values for the default network. If unset, the operation of changing the MTU for the default network will be rejected.
                       type: object

@@ -4,9 +4,12 @@ package v1alpha1
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
+	monitoringv1alpha1 "github.com/openshift/client-go/monitoring/applyconfigurations/monitoring/v1alpha1"
 	scheme "github.com/openshift/client-go/monitoring/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -31,6 +34,8 @@ type AlertRelabelConfigInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AlertRelabelConfigList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AlertRelabelConfig, err error)
+	Apply(ctx context.Context, alertRelabelConfig *monitoringv1alpha1.AlertRelabelConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AlertRelabelConfig, err error)
+	ApplyStatus(ctx context.Context, alertRelabelConfig *monitoringv1alpha1.AlertRelabelConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AlertRelabelConfig, err error)
 	AlertRelabelConfigExpansion
 }
 
@@ -172,6 +177,62 @@ func (c *alertRelabelConfigs) Patch(ctx context.Context, name string, pt types.P
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied alertRelabelConfig.
+func (c *alertRelabelConfigs) Apply(ctx context.Context, alertRelabelConfig *monitoringv1alpha1.AlertRelabelConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AlertRelabelConfig, err error) {
+	if alertRelabelConfig == nil {
+		return nil, fmt.Errorf("alertRelabelConfig provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(alertRelabelConfig)
+	if err != nil {
+		return nil, err
+	}
+	name := alertRelabelConfig.Name
+	if name == nil {
+		return nil, fmt.Errorf("alertRelabelConfig.Name must be provided to Apply")
+	}
+	result = &v1alpha1.AlertRelabelConfig{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("alertrelabelconfigs").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *alertRelabelConfigs) ApplyStatus(ctx context.Context, alertRelabelConfig *monitoringv1alpha1.AlertRelabelConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AlertRelabelConfig, err error) {
+	if alertRelabelConfig == nil {
+		return nil, fmt.Errorf("alertRelabelConfig provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(alertRelabelConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	name := alertRelabelConfig.Name
+	if name == nil {
+		return nil, fmt.Errorf("alertRelabelConfig.Name must be provided to Apply")
+	}
+
+	result = &v1alpha1.AlertRelabelConfig{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("alertrelabelconfigs").
+		Name(*name).
+		SubResource("status").
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)
