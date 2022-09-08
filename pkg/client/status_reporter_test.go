@@ -25,6 +25,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	v1 "github.com/openshift/api/config/v1"
+	configv1 "github.com/openshift/client-go/config/applyconfigurations/config/v1"
 	clientv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -458,4 +459,12 @@ func (com *clusterOperatorMock) Watch(ctx context.Context, opts metav1.ListOptio
 
 func (com *clusterOperatorMock) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.ClusterOperator, err error) {
 	return nil, nil
+}
+
+func (com *clusterOperatorMock) Apply(ctx context.Context, clusterOperator *configv1.ClusterOperatorApplyConfiguration, opts metav1.ApplyOptions) (result *v1.ClusterOperator, err error) {
+	panic("not supported")
+}
+
+func (com *clusterOperatorMock) ApplyStatus(ctx context.Context, clusterOperator *configv1.ClusterOperatorApplyConfiguration, opts metav1.ApplyOptions) (result *v1.ClusterOperator, err error) {
+	panic("not supported")
 }
