@@ -800,6 +800,12 @@ data:
     #
     # Status of the noobaa service in the addon's namespace.
     - '{__name__="namespace:noobaa_system_health_status:max"}'
+    #
+    # owners: (https://github.com/red-hat-storage/ocs-operator, OCS Operator team)
+    #
+    # ocs_advanced_feature_usage shows whether the cluster is using any of the advanced
+    # features, like external cluster mode or KMS/PV Encryption etc
+    - '{__name__="ocs_advanced_feature_usage"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
