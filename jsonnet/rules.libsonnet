@@ -9,8 +9,13 @@ function(params) {
       rules: [
         {
           expr: |||
-            100 * (count(up == 0 unless on (node) max by (node) (kube_node_spec_unschedulable == 1)) BY (job, namespace, service) /
-              count(up unless on (node) max by (node) (kube_node_spec_unschedulable == 1)) BY (job, namespace, service)) > 10
+            100 * ((
+              1 - sum   by (job, namespace, service) (up and on(namespace, pod) kube_pod_info) /
+                  count by (job, namespace, service) (up and on(namespace, pod) kube_pod_info)
+            ) or (
+              count by (job, namespace, service) (up == 0) /
+              count by (job, namespace, service) (up)
+            )) > 10
           |||,
           alert: 'TargetDown',
           'for': '15m',

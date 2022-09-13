@@ -1,0 +1,176 @@
+rule_files:
+  - ocpbugs-1453.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # NOMINAL CASE
+  # One of the 2 pods is down for 20 minutes.
+  # -> This exceeds the alert time threshold (15 minutes),
+  #    so the alert is fired for a few minutes.
+  - interval: 1m
+    input_series:
+      - series: 'up{namespace="ns", service="service", pod="pod-0"}'
+        values: 1x40 # 1 for all 40 minutes
+      - series: 'up{namespace="ns", service="service", pod="pod-1"}'
+        values: 1x10 0x20 1x10 # 1 for the first 10 minutes, 0 for the next 20 minutes then 1 again for the last 10 minutes
+      - series: 'kube_pod_info{namespace="ns", pod="pod-0"}'
+        values: 1x40 # 1 for all 40 minutes
+      - series: 'kube_pod_info{namespace="ns", pod="pod-1"}'
+        values: 1x40 # 1 for all 40 minutes
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 24m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 27m
+        alertname: TargetDown
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: ns
+            service: service
+          exp_annotations:
+            description: "50% of the /service targets in ns namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support."
+            summary: "Some targets were not reachable from the monitoring server for an extended period of time."
+      - eval_time: 32m
+        alertname: TargetDown
+        exp_alerts:
+
+  # A POD IS SLOWLY REPLACED BUT THE UP METRIC CONTINUES TO EXIST FOR THE OLD POD
+  # The endpoind should be unregistered from the Prometheus config when the old pod goes down; this is an occurence of the following bug:
+  # https://bugzilla.redhat.com/show_bug.cgi?id=1943860
+  # The new pod takes 20 minutes to start:
+  # -> We check that the alert fires for a few minutes.
+  # -> When the new pod starts the alert is dismissed thanks to the workaround implemented in OCPBUGS-1453 / OSD-13070 / OHSS-14889.
+  #    The workaround make sure that the "up" metric is joined with the "kube_pod_info" metric whenever possible.
+  #    This undefines the "up" metric when the pod is down.
+  - interval: 1m
+    input_series:
+      - series: 'up{namespace="ns", service="service", pod="pod-0"}'
+        values: 1x40 # 1 for all 40 minutes
+      - series: 'up{namespace="ns", service="service", pod="pod-1-a"}'
+        values: 1x10 0x30 # 1 for the first 10 minutes, 0 for the next 30 minutes
+      - series: 'up{namespace="ns", service="service", pod="pod-1-b"}'
+        values: 0x30 1x10 # 0 for the first 30 minutes, 1 for the next 10 minutes
+      - series: 'kube_pod_info{namespace="ns", pod="pod-0"}'
+        values: 1x40 # 1 for all 40 minutes
+      - series: 'kube_pod_info{namespace="ns", pod="pod-1-a"}'
+        values: 1x10 _x30 # 1 for the first 10 minutes, absent for the next 30 minutes
+      - series: 'kube_pod_info{namespace="ns", pod="pod-1-b"}'
+        values: _x10 1x30 # absent for the first 10 minutes, 1 for the next 30 minutes
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 24m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 27m
+        alertname: TargetDown
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: ns
+            service: service
+          exp_annotations:
+            description: "50% of the /service targets in ns namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support."
+            summary: "Some targets were not reachable from the monitoring server for an extended period of time."
+      - eval_time: 32m
+        alertname: TargetDown
+        exp_alerts:
+
+  # A POD IS RAPIDLY REPLACED BUT THE UP METRIC CONTINUES TO EXIST FOR THE OLD POD
+  # This time the pod takes less time than the alert threshold to restart:
+  # -> Once again we check that the workaround implemented in the JIRA tickets correctly counters the BugZilla bug.
+  # -> Especially we make sure that the old pod is discarded by the alert once the new pod is up and running.
+  #    Thanks to the workaround the alert is not firing at the end of the test time window.
+  - interval: 1m
+    input_series:
+      - series: 'up{namespace="ns", service="service", pod="pod-0"}'
+        values: 1x40 # 1 for all 40 minutes
+      - series: 'up{namespace="ns", service="service", pod="pod-1-a"}'
+        values: 1x10 0x30 # 1 for the first 10 minutes, 0 for the next 30 minutes
+      - series: 'up{namespace="ns", service="service", pod="pod-1-b"}'
+        values: 0x20 1x20 # 0 for the first 20 minutes, 1 for the next 20 minutes
+      - series: 'kube_pod_info{namespace="ns", pod="pod-0"}'
+        values: 1x40 # 1 for all 40 minutes
+      - series: 'kube_pod_info{namespace="ns", pod="pod-1-a"}'
+        values: 1x10 _x30 # 1 for the first 10 minutes, absent for the next 30 minutes
+      - series: 'kube_pod_info{namespace="ns", pod="pod-1-b"}'
+        values: _x10 1x30 # absent for the first 10 minutes, 1 for the next 30 minutes
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 19m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 27m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 32m
+        alertname: TargetDown
+        exp_alerts:
+
+  # "pod" LABEL DOES NOT EXIST
+  # One of the 2 pods is down for 20 minutes.
+  # -> This exceeds the alert time threshold (15 minutes), so the alert is fired for a few minutes.
+  - interval: 1m
+    input_series:
+      - series: 'up{namespace="ns", service="service", key="value0"}'
+        values: 1x40 # 1 for all 40 minutes
+      - series: 'up{namespace="ns", service="service", key="value1"}'
+        values: 1x10 0x20 1x10 # 1 for the first 10 minutes, 0 for the next 20 minutes then 1 again for the last 10 minutes
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 24m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 27m
+        alertname: TargetDown
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: ns
+            service: service
+          exp_annotations:
+            description: "50% of the /service targets in ns namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support."
+            summary: "Some targets were not reachable from the monitoring server for an extended period of time."
+      - eval_time: 32m
+        alertname: TargetDown
+        exp_alerts:
+
+  # "kube_pod_info" METRIC DOES NOT EXIST
+  # One of the 2 pods is down for 20 minutes.
+  # -> This exceeds the alert time threshold (15 minutes), so the alert is fired for a few minutes.
+  - interval: 1m
+    input_series:
+      - series: 'up{namespace="ns", service="service", pod="pod-0"}'
+        values: 1x40 # 1 for all 40 minutes
+      - series: 'up{namespace="ns", service="service", pod="pod-1"}'
+        values: 1x10 0x20 1x10 # 1 for the first 10 minutes, 0 for the next 20 minutes then 1 again for the last 10 minutes
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 24m
+        alertname: TargetDown
+        exp_alerts:
+      - eval_time: 27m
+        alertname: TargetDown
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: ns
+            service: service
+          exp_annotations:
+            description: "50% of the /service targets in ns namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support."
+            summary: "Some targets were not reachable from the monitoring server for an extended period of time."
+      - eval_time: 32m
+        alertname: TargetDown
+        exp_alerts:
