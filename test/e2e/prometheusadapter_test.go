@@ -60,6 +60,37 @@ func isAPIServiceAvailable(conditions []apiservicesv1.APIServiceCondition) bool 
 }
 
 func TestMetricsAPIAvailability(t *testing.T) {
+	for _, tc := range []struct {
+		cmoConfig string
+	}{
+		{
+			cmoConfig: `prometheusK8s:
+  logLevel: debug
+  k8sPrometheusAdapter:
+    dedicatedServiceMonitors:
+      enabled: false
+`,
+		},
+		{
+			cmoConfig: `prometheusK8s:
+  logLevel: debug
+  k8sPrometheusAdapter:
+    dedicatedServiceMonitors:
+      enabled: true
+`,
+		},
+	} {
+		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.cmoConfig))
+
+		f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+		f.AssertOperatorCondition(configv1.OperatorProgressing, configv1.ConditionFalse)(t)
+		f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+
+		checkMetricsAPIAvailability(t)
+	}
+}
+
+func checkMetricsAPIAvailability(t *testing.T) {
 	ctx := context.Background()
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
@@ -83,6 +114,37 @@ func TestMetricsAPIAvailability(t *testing.T) {
 }
 
 func TestNodeMetricsPresence(t *testing.T) {
+	for _, tc := range []struct {
+		cmoConfig string
+	}{
+		{
+			cmoConfig: `prometheusK8s:
+  logLevel: debug
+  k8sPrometheusAdapter:
+    dedicatedServiceMonitors:
+      enabled: false
+`,
+		},
+		{
+			cmoConfig: `prometheusK8s:
+  logLevel: debug
+  k8sPrometheusAdapter:
+    dedicatedServiceMonitors:
+      enabled: true
+`,
+		},
+	} {
+		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.cmoConfig))
+
+		f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+		f.AssertOperatorCondition(configv1.OperatorProgressing, configv1.ConditionFalse)(t)
+		f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+
+		checkNodeMetricsPresence(t)
+	}
+}
+
+func checkNodeMetricsPresence(t *testing.T) {
 	ctx := context.Background()
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
@@ -121,6 +183,37 @@ func TestNodeMetricsPresence(t *testing.T) {
 }
 
 func TestPodMetricsPresence(t *testing.T) {
+	for _, tc := range []struct {
+		cmoConfig string
+	}{
+		{
+			cmoConfig: `prometheusK8s:
+  logLevel: debug
+  k8sPrometheusAdapter:
+    dedicatedServiceMonitors:
+      enabled: false
+`,
+		},
+		{
+			cmoConfig: `prometheusK8s:
+  logLevel: debug
+  k8sPrometheusAdapter:
+    dedicatedServiceMonitors:
+      enabled: true
+`,
+		},
+	} {
+		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.cmoConfig))
+
+		f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+		f.AssertOperatorCondition(configv1.OperatorProgressing, configv1.ConditionFalse)(t)
+		f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+
+		checkPodMetricsPresence(t)
+	}
+}
+
+func checkPodMetricsPresence(t *testing.T) {
 	var lastErr error
 	ctx := context.Background()
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
