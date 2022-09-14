@@ -421,6 +421,22 @@ func (o *Operator) enqueue(obj interface{}) {
 	o.queue.Add(key)
 }
 
+type proxyConfigSupplier func() (*ProxyConfig, error)
+
+func getProxyReader(config *manifests.Config, proxyConfigSupplier proxyConfigSupplier) manifests.ProxyReader {
+	if config.HTTPProxy() != "" || config.HTTPSProxy() != "" || config.NoProxy() != "" {
+		return config
+	}
+
+	clusterProxyConfig, err := proxyConfigSupplier()
+	if err != nil {
+		klog.Warningf("Proxy config in CMO configmap is empty and fallback to cluster proxy config failed - no proxy will be used: %v", err)
+		return config
+	}
+
+	return clusterProxyConfig
+}
+
 func (o *Operator) sync(key string) error {
 	config, err := o.Config(key)
 	if err != nil {
@@ -431,12 +447,7 @@ func (o *Operator) sync(key string) error {
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
 
-	var proxyConfig manifests.ProxyReader
-	proxyConfig, err = o.loadProxyConfig()
-	if err != nil {
-		klog.Warningf("using proxy config from CMO configmap: %v", err)
-		proxyConfig = config
-	}
+	var proxyConfig = getProxyReader(config, o.loadProxyConfig)
 	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(), proxyConfig, o.assets)
 
 	tl := tasks.NewTaskRunner(
