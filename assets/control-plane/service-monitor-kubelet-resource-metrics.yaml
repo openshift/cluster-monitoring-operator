@@ -15,7 +15,7 @@ spec:
     interval: 30s
     metricRelabelings:
     - action: keep
-      regex: container_cpu_usage_seconds_total|container_memory_working_set_bytes
+      regex: container_cpu_usage_seconds_total|container_memory_working_set_bytes|scrape_error
       sourceLabels:
       - __name__
     - action: replace
