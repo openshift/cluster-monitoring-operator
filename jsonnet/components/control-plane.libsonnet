@@ -142,7 +142,7 @@ function(params)
     },
 
     // This adds a kubelet ServiceMonitor for special use with
-    // prometheus-adapter
+    // prometheus-adapter if enabled by the configuration of the cluster monitoring operator.
     serviceMonitorKubeletResourceMetrics: self.serviceMonitorKubelet {
       metadata+: {
         name: 'kubelet-resource-metrics',
@@ -161,8 +161,9 @@ function(params)
                   {
                     sourceLabels: ['__name__'],
                     action: 'keep',
-                    regex: 'container_cpu_usage_seconds_total|container_memory_working_set_bytes',
+                    regex: 'container_cpu_usage_seconds_total|container_memory_working_set_bytes|scrape_error',
                   },
+                   // To avoid clashes with the cAdvisor metrics, the resource metrics are prefixed with a distinct identifier.
                   {
                     sourceLabels: ['__name__'],
                     targetLabel: '__name__',
