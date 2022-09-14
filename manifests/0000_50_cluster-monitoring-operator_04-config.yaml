@@ -535,6 +535,38 @@ data:
     # consumers: (@openshift/openshift-team-cluster-manager)
     - '{__name__="rhmi_status"}'
     #
+    # owners: (https://github.com/integr8ly, @boomatang)
+    #
+    # rhoam_state captures the currently installed/upgrading RHOAM versions.
+    # Possible label values are:
+    #   status= in progress|complete
+    #   upgrading= true|false
+    #   version= x.y.z
+    # This metric is used by cs-SRE to gain insights into RHOAM version.
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    - '{__name__="status:upgrading:version:rhoam_state:max"}'
+    #
+    # owners: (https://github.com/integr8ly, @boomatang)
+    #
+    # rhoam_critical_alerts count of RHOAM specific critical alerts on a cluster
+    # Possible label values are:
+    #   state= pending|firing
+    # This metric is used by CS-SRE to gain insights into critical alerts on RHOAM cluster.
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    - '{__name__="state:rhoam_critical_alerts:max"}'
+    #
+    # owners: (https://github.com/integr8ly, @boomatang)
+    #
+    # rhoam_warning_alerts count of RHOAM specific warning alerts on a cluster
+    # Possible label values are:
+    #   state= pending|firing
+    # This metric is used by CS-SRE to gain insights into warning alerts on RHOAM cluster.
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    - '{__name__="state:rhoam_warning_alerts:max"}'
+    #
     # owners: (openshift/openshift-team-master, @openshift/openshift-group-b)
     #
     # cluster_legacy_scheduler_policy reports whether the scheduler operator is
