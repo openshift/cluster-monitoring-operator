@@ -158,12 +158,15 @@ function(params)
                 path: '/metrics/resource',
                 honorTimestamps: true,
                 metricRelabelings: [
+                  // Keep only container_cpu_usage_seconds_total and container_memory_working_set_bytes metrics.
+                  // This is all that the Prometheus adapter needs. Node metrics are provided by node_exporter (Linux) or Windows exporter.
+                  // scrape_errors will be useful for troubleshooting.
                   {
                     sourceLabels: ['__name__'],
                     action: 'keep',
                     regex: 'container_cpu_usage_seconds_total|container_memory_working_set_bytes|scrape_error',
                   },
-                   // To avoid clashes with the cAdvisor metrics, the resource metrics are prefixed with a distinct identifier.
+                  // To avoid clashes with the cAdvisor metrics, the resource metrics are prefixed with a distinct identifier.
                   {
                     sourceLabels: ['__name__'],
                     targetLabel: '__name__',
