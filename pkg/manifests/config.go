@@ -299,7 +299,8 @@ type K8sPrometheusAdapter struct {
 // relevant for the pod resource queries of prometheus-adapter.
 // Additionally prometheus-adapter is configured to use these dedicated metrics.
 // Overall this will improve the consistency of prometheus-adapter based CPU
-// usage measurements used by for example the oc adm top pod command or HPAs.
+// usage measurements used by for example the oc adm top pod command or the
+// Horizontal Pod Autoscaler.
 type DedicatedServiceMonitors struct {
 	Enabled bool `json:"enabled"`
 }
