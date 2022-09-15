@@ -6,7 +6,7 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-K8sPrometheusAdapter defines configuration related with Prometheus Adapater
+`K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 
 
 
@@ -15,11 +15,11 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
-|audit|*Audit|Audit defines the audit configuration to be used by the prometheus adapter instance. Possible profile values are: \"metadata, request, requestresponse, none\". default: metadata
+|audit|*Audit|Defines the audit configuration used by the Prometheus Adapter instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`.
 
-|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+|nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
-|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+|tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
 |dedicatedServiceMonitors|*link:dedicatedservicemonitors.adoc[DedicatedServiceMonitors]|
 

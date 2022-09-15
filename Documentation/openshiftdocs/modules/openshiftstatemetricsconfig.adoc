@@ -6,7 +6,7 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-OpenShiftStateMetricsConfig holds configuration related to openshift-state-metrics agent.
+`OpenShiftStateMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 
 
 
@@ -15,9 +15,9 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
-|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+|nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
-|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+|tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
 |===
 

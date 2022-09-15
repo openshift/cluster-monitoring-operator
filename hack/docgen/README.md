@@ -22,7 +22,7 @@ Some fields can be omitted from the documentation if their documentation starts 
 
 ### How to run
 
-To run update the documentation run:
+To update the documentation, run:
 
 ```bash
 make docs --always-make

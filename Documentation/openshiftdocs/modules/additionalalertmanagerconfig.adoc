@@ -6,7 +6,7 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-AdditionalAlertmanagerConfig defines configuration on how a component should communicate with aditional Alertmanager instances.
+`AdditionalAlertmanagerConfig` defines settings for how a component communicates with additional Alertmanager instances.
 
 === Required
 * `apiVersion`
@@ -19,19 +19,19 @@ link:thanosrulerconfig.adoc[ThanosRulerConfig]
 [options="header"]
 |===
 | Property | Type | Description 
-|apiVersion|string|APIVersion defines the api version of Alertmanager.
+|apiVersion|string|Defines the API version of Alertmanager.
 
-|bearerToken|*v1.SecretKeySelector|BearerToken defines the bearer token to use when authenticating to Alertmanager.
+|bearerToken|*v1.SecretKeySelector|Defines the bearer token to use when authenticating to Alertmanager.
 
-|pathPrefix|string|PathPrefix defines the path prefix to add in front of the push endpoint path.
+|pathPrefix|string|Defines the path prefix to add in front of the push endpoint path.
 
-|scheme|string|Scheme the URL scheme to use when talking to Alertmanagers.
+|scheme|string|Defines the URL scheme to use when communicating with Alertmanager instances.
 
-|staticConfigs|[]string|StaticConfigs a list of statically configured Alertmanagers.
+|staticConfigs|[]string|A list of statically configured Alertmanager instances.
 
-|timeout|*string|Timeout defines the timeout used when sending alerts.
+|timeout|*string|Defines the timeout value used when sending alerts.
 
-|tlsConfig|link:tlsconfig.adoc[TLSConfig]|TLSConfig defines the TLS Config to use for alertmanager connection.
+|tlsConfig|link:tlsconfig.adoc[TLSConfig]|Defines the TLS settings to use for Alertmanager connections.
 
 |===
 

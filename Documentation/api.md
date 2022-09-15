@@ -39,7 +39,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 
 #### Description
 
-AdditionalAlertmanagerConfig defines configuration on how a component should communicate with aditional Alertmanager instances.
+`AdditionalAlertmanagerConfig` defines settings for how a component communicates with additional Alertmanager instances.
 
 #### Required
    - ` apiVersion `
@@ -62,7 +62,7 @@ AdditionalAlertmanagerConfig defines configuration on how a component should com
 
 #### Description
 
-AlertmanagerMainConfig defines configuration related with the main Alertmanager instance.
+`AlertmanagerMainConfig` defines settings for the main Alertmanager instance.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -84,7 +84,7 @@ AlertmanagerMainConfig defines configuration related with the main Alertmanager 
 
 #### Description
 
-AlertmanagerUserWorkloadConfig defines configuration for the Alertmanager instance for user-defined projects.
+`AlertmanagerUserWorkloadConfig` defines the settings for the Alertmanager instance used for user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
@@ -105,33 +105,18 @@ AlertmanagerUserWorkloadConfig defines configuration for the Alertmanager instan
 
 #### Description
 
-ClusterMonitoringConfiguration defines configuration that allows users to customise the platform monitoring stack through the cluster-monitoring-config ConfigMap in the openshift-monitoring namespace
+`ClusterMonitoringConfiguration` defines settings that customize the default platform monitoring stack through the `cluster-monitoring-config` ConfigMap in the `openshift-monitoring` namespace.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | AlertmanagerMainConfig defines configuration related with the main Alertmanager instance. |
-| enableUserWorkload | *bool | UserWorkloadEnabled boolean flag to enable monitoring for user-defined projects. |
-| k8sPrometheusAdapter | *[K8sPrometheusAdapter](#k8sprometheusadapter) | K8sPrometheusAdapter defines configuration related with prometheus-adapter |
-| kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | KubeStateMetricsConfig defines configuration related with kube-state-metrics agent |
-| prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | PrometheusK8sConfig defines configuration related with prometheus |
-| prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | PrometheusOperatorConfig defines configuration related with prometheus-operator |
-| openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | OpenShiftMetricsConfig defines configuration related with openshift-state-metrics agent |
-| thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | ThanosQuerierConfig defines configuration related with the Thanos Querier component |
-
-[Back to TOC](#table-of-contents)
-
-## DedicatedServiceMonitors
-
-#### Description
-
-Configuration for prometheus-adapter dedicated Service Monitors. When Enabled is set to true, CMO will deploy and scrape a dedicated Service Monitor, that exposes the kubelet /metrics/resource endpoint. This Service Monitor sets honorTimestamps: true and only keeps metrics that are relevant for the pod resource queries of prometheus-adapter. Additionally prometheus-adapter is configured to use these dedicated metrics. Overall this will improve the consistency of prometheus-adapter based CPU usage measurements used by for example the oc adm top pod command or the Horizontal Pod Autoscaler.
-
-
-<em>appears in: [K8sPrometheusAdapter](#k8sprometheusadapter)</em>
-
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| enabled | bool |  |
+| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | `AlertmanagerMainConfig` defines settings for the main Alertmanager instance. |
+| enableUserWorkload | *bool | `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects. |
+| k8sPrometheusAdapter | *[K8sPrometheusAdapter](#k8sprometheusadapter) | `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component. |
+| kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent. |
+| prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | `PrometheusK8sConfig` defines settings for the Prometheus component. |
+| prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | `PrometheusOperatorConfig` defines settings for the Prometheus Operator component. |
+| openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent. |
+| thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
 
 [Back to TOC](#table-of-contents)
 
@@ -139,7 +124,7 @@ Configuration for prometheus-adapter dedicated Service Monitors. When Enabled is
 
 #### Description
 
-K8sPrometheusAdapter defines configuration related with Prometheus Adapater
+`K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -157,7 +142,7 @@ K8sPrometheusAdapter defines configuration related with Prometheus Adapater
 
 #### Description
 
-KubeStateMetricsConfig defines configuration related with the kube-state-metrics agent.
+`KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -173,7 +158,7 @@ KubeStateMetricsConfig defines configuration related with the kube-state-metrics
 
 #### Description
 
-OpenShiftStateMetricsConfig holds configuration related to openshift-state-metrics agent.
+`OpenShiftStateMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -189,7 +174,7 @@ OpenShiftStateMetricsConfig holds configuration related to openshift-state-metri
 
 #### Description
 
-PrometheusK8sConfig holds configuration related to the Prometheus component.
+`PrometheusK8sConfig` defines settings for the Prometheus component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -216,7 +201,7 @@ PrometheusK8sConfig holds configuration related to the Prometheus component.
 
 #### Description
 
-PrometheusOperatorConfig holds configuration related to Prometheus Operator.
+`PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration), [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
@@ -233,7 +218,7 @@ PrometheusOperatorConfig holds configuration related to Prometheus Operator.
 
 #### Description
 
-PrometheusRestrictedConfig defines configuration related to the Prometheus component that will monitor user-defined projects.
+`PrometheusRestrictedConfig` defines the settings for the Prometheus component that monitors user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
@@ -263,7 +248,7 @@ PrometheusRestrictedConfig defines configuration related to the Prometheus compo
 
 #### Description
 
-RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the BearerToken field removed. In the future other fields might be added here.
+`RemoteWriteSpec` defines the settings for remote write storage.
 
 #### Required
    - ` url `
@@ -272,20 +257,20 @@ RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the Bear
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| authorization | *monv1.SafeAuthorization | Authorization defines the authorization section for remote write |
-| basicAuth | *[monv1.BasicAuth](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#basicauth) | BasicAuth defines configuration for basic authentication for the URL. |
-| bearerTokenFile | string | BearerTokenFile defines the file where the bearer token for remote write resides. |
-| headers | map[string]string | Headers custom HTTP headers to be sent along with each remote write request. Be aware that headers that are set by Prometheus itself can't be overwritten. |
-| metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#metadataconfig) | MetadataConfig configures the sending of series metadata to remote storage. |
-| name | string | Name defines the name of the remote write queue, must be unique if specified. The name is used in metrics and logging in order to differentiate queues. |
-| oauth2 | *monv1.OAuth2 | OAuth2 configures OAuth2 authentication for remote write. |
-| proxyUrl | string | ProxyURL defines an optional proxy URL |
-| queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#queueconfig) | QueueConfig allows tuning of the remote write queue parameters. |
-| remoteTimeout | string | RemoteTimeout defines the timeout for requests to the remote write endpoint. |
-| sigv4 | *monv1.Sigv4 | Sigv4 allows to configures AWS's Signature Verification 4 |
-| tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#safetlsconfig) | TLSConfig defines the TLS configuration to use for remote write. |
-| url | string | URL defines the URL of the endpoint to send samples to. |
-| writeRelabelConfigs | [][monv1.RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#relabelconfig) | WriteRelabelConfigs defines the list of remote write relabel configurations. |
+| authorization | *monv1.SafeAuthorization | Defines the authorization settings for remote write storage. |
+| basicAuth | *[monv1.BasicAuth](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#basicauth) | Defines basic authentication settings for the remote write endpoint URL. |
+| bearerTokenFile | string | Defines the file that contains the bearer token for the remote write endpoint. |
+| headers | map[string]string | Specifies the custom HTTP headers to be sent along with each remote write request. Headers set by Prometheus cannot be overwritten. |
+| metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#metadataconfig) | Defines settings for sending series metadata to remote write storage. |
+| name | string | Defines the name of the remote write queue. This name is used in meetrics and logging to differentiate queues. If specified, this name must be unique. |
+| oauth2 | *monv1.OAuth2 | Defines OAuth2 authentication settings for the remote write endpoint. |
+| proxyUrl | string | Defines an optional proxy URL. |
+| queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
+| remoteTimeout | string | Defines the timeout value for requests to the remote write endpoint. |
+| sigv4 | *monv1.Sigv4 | Defines AWS Signature Verification 4 authentication settings. |
+| tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#safetlsconfig) | Defines TLS authentication settings for the remote write endpoint. |
+| url | string | Defines the URL of the remote write endpoint to which samples will be sent. |
+| writeRelabelConfigs | [][monv1.RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#relabelconfig) | Defines the list of remote write relabel configurations. |
 
 [Back to TOC](#table-of-contents)
 
@@ -293,7 +278,7 @@ RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the Bear
 
 #### Description
 
-TLSConfig configures the options for TLS connections.
+`TLSConfig` configures the settings for TLS connections.
 
 #### Required
    - ` insecureSkipVerify `
@@ -314,7 +299,7 @@ TLSConfig configures the options for TLS connections.
 
 #### Description
 
-ThanosQuerierConfig holds configuration related to Thanos Querier component.
+`ThanosQuerierConfig` defines settings for the Thanos Querier component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -333,7 +318,7 @@ ThanosQuerierConfig holds configuration related to Thanos Querier component.
 
 #### Description
 
-ThanosRulerConfig defines configuration for the Thanos Ruler instance for user-defined projects.
+`ThanosRulerConfig` defines configuration for the Thanos Ruler instance for user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
@@ -355,13 +340,13 @@ ThanosRulerConfig defines configuration for the Thanos Ruler instance for user-d
 
 #### Description
 
-UserWorkloadConfiguration defines configuration that allows users to customise the monitoring stack responsible for user-defined projects through the user-workload-monitoring-config ConfigMap in the openshift-user-workload-monitoring namespace
+`UserWorkloadConfiguration` defines the settings for the monitoring stack responsible for user-defined projects in the `user-workload-monitoring-config` ConfigMap in the `openshift-user-workload-monitoring` namespace.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| alertmanager | *[AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig) | Alertmanager defines configuration for Alertmanager component. |
-| prometheus | *[PrometheusRestrictedConfig](#prometheusrestrictedconfig) | Prometheus defines configuration for Prometheus component. |
-| prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | PrometheusOperator defines configuration for prometheus-operator component. |
-| thanosRuler | *[ThanosRulerConfig](#thanosrulerconfig) | ThanosRuler defines configuration for the Thanos Ruler component |
+| alertmanager | *[AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig) | Defines the settings for the Alertmanager component in user workload monitoring. |
+| prometheus | *[PrometheusRestrictedConfig](#prometheusrestrictedconfig) | Defines the settings for the Prometheus component in user workload monitoring. |
+| prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | Defines the settings for the Prometheus Operator component in user workload monitoring. |
+| thanosRuler | *[ThanosRulerConfig](#thanosrulerconfig) | Defines the settings for the Thanos Ruler component in user workload monitoring. |
 
 [Back to TOC](#table-of-contents)

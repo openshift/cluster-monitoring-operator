@@ -6,7 +6,7 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the BearerToken field removed. In the future other fields might be added here.
+`RemoteWriteSpec` defines the settings for remote write storage.
 
 === Required
 * `url`
@@ -18,33 +18,33 @@ link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]
 [options="header"]
 |===
 | Property | Type | Description 
-|authorization|*monv1.SafeAuthorization|Authorization defines the authorization section for remote write
+|authorization|*monv1.SafeAuthorization|Defines the authorization settings for remote write storage.
 
-|basicAuth|*monv1.BasicAuth|BasicAuth defines configuration for basic authentication for the URL.
+|basicAuth|*monv1.BasicAuth|Defines basic authentication settings for the remote write endpoint URL.
 
-|bearerTokenFile|string|BearerTokenFile defines the file where the bearer token for remote write resides.
+|bearerTokenFile|string|Defines the file that contains the bearer token for the remote write endpoint.
 
-|headers|map[string]string|Headers custom HTTP headers to be sent along with each remote write request. Be aware that headers that are set by Prometheus itself can't be overwritten.
+|headers|map[string]string|Specifies the custom HTTP headers to be sent along with each remote write request. Headers set by Prometheus cannot be overwritten.
 
-|metadataConfig|*monv1.MetadataConfig|MetadataConfig configures the sending of series metadata to remote storage.
+|metadataConfig|*monv1.MetadataConfig|Defines settings for sending series metadata to remote write storage.
 
-|name|string|Name defines the name of the remote write queue, must be unique if specified. The name is used in metrics and logging in order to differentiate queues.
+|name|string|Defines the name of the remote write queue. This name is used in meetrics and logging to differentiate queues. If specified, this name must be unique.
 
-|oauth2|*monv1.OAuth2|OAuth2 configures OAuth2 authentication for remote write.
+|oauth2|*monv1.OAuth2|Defines OAuth2 authentication settings for the remote write endpoint.
 
-|proxyUrl|string|ProxyURL defines an optional proxy URL
+|proxyUrl|string|Defines an optional proxy URL.
 
-|queueConfig|*monv1.QueueConfig|QueueConfig allows tuning of the remote write queue parameters.
+|queueConfig|*monv1.QueueConfig|Allows tuning configuration for remote write queue parameters.
 
-|remoteTimeout|string|RemoteTimeout defines the timeout for requests to the remote write endpoint.
+|remoteTimeout|string|Defines the timeout value for requests to the remote write endpoint.
 
-|sigv4|*monv1.Sigv4|Sigv4 allows to configures AWS's Signature Verification 4
+|sigv4|*monv1.Sigv4|Defines AWS Signature Verification 4 authentication settings.
 
-|tlsConfig|*monv1.SafeTLSConfig|TLSConfig defines the TLS configuration to use for remote write.
+|tlsConfig|*monv1.SafeTLSConfig|Defines TLS authentication settings for the remote write endpoint.
 
-|url|string|URL defines the URL of the endpoint to send samples to.
+|url|string|Defines the URL of the remote write endpoint to which samples will be sent.
 
-|writeRelabelConfigs|[]monv1.RelabelConfig|WriteRelabelConfigs defines the list of remote write relabel configurations.
+|writeRelabelConfigs|[]monv1.RelabelConfig|Defines the list of remote write relabel configurations.
 
 |===
 

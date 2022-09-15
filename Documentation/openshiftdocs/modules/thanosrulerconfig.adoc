@@ -6,7 +6,7 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-ThanosRulerConfig defines configuration for the Thanos Ruler instance for user-defined projects.
+`ThanosRulerConfig` defines configuration for the Thanos Ruler instance for user-defined projects.
 
 
 
@@ -15,21 +15,21 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 [options="header"]
 |===
 | Property | Type | Description 
-|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|AlertmanagerConfigs holds configuration about how the Thanos Ruler component should communicate with aditional Alertmanager instances. default: nil
+|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|Configures how the Thanos Ruler component communicates with additional Alertmanager instances. The default value is `nil`.
 
-|logLevel|string|LogLevel defines the log level for Thanos Ruler. Possible values are: error, warn, info, debug. default: info
+|logLevel|string|Defines the log level setting for Thanos Ruler. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`.
 
-|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+|nodeSelector|map[string]string|Defines the nodes on which the Pods are scheduled.
 
-|resources|*v1.ResourceRequirements|Resources define resources requests and limits for single Pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for single pods.
 
-|retention|string|Retention defines the time duration Thanos Ruler shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d
+|retention|string|Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`.
 
-|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+|tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
-|topologySpreadConstraints|[]v1.TopologySpreadConstraint|TopologySpreadConstraints defines the pod's topology spread constraints.
+|topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines topology spread constraints for the pods.
 
-|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|VolumeClaimTemplate defines persistent storage for Thanos Ruler. It's possible to configure storageClass and size of volume.
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Thanos Ruler. Use this setting to configure the storage class and size of a volume.
 
 |===
 

@@ -6,7 +6,7 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-PrometheusOperatorConfig holds configuration related to Prometheus Operator.
+`PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
 
 
 
@@ -16,11 +16,11 @@ link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 [options="header"]
 |===
 | Property | Type | Description 
-|logLevel|string|LogLevel defines the log level for Prometheus Operator. Possible values are: error, warn, info, debug. default: info
+|logLevel|string|Defines the log level settings for Prometheus Operator. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`.
 
-|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+|nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
-|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+|tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
 |===
 

@@ -6,7 +6,7 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-AlertmanagerMainConfig defines configuration related with the main Alertmanager instance.
+`AlertmanagerMainConfig` defines settings for the main Alertmanager instance.
 
 
 
@@ -15,21 +15,21 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
-|enabled|*bool|Enabled a boolean flag to enable or disable the main Alertmanager instance under openshift-monitoring default: true
+|enabled|*bool|A Boolean flag that enables or disables the main Alertmanager instance in the `openshift-monitoring` namespace. The default value is `true`.
 
-|enableUserAlertmanagerConfig|bool|EnableUserAlertManagerConfig boolean flag to enable or disable user-defined namespaces to be selected for AlertmanagerConfig lookup, by default Alertmanager only looks for configuration in the namespace where it was deployed to. This will only work if the UWM Alertmanager instance is not enabled. default: false
+|enableUserAlertmanagerConfig|bool|A Boolean flag that enables or disables user-defined namespaces to be selected for `AlertmanagerConfig` lookups. By default Alertmanager only looks for configuration settings in the namespace to which it was deployed. This setting only applies if the user workload monitoring instance of Alertmanager is not enabled. The default value is `false`.
 
-|logLevel|string|LogLevel defines the log level for Alertmanager. Possible values are: error, warn, info, debug. default: info
+|logLevel|string|Defines the log level setting for Alertmanager. The possible values are: `error`, `warn`, `info`, `debug`. The default value is `info`.
 
-|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+|nodeSelector|map[string]string|Defines the nodes on which the Pods are scheduled.
 
-|resources|*v1.ResourceRequirements|Resources define resources requests and limits for single Pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for single pods.
 
-|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+|tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
-|topologySpreadConstraints|[]v1.TopologySpreadConstraint|TopologySpreadConstraints defines the pod's topology spread constraints.
+|topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.
 
-|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|VolumeClaimTemplate defines persistent storage for Alertmanager. It's possible to configure storageClass and size of volume.
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Alertmanager. Use this setting to configure the storage class and size of a volume.
 
 |===
 

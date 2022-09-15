@@ -6,19 +6,19 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-UserWorkloadConfiguration defines configuration that allows users to customise the monitoring stack responsible for user-defined projects through the user-workload-monitoring-config ConfigMap in the openshift-user-workload-monitoring namespace
+`UserWorkloadConfiguration` defines the settings for the monitoring stack responsible for user-defined projects in the `user-workload-monitoring-config` ConfigMap in the `openshift-user-workload-monitoring` namespace.
 
 
 [options="header"]
 |===
 | Property | Type | Description 
-|alertmanager|*link:alertmanageruserworkloadconfig.adoc[AlertmanagerUserWorkloadConfig]|Alertmanager defines configuration for Alertmanager component.
+|alertmanager|*link:alertmanageruserworkloadconfig.adoc[AlertmanagerUserWorkloadConfig]|Defines the settings for the Alertmanager component in user workload monitoring.
 
-|prometheus|*link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]|Prometheus defines configuration for Prometheus component.
+|prometheus|*link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]|Defines the settings for the Prometheus component in user workload monitoring.
 
-|prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|PrometheusOperator defines configuration for prometheus-operator component.
+|prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|Defines the settings for the Prometheus Operator component in user workload monitoring.
 
-|thanosRuler|*link:thanosrulerconfig.adoc[ThanosRulerConfig]|ThanosRuler defines configuration for the Thanos Ruler component
+|thanosRuler|*link:thanosrulerconfig.adoc[ThanosRulerConfig]|Defines the settings for the Thanos Ruler component in user workload monitoring.
 
 |===
 

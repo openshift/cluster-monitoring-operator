@@ -6,7 +6,7 @@ include::_attributes/common-attributes.adoc[]
 
 === Description
 
-TLSConfig configures the options for TLS connections.
+`TLSConfig` configures the settings for TLS connections.
 
 === Required
 * `insecureSkipVerify`
@@ -17,15 +17,15 @@ Appears in: link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]
 [options="header"]
 |===
 | Property | Type | Description 
-|ca|*v1.SecretKeySelector|CA defines the CA cert in the Prometheus container to use for the targets.
+|ca|*v1.SecretKeySelector|Defines the CA cert in the Prometheus container to use for the targets.
 
-|cert|*v1.SecretKeySelector|Cert defines the client cert in the Prometheus container to use for the targets.
+|cert|*v1.SecretKeySelector|Defines the client cert in the Prometheus container to use for the targets.
 
-|key|*v1.SecretKeySelector|Key defines the client key in the Prometheus container to use for the targets.
+|key|*v1.SecretKeySelector|Defines the client key in the Prometheus container to use for the targets.
 
-|serverName|string|ServerName used to verify the hostname for the targets.
+|serverName|string|Used to verify the hostname for the targets.
 
-|insecureSkipVerify|bool|InsecureSkipVerify disable target certificate validation.
+|insecureSkipVerify|bool|Disables target certificate validation.
 
 |===
 
