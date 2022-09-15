@@ -1,0 +1,38 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+[id="configmap-reference-for-cluster-monitoring-operator"]
+= ConfigMap reference for Cluster Monitoring Operator
+
+toc::[]
+
+[id="cluster-monitoring-configuration-reference"]
+== Cluster Monitoring configuration reference
+
+Parts of Cluster Monitoring are configurable. Depending on which part of the stack users want to configure, they should edit the following:
+
+- Configuration of OpenShift Container Platform monitoring components lies in a ConfigMap called `cluster-monitoring-config` in the `openshift-monitoring` namespace. Defined by link:#clustermonitoringconfiguration[ClusterMonitoringConfiguration].
+- Configuration of components that monitor user-defined projects lies in a ConfigMap called `user-workload-monitoring-config` in the `openshift-user-workload-monitoring` namespace. Defined by link:#userworkloadconfiguration[UserWorkloadConfiguration].
+
+The configuration file itself is always defined under the `config.yaml` key within the ConfigMap's data.
+
+NOTE: Not all configuration parameters are exposed. Configuring Cluster Monitoring is optional. If the configuration does not exist or is empty or malformed, defaults are used.
+
+=== Table of Contents
+
+* link:modules/additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]
+* link:modules/alertmanagermainconfig.adoc[AlertmanagerMainConfig]
+* link:modules/alertmanageruserworkloadconfig.adoc[AlertmanagerUserWorkloadConfig]
+* link:modules/clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
+* link:modules/k8sprometheusadapter.adoc[K8sPrometheusAdapter]
+* link:modules/kubestatemetricsconfig.adoc[KubeStateMetricsConfig]
+* link:modules/openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]
+* link:modules/prometheusk8sconfig.adoc[PrometheusK8sConfig]
+* link:modules/prometheusoperatorconfig.adoc[PrometheusOperatorConfig]
+* link:modules/prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]
+* link:modules/remotewritespec.adoc[RemoteWriteSpec]
+* link:modules/tlsconfig.adoc[TLSConfig]
+* link:modules/thanosquerierconfig.adoc[ThanosQuerierConfig]
+* link:modules/thanosrulerconfig.adoc[ThanosRulerConfig]
+* link:modules/userworkloadconfiguration.adoc[UserWorkloadConfiguration]

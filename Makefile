@@ -22,13 +22,19 @@ ASSETS=$(shell grep -oh '[^"]*/.*\.yaml' pkg/manifests/manifests.go \
 
 BIN_DIR ?= $(shell pwd)/tmp/bin
 
+# Docgen related variables
+TYPES_TARGET=pkg/manifests/types.go
+K8S_VERSION=$(shell echo -n v1. &&  cat go.mod | grep -w "k8s.io/api" | awk '{ print $$2 }' | cut -d "." -f 2)
+PO_VERSION=$(shell cat go.mod | grep -w "github.com/prometheus-operator/prometheus-operator" | awk '{ print $$2 }' | sort -u)
+
 EMBEDMD_BIN=$(BIN_DIR)/embedmd
 JB_BIN=$(BIN_DIR)/jb
 GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
 JSONNET_BIN=$(BIN_DIR)/jsonnet
 JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
 PROMTOOL_BIN=$(BIN_DIR)/promtool
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN)
+DOCGEN_BIN=$(BIN_DIR)/docgen
+TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -148,6 +154,8 @@ versions: $(GOJSONTOYAML_BIN)
 .PHONY: docs
 docs: $(EMBEDMD_BIN) Documentation/telemetry/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
+	$(DOCGEN_BIN) markdown $(K8S_VERSION) $(PO_VERSION) $(TYPES_TARGET) > Documentation/api.md
+	$(DOCGEN_BIN) asciidocs $(K8S_VERSION) $(PO_VERSION) $(TYPES_TARGET)
 
 Documentation/telemetry/telemeter_query: manifests/0000_50_cluster-monitoring-operator_04-config.yaml hack/telemeter_query.go
 	go generate ./hack/telemeter_query.go > Documentation/telemetry/telemeter_query
@@ -219,3 +227,4 @@ $(JSON_MANIFESTS_DIR):
 $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools.go
 	@cd hack/tools && go list -mod=mod -tags tools -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
+	@GOBIN=$(BIN_DIR) go install $(GO_PKG)/hack/docgen

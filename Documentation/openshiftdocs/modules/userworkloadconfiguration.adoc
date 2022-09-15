@@ -1,0 +1,25 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== UserWorkloadConfiguration
+
+=== Description
+
+UserWorkloadConfiguration defines configuration that allows users to customise the monitoring stack responsible for user-defined projects through the user-workload-monitoring-config ConfigMap in the openshift-user-workload-monitoring namespace
+
+
+[options="header"]
+|===
+| Property | Type | Description 
+|alertmanager|*link:alertmanageruserworkloadconfig.adoc[AlertmanagerUserWorkloadConfig]|Alertmanager defines configuration for Alertmanager component.
+
+|prometheus|*link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]|Prometheus defines configuration for Prometheus component.
+
+|prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|PrometheusOperator defines configuration for prometheus-operator component.
+
+|thanosRuler|*link:thanosrulerconfig.adoc[ThanosRulerConfig]|ThanosRuler defines configuration for the Thanos Ruler component
+
+|===
+
+link:../index.adoc[Back to TOC]

@@ -1,0 +1,46 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== PrometheusK8sConfig
+
+=== Description
+
+PrometheusK8sConfig holds configuration related to the Prometheus component.
+
+
+
+Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|AlertmanagerConfigs holds configuration about how the Prometheus component should communicate with aditional Alertmanager instances. default: nil
+
+|enforcedBodySizeLimit|string|EnforcedBodySizeLimit enforces body size limit of Prometheus scrapes, if a scrape is bigger than the limit it will fail. 3 kinds of values are accepted:\n 1. empty value: no limit\n 2. a value in Prometheus size format, e.g. \"64MB\"\n 3. string \"automatic\", which means the limit will be automatically calculated based on\n    cluster capacity.\ndefault: 64MB
+
+|externalLabels|map[string]string|ExternalLabels defines labels to be added to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager). default: nil
+
+|logLevel|string|LogLevel defines the log level for Prometheus. Possible values are: error, warn, info, debug. default: info
+
+|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+
+|queryLogFile|string|QueryLogFile specifies the file to which PromQL queries are logged. Suports both just a filename in which case they will be saved to an emptyDir volume at /var/log/prometheus, if a full path is given an emptyDir volume will be mounted at that location. Relative paths not supported, also not supported writing to linux std streams. default: \"\"
+
+|remoteWrite|[]link:remotewritespec.adoc[RemoteWriteSpec]|RemoteWrite Holds the remote write configuration, everything from url, authorization to relabeling
+
+|resources|*v1.ResourceRequirements|Resources define resources requests and limits for single Pods.
+
+|retention|string|Retention defines the Time duration Prometheus shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d
+
+|retentionSize|string|RetentionSize defines the maximum amount of disk space used by blocks + WAL. default: nil
+
+|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+
+|topologySpreadConstraints|[]v1.TopologySpreadConstraint|TopologySpreadConstraints defines the pod's topology spread constraints.
+
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to configure storageClass and size of volume.
+
+|===
+
+link:../index.adoc[Back to TOC]

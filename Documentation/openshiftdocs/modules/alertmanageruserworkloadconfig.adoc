@@ -1,0 +1,34 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== AlertmanagerUserWorkloadConfig
+
+=== Description
+
+AlertmanagerUserWorkloadConfig defines configuration for the Alertmanager instance for user-defined projects.
+
+
+
+Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|enabled|bool|Enabled a boolean flag to enable or disable a dedicated instance of Alertmanager for user-defined projects under openshift-user-workload-monitoring default: false
+
+|enableAlertmanagerConfig|bool|EnableAlertmanagerConfig a boolean flag to enable or disable user-defined namespaces to be selected for AlertmanagerConfig lookup, by default Alertmanager only looks for configuration in the namespace where it was deployed to default: false
+
+|logLevel|string|LogLevel defines the log level for Alertmanager. Possible values are: error, warn, info, debug. default: info
+
+|resources|*v1.ResourceRequirements|Resources define resources requests and limits for single Pods.
+
+|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+
+|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|VolumeClaimTemplate defines persistent storage for Alertmanager. It's possible to configure storageClass and size of volume.
+
+|===
+
+link:../index.adoc[Back to TOC]
