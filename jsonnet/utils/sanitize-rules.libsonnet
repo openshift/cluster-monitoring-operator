@@ -252,6 +252,15 @@ local patchedRules = [
     ],
   },
   {
+    name: 'kubernetes-system-apiserver',
+    rules: [
+      {
+        alert: 'KubeAggregatedAPIDown',
+        'for': '15m',
+      },
+    ],
+  },
+  {
     name: 'prometheus',
     rules: [
       {
