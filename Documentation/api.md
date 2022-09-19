@@ -22,6 +22,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [AlertmanagerMainConfig](#alertmanagermainconfig)
 * [AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig)
 * [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)
+* [DedicatedServiceMonitors](#dedicatedservicemonitors)
 * [K8sPrometheusAdapter](#k8sprometheusadapter)
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
@@ -119,6 +120,21 @@ ClusterMonitoringConfiguration defines configuration that allows users to custom
 
 [Back to TOC](#table-of-contents)
 
+## DedicatedServiceMonitors
+
+#### Description
+
+Configuration for prometheus-adapter dedicated Service Monitors. When Enabled is set to true, CMO will deploy and scrape a dedicated Service Monitor, that exposes the kubelet /metrics/resource endpoint. This Service Monitor sets honorTimestamps: true and only keeps metrics that are relevant for the pod resource queries of prometheus-adapter. Additionally prometheus-adapter is configured to use these dedicated metrics. Overall this will improve the consistency of prometheus-adapter based CPU usage measurements used by for example the oc adm top pod command or the Horizontal Pod Autoscaler.
+
+
+<em>appears in: [K8sPrometheusAdapter](#k8sprometheusadapter)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool |  |
+
+[Back to TOC](#table-of-contents)
+
 ## K8sPrometheusAdapter
 
 #### Description
@@ -133,6 +149,7 @@ K8sPrometheusAdapter defines configuration related with Prometheus Adapater
 | audit | *Audit | Audit defines the audit configuration to be used by the prometheus adapter instance. Possible profile values are: \"metadata, request, requestresponse, none\". default: metadata |
 | nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
+| dedicatedServiceMonitors | *[DedicatedServiceMonitors](#dedicatedservicemonitors) |  |
 
 [Back to TOC](#table-of-contents)
 
