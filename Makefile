@@ -152,7 +152,7 @@ versions: $(GOJSONTOYAML_BIN)
 	./hack/generate-versions.sh
 
 .PHONY: docs
-docs: $(EMBEDMD_BIN) Documentation/telemetry/telemeter_query
+docs: $(EMBEDMD_BIN) $(DOCGEN_BIN) Documentation/telemetry/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
 	$(DOCGEN_BIN) markdown $(K8S_VERSION) $(PO_VERSION) $(TYPES_TARGET) > Documentation/api.md
 	$(DOCGEN_BIN) asciidocs $(K8S_VERSION) $(PO_VERSION) $(TYPES_TARGET)
