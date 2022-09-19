@@ -289,10 +289,10 @@ type K8sPrometheusAdapter struct {
 	// Prometheus Adapter audit logging related configuration
 	Audit *Audit `json:"audit"`
 
-	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors"`
+	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
 }
 
-// Dedicated Service Monitors configuration
+// Configuration for prometheus-adapter dedicated Service Monitors.
 // When Enabled is set to true, CMO will deploy and scrape a dedicated
 // Service Monitor, that exposes the kubelet /metrics/resource endpoint. This
 // Service Monitor sets honorTimestamps: true and only keeps metrics that are
@@ -302,7 +302,7 @@ type K8sPrometheusAdapter struct {
 // usage measurements used by for example the oc adm top pod command or the
 // Horizontal Pod Autoscaler.
 type DedicatedServiceMonitors struct {
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // Audit profile configurations
