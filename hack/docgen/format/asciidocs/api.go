@@ -25,27 +25,43 @@ import (
 )
 
 const (
-	commonHeaders = `:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+	commonHeaders = `// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 `
 	firstParagraph = commonHeaders + `
 [id="configmap-reference-for-cluster-monitoring-operator"]
-= ConfigMap reference for Cluster Monitoring Operator
+= ConfigMap reference for the Cluster Monitoring Operator
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
 
 toc::[]
 
-[id="cluster-monitoring-configuration-reference"]
-== Cluster Monitoring configuration reference
+[id="cluster-monitoring-operator-configuration-reference"]
+== Cluster Monitoring Operator configuration reference
 
-Parts of Cluster Monitoring are configurable. Depending on which part of the stack users want to configure, they should edit the following:
+Parts of {product-title} cluster monitoring are configurable.
+The API is accessible by setting parameters defined in various `ConfigMap` objects. 
 
-- Configuration of OpenShift Container Platform monitoring components lies in a ConfigMap called ` + "`cluster-monitoring-config`" + ` in the ` + "`openshift-monitoring`" + ` namespace. Defined by link:#clustermonitoringconfiguration[ClusterMonitoringConfiguration].
-- Configuration of components that monitor user-defined projects lies in a ConfigMap called ` + "`user-workload-monitoring-config`" + ` in the ` + "`openshift-user-workload-monitoring`" + ` namespace. Defined by link:#userworkloadconfiguration[UserWorkloadConfiguration].
+Depending on which part of the stack you want to configure, edit the following:
 
-The configuration file itself is always defined under the ` + "`config.yaml`" + ` key within the ConfigMap's data.
+- To configure monitoring components, edit the config map named ` + "`cluster-monitoring-config`" + ` in the ` + "`openshift-monitoring`" + ` namespace. 
+These configurations are defined by link:#clustermonitoringconfiguration[ClusterMonitoringConfiguration].
+- To configure monitoring components that monitor user-defined projects, edit the config map named ` + "`user-workload-monitoring-config`" + ` in the ` + "`openshift-user-workload-monitoring`" + ` namespace. 
+These configurations are defined by link:#userworkloadconfiguration[UserWorkloadConfiguration].
 
-NOTE: Not all configuration parameters are exposed. Configuring Cluster Monitoring is optional. If the configuration does not exist or is empty or malformed, defaults are used.`
+The configuration file itself is always defined under the ` + "`config.yaml`" + ` key in the config map data.
+
+[NOTE]
+====
+Not all configuration parameters are exposed. 
+Configuring cluster monitoring is optional. 
+If a configuration does not exist or is empty or malformed, default values are used.
+====
+`
 	pathToDocs    = "Documentation/openshiftdocs/"
 	indexFile     = "index.adoc"
 	modulesFolder = "modules/"
