@@ -1,0 +1,45 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/name: kubelet
+    app.kubernetes.io/part-of: openshift-monitoring
+    k8s-app: kubelet
+  name: kubelet-resource-metrics
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    honorTimestamps: true
+    interval: 30s
+    metricRelabelings:
+    - action: keep
+      regex: container_cpu_usage_seconds_total|container_memory_working_set_bytes|scrape_error
+      sourceLabels:
+      - __name__
+    - action: replace
+      replacement: pa_$1
+      sourceLabels:
+      - __name__
+      targetLabel: __name__
+    path: /metrics/resource
+    port: https-metrics
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    scrapeTimeout: 30s
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+  jobLabel: k8s-app
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      k8s-app: kubelet

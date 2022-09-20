@@ -25,6 +25,7 @@ NOTE: Not all configuration parameters are exposed. Configuring Cluster Monitori
 * link:modules/alertmanagermainconfig.adoc[AlertmanagerMainConfig]
 * link:modules/alertmanageruserworkloadconfig.adoc[AlertmanagerUserWorkloadConfig]
 * link:modules/clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
+* link:modules/dedicatedservicemonitors.adoc[DedicatedServiceMonitors]
 * link:modules/k8sprometheusadapter.adoc[K8sPrometheusAdapter]
 * link:modules/kubestatemetricsconfig.adoc[KubeStateMetricsConfig]
 * link:modules/openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]

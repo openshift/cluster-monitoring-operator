@@ -21,6 +21,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
 
+|dedicatedServiceMonitors|*link:dedicatedservicemonitors.adoc[DedicatedServiceMonitors]|
+
 |===
 
 link:../index.adoc[Back to TOC]

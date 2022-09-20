@@ -2,6 +2,7 @@
 
 ## 4.12
 - [#1624](https://github.com/openshift/cluster-monitoring-operator/pull/1624) Add option to specify TopologySpreadConstraints for Prometheus, Alertmanager, and ThanosRuler.
+- [#1752](https://github.com/openshift/cluster-monitoring-operator/pull/1752) Add option to improve consistency of prometheus-adapter CPU and RAM time series.
 
 ## 4.11
 - [#1652](https://github.com/openshift/cluster-monitoring-operator/pull/1652) Double scrape interval for all CMO controlled ServiceMonitors on single node deployments

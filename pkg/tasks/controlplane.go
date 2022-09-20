@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -53,6 +54,23 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smk)
 	if err != nil {
 		return errors.Wrap(err, "reconciling control-plane kubelet ServiceMonitor failed")
+	}
+
+	smkpa, err := t.factory.ControlPlaneKubeletServiceMonitorPA()
+	if err != nil {
+		return errors.Wrap(err, "initializing prometheus-adapter dedicated kubelet ServiceMonitor failed")
+	}
+
+	if t.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, smkpa)
+		if err != nil {
+			return errors.Wrap(err, "reconciling prometheus-adapter dedicated kubelet ServiceMonitor failed")
+		}
+	} else {
+		err = t.client.DeleteServiceMonitor(ctx, smkpa)
+		if err != nil {
+			return errors.Wrap(err, "deleting prometheus-adapter dedicated kubelet ServiceMonitor failed")
+		}
 	}
 
 	sme, err := t.factory.ControlPlaneEtcdServiceMonitor()

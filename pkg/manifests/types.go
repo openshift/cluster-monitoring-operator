@@ -86,6 +86,21 @@ type K8sPrometheusAdapter struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Tolerations defines the Pods tolerations.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+
+	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
+}
+
+// Configuration for prometheus-adapter dedicated Service Monitors.
+// When Enabled is set to true, CMO will deploy and scrape a dedicated
+// Service Monitor, that exposes the kubelet /metrics/resource endpoint. This
+// Service Monitor sets honorTimestamps: true and only keeps metrics that are
+// relevant for the pod resource queries of prometheus-adapter.
+// Additionally prometheus-adapter is configured to use these dedicated metrics.
+// Overall this will improve the consistency of prometheus-adapter based CPU
+// usage measurements used by for example the oc adm top pod command or the
+// Horizontal Pod Autoscaler.
+type DedicatedServiceMonitors struct {
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // KubeStateMetricsConfig defines configuration related with the kube-state-metrics agent.

@@ -1,0 +1,22 @@
+:_content-type: ASSEMBLY
+include::_attributes/common-attributes.adoc[]
+:context: configmap-reference-for-cluster-monitoring-operator
+
+== DedicatedServiceMonitors
+
+=== Description
+
+Configuration for prometheus-adapter dedicated Service Monitors. When Enabled is set to true, CMO will deploy and scrape a dedicated Service Monitor, that exposes the kubelet /metrics/resource endpoint. This Service Monitor sets honorTimestamps: true and only keeps metrics that are relevant for the pod resource queries of prometheus-adapter. Additionally prometheus-adapter is configured to use these dedicated metrics. Overall this will improve the consistency of prometheus-adapter based CPU usage measurements used by for example the oc adm top pod command or the Horizontal Pod Autoscaler.
+
+
+
+Appears in: link:k8sprometheusadapter.adoc[K8sPrometheusAdapter]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|enabled|bool|
+
+|===
+
+link:../index.adoc[Back to TOC]
