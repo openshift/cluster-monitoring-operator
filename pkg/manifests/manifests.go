@@ -62,6 +62,12 @@ const (
 
 	platformAlertmanagerService     = "alertmanager-main"
 	userWorkloadAlertmanagerService = "alertmanager-user-workload"
+
+	// TrustedCABundleKey is the Configmap key holding the CA bundle.
+	TrustedCABundleKey = "ca-bundle.crt"
+
+	grpcTLSVolumeName            = "secret-grpc-tls"
+	prometheusCABundleVolumeName = "prometheus-trusted-ca-bundle"
 )
 
 var (
@@ -285,11 +291,10 @@ var (
 	KubeRbacProxyTLSCipherSuitesFlag                     = "--tls-cipher-suites="
 	KubeRbacProxyMinTLSVersionFlag                       = "--tls-min-version="
 
+	// TODO(simonpasquier): remove?
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
 	AuthProxyRedirectURLFlag  = "-redirect-url="
-
-	TrustedCABundleKey = "ca-bundle.crt"
 
 	AdditionalAlertmanagerConfigSecretKey               = "alertmanager-configs.yaml"
 	PrometheusK8sAdditionalAlertmanagerConfigSecretName = "prometheus-k8s-additional-alertmanager-configs"
@@ -1747,8 +1752,9 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 			p.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}
 	}
+
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
-		Name: "secret-grpc-tls",
+		Name: grpcTLSVolumeName,
 		VolumeSource: v1.VolumeSource{
 			Secret: &v1.SecretVolumeSource{
 				SecretName: grpcTLS.GetName(),
@@ -1757,22 +1763,25 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	})
 
 	if trustedCABundleCM != nil {
-		volumeName := "prometheus-trusted-ca-bundle"
-		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
+
+		volume := trustedCABundleVolume(trustedCABundleCM.Name, prometheusCABundleVolumeName)
 		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
 			Key:  TrustedCABundleKey,
 			Path: "tls-ca-bundle.pem",
 		})
 		p.Spec.Volumes = append(p.Spec.Volumes, volume)
 
+		volumeMount := trustedCABundleVolumeMount(prometheusCABundleVolumeName)
+
 		// we only need the trusted CA bundle in:
 		// 1. Prometheus, because users might want to configure external remote write.
+		p.Spec.VolumeMounts = append(p.Spec.VolumeMounts, volumeMount)
 		// 2. In OAuth proxy, as that communicates externally when executing the OAuth handshake.
 		for i, container := range p.Spec.Containers {
-			if container.Name == "prometheus-proxy" || container.Name == "prometheus" {
+			if container.Name == "prometheus-proxy" {
 				p.Spec.Containers[i].VolumeMounts = append(
 					p.Spec.Containers[i].VolumeMounts,
-					trustedCABundleVolumeMount(volumeName),
+					volumeMount,
 				)
 			}
 		}
@@ -1985,7 +1994,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	}
 
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
-		Name: "secret-grpc-tls",
+		Name: grpcTLSVolumeName,
 		VolumeSource: v1.VolumeSource{
 			Secret: &v1.SecretVolumeSource{
 				SecretName: grpcTLS.GetName(),
@@ -3359,7 +3368,7 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 	}
 
 	d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, v1.Volume{
-		Name: "secret-grpc-tls",
+		Name: grpcTLSVolumeName,
 		VolumeSource: v1.VolumeSource{
 			Secret: &v1.SecretVolumeSource{
 				SecretName: grpcTLS.GetName(),
@@ -3814,9 +3823,9 @@ func (f *Factory) ThanosRulerCustomResource(
 	if grpcTLS == nil {
 		return nil, errors.New("could not generate thanos ruler CRD: GRPC TLS secret was not found")
 	}
-	secretName := "secret-grpc-tls"
+
 	secretVolume := v1.Volume{
-		Name: secretName,
+		Name: grpcTLSVolumeName,
 		VolumeSource: v1.VolumeSource{
 			Secret: &v1.SecretVolumeSource{
 				SecretName: grpcTLS.GetName(),

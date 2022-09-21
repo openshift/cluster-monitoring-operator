@@ -268,14 +268,6 @@ function(params)
         arbitraryFSAccessThroughSMs+: {
           deny: true,
         },
-        thanos+: {
-          resources: {
-            requests: {
-              cpu: '1m',
-              memory: '100Mi',
-            },
-          },
-        },
         alerting+: {
           alertmanagers:
             std.map(
@@ -316,6 +308,26 @@ function(params)
         ruleNamespaceSelector: cfg.namespaceSelector,
         listenLocal: true,
         priorityClassName: 'openshift-user-critical',
+        thanos+: {
+          grpcServerTlsConfig: {
+            caFile: '/etc/tls/grpc/ca.crt',
+            certFile: '/etc/tls/grpc/server.crt',
+            keyFile: '/etc/tls/grpc/server.key',
+          },
+          listenLocal: true,
+          volumeMounts: [
+            {
+              mountPath: '/etc/tls/grpc',
+              name: 'secret-grpc-tls',
+            },
+          ],
+          resources: {
+            requests: {
+              cpu: '1m',
+              memory: '17Mi',
+            },
+          },
+        },
         containers: [
           {
             name: 'kube-rbac-proxy-federate',
@@ -461,36 +473,6 @@ function(params)
               {
                 mountPath: '/etc/kube-rbac-proxy',
                 name: 'secret-' + $.kubeRbacProxyMetricsSecret.metadata.name,
-              },
-            ],
-            securityContext: {
-              allowPrivilegeEscalation: false,
-              capabilities: {
-                drop: ['ALL'],
-              },
-            },
-          },
-          {
-            name: 'thanos-sidecar',
-            args: [
-              'sidecar',
-              '--prometheus.url=http://localhost:9090/',
-              '--tsdb.path=/prometheus',
-              '--http-address=127.0.0.1:10902',
-              '--grpc-server-tls-cert=/etc/tls/grpc/server.crt',
-              '--grpc-server-tls-key=/etc/tls/grpc/server.key',
-              '--grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt',
-            ],
-            resources: {
-              requests: {
-                memory: '17Mi',
-                cpu: '1m',
-              },
-            },
-            volumeMounts: [
-              {
-                mountPath: '/etc/tls/grpc',
-                name: 'secret-grpc-tls',
               },
             ],
             securityContext: {

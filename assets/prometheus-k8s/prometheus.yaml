@@ -137,23 +137,6 @@ spec:
       name: secret-prometheus-k8s-thanos-sidecar-tls
     - mountPath: /etc/kube-rbac-proxy
       name: secret-kube-rbac-proxy
-  - args:
-    - sidecar
-    - --prometheus.url=http://localhost:9090/
-    - --tsdb.path=/prometheus
-    - --http-address=127.0.0.1:10902
-    - --grpc-server-tls-cert=/etc/tls/grpc/server.crt
-    - --grpc-server-tls-key=/etc/tls/grpc/server.key
-    - --grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt
-    name: thanos-sidecar
-    resources:
-      requests:
-        cpu: 1m
-        memory: 25Mi
-    volumeMounts:
-    - mountPath: /etc/tls/grpc
-      name: secret-grpc-tls
-  - name: prometheus
   enableFeatures: []
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
@@ -205,10 +188,18 @@ spec:
       openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
   thanos:
+    grpcServerTlsConfig:
+      caFile: /etc/tls/grpc/ca.crt
+      certFile: /etc/tls/grpc/server.crt
+      keyFile: /etc/tls/grpc/server.key
     image: quay.io/thanos/thanos:v0.28.0
+    listenLocal: true
     resources:
       requests:
         cpu: 1m
-        memory: 100Mi
+        memory: 25Mi
     version: 0.28.0
+    volumeMounts:
+    - mountPath: /etc/tls/grpc
+      name: secret-grpc-tls
   version: 2.38.0

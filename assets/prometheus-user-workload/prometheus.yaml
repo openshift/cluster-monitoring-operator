@@ -141,27 +141,6 @@ spec:
       readOnly: true
     - mountPath: /etc/kube-rbac-proxy
       name: secret-kube-rbac-proxy-metrics
-  - args:
-    - sidecar
-    - --prometheus.url=http://localhost:9090/
-    - --tsdb.path=/prometheus
-    - --http-address=127.0.0.1:10902
-    - --grpc-server-tls-cert=/etc/tls/grpc/server.crt
-    - --grpc-server-tls-key=/etc/tls/grpc/server.key
-    - --grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt
-    name: thanos-sidecar
-    resources:
-      requests:
-        cpu: 1m
-        memory: 17Mi
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-        - ALL
-    volumeMounts:
-    - mountPath: /etc/tls/grpc
-      name: secret-grpc-tls
   enableFeatures: []
   enforcedNamespaceLabel: namespace
   externalLabels: {}
@@ -246,10 +225,18 @@ spec:
       - "false"
   serviceMonitorSelector: {}
   thanos:
+    grpcServerTlsConfig:
+      caFile: /etc/tls/grpc/ca.crt
+      certFile: /etc/tls/grpc/server.crt
+      keyFile: /etc/tls/grpc/server.key
     image: quay.io/thanos/thanos:v0.28.0
+    listenLocal: true
     resources:
       requests:
         cpu: 1m
-        memory: 100Mi
+        memory: 17Mi
     version: 0.28.0
+    volumeMounts:
+    - mountPath: /etc/tls/grpc
+      name: secret-grpc-tls
   version: 2.38.0
