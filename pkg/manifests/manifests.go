@@ -1516,7 +1516,10 @@ func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
 	return r, nil
 }
 
-func (f *Factory) SharingConfig(promHost, amHost, thanosHost *url.URL) *v1.ConfigMap {
+func (f *Factory) SharingConfig(
+	promHost, amHost, thanosHost *url.URL,
+	alertmanagerUserWorkloadHost, alertmanagerTenancyHost string,
+) *v1.ConfigMap {
 	data := map[string]string{}
 
 	// Configmap keys need to include "public" to indicate that they are public values.
@@ -1532,6 +1535,8 @@ func (f *Factory) SharingConfig(promHost, amHost, thanosHost *url.URL) *v1.Confi
 	if thanosHost != nil {
 		data["thanosPublicURL"] = fmt.Sprintf("%s://%s", thanosHost.Scheme, thanosHost.Host)
 	}
+	data["alertmanagerUserWorkloadHost"] = alertmanagerUserWorkloadHost
+	data["alertmanagerTenancyHost"] = alertmanagerTenancyHost
 
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
