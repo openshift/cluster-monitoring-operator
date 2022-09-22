@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"net/url"
@@ -628,7 +629,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.TelemeterClientDeployment(nil)
+	_, err = f.TelemeterClientDeployment(nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3125,7 +3126,7 @@ func TestTelemeterConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.TelemeterClientDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+	d, err := f.TelemeterClientDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, &v1.Secret{Data: map[string][]byte{"token": []byte("test")}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3148,6 +3149,15 @@ func TestTelemeterConfiguration(t *testing.T) {
 		}
 	}
 
+	hash := sha256.New()
+	expectedTokenHash := string(hash.Sum([]byte("test")))
+
+	if tokenHash, ok := d.Spec.Template.Annotations["telemeter-token-hash"]; !ok {
+		t.Fatalf("telemeter-token-hash annotation not set in telemeter-client deployment")
+	} else if expectedTokenHash != tokenHash {
+		t.Fatalf("incorrect token hash on telemeter-token-hash annotation, \n got %s, \nwant %s", tokenHash, expectedTokenHash)
+	}
+
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
 		KubeRbacProxyTLSCipherSuitesFlag,
 		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
@@ -3161,6 +3171,87 @@ func TestTelemeterConfiguration(t *testing.T) {
 	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
+}
+
+func TestTelemeterClientSecret(t *testing.T) {
+	for _, tc := range []struct {
+		name                 string
+		config               string
+		existingData         map[string][]byte
+		expectedData         map[string][]byte
+		updateToSaltExpected bool
+	}{
+		{
+			name: "No existing secret",
+			config: `telemeterClient:
+  token: mySecretToken
+`,
+			existingData: map[string][]byte{},
+			expectedData: map[string][]byte{
+				"token": []byte("mySecretToken"),
+			},
+			updateToSaltExpected: true,
+		},
+		{
+			name: "Existing secret, salt gets deleted",
+			config: `telemeterClient:
+  token: mySecretToken
+`,
+			existingData: map[string][]byte{
+				"token": []byte("mySecretToken"),
+			},
+			expectedData: map[string][]byte{
+				"token": []byte("mySecretToken"),
+			},
+			updateToSaltExpected: true,
+		},
+		{
+			name: "Existing secret, secret changes",
+			config: `telemeterClient:
+  token: myNewSecretToken
+`,
+			existingData: map[string][]byte{
+				"token": []byte("mySecretToken"),
+				"salt":  []byte("1234456789ABCDEF"),
+			},
+			expectedData: map[string][]byte{
+				"token": []byte("myNewSecretToken"),
+			},
+			updateToSaltExpected: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			generatedS, err := f.TelemeterClientSecret()
+			if err != nil {
+				t.Fatal(err)
+			}
+			byteT, exists := generatedS.Data["token"]
+			newToken := string(byteT)
+			if !exists {
+				t.Fatalf("generated TelemeterClientSecret does not contain a token")
+			}
+			byteS, exists := generatedS.Data["salt"]
+			newSalt := string(byteS)
+			if !exists {
+				t.Fatalf("generated TelemeterClientSecret does not contain a salt")
+			}
+			if string(tc.expectedData["token"]) != newToken {
+				t.Fatalf("generated token is different from expected, expected %s, got %s", tc.expectedData["token"], newToken)
+			}
+			if tc.updateToSaltExpected && string(tc.existingData["salt"]) == newSalt {
+				t.Fatalf("generated salt remain the same expected it to be different, got %s", newSalt)
+			} else if !tc.updateToSaltExpected && string(tc.expectedData["salt"]) != newSalt {
+				t.Fatalf("generated salt is different from expected, expected %s, got %s", tc.expectedData["salt"], newSalt)
+			}
+		})
+	}
+
 }
 
 func TestThanosRulerConfiguration(t *testing.T) {
