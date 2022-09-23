@@ -175,6 +175,7 @@ var (
 	PrometheusAdapterClusterRoleServerResources         = "prometheus-adapter/cluster-role-server-resources.yaml"
 	PrometheusAdapterClusterRoleAggregatedMetricsReader = "prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml"
 	PrometheusAdapterConfigMap                          = "prometheus-adapter/config-map.yaml"
+	PrometheusAdapterConfigMapDedicatedSM               = "prometheus-adapter/config-map-dedicated-service-monitors.yaml"
 	PrometheusAdapterConfigMapPrometheus                = "prometheus-adapter/configmap-prometheus.yaml"
 	PrometheusAdapterConfigMapAuditPolicy               = "prometheus-adapter/configmap-audit-profiles.yaml"
 	PrometheusAdapterDeployment                         = "prometheus-adapter/deployment.yaml"
@@ -287,9 +288,10 @@ var (
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
-	ControlPlanePrometheusRule        = "control-plane/prometheus-rule.yaml"
-	ControlPlaneKubeletServiceMonitor = "control-plane/service-monitor-kubelet.yaml"
-	ControlPlaneEtcdServiceMonitor    = "control-plane/service-monitor-etcd.yaml"
+	ControlPlanePrometheusRule          = "control-plane/prometheus-rule.yaml"
+	ControlPlaneKubeletServiceMonitor   = "control-plane/service-monitor-kubelet.yaml"
+	ControlPlaneKubeletServiceMonitorPA = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
+	ControlPlaneEtcdServiceMonitor      = "control-plane/service-monitor-etcd.yaml"
 )
 
 var (
@@ -2162,6 +2164,17 @@ func (f *Factory) PrometheusAdapterConfigMap() (*v1.ConfigMap, error) {
 	return cm, nil
 }
 
+func (f *Factory) PrometheusAdapterConfigMapDedicated() (*v1.ConfigMap, error) {
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMapDedicatedSM))
+	if err != nil {
+		return nil, err
+	}
+
+	cm.Namespace = f.namespace
+
+	return cm, nil
+}
+
 func (f *Factory) PrometheusAdapterConfigMapAuditPolicy() (*v1.ConfigMap, error) {
 	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMapAuditPolicy))
 	if err != nil {
@@ -2200,7 +2213,7 @@ func validateAuditProfile(profile auditv1.Level) error {
 	}
 }
 
-func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string) (*appsv1.Deployment, error) {
+func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string, configName string) (*appsv1.Deployment, error) {
 	dep, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusAdapterDeployment))
 	if err != nil {
 		return nil, err
@@ -2271,6 +2284,16 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
 					SecretName: apiAuthSecretName,
+				},
+			},
+		},
+		v1.Volume{
+			Name: "config",
+			VolumeSource: v1.VolumeSource{
+				ConfigMap: &v1.ConfigMapVolumeSource{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: configName,
+					},
 				},
 			},
 		},
@@ -3221,6 +3244,17 @@ func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error
 
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
 	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ControlPlaneKubeletServiceMonitorPA() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletServiceMonitorPA))
 	if err != nil {
 		return nil, err
 	}

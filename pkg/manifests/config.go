@@ -288,6 +288,21 @@ type K8sPrometheusAdapter struct {
 
 	// Prometheus Adapter audit logging related configuration
 	Audit *Audit `json:"audit"`
+
+	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
+}
+
+// Configuration for prometheus-adapter dedicated Service Monitors.
+// When Enabled is set to true, CMO will deploy and scrape a dedicated
+// Service Monitor, that exposes the kubelet /metrics/resource endpoint. This
+// Service Monitor sets honorTimestamps: true and only keeps metrics that are
+// relevant for the pod resource queries of prometheus-adapter.
+// Additionally prometheus-adapter is configured to use these dedicated metrics.
+// Overall this will improve the consistency of prometheus-adapter based CPU
+// usage measurements used by for example the oc adm top pod command or the
+// Horizontal Pod Autoscaler.
+type DedicatedServiceMonitors struct {
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // Audit profile configurations
@@ -395,6 +410,9 @@ func (c *Config) applyDefaults() {
 
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
+	}
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors == nil {
+		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors = &DedicatedServiceMonitors{}
 	}
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}
