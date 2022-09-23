@@ -339,6 +339,9 @@ func New(
 		controllerRef,
 	)
 
+	// Set event recorder
+	client.EventRecorder(eventRecorder)
+
 	csrController, err := csr.NewClientCertificateController(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",

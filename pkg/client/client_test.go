@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	secv1 "github.com/openshift/api/security/v1"
+	"github.com/openshift/library-go/pkg/operator/events"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -1021,11 +1022,13 @@ func TestCreateOrUpdateServiceAccount(t *testing.T) {
 			var c Client
 			if tc.initialAnnotations == nil && tc.initialLabels == nil {
 				c = Client{
-					kclient: fake.NewSimpleClientset(),
+					kclient:       fake.NewSimpleClientset(),
+					eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 				}
 			} else {
 				c = Client{
-					kclient: fake.NewSimpleClientset(sa.DeepCopy()),
+					kclient:       fake.NewSimpleClientset(sa.DeepCopy()),
+					eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 				}
 				_, err := c.kclient.CoreV1().ServiceAccounts(ns).Get(ctx, sa.Name, metav1.GetOptions{})
 				if err != nil {

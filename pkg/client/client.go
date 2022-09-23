@@ -33,7 +33,8 @@ import (
 	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
-	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
+	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -82,6 +83,7 @@ type Client struct {
 	mclient               monitoring.Interface
 	eclient               apiextensionsclient.Interface
 	aggclient             aggregatorclient.Interface
+	eventRecorder         events.Recorder
 }
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string) (*Client, error) {
@@ -192,6 +194,12 @@ func ApiExtensionsClient(eclient apiextensionsclient.Interface) Option {
 func AggregatorClient(aggclient aggregatorclient.Interface) Option {
 	return func(c *Client) {
 		c.aggclient = aggclient
+	}
+}
+
+func EventRecorder(eventRecorder events.Recorder) Option {
+	return func(c *Client) {
+		c.eventRecorder = eventRecorder
 	}
 }
 
@@ -1614,27 +1622,7 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
-	sClient := c.kclient.CoreV1().ServiceAccounts(sa.GetNamespace())
-	existing, err := sClient.Get(ctx, sa.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := sClient.Create(ctx, sa, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ServiceAccount object failed")
-	}
-	if err != nil {
-		return errors.Wrap(err, "retrieving ServiceAccount object failed")
-	}
-	modified := resourcemerge.BoolPtr(false)
-	existingCopy := existing.DeepCopy()
-
-	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, sa.ObjectMeta)
-	// Only update ServiceAccounts if Metadata is updated
-	if !*modified {
-		return nil
-	}
-
-	// Here we are using existingCopy on purpose otherwise we would generate
-	// a new SA token and dockercfg
-	_, err = sClient.Update(ctx, existingCopy, metav1.UpdateOptions{})
+	_, _, err := resourceapply.ApplyServiceAccount(ctx, c.kclient.CoreV1(), c.eventRecorder, sa)
 	return errors.Wrap(err, "patching ServiceAccount object failed")
 }
 
