@@ -20,6 +20,24 @@ function(params)
   local pa = prometheusAdapter(cfg);
 
   pa {
+    configMapDedicatedServiceMonitors: pa.configMap {
+      metadata+: {
+        name: 'adapter-config-dedicated-sm',
+      },
+      data: {
+        'config.yaml': std.manifestYamlDoc(pa._config.config {
+          resourceRules+: {
+            cpu+: {
+              containerQuery: std.strReplace(pa._config.config.resourceRules.cpu.containerQuery, 'container_cpu_usage_seconds_total', cfg.prometheusAdapterMetricPrefix + 'container_cpu_usage_seconds_total'),
+            },
+            memory+: {
+              containerQuery: std.strReplace(pa._config.config.resourceRules.memory.containerQuery, 'container_memory_working_set_bytes', cfg.prometheusAdapterMetricPrefix + 'container_memory_working_set_bytes'),
+            },
+          },
+        }),
+      },
+    },
+
     clusterRoleAggregatedMetricsReader+:
       {
         metadata+: {
@@ -149,12 +167,6 @@ function(params)
                 {
                   name: 'tmpfs',
                   emptyDir: {},
-                },
-                {
-                  name: 'config',
-                  configMap: {
-                    name: 'adapter-config',
-                  },
                 },
                 {
                   name: prometheusAdapterPrometheusConfig,

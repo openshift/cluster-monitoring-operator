@@ -2,6 +2,7 @@
 
 ## 4.10
 
+- [#1777](https://github.com/openshift/cluster-monitoring-operator/pull/1777) Add option to improve consistency of prometheus-adapter CPU and RAM time series.
 - [#1509](https://github.com/openshift/cluster-monitoring-operator/pull/1509) add NLB usage metrics for network edge
 - [#1299](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose /api/v1/labels and /api/v1/labels/*/values endpoint on the Thanos query tenancy port.
 - [#1529](https://github.com/openshift/cluster-monitoring-operator/pull/1299) Expose /api/v1/series endpoint on the Thanos query tenancy port.

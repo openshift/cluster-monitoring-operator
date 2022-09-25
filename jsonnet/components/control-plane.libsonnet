@@ -141,6 +141,46 @@ function(params)
       },
     },
 
+    // This adds a kubelet ServiceMonitor for special use with
+    // prometheus-adapter if enabled by the configuration of the cluster monitoring operator.
+    serviceMonitorKubeletResourceMetrics: self.serviceMonitorKubelet {
+      metadata+: {
+        name: 'kubelet-resource-metrics',
+      },
+      spec+: {
+        endpoints:
+          std.filterMap(
+            function(e)
+              'path' in e && e.path == '/metrics/cadvisor'
+            ,
+            function(e)
+              e {
+                path: '/metrics/resource',
+                honorTimestamps: true,
+                metricRelabelings: [
+                  // Keep only container_cpu_usage_seconds_total and container_memory_working_set_bytes metrics.
+                  // This is all that the Prometheus adapter needs. Node metrics are provided by node_exporter (Linux) or Windows exporter.
+                  // scrape_errors will be useful for troubleshooting.
+                  {
+                    sourceLabels: ['__name__'],
+                    action: 'keep',
+                    regex: 'container_cpu_usage_seconds_total|container_memory_working_set_bytes|scrape_error',
+                  },
+                  // To avoid clashes with the cAdvisor metrics, the resource metrics are prefixed with a distinct identifier.
+                  {
+                    sourceLabels: ['__name__'],
+                    targetLabel: '__name__',
+                    replacement: std.format('%s$1', cfg.prometheusAdapterMetricPrefix),
+                    action: 'replace',
+                  },
+                ],
+              }
+            ,
+            super.endpoints,
+          ),
+      },
+    },
+
     // This avoids creating service monitors which are already managed by the respective operators.
     serviceMonitorApiserver:: {},
     serviceMonitorKubeScheduler:: {},
