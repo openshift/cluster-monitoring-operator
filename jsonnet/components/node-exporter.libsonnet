@@ -165,7 +165,7 @@ function(params)
                       // gather that data (especially for bare metal clusters), and
                       // add flags to collect the node_cpu_info metric + metrics
                       // from the text file.
-                      args: [a for a in c.args if a != '--no-collector.hwmon'] +
+                      args: [a for a in c.args if (a != '--no-collector.hwmon') && !std.startsWith(a, '--collector.netclass.ignored-devices')] +
                             [
                               '--collector.cpu.info',
                               '--collector.textfile.directory=' + textfileDir,
@@ -177,6 +177,9 @@ function(params)
                               // https://bugzilla.redhat.com/show_bug.cgi?id=1972076
                               // https://github.com/prometheus/node_exporter/issues/1880
                               '--no-collector.cpufreq',
+                              // ignore OVNK network interfaces, too.
+                              // https://issues.redhat.com/browse/OCPBUGS-1321
+                              '--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|tun[0-9]*|br[0-9]*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext)$',
                             ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts+: [{
