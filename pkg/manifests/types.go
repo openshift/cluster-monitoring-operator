@@ -135,6 +135,35 @@ type PrometheusK8sConfig struct {
 	// automatically calculated based on cluster capacity.
 	// The default value is empty, which indicates no limit.
 	EnforcedBodySizeLimit string `json:"enforcedBodySizeLimit,omitempty"`
+	// EnforcedLabelLimit per-scrape limit on the number of labels accepted for a sample. If more than this
+	// number of labels are present post metric-relabeling, the entire scrape will be treated as
+	// failed. 0 means no limit.
+	// default: 0
+	EnforcedLabelLimit *uint64 `json:"enforcedLabelLimit,omitempty"`
+	// EnforcedLabelNameLengthLimit per-scrape limit on the length of labels name that will be accepted for
+	// a sample. If a label name is longer than this number post metric-relabeling, the entire scrape
+	// will be treated as failed. 0 means no limit.
+	// default: 0
+	EnforcedLabelNameLengthLimit *uint64 `json:"enforcedLabelNameLengthLimit,omitempty"`
+	// EnforcedLabelValueLengthLimit per-scrape limit on the length of labels value that will be accepted for
+	// a sample. If a label value is longer than this number post metric-relabeling, the entire scrape will
+	// be treated as failed. 0 means no limit.
+	// default: 0
+	EnforcedLabelValueLengthLimit *uint64 `json:"enforcedLabelValueLengthLimit,omitempty"`
+	// EnforcedSampleLimit defines a global limit on the number of scraped samples that will be accepted.
+	// This overrides any SampleLimit set per ServiceMonitor or/and PodMonitor. It is meant to be
+	// used by admins to enforce the SampleLimit to keep the overall number of samples/series under the
+	// desired limit. Note that if SampleLimit is lower that value will be taken instead.
+	// default: 0
+	EnforcedSampleLimit *uint64 `json:"enforcedSampleLimit,omitempty"`
+	// EnforcedTargetLimit defines a global limit on the number of scraped targets. This overrides
+	// any TargetLimit set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to
+	// enforce the TargetLimit to keep the overall number of targets under the desired limit. Note
+	// that if TargetLimit is lower, that value will be taken instead, except if either value is
+	// zero, in which case the non-zero value will be used. If both values are zero, no limit is
+	// enforced.
+	// default: 0
+	EnforcedTargetLimit *uint64 `json:"enforcedTargetLimit,omitempty"`
 	// Defines labels to be added to any time series or alerts when
 	// communicating with external systems such as federation, remote storage,
 	// and Alertmanager. By default, no labels are added.

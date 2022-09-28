@@ -240,6 +240,11 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 	)
 
 	data := fmt.Sprintf(`prometheusK8s:
+  enforcedSampleLimit: 50000
+  enforcedTargetLimit: 10
+  enforcedLabelLimit: 500
+  enforcedLabelNameLengthLimit: 50
+  enforcedLabelValueLengthLimit: 600
   logLevel: debug
   retention: 10h
   retentionSize: 15GB
@@ -292,6 +297,26 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert remote write url value in set in CR",
 			assertion: assertRemoteWriteWasSet(f.Ns, crName, "https://test.remotewrite.com/api/write"),
+		},
+		{
+			name:      "assert enforced sample limit is configured",
+			assertion: assertEnforcedSampleLimit(f.Ns, crName, 50000),
+		},
+		{
+			name:      "assert enforced target limit is configured",
+			assertion: assertEnforcedTargetLimit(f.Ns, crName, 10),
+		},
+		{
+			name:      "assert enforced label limit is configured",
+			assertion: assertEnforcedLabelLimit(f.Ns, crName, 500),
+		},
+		{
+			name:      "assert enforced label name length limit is configured",
+			assertion: assertEnforcedLabelNameLengthLimit(f.Ns, crName, 50),
+		},
+		{
+			name:      "assert enforced label value length limit",
+			assertion: assertEnforcedLabelValueLengthLimit(f.Ns, crName, 600),
 		},
 		{
 			name:      "assert query log file value is set and correct",
@@ -634,6 +659,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		},
 		Data: map[string]string{
 			"config.yaml": fmt.Sprintf(`prometheus:
+  enforcedSampleLimit: 50000
   enforcedTargetLimit: 10
   enforcedLabelLimit: 500
   enforcedLabelNameLengthLimit: 50
@@ -698,20 +724,24 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 			assertion: assertRemoteWriteWasSet(f.UserWorkloadMonitoringNs, crName, "https://test.remotewrite.com/api/write"),
 		},
 		{
+			name:      "assert enforced sample limit is configured",
+			assertion: assertEnforcedSampleLimit(f.UserWorkloadMonitoringNs, crName, 50000),
+		},
+		{
 			name:      "assert enforced target limit is configured",
-			assertion: assertEnforcedTargetLimit(10),
+			assertion: assertEnforcedTargetLimit(f.UserWorkloadMonitoringNs, crName, 10),
 		},
 		{
 			name:      "assert enforced label limit is configured",
-			assertion: assertEnforcedLabelLimit(500),
+			assertion: assertEnforcedLabelLimit(f.UserWorkloadMonitoringNs, crName, 500),
 		},
 		{
 			name:      "assert enforced label name length limit is configured",
-			assertion: assertEnforcedLabelNameLengthLimit(50),
+			assertion: assertEnforcedLabelNameLengthLimit(f.UserWorkloadMonitoringNs, crName, 50),
 		},
 		{
 			name:      "assert enforced label value length limit",
-			assertion: assertEnforcedLabelValueLengthLimit(600),
+			assertion: assertEnforcedLabelValueLengthLimit(f.UserWorkloadMonitoringNs, crName, 600),
 		},
 		{
 			name:      "assert query log file value is set and correct",
@@ -960,11 +990,35 @@ func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing
 	}
 }
 
-func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
+func assertEnforcedSampleLimit(namespace, crName string, limit uint64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, crName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if prom.Spec.EnforcedSampleLimit == nil {
+				return errors.New("EnforcedSampleLimit not set")
+			} else if *prom.Spec.EnforcedSampleLimit != limit {
+				return fmt.Errorf("expected EnforcedSampleLimit to be %d, but got %d", limit, *prom.Spec.EnforcedSampleLimit)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for EnforcedSampleLimit configuration: %v", err)
+		}
+	}
+}
+
+func assertEnforcedTargetLimit(namespace, crName string, limit uint64) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, crName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -984,11 +1038,11 @@ func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelLimit(namespace, crName string, limit uint64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, crName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -1008,11 +1062,11 @@ func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelNameLengthLimit(namespace, crName string, limit uint64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, crName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -1032,11 +1086,11 @@ func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelValueLengthLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelValueLengthLimit(namespace, crName string, limit uint64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, crName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}

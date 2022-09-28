@@ -1797,6 +1797,26 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		p.Spec.EnforcedBodySizeLimit = monv1.ByteSize(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
 	}
 
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedSampleLimit != nil {
+		p.Spec.EnforcedSampleLimit = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedSampleLimit
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedTargetLimit != nil {
+		p.Spec.EnforcedTargetLimit = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedTargetLimit
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedLabelLimit != nil {
+		p.Spec.EnforcedLabelLimit = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedLabelLimit
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedLabelNameLengthLimit != nil {
+		p.Spec.EnforcedLabelNameLengthLimit = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedLabelNameLengthLimit
+	}
+
+	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedLabelValueLengthLimit != nil {
+		p.Spec.EnforcedLabelValueLengthLimit = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedLabelValueLengthLimit
+	}
+
 	return p, nil
 }
 
