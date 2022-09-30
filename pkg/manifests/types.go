@@ -54,9 +54,9 @@ type AlertmanagerMainConfig struct {
 	// The default value is `true`.
 	Enabled *bool `json:"enabled,omitempty"`
 	// A Boolean flag that enables or disables user-defined namespaces
-	// to be selected for `AlertmanagerConfig` lookups. By default Alertmanager only
-	// looks for configuration settings in the namespace to which it was deployed. This setting only applies
-	// if the user workload monitoring instance of Alertmanager is not enabled.
+	// to be selected for `AlertmanagerConfig` lookups. This setting only 
+	// applies if the user workload monitoring instance of Alertmanager 
+	// is not enabled.
 	// The default value is `false`.
 	EnableUserAlertManagerConfig bool `json:"enableUserAlertmanagerConfig,omitempty"`
 	// Defines the log level setting for Alertmanager.
@@ -72,7 +72,8 @@ type AlertmanagerMainConfig struct {
 	// Defines a pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Defines persistent storage for Alertmanager. Use this setting to
-	// configure the storage class and size of a volume.
+	// configure the persistent volume claim, including storage class, volume
+	// size, and name.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
@@ -124,11 +125,11 @@ type PrometheusK8sConfig struct {
 	// a numeric value in Prometheus size format (such as `64MB`), or
 	// the string `automatic`, which indicates that the limit will be 
 	// automatically calculated based on cluster capacity.
-	// The default value is `64MB`.
+	// The default value is empty, which indicates no limit.
 	EnforcedBodySizeLimit string `json:"enforcedBodySizeLimit,omitempty"`
 	// Defines labels to be added to any time series or alerts when communicating
 	// with external systems such as federation, remote storage, and Alertmanager.
-	// The default value is `nil`.
+	// By default, no labels are added.
 	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
 	// Defines the log level setting for Prometheus.
 	// The possible values are: `error`, `warn`, `info`, and `debug`.
@@ -143,7 +144,7 @@ type PrometheusK8sConfig struct {
 	// an `emptyDir` volume will be mounted and the queries saved. 
 	// Relative paths are not supported, nor is writing to 
 	// Linux `std` text streams.
-	// The default value is blank.
+	// By default, PromQL queries are not logged.
 	QueryLogFile string `json:"queryLogFile,omitempty"`
 	// Defines the remote write configuration, including URL, authentication, 
 	// and relabeling settings.
@@ -158,7 +159,7 @@ type PrometheusK8sConfig struct {
 	Retention string `json:"retention,omitempty"`
 	// Defines the maximum amount of disk space used by data blocks plus the 
 	// write-ahead log (WAL).
-	// The default value is `nil`.
+	// By default, no limit is defined.
 	RetentionSize string `json:"retentionSize,omitempty"`
 	// OmitFromDoc
 	TelemetryMatches []string `json:"-"`
@@ -167,7 +168,8 @@ type PrometheusK8sConfig struct {
 	// Defines the pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
-	// configure the storage class and size of a volume.
+	// configure the persistent volume claim, including storage class, 
+	// volume size and name.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
@@ -230,9 +232,8 @@ type AlertmanagerUserWorkloadConfig struct {
 	// Alertmanager for user-defined projects in the `openshift-user-workload-monitoring` namespace.
 	// The default value is `false`.
 	Enabled bool `json:"enabled,omitempty"`
-	// A Boolean flag to enable or disable user-defined namespaces to be selected
-	// for `AlertmanagerConfig` lookup. By default, Alertmanager only looks for configuration
-	// in the namespace to which it was deployed.
+	// A Boolean flag to enable or disable user-defined namespaces 
+	// to be selected for `AlertmanagerConfig` lookup. 
 	// The default value is `false`.
 	EnableAlertmanagerConfig bool `json:"enableAlertmanagerConfig,omitempty"`
 	// Defines the log level setting for Alertmanager for user workload monitoring.
@@ -246,7 +247,8 @@ type AlertmanagerUserWorkloadConfig struct {
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines persistent storage for Alertmanager. Use this setting to
-	// configure the storage class and size of a volume.
+	// configure the persistent volume claim, including storage class, 
+	// volume size and name.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
@@ -255,7 +257,7 @@ type AlertmanagerUserWorkloadConfig struct {
 type PrometheusRestrictedConfig struct {
 	// Configures how the Prometheus component communicates
 	// with additional Alertmanager instances.
-	// The default value is `nil`.
+	// By default, no instance is configured.
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
 	// Specifies a per-scrape limit on the number of labels accepted for a sample. 
 	// If the number of labels exceeds this limit after metric relabeling, 
@@ -273,26 +275,25 @@ type PrometheusRestrictedConfig struct {
 	// The default value is `0`, which means that no limit is set.
 	EnforcedLabelValueLengthLimit *uint64 `json:"enforcedLabelValueLengthLimit,omitempty"`
 	// Specifies a global limit on the number of scraped samples that will be accepted.
-	// This setting overrides any `SampleLimit` value set per `ServiceMonitor` or `PodMonitor`. 
-	// Administrators can use this setting to enforce a `SampleLimit` value and 
-	// keep the overall number of samples or series under the set limit. 
-	// However, if the `SampleLimit` value is lower than this limit,
-	// the `SampleLimit` value is used instead.
-	// The default value is `0`.
+	// This setting overrides the `SampleLimit` value set in any user-defined 
+	// `ServiceMonitor` or `PodMonitor` object if the value is greater than 
+	// `enforcedSampleLimit`. 
+	// Administrators can use this setting to keep the overall number of 
+	// samples under control.
+	// The default value is `0`, which means that no limit is set.
 	EnforcedSampleLimit *uint64 `json:"enforcedSampleLimit,omitempty"`
-	// Specifies a global limit on the number of scraped targets. This value overrides
-	// any `TargetLimit` value set per `ServiceMonitor` or `PodMonitor`. 
-	// Administrators can use this setting to enforce a `TargetLimit` value and
-	// keep the overall number of targets under the set limit. Note
-	// However, if the `TargetLimit` value is lower than this limit, 
-	// the `TargetLimit` value is used instead. If one of the values is
-	// `0`, the non-zero value is used. If both values are 
-	// `0`, no limit is set.
+	// Specifies a global limit on the number of scraped targets. 
+	// This setting overrides the `TargetLimit` value set in any user-defined 
+	// `ServiceMonitor` or `PodMonitor` object if the value is greater than 
+	// `enforcedSampleLimit`. 
+	// Administrators can use this setting to keep the overall number of 
+	// targets under control.
 	// The default value is `0`.
 	EnforcedTargetLimit *uint64 `json:"enforcedTargetLimit,omitempty"`
-	// Defines labels to be added to any time series or alert when 
-	// communicating with external systems such as federation, remote storage, and Alertmanager.
-	// The default value is `nil`.
+	// Defines labels to be added to any time series or alerts when 
+	// communicating with external systems such as federation, remote storage, 
+	// and Alertmanager.
+	// By default, no labels are added.
 	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
 	// Defines the log level setting for Prometheus.
 	// The possible values are `error`, `warn`, `info`, and `debug`.
@@ -307,7 +308,7 @@ type PrometheusRestrictedConfig struct {
 	// an `emptyDir` volume will be mounted and the queries saved. 
 	// Relative paths are not supported, nor is writing to 
 	// Linux `std` text streams.
-	// The default value is `nil`.
+	// By default, PromQL queries are not logged.
 	QueryLogFile string `json:"queryLogFile,omitempty"`
 	// Defines the remote write configuration, including URL, authentication, 
 	// and relabeling settings.
@@ -365,15 +366,21 @@ type ThanosRulerConfig struct {
 // `AdditionalAlertmanagerConfig` defines settings for how a component 
 // communicates with additional Alertmanager instances.
 type AdditionalAlertmanagerConfig struct {
-	// Defines the API version of Alertmanager.
+	// Defines the API version of Alertmanager. Possible values are `v1` or
+	// `v2`.
+	// The default is `v2`.
 	APIVersion string `json:"apiVersion"`
-	// Defines the bearer token to use when authenticating to Alertmanager.
+	// Defines the secret key reference containing the bearer token 
+	// to use when authenticating to Alertmanager.
 	BearerToken *v1.SecretKeySelector `json:"bearerToken,omitempty"`
 	// Defines the path prefix to add in front of the push endpoint path.
 	PathPrefix string `json:"pathPrefix,omitempty"`
-	// Defines the URL scheme to use when communicating with Alertmanager instances.
+	// Defines the URL scheme to use when communicating with Alertmanager 
+	// instances.
+	// Possible values are `http` or `https`. The default value is `http`.
 	Scheme string `json:"scheme,omitempty"`
-	// A list of statically configured Alertmanager instances.
+	// A list of statically configured Alertmanager endpoints in the form
+	// of `<hosts>:<port>`.
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
 	// Defines the timeout value used when sending alerts.
 	Timeout *string `json:"timeout,omitempty"`
@@ -387,7 +394,10 @@ type RemoteWriteSpec struct {
 	Authorization *monv1.SafeAuthorization `json:"authorization,omitempty"`
 	// Defines basic authentication settings for the remote write endpoint URL.
 	BasicAuth *monv1.BasicAuth `json:"basicAuth,omitempty"`
-	// Defines the file that contains the bearer token for the remote write endpoint.
+	// Defines the file that contains the bearer token for the remote write 
+	// endpoint.
+	// However, because you cannot mount secrets in a pod, in practice
+	// you can only reference the token of the service account.
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
 	// Specifies the custom HTTP headers to be sent along with each remote write request.
 	// Headers set by Prometheus cannot be overwritten.
@@ -395,7 +405,7 @@ type RemoteWriteSpec struct {
 	// Defines settings for sending series metadata to remote write storage.
 	MetadataConfig *monv1.MetadataConfig `json:"metadataConfig,omitempty"`
 	// Defines the name of the remote write queue. This name is used in
-	// meetrics and logging to differentiate queues.
+	// metrics and logging to differentiate queues.
 	// If specified, this name must be unique.
 	Name string `json:"name,omitempty"`
 	// Defines OAuth2 authentication settings for the remote write endpoint.
@@ -418,14 +428,18 @@ type RemoteWriteSpec struct {
 
 // `TLSConfig` configures the settings for TLS connections.
 type TLSConfig struct {
-	// Defines the CA cert in the Prometheus container to use for the targets.
+	// Defines the secret key reference containing the Certificate Authority 
+	// (CA) to use for the remote host.
 	CA *v1.SecretKeySelector `json:"ca,omitempty"`
-	// Defines the client cert in the Prometheus container to use for the targets.
+	// Defines the secret key reference containing the public certificate to 
+	// use for the remote host.
 	Cert *v1.SecretKeySelector `json:"cert,omitempty"`
-	// Defines the client key in the Prometheus container to use for the targets.
+	// Defines the secret key reference containing the private key to use for 
+	// the remote host.
 	Key *v1.SecretKeySelector `json:"key,omitempty"`
-	// Used to verify the hostname for the targets.
+	// Used to verify the hostname on the returned certificate.
 	ServerName string `json:"serverName,omitempty"`
-	// Disables target certificate validation.
+	// When set to `true`, disables the verification of the remote host's 
+	// certificate and name.
 	InsecureSkipVerify bool `json:"insecureSkipVerify"`
 }

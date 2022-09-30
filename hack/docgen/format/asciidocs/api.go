@@ -44,7 +44,7 @@ toc::[]
 == Cluster Monitoring Operator configuration reference
 
 Parts of {product-title} cluster monitoring are configurable.
-The API is accessible by setting parameters defined in various `ConfigMap` objects. 
+The API is accessible by setting parameters defined in various config maps. 
 
 Depending on which part of the stack you want to configure, edit the following:
 
