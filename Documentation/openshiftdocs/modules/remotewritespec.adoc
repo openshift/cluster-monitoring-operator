@@ -1,6 +1,9 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == RemoteWriteSpec
 
@@ -22,13 +25,13 @@ link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]
 
 |basicAuth|*monv1.BasicAuth|Defines basic authentication settings for the remote write endpoint URL.
 
-|bearerTokenFile|string|Defines the file that contains the bearer token for the remote write endpoint.
+|bearerTokenFile|string|Defines the file that contains the bearer token for the remote write endpoint. However, because you cannot mount secrets in a pod, in practice you can only reference the token of the service account.
 
 |headers|map[string]string|Specifies the custom HTTP headers to be sent along with each remote write request. Headers set by Prometheus cannot be overwritten.
 
 |metadataConfig|*monv1.MetadataConfig|Defines settings for sending series metadata to remote write storage.
 
-|name|string|Defines the name of the remote write queue. This name is used in meetrics and logging to differentiate queues. If specified, this name must be unique.
+|name|string|Defines the name of the remote write queue. This name is used in metrics and logging to differentiate queues. If specified, this name must be unique.
 
 |oauth2|*monv1.OAuth2|Defines OAuth2 authentication settings for the remote write endpoint.
 

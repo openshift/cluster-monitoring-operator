@@ -1,6 +1,9 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == AdditionalAlertmanagerConfig
 
@@ -19,15 +22,15 @@ link:thanosrulerconfig.adoc[ThanosRulerConfig]
 [options="header"]
 |===
 | Property | Type | Description 
-|apiVersion|string|Defines the API version of Alertmanager.
+|apiVersion|string|Defines the API version of Alertmanager. Possible values are `v1` or `v2`. The default is `v2`.
 
-|bearerToken|*v1.SecretKeySelector|Defines the bearer token to use when authenticating to Alertmanager.
+|bearerToken|*v1.SecretKeySelector|Defines the secret key reference containing the bearer token to use when authenticating to Alertmanager.
 
 |pathPrefix|string|Defines the path prefix to add in front of the push endpoint path.
 
-|scheme|string|Defines the URL scheme to use when communicating with Alertmanager instances.
+|scheme|string|Defines the URL scheme to use when communicating with Alertmanager instances. Possible values are `http` or `https`. The default value is `http`.
 
-|staticConfigs|[]string|A list of statically configured Alertmanager instances.
+|staticConfigs|[]string|A list of statically configured Alertmanager endpoints in the form of `<hosts>:<port>`.
 
 |timeout|*string|Defines the timeout value used when sending alerts.
 

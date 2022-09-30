@@ -1,6 +1,9 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == AlertmanagerMainConfig
 
@@ -17,7 +20,7 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 | Property | Type | Description 
 |enabled|*bool|A Boolean flag that enables or disables the main Alertmanager instance in the `openshift-monitoring` namespace. The default value is `true`.
 
-|enableUserAlertmanagerConfig|bool|A Boolean flag that enables or disables user-defined namespaces to be selected for `AlertmanagerConfig` lookups. By default Alertmanager only looks for configuration settings in the namespace to which it was deployed. This setting only applies if the user workload monitoring instance of Alertmanager is not enabled. The default value is `false`.
+|enableUserAlertmanagerConfig|bool|A Boolean flag that enables or disables user-defined namespaces to be selected for `AlertmanagerConfig` lookups. This setting only applies if the user workload monitoring instance of Alertmanager is not enabled. The default value is `false`.
 
 |logLevel|string|Defines the log level setting for Alertmanager. The possible values are: `error`, `warn`, `info`, `debug`. The default value is `info`.
 
@@ -29,7 +32,7 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.
 
-|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Alertmanager. Use this setting to configure the storage class and size of a volume.
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Alertmanager. Use this setting to configure the persistent volume claim, including storage class, volume size, and name.
 
 |===
 

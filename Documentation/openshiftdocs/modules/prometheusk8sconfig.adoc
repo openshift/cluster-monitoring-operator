@@ -1,6 +1,9 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == PrometheusK8sConfig
 
@@ -17,15 +20,15 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 | Property | Type | Description 
 |additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|Configures how the Prometheus component communicates with additional Alertmanager instances. The default value is `nil`.
 
-|enforcedBodySizeLimit|string|Enforces a body size limit for Prometheus scraped metrics. If a scraped metric is larger than the limit, the scrape will fail. The following values are valid: an empty value to specify no limit, a numeric value in Prometheus size format (such as `64MB`), or the string `automatic`, which indicates that the limit will be automatically calculated based on cluster capacity. The default value is `64MB`.
+|enforcedBodySizeLimit|string|Enforces a body size limit for Prometheus scraped metrics. If a scraped metric is larger than the limit, the scrape will fail. The following values are valid: an empty value to specify no limit, a numeric value in Prometheus size format (such as `64MB`), or the string `automatic`, which indicates that the limit will be automatically calculated based on cluster capacity. The default value is empty, which indicates no limit.
 
-|externalLabels|map[string]string|Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. The default value is `nil`.
+|externalLabels|map[string]string|Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. By default, no labels are added.
 
 |logLevel|string|Defines the log level setting for Prometheus. The possible values are: `error`, `warn`, `info`, and `debug`. The default value is `info`.
 
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
-|queryLogFile|string|Specifies the file to which PromQL queries are logged. This setting can be either a filename, in which case the queries are saved to an `emptyDir` volume at `/var/log/prometheus`, or a full path to a location where an `emptyDir` volume will be mounted and the queries saved. Relative paths are not supported, nor is writing to Linux `std` text streams. The default value is blank.
+|queryLogFile|string|Specifies the file to which PromQL queries are logged. This setting can be either a filename, in which case the queries are saved to an `emptyDir` volume at `/var/log/prometheus`, or a full path to a location where an `emptyDir` volume will be mounted and the queries saved. Relative paths are not supported, nor is writing to Linux `std` text streams. By default, PromQL queries are not logged.
 
 |remoteWrite|[]link:remotewritespec.adoc[RemoteWriteSpec]|Defines the remote write configuration, including URL, authentication, and relabeling settings.
 
@@ -33,13 +36,13 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |retention|string|Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`.
 
-|retentionSize|string|Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). The default value is `nil`.
+|retentionSize|string|Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). By default, no limit is defined.
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
 |topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines the pod's topology spread constraints.
 
-|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Prometheus. Use this setting to configure the storage class and size of a volume.
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Prometheus. Use this setting to configure the persistent volume claim, including storage class, volume size and name.
 
 |===
 

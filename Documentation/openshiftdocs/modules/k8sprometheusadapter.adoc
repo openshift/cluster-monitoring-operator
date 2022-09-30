@@ -1,6 +1,9 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == K8sPrometheusAdapter
 

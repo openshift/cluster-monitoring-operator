@@ -18,22 +18,43 @@ Despite this, to avoid users from misconfiguring the monitoring stack of their c
 Configuring Cluster Monitoring is optional. If the config does not exist or is empty or malformed, then defaults will be used.
 
 ## Table of Contents
-* [AdditionalAlertmanagerConfig](#additionalalertmanagerconfig)
-* [AlertmanagerMainConfig](#alertmanagermainconfig)
-* [AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig)
-* [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)
-* [DedicatedServiceMonitors](#dedicatedservicemonitors)
-* [K8sPrometheusAdapter](#k8sprometheusadapter)
-* [KubeStateMetricsConfig](#kubestatemetricsconfig)
-* [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
-* [PrometheusK8sConfig](#prometheusk8sconfig)
-* [PrometheusOperatorConfig](#prometheusoperatorconfig)
-* [PrometheusRestrictedConfig](#prometheusrestrictedconfig)
-* [RemoteWriteSpec](#remotewritespec)
-* [TLSConfig](#tlsconfig)
-* [ThanosQuerierConfig](#thanosquerierconfig)
-* [ThanosRulerConfig](#thanosrulerconfig)
-* [UserWorkloadConfiguration](#userworkloadconfiguration)
+- [Cluster Monitoring Configuration Reference](#cluster-monitoring-configuration-reference)
+  - [Table of Contents](#table-of-contents)
+  - [AdditionalAlertmanagerConfig](#additionalalertmanagerconfig)
+      - [Description](#description)
+      - [Required](#required)
+  - [AlertmanagerMainConfig](#alertmanagermainconfig)
+      - [Description](#description-1)
+  - [AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig)
+      - [Description](#description-2)
+  - [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)
+      - [Description](#description-3)
+  - [DedicatedServiceMonitors](#dedicatedservicemonitors)
+      - [Description](#description-4)
+  - [K8sPrometheusAdapter](#k8sprometheusadapter)
+      - [Description](#description-5)
+  - [KubeStateMetricsConfig](#kubestatemetricsconfig)
+      - [Description](#description-6)
+  - [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
+      - [Description](#description-7)
+  - [PrometheusK8sConfig](#prometheusk8sconfig)
+      - [Description](#description-8)
+  - [PrometheusOperatorConfig](#prometheusoperatorconfig)
+      - [Description](#description-9)
+  - [PrometheusRestrictedConfig](#prometheusrestrictedconfig)
+      - [Description](#description-10)
+  - [RemoteWriteSpec](#remotewritespec)
+      - [Description](#description-11)
+      - [Required](#required-1)
+  - [TLSConfig](#tlsconfig)
+      - [Description](#description-12)
+      - [Required](#required-2)
+  - [ThanosQuerierConfig](#thanosquerierconfig)
+      - [Description](#description-13)
+  - [ThanosRulerConfig](#thanosrulerconfig)
+      - [Description](#description-14)
+  - [UserWorkloadConfiguration](#userworkloadconfiguration)
+      - [Description](#description-15)
 
 ## AdditionalAlertmanagerConfig
 
@@ -117,6 +138,21 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 | prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | `PrometheusOperatorConfig` defines settings for the Prometheus Operator component. |
 | openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent. |
 | thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
+
+[Back to TOC](#table-of-contents)
+
+## DedicatedServiceMonitors
+
+#### Description
+
+Configuration for prometheus-adapter dedicated Service Monitors. When Enabled is set to true, CMO will deploy and scrape a dedicated Service Monitor, that exposes the kubelet /metrics/resource endpoint. This Service Monitor sets honorTimestamps: true and only keeps metrics that are relevant for the pod resource queries of prometheus-adapter. Additionally prometheus-adapter is configured to use these dedicated metrics. Overall this will improve the consistency of prometheus-adapter based CPU usage measurements used by for example the oc adm top pod command or the Horizontal Pod Autoscaler.
+
+
+<em>appears in: [K8sPrometheusAdapter](#k8sprometheusadapter)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool |  |
 
 [Back to TOC](#table-of-contents)
 
@@ -259,10 +295,10 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 | -------- | ---- | ----------- |
 | authorization | *monv1.SafeAuthorization | Defines the authorization settings for remote write storage. |
 | basicAuth | *[monv1.BasicAuth](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#basicauth) | Defines basic authentication settings for the remote write endpoint URL. |
-| bearerTokenFile | string | Defines the file that contains the bearer token for the remote write endpoint. |
+| bearerTokenFile | string | Defines the file that contains the bearer token for the remote write endpoint. However, because you cannot mount secrets in a pod, in practice you can only reference the token of the service account. |
 | headers | map[string]string | Specifies the custom HTTP headers to be sent along with each remote write request. Headers set by Prometheus cannot be overwritten. |
 | metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#metadataconfig) | Defines settings for sending series metadata to remote write storage. |
-| name | string | Defines the name of the remote write queue. This name is used in meetrics and logging to differentiate queues. If specified, this name must be unique. |
+| name | string | Defines the name of the remote write queue. This name is used in metrics and logging to differentiate queues. If specified, this name must be unique. |
 | oauth2 | *monv1.OAuth2 | Defines OAuth2 authentication settings for the remote write endpoint. |
 | proxyUrl | string | Defines an optional proxy URL. |
 | queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
