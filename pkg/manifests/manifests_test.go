@@ -755,13 +755,13 @@ func TestSharingConfig(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			cm := f.SharingConfig(u, u, u)
+			cm := f.SharingConfig(u, u, u, "alertmanager-main.openshift-monitoring.svc:9094", "alertmanager-main.openshift-monitoring.svc:9092")
 			if cm.Namespace == "openshift-monitoring" {
 				t.Fatalf("expecting namespace other than %q", "openshift-monitoring")
 			}
 			for k, v := range cm.Data {
 				if !strings.Contains(k, "Public") {
-					t.Fatalf("expecting key %q to contain 'Public'", k)
+					continue
 				}
 				publicURL, err := url.Parse(v)
 				if err != nil {
