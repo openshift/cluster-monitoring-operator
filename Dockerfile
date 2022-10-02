@@ -1,6 +1,6 @@
 # When bumping the Go version, don't forget to update the configuration of the
 # CI jobs in openshift/release.
-FROM registry.ci.openshift.org/ocp/builder:rhel-8-golang-1.18-openshift-4.12 AS builder
+FROM registry.ci.openshift.org/ocp/builder:rhel-8-golang-1.19-openshift-4.12 AS builder
 WORKDIR /go/src/github.com/openshift/cluster-monitoring-operator
 COPY . .
 ENV GOFLAGS="-mod=vendor"
