@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: prometheus-adapter
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.10.0
-    monitoring.openshift.io/scrape-profile: full
-  name: prometheus-adapter
+    monitoring.openshift.io/scrape-profile: uponly
+  name: prometheus-adapter-uponly
   namespace: openshift-monitoring
 spec:
   endpoints:
@@ -15,7 +15,7 @@ spec:
     interval: 30s
     metricRelabelings:
     - action: drop
-      regex: (apiserver_client_certificate_.*|apiserver_envelope_.*|apiserver_flowcontrol_.*|apiserver_storage_.*|apiserver_webhooks_.*|workqueue_.*)
+      regex: .+
       sourceLabels:
       - __name__
     port: https
@@ -25,7 +25,6 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: prometheus-adapter.openshift-monitoring.svc
   selector:
     matchLabels:
       app.kubernetes.io/component: metrics-adapter

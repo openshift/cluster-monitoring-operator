@@ -5,9 +5,9 @@ metadata:
     app.kubernetes.io/component: exporter
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.8.1
-    monitoring.openshift.io/scrape-profile: full
-  name: kube-state-metrics
+    app.kubernetes.io/version: 2.7.0
+    monitoring.openshift.io/scrape-profile: uponly
+  name: kube-state-metrics-uponly
   namespace: openshift-monitoring
 spec:
   endpoints:
@@ -17,6 +17,10 @@ spec:
     metricRelabelings:
     - action: labeldrop
       regex: instance
+    - action: drop
+      regex: .+
+      sourceLabels:
+      - __name__
     port: https-main
     relabelings:
     - action: labeldrop
@@ -28,9 +32,13 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: kube-state-metrics.openshift-monitoring.svc
   - bearerTokenFile: ""
     interval: 1m
+    metricRelabelings:
+    - action: drop
+      regex: .+
+      sourceLabels:
+      - __name__
     port: https-self
     scheme: https
     scrapeTimeout: 1m
@@ -39,7 +47,6 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: kube-state-metrics.openshift-monitoring.svc
   jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
