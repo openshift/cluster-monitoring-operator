@@ -71,6 +71,67 @@ function(params)
         },
       },
 
+    serviceMonitor+: {
+      metadata+: {
+        labels+: {
+          'monitoring.openshift.io/scrape-profile': 'full',
+        },
+      },
+    },
+
+    operationalServiceMonitor: self.serviceMonitor {
+      metadata+: {
+        name: super.name + '-operational',
+        labels+: {
+          'monitoring.openshift.io/scrape-profile': 'operational',
+        },
+      },
+      spec+: {
+        endpoints: std.map(
+          function(e) e {
+            metricRelabelings: [
+              {
+                sourceLabels: ['__name__'],
+                action: 'keep',
+                regex: '(' + std.join('|',
+                                      [
+                                        'apiserver_audit_event_total',
+                                        'apiserver_current_inflight_requests',
+                                        'apiserver_request_duration_seconds_bucket',
+                                        'apiserver_request_duration_seconds_count',
+                                        'apiserver_request_total',
+                                      ]) + ')',
+              },
+            ],
+          },
+          super.endpoints
+        ),
+      },
+    },
+
+    uponlyServiceMonitor: self.serviceMonitor {
+      metadata+: {
+        name: super.name + '-uponly',
+        labels+: {
+          'monitoring.openshift.io/scrape-profile': 'uponly',
+        },
+      },
+      spec+: {
+        endpoints: std.map(
+          function(e) e {
+            metricRelabelings: [
+              {
+                sourceLabels: ['__name__'],
+                action: 'drop',
+                regex: '.+',
+              },
+            ],
+          },
+          super.endpoints
+        ),
+      },
+    },
+
     deployment+:
       {
         metadata+: {

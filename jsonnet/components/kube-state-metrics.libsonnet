@@ -22,6 +22,12 @@ function(params)
     // This changes kube-state-metrics to be scraped with validating TLS.
 
     serviceMonitor+: {
+      metadata+: {
+        name: super.name,
+        labels+: {
+          'monitoring.openshift.io/scrape-profile': 'full',
+        },
+      },
       spec+: {
         endpoints: [
           {
@@ -58,6 +64,135 @@ function(params)
             scheme: 'https',
           },
         ],
+      },
+    },
+
+    operationalServiceMonitor: self.serviceMonitor {
+      metadata+: {
+        name: super.name + '-operational',
+        labels+: {
+          'monitoring.openshift.io/scrape-profile': 'operational',
+        },
+      },
+      spec+: {
+        endpoints: std.map(
+          function(e)
+            e +
+            if e.port == 'https-main' then {
+              metricRelabelings+: [{
+                sourceLabels: ['__name__'],
+                action: 'keep',
+                regex: '(' + std.join('|',
+                                      [
+                                        'kube_daemonset_status_current_number_scheduled',
+                                        'kube_daemonset_status_desired_number_scheduled',
+                                        'kube_daemonset_status_number_available',
+                                        'kube_daemonset_status_number_misscheduled',
+                                        'kube_daemonset_status_updated_number_scheduled',
+                                        'kube_deployment_metadata_generation',
+                                        'kube_deployment_spec_replicas',
+                                        'kube_deployment_status_observed_generation',
+                                        'kube_deployment_status_replicas_available',
+                                        'kube_deployment_status_replicas_updated',
+                                        'kube_horizontalpodautoscaler_spec_max_replicas',
+                                        'kube_horizontalpodautoscaler_spec_min_replicas',
+                                        'kube_horizontalpodautoscaler_status_current_replicas',
+                                        'kube_horizontalpodautoscaler_status_desired_replicas',
+                                        'kube_job_failed',
+                                        'kube_job_status_active',
+                                        'kube_job_status_start_time',
+                                        'kube_node_info',
+                                        'kube_node_labels',
+                                        'kube_node_role',
+                                        'kube_node_spec_taint',
+                                        'kube_node_spec_unschedulable',
+                                        'kube_node_status_allocatable',
+                                        'kube_node_status_capacity',
+                                        'kube_node_status_condition',
+                                        'kube_persistentvolume_info',
+                                        'kube_persistentvolume_status_phase',
+                                        'kube_persistentvolumeclaim_access_mode',
+                                        'kube_persistentvolumeclaim_info',
+                                        'kube_persistentvolumeclaim_labels',
+                                        'kube_persistentvolumeclaim_resource_requests_storage_bytes',
+                                        'kube_pod_container_resource_limits',
+                                        'kube_pod_container_resource_requests',
+                                        'kube_pod_container_status_last_terminated_reason',
+                                        'kube_pod_container_status_restarts_total',
+                                        'kube_pod_container_status_waiting_reason',
+                                        'kube_pod_info',
+                                        'kube_pod_owner',
+                                        'kube_pod_status_phase',
+                                        'kube_pod_status_ready',
+                                        'kube_poddisruptionbudget_status_current_healthy',
+                                        'kube_poddisruptionbudget_status_desired_healthy',
+                                        'kube_poddisruptionbudget_status_expected_pods',
+                                        'kube_replicaset_owner',
+                                        'kube_replicationcontroller_owner',
+                                        'kube_resourcequota',
+                                        'kube_statefulset_metadata_generation',
+                                        'kube_statefulset_replicas',
+                                        'kube_statefulset_status_current_revision',
+                                        'kube_statefulset_status_observed_generation',
+                                        'kube_statefulset_status_replicas',
+                                        'kube_statefulset_status_replicas_ready',
+                                        'kube_statefulset_status_replicas_updated',
+                                        'kube_statefulset_status_update_revision',
+                                        'kube_storageclass_info',
+                                      ]) + ')',
+              }],
+            } else {} +
+                   if e.port == 'https-self' then {
+                     metricRelabelings+: [{
+                       sourceLabels: ['__name__'],
+                       action: 'keep',
+                       regex: '(' + std.join('|',
+                                             [
+                                               'kube_state_metrics_list_total',
+                                               'kube_state_metrics_watch_total',
+                                             ]) + ')',
+                     }],
+                   } else {},
+          std.map(
+            function(e)
+              e +
+              if std.objectHas(e, 'metricRelabelings') then {
+                metricRelabelings: std.filter(function(mr) mr.action == 'labeldrop', e.metricRelabelings),
+              } else {},
+            super.endpoints
+          )
+        ),
+      },
+    },
+
+    uponlyServiceMonitor: self.serviceMonitor {
+      metadata+: {
+        name: super.name + '-uponly',
+        labels+: {
+          'monitoring.openshift.io/scrape-profile': 'uponly',
+        },
+      },
+      spec+: {
+        endpoints: std.map(
+          function(e)
+            e {
+              metricRelabelings+: [
+                {
+                  sourceLabels: ['__name__'],
+                  action: 'drop',
+                  regex: '.+',
+                },
+              ],
+            },
+          std.map(
+            function(e)
+              e +
+              if std.objectHas(e, 'metricRelabelings') then {
+                metricRelabelings: std.filter(function(mr) mr.action == 'labeldrop', e.metricRelabelings),
+              } else {},
+            super.endpoints
+          )
+        ),
       },
     },
 
