@@ -570,8 +570,8 @@ func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*mo
 // of 7 minutes (420 seconds) in case the endpoint isn't ready after 20s.
 //
 // See bugs below for details:
-//  - https://bugzilla.redhat.com/show_bug.cgi?id=2037073
-//  - https://bugzilla.redhat.com/show_bug.cgi?id=2083226
+//   - https://bugzilla.redhat.com/show_bug.cgi?id=2037073
+//   - https://bugzilla.redhat.com/show_bug.cgi?id=2083226
 func setupStartupProbe(a *monv1.Alertmanager) {
 	if a.Spec.Storage != nil {
 		return
