@@ -1248,6 +1248,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		return nil, err
 	}
 
+	if err := f.setupScrapeProfiles(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile); err != nil {
+		return nil, err
+	}
+
 	clusterID := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID
 	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && f.config.RemoteWrite {
 		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
@@ -1493,6 +1497,40 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 			Name:      "query-log",
 			MountPath: dirPath,
 		})
+	return nil
+}
+
+func (f *Factory) setupScrapeProfiles(p *monv1.Prometheus, scrapeProfile string) error {
+	if scrapeProfile == "" {
+		scrapeProfile = "full"
+	}
+
+	if scrapeProfile != "full" && scrapeProfile != "operational" && scrapeProfile != "uponly" {
+		return errors.Wrap(ErrConfigValidation, `scrape profile provided is unknown, supported scrape profiles are: full, operational, uponly`)
+	}
+
+	profiles := []string{"full", "operational", "uponly"}
+	for i, profile := range profiles {
+		if profile == scrapeProfile {
+			profiles = append(profiles[:i], profiles[i+1:]...)
+			break
+		}
+	}
+
+	labelSelector := &metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      "monitoring.openshift.io/scrape-profile",
+				Operator: metav1.LabelSelectorOpNotIn,
+				Values:   profiles,
+			},
+		},
+	}
+
+	p.Spec.ServiceMonitorSelector = labelSelector
+	p.Spec.PodMonitorSelector = labelSelector
+	p.Spec.ProbeSelector = labelSelector
+
 	return nil
 }
 

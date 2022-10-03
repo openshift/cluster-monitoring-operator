@@ -295,6 +295,7 @@ The `PrometheusK8sConfig` resource defines settings for the Prometheus component
 | retentionSize | string | Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, `TiB`, `PB`, `PiB`, `EB`, and `EiB`. By default, no limit is defined. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines the pod's topology spread constraints. |
+| scrapeProfile | string | Possible values are full operational uponly |
 | volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.62.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Prometheus. Use this setting to configure the persistent volume claim, including storage class, volume size and name. |
 
 [Back to TOC](#table-of-contents)

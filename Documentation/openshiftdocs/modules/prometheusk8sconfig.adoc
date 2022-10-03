@@ -42,6 +42,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines the pod's topology spread constraints.
 
+|scrapeProfile|string|Possible values are full operational uponly
+
 |volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Prometheus. Use this setting to configure the persistent volume claim, including storage class, volume size and name.
 
 |===

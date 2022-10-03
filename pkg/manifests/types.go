@@ -186,6 +186,8 @@ type PrometheusK8sConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines the pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Possible values are full operational uponly
+	ScrapeProfile string `json:"scrapeProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,
 	// volume size and name.
