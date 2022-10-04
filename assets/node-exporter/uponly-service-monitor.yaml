@@ -2,35 +2,39 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    app.kubernetes.io/component: metrics-adapter
-    app.kubernetes.io/name: prometheus-adapter
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: node-exporter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.10.0
+    app.kubernetes.io/version: 1.5.0
     monitoring.openshift.io/scrape-profile: uponly
-  name: prometheus-adapter-uponly
+  name: node-exporter-uponly
   namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: ""
-    interval: 30s
+    interval: 15s
     metricRelabelings:
-    - action: drop
-      regex: (apiserver_client_certificate_.*|apiserver_envelope_.*|apiserver_flowcontrol_.*|apiserver_storage_.*|apiserver_webhooks_.*|workqueue_.*)
-      sourceLabels:
-      - __name__
     - action: drop
       regex: .+
       sourceLabels:
       - __name__
     port: https
+    relabelings:
+    - action: replace
+      regex: (.*)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: instance
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+  jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
-      app.kubernetes.io/component: metrics-adapter
-      app.kubernetes.io/name: prometheus-adapter
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/name: node-exporter
       app.kubernetes.io/part-of: openshift-monitoring

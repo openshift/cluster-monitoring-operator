@@ -186,7 +186,12 @@ type PrometheusK8sConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines the pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	// Possible values are full operational uponly
+	// Defines the scraping profile which Prometheus will use to scrape metrics
+	// from the platform components. Supported values are `full` or `minimal`.
+	// In the `full` profile (default) Prometheus will scrape all the metrics
+	// that are exposed by the different platform components. In the `minimal`
+	// profile Prometheus will only scrape metrics necessary for platform
+	// alerts, recording rules, telemetry and console dashboards. 
 	ScrapeProfile string `json:"scrapeProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,

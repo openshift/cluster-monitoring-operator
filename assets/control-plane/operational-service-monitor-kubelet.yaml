@@ -5,8 +5,8 @@ metadata:
     app.kubernetes.io/name: kubelet
     app.kubernetes.io/part-of: openshift-monitoring
     k8s-app: kubelet
-    monitoring.openshift.io/scrape-profile: full
-  name: kubelet
+    monitoring.openshift.io/scrape-profile: operational
+  name: kubelet-operational
   namespace: openshift-monitoring
 spec:
   endpoints:
@@ -44,6 +44,10 @@ spec:
       - __name__
     - action: drop
       regex: (admission_quota_controller_adds|admission_quota_controller_depth|admission_quota_controller_longest_running_processor_microseconds|admission_quota_controller_queue_latency|admission_quota_controller_unfinished_work_seconds|admission_quota_controller_work_duration|APIServiceOpenAPIAggregationControllerQueue1_adds|APIServiceOpenAPIAggregationControllerQueue1_depth|APIServiceOpenAPIAggregationControllerQueue1_longest_running_processor_microseconds|APIServiceOpenAPIAggregationControllerQueue1_queue_latency|APIServiceOpenAPIAggregationControllerQueue1_retries|APIServiceOpenAPIAggregationControllerQueue1_unfinished_work_seconds|APIServiceOpenAPIAggregationControllerQueue1_work_duration|APIServiceRegistrationController_adds|APIServiceRegistrationController_depth|APIServiceRegistrationController_longest_running_processor_microseconds|APIServiceRegistrationController_queue_latency|APIServiceRegistrationController_retries|APIServiceRegistrationController_unfinished_work_seconds|APIServiceRegistrationController_work_duration|autoregister_adds|autoregister_depth|autoregister_longest_running_processor_microseconds|autoregister_queue_latency|autoregister_retries|autoregister_unfinished_work_seconds|autoregister_work_duration|AvailableConditionController_adds|AvailableConditionController_depth|AvailableConditionController_longest_running_processor_microseconds|AvailableConditionController_queue_latency|AvailableConditionController_retries|AvailableConditionController_unfinished_work_seconds|AvailableConditionController_work_duration|crd_autoregistration_controller_adds|crd_autoregistration_controller_depth|crd_autoregistration_controller_longest_running_processor_microseconds|crd_autoregistration_controller_queue_latency|crd_autoregistration_controller_retries|crd_autoregistration_controller_unfinished_work_seconds|crd_autoregistration_controller_work_duration|crdEstablishing_adds|crdEstablishing_depth|crdEstablishing_longest_running_processor_microseconds|crdEstablishing_queue_latency|crdEstablishing_retries|crdEstablishing_unfinished_work_seconds|crdEstablishing_work_duration|crd_finalizer_adds|crd_finalizer_depth|crd_finalizer_longest_running_processor_microseconds|crd_finalizer_queue_latency|crd_finalizer_retries|crd_finalizer_unfinished_work_seconds|crd_finalizer_work_duration|crd_naming_condition_controller_adds|crd_naming_condition_controller_depth|crd_naming_condition_controller_longest_running_processor_microseconds|crd_naming_condition_controller_queue_latency|crd_naming_condition_controller_retries|crd_naming_condition_controller_unfinished_work_seconds|crd_naming_condition_controller_work_duration|crd_openapi_controller_adds|crd_openapi_controller_depth|crd_openapi_controller_longest_running_processor_microseconds|crd_openapi_controller_queue_latency|crd_openapi_controller_retries|crd_openapi_controller_unfinished_work_seconds|crd_openapi_controller_work_duration|DiscoveryController_adds|DiscoveryController_depth|DiscoveryController_longest_running_processor_microseconds|DiscoveryController_queue_latency|DiscoveryController_retries|DiscoveryController_unfinished_work_seconds|DiscoveryController_work_duration|kubeproxy_sync_proxy_rules_latency_microseconds|non_structural_schema_condition_controller_adds|non_structural_schema_condition_controller_depth|non_structural_schema_condition_controller_longest_running_processor_microseconds|non_structural_schema_condition_controller_queue_latency|non_structural_schema_condition_controller_retries|non_structural_schema_condition_controller_unfinished_work_seconds|non_structural_schema_condition_controller_work_duration|rest_client_request_latency_seconds|storage_operation_errors_total|storage_operation_status_count)
+      sourceLabels:
+      - __name__
+    - action: keep
+      regex: (apiserver_audit_event_total|kubelet_certificate_manager_client_expiration_renew_errors|kubelet_containers_per_pod_count_sum|kubelet_node_name|kubelet_pleg_relist_duration_seconds_bucket|kubelet_pod_worker_duration_seconds_bucket|kubelet_server_expiration_renew_errors|kubelet_volume_stats_available_bytes|kubelet_volume_stats_capacity_bytes|kubelet_volume_stats_inodes|kubelet_volume_stats_inodes_free|kubelet_volume_stats_inodes_used|kubelet_volume_stats_used_bytes)
       sourceLabels:
       - __name__
     port: https-metrics
@@ -95,6 +99,10 @@ spec:
       - container
     - action: labeldrop
       regex: __tmp_keep_metric
+    - action: keep
+      regex: (apiserver_audit_event_total|kubelet_certificate_manager_client_expiration_renew_errors|kubelet_containers_per_pod_count_sum|kubelet_node_name|kubelet_pleg_relist_duration_seconds_bucket|kubelet_pod_worker_duration_seconds_bucket|kubelet_server_expiration_renew_errors|kubelet_volume_stats_available_bytes|kubelet_volume_stats_capacity_bytes|kubelet_volume_stats_inodes|kubelet_volume_stats_inodes_free|kubelet_volume_stats_inodes_used|kubelet_volume_stats_used_bytes)
+      sourceLabels:
+      - __name__
     path: /metrics/cadvisor
     port: https-metrics
     relabelings:
@@ -111,6 +119,11 @@ spec:
   - bearerTokenFile: ""
     honorLabels: true
     interval: 30s
+    metricRelabelings:
+    - action: drop
+      regex: .+
+      sourceLabels:
+      - __name__
     path: /metrics/probes
     port: https-metrics
     relabelings:
@@ -125,6 +138,11 @@ spec:
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   - interval: 30s
+    metricRelabelings:
+    - action: drop
+      regex: .+
+      sourceLabels:
+      - __name__
     port: https-metrics
     relabelings:
     - action: replace

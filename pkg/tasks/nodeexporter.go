@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -113,6 +114,26 @@ func (t *NodeExporterTask) Run(ctx context.Context) error {
 	}
 
 	smn, err := t.factory.NodeExporterServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smn)
+	if err != nil {
+		return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
+	}
+
+	smn, err = t.factory.NodeExporterOperationalServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smn)
+	if err != nil {
+		return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
+	}
+
+	smn, err = t.factory.NodeExporterUponlyServiceMonitor()
 	if err != nil {
 		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
 	}

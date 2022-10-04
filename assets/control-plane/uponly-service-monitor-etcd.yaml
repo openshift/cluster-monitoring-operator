@@ -2,12 +2,10 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    app.kubernetes.io/component: metrics-adapter
-    app.kubernetes.io/name: prometheus-adapter
-    app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.10.0
+    app.kubernetes.io/name: etcd
+    k8s-app: etcd
     monitoring.openshift.io/scrape-profile: uponly
-  name: prometheus-adapter-uponly
+  name: etcd-uponly
   namespace: openshift-monitoring
 spec:
   endpoints:
@@ -15,22 +13,20 @@ spec:
     interval: 30s
     metricRelabelings:
     - action: drop
-      regex: (apiserver_client_certificate_.*|apiserver_envelope_.*|apiserver_flowcontrol_.*|apiserver_storage_.*|apiserver_webhooks_.*|workqueue_.*)
-      sourceLabels:
-      - __name__
-    - action: drop
       regex: .+
       sourceLabels:
       - __name__
-    port: https
+    port: etcd-metrics
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+  jobLabel: k8s-app
+  namespaceSelector:
+    matchNames:
+    - openshift-etcd
   selector:
     matchLabels:
-      app.kubernetes.io/component: metrics-adapter
-      app.kubernetes.io/name: prometheus-adapter
-      app.kubernetes.io/part-of: openshift-monitoring
+      k8s-app: etcd

@@ -120,6 +120,8 @@ var (
 	NodeExporterClusterRoleBinding         = "node-exporter/cluster-role-binding.yaml"
 	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
 	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
+	NodeExporterOperationalServiceMonitor  = "node-exporter/operational-service-monitor.yaml"
+	NodeExporterUponlyServiceMonitor       = "node-exporter/uponly-service-monitor.yaml"
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
 
@@ -276,10 +278,14 @@ var (
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
-	ControlPlanePrometheusRule          = "control-plane/prometheus-rule.yaml"
-	ControlPlaneKubeletServiceMonitor   = "control-plane/service-monitor-kubelet.yaml"
-	ControlPlaneKubeletServiceMonitorPA = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
-	ControlPlaneEtcdServiceMonitor      = "control-plane/service-monitor-etcd.yaml"
+	ControlPlanePrometheusRule                   = "control-plane/prometheus-rule.yaml"
+	ControlPlaneKubeletServiceMonitor            = "control-plane/service-monitor-kubelet.yaml"
+	ControlPlaneKubeletOperationalServiceMonitor = "control-plane/operational-service-monitor-kubelet.yaml"
+	ControlPlaneKubeletUponlyServiceMonitor      = "control-plane/uponly-service-monitor-kubelet.yaml"
+	ControlPlaneKubeletServiceMonitorPA          = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
+	ControlPlaneEtcdServiceMonitor               = "control-plane/service-monitor-etcd.yaml"
+	ControlPlaneEtcdOperationalServiceMonitor    = "control-plane/operational-service-monitor-etcd.yaml"
+	ControlPlaneEtcdUponlyServiceMonitor         = "control-plane/uponly-service-monitor-etcd.yaml"
 )
 
 var (
@@ -855,6 +861,30 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 	}
 
 	return args
+}
+
+func (f *Factory) NodeExporterOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterOperationalServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("node-exporter.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
+}
+
+func (f *Factory) NodeExporterUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterUponlyServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("node-exporter.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
 }
 
 func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
@@ -2376,8 +2406,52 @@ func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdServiceMonitor))
 }
 
+func (f *Factory) ControlPlaneEtcdOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdOperationalServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ControlPlaneEtcdUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdUponlyServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletServiceMonitor))
+}
+
+func (f *Factory) ControlPlaneKubeletOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletOperationalServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
+}
+
+func (f *Factory) ControlPlaneKubeletUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletUponlyServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespace
+
+	return s, nil
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitorPA() (*monv1.ServiceMonitor, error) {

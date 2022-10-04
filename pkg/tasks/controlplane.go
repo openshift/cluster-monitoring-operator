@@ -58,6 +58,26 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling control-plane kubelet ServiceMonitor failed")
 	}
 
+	smk, err = t.factory.ControlPlaneKubeletOperationalServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing control-plane kubelet ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smk)
+	if err != nil {
+		return errors.Wrap(err, "reconciling control-plane kubelet ServiceMonitor failed")
+	}
+
+	smk, err = t.factory.ControlPlaneKubeletUponlyServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing control-plane kubelet ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, smk)
+	if err != nil {
+		return errors.Wrap(err, "reconciling control-plane kubelet ServiceMonitor failed")
+	}
+
 	smkpa, err := t.factory.ControlPlaneKubeletServiceMonitorPA()
 	if err != nil {
 		return errors.Wrap(err, "initializing prometheus-adapter dedicated kubelet ServiceMonitor failed")
@@ -85,6 +105,26 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "reconciling control-plane etcd ServiceMonitor failed")
 		}
+	 
+		sme, err = t.factory.ControlPlaneEtcdOperationalServiceMonitor()
+		if err != nil {
+			return errors.Wrap(err, "initializing control-plane etcd ServiceMonitor failed")
+		}
+
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, sme)
+		if err != nil {
+			return errors.Wrap(err, "reconciling control-plane etcd ServiceMonitor failed")
+		}
+		sme, err = t.factory.ControlPlaneEtcdUponlyServiceMonitor()
+		if err != nil {
+			return errors.Wrap(err, "initializing control-plane etcd ServiceMonitor failed")
+		}
+
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, sme)
+		if err != nil {
+			return errors.Wrap(err, "reconciling control-plane etcd ServiceMonitor failed")
+		}
+
 		etcdCA, err := t.client.WaitForConfigMapByNsName(ctx, types.NamespacedName{Namespace: "openshift-config", Name: "etcd-metric-serving-ca"})
 		if err != nil {
 			return errors.Wrap(err, "failed to wait for openshift-config/etcd-metric-serving-ca configmap")

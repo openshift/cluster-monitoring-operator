@@ -153,14 +153,7 @@ function(params)
                                              ]) + ')',
                      }],
                    } else {},
-          std.map(
-            function(e)
-              e +
-              if std.objectHas(e, 'metricRelabelings') then {
-                metricRelabelings: std.filter(function(mr) mr.action == 'labeldrop', e.metricRelabelings),
-              } else {},
-            super.endpoints
-          )
+          super.endpoints
         ),
       },
     },
@@ -184,14 +177,7 @@ function(params)
                 },
               ],
             },
-          std.map(
-            function(e)
-              e +
-              if std.objectHas(e, 'metricRelabelings') then {
-                metricRelabelings: std.filter(function(mr) mr.action == 'labeldrop', e.metricRelabelings),
-              } else {},
-            super.endpoints
-          )
+          super.endpoints
         ),
       },
     },

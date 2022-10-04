@@ -89,7 +89,7 @@ function(params)
       spec+: {
         endpoints: std.map(
           function(e) e {
-            metricRelabelings: [
+            metricRelabelings+: [
               {
                 sourceLabels: ['__name__'],
                 action: 'keep',
@@ -119,7 +119,7 @@ function(params)
       spec+: {
         endpoints: std.map(
           function(e) e {
-            metricRelabelings: [
+            metricRelabelings+: [
               {
                 sourceLabels: ['__name__'],
                 action: 'drop',
