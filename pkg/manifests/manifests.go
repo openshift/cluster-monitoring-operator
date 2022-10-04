@@ -94,14 +94,16 @@ var (
 	AlertmanagerUserWorkloadPodDisruptionBudget    = "alertmanager-user-workload/pod-disruption-budget.yaml"
 	AlertmanagerUserWorkloadServiceMonitor         = "alertmanager-user-workload/service-monitor.yaml"
 
-	KubeStateMetricsClusterRoleBinding  = "kube-state-metrics/cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole         = "kube-state-metrics/cluster-role.yaml"
-	KubeStateMetricsDeployment          = "kube-state-metrics/deployment.yaml"
-	KubeStateMetricsServiceAccount      = "kube-state-metrics/service-account.yaml"
-	KubeStateMetricsService             = "kube-state-metrics/service.yaml"
-	KubeStateMetricsServiceMonitor      = "kube-state-metrics/service-monitor.yaml"
-	KubeStateMetricsPrometheusRule      = "kube-state-metrics/prometheus-rule.yaml"
-	KubeStateMetricsKubeRbacProxySecret = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
+	KubeStateMetricsClusterRoleBinding        = "kube-state-metrics/cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole               = "kube-state-metrics/cluster-role.yaml"
+	KubeStateMetricsDeployment                = "kube-state-metrics/deployment.yaml"
+	KubeStateMetricsServiceAccount            = "kube-state-metrics/service-account.yaml"
+	KubeStateMetricsService                   = "kube-state-metrics/service.yaml"
+	KubeStateMetricsServiceMonitor            = "kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsOperationalServiceMonitor = "kube-state-metrics/operational-service-monitor.yaml"
+	KubeStateMetricsUponlyServiceMonitor      = "kube-state-metrics/uponly-service-monitor.yaml"
+	KubeStateMetricsPrometheusRule            = "kube-state-metrics/prometheus-rule.yaml"
+	KubeStateMetricsKubeRbacProxySecret       = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
 
 	OpenShiftStateMetricsClusterRoleBinding  = "openshift-state-metrics/cluster-role-binding.yaml"
 	OpenShiftStateMetricsClusterRole         = "openshift-state-metrics/cluster-role.yaml"
@@ -184,6 +186,8 @@ var (
 	PrometheusAdapterRoleBindingAuthReader              = "prometheus-adapter/role-binding-auth-reader.yaml"
 	PrometheusAdapterService                            = "prometheus-adapter/service.yaml"
 	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
+	PrometheusAdapterOperationalServiceMonitor          = "prometheus-adapter/operational-service-monitor.yaml"
+	PrometheusAdapterUponlyServiceMonitor               = "prometheus-adapter/uponly-service-monitor.yaml"
 	PrometheusAdapterServiceAccount                     = "prometheus-adapter/service-account.yaml"
 
 	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
@@ -705,6 +709,32 @@ func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
 
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsServiceMonitor))
+}
+
+func (f *Factory) KubeStateMetricsOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsOperationalServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
+	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
+}
+
+func (f *Factory) KubeStateMetricsUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsUponlyServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
+	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
+	sm.Namespace = f.namespace
+
+	return sm, nil
 }
 
 func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
@@ -1872,6 +1902,30 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 
 func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterServiceMonitor))
+}
+
+func (f *Factory) PrometheusAdapterOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterOperationalServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespace
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-adapter.%s.svc", f.namespace)
+
+	return sm, nil
+}
+
+func (f *Factory) PrometheusAdapterUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterUponlyServiceMonitor))
+	if err != nil {
+		return nil, err
+	}
+
+	sm.Namespace = f.namespace
+	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-adapter.%s.svc", f.namespace)
+
+	return sm, nil
 }
 
 func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1.ConfigMap) (*v1.Secret, error) {

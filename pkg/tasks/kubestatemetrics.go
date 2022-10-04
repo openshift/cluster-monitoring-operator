@@ -114,5 +114,25 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 		errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
 	}
 
+	sm, err = t.factory.KubeStateMetricsOperationalServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+	if err != nil {
+		errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
+	}
+
+	sm, err = t.factory.KubeStateMetricsUponlyServiceMonitor()
+	if err != nil {
+		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")
+	}
+
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+	if err != nil {
+		errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
+	}
+
 	return nil
 }
