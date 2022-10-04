@@ -183,6 +183,27 @@ local patchedRules = [
         },
         'for': '30m',
       },
+      {
+        alert: 'KubePodNotReady',
+        expr: |||
+          sum by (namespace, pod, %(clusterLabel)s) (
+            max by(namespace, pod, %(clusterLabel)s) (
+              kube_pod_status_phase{%(prefixedNamespaceSelector)s,%(kubeStateMetricsSelector)s, pod!~"installer.+", phase=~"Pending|Unknown|Failed"} or
+              kube_pod_status_phase{%(prefixedNamespaceSelector)s,%(kubeStateMetricsSelector)s, pod=~"installer.+", phase=~"Pending|Unknown"}
+            ) * on(namespace, pod, %(clusterLabel)s) group_left(owner_kind) topk by(namespace, pod, %(clusterLabel)s) (
+              1, max by(namespace, pod, owner_kind, %(clusterLabel)s) (kube_pod_owner{owner_kind!="Job"})
+            )
+          ) > 0
+        ||| % {
+          clusterLabel: 'cluster',
+          prefixedNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default)"',
+          kubeStateMetricsSelector: 'job="kube-state-metrics"',
+        },
+        labels: {
+          severity: 'warning',
+        },
+
+      },
     ],
   },
   {
