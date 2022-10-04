@@ -19,15 +19,17 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// `ClusterMonitoringConfiguration` defines settings that customize the
-// default platform monitoring stack through the `cluster-monitoring-config` ConfigMap in the
+// The `ClusterMonitoringConfiguration` resource defines settings that
+// customize the default platform monitoring stack through the
+// `cluster-monitoring-config` config map in the
 // `openshift-monitoring` namespace.
 type ClusterMonitoringConfiguration struct {
-	// `AlertmanagerMainConfig` defines settings for the main Alertmanager instance.
+	// The `AlertmanagerMainConfig` resource defines settings for the main 
+	// Alertmanager instance.
 	AlertmanagerMainConfig *AlertmanagerMainConfig `json:"alertmanagerMain,omitempty"`
 	// OmitFromDoc
 	EtcdConfig *EtcdConfig `json:"-"`
-	// `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
+	//  `UserWorkloadEnabled` a Boolean flag that enables monitoring for user-defined projects.
 	UserWorkloadEnabled *bool `json:"enableUserWorkload,omitempty"`
 	// OmitFromDoc
 	HTTPConfig *HTTPConfig `json:"http,omitempty"`
@@ -47,7 +49,8 @@ type ClusterMonitoringConfiguration struct {
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
 }
 
-// `AlertmanagerMainConfig` defines settings for the main Alertmanager instance.
+// The `AlertmanagerMainConfig` resource defines settings for the main 
+// Alertmanager instance.
 type AlertmanagerMainConfig struct {
 	// A Boolean flag that enables or disables the main Alertmanager instance
 	// in the `openshift-monitoring` namespace.
@@ -77,7 +80,7 @@ type AlertmanagerMainConfig struct {
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
-// `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
+// The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
 type K8sPrometheusAdapter struct {
 	// Defines the audit configuration used by the Prometheus Adapter instance.
 	// Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`.
@@ -93,6 +96,7 @@ type K8sPrometheusAdapter struct {
 
 // You can use the `DedicatedServiceMonitors` resource to configure dedicated 
 // Service Monitors for the Prometheus Adapter
+type DedicatedServiceMonitors struct {
 // When `Enabled` is set to `true`, the Cluster Monitoring Operator (CMO)
 // deploys and scrapes a dedicated Service Monitor that exposes 
 // the kubelet `/metrics/resource` endpoint. This
@@ -102,11 +106,11 @@ type K8sPrometheusAdapter struct {
 // Overall, this feature improves the consistency of Prometheus Adapter-based 
 // CPU usage measurements used by, for example, the `oc adm top pod` command or 
 // the Horizontal Pod Autoscaler.
-type DedicatedServiceMonitors struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-// `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
+// The `KubeStateMetricsConfig` resource defines settings for the 
+// `kube-state-metrics` agent.
 type KubeStateMetricsConfig struct {
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
@@ -114,7 +118,8 @@ type KubeStateMetricsConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// `PrometheusK8sConfig` defines settings for the Prometheus component.
+// The `PrometheusK8sConfig` resource defines settings for the Prometheus 
+// component.
 type PrometheusK8sConfig struct {
 	// Configures how the Prometheus component communicates
 	// with additional Alertmanager instances.
@@ -129,9 +134,9 @@ type PrometheusK8sConfig struct {
 	// automatically calculated based on cluster capacity.
 	// The default value is empty, which indicates no limit.
 	EnforcedBodySizeLimit string `json:"enforcedBodySizeLimit,omitempty"`
-	// Defines labels to be added to any time series or alerts when communicating
-	// with external systems such as federation, remote storage, and Alertmanager.
-	// By default, no labels are added.
+	// Defines labels to be added to any time series or alerts when 
+	// communicating with external systems such as federation, remote storage, 
+	// and Alertmanager. By default, no labels are added.
 	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
 	// Defines the log level setting for Prometheus.
 	// The possible values are: `error`, `warn`, `info`, and `debug`.
@@ -175,7 +180,8 @@ type PrometheusK8sConfig struct {
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
-// `PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
+// The `PrometheusOperatorConfig` resource defines settings for the Prometheus 
+// Operator component.
 type PrometheusOperatorConfig struct {
 	// Defines the log level settings for Prometheus Operator.
 	// The possible values are `error`, `warn`, `info`, and `debug`.
@@ -187,7 +193,8 @@ type PrometheusOperatorConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// `OpenShiftStateMetricsConfig` defines settings for the `openshift-state-metrics` agent.
+// The `OpenShiftStateMetricsConfig` resource defines settings for the 
+// `openshift-state-metrics` agent.
 type OpenShiftStateMetricsConfig struct {
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
@@ -195,7 +202,8 @@ type OpenShiftStateMetricsConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
+// The `ThanosQuerierConfig` resource defines settings for the Thanos Querier 
+// component.
 type ThanosQuerierConfig struct {
 	// A Boolean flag that enables or disables request logging.
 	// The default value is `false`.
@@ -212,33 +220,38 @@ type ThanosQuerierConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// `UserWorkloadConfiguration` defines the settings for the
+// The `UserWorkloadConfiguration` resource defines the settings for the
 // monitoring stack responsible for user-defined projects in the
-// `user-workload-monitoring-config` ConfigMap in the 
+// `user-workload-monitoring-config` config map  in the 
 // `openshift-user-workload-monitoring` namespace.
 type UserWorkloadConfiguration struct {
-	// Defines the settings for the Alertmanager component in user workload monitoring.
+	// Defines the settings for the Alertmanager component in user workload 
+	// monitoring.
 	Alertmanager *AlertmanagerUserWorkloadConfig `json:"alertmanager,omitempty"`
-	// Defines the settings for the Prometheus component in user workload monitoring.
+	// Defines the settings for the Prometheus component in user workload 
+	// monitoring.
 	Prometheus *PrometheusRestrictedConfig `json:"prometheus,omitempty"`
-	// Defines the settings for the Prometheus Operator component in user workload monitoring.
+	// Defines the settings for the Prometheus Operator component in user 
+	// workload monitoring.
 	PrometheusOperator *PrometheusOperatorConfig `json:"prometheusOperator,omitempty"`
-	// Defines the settings for the Thanos Ruler component in user workload monitoring.
+	// Defines the settings for the Thanos Ruler component in user workload 
+	// monitoring.
 	ThanosRuler *ThanosRulerConfig `json:"thanosRuler,omitempty"`
 }
 
-// `AlertmanagerUserWorkloadConfig` defines the settings for the Alertmanager 
-// instance used for user-defined projects.
+// The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alertmanager instance used for user-defined projects.
 type AlertmanagerUserWorkloadConfig struct {
 	// A Boolean flag that enables or disables a dedicated instance of 
-	// Alertmanager for user-defined projects in the `openshift-user-workload-monitoring` namespace.
+	// Alertmanager for user-defined projects in the 
+	// `openshift-user-workload-monitoring` namespace.
 	// The default value is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// A Boolean flag to enable or disable user-defined namespaces 
 	// to be selected for `AlertmanagerConfig` lookup. 
 	// The default value is `false`.
 	EnableAlertmanagerConfig bool `json:"enableAlertmanagerConfig,omitempty"`
-	// Defines the log level setting for Alertmanager for user workload monitoring.
+	// Defines the log level setting for Alertmanager for user workload 
+	// monitoring.
 	// The possible values are `error`, `warn`, `info`, and `debug`.
 	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
@@ -254,14 +267,15 @@ type AlertmanagerUserWorkloadConfig struct {
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
-// `PrometheusRestrictedConfig` defines the settings for the Prometheus 
-// component that monitors user-defined projects.
+// The `PrometheusRestrictedConfig` resource defines the settings for the 
+// Prometheus component that monitors user-defined projects.
 type PrometheusRestrictedConfig struct {
 	// Configures how the Prometheus component communicates
 	// with additional Alertmanager instances.
 	// By default, no instance is configured.
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
-	// Specifies a per-scrape limit on the number of labels accepted for a sample. 
+	// Specifies a per-scrape limit on the number of labels accepted for a 
+	// sample. 
 	// If the number of labels exceeds this limit after metric relabeling, 
 	// the entire scrape is treated as failed. 
 	// The default value is `0`, which means that no limit is set.
@@ -276,7 +290,8 @@ type PrometheusRestrictedConfig struct {
 	// metric relabeling, the entire scrape is treated as failed.
 	// The default value is `0`, which means that no limit is set.
 	EnforcedLabelValueLengthLimit *uint64 `json:"enforcedLabelValueLengthLimit,omitempty"`
-	// Specifies a global limit on the number of scraped samples that will be accepted.
+	// Specifies a global limit on the number of scraped samples that will be 
+	// accepted.
 	// This setting overrides the `SampleLimit` value set in any user-defined 
 	// `ServiceMonitor` or `PodMonitor` object if the value is greater than 
 	// `enforcedSampleLimit`. 
@@ -334,7 +349,7 @@ type PrometheusRestrictedConfig struct {
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
-// `ThanosRulerConfig` defines configuration for the Thanos Ruler instance for user-defined projects.
+// The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler instance for user-defined projects.
 type ThanosRulerConfig struct {
 	// Configures how the Thanos Ruler component communicates
 	// with additional Alertmanager instances.
@@ -365,8 +380,8 @@ type ThanosRulerConfig struct {
 
 // ----- Common Types -----
 
-// `AdditionalAlertmanagerConfig` defines settings for how a component 
-// communicates with additional Alertmanager instances.
+// The `AdditionalAlertmanagerConfig` resource defines settings for how a 
+// component communicates with additional Alertmanager instances.
 type AdditionalAlertmanagerConfig struct {
 	// Defines the API version of Alertmanager. Possible values are `v1` or
 	// `v2`.
@@ -390,7 +405,7 @@ type AdditionalAlertmanagerConfig struct {
 	TLSConfig TLSConfig `json:"tlsConfig,omitempty"`
 }
 
-// `RemoteWriteSpec` defines the settings for remote write storage.
+// The `RemoteWriteSpec` resource defines the settings for remote write storage.
 type RemoteWriteSpec struct {
 	// Defines the authorization settings for remote write storage.
 	Authorization *monv1.SafeAuthorization `json:"authorization,omitempty"`
@@ -428,7 +443,7 @@ type RemoteWriteSpec struct {
 	WriteRelabelConfigs []monv1.RelabelConfig `json:"writeRelabelConfigs,omitempty"`
 }
 
-// `TLSConfig` configures the settings for TLS connections.
+// The `TLSConfig` resource configures the settings for TLS connections.
 type TLSConfig struct {
 	// Defines the secret key reference containing the Certificate Authority 
 	// (CA) to use for the remote host.
