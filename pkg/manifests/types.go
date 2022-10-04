@@ -91,9 +91,10 @@ type K8sPrometheusAdapter struct {
 	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
 }
 
-// Configures dedicated Service Monitors for Prometheus Adapter.
+// You can use the `DedicatedServiceMonitors` resource to configure dedicated 
+// Service Monitors for the Prometheus Adapter
 // When `Enabled` is set to `true`, the Cluster Monitoring Operator (CMO)
-// deploys and scrape a dedicated Service Monitor that exposes 
+// deploys and scrapes a dedicated Service Monitor that exposes 
 // the kubelet `/metrics/resource` endpoint. This
 // Service Monitor sets `honorTimestamps: true` and only keeps metrics that are
 // relevant for the pod resource queries of Prometheus Adapter.

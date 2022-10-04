@@ -48,9 +48,9 @@ The API is accessible by setting parameters defined in various config maps.
 
 Depending on which part of the stack you want to configure, edit the following:
 
-- To configure monitoring components, edit the config map named ` + "`cluster-monitoring-config`" + ` in the ` + "`openshift-monitoring`" + ` namespace. 
+- To configure monitoring components, edit the ` + "`ConfigMap`" + ` object named ` + "`cluster-monitoring-config`" + ` in the ` + "`openshift-monitoring`" + ` namespace. 
 These configurations are defined by link:#clustermonitoringconfiguration[ClusterMonitoringConfiguration].
-- To configure monitoring components that monitor user-defined projects, edit the config map named ` + "`user-workload-monitoring-config`" + ` in the ` + "`openshift-user-workload-monitoring`" + ` namespace. 
+- To configure monitoring components that monitor user-defined projects, edit the ` + "`ConfigMap`" + ` object named ` + "`user-workload-monitoring-config`" + ` in the ` + "`openshift-user-workload-monitoring`" + ` namespace. 
 These configurations are defined by link:#userworkloadconfiguration[UserWorkloadConfiguration].
 
 The configuration file itself is always defined under the ` + "`config.yaml`" + ` key in the config map data.
