@@ -9,7 +9,7 @@
 
 === Description
 
-`UserWorkloadConfiguration` defines the settings for the monitoring stack responsible for user-defined projects in the `user-workload-monitoring-config` ConfigMap in the `openshift-user-workload-monitoring` namespace.
+The `UserWorkloadConfiguration` resource defines the settings for the monitoring stack responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace.
 
 
 [options="header"]

@@ -9,7 +9,7 @@
 
 === Description
 
-`AdditionalAlertmanagerConfig` defines settings for how a component communicates with additional Alertmanager instances.
+The `AdditionalAlertmanagerConfig` resource defines settings for how a component communicates with additional Alertmanager instances.
 
 === Required
 * `apiVersion`

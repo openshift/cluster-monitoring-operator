@@ -9,7 +9,7 @@
 
 === Description
 
-`PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
+The `PrometheusOperatorConfig` resource defines settings for the Prometheus Operator component.
 
 
 

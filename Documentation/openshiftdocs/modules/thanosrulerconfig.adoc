@@ -9,7 +9,7 @@
 
 === Description
 
-`ThanosRulerConfig` defines configuration for the Thanos Ruler instance for user-defined projects.
+The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler instance for user-defined projects.
 
 
 

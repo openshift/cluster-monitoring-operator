@@ -60,7 +60,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 
 #### Description
 
-`AdditionalAlertmanagerConfig` defines settings for how a component communicates with additional Alertmanager instances.
+The `AdditionalAlertmanagerConfig` resource defines settings for how a component communicates with additional Alertmanager instances.
 
 #### Required
    - ` apiVersion `
@@ -83,7 +83,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 
 #### Description
 
-`AlertmanagerMainConfig` defines settings for the main Alertmanager instance.
+The `AlertmanagerMainConfig` resource defines settings for the main Alertmanager instance.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -105,7 +105,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 
 #### Description
 
-`AlertmanagerUserWorkloadConfig` defines the settings for the Alertmanager instance used for user-defined projects.
+The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alertmanager instance used for user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
@@ -126,12 +126,12 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 
 #### Description
 
-`ClusterMonitoringConfiguration` defines settings that customize the default platform monitoring stack through the `cluster-monitoring-config` ConfigMap in the `openshift-monitoring` namespace.
+The `ClusterMonitoringConfiguration` resource defines settings that customize the default platform monitoring stack through the `cluster-monitoring-config` config map in the `openshift-monitoring` namespace.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | `AlertmanagerMainConfig` defines settings for the main Alertmanager instance. |
-| enableUserWorkload | *bool | `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects. |
+| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | The `AlertmanagerMainConfig` resource defines settings for the main Alertmanager instance. |
+| enableUserWorkload | *bool | \n `UserWorkloadEnabled` a Boolean flag that enables monitoring for user-defined projects. |
 | k8sPrometheusAdapter | *[K8sPrometheusAdapter](#k8sprometheusadapter) | `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component. |
 | kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent. |
 | prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | `PrometheusK8sConfig` defines settings for the Prometheus component. |
@@ -145,14 +145,14 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 
 #### Description
 
-You can use the `DedicatedServiceMonitors` resource to configure dedicated Service Monitors for the Prometheus Adapter When `Enabled` is set to `true`, the Cluster Monitoring Operator (CMO) deploys and scrapes a dedicated Service Monitor that exposes the kubelet `/metrics/resource` endpoint. This Service Monitor sets `honorTimestamps: true` and only keeps metrics that are relevant for the pod resource queries of Prometheus Adapter. Additionally Prometheus Adapter is configured to use these dedicated metrics. Overall, this feature improves the consistency of Prometheus Adapter-based CPU usage measurements used by, for example, the `oc adm top pod` command or the Horizontal Pod Autoscaler.
+You can use the `DedicatedServiceMonitors` resource to configure dedicated Service Monitors for the Prometheus Adapter
 
 
 <em>appears in: [K8sPrometheusAdapter](#k8sprometheusadapter)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| enabled | bool |  |
+| enabled | bool | When `Enabled` is set to `true`, the Cluster Monitoring Operator (CMO) deploys and scrapes a dedicated Service Monitor that exposes the kubelet `/metrics/resource` endpoint. This Service Monitor sets `honorTimestamps: true` and only keeps metrics that are relevant for the pod resource queries of Prometheus Adapter. Additionally Prometheus Adapter is configured to use these dedicated metrics. Overall, this feature improves the consistency of Prometheus Adapter-based CPU usage measurements used by, for example, the `oc adm top pod` command or the Horizontal Pod Autoscaler. |
 
 [Back to TOC](#table-of-contents)
 
@@ -160,7 +160,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
+The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -178,7 +178,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
+The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metrics` agent.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -194,7 +194,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`OpenShiftStateMetricsConfig` defines settings for the `openshift-state-metrics` agent.
+The `OpenShiftStateMetricsConfig` resource defines settings for the `openshift-state-metrics` agent.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -210,7 +210,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`PrometheusK8sConfig` defines settings for the Prometheus component.
+The `PrometheusK8sConfig` resource defines settings for the Prometheus component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -237,7 +237,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
+The `PrometheusOperatorConfig` resource defines settings for the Prometheus Operator component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration), [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
@@ -254,7 +254,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`PrometheusRestrictedConfig` defines the settings for the Prometheus component that monitors user-defined projects.
+The `PrometheusRestrictedConfig` resource defines the settings for the Prometheus component that monitors user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
@@ -284,7 +284,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`RemoteWriteSpec` defines the settings for remote write storage.
+The `RemoteWriteSpec` resource defines the settings for remote write storage.
 
 #### Required
    - ` url `
@@ -314,7 +314,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`TLSConfig` configures the settings for TLS connections.
+The `TLSConfig` resource configures the settings for TLS connections.
 
 #### Required
    - ` insecureSkipVerify `
@@ -335,7 +335,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`ThanosQuerierConfig` defines settings for the Thanos Querier component.
+The `ThanosQuerierConfig` resource defines settings for the Thanos Querier component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -354,7 +354,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`ThanosRulerConfig` defines configuration for the Thanos Ruler instance for user-defined projects.
+The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler instance for user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
@@ -376,7 +376,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 #### Description
 
-`UserWorkloadConfiguration` defines the settings for the monitoring stack responsible for user-defined projects in the `user-workload-monitoring-config` ConfigMap in the `openshift-user-workload-monitoring` namespace.
+The `UserWorkloadConfiguration` resource defines the settings for the monitoring stack responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |

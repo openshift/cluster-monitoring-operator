@@ -9,7 +9,7 @@
 
 === Description
 
-`OpenShiftStateMetricsConfig` defines settings for the `openshift-state-metrics` agent.
+The `OpenShiftStateMetricsConfig` resource defines settings for the `openshift-state-metrics` agent.
 
 
 

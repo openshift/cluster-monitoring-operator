@@ -9,7 +9,7 @@
 
 === Description
 
-`PrometheusRestrictedConfig` defines the settings for the Prometheus component that monitors user-defined projects.
+The `PrometheusRestrictedConfig` resource defines the settings for the Prometheus component that monitors user-defined projects.
 
 
 

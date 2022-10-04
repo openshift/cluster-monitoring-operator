@@ -9,7 +9,7 @@
 
 === Description
 
-`RemoteWriteSpec` defines the settings for remote write storage.
+The `RemoteWriteSpec` resource defines the settings for remote write storage.
 
 === Required
 * `url`

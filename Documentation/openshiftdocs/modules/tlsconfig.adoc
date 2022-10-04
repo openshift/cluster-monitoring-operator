@@ -9,7 +9,7 @@
 
 === Description
 
-`TLSConfig` configures the settings for TLS connections.
+The `TLSConfig` resource configures the settings for TLS connections.
 
 === Required
 * `insecureSkipVerify`

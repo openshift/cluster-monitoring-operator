@@ -9,7 +9,7 @@
 
 === Description
 
-`AlertmanagerMainConfig` defines settings for the main Alertmanager instance.
+The `AlertmanagerMainConfig` resource defines settings for the main Alertmanager instance.
 
 
 

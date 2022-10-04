@@ -9,15 +9,15 @@
 
 === Description
 
-`ClusterMonitoringConfiguration` defines settings that customize the default platform monitoring stack through the `cluster-monitoring-config` ConfigMap in the `openshift-monitoring` namespace.
+The `ClusterMonitoringConfiguration` resource defines settings that customize the default platform monitoring stack through the `cluster-monitoring-config` config map in the `openshift-monitoring` namespace.
 
 
 [options="header"]
 |===
 | Property | Type | Description 
-|alertmanagerMain|*link:alertmanagermainconfig.adoc[AlertmanagerMainConfig]|`AlertmanagerMainConfig` defines settings for the main Alertmanager instance.
+|alertmanagerMain|*link:alertmanagermainconfig.adoc[AlertmanagerMainConfig]|The `AlertmanagerMainConfig` resource defines settings for the main Alertmanager instance.
 
-|enableUserWorkload|*bool|`UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
+|enableUserWorkload|*bool|\n `UserWorkloadEnabled` a Boolean flag that enables monitoring for user-defined projects.
 
 |k8sPrometheusAdapter|*link:k8sprometheusadapter.adoc[K8sPrometheusAdapter]|`K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 

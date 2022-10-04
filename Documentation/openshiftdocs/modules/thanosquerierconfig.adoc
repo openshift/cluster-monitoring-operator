@@ -9,7 +9,7 @@
 
 === Description
 
-`ThanosQuerierConfig` defines settings for the Thanos Querier component.
+The `ThanosQuerierConfig` resource defines settings for the Thanos Querier component.
 
 
 

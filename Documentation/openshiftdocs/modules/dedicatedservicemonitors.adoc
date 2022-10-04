@@ -9,7 +9,7 @@
 
 === Description
 
-You can use the `DedicatedServiceMonitors` resource to configure dedicated Service Monitors for the Prometheus Adapter When `Enabled` is set to `true`, the Cluster Monitoring Operator (CMO) deploys and scrapes a dedicated Service Monitor that exposes the kubelet `/metrics/resource` endpoint. This Service Monitor sets `honorTimestamps: true` and only keeps metrics that are relevant for the pod resource queries of Prometheus Adapter. Additionally Prometheus Adapter is configured to use these dedicated metrics. Overall, this feature improves the consistency of Prometheus Adapter-based CPU usage measurements used by, for example, the `oc adm top pod` command or the Horizontal Pod Autoscaler.
+You can use the `DedicatedServiceMonitors` resource to configure dedicated Service Monitors for the Prometheus Adapter
 
 
 
@@ -18,7 +18,7 @@ Appears in: link:k8sprometheusadapter.adoc[K8sPrometheusAdapter]
 [options="header"]
 |===
 | Property | Type | Description 
-|enabled|bool|
+|enabled|bool|When `Enabled` is set to `true`, the Cluster Monitoring Operator (CMO) deploys and scrapes a dedicated Service Monitor that exposes the kubelet `/metrics/resource` endpoint. This Service Monitor sets `honorTimestamps: true` and only keeps metrics that are relevant for the pod resource queries of Prometheus Adapter. Additionally Prometheus Adapter is configured to use these dedicated metrics. Overall, this feature improves the consistency of Prometheus Adapter-based CPU usage measurements used by, for example, the `oc adm top pod` command or the Horizontal Pod Autoscaler.
 
 |===
 

@@ -9,7 +9,7 @@
 
 === Description
 
-`AlertmanagerUserWorkloadConfig` defines the settings for the Alertmanager instance used for user-defined projects.
+The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alertmanager instance used for user-defined projects.
 
 
 
