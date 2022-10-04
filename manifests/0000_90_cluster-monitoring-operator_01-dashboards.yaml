@@ -8694,6 +8694,33 @@ data:
                     },
                     "datasource": "$datasource",
                     "hide": 0,
+                    "includeAll": true,
+                    "label": null,
+                    "multi": true,
+                    "name": "role",
+                    "options": [
+
+                    ],
+                    "query": "label_values(kube_node_role{cluster=\"$cluster\"}, role)",
+                    "refresh": 2,
+                    "regex": "",
+                    "sort": 1,
+                    "tagValuesQuery": "",
+                    "tags": [
+
+                    ],
+                    "tagsQuery": "",
+                    "type": "query",
+                    "useTags": false
+                },
+                {
+                    "allValue": null,
+                    "current": {
+                        "text": "",
+                        "value": ""
+                    },
+                    "datasource": "$datasource",
+                    "hide": 0,
                     "includeAll": false,
                     "label": null,
                     "multi": true,
@@ -8701,7 +8728,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_node_info{cluster=\"$cluster\"}, node)",
+                    "query": "label_values(kube_node_role{cluster=\"$cluster\",role=~\"^$role$\"}, node)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
