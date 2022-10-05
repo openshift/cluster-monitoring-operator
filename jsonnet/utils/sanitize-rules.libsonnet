@@ -116,6 +116,18 @@ local excludedRules = [
       { alert: 'ThanosQueryRangeLatencyHigh' },
     ],
   },
+  {
+    name: 'kubernetes-storage',
+    rules: [
+      // we disable the inode almost full alert, because specially Ceph has caused
+      // false positives on several occassions. Since this alert seems of limited
+      // use anyway (unlikely to run out of inodes before running out of space) we
+      // disable it until Ceph has fixed their exporter.
+      // See also https://issues.redhat.com/browse/OCPBUGS-1766 and
+      // https://bugzilla.redhat.com/show_bug.cgi?id=2132270
+      { alert: 'KubePersistentVolumeInodesFillingUp' },
+    ],
+  },
 ];
 
 local patchedRules = [
