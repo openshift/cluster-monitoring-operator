@@ -105,14 +105,14 @@ func (f *Factory) UserWorkloadMetricsClientCACM(apiAuthConfigmap *v1.ConfigMap) 
 //
 // The rotation scheme here assumes the following threat model:
 //
-// 1. CA certificates could be compromised as they are being mounted into multiple pods
-//    reachable externally i.e. via routes.
-//    This is addressed by expiry and time based rotation.
-// 2. Client and server certificates as well as their private key could be compromised
-//    as they are being mounted into multiple pods reachable externally i.e. via routes.
-//    This is addressed by re-issuing them at the same time the CA expires.
-// 3. The CA's private key is left out of the thread model as it is not mounted in any pod.
-//    This implementation assumes it can stay immutable and does not need rotation.
+//  1. CA certificates could be compromised as they are being mounted into multiple pods
+//     reachable externally i.e. via routes.
+//     This is addressed by expiry and time based rotation.
+//  2. Client and server certificates as well as their private key could be compromised
+//     as they are being mounted into multiple pods reachable externally i.e. via routes.
+//     This is addressed by re-issuing them at the same time the CA expires.
+//  3. The CA's private key is left out of the thread model as it is not mounted in any pod.
+//     This implementation assumes it can stay immutable and does not need rotation.
 func RotateGRPCSecret(s *v1.Secret) error {
 	var (
 		curCA, newCA              *crypto.CA
