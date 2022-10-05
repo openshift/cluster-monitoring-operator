@@ -183,6 +183,26 @@ local patchedRules = [
         },
         'for': '30m',
       },
+      // This patches the alert KubePodNotReady to exclude pods with 'Failed' phase.
+      // This should be removed after the resolution of the bug TRT-589:
+      // https://issues.redhat.com/browse/TRT-589
+      {
+        alert: 'KubePodNotReady',
+        expr: |||
+          sum by (namespace, pod, cluster) (
+            max by(namespace, pod, cluster) (
+              kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}
+              unless ignoring(phase) (kube_pod_status_unschedulable{job="kube-state-metrics"} == 1)
+            ) * on(namespace, pod, cluster) group_left(owner_kind) topk by(namespace, pod, cluster) (
+              1, max by(namespace, pod, owner_kind, cluster) (kube_pod_owner{owner_kind!="Job"})
+            )
+          ) > 0
+        ||| % {
+          clusterLabel: 'cluster',
+          prefixedNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default)"',
+          kubeStateMetricsSelector: 'job="kube-state-metrics"',
+        },
+      },
     ],
   },
   {

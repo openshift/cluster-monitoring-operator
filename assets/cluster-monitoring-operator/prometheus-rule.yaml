@@ -404,6 +404,17 @@ spec:
     rules:
     - expr: sum(rate(apiserver_request_total{job="apiserver"}[10m])) BY (code)
       record: code:apiserver_request_total:rate:sum
+  - name: openshift-test.rules
+    rules:
+    - alert: KubePodNotScheduled
+      annotations:
+        description: Pod {{ $labels.namespace}}/{{ $labels.pod }} can't be scheduled
+          for longer than 30 minutes.
+        summary: Unable to schedule pod.
+      expr: last_over_time(kube_pod_status_unschedulable[5m]) == 1
+      for: 30m
+      labels:
+        severity: warning
   - name: general.rules
     rules:
     - alert: Watchdog

@@ -581,5 +581,22 @@ function(params) {
         },
       ],
     },
+    {
+      name: 'openshift-test.rules',
+      rules: [
+        {
+          alert: 'KubePodNotScheduled',
+          expr: 'last_over_time(kube_pod_status_unschedulable[5m]) == 1',
+          'for': '30m',
+          annotations: {
+            summary: 'Unable to schedule pod.',
+            description: "Pod {{ $labels.namespace}}/{{ $labels.pod }} can't be scheduled for longer than 30 minutes.",
+          },
+          labels: {
+            severity: 'warning',
+          },
+        },
+      ],
+    },
   ],
 }
