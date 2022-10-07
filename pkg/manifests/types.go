@@ -24,8 +24,8 @@ import (
 // `cluster-monitoring-config` config map in the
 // `openshift-monitoring` namespace.
 type ClusterMonitoringConfiguration struct {
-	// The `AlertmanagerMainConfig` resource defines settings for the main 
-	// Alertmanager instance.
+	// The `AlertmanagerMainConfig` resource defines settings for the 
+	// Alertmanager component in the `openshift-monitoring` namespace.
 	AlertmanagerMainConfig *AlertmanagerMainConfig `json:"alertmanagerMain,omitempty"`
 	// OmitFromDoc
 	EtcdConfig *EtcdConfig `json:"-"`
@@ -49,8 +49,8 @@ type ClusterMonitoringConfiguration struct {
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
 }
 
-// The `AlertmanagerMainConfig` resource defines settings for the main 
-// Alertmanager instance.
+// The `AlertmanagerMainConfig` resource defines settings for the 
+// Alertmanager component in the `openshift-monitoring` namespace.
 type AlertmanagerMainConfig struct {
 	// A Boolean flag that enables or disables the main Alertmanager instance
 	// in the `openshift-monitoring` namespace.
@@ -68,7 +68,7 @@ type AlertmanagerMainConfig struct {
 	LogLevel string `json:"logLevel,omitempty"`
 	// Defines the nodes on which the Pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Defines resource requests and limits for single pods.
+	// Defines resource requests and limits for the Alertmanager container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
@@ -97,15 +97,15 @@ type K8sPrometheusAdapter struct {
 // You can use the `DedicatedServiceMonitors` resource to configure dedicated 
 // Service Monitors for the Prometheus Adapter
 type DedicatedServiceMonitors struct {
-// When `Enabled` is set to `true`, the Cluster Monitoring Operator (CMO)
-// deploys and scrapes a dedicated Service Monitor that exposes 
-// the kubelet `/metrics/resource` endpoint. This
-// Service Monitor sets `honorTimestamps: true` and only keeps metrics that are
+// When `enabled` is set to `true`, the Cluster Monitoring Operator (CMO)
+// deploys a dedicated Service Monitor that exposes the kubelet
+// `/metrics/resource` endpoint. This Service Monitor sets
+// `honorTimestamps: true` and only keeps metrics that are
 // relevant for the pod resource queries of Prometheus Adapter.
-// Additionally Prometheus Adapter is configured to use these dedicated metrics.
-// Overall, this feature improves the consistency of Prometheus Adapter-based 
-// CPU usage measurements used by, for example, the `oc adm top pod` command or 
-// the Horizontal Pod Autoscaler.
+// Additionally, Prometheus Adapter is configured to use these dedicated
+// metrics. Overall, this feature improves the consistency of Prometheus 
+// Adapter-based CPU usage measurements used by, for example, the `oc adm top 
+// pod` command or the Horizontal Pod Autoscaler.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
@@ -121,12 +121,12 @@ type KubeStateMetricsConfig struct {
 // The `PrometheusK8sConfig` resource defines settings for the Prometheus 
 // component.
 type PrometheusK8sConfig struct {
-	// Configures how the Prometheus component communicates
-	// with additional Alertmanager instances.
-	// The default value is `nil`.
+	// Configures additional Alertmanager instances that receive alerts from 
+	// the Prometheus component. By default, no additional Alertmanager 
+	// instances are configured.
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
 	// Enforces a body size limit for Prometheus scraped metrics. If a scraped 
-	// metric is larger than the limit, the scrape will fail.
+	// target's body response is larger than the limit, the scrape will fail.
 	// The following values are valid:
 	// an empty value to specify no limit,
 	// a numeric value in Prometheus size format (such as `64MB`), or
@@ -156,7 +156,7 @@ type PrometheusK8sConfig struct {
 	// Defines the remote write configuration, including URL, authentication, 
 	// and relabeling settings.
 	RemoteWrite []RemoteWriteSpec `json:"remoteWrite,omitempty"`
-	// Defines resource requests and limits for single pods.
+	// Defines resource requests and limits for the Prometheus container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines the duration for which Prometheus retains data.
 	// This definition must be specified using the following regular
@@ -166,6 +166,8 @@ type PrometheusK8sConfig struct {
 	Retention string `json:"retention,omitempty"`
 	// Defines the maximum amount of disk space used by data blocks plus the 
 	// write-ahead log (WAL).
+	// Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, 
+	// `TiB`, `PB`, `PiB`, `EB`, and `EiB`. 
 	// By default, no limit is defined.
 	RetentionSize string `json:"retentionSize,omitempty"`
 	// OmitFromDoc
@@ -214,16 +216,18 @@ type ThanosQuerierConfig struct {
 	LogLevel string `json:"logLevel,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Defines resource requests and limits for single pods.
+	// Defines resource requests and limits for the Thanos Querier container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// The `UserWorkloadConfiguration` resource defines the settings for the
-// monitoring stack responsible for user-defined projects in the
+// The `UserWorkloadConfiguration` resource defines the settings 
+// responsible for user-defined projects in the
 // `user-workload-monitoring-config` config map  in the 
-// `openshift-user-workload-monitoring` namespace.
+// `openshift-user-workload-monitoring` namespace. You can only enable
+// `UserWorkloadConfiguration` if you first set `enableUserWorkload` to `true` 
+// in the `openshift-monitoring` config map.
 type UserWorkloadConfiguration struct {
 	// Defines the settings for the Alertmanager component in user workload 
 	// monitoring.
@@ -242,7 +246,7 @@ type UserWorkloadConfiguration struct {
 // The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alertmanager instance used for user-defined projects.
 type AlertmanagerUserWorkloadConfig struct {
 	// A Boolean flag that enables or disables a dedicated instance of 
-	// Alertmanager for user-defined projects in the 
+	// Alertmanager for user-defined alerts in the 
 	// `openshift-user-workload-monitoring` namespace.
 	// The default value is `false`.
 	Enabled bool `json:"enabled,omitempty"`
@@ -255,7 +259,7 @@ type AlertmanagerUserWorkloadConfig struct {
 	// The possible values are `error`, `warn`, `info`, and `debug`.
 	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
-	// Defines resource requests and limits for single pods.
+	// Defines resource requests and limits for the Alertmanager container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
@@ -270,9 +274,9 @@ type AlertmanagerUserWorkloadConfig struct {
 // The `PrometheusRestrictedConfig` resource defines the settings for the 
 // Prometheus component that monitors user-defined projects.
 type PrometheusRestrictedConfig struct {
-	// Configures how the Prometheus component communicates
-	// with additional Alertmanager instances.
-	// By default, no instance is configured.
+	// Configures additional Alertmanager instances that receive alerts from 
+	// the Prometheus component. By default, no additional Alertmanager 
+	// instances are configured.
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
 	// Specifies a per-scrape limit on the number of labels accepted for a 
 	// sample. 
@@ -294,7 +298,7 @@ type PrometheusRestrictedConfig struct {
 	// accepted.
 	// This setting overrides the `SampleLimit` value set in any user-defined 
 	// `ServiceMonitor` or `PodMonitor` object if the value is greater than 
-	// `enforcedSampleLimit`. 
+	// `enforcedTargetLimit`. 
 	// Administrators can use this setting to keep the overall number of 
 	// samples under control.
 	// The default value is `0`, which means that no limit is set.
@@ -330,7 +334,7 @@ type PrometheusRestrictedConfig struct {
 	// Defines the remote write configuration, including URL, authentication, 
 	// and relabeling settings.
 	RemoteWrite []RemoteWriteSpec `json:"remoteWrite,omitempty"`
-	// Defines resource requests and limits for single pods.
+	// Defines resource requests and limits for the Prometheus container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines the duration for which Prometheus retains data.
 	// This definition must be specified using the following regular
@@ -340,6 +344,8 @@ type PrometheusRestrictedConfig struct {
 	Retention string `json:"retention,omitempty"`
 	// Defines the maximum amount of disk space used by data blocks plus the 
 	// write-ahead log (WAL).
+	// Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, 
+	// `TiB`, `PB`, `PiB`, `EB`, and `EiB`. 
 	// The default value is `nil`.
 	RetentionSize string `json:"retentionSize,omitempty"`
 	// Defines tolerations for the pods.
@@ -361,7 +367,7 @@ type ThanosRulerConfig struct {
 	LogLevel string `json:"logLevel,omitempty"`
 	// Defines the nodes on which the Pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Defines resource requests and limits for single pods.
+	// Defines resource requests and limits for the Alertmanager container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines the duration for which Prometheus retains data.
 	// This definition must be specified using the following regular
