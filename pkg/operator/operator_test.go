@@ -445,3 +445,52 @@ func TestUpgradeableStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestRunReport(t *testing.T) {
+	tt := []struct {
+		name       string
+		degraded   client.StateInfo
+		isDegraded bool
+
+		available     client.StateInfo
+		isUnavailable bool
+	}{{
+		name:     "all nils",
+		degraded: nil, isDegraded: false,
+		available: nil, isUnavailable: false,
+	}, {
+		name:     "degraded: false",
+		degraded: asExpected(client.FalseStatus), isDegraded: false,
+		available: nil, isUnavailable: false,
+	}, {
+		name:     "available: false",
+		degraded: nil, isDegraded: false,
+		available: asExpected(client.TrueStatus), isUnavailable: false,
+	}, {
+		name:     "degraded: stateInfo",
+		degraded: &stateInfo{}, isDegraded: true,
+		available: nil, isUnavailable: false,
+	}, {
+		name:     "available: stateInfo",
+		degraded: nil, isDegraded: false,
+		available: &stateInfo{}, isUnavailable: true,
+	}}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			rr := runReport{
+				degraded:  tc.degraded,
+				available: tc.available,
+			}
+
+			if got, want := rr.isDegraded(), tc.isDegraded; got != want {
+				t.Errorf("expected degraded to be %t but got %t", want, got)
+			}
+
+			if got, want := rr.isUnavailable(), tc.isUnavailable; got != want {
+				t.Errorf("expected degraded to be %t but got %t", want, got)
+			}
+		})
+
+	}
+}

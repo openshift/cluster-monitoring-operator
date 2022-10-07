@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"reflect"
 	"strings"
@@ -39,6 +40,7 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	thanosoperator "github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -49,6 +51,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -859,6 +863,90 @@ func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) err
 		return errors.Wrapf(err, "waiting for Prometheus %s/%s", p.GetNamespace(), p.GetName())
 	}
 	return nil
+}
+
+// validatePrometheusResource is a helper method for ValidatePrometheus.
+// NOTE: this function is refactored out of wait.Poll for testing
+func (c Client) validatePrometheusResource(ctx context.Context, prom types.NamespacedName) (bool, []error) {
+
+	p, err := c.mclient.MonitoringV1().Prometheuses(prom.Namespace).Get(ctx, prom.Name, metav1.GetOptions{})
+	if err != nil {
+		// failing to get Prometheus -> Degraded: Unknown & Unavailable: Unknown
+		klog.V(4).Info("validate prometheus failed to get prometheus: ", err)
+		return false, []error{
+			NewUnknownAvailabiltyError(err.Error()),
+			NewUnknownDegradedError(err.Error()),
+		}
+	}
+
+	avail, err := prometheusConditonForType(p.Status.Conditions, monv1.PrometheusAvailable)
+	if err != nil {
+		klog.V(4).Info("validate prometheus failed to get prometheus avail condition: ", err)
+		// failing to get Prometheus.Status.Condtion -> Degraded: Unknown & Unavailable: Unknown
+		return false, []error{
+			NewUnknownAvailabiltyError(err.Error()),
+			NewUnknownDegradedError(err.Error()),
+		}
+	}
+
+	if avail.Status == monv1.PrometheusConditionTrue {
+		// Prometheus is Available; check reconciled Condition as well
+		reconciled, err := prometheusConditonForType(p.Status.Conditions, monv1.PrometheusReconciled)
+		if err != nil {
+			klog.V(4).Info("validate prometheus failed to get prometheus reconciled condition: ", err)
+			// failing to get Prometheus.Status.Condtion -> Degraded: Unknown
+			return false, []error{NewUnknownDegradedError(err.Error())}
+
+		} else if reconciled.Status != monv1.PrometheusConditionTrue {
+			klog.V(4).Info("validate prometheus failed reconciled condition: ", reconciled.Status)
+			msg := fmt.Sprintf("%s: %s", reconciled.Reason, reconciled.Message)
+			return false, []error{NewDegradedError(msg)}
+		}
+
+		// terminate if available & reconciled
+		return true, nil
+	}
+
+	// return reason for failure as state-errors - Degraded: True & Unavailable: True
+	// since prometheus is Unavailable
+
+	msg := fmt.Sprintf("%s: %s", avail.Reason, avail.Message)
+	errs := []error{NewDegradedError(msg)}
+
+	if avail.Status == monv1.PrometheusConditionFalse {
+		// prometheus not available should result in a Degraded and Unavailable error
+		errs = append(errs, NewAvailabilityError(msg))
+	}
+	return false, errs
+}
+
+// ValidatePrometheus returns nil error if Prometheus is fully available.
+// Otherwise, it returns
+// Degraded(True) and Unavailable(True) if Prometheus is not running
+// Degraded(Unknown)  and Unavailable(Unknown) if it fails to retrieve Prometheus status
+func (c *Client) ValidatePrometheus(ctx context.Context, promNsName types.NamespacedName) error {
+	validationErrors := []error{}
+
+	pollErr := wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+		stop, errs := c.validatePrometheusResource(ctx, promNsName)
+		validationErrors = errs
+		return stop, nil
+	})
+
+	if pollErr == wait.ErrWaitTimeout {
+		return apiutilerrors.NewAggregate(validationErrors)
+	}
+
+	return nil
+}
+
+func prometheusConditonForType(conditions []monv1.PrometheusCondition, t monv1.PrometheusConditionType) (monv1.PrometheusCondition, error) {
+	for _, c := range conditions {
+		if c.Type == t {
+			return c, nil
+		}
+	}
+	return monv1.PrometheusCondition{}, fmt.Errorf("prometheus: missing condition type - %s", t)
 }
 
 func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {

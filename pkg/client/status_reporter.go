@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
@@ -36,6 +35,32 @@ const (
 	UserAlermanagerConfigMisconfiguredMessage        = "Misconfigured Alertmanager:  Alertmanager for user-defined alerting is enabled in the openshift-monitoring/cluster-monitoring-config configmap by setting 'enableUserAlertmanagerConfig: true' field. This conflicts with a dedicated Alertmanager instance enabled in  openshift-user-workload-monitoring/user-workload-monitoring-config. Alertmanager enabled in openshift-user-workload-monitoring takes precedence over the one in openshift-monitoring, so please remove the 'enableUserAlertmanagerConfig' field in openshift-monitoring/cluster-monitoring-config."
 	UserAlermanagerConfigMisconfiguredReason         = "UserAlertmanagerMisconfigured"
 )
+
+// Status represents if the state being reported is known to be True, False, or Unknown.
+//
+// NOTE: redefined instead of reusing openshift/config/v1 to avoid coupling
+type Status string
+
+const (
+	TrueStatus    Status = "True"
+	FalseStatus   Status = "False"
+	UnknownStatus Status = "Unknown"
+)
+
+// StateInfo provides all information required by the StatusReporter to report
+// a condition's state such as Status, Reason, and Message
+type StateInfo interface {
+	Status() Status
+	Reason() string
+	Message() string
+}
+
+// StatesReport represents State Information about various States that the
+// StatusReporter will report on such as the Degraded and Available.
+type StatesReport interface {
+	Degraded() StateInfo
+	Available() StateInfo
+}
 
 type StatusReporter struct {
 	client                clientv1.ClusterOperatorInterface
@@ -172,20 +197,32 @@ func (r *StatusReporter) SetRollOutInProgress(ctx context.Context) error {
 	return r.setConditions(ctx, co, conditions)
 }
 
-func (r *StatusReporter) SetFailed(ctx context.Context, statusErr error, reason string) error {
+// ReportState sets the Degraded and the Availability condition as reported by the
+// StatesReport passed. If degraded or availability is nil, no changes are make
+// to the existing condition
+func (r *StatusReporter) ReportState(ctx context.Context, report StatesReport) error {
 	co, err := r.getOrCreateClusterOperator(ctx)
 	if err != nil {
 		return err
 	}
 
 	time := metav1.Now()
-	// The Reason should be upper case camelCase (PascalCase) according to the API docs.
-	reason = cmostr.ToPascalCase(reason)
 
 	conditions := newConditions(co.Status, r.version, time)
-	conditions.setCondition(v1.OperatorAvailable, v1.ConditionFalse, unavailableMessage, reason, time)
-	conditions.setCondition(v1.OperatorProgressing, v1.ConditionFalse, unavailableMessage, reason, time)
-	conditions.setCondition(v1.OperatorDegraded, v1.ConditionTrue, fmt.Sprintf("Failed to rollout the stack. Error: %v", statusErr), reason, time)
+
+	if degraded := report.Degraded(); degraded != nil {
+		// The Reason should be upper case camelCase (PascalCase) according to the API docs.
+		reason := cmostr.ToPascalCase(degraded.Reason())
+
+		conditions.setCondition(v1.OperatorDegraded, v1.ConditionStatus(degraded.Status()),
+			degraded.Message(), reason, time)
+	}
+
+	if available := report.Available(); available != nil {
+		reason := cmostr.ToPascalCase(available.Reason())
+		conditions.setCondition(v1.OperatorAvailable, v1.ConditionStatus(available.Status()),
+			available.Message(), reason, time)
+	}
 
 	return r.setConditions(ctx, co, conditions)
 }
