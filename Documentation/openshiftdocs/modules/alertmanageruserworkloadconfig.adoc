@@ -18,13 +18,13 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 [options="header"]
 |===
 | Property | Type | Description 
-|enabled|bool|A Boolean flag that enables or disables a dedicated instance of Alertmanager for user-defined projects in the `openshift-user-workload-monitoring` namespace. The default value is `false`.
+|enabled|bool|A Boolean flag that enables or disables a dedicated instance of Alertmanager for user-defined alerts in the `openshift-user-workload-monitoring` namespace. The default value is `false`.
 
 |enableAlertmanagerConfig|bool|A Boolean flag to enable or disable user-defined namespaces to be selected for `AlertmanagerConfig` lookup. The default value is `false`.
 
 |logLevel|string|Defines the log level setting for Alertmanager for user workload monitoring. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`.
 
-|resources|*v1.ResourceRequirements|Defines resource requests and limits for single pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the Alertmanager container.
 
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 

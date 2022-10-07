@@ -18,9 +18,9 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
-|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|Configures how the Prometheus component communicates with additional Alertmanager instances. The default value is `nil`.
+|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|Configures additional Alertmanager instances that receive alerts from the Prometheus component. By default, no additional Alertmanager instances are configured.
 
-|enforcedBodySizeLimit|string|Enforces a body size limit for Prometheus scraped metrics. If a scraped metric is larger than the limit, the scrape will fail. The following values are valid: an empty value to specify no limit, a numeric value in Prometheus size format (such as `64MB`), or the string `automatic`, which indicates that the limit will be automatically calculated based on cluster capacity. The default value is empty, which indicates no limit.
+|enforcedBodySizeLimit|string|Enforces a body size limit for Prometheus scraped metrics. If a scraped target's body response is larger than the limit, the scrape will fail. The following values are valid: an empty value to specify no limit, a numeric value in Prometheus size format (such as `64MB`), or the string `automatic`, which indicates that the limit will be automatically calculated based on cluster capacity. The default value is empty, which indicates no limit.
 
 |externalLabels|map[string]string|Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. By default, no labels are added.
 
@@ -32,11 +32,11 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |remoteWrite|[]link:remotewritespec.adoc[RemoteWriteSpec]|Defines the remote write configuration, including URL, authentication, and relabeling settings.
 
-|resources|*v1.ResourceRequirements|Defines resource requests and limits for single pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the Prometheus container.
 
 |retention|string|Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`.
 
-|retentionSize|string|Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). By default, no limit is defined.
+|retentionSize|string|Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, `TiB`, `PB`, `PiB`, `EB`, and `EiB`. By default, no limit is defined.
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 

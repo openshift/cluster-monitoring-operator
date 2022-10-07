@@ -29,9 +29,10 @@ The configuration file itself is always defined under the `config.yaml` key in t
 
 [NOTE]
 ====
-Not all configuration parameters are exposed. 
-Configuring cluster monitoring is optional. 
-If a configuration does not exist or is empty or malformed, default values are used.
+* Not all configuration parameters are exposed. 
+* Configuring cluster monitoring is optional. 
+* If a configuration does not exist or is empty, default values are used.
+* If the configuration isn't valid YAML data, the Cluster Monitoring Operator stops reconciling the resources and reports `Degraded=True` in the status conditions of the Operator.
 ====
 
 

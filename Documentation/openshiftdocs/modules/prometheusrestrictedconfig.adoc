@@ -18,7 +18,7 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 [options="header"]
 |===
 | Property | Type | Description 
-|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|Configures how the Prometheus component communicates with additional Alertmanager instances. By default, no instance is configured.
+|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|Configures additional Alertmanager instances that receive alerts from the Prometheus component. By default, no additional Alertmanager instances are configured.
 
 |enforcedLabelLimit|*uint64|Specifies a per-scrape limit on the number of labels accepted for a sample. If the number of labels exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
 
@@ -26,7 +26,7 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 
 |enforcedLabelValueLengthLimit|*uint64|Specifies a per-scrape limit on the length of a label value for a sample. If a label value exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
 
-|enforcedSampleLimit|*uint64|Specifies a global limit on the number of scraped samples that will be accepted. This setting overrides the `SampleLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedSampleLimit`. Administrators can use this setting to keep the overall number of samples under control. The default value is `0`, which means that no limit is set.
+|enforcedSampleLimit|*uint64|Specifies a global limit on the number of scraped samples that will be accepted. This setting overrides the `SampleLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedTargetLimit`. Administrators can use this setting to keep the overall number of samples under control. The default value is `0`, which means that no limit is set.
 
 |enforcedTargetLimit|*uint64|Specifies a global limit on the number of scraped targets. This setting overrides the `TargetLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedSampleLimit`. Administrators can use this setting to keep the overall number of targets under control. The default value is `0`.
 
@@ -40,11 +40,11 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 
 |remoteWrite|[]link:remotewritespec.adoc[RemoteWriteSpec]|Defines the remote write configuration, including URL, authentication, and relabeling settings.
 
-|resources|*v1.ResourceRequirements|Defines resource requests and limits for single pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the Prometheus container.
 
 |retention|string|Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`.
 
-|retentionSize|string|Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). The default value is `nil`.
+|retentionSize|string|Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, `TiB`, `PB`, `PiB`, `EB`, and `EiB`. The default value is `nil`.
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 

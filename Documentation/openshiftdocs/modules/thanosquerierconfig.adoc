@@ -24,7 +24,7 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
-|resources|*v1.ResourceRequirements|Defines resource requests and limits for single pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the Thanos Querier container.
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 

@@ -9,7 +9,7 @@
 
 === Description
 
-The `AlertmanagerMainConfig` resource defines settings for the main Alertmanager instance.
+The `AlertmanagerMainConfig` resource defines settings for the Alertmanager component in the `openshift-monitoring` namespace.
 
 
 
@@ -26,7 +26,7 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |nodeSelector|map[string]string|Defines the nodes on which the Pods are scheduled.
 
-|resources|*v1.ResourceRequirements|Defines resource requests and limits for single pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the Alertmanager container.
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 

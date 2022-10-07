@@ -15,7 +15,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 [options="header"]
 |===
 | Property | Type | Description 
-|alertmanagerMain|*link:alertmanagermainconfig.adoc[AlertmanagerMainConfig]|The `AlertmanagerMainConfig` resource defines settings for the main Alertmanager instance.
+|alertmanagerMain|*link:alertmanagermainconfig.adoc[AlertmanagerMainConfig]|The `AlertmanagerMainConfig` resource defines settings for the Alertmanager component in the `openshift-monitoring` namespace.
 
 |enableUserWorkload|*bool|\n `UserWorkloadEnabled` a Boolean flag that enables monitoring for user-defined projects.
 

@@ -83,7 +83,7 @@ The `AdditionalAlertmanagerConfig` resource defines settings for how a component
 
 #### Description
 
-The `AlertmanagerMainConfig` resource defines settings for the main Alertmanager instance.
+The `AlertmanagerMainConfig` resource defines settings for the Alertmanager component in the `openshift-monitoring` namespace.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -130,7 +130,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | The `AlertmanagerMainConfig` resource defines settings for the main Alertmanager instance. |
+| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | The `AlertmanagerMainConfig` resource defines settings for the Alertmanager component in the `openshift-monitoring` namespace. |
 | enableUserWorkload | *bool | \n `UserWorkloadEnabled` a Boolean flag that enables monitoring for user-defined projects. |
 | k8sPrometheusAdapter | *[K8sPrometheusAdapter](#k8sprometheusadapter) | `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component. |
 | kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent. |
@@ -152,7 +152,7 @@ You can use the `DedicatedServiceMonitors` resource to configure dedicated Servi
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| enabled | bool | When `Enabled` is set to `true`, the Cluster Monitoring Operator (CMO) deploys and scrapes a dedicated Service Monitor that exposes the kubelet `/metrics/resource` endpoint. This Service Monitor sets `honorTimestamps: true` and only keeps metrics that are relevant for the pod resource queries of Prometheus Adapter. Additionally Prometheus Adapter is configured to use these dedicated metrics. Overall, this feature improves the consistency of Prometheus Adapter-based CPU usage measurements used by, for example, the `oc adm top pod` command or the Horizontal Pod Autoscaler. |
+| enabled | bool | When `enabled` is set to `true`, the Cluster Monitoring Operator (CMO) deploys a dedicated Service Monitor that exposes the kubelet `/metrics/resource` endpoint. This Service Monitor sets `honorTimestamps: true` and only keeps metrics that are relevant for the pod resource queries of Prometheus Adapter. Additionally, Prometheus Adapter is configured to use these dedicated metrics. Overall, this feature improves the consistency of Prometheus Adapter-based CPU usage measurements used by, for example, the `oc adm top pod` command or the Horizontal Pod Autoscaler. |
 
 [Back to TOC](#table-of-contents)
 
@@ -376,7 +376,7 @@ The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler inst
 
 #### Description
 
-The `UserWorkloadConfiguration` resource defines the settings for the monitoring stack responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace.
+The `UserWorkloadConfiguration` resource defines the settings responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace. You can only enable `UserWorkloadConfiguration` if you first set `enableUserWorkload` to `true` in the `openshift-monitoring` config map.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
