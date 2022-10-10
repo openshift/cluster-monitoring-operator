@@ -847,6 +847,11 @@ data:
     # ocs_advanced_feature_usage shows whether the cluster is using any of the advanced
     # features, like external cluster mode or KMS/PV Encryption etc
     - '{__name__="ocs_advanced_feature_usage"}'
+    #
+    # owners: (https://github.com/openshift/machine-config-operator/)
+    #
+    # os_image_url_override:sum tells whether cluster is using default OS image or has been overridden by user
+    - '{__name__="os_image_url_override:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
