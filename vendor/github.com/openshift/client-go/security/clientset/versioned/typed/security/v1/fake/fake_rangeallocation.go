@@ -4,8 +4,11 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	securityv1 "github.com/openshift/api/security/v1"
+	applyconfigurationssecurityv1 "github.com/openshift/client-go/security/applyconfigurations/security/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -99,6 +102,27 @@ func (c *FakeRangeAllocations) DeleteCollection(ctx context.Context, opts v1.Del
 func (c *FakeRangeAllocations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *securityv1.RangeAllocation, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(rangeallocationsResource, name, pt, data, subresources...), &securityv1.RangeAllocation{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*securityv1.RangeAllocation), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied rangeAllocation.
+func (c *FakeRangeAllocations) Apply(ctx context.Context, rangeAllocation *applyconfigurationssecurityv1.RangeAllocationApplyConfiguration, opts v1.ApplyOptions) (result *securityv1.RangeAllocation, err error) {
+	if rangeAllocation == nil {
+		return nil, fmt.Errorf("rangeAllocation provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(rangeAllocation)
+	if err != nil {
+		return nil, err
+	}
+	name := rangeAllocation.Name
+	if name == nil {
+		return nil, fmt.Errorf("rangeAllocation.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewRootPatchSubresourceAction(rangeallocationsResource, *name, types.ApplyPatchType, data), &securityv1.RangeAllocation{})
 	if obj == nil {
 		return nil, err
 	}

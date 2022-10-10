@@ -123,6 +123,34 @@ type NetworkMigration struct {
 	// changing the MTU for the default network will be rejected.
 	// +optional
 	MTU *MTUMigration `json:"mtu,omitempty"`
+
+	// features contains the features migration configuration. Set this to migrate
+	// feature configuration when changing the cluster default network provider.
+	// if unset, the default operation is to migrate all the configuration of
+	// supported features.
+	// +optional
+	Features *FeaturesMigration `json:"features,omitempty"`
+}
+
+type FeaturesMigration struct {
+	// egressIP specifies whether or not the Egress IP configuration is migrated
+	// automatically when changing the cluster default network provider.
+	// If unset, this property defaults to 'true' and Egress IP configure is migrated.
+	// +optional
+	// +kubebuilder:default:=true
+	EgressIP bool `json:"egressIP,omitempty"`
+	// egressFirewall specifies whether or not the Egress Firewall configuration is migrated
+	// automatically when changing the cluster default network provider.
+	// If unset, this property defaults to 'true' and Egress Firewall configure is migrated.
+	// +optional
+	// +kubebuilder:default:=true
+	EgressFirewall bool `json:"egressFirewall,omitempty"`
+	// multicast specifies whether or not the multicast configuration is migrated
+	// automatically when changing the cluster default network provider.
+	// If unset, this property defaults to 'true' and multicast configure is migrated.
+	// +optional
+	// +kubebuilder:default:=true
+	Multicast bool `json:"multicast,omitempty"`
 }
 
 // MTUMigration MTU contains infomation about MTU migration.
