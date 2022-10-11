@@ -51,7 +51,7 @@ function(params)
       {
         metadata+: {
           annotations+: {
-            'service.alpha.openshift.io/inject-cabundle': 'true',
+            'service.beta.openshift.io/inject-cabundle': 'true',
           },
         },
         spec+: {
