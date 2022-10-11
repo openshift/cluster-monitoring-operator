@@ -109,8 +109,8 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | The `AlertmanagerMainConfig` resource defines settings for the Alertmanager component in the `openshift-monitoring` namespace. |
-| enableUserWorkload | *bool | \n `UserWorkloadEnabled` a Boolean flag that enables monitoring for user-defined projects. |
+| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | `AlertmanagerMainConfig` defines settings for the Alertmanager component in the `openshift-monitoring` namespace. |
+| enableUserWorkload | *bool | \n `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects. |
 | k8sPrometheusAdapter | *[K8sPrometheusAdapter](#k8sprometheusadapter) | `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component. |
 | kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent. |
 | prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | `PrometheusK8sConfig` defines settings for the Prometheus component. |
@@ -242,8 +242,8 @@ The `PrometheusRestrictedConfig` resource defines the settings for the Prometheu
 | -------- | ---- | ----------- |
 | additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | Configures additional Alertmanager instances that receive alerts from the Prometheus component. By default, no additional Alertmanager instances are configured. |
 | enforcedLabelLimit | *uint64 | Specifies a per-scrape limit on the number of labels accepted for a sample. If the number of labels exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
-| enforcedLabelNameLengthLimit | *uint64 | Specifies a per-scrape limit on the length of a label name for a sample. If a label name exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
-| enforcedLabelValueLengthLimit | *uint64 | Specifies a per-scrape limit on the length of a label value for a sample. If a label value exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
+| enforcedLabelNameLengthLimit | *uint64 | Specifies a per-scrape limit on the length of a label name for a sample. If the length of a label name exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
+| enforcedLabelValueLengthLimit | *uint64 | Specifies a per-scrape limit on the length of a label value for a sample. If the length of a label value exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
 | enforcedSampleLimit | *uint64 | Specifies a global limit on the number of scraped samples that will be accepted. This setting overrides the `SampleLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedTargetLimit`. Administrators can use this setting to keep the overall number of samples under control. The default value is `0`, which means that no limit is set. |
 | enforcedTargetLimit | *uint64 | Specifies a global limit on the number of scraped targets. This setting overrides the `TargetLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedSampleLimit`. Administrators can use this setting to keep the overall number of targets under control. The default value is `0`. |
 | externalLabels | map[string]string | Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. By default, no labels are added. |
@@ -282,7 +282,7 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 | proxyUrl | string | Defines an optional proxy URL. |
 | queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
 | remoteTimeout | string | Defines the timeout value for requests to the remote write endpoint. |
-| sigv4 | *monv1.Sigv4 | Defines AWS Signature Verification 4 authentication settings. |
+| sigv4 | *monv1.Sigv4 | Defines AWS Signature Version 4 authentication settings. |
 | tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#safetlsconfig) | Defines TLS authentication settings for the remote write endpoint. |
 | url | string | Defines the URL of the remote write endpoint to which samples will be sent. |
 | writeRelabelConfigs | [][monv1.RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#relabelconfig) | Defines the list of remote write relabel configurations. |
@@ -355,7 +355,7 @@ The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler inst
 
 #### Description
 
-The `UserWorkloadConfiguration` resource defines the settings responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace. You can only enable `UserWorkloadConfiguration` if you first set `enableUserWorkload` to `true` in the `openshift-monitoring` config map.
+The `UserWorkloadConfiguration` resource defines the settings responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace. You can only enable `UserWorkloadConfiguration` after you have set `enableUserWorkload` to `true` in the `cluster-monitoring-config` config map under the `openshift-monitoring` namespace.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |

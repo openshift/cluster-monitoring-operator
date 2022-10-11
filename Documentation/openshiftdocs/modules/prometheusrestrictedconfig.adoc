@@ -22,9 +22,9 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 
 |enforcedLabelLimit|*uint64|Specifies a per-scrape limit on the number of labels accepted for a sample. If the number of labels exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
 
-|enforcedLabelNameLengthLimit|*uint64|Specifies a per-scrape limit on the length of a label name for a sample. If a label name exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
+|enforcedLabelNameLengthLimit|*uint64|Specifies a per-scrape limit on the length of a label name for a sample. If the length of a label name exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
 
-|enforcedLabelValueLengthLimit|*uint64|Specifies a per-scrape limit on the length of a label value for a sample. If a label value exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
+|enforcedLabelValueLengthLimit|*uint64|Specifies a per-scrape limit on the length of a label value for a sample. If the length of a label value exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
 
 |enforcedSampleLimit|*uint64|Specifies a global limit on the number of scraped samples that will be accepted. This setting overrides the `SampleLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedTargetLimit`. Administrators can use this setting to keep the overall number of samples under control. The default value is `0`, which means that no limit is set.
 

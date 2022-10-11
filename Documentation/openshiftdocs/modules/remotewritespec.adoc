@@ -41,7 +41,7 @@ link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]
 
 |remoteTimeout|string|Defines the timeout value for requests to the remote write endpoint.
 
-|sigv4|*monv1.Sigv4|Defines AWS Signature Verification 4 authentication settings.
+|sigv4|*monv1.Sigv4|Defines AWS Signature Version 4 authentication settings.
 
 |tlsConfig|*monv1.SafeTLSConfig|Defines TLS authentication settings for the remote write endpoint.
 

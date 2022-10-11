@@ -9,7 +9,7 @@
 
 === Description
 
-The `UserWorkloadConfiguration` resource defines the settings responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace. You can only enable `UserWorkloadConfiguration` if you first set `enableUserWorkload` to `true` in the `openshift-monitoring` config map.
+The `UserWorkloadConfiguration` resource defines the settings responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace. You can only enable `UserWorkloadConfiguration` after you have set `enableUserWorkload` to `true` in the `cluster-monitoring-config` config map under the `openshift-monitoring` namespace.
 
 
 [options="header"]
