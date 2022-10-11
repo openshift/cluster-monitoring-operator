@@ -21,15 +21,15 @@ import (
 
 // The `ClusterMonitoringConfiguration` resource defines settings that
 // customize the default platform monitoring stack through the
-// `cluster-monitoring-config` config map in the
-// `openshift-monitoring` namespace.
+// `cluster-monitoring-config` config map in the `openshift-monitoring`
+// namespace.
 type ClusterMonitoringConfiguration struct {
-	// The `AlertmanagerMainConfig` resource defines settings for the 
+	// `AlertmanagerMainConfig` defines settings for the 
 	// Alertmanager component in the `openshift-monitoring` namespace.
 	AlertmanagerMainConfig *AlertmanagerMainConfig `json:"alertmanagerMain,omitempty"`
 	// OmitFromDoc
 	EtcdConfig *EtcdConfig `json:"-"`
-	//  `UserWorkloadEnabled` a Boolean flag that enables monitoring for user-defined projects.
+	//  `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
 	UserWorkloadEnabled *bool `json:"enableUserWorkload,omitempty"`
 	// OmitFromDoc
 	HTTPConfig *HTTPConfig `json:"http,omitempty"`
@@ -226,8 +226,9 @@ type ThanosQuerierConfig struct {
 // responsible for user-defined projects in the
 // `user-workload-monitoring-config` config map  in the 
 // `openshift-user-workload-monitoring` namespace. You can only enable
-// `UserWorkloadConfiguration` if you first set `enableUserWorkload` to `true` 
-// in the `openshift-monitoring` config map.
+// `UserWorkloadConfiguration` after you have set `enableUserWorkload` to 
+// `true` in the `cluster-monitoring-config` config map under the 
+// `openshift-monitoring` namespace.
 type UserWorkloadConfiguration struct {
 	// Defines the settings for the Alertmanager component in user workload 
 	// monitoring.
@@ -285,12 +286,12 @@ type PrometheusRestrictedConfig struct {
 	// The default value is `0`, which means that no limit is set.
 	EnforcedLabelLimit *uint64 `json:"enforcedLabelLimit,omitempty"`
 	// Specifies a per-scrape limit on the length of a label name for a sample. 
-	// If a label name exceeds this limit after metric relabeling, 
-	// the entire scrape is treated as failed. 
+	// If the length of a label name exceeds this limit after metric 
+	// relabeling, the entire scrape is treated as failed. 
 	// The default value is `0`, which means that no limit is set.
 	EnforcedLabelNameLengthLimit *uint64 `json:"enforcedLabelNameLengthLimit,omitempty"`
 	// Specifies a per-scrape limit on the length of a label value for
-	// a sample. If a label value exceeds this limit after 
+	// a sample. If the length of a label value exceeds this limit after 
 	// metric relabeling, the entire scrape is treated as failed.
 	// The default value is `0`, which means that no limit is set.
 	EnforcedLabelValueLengthLimit *uint64 `json:"enforcedLabelValueLengthLimit,omitempty"`
@@ -439,7 +440,7 @@ type RemoteWriteSpec struct {
 	QueueConfig *monv1.QueueConfig `json:"queueConfig,omitempty"`
 	// Defines the timeout value for requests to the remote write endpoint.
 	RemoteTimeout string `json:"remoteTimeout,omitempty"`
-	// Defines AWS Signature Verification 4 authentication settings.
+	// Defines AWS Signature Version 4 authentication settings.
 	Sigv4 *monv1.Sigv4 `json:"sigv4,omitempty"`
 	// Defines TLS authentication settings for the remote write endpoint.
 	TLSConfig *monv1.SafeTLSConfig `json:"tlsConfig,omitempty"`
