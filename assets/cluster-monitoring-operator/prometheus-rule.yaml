@@ -353,16 +353,6 @@ spec:
       record: cluster:usage:openshift:ingress_request_total:irate5m
     - expr: sum(ingress_controller_aws_nlb_active) or vector(0)
       record: cluster:ingress_controller_aws_nlb_active:sum
-    - expr: min(route_metrics_controller_routes_per_shard)
-      record: cluster:route_metrics_controller_routes_per_shard:min
-    - expr: max(route_metrics_controller_routes_per_shard)
-      record: cluster:route_metrics_controller_routes_per_shard:max
-    - expr: avg(route_metrics_controller_routes_per_shard)
-      record: cluster:route_metrics_controller_routes_per_shard:avg
-    - expr: quantile(0.5, route_metrics_controller_routes_per_shard)
-      record: cluster:route_metrics_controller_routes_per_shard:median
-    - expr: sum (openshift_route_info) by (tls_termination)
-      record: cluster:openshift_route_info:tls_termination:sum
   - name: openshift-build.rules
     rules:
     - expr: sum by (strategy) (openshift_build_status_phase_total)

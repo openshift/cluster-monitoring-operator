@@ -485,32 +485,6 @@ function(params) {
           record: 'cluster:ingress_controller_aws_nlb_active:sum',
           // Informs how many NLBs are active in AWS.
         },
-        {
-          // Tracks the minimum number of routes admitted by any of the shards.
-          expr: 'min(route_metrics_controller_routes_per_shard)',
-          record: 'cluster:route_metrics_controller_routes_per_shard:min',
-        },
-        {
-          // Tracks the maximum number of routes admitted by any of the shards.
-          expr: 'max(route_metrics_controller_routes_per_shard)',
-          record: 'cluster:route_metrics_controller_routes_per_shard:max',
-        },
-        {
-          // Tracks the average value for the route_metrics_controller_routes_per_shard metric.
-          expr: 'avg(route_metrics_controller_routes_per_shard)',
-          record: 'cluster:route_metrics_controller_routes_per_shard:avg',
-        },
-        {
-          // Tracks the median value for the route_metrics_controller_routes_per_shard metric.
-          expr: 'quantile(0.5, route_metrics_controller_routes_per_shard)',
-          record: 'cluster:route_metrics_controller_routes_per_shard:median',
-        },
-        {
-          // Tracks the number of routes for each tls_termination value. The possible values for
-          // tls_termination are edge, passthrough and reencrypt.
-          expr: 'sum (openshift_route_info) by (tls_termination)',
-          record: 'cluster:openshift_route_info:tls_termination:sum',
-        },
       ],
     },
     {
