@@ -38,7 +38,7 @@ func getActiveTarget(body []byte, jobName string) error {
 	}
 
 	for _, job := range activeJobs {
-		name := job.S("discoveredLabels").S("job").Data().(string)
+		name := job.S("scrapePool").Data().(string)
 
 		if name == jobName {
 			return nil
