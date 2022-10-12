@@ -298,7 +298,7 @@ function(params) {
         'include.release.openshift.io/ibm-cloud-managed': 'true',
         'include.release.openshift.io/self-managed-high-availability': 'true',
         'include.release.openshift.io/single-node-developer': 'true',
-        'release.openshift.io/feature-gate': 'TechPreviewNoUpgrade',
+        'release.openshift.io/feature-set': 'TechPreviewNoUpgrade',
       },
     },
     rules: [
