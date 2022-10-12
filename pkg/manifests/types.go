@@ -43,7 +43,8 @@ type ClusterMonitoringConfiguration struct {
 	PrometheusOperatorConfig *PrometheusOperatorConfig `json:"prometheusOperator,omitempty"`
 	// `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 	OpenShiftMetricsConfig *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics,omitempty"`
-	// OmitFromDoc
+	// `TelemeterClientConfig` defines settings for the Telemeter Client
+	// component.
 	TelemeterClientConfig *TelemeterClientConfig `json:"telemeterClient,omitempty"`
 	// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
@@ -149,8 +150,9 @@ type PrometheusK8sConfig struct {
 	// case the queries are saved to an `emptyDir` volume 
 	// at `/var/log/prometheus`, or a full path to a location where
 	// an `emptyDir` volume will be mounted and the queries saved. 
-	// Relative paths are not supported, nor is writing to 
-	// Linux `std` text streams.
+	// Writing to `/dev/stderr`, `/dev/stdout` or `/dev/null` is supported, but 
+	// writing to any other `/dev/` path is not supported. Relative paths are 
+	// also not supported. 
 	// By default, PromQL queries are not logged.
 	QueryLogFile string `json:"queryLogFile,omitempty"`
 	// Defines the remote write configuration, including URL, authentication, 
@@ -328,8 +330,9 @@ type PrometheusRestrictedConfig struct {
 	// case the queries are saved to an `emptyDir` volume 
 	// at `/var/log/prometheus`, or a full path to a location where
 	// an `emptyDir` volume will be mounted and the queries saved. 
-	// Relative paths are not supported, nor is writing to 
-	// Linux `std` text streams.
+	// Writing to `/dev/stderr`, `/dev/stdout` or `/dev/null` is supported, but 
+	// writing to any other `/dev/` path is not supported. Relative paths are 
+	// also not supported. 
 	// By default, PromQL queries are not logged.
 	QueryLogFile string `json:"queryLogFile,omitempty"`
 	// Defines the remote write configuration, including URL, authentication, 
