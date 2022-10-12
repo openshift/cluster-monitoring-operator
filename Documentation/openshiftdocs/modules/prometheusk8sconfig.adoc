@@ -28,7 +28,7 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
-|queryLogFile|string|Specifies the file to which PromQL queries are logged. This setting can be either a filename, in which case the queries are saved to an `emptyDir` volume at `/var/log/prometheus`, or a full path to a location where an `emptyDir` volume will be mounted and the queries saved. Relative paths are not supported, nor is writing to Linux `std` text streams. By default, PromQL queries are not logged.
+|queryLogFile|string|Specifies the file to which PromQL queries are logged. This setting can be either a filename, in which case the queries are saved to an `emptyDir` volume at `/var/log/prometheus`, or a full path to a location where an `emptyDir` volume will be mounted and the queries saved. Writing to `/dev/stderr`, `/dev/stdout` or `/dev/null` is supported, but writing to any other `/dev/` path is not supported. Relative paths are also not supported. By default, PromQL queries are not logged.
 
 |remoteWrite|[]link:remotewritespec.adoc[RemoteWriteSpec]|Defines the remote write configuration, including URL, authentication, and relabeling settings.
 

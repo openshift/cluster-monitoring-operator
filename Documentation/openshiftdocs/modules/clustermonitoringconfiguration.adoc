@@ -17,7 +17,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | Property | Type | Description 
 |alertmanagerMain|*link:alertmanagermainconfig.adoc[AlertmanagerMainConfig]|`AlertmanagerMainConfig` defines settings for the Alertmanager component in the `openshift-monitoring` namespace.
 
-|enableUserWorkload|*bool|`UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
+|enableUserWorkload|*bool|\n `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
 
 |k8sPrometheusAdapter|*link:k8sprometheusadapter.adoc[K8sPrometheusAdapter]|`K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 
@@ -28,6 +28,8 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 |prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|`PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
 
 |openshiftStateMetrics|*link:openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]|`OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
+
+|telemeterClient|*TelemeterClientConfig|`TelemeterClientConfig` defines settings for the Telemeter Client component.
 
 |thanosQuerier|*link:thanosquerierconfig.adoc[ThanosQuerierConfig]|`ThanosQuerierConfig` defines settings for the Thanos Querier component.
 
