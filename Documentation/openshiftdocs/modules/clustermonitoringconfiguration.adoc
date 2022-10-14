@@ -29,7 +29,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 |openshiftStateMetrics|*link:openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]|`OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 
-|telemeterClient|*TelemeterClientConfig|`TelemeterClientConfig` defines settings for the Telemeter Client component.
+|telemeterClient|*link:telemeterclientconfig.adoc[TelemeterClientConfig]|`TelemeterClientConfig` defines settings for the Telemeter Client component.
 
 |thanosQuerier|*link:thanosquerierconfig.adoc[ThanosQuerierConfig]|`ThanosQuerierConfig` defines settings for the Thanos Querier component.
 

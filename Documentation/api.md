@@ -31,6 +31,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [PrometheusRestrictedConfig](#prometheusrestrictedconfig)
 * [RemoteWriteSpec](#remotewritespec)
 * [TLSConfig](#tlsconfig)
+* [TelemeterClientConfig](#telemeterclientconfig)
 * [ThanosQuerierConfig](#thanosquerierconfig)
 * [ThanosRulerConfig](#thanosrulerconfig)
 * [UserWorkloadConfiguration](#userworkloadconfiguration)
@@ -116,7 +117,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | `PrometheusK8sConfig` defines settings for the Prometheus component. |
 | prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | `PrometheusOperatorConfig` defines settings for the Prometheus Operator component. |
 | openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent. |
-| telemeterClient | *TelemeterClientConfig | `TelemeterClientConfig` defines settings for the Telemeter Client component. |
+| telemeterClient | *[TelemeterClientConfig](#telemeterclientconfig) | `TelemeterClientConfig` defines settings for the Telemeter Client component. |
 | thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
 
 [Back to TOC](#table-of-contents)
@@ -308,6 +309,22 @@ The `TLSConfig` resource configures the settings for TLS connections.
 | key | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | Defines the secret key reference containing the private key to use for the remote host. |
 | serverName | string | Used to verify the hostname on the returned certificate. |
 | insecureSkipVerify | bool | When set to `true`, disables the verification of the remote host's certificate and name. |
+
+[Back to TOC](#table-of-contents)
+
+## TelemeterClientConfig
+
+#### Description
+
+The `TelemeterClientConfig` resource defines settings for the `telemeter-client` component.
+
+
+<em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
 
 [Back to TOC](#table-of-contents)
 
