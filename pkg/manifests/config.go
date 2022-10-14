@@ -172,15 +172,6 @@ func (e *EtcdConfig) IsEnabled() bool {
 	return *e.Enabled
 }
 
-type TelemeterClientConfig struct {
-	ClusterID          string            `json:"clusterID"`
-	Enabled            *bool             `json:"enabled"`
-	TelemeterServerURL string            `json:"telemeterServerURL"`
-	Token              string            `json:"token"`
-	NodeSelector       map[string]string `json:"nodeSelector"`
-	Tolerations        []v1.Toleration   `json:"tolerations"`
-}
-
 func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	if cfg == nil {
 		return false
