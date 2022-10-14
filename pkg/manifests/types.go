@@ -206,6 +206,23 @@ type OpenShiftStateMetricsConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
+// `TelemeterClientConfig` defines settings for the Telemeter Client
+// component.
+type TelemeterClientConfig struct {
+	// Unique identifier of the cluster, that will identify the telemeter data send to RedHat
+	ClusterID string `json:"clusterID"`
+	// Enable or disable the telemeter client
+	Enabled   *bool  `json:"enabled"`
+	// Defines the nodes on which the pods are scheduled.
+	NodeSelector       map[string]string `json:"nodeSelector"`
+	// URL of the telemeter server to send telemeter data to
+	TelemeterServerURL string            `json:"telemeterServerURL"`
+	// Token to authenticate against the telemeter server
+	Token              string            `json:"token"`
+	// Defines tolerations for the pods.
+	Tolerations []v1.Toleration `json:"tolerations"`
+}
+
 // The `ThanosQuerierConfig` resource defines settings for the Thanos Querier
 // component.
 type ThanosQuerierConfig struct {
