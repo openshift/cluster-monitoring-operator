@@ -504,11 +504,6 @@ function(params)
       },
     },
 
-    // TODO: remove podDisruptionBudget once https://github.com/prometheus-operator/kube-prometheus/pull/1156 is merged
-    podDisruptionBudget+: {
-      apiVersion: 'policy/v1',
-    },
-
     serviceAccount+: {
       // service account token is managed by the operator.
       automountServiceAccountToken: false,
