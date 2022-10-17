@@ -180,6 +180,7 @@ function(params)
                               // ignore OVNK network interfaces, too.
                               // https://issues.redhat.com/browse/OCPBUGS-1321
                               '--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|tun[0-9]*|br[0-9]*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext)$',
+                              '--path.udev.data=/host/root/run/udev/data',
                             ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts+: [{
