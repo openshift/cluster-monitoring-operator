@@ -330,11 +330,7 @@ The `TLSConfig` resource configures the settings for TLS connections.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| clusterID | string | Unique identifier of the cluster, that will identify the telemeter data send to RedHat |
-| enabled | *bool | Enable or disable the telemeter client |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
-| telemeterServerURL | string | URL of the telemeter server to send telemeter data to |
-| token | string | Token to authenticate against the telemeter server |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
 
 [Back to TOC](#table-of-contents)
