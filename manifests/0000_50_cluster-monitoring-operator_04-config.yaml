@@ -433,6 +433,36 @@ data:
     # Zero would indicate ELB (legacy). This metric is only emitted on AWS.
     - '{__name__="cluster:ingress_controller_aws_nlb_active:sum"}'
     #
+    # owners: (@openshift/network-edge)
+    #
+    # cluster:route_metrics_controller_routes_per_shard:min tracks the minimum number of routes
+    # admitted by any of the shards.
+    - '{__name__="cluster:route_metrics_controller_routes_per_shard:min"}'
+    #
+    # owners: (@openshift/network-edge)
+    #
+    # cluster:route_metrics_controller_routes_per_shard:max tracks the maximum number of routes
+    # admitted by any of the shards.
+    - '{__name__="cluster:route_metrics_controller_routes_per_shard:max"}'
+    #
+    # owners: (@openshift/network-edge)
+    #
+    # cluster:route_metrics_controller_routes_per_shard:avg tracks the average value for the
+    # route_metrics_controller_routes_per_shard metric.
+    - '{__name__="cluster:route_metrics_controller_routes_per_shard:avg"}'
+    #
+    # owners: (@openshift/network-edge)
+    #
+    # cluster:route_metrics_controller_routes_per_shard:median tracks the median value for the
+    # route_metrics_controller_routes_per_shard metric.
+    - '{__name__="cluster:route_metrics_controller_routes_per_shard:median"}'
+    #
+    # owners: (@openshift/network-edge)
+    #
+    # cluster:openshift_route_info:tls_termination:sum tracks the number of routes for each tls_termination
+    # value. The possible values for tls_termination are edge, passthrough and reencrypt. 
+    - '{__name__="cluster:openshift_route_info:tls_termination:sum"}'
+    #
     # owners: (https://github.com/openshift/insights-operator/blob/master/OWNERS)
     #
     # insightsclient_request_send tracks the number of metrics sends.
