@@ -1,12 +1,15 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == PrometheusRestrictedConfig
 
 === Description
 
-PrometheusRestrictedConfig defines configuration related to the Prometheus component that will monitor user-defined projects.
+The `PrometheusRestrictedConfig` resource defines the settings for the Prometheus component that monitors user-defined projects.
 
 
 
@@ -15,37 +18,37 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 [options="header"]
 |===
 | Property | Type | Description 
-|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|AlertmanagerConfigs holds configuration about how the Prometheus component should communicate with aditional Alertmanager instances. default: nil
+|additionalAlertmanagerConfigs|[]link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]|Configures additional Alertmanager instances that receive alerts from the Prometheus component. By default, no additional Alertmanager instances are configured.
 
-|enforcedLabelLimit|*uint64|EnforcedLabelLimit per-scrape limit on the number of labels accepted for a sample. If more than this number of labels are present post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0
+|enforcedLabelLimit|*uint64|Specifies a per-scrape limit on the number of labels accepted for a sample. If the number of labels exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
 
-|enforcedLabelNameLengthLimit|*uint64|EnforcedLabelNameLengthLimit per-scrape limit on the length of labels name that will be accepted for a sample. If a label name is longer than this number post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0
+|enforcedLabelNameLengthLimit|*uint64|Specifies a per-scrape limit on the length of a label name for a sample. If the length of a label name exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
 
-|enforcedLabelValueLengthLimit|*uint64|EnforcedLabelValueLengthLimit per-scrape limit on the length of labels value that will be accepted for a sample. If a label value is longer than this number post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0
+|enforcedLabelValueLengthLimit|*uint64|Specifies a per-scrape limit on the length of a label value for a sample. If the length of a label value exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set.
 
-|enforcedSampleLimit|*uint64|EnforcedSampleLimit defines a global limit on the number of scraped samples that will be accepted. This overrides any SampleLimit set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to enforce the SampleLimit to keep the overall number of samples/series under the desired limit. Note that if SampleLimit is lower that value will be taken instead. default: 0
+|enforcedSampleLimit|*uint64|Specifies a global limit on the number of scraped samples that will be accepted. This setting overrides the `SampleLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedTargetLimit`. Administrators can use this setting to keep the overall number of samples under control. The default value is `0`, which means that no limit is set.
 
-|enforcedTargetLimit|*uint64|EnforcedTargetLimit defines a global limit on the number of scraped targets. This overrides any TargetLimit set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to enforce the TargetLimit to keep the overall number of targets under the desired limit. Note that if TargetLimit is lower, that value will be taken instead, except if either value is zero, in which case the non-zero value will be used. If both values are zero, no limit is enforced. default: 0
+|enforcedTargetLimit|*uint64|Specifies a global limit on the number of scraped targets. This setting overrides the `TargetLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedSampleLimit`. Administrators can use this setting to keep the overall number of targets under control. The default value is `0`.
 
-|externalLabels|map[string]string|ExternalLabels defines labels to be added to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager). default: nil
+|externalLabels|map[string]string|Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. By default, no labels are added.
 
-|logLevel|string|LogLevel defines the log level for Prometheus. Possible values are: error, warn, info, debug. default: info
+|logLevel|string|Defines the log level setting for Prometheus. The possible values are `error`, `warn`, `info`, and `debug`. The default setting is `info`.
 
-|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+|nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
-|queryLogFile|string|QueryLogFile specifies the file to which PromQL queries are logged. Suports both just a filename in which case they will be saved to an emptyDir volume at /var/log/prometheus, if a full path is given an emptyDir volume will be mounted at that location. Relative paths not supported, also not supported writing to linux std streams. default: \"\"
+|queryLogFile|string|Specifies the file to which PromQL queries are logged. This setting can be either a filename, in which case the queries are saved to an `emptyDir` volume at `/var/log/prometheus`, or a full path to a location where an `emptyDir` volume will be mounted and the queries saved. Writing to `/dev/stderr`, `/dev/stdout` or `/dev/null` is supported, but writing to any other `/dev/` path is not supported. Relative paths are also not supported. By default, PromQL queries are not logged.
 
-|remoteWrite|[]link:remotewritespec.adoc[RemoteWriteSpec]|RemoteWrite Holds the remote write configuration, everything from url, authorization to relabeling
+|remoteWrite|[]link:remotewritespec.adoc[RemoteWriteSpec]|Defines the remote write configuration, including URL, authentication, and relabeling settings.
 
-|resources|*v1.ResourceRequirements|Resources define resources requests and limits for single Pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the Prometheus container.
 
-|retention|string|Retention defines the Time duration Prometheus shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d
+|retention|string|Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`.
 
-|retentionSize|string|RetentionSize defines the maximum amount of disk space used by blocks + WAL. default: nil
+|retentionSize|string|Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, `TiB`, `PB`, `PiB`, `EB`, and `EiB`. The default value is `nil`.
 
-|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+|tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
-|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to configure storageClass and size of volume.
+|volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Prometheus. Use this setting to configure the storage class and size of a volume.
 
 |===
 

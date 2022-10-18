@@ -1,24 +1,27 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == UserWorkloadConfiguration
 
 === Description
 
-UserWorkloadConfiguration defines configuration that allows users to customise the monitoring stack responsible for user-defined projects through the user-workload-monitoring-config ConfigMap in the openshift-user-workload-monitoring namespace
+The `UserWorkloadConfiguration` resource defines the settings responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace. You can only enable `UserWorkloadConfiguration` after you have set `enableUserWorkload` to `true` in the `cluster-monitoring-config` config map under the `openshift-monitoring` namespace.
 
 
 [options="header"]
 |===
 | Property | Type | Description 
-|alertmanager|*link:alertmanageruserworkloadconfig.adoc[AlertmanagerUserWorkloadConfig]|Alertmanager defines configuration for Alertmanager component.
+|alertmanager|*link:alertmanageruserworkloadconfig.adoc[AlertmanagerUserWorkloadConfig]|Defines the settings for the Alertmanager component in user workload monitoring.
 
-|prometheus|*link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]|Prometheus defines configuration for Prometheus component.
+|prometheus|*link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]|Defines the settings for the Prometheus component in user workload monitoring.
 
-|prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|PrometheusOperator defines configuration for prometheus-operator component.
+|prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|Defines the settings for the Prometheus Operator component in user workload monitoring.
 
-|thanosRuler|*link:thanosrulerconfig.adoc[ThanosRulerConfig]|ThanosRuler defines configuration for the Thanos Ruler component
+|thanosRuler|*link:thanosrulerconfig.adoc[ThanosRulerConfig]|Defines the settings for the Thanos Ruler component in user workload monitoring.
 
 |===
 

@@ -31,6 +31,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [PrometheusRestrictedConfig](#prometheusrestrictedconfig)
 * [RemoteWriteSpec](#remotewritespec)
 * [TLSConfig](#tlsconfig)
+* [TelemeterClientConfig](#telemeterclientconfig)
 * [ThanosQuerierConfig](#thanosquerierconfig)
 * [ThanosRulerConfig](#thanosrulerconfig)
 * [UserWorkloadConfiguration](#userworkloadconfiguration)
@@ -39,7 +40,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 
 #### Description
 
-AdditionalAlertmanagerConfig defines configuration on how a component should communicate with aditional Alertmanager instances.
+The `AdditionalAlertmanagerConfig` resource defines settings for how a component communicates with additional Alertmanager instances.
 
 #### Required
    - ` apiVersion `
@@ -48,13 +49,13 @@ AdditionalAlertmanagerConfig defines configuration on how a component should com
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| apiVersion | string | APIVersion defines the api version of Alertmanager. |
-| bearerToken | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | BearerToken defines the bearer token to use when authenticating to Alertmanager. |
-| pathPrefix | string | PathPrefix defines the path prefix to add in front of the push endpoint path. |
-| scheme | string | Scheme the URL scheme to use when talking to Alertmanagers. |
-| staticConfigs | []string | StaticConfigs a list of statically configured Alertmanagers. |
-| timeout | *string | Timeout defines the timeout used when sending alerts. |
-| tlsConfig | [TLSConfig](#tlsconfig) | TLSConfig defines the TLS Config to use for alertmanager connection. |
+| apiVersion | string | Defines the API version of Alertmanager. Possible values are `v1` or `v2`. The default is `v2`. |
+| bearerToken | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | Defines the secret key reference containing the bearer token to use when authenticating to Alertmanager. |
+| pathPrefix | string | Defines the path prefix to add in front of the push endpoint path. |
+| scheme | string | Defines the URL scheme to use when communicating with Alertmanager instances. Possible values are `http` or `https`. The default value is `http`. |
+| staticConfigs | []string | A list of statically configured Alertmanager endpoints in the form of `<hosts>:<port>`. |
+| timeout | *string | Defines the timeout value used when sending alerts. |
+| tlsConfig | [TLSConfig](#tlsconfig) | Defines the TLS settings to use for Alertmanager connections. |
 
 [Back to TOC](#table-of-contents)
 
@@ -62,21 +63,21 @@ AdditionalAlertmanagerConfig defines configuration on how a component should com
 
 #### Description
 
-AlertmanagerMainConfig defines configuration related with the main Alertmanager instance.
+The `AlertmanagerMainConfig` resource defines settings for the Alertmanager component in the `openshift-monitoring` namespace.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| enabled | *bool | Enabled a boolean flag to enable or disable the main Alertmanager instance under openshift-monitoring default: true |
-| enableUserAlertmanagerConfig | bool | EnableUserAlertManagerConfig boolean flag to enable or disable user-defined namespaces to be selected for AlertmanagerConfig lookup, by default Alertmanager only looks for configuration in the namespace where it was deployed to. This will only work if the UWM Alertmanager instance is not enabled. default: false |
-| logLevel | string | LogLevel defines the log level for Alertmanager. Possible values are: error, warn, info, debug. default: info |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Resources define resources requests and limits for single Pods. |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
-| topologySpreadConstraints | []v1.TopologySpreadConstraint | TopologySpreadConstraints defines the pod's topology spread constraints. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | VolumeClaimTemplate defines persistent storage for Alertmanager. It's possible to configure storageClass and size of volume. |
+| enabled | *bool | A Boolean flag that enables or disables the main Alertmanager instance in the `openshift-monitoring` namespace. The default value is `true`. |
+| enableUserAlertmanagerConfig | bool | A Boolean flag that enables or disables user-defined namespaces to be selected for `AlertmanagerConfig` lookups. This setting only applies if the user workload monitoring instance of Alertmanager is not enabled. The default value is `false`. |
+| logLevel | string | Defines the log level setting for Alertmanager. The possible values are: `error`, `warn`, `info`, `debug`. The default value is `info`. |
+| nodeSelector | map[string]string | Defines the nodes on which the Pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Defines resource requests and limits for the Alertmanager container. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Alertmanager. Use this setting to configure the persistent volume claim, including storage class, volume size, and name. |
 
 [Back to TOC](#table-of-contents)
 
@@ -84,20 +85,20 @@ AlertmanagerMainConfig defines configuration related with the main Alertmanager 
 
 #### Description
 
-AlertmanagerUserWorkloadConfig defines configuration for the Alertmanager instance for user-defined projects.
+The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alertmanager instance used for user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| enabled | bool | Enabled a boolean flag to enable or disable a dedicated instance of Alertmanager for user-defined projects under openshift-user-workload-monitoring default: false |
-| enableAlertmanagerConfig | bool | EnableAlertmanagerConfig a boolean flag to enable or disable user-defined namespaces to be selected for AlertmanagerConfig lookup, by default Alertmanager only looks for configuration in the namespace where it was deployed to default: false |
-| logLevel | string | LogLevel defines the log level for Alertmanager. Possible values are: error, warn, info, debug. default: info |
-| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Resources define resources requests and limits for single Pods. |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | VolumeClaimTemplate defines persistent storage for Alertmanager. It's possible to configure storageClass and size of volume. |
+| enabled | bool | A Boolean flag that enables or disables a dedicated instance of Alertmanager for user-defined alerts in the `openshift-user-workload-monitoring` namespace. The default value is `false`. |
+| enableAlertmanagerConfig | bool | A Boolean flag to enable or disable user-defined namespaces to be selected for `AlertmanagerConfig` lookup. The default value is `false`. |
+| logLevel | string | Defines the log level setting for Alertmanager for user workload monitoring. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Defines resource requests and limits for the Alertmanager container. |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Alertmanager. Use this setting to configure the persistent volume claim, including storage class, volume size and name. |
 
 [Back to TOC](#table-of-contents)
 
@@ -105,18 +106,19 @@ AlertmanagerUserWorkloadConfig defines configuration for the Alertmanager instan
 
 #### Description
 
-ClusterMonitoringConfiguration defines configuration that allows users to customise the platform monitoring stack through the cluster-monitoring-config ConfigMap in the openshift-monitoring namespace
+The `ClusterMonitoringConfiguration` resource defines settings that customize the default platform monitoring stack through the `cluster-monitoring-config` config map in the `openshift-monitoring` namespace.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | AlertmanagerMainConfig defines configuration related with the main Alertmanager instance. |
-| enableUserWorkload | *bool | UserWorkloadEnabled boolean flag to enable monitoring for user-defined projects. |
-| k8sPrometheusAdapter | *[K8sPrometheusAdapter](#k8sprometheusadapter) | K8sPrometheusAdapter defines configuration related with prometheus-adapter |
-| kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | KubeStateMetricsConfig defines configuration related with kube-state-metrics agent |
-| prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | PrometheusK8sConfig defines configuration related with prometheus |
-| prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | PrometheusOperatorConfig defines configuration related with prometheus-operator |
-| openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | OpenShiftMetricsConfig defines configuration related with openshift-state-metrics agent |
-| thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | ThanosQuerierConfig defines configuration related with the Thanos Querier component |
+| alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | `AlertmanagerMainConfig` defines settings for the Alertmanager component in the `openshift-monitoring` namespace. |
+| enableUserWorkload | *bool | `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects. |
+| k8sPrometheusAdapter | *[K8sPrometheusAdapter](#k8sprometheusadapter) | `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component. |
+| kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent. |
+| prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | `PrometheusK8sConfig` defines settings for the Prometheus component. |
+| prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | `PrometheusOperatorConfig` defines settings for the Prometheus Operator component. |
+| openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent. |
+| telemeterClient | *[TelemeterClientConfig](#telemeterclientconfig) | `TelemeterClientConfig` defines settings for the Telemeter Client component. |
+| thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
 
 [Back to TOC](#table-of-contents)
 
@@ -124,14 +126,14 @@ ClusterMonitoringConfiguration defines configuration that allows users to custom
 
 #### Description
 
-Configuration for prometheus-adapter dedicated Service Monitors. When Enabled is set to true, CMO will deploy and scrape a dedicated Service Monitor, that exposes the kubelet /metrics/resource endpoint. This Service Monitor sets honorTimestamps: true and only keeps metrics that are relevant for the pod resource queries of prometheus-adapter. Additionally prometheus-adapter is configured to use these dedicated metrics. Overall this will improve the consistency of prometheus-adapter based CPU usage measurements used by for example the oc adm top pod command or the Horizontal Pod Autoscaler.
+You can use the `DedicatedServiceMonitors` resource to configure dedicated Service Monitors for the Prometheus Adapter
 
 
 <em>appears in: [K8sPrometheusAdapter](#k8sprometheusadapter)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| enabled | bool |  |
+| enabled | bool | When `enabled` is set to `true`, the Cluster Monitoring Operator (CMO) deploys a dedicated Service Monitor that exposes the kubelet `/metrics/resource` endpoint. This Service Monitor sets `honorTimestamps: true` and only keeps metrics that are relevant for the pod resource queries of Prometheus Adapter. Additionally, Prometheus Adapter is configured to use these dedicated metrics. Overall, this feature improves the consistency of Prometheus Adapter-based CPU usage measurements used by, for example, the `oc adm top pod` command or the Horizontal Pod Autoscaler. |
 
 [Back to TOC](#table-of-contents)
 
@@ -139,17 +141,17 @@ Configuration for prometheus-adapter dedicated Service Monitors. When Enabled is
 
 #### Description
 
-K8sPrometheusAdapter defines configuration related with Prometheus Adapater
+The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| audit | *Audit | Audit defines the audit configuration to be used by the prometheus adapter instance. Possible profile values are: \"metadata, request, requestresponse, none\". default: metadata |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
-| dedicatedServiceMonitors | *[DedicatedServiceMonitors](#dedicatedservicemonitors) |  |
+| audit | *Audit | Defines the audit configuration used by the Prometheus Adapter instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`. |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
+| dedicatedServiceMonitors | *[DedicatedServiceMonitors](#dedicatedservicemonitors) | Defines dedicated service monitors. |
 
 [Back to TOC](#table-of-contents)
 
@@ -157,15 +159,15 @@ K8sPrometheusAdapter defines configuration related with Prometheus Adapater
 
 #### Description
 
-KubeStateMetricsConfig defines configuration related with the kube-state-metrics agent.
+The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metrics` agent.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
 
 [Back to TOC](#table-of-contents)
 
@@ -173,15 +175,15 @@ KubeStateMetricsConfig defines configuration related with the kube-state-metrics
 
 #### Description
 
-OpenShiftStateMetricsConfig holds configuration related to openshift-state-metrics agent.
+The `OpenShiftStateMetricsConfig` resource defines settings for the `openshift-state-metrics` agent.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
 
 [Back to TOC](#table-of-contents)
 
@@ -189,26 +191,26 @@ OpenShiftStateMetricsConfig holds configuration related to openshift-state-metri
 
 #### Description
 
-PrometheusK8sConfig holds configuration related to the Prometheus component.
+The `PrometheusK8sConfig` resource defines settings for the Prometheus component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | AlertmanagerConfigs holds configuration about how the Prometheus component should communicate with aditional Alertmanager instances. default: nil |
-| enforcedBodySizeLimit | string | EnforcedBodySizeLimit enforces body size limit of Prometheus scrapes, if a scrape is bigger than the limit it will fail. 3 kinds of values are accepted:\n 1. empty value: no limit\n 2. a value in Prometheus size format, e.g. \"64MB\"\n 3. string \"automatic\", which means the limit will be automatically calculated based on\n    cluster capacity.\ndefault: 64MB |
-| externalLabels | map[string]string | ExternalLabels defines labels to be added to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager). default: nil |
-| logLevel | string | LogLevel defines the log level for Prometheus. Possible values are: error, warn, info, debug. default: info |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| queryLogFile | string | QueryLogFile specifies the file to which PromQL queries are logged. Suports both just a filename in which case they will be saved to an emptyDir volume at /var/log/prometheus, if a full path is given an emptyDir volume will be mounted at that location. Relative paths not supported, also not supported writing to linux std streams. default: \"\" |
-| remoteWrite | [][RemoteWriteSpec](#remotewritespec) | RemoteWrite Holds the remote write configuration, everything from url, authorization to relabeling |
-| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Resources define resources requests and limits for single Pods. |
-| retention | string | Retention defines the Time duration Prometheus shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d |
-| retentionSize | string | RetentionSize defines the maximum amount of disk space used by blocks + WAL. default: nil |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
-| topologySpreadConstraints | []v1.TopologySpreadConstraint | TopologySpreadConstraints defines the pod's topology spread constraints. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to configure storageClass and size of volume. |
+| additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | Configures additional Alertmanager instances that receive alerts from the Prometheus component. By default, no additional Alertmanager instances are configured. |
+| enforcedBodySizeLimit | string | Enforces a body size limit for Prometheus scraped metrics. If a scraped target's body response is larger than the limit, the scrape will fail. The following values are valid: an empty value to specify no limit, a numeric value in Prometheus size format (such as `64MB`), or the string `automatic`, which indicates that the limit will be automatically calculated based on cluster capacity. The default value is empty, which indicates no limit. |
+| externalLabels | map[string]string | Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. By default, no labels are added. |
+| logLevel | string | Defines the log level setting for Prometheus. The possible values are: `error`, `warn`, `info`, and `debug`. The default value is `info`. |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| queryLogFile | string | Specifies the file to which PromQL queries are logged. This setting can be either a filename, in which case the queries are saved to an `emptyDir` volume at `/var/log/prometheus`, or a full path to a location where an `emptyDir` volume will be mounted and the queries saved. Writing to `/dev/stderr`, `/dev/stdout` or `/dev/null` is supported, but writing to any other `/dev/` path is not supported. Relative paths are also not supported. By default, PromQL queries are not logged. |
+| remoteWrite | [][RemoteWriteSpec](#remotewritespec) | Defines the remote write configuration, including URL, authentication, and relabeling settings. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Defines resource requests and limits for the Prometheus container. |
+| retention | string | Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`. |
+| retentionSize | string | Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, `TiB`, `PB`, `PiB`, `EB`, and `EiB`. By default, no limit is defined. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines the pod's topology spread constraints. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Prometheus. Use this setting to configure the persistent volume claim, including storage class, volume size and name. |
 
 [Back to TOC](#table-of-contents)
 
@@ -216,16 +218,16 @@ PrometheusK8sConfig holds configuration related to the Prometheus component.
 
 #### Description
 
-PrometheusOperatorConfig holds configuration related to Prometheus Operator.
+The `PrometheusOperatorConfig` resource defines settings for the Prometheus Operator component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration), [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| logLevel | string | LogLevel defines the log level for Prometheus Operator. Possible values are: error, warn, info, debug. default: info |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
+| logLevel | string | Defines the log level settings for Prometheus Operator. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`. |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
 
 [Back to TOC](#table-of-contents)
 
@@ -233,29 +235,29 @@ PrometheusOperatorConfig holds configuration related to Prometheus Operator.
 
 #### Description
 
-PrometheusRestrictedConfig defines configuration related to the Prometheus component that will monitor user-defined projects.
+The `PrometheusRestrictedConfig` resource defines the settings for the Prometheus component that monitors user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | AlertmanagerConfigs holds configuration about how the Prometheus component should communicate with aditional Alertmanager instances. default: nil |
-| enforcedLabelLimit | *uint64 | EnforcedLabelLimit per-scrape limit on the number of labels accepted for a sample. If more than this number of labels are present post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0 |
-| enforcedLabelNameLengthLimit | *uint64 | EnforcedLabelNameLengthLimit per-scrape limit on the length of labels name that will be accepted for a sample. If a label name is longer than this number post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0 |
-| enforcedLabelValueLengthLimit | *uint64 | EnforcedLabelValueLengthLimit per-scrape limit on the length of labels value that will be accepted for a sample. If a label value is longer than this number post metric-relabeling, the entire scrape will be treated as failed. 0 means no limit. default: 0 |
-| enforcedSampleLimit | *uint64 | EnforcedSampleLimit defines a global limit on the number of scraped samples that will be accepted. This overrides any SampleLimit set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to enforce the SampleLimit to keep the overall number of samples/series under the desired limit. Note that if SampleLimit is lower that value will be taken instead. default: 0 |
-| enforcedTargetLimit | *uint64 | EnforcedTargetLimit defines a global limit on the number of scraped targets. This overrides any TargetLimit set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to enforce the TargetLimit to keep the overall number of targets under the desired limit. Note that if TargetLimit is lower, that value will be taken instead, except if either value is zero, in which case the non-zero value will be used. If both values are zero, no limit is enforced. default: 0 |
-| externalLabels | map[string]string | ExternalLabels defines labels to be added to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager). default: nil |
-| logLevel | string | LogLevel defines the log level for Prometheus. Possible values are: error, warn, info, debug. default: info |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| queryLogFile | string | QueryLogFile specifies the file to which PromQL queries are logged. Suports both just a filename in which case they will be saved to an emptyDir volume at /var/log/prometheus, if a full path is given an emptyDir volume will be mounted at that location. Relative paths not supported, also not supported writing to linux std streams. default: \"\" |
-| remoteWrite | [][RemoteWriteSpec](#remotewritespec) | RemoteWrite Holds the remote write configuration, everything from url, authorization to relabeling |
-| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Resources define resources requests and limits for single Pods. |
-| retention | string | Retention defines the Time duration Prometheus shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d |
-| retentionSize | string | RetentionSize defines the maximum amount of disk space used by blocks + WAL. default: nil |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to configure storageClass and size of volume. |
+| additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | Configures additional Alertmanager instances that receive alerts from the Prometheus component. By default, no additional Alertmanager instances are configured. |
+| enforcedLabelLimit | *uint64 | Specifies a per-scrape limit on the number of labels accepted for a sample. If the number of labels exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
+| enforcedLabelNameLengthLimit | *uint64 | Specifies a per-scrape limit on the length of a label name for a sample. If the length of a label name exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
+| enforcedLabelValueLengthLimit | *uint64 | Specifies a per-scrape limit on the length of a label value for a sample. If the length of a label value exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
+| enforcedSampleLimit | *uint64 | Specifies a global limit on the number of scraped samples that will be accepted. This setting overrides the `SampleLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedTargetLimit`. Administrators can use this setting to keep the overall number of samples under control. The default value is `0`, which means that no limit is set. |
+| enforcedTargetLimit | *uint64 | Specifies a global limit on the number of scraped targets. This setting overrides the `TargetLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedSampleLimit`. Administrators can use this setting to keep the overall number of targets under control. The default value is `0`. |
+| externalLabels | map[string]string | Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. By default, no labels are added. |
+| logLevel | string | Defines the log level setting for Prometheus. The possible values are `error`, `warn`, `info`, and `debug`. The default setting is `info`. |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| queryLogFile | string | Specifies the file to which PromQL queries are logged. This setting can be either a filename, in which case the queries are saved to an `emptyDir` volume at `/var/log/prometheus`, or a full path to a location where an `emptyDir` volume will be mounted and the queries saved. Writing to `/dev/stderr`, `/dev/stdout` or `/dev/null` is supported, but writing to any other `/dev/` path is not supported. Relative paths are also not supported. By default, PromQL queries are not logged. |
+| remoteWrite | [][RemoteWriteSpec](#remotewritespec) | Defines the remote write configuration, including URL, authentication, and relabeling settings. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Defines resource requests and limits for the Prometheus container. |
+| retention | string | Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`. |
+| retentionSize | string | Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, `TiB`, `PB`, `PiB`, `EB`, and `EiB`. The default value is `nil`. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Prometheus. Use this setting to configure the storage class and size of a volume. |
 
 [Back to TOC](#table-of-contents)
 
@@ -263,7 +265,7 @@ PrometheusRestrictedConfig defines configuration related to the Prometheus compo
 
 #### Description
 
-RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the BearerToken field removed. In the future other fields might be added here.
+The `RemoteWriteSpec` resource defines the settings for remote write storage.
 
 #### Required
    - ` url `
@@ -272,20 +274,20 @@ RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the Bear
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| authorization | *monv1.SafeAuthorization | Authorization defines the authorization section for remote write |
-| basicAuth | *[monv1.BasicAuth](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#basicauth) | BasicAuth defines configuration for basic authentication for the URL. |
-| bearerTokenFile | string | BearerTokenFile defines the file where the bearer token for remote write resides. |
-| headers | map[string]string | Headers custom HTTP headers to be sent along with each remote write request. Be aware that headers that are set by Prometheus itself can't be overwritten. |
-| metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#metadataconfig) | MetadataConfig configures the sending of series metadata to remote storage. |
-| name | string | Name defines the name of the remote write queue, must be unique if specified. The name is used in metrics and logging in order to differentiate queues. |
-| oauth2 | *monv1.OAuth2 | OAuth2 configures OAuth2 authentication for remote write. |
-| proxyUrl | string | ProxyURL defines an optional proxy URL |
-| queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#queueconfig) | QueueConfig allows tuning of the remote write queue parameters. |
-| remoteTimeout | string | RemoteTimeout defines the timeout for requests to the remote write endpoint. |
-| sigv4 | *monv1.Sigv4 | Sigv4 allows to configures AWS's Signature Verification 4 |
-| tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#safetlsconfig) | TLSConfig defines the TLS configuration to use for remote write. |
-| url | string | URL defines the URL of the endpoint to send samples to. |
-| writeRelabelConfigs | [][monv1.RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#relabelconfig) | WriteRelabelConfigs defines the list of remote write relabel configurations. |
+| authorization | *monv1.SafeAuthorization | Defines the authorization settings for remote write storage. |
+| basicAuth | *[monv1.BasicAuth](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#basicauth) | Defines basic authentication settings for the remote write endpoint URL. |
+| bearerTokenFile | string | Defines the file that contains the bearer token for the remote write endpoint. However, because you cannot mount secrets in a pod, in practice you can only reference the token of the service account. |
+| headers | map[string]string | Specifies the custom HTTP headers to be sent along with each remote write request. Headers set by Prometheus cannot be overwritten. |
+| metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#metadataconfig) | Defines settings for sending series metadata to remote write storage. |
+| name | string | Defines the name of the remote write queue. This name is used in metrics and logging to differentiate queues. If specified, this name must be unique. |
+| oauth2 | *monv1.OAuth2 | Defines OAuth2 authentication settings for the remote write endpoint. |
+| proxyUrl | string | Defines an optional proxy URL. |
+| queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
+| remoteTimeout | string | Defines the timeout value for requests to the remote write endpoint. |
+| sigv4 | *monv1.Sigv4 | Defines AWS Signature Version 4 authentication settings. |
+| tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#safetlsconfig) | Defines TLS authentication settings for the remote write endpoint. |
+| url | string | Defines the URL of the remote write endpoint to which samples will be sent. |
+| writeRelabelConfigs | [][monv1.RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#relabelconfig) | Defines the list of remote write relabel configurations. |
 
 [Back to TOC](#table-of-contents)
 
@@ -293,7 +295,7 @@ RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the Bear
 
 #### Description
 
-TLSConfig configures the options for TLS connections.
+The `TLSConfig` resource configures the settings for TLS connections.
 
 #### Required
    - ` insecureSkipVerify `
@@ -302,11 +304,34 @@ TLSConfig configures the options for TLS connections.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| ca | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | CA defines the CA cert in the Prometheus container to use for the targets. |
-| cert | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | Cert defines the client cert in the Prometheus container to use for the targets. |
-| key | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | Key defines the client key in the Prometheus container to use for the targets. |
-| serverName | string | ServerName used to verify the hostname for the targets. |
-| insecureSkipVerify | bool | InsecureSkipVerify disable target certificate validation. |
+| ca | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | Defines the secret key reference containing the Certificate Authority (CA) to use for the remote host. |
+| cert | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | Defines the secret key reference containing the public certificate to use for the remote host. |
+| key | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core) | Defines the secret key reference containing the private key to use for the remote host. |
+| serverName | string | Used to verify the hostname on the returned certificate. |
+| insecureSkipVerify | bool | When set to `true`, disables the verification of the remote host's certificate and name. |
+
+[Back to TOC](#table-of-contents)
+
+## TelemeterClientConfig
+
+#### Description
+
+`TelemeterClientConfig` defines settings for the Telemeter Client component.
+
+#### Required
+   - ` clusterID `
+   - ` enabled `
+   - ` nodeSelector `
+   - ` telemeterServerURL `
+   - ` token `
+   - ` tolerations `
+
+<em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
 
 [Back to TOC](#table-of-contents)
 
@@ -314,18 +339,18 @@ TLSConfig configures the options for TLS connections.
 
 #### Description
 
-ThanosQuerierConfig holds configuration related to Thanos Querier component.
+The `ThanosQuerierConfig` resource defines settings for the Thanos Querier component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| enableRequestLogging | bool | EnableRequestLogging boolean flag to enable or disable request logging default: false |
-| logLevel | string | LogLevel defines the log level for Thanos Querier. Possible values are: error, warn, info, debug. default: info |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Resources define resources requests and limits for single Pods. |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
+| enableRequestLogging | bool | A Boolean flag that enables or disables request logging. The default value is `false`. |
+| logLevel | string | Defines the log level setting for Thanos Querier. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`. |
+| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Defines resource requests and limits for the Thanos Querier container. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
 
 [Back to TOC](#table-of-contents)
 
@@ -333,21 +358,21 @@ ThanosQuerierConfig holds configuration related to Thanos Querier component.
 
 #### Description
 
-ThanosRulerConfig defines configuration for the Thanos Ruler instance for user-defined projects.
+The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler instance for user-defined projects.
 
 
 <em>appears in: [UserWorkloadConfiguration](#userworkloadconfiguration)</em>
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | AlertmanagerConfigs holds configuration about how the Thanos Ruler component should communicate with aditional Alertmanager instances. default: nil |
-| logLevel | string | LogLevel defines the log level for Thanos Ruler. Possible values are: error, warn, info, debug. default: info |
-| nodeSelector | map[string]string | NodeSelector defines which Nodes the Pods are scheduled on. |
-| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Resources define resources requests and limits for single Pods. |
-| retention | string | Retention defines the time duration Thanos Ruler shall retain data for. Must match the regular expression [0-9]+(ms\|s\|m\|h\|d\|w\|y) (milliseconds seconds minutes hours days weeks years). default: 15d |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Tolerations defines the Pods tolerations. |
-| topologySpreadConstraints | []v1.TopologySpreadConstraint | TopologySpreadConstraints defines the pod's topology spread constraints. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | VolumeClaimTemplate defines persistent storage for Thanos Ruler. It's possible to configure storageClass and size of volume. |
+| additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | Configures how the Thanos Ruler component communicates with additional Alertmanager instances. The default value is `nil`. |
+| logLevel | string | Defines the log level setting for Thanos Ruler. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`. |
+| nodeSelector | map[string]string | Defines the nodes on which the Pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core) | Defines resource requests and limits for the Alertmanager container. |
+| retention | string | Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines topology spread constraints for the pods. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.57.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Thanos Ruler. Use this setting to configure the storage class and size of a volume. |
 
 [Back to TOC](#table-of-contents)
 
@@ -355,13 +380,13 @@ ThanosRulerConfig defines configuration for the Thanos Ruler instance for user-d
 
 #### Description
 
-UserWorkloadConfiguration defines configuration that allows users to customise the monitoring stack responsible for user-defined projects through the user-workload-monitoring-config ConfigMap in the openshift-user-workload-monitoring namespace
+The `UserWorkloadConfiguration` resource defines the settings responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace. You can only enable `UserWorkloadConfiguration` after you have set `enableUserWorkload` to `true` in the `cluster-monitoring-config` config map under the `openshift-monitoring` namespace.
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| alertmanager | *[AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig) | Alertmanager defines configuration for Alertmanager component. |
-| prometheus | *[PrometheusRestrictedConfig](#prometheusrestrictedconfig) | Prometheus defines configuration for Prometheus component. |
-| prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | PrometheusOperator defines configuration for prometheus-operator component. |
-| thanosRuler | *[ThanosRulerConfig](#thanosrulerconfig) | ThanosRuler defines configuration for the Thanos Ruler component |
+| alertmanager | *[AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig) | Defines the settings for the Alertmanager component in user workload monitoring. |
+| prometheus | *[PrometheusRestrictedConfig](#prometheusrestrictedconfig) | Defines the settings for the Prometheus component in user workload monitoring. |
+| prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | Defines the settings for the Prometheus Operator component in user workload monitoring. |
+| thanosRuler | *[ThanosRulerConfig](#thanosrulerconfig) | Defines the settings for the Thanos Ruler component in user workload monitoring. |
 
 [Back to TOC](#table-of-contents)

@@ -5,12 +5,19 @@
 	// CMO.
 	:_content-type: ASSEMBLY
 
-== OpenShiftStateMetricsConfig
+== TelemeterClientConfig
 
 === Description
 
-The `OpenShiftStateMetricsConfig` resource defines settings for the `openshift-state-metrics` agent.
+`TelemeterClientConfig` defines settings for the Telemeter Client component.
 
+=== Required
+* `clusterID`
+* `enabled`
+* `nodeSelector`
+* `telemeterServerURL`
+* `token`
+* `tolerations`
 
 
 Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]

@@ -1,12 +1,15 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == TLSConfig
 
 === Description
 
-TLSConfig configures the options for TLS connections.
+The `TLSConfig` resource configures the settings for TLS connections.
 
 === Required
 * `insecureSkipVerify`
@@ -17,15 +20,15 @@ Appears in: link:additionalalertmanagerconfig.adoc[AdditionalAlertmanagerConfig]
 [options="header"]
 |===
 | Property | Type | Description 
-|ca|*v1.SecretKeySelector|CA defines the CA cert in the Prometheus container to use for the targets.
+|ca|*v1.SecretKeySelector|Defines the secret key reference containing the Certificate Authority (CA) to use for the remote host.
 
-|cert|*v1.SecretKeySelector|Cert defines the client cert in the Prometheus container to use for the targets.
+|cert|*v1.SecretKeySelector|Defines the secret key reference containing the public certificate to use for the remote host.
 
-|key|*v1.SecretKeySelector|Key defines the client key in the Prometheus container to use for the targets.
+|key|*v1.SecretKeySelector|Defines the secret key reference containing the private key to use for the remote host.
 
-|serverName|string|ServerName used to verify the hostname for the targets.
+|serverName|string|Used to verify the hostname on the returned certificate.
 
-|insecureSkipVerify|bool|InsecureSkipVerify disable target certificate validation.
+|insecureSkipVerify|bool|When set to `true`, disables the verification of the remote host's certificate and name.
 
 |===
 

@@ -1,12 +1,15 @@
-:_content-type: ASSEMBLY
-include::_attributes/common-attributes.adoc[]
-:context: configmap-reference-for-cluster-monitoring-operator
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
 
 == ThanosQuerierConfig
 
 === Description
 
-ThanosQuerierConfig holds configuration related to Thanos Querier component.
+The `ThanosQuerierConfig` resource defines settings for the Thanos Querier component.
 
 
 
@@ -15,15 +18,15 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
-|enableRequestLogging|bool|EnableRequestLogging boolean flag to enable or disable request logging default: false
+|enableRequestLogging|bool|A Boolean flag that enables or disables request logging. The default value is `false`.
 
-|logLevel|string|LogLevel defines the log level for Thanos Querier. Possible values are: error, warn, info, debug. default: info
+|logLevel|string|Defines the log level setting for Thanos Querier. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`.
 
-|nodeSelector|map[string]string|NodeSelector defines which Nodes the Pods are scheduled on.
+|nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
-|resources|*v1.ResourceRequirements|Resources define resources requests and limits for single Pods.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the Thanos Querier container.
 
-|tolerations|[]v1.Toleration|Tolerations defines the Pods tolerations.
+|tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
 |===
 

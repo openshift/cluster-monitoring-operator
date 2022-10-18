@@ -19,392 +19,471 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// ClusterMonitoringConfiguration defines configuration that allows users to customise the
-// platform monitoring stack through the cluster-monitoring-config ConfigMap in the
-// openshift-monitoring namespace
+// The `ClusterMonitoringConfiguration` resource defines settings that
+// customize the default platform monitoring stack through the
+// `cluster-monitoring-config` config map in the `openshift-monitoring`
+// namespace.
 type ClusterMonitoringConfiguration struct {
-	// AlertmanagerMainConfig defines configuration related with the main Alertmanager instance.
+	// `AlertmanagerMainConfig` defines settings for the
+	// Alertmanager component in the `openshift-monitoring` namespace.
 	AlertmanagerMainConfig *AlertmanagerMainConfig `json:"alertmanagerMain,omitempty"`
 	// OmitFromDoc
 	EtcdConfig *EtcdConfig `json:"-"`
-	// UserWorkloadEnabled boolean flag to enable monitoring for user-defined projects.
+	// `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
 	UserWorkloadEnabled *bool `json:"enableUserWorkload,omitempty"`
 	// OmitFromDoc
 	HTTPConfig *HTTPConfig `json:"http,omitempty"`
-	// K8sPrometheusAdapter defines configuration related with prometheus-adapter
+	// `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 	K8sPrometheusAdapter *K8sPrometheusAdapter `json:"k8sPrometheusAdapter,omitempty"`
-	// KubeStateMetricsConfig defines configuration related with kube-state-metrics agent
+	// `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
 	KubeStateMetricsConfig *KubeStateMetricsConfig `json:"kubeStateMetrics,omitempty"`
-	// PrometheusK8sConfig defines configuration related with prometheus
+	// `PrometheusK8sConfig` defines settings for the Prometheus component.
 	PrometheusK8sConfig *PrometheusK8sConfig `json:"prometheusK8s,omitempty"`
-	// PrometheusOperatorConfig defines configuration related with prometheus-operator
+	// `PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
 	PrometheusOperatorConfig *PrometheusOperatorConfig `json:"prometheusOperator,omitempty"`
-	// OpenShiftMetricsConfig defines configuration related with openshift-state-metrics agent
+	// `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 	OpenShiftMetricsConfig *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics,omitempty"`
-	// OmitFromDoc
+	// `TelemeterClientConfig` defines settings for the Telemeter Client
+	// component.
 	TelemeterClientConfig *TelemeterClientConfig `json:"telemeterClient,omitempty"`
-	// ThanosQuerierConfig defines configuration related with the Thanos Querier component
+	// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
 }
 
-// AlertmanagerMainConfig defines configuration related with the main Alertmanager instance.
+// The `AlertmanagerMainConfig` resource defines settings for the
+// Alertmanager component in the `openshift-monitoring` namespace.
 type AlertmanagerMainConfig struct {
-	// Enabled a boolean flag to enable or disable the main Alertmanager instance
-	// under openshift-monitoring
-	// default: true
+	// A Boolean flag that enables or disables the main Alertmanager instance
+	// in the `openshift-monitoring` namespace.
+	// The default value is `true`.
 	Enabled *bool `json:"enabled,omitempty"`
-	// EnableUserAlertManagerConfig boolean flag to enable or disable user-defined namespaces
-	// to be selected for AlertmanagerConfig lookup, by default Alertmanager only
-	// looks for configuration in the namespace where it was deployed to. This will only work
-	// if the UWM Alertmanager instance is not enabled.
-	// default: false
+	// A Boolean flag that enables or disables user-defined namespaces
+	// to be selected for `AlertmanagerConfig` lookups. This setting only
+	// applies if the user workload monitoring instance of Alertmanager
+	// is not enabled.
+	// The default value is `false`.
 	EnableUserAlertManagerConfig bool `json:"enableUserAlertmanagerConfig,omitempty"`
-	// LogLevel defines the log level for Alertmanager.
-	// Possible values are: error, warn, info, debug.
-	// default: info
+	// Defines the log level setting for Alertmanager.
+	// The possible values are: `error`, `warn`, `info`, `debug`.
+	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the Pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Resources define resources requests and limits for single Pods.
+	// Defines resource requests and limits for the Alertmanager container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// TopologySpreadConstraints defines the pod's topology spread constraints.
+	// Defines a pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	// VolumeClaimTemplate defines persistent storage for Alertmanager. It's possible to
-	// configure storageClass and size of volume.
+	// Defines persistent storage for Alertmanager. Use this setting to
+	// configure the persistent volume claim, including storage class, volume
+	// size, and name.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
-// K8sPrometheusAdapter defines configuration related with Prometheus Adapater
+// The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
 type K8sPrometheusAdapter struct {
-	// Audit defines the audit configuration to be used by the prometheus adapter instance.
-	// Possible profile values are: "metadata, request, requestresponse, none".
-	// default: metadata
+	// Defines the audit configuration used by the Prometheus Adapter instance.
+	// Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`.
+	// The default value is `metadata`.
 	Audit *Audit `json:"audit,omitempty"`
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-
+	// Defines dedicated service monitors.
 	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
 }
 
-// Configuration for prometheus-adapter dedicated Service Monitors.
-// When Enabled is set to true, CMO will deploy and scrape a dedicated
-// Service Monitor, that exposes the kubelet /metrics/resource endpoint. This
-// Service Monitor sets honorTimestamps: true and only keeps metrics that are
-// relevant for the pod resource queries of prometheus-adapter.
-// Additionally prometheus-adapter is configured to use these dedicated metrics.
-// Overall this will improve the consistency of prometheus-adapter based CPU
-// usage measurements used by for example the oc adm top pod command or the
-// Horizontal Pod Autoscaler.
+// You can use the `DedicatedServiceMonitors` resource to configure dedicated
+// Service Monitors for the Prometheus Adapter
 type DedicatedServiceMonitors struct {
+	// When `enabled` is set to `true`, the Cluster Monitoring Operator (CMO)
+	// deploys a dedicated Service Monitor that exposes the kubelet
+	// `/metrics/resource` endpoint. This Service Monitor sets
+	// `honorTimestamps: true` and only keeps metrics that are
+	// relevant for the pod resource queries of Prometheus Adapter.
+	// Additionally, Prometheus Adapter is configured to use these dedicated
+	// metrics. Overall, this feature improves the consistency of Prometheus
+	// Adapter-based CPU usage measurements used by, for example, the `oc adm top
+	// pod` command or the Horizontal Pod Autoscaler.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-// KubeStateMetricsConfig defines configuration related with the kube-state-metrics agent.
+// The `KubeStateMetricsConfig` resource defines settings for the
+// `kube-state-metrics` agent.
 type KubeStateMetricsConfig struct {
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// PrometheusK8sConfig holds configuration related to the Prometheus component.
+// The `PrometheusK8sConfig` resource defines settings for the Prometheus
+// component.
 type PrometheusK8sConfig struct {
-	// AlertmanagerConfigs holds configuration about how the Prometheus component should communicate
-	// with aditional Alertmanager instances.
-	// default: nil
+	// Configures additional Alertmanager instances that receive alerts from
+	// the Prometheus component. By default, no additional Alertmanager
+	// instances are configured.
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
-	// EnforcedBodySizeLimit enforces body size limit of Prometheus scrapes, if a scrape is bigger than
-	// the limit it will fail.
-	// 3 kinds of values are accepted:
-	//  1. empty value: no limit
-	//  2. a value in Prometheus size format, e.g. "64MB"
-	//  3. string "automatic", which means the limit will be automatically calculated based on
-	//     cluster capacity.
-	// default: 64MB
+	// Enforces a body size limit for Prometheus scraped metrics. If a scraped
+	// target's body response is larger than the limit, the scrape will fail.
+	// The following values are valid:
+	// an empty value to specify no limit,
+	// a numeric value in Prometheus size format (such as `64MB`), or
+	// the string `automatic`, which indicates that the limit will be
+	// automatically calculated based on cluster capacity.
+	// The default value is empty, which indicates no limit.
 	EnforcedBodySizeLimit string `json:"enforcedBodySizeLimit,omitempty"`
-	// ExternalLabels defines labels to be added to any time series or alerts when communicating
-	// with external systems (federation, remote storage, Alertmanager).
-	// default: nil
+	// Defines labels to be added to any time series or alerts when
+	// communicating with external systems such as federation, remote storage,
+	// and Alertmanager. By default, no labels are added.
 	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
-	// LogLevel defines the log level for Prometheus.
-	// Possible values are: error, warn, info, debug.
-	// default: info
+	// Defines the log level setting for Prometheus.
+	// The possible values are: `error`, `warn`, `info`, and `debug`.
+	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// QueryLogFile specifies the file to which PromQL queries are logged. Suports both just a filename
-	// in which case they will be saved to an emptyDir volume at /var/log/prometheus, if a full path is
-	// given an emptyDir volume will be mounted at that location. Relative paths not supported,
-	// also not supported writing to linux std streams.
-	// default: ""
+	// Specifies the file to which PromQL queries are logged.
+	// This setting can be either a filename, in which
+	// case the queries are saved to an `emptyDir` volume
+	// at `/var/log/prometheus`, or a full path to a location where
+	// an `emptyDir` volume will be mounted and the queries saved.
+	// Writing to `/dev/stderr`, `/dev/stdout` or `/dev/null` is supported, but
+	// writing to any other `/dev/` path is not supported. Relative paths are
+	// also not supported.
+	// By default, PromQL queries are not logged.
 	QueryLogFile string `json:"queryLogFile,omitempty"`
-	// RemoteWrite Holds the remote write configuration, everything from url, authorization to relabeling
+	// Defines the remote write configuration, including URL, authentication,
+	// and relabeling settings.
 	RemoteWrite []RemoteWriteSpec `json:"remoteWrite,omitempty"`
-	// Resources define resources requests and limits for single Pods.
+	// Defines resource requests and limits for the Prometheus container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// Retention defines the Time duration Prometheus shall retain data for. Must match the regular expression
-	// [0-9]+(ms|s|m|h|d|w|y) (milliseconds seconds minutes hours days weeks years).
-	// default: 15d
+	// Defines the duration for which Prometheus retains data.
+	// This definition must be specified using the following regular
+	// expression pattern: `[0-9]+(ms|s|m|h|d|w|y)` (ms = milliseconds,
+	// s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years).
+	// The default value is `15d`.
 	Retention string `json:"retention,omitempty"`
-	// RetentionSize defines the maximum amount of disk space used by blocks + WAL.
-	// default: nil
+	// Defines the maximum amount of disk space used by data blocks plus the
+	// write-ahead log (WAL).
+	// Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`,
+	// `TiB`, `PB`, `PiB`, `EB`, and `EiB`.
+	// By default, no limit is defined.
 	RetentionSize string `json:"retentionSize,omitempty"`
 	// OmitFromDoc
 	TelemetryMatches []string `json:"-"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// TopologySpreadConstraints defines the pod's topology spread constraints.
+	// Defines the pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	// VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to
-	// configure storageClass and size of volume.
+	// Defines persistent storage for Prometheus. Use this setting to
+	// configure the persistent volume claim, including storage class,
+	// volume size and name.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
-// PrometheusOperatorConfig holds configuration related to Prometheus Operator.
+// The `PrometheusOperatorConfig` resource defines settings for the Prometheus
+// Operator component.
 type PrometheusOperatorConfig struct {
-	// LogLevel defines the log level for Prometheus Operator.
-	// Possible values are: error, warn, info, debug.
-	// default: info
+	// Defines the log level settings for Prometheus Operator.
+	// The possible values are `error`, `warn`, `info`, and `debug`.
+	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// OpenShiftStateMetricsConfig holds configuration related to openshift-state-metrics agent.
+// The `OpenShiftStateMetricsConfig` resource defines settings for the
+// `openshift-state-metrics` agent.
 type OpenShiftStateMetricsConfig struct {
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// ThanosQuerierConfig holds configuration related to Thanos Querier component.
+// `TelemeterClientConfig` defines settings for the Telemeter Client
+// component.
+type TelemeterClientConfig struct {
+	// OmitFromDoc
+	ClusterID string `json:"clusterID"`
+	// OmitFromDoc
+	Enabled *bool `json:"enabled"`
+	// Defines the nodes on which the pods are scheduled.
+	NodeSelector map[string]string `json:"nodeSelector"`
+	// OmitFromDoc
+	TelemeterServerURL string `json:"telemeterServerURL"`
+	// OmitFromDoc
+	Token string `json:"token"`
+	// Defines tolerations for the pods.
+	Tolerations []v1.Toleration `json:"tolerations"`
+}
+
+// The `ThanosQuerierConfig` resource defines settings for the Thanos Querier
+// component.
 type ThanosQuerierConfig struct {
-	// EnableRequestLogging boolean flag to enable or disable request logging
-	// default: false
+	// A Boolean flag that enables or disables request logging.
+	// The default value is `false`.
 	EnableRequestLogging bool `json:"enableRequestLogging,omitempty"`
-	// LogLevel defines the log level for Thanos Querier.
-	// Possible values are: error, warn, info, debug.
-	// default: info
+	// Defines the log level setting for Thanos Querier.
+	// The possible values are `error`, `warn`, `info`, and `debug`.
+	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Resources define resources requests and limits for single Pods.
+	// Defines resource requests and limits for the Thanos Querier container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// UserWorkloadConfiguration defines configuration that allows users to customise the
-// monitoring stack responsible for user-defined projects through the
-// user-workload-monitoring-config ConfigMap in the openshift-user-workload-monitoring namespace
+// The `UserWorkloadConfiguration` resource defines the settings
+// responsible for user-defined projects in the
+// `user-workload-monitoring-config` config map  in the
+// `openshift-user-workload-monitoring` namespace. You can only enable
+// `UserWorkloadConfiguration` after you have set `enableUserWorkload` to
+// `true` in the `cluster-monitoring-config` config map under the
+// `openshift-monitoring` namespace.
 type UserWorkloadConfiguration struct {
-	// Alertmanager defines configuration for Alertmanager component.
+	// Defines the settings for the Alertmanager component in user workload
+	// monitoring.
 	Alertmanager *AlertmanagerUserWorkloadConfig `json:"alertmanager,omitempty"`
-	// Prometheus defines configuration for Prometheus component.
+	// Defines the settings for the Prometheus component in user workload
+	// monitoring.
 	Prometheus *PrometheusRestrictedConfig `json:"prometheus,omitempty"`
-	// PrometheusOperator defines configuration for prometheus-operator component.
+	// Defines the settings for the Prometheus Operator component in user
+	// workload monitoring.
 	PrometheusOperator *PrometheusOperatorConfig `json:"prometheusOperator,omitempty"`
-	// ThanosRuler defines configuration for the Thanos Ruler component
+	// Defines the settings for the Thanos Ruler component in user workload
+	// monitoring.
 	ThanosRuler *ThanosRulerConfig `json:"thanosRuler,omitempty"`
 }
 
-// AlertmanagerUserWorkloadConfig defines configuration for the Alertmanager instance for
-// user-defined projects.
+// The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alertmanager instance used for user-defined projects.
 type AlertmanagerUserWorkloadConfig struct {
-	// Enabled a boolean flag to enable or disable a dedicated instance of Alertmanager
-	// for user-defined projects under openshift-user-workload-monitoring
-	// default: false
+	// A Boolean flag that enables or disables a dedicated instance of
+	// Alertmanager for user-defined alerts in the
+	// `openshift-user-workload-monitoring` namespace.
+	// The default value is `false`.
 	Enabled bool `json:"enabled,omitempty"`
-	// EnableAlertmanagerConfig a boolean flag to enable or disable user-defined namespaces to be selected
-	// for AlertmanagerConfig lookup, by default Alertmanager only looks for configuration
-	// in the namespace where it was deployed to
-	// default: false
+	// A Boolean flag to enable or disable user-defined namespaces
+	// to be selected for `AlertmanagerConfig` lookup.
+	// The default value is `false`.
 	EnableAlertmanagerConfig bool `json:"enableAlertmanagerConfig,omitempty"`
-	// LogLevel defines the log level for Alertmanager.
-	// Possible values are: error, warn, info, debug.
-	// default: info
+	// Defines the log level setting for Alertmanager for user workload
+	// monitoring.
+	// The possible values are `error`, `warn`, `info`, and `debug`.
+	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
-	// Resources define resources requests and limits for single Pods.
+	// Defines resource requests and limits for the Alertmanager container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// VolumeClaimTemplate defines persistent storage for Alertmanager. It's possible to
-	// configure storageClass and size of volume.
+	// Defines persistent storage for Alertmanager. Use this setting to
+	// configure the persistent volume claim, including storage class,
+	// volume size and name.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
-// PrometheusRestrictedConfig defines configuration related to the Prometheus component that
-// will monitor user-defined projects.
+// The `PrometheusRestrictedConfig` resource defines the settings for the
+// Prometheus component that monitors user-defined projects.
 type PrometheusRestrictedConfig struct {
-	// AlertmanagerConfigs holds configuration about how the Prometheus component should communicate
-	// with aditional Alertmanager instances.
-	// default: nil
+	// Configures additional Alertmanager instances that receive alerts from
+	// the Prometheus component. By default, no additional Alertmanager
+	// instances are configured.
 	AlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
-	// EnforcedLabelLimit per-scrape limit on the number of labels accepted for a sample. If more than this
-	// number of labels are present post metric-relabeling, the entire scrape will be treated as
-	// failed. 0 means no limit.
-	// default: 0
+	// Specifies a per-scrape limit on the number of labels accepted for a
+	// sample.
+	// If the number of labels exceeds this limit after metric relabeling,
+	// the entire scrape is treated as failed.
+	// The default value is `0`, which means that no limit is set.
 	EnforcedLabelLimit *uint64 `json:"enforcedLabelLimit,omitempty"`
-	// EnforcedLabelNameLengthLimit per-scrape limit on the length of labels name that will be accepted for
-	// a sample. If a label name is longer than this number post metric-relabeling, the entire scrape
-	// will be treated as failed. 0 means no limit.
-	// default: 0
+	// Specifies a per-scrape limit on the length of a label name for a sample.
+	// If the length of a label name exceeds this limit after metric
+	// relabeling, the entire scrape is treated as failed.
+	// The default value is `0`, which means that no limit is set.
 	EnforcedLabelNameLengthLimit *uint64 `json:"enforcedLabelNameLengthLimit,omitempty"`
-	// EnforcedLabelValueLengthLimit per-scrape limit on the length of labels value that will be accepted for
-	// a sample. If a label value is longer than this number post metric-relabeling, the entire scrape will
-	// be treated as failed. 0 means no limit.
-	// default: 0
+	// Specifies a per-scrape limit on the length of a label value for
+	// a sample. If the length of a label value exceeds this limit after
+	// metric relabeling, the entire scrape is treated as failed.
+	// The default value is `0`, which means that no limit is set.
 	EnforcedLabelValueLengthLimit *uint64 `json:"enforcedLabelValueLengthLimit,omitempty"`
-	// EnforcedSampleLimit defines a global limit on the number of scraped samples that will be accepted.
-	// This overrides any SampleLimit set per ServiceMonitor or/and PodMonitor. It is meant to be
-	// used by admins to enforce the SampleLimit to keep the overall number of samples/series under the
-	// desired limit. Note that if SampleLimit is lower that value will be taken instead.
-	// default: 0
+	// Specifies a global limit on the number of scraped samples that will be
+	// accepted.
+	// This setting overrides the `SampleLimit` value set in any user-defined
+	// `ServiceMonitor` or `PodMonitor` object if the value is greater than
+	// `enforcedTargetLimit`.
+	// Administrators can use this setting to keep the overall number of
+	// samples under control.
+	// The default value is `0`, which means that no limit is set.
 	EnforcedSampleLimit *uint64 `json:"enforcedSampleLimit,omitempty"`
-	// EnforcedTargetLimit defines a global limit on the number of scraped targets. This overrides
-	// any TargetLimit set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to
-	// enforce the TargetLimit to keep the overall number of targets under the desired limit. Note
-	// that if TargetLimit is lower, that value will be taken instead, except if either value is
-	// zero, in which case the non-zero value will be used. If both values are zero, no limit is
-	// enforced.
-	// default: 0
+	// Specifies a global limit on the number of scraped targets.
+	// This setting overrides the `TargetLimit` value set in any user-defined
+	// `ServiceMonitor` or `PodMonitor` object if the value is greater than
+	// `enforcedSampleLimit`.
+	// Administrators can use this setting to keep the overall number of
+	// targets under control.
+	// The default value is `0`.
 	EnforcedTargetLimit *uint64 `json:"enforcedTargetLimit,omitempty"`
-	// ExternalLabels defines labels to be added to any time series or alerts when communicating
-	// with external systems (federation, remote storage, Alertmanager).
-	// default: nil
+	// Defines labels to be added to any time series or alerts when
+	// communicating with external systems such as federation, remote storage,
+	// and Alertmanager.
+	// By default, no labels are added.
 	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
-	// LogLevel defines the log level for Prometheus.
-	// Possible values are: error, warn, info, debug.
-	// default: info
+	// Defines the log level setting for Prometheus.
+	// The possible values are `error`, `warn`, `info`, and `debug`.
+	// The default setting is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// QueryLogFile specifies the file to which PromQL queries are logged. Suports both just a filename
-	// in which case they will be saved to an emptyDir volume at /var/log/prometheus, if a full path is
-	// given an emptyDir volume will be mounted at that location. Relative paths not supported,
-	// also not supported writing to linux std streams.
-	// default: ""
+	// Specifies the file to which PromQL queries are logged.
+	// This setting can be either a filename, in which
+	// case the queries are saved to an `emptyDir` volume
+	// at `/var/log/prometheus`, or a full path to a location where
+	// an `emptyDir` volume will be mounted and the queries saved.
+	// Writing to `/dev/stderr`, `/dev/stdout` or `/dev/null` is supported, but
+	// writing to any other `/dev/` path is not supported. Relative paths are
+	// also not supported.
+	// By default, PromQL queries are not logged.
 	QueryLogFile string `json:"queryLogFile,omitempty"`
-	// RemoteWrite Holds the remote write configuration, everything from url, authorization to relabeling
+	// Defines the remote write configuration, including URL, authentication,
+	// and relabeling settings.
 	RemoteWrite []RemoteWriteSpec `json:"remoteWrite,omitempty"`
-	// Resources define resources requests and limits for single Pods.
+	// Defines resource requests and limits for the Prometheus container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// Retention defines the Time duration Prometheus shall retain data for. Must match the regular expression
-	// [0-9]+(ms|s|m|h|d|w|y) (milliseconds seconds minutes hours days weeks years).
-	// default: 15d
+	// Defines the duration for which Prometheus retains data.
+	// This definition must be specified using the following regular
+	// expression pattern: `[0-9]+(ms|s|m|h|d|w|y)` (ms = milliseconds,
+	// s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years).
+	// The default value is `15d`.
 	Retention string `json:"retention,omitempty"`
-	// RetentionSize defines the maximum amount of disk space used by blocks + WAL.
-	// default: nil
+	// Defines the maximum amount of disk space used by data blocks plus the
+	// write-ahead log (WAL).
+	// Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`,
+	// `TiB`, `PB`, `PiB`, `EB`, and `EiB`.
+	// The default value is `nil`.
 	RetentionSize string `json:"retentionSize,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// VolumeClaimTemplate defines persistent storage for Prometheus. It's possible to
-	// configure storageClass and size of volume.
+	// Defines persistent storage for Prometheus. Use this setting to
+	// configure the storage class and size of a volume.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
-// ThanosRulerConfig defines configuration for the Thanos Ruler instance for user-defined projects.
+// The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler instance for user-defined projects.
 type ThanosRulerConfig struct {
-	// AlertmanagerConfigs holds configuration about how the Thanos Ruler component should communicate
-	// with aditional Alertmanager instances.
-	// default: nil
+	// Configures how the Thanos Ruler component communicates
+	// with additional Alertmanager instances.
+	// The default value is `nil`.
 	AlertmanagersConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
-	// LogLevel defines the log level for Thanos Ruler.
-	// Possible values are: error, warn, info, debug.
-	// default: info
+	// Defines the log level setting for Thanos Ruler.
+	// The possible values are `error`, `warn`, `info`, and `debug`.
+	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
-	// NodeSelector defines which Nodes the Pods are scheduled on.
+	// Defines the nodes on which the Pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Resources define resources requests and limits for single Pods.
+	// Defines resource requests and limits for the Alertmanager container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// Retention defines the time duration Thanos Ruler shall retain data for. Must match the regular expression
-	// [0-9]+(ms|s|m|h|d|w|y) (milliseconds seconds minutes hours days weeks years).
-	// default: 15d
+	// Defines the duration for which Prometheus retains data.
+	// This definition must be specified using the following regular
+	// expression pattern: `[0-9]+(ms|s|m|h|d|w|y)` (ms = milliseconds,
+	// s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years).
+	// The default value is `15d`.
 	Retention string `json:"retention,omitempty"`
-	// Tolerations defines the Pods tolerations.
+	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// TopologySpreadConstraints defines the pod's topology spread constraints.
+	// Defines topology spread constraints for the pods.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	// VolumeClaimTemplate defines persistent storage for Thanos Ruler. It's possible to
-	// configure storageClass and size of volume.
+	// Defines persistent storage for Thanos Ruler. Use this setting to
+	// configure the storage class and size of a volume.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
 // ----- Common Types -----
 
-// AdditionalAlertmanagerConfig defines configuration on how a component should communicate with
-// aditional Alertmanager instances.
+// The `AdditionalAlertmanagerConfig` resource defines settings for how a
+// component communicates with additional Alertmanager instances.
 type AdditionalAlertmanagerConfig struct {
-	// APIVersion defines the api version of Alertmanager.
+	// Defines the API version of Alertmanager. Possible values are `v1` or
+	// `v2`.
+	// The default is `v2`.
 	APIVersion string `json:"apiVersion"`
-	// BearerToken defines the bearer token to use when authenticating to Alertmanager.
+	// Defines the secret key reference containing the bearer token
+	// to use when authenticating to Alertmanager.
 	BearerToken *v1.SecretKeySelector `json:"bearerToken,omitempty"`
-	// PathPrefix defines the path prefix to add in front of the push endpoint path.
+	// Defines the path prefix to add in front of the push endpoint path.
 	PathPrefix string `json:"pathPrefix,omitempty"`
-	// Scheme the URL scheme to use when talking to Alertmanagers.
+	// Defines the URL scheme to use when communicating with Alertmanager
+	// instances.
+	// Possible values are `http` or `https`. The default value is `http`.
 	Scheme string `json:"scheme,omitempty"`
-	// StaticConfigs a list of statically configured Alertmanagers.
+	// A list of statically configured Alertmanager endpoints in the form
+	// of `<hosts>:<port>`.
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
-	// Timeout defines the timeout used when sending alerts.
+	// Defines the timeout value used when sending alerts.
 	Timeout *string `json:"timeout,omitempty"`
-	// TLSConfig defines the TLS Config to use for alertmanager connection.
+	// Defines the TLS settings to use for Alertmanager connections.
 	TLSConfig TLSConfig `json:"tlsConfig,omitempty"`
 }
 
-// RemoteWriteSpec is almost a 1to1 copy of monv1.RemoteWriteSpec but with the
-// BearerToken field removed. In the future other fields might be added here.
+// The `RemoteWriteSpec` resource defines the settings for remote write storage.
 type RemoteWriteSpec struct {
-	// Authorization defines the authorization section for remote write
+	// Defines the authorization settings for remote write storage.
 	Authorization *monv1.SafeAuthorization `json:"authorization,omitempty"`
-	// BasicAuth defines configuration for basic authentication for the URL.
+	// Defines basic authentication settings for the remote write endpoint URL.
 	BasicAuth *monv1.BasicAuth `json:"basicAuth,omitempty"`
-	// BearerTokenFile defines the file where the bearer token for remote write resides.
+	// Defines the file that contains the bearer token for the remote write
+	// endpoint.
+	// However, because you cannot mount secrets in a pod, in practice
+	// you can only reference the token of the service account.
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
-	// Headers custom HTTP headers to be sent along with each remote write request.
-	// Be aware that headers that are set by Prometheus itself can't be overwritten.
+	// Specifies the custom HTTP headers to be sent along with each remote write request.
+	// Headers set by Prometheus cannot be overwritten.
 	Headers map[string]string `json:"headers,omitempty"`
-	// MetadataConfig configures the sending of series metadata to remote storage.
+	// Defines settings for sending series metadata to remote write storage.
 	MetadataConfig *monv1.MetadataConfig `json:"metadataConfig,omitempty"`
-	// Name defines the name of the remote write queue, must be unique if specified. The
-	// name is used in metrics and logging in order to differentiate queues.
+	// Defines the name of the remote write queue. This name is used in
+	// metrics and logging to differentiate queues.
+	// If specified, this name must be unique.
 	Name string `json:"name,omitempty"`
-	// OAuth2 configures OAuth2 authentication for remote write.
+	// Defines OAuth2 authentication settings for the remote write endpoint.
 	OAuth2 *monv1.OAuth2 `json:"oauth2,omitempty"`
-	// ProxyURL defines an optional proxy URL
+	// Defines an optional proxy URL.
 	ProxyURL string `json:"proxyUrl,omitempty"`
-	// QueueConfig allows tuning of the remote write queue parameters.
+	// Allows tuning configuration for remote write queue parameters.
 	QueueConfig *monv1.QueueConfig `json:"queueConfig,omitempty"`
-	// RemoteTimeout defines the timeout for requests to the remote write endpoint.
+	// Defines the timeout value for requests to the remote write endpoint.
 	RemoteTimeout string `json:"remoteTimeout,omitempty"`
-	// Sigv4 allows to configures AWS's Signature Verification 4
+	// Defines AWS Signature Version 4 authentication settings.
 	Sigv4 *monv1.Sigv4 `json:"sigv4,omitempty"`
-	// TLSConfig defines the TLS configuration to use for remote write.
+	// Defines TLS authentication settings for the remote write endpoint.
 	TLSConfig *monv1.SafeTLSConfig `json:"tlsConfig,omitempty"`
-	// URL defines the URL of the endpoint to send samples to.
+	// Defines the URL of the remote write endpoint to which samples will be sent.
 	URL string `json:"url"`
-	// WriteRelabelConfigs defines the list of remote write relabel configurations.
+	// Defines the list of remote write relabel configurations.
 	WriteRelabelConfigs []monv1.RelabelConfig `json:"writeRelabelConfigs,omitempty"`
 }
 
-// TLSConfig configures the options for TLS connections.
+// The `TLSConfig` resource configures the settings for TLS connections.
 type TLSConfig struct {
-	// CA defines the CA cert in the Prometheus container to use for the targets.
+	// Defines the secret key reference containing the Certificate Authority
+	// (CA) to use for the remote host.
 	CA *v1.SecretKeySelector `json:"ca,omitempty"`
-	// Cert defines the client cert in the Prometheus container to use for the targets.
+	// Defines the secret key reference containing the public certificate to
+	// use for the remote host.
 	Cert *v1.SecretKeySelector `json:"cert,omitempty"`
-	// Key defines the client key in the Prometheus container to use for the targets.
+	// Defines the secret key reference containing the private key to use for
+	// the remote host.
 	Key *v1.SecretKeySelector `json:"key,omitempty"`
-	// ServerName used to verify the hostname for the targets.
+	// Used to verify the hostname on the returned certificate.
 	ServerName string `json:"serverName,omitempty"`
-	// InsecureSkipVerify disable target certificate validation.
+	// When set to `true`, disables the verification of the remote host's
+	// certificate and name.
 	InsecureSkipVerify bool `json:"insecureSkipVerify"`
 }
