@@ -112,24 +112,6 @@ function(params)
     // the API server.
     serviceMonitor:: {},
 
-    // TODO(simonpasquier): move this to the upstream jsonnet.
-    podDisruptionBudget: {
-      apiVersion: 'policy/v1',
-      kind: 'PodDisruptionBudget',
-      metadata: {
-        name: aw._config.name,
-        namespace: aw._config.namespace,
-        labels: aw._config.commonLabels,
-      },
-      spec: {
-        minAvailable: 1,
-        selector: {
-          matchLabels: aw._config.selectorLabels,
-        },
-
-      },
-    },
-
     prometheusRuleValidatingWebhook: {
       apiVersion: 'admissionregistration.k8s.io/v1',
       kind: 'ValidatingWebhookConfiguration',
