@@ -36,6 +36,7 @@ import (
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -184,7 +185,23 @@ func New(
 	telemetryMatches []string,
 	a *manifests.Assets,
 ) (*Operator, error) {
-	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload)
+	kclient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating kubernetes clientset client")
+	}
+	controllerRef, err := events.GetControllerReferenceForCurrentPod(context.TODO(), kclient, namespace, nil)
+	if err != nil {
+		klog.Warningf("unable to get owner reference (falling back to namespace): %v", err)
+	}
+
+	eventRecorder := events.NewKubeRecorderWithOptions(
+		kclient.CoreV1().Events(namespace),
+		events.RecommendedClusterSingletonCorrelatorOptions(),
+		"cluster-monitoring-operator",
+		controllerRef,
+	)
+
+	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload, client.KubernetesClient(kclient), client.EventRecorder(eventRecorder))
 	if err != nil {
 		return nil, err
 	}
@@ -327,21 +344,6 @@ func New(
 	)
 	o.informerFactories = append(o.informerFactories, kubeInformersOperatorNS)
 
-	controllerRef, err := events.GetControllerReferenceForCurrentPod(ctx, o.client.KubernetesInterface(), namespace, nil)
-	if err != nil {
-		klog.Warningf("unable to get owner reference (falling back to namespace): %v", err)
-	}
-
-	eventRecorder := events.NewKubeRecorderWithOptions(
-		o.client.KubernetesInterface().CoreV1().Events(namespace),
-		events.RecommendedClusterSingletonCorrelatorOptions(),
-		"cluster-monitoring-operator",
-		controllerRef,
-	)
-
-	// Set event recorder
-	client.EventRecorder(eventRecorder)
-
 	csrController, err := csr.NewClientCertificateController(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
@@ -361,7 +363,7 @@ func New(
 		o.client.KubernetesInterface().CertificatesV1().CertificateSigningRequests(),
 		kubeInformersOperatorNS.Core().V1().Secrets(),
 		o.client.KubernetesInterface().CoreV1(),
-		eventRecorder,
+		o.client.EventRecorder(),
 		"OpenShiftMonitoringClientCertRequester",
 	)
 

@@ -86,65 +86,79 @@ type Client struct {
 	eventRecorder         events.Recorder
 }
 
-func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string) (*Client, error) {
-	mclient, err := monitoring.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
+func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
+	client := New(version, namespace, userWorkloadNamespace, options...)
+
+	if client.kclient == nil {
+		kclient, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating kubernetes clientset client")
+		}
+		client.kclient = kclient
 	}
 
-	kclient, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating kubernetes clientset client")
+	if client.eclient == nil {
+		eclient, err := apiextensionsclient.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating apiextensions client")
+		}
+		client.eclient = eclient
 	}
 
-	eclient, err := apiextensionsclient.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating apiextensions client")
+	if client.mclient == nil {
+		mclient, err := monitoring.NewForConfig(cfg)
+		if err != nil {
+			return nil, err
+		}
+		client.mclient = mclient
 	}
 
-	osmclient, err := openshiftmonitoringclientset.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating openshift monitoring client")
+	if client.osmclient == nil {
+		osmclient, err := openshiftmonitoringclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift monitoring client")
+		}
+		client.osmclient = osmclient
 	}
 
-	oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating openshift config client")
+	if client.oscclient == nil {
+		oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift config client")
+		}
+		client.oscclient = oscclient
 	}
 
-	// SCC moved to CRD and CRD does not handle protobuf. Force the SCC client to use JSON instead.
-	jsonClientConfig := rest.CopyConfig(cfg)
-	jsonClientConfig.ContentConfig.AcceptContentTypes = "application/json"
-	jsonClientConfig.ContentConfig.ContentType = "application/json"
+	if client.ossclient == nil {
+		// SCC moved to CRD and CRD does not handle protobuf. Force the SCC client to use JSON instead.
+		jsonClientConfig := rest.CopyConfig(cfg)
+		jsonClientConfig.ContentConfig.AcceptContentTypes = "application/json"
+		jsonClientConfig.ContentConfig.ContentType = "application/json"
 
-	ossclient, err := openshiftsecurityclientset.NewForConfig(jsonClientConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating openshift security client")
+		ossclient, err := openshiftsecurityclientset.NewForConfig(jsonClientConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift security client")
+		}
+		client.ossclient = ossclient
 	}
 
-	osrclient, err := openshiftrouteclientset.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating openshift route client")
+	if client.osrclient == nil {
+		osrclient, err := openshiftrouteclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift route client")
+		}
+		client.osrclient = osrclient
 	}
 
-	aggclient, err := aggregatorclient.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating kubernetes aggregator")
+	if client.aggclient == nil {
+		aggclient, err := aggregatorclient.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating kubernetes aggregator")
+		}
+		client.aggclient = aggclient
 	}
 
-	return New(
-		version,
-		namespace,
-		userWorkloadNamespace,
-		KubernetesClient(kclient),
-		OpenshiftMonitoringClient(osmclient),
-		OpenshiftConfigClient(oscclient),
-		OpenshiftSecurityClient(ossclient),
-		OpenshiftRouteClient(osrclient),
-		MonitoringClient(mclient),
-		ApiExtensionsClient(eclient),
-		AggregatorClient(aggclient),
-	), nil
+	return client, nil
 }
 
 type Option = func(*Client)
@@ -219,6 +233,10 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 
 func (c *Client) KubernetesInterface() kubernetes.Interface {
 	return c.kclient
+}
+
+func (c *Client) EventRecorder() events.Recorder {
+	return c.eventRecorder
 }
 
 func (c *Client) Namespace() string {
