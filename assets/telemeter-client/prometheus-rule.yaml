@@ -9,3 +9,21 @@ spec:
     rules:
     - expr: max(federate_samples - federate_filtered_samples)
       record: cluster:telemetry_selected_series:count
+    - alert: TelemeterClientFailures
+      annotations:
+        description: |-
+          The telemeter client in namespace {{ $labels.namespace }} fails {{ $value | humanize }} of the requests to the telemeter service.
+          Check the logs of the telemeter-client pod with the following command:
+          oc logs -n openshift-monitoring deployment.apps/telemeter-client -c telemeter-client
+          If the telemeter client fails to authenticate with the telemeter service, make sure that the global pull secret is up to date, see https://docs.openshift.com/container-platform/latest/openshift_images/managing_images/using-image-pull-secrets.html#images-update-global-pull-secret_using-image-pull-secrets for more details.
+        summary: Telemeter client fails to send metrics
+      expr: |
+        sum by (namespace) (
+          rate(federate_requests_failed_total{job="telemeter-client"}[15m])
+        ) /
+        sum by (namespace) (
+          rate(federate_requests_total{job="telemeter-client"}[15m])
+        ) > 0.2
+      for: 1h
+      labels:
+        severity: warning
