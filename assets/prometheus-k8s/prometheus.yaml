@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: k8s
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.38.0
+    app.kubernetes.io/version: 2.39.1
   name: k8s
   namespace: openshift-monitoring
 spec:
@@ -157,7 +157,7 @@ spec:
   enableFeatures: []
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
-  image: quay.io/prometheus/prometheus:v2.38.0
+  image: quay.io/prometheus/prometheus:v2.39.1
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -169,7 +169,7 @@ spec:
       app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.38.0
+      app.kubernetes.io/version: 2.39.1
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
@@ -205,10 +205,10 @@ spec:
       openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/thanos/thanos:v0.28.0
+    image: quay.io/thanos/thanos:v0.28.1
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: 0.28.0
-  version: 2.38.0
+    version: 0.28.1
+  version: 2.39.1

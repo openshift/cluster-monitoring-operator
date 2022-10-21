@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator-admission-webhook
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.60.0
+    app.kubernetes.io/version: 0.60.1
   name: prometheus-operator-admission-webhook
   namespace: openshift-monitoring
 spec:
@@ -26,7 +26,7 @@ spec:
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: prometheus-operator-admission-webhook
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 0.60.0
+        app.kubernetes.io/version: 0.60.1
     spec:
       affinity:
         podAntiAffinity:
@@ -46,7 +46,7 @@ spec:
         - --web.tls-min-version=VersionTLS12
         - --web.cert-file=/etc/tls/private/tls.crt
         - --web.key-file=/etc/tls/private/tls.key
-        image: quay.io/prometheus-operator/admission-webhook:v0.60.0
+        image: quay.io/prometheus-operator/admission-webhook:v0.60.1
         livenessProbe:
           httpGet:
             path: /healthz
