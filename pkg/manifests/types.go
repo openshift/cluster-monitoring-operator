@@ -210,15 +210,15 @@ type OpenShiftStateMetricsConfig struct {
 // component.
 type TelemeterClientConfig struct {
 	// OmitFromDoc
-	ClusterID string `json:"clusterID"`
+	ClusterID string `json:"clusterID,omitempty"`
 	// OmitFromDoc
-	Enabled *bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector"`
 	// OmitFromDoc
-	TelemeterServerURL string `json:"telemeterServerURL"`
+	TelemeterServerURL string `json:"telemeterServerURL,omitempty"`
 	// OmitFromDoc
-	Token string `json:"token"`
+	Token string `json:"token,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations"`
 }

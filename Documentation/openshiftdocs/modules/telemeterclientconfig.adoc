@@ -12,11 +12,7 @@
 `TelemeterClientConfig` defines settings for the Telemeter Client component.
 
 === Required
-* `clusterID`
-* `enabled`
 * `nodeSelector`
-* `telemeterServerURL`
-* `token`
 * `tolerations`
 
 

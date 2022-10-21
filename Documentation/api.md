@@ -319,11 +319,7 @@ The `TLSConfig` resource configures the settings for TLS connections.
 `TelemeterClientConfig` defines settings for the Telemeter Client component.
 
 #### Required
-   - ` clusterID `
-   - ` enabled `
    - ` nodeSelector `
-   - ` telemeterServerURL `
-   - ` token `
    - ` tolerations `
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
