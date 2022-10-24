@@ -1,5 +1,4 @@
 local tlsVolumeName = 'prometheus-operator-tls';
-local certsCAVolumeName = 'operator-certs-ca-bundle';
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 
@@ -45,9 +44,9 @@ function(params)
               std.map(
                 function(c)
                   if c.name == 'prometheus-operator' then
-                    // TODO(simonpasquier): add readiness/liveness probes once upstream
-                    // supports /healthz endpoint without requiring client TLS
-                    // authentication.
+                    // TODO(simonpasquier): add readiness/liveness probes once
+                    // upstream prometheus-operator supports /healthz endpoint
+                    // without requiring client TLS authentication.
                     c {
                       args+: [
                         '--prometheus-instance-namespaces=' + cfg.namespace,
@@ -57,11 +56,9 @@ function(params)
                         '--config-reloader-memory-limit=0',
                         '--config-reloader-cpu-request=1m',
                         '--config-reloader-memory-request=10Mi',
-                        '--web.enable-tls=true',
-                        '--web.tls-cipher-suites=' + cfg.tlsCipherSuites,
-                        '--web.tls-min-version=VersionTLS12',
+                        '--web.listen-address=127.0.0.1:8080',
                       ],
-                      securityContext: {},
+                      ports: [],
                       resources: {
                         requests: {
                           memory: '150Mi',
@@ -69,26 +66,21 @@ function(params)
                         },
                       },
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts+: [{
-                        mountPath: '/etc/tls/private',
-                        name: tlsVolumeName,
-                        readOnly: false,
-                      }],
                     }
                   else if c.name == 'kube-rbac-proxy' then
-                    // TODO(simonpasquier): remove kube-rbac-proxy in OCP 4.12
-                    // and configure the proper client CA for the prometheus
-                    // operator container.
+                    // TODO(simonpasquier): remove kube-rbac-proxy and
+                    // configure the proper client CA + name in the prometheus
+                    // operator container directly (once prometheus operator
+                    // upstream supports name verification).
                     c {
                       args: [
                         '--logtostderr',
                         '--secure-listen-address=:8443',
                         '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-                        '--upstream=https://prometheus-operator.openshift-monitoring.svc:8080/',
+                        '--upstream=http://localhost:8080/',
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
-                        '--upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt',
                         '--config-file=/etc/kube-rbac-policy/config.yaml',
                       ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -96,17 +88,12 @@ function(params)
                         {
                           mountPath: '/etc/tls/private',
                           name: tlsVolumeName,
-                          readOnly: false,
-                        },
-                        {
-                          mountPath: '/etc/configmaps/operator-cert-ca-bundle',
-                          name: certsCAVolumeName,
-                          readOnly: false,
+                          readOnly: true,
                         },
                         {
                           mountPath: '/etc/tls/client',
                           name: 'metrics-client-ca',
-                          readOnly: false,
+                          readOnly: true,
                         },
                         {
                           mountPath: '/etc/kube-rbac-policy',
@@ -134,7 +121,6 @@ function(params)
                 },
 
               },
-              generateCertInjection.SCOCaBundleVolume(certsCAVolumeName),
               {
                 name: 'prometheus-operator-kube-rbac-proxy-config',
                 secret: {
@@ -159,9 +145,6 @@ function(params)
           'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-tls',
         },
       },
-      spec+: {
-        ports+: [{ name: 'web', port: 8080, targetPort: 8080 }],
-      },
     },
 
     serviceMonitor+: {
@@ -183,5 +166,13 @@ function(params)
       },
     },
 
-    operatorCertsCaBundle: generateCertInjection.SCOCaBundleCM(cfg.namespace, certsCAVolumeName),
+    // TODO(simonpasquier): remove once 4.13 branch opens.
+    operatorCertsCaBundle: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: 'operator-certs-ca-bundle',
+        namespace: cfg.namespace,
+      },
+    },
   }

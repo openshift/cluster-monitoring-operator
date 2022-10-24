@@ -100,8 +100,8 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 				manifests.PrometheusOperatorWebTLSMinTLSVersionFlag, tt.expectedCipherSuite,
 				atLeastVersionTLS12(tt.expectedMinTLSVersion))
 			assertCorrectTLSConfiguration(t, "prometheus-operator", "deployment",
-				manifests.PrometheusOperatorWebTLSCipherSuitesFlag,
-				manifests.PrometheusOperatorWebTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
+				manifests.KubeRbacProxyTLSCipherSuitesFlag,
+				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
 			assertCorrectTLSConfiguration(t, "prometheus-adapter", "deployment",
 				manifests.PrometheusAdapterTLSCipherSuitesFlag,
 				manifests.PrometheusAdapterTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)

@@ -35,15 +35,17 @@ func NewPrometheusOperatorTask(client *client.Client, factory *manifests.Factory
 }
 
 func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
+	// TODO(simonpasquier): remove this section once 4.13 branch opens.
 	cacm, err := t.factory.PrometheusOperatorCertsCABundle()
 	if err != nil {
 		return errors.Wrap(err, "initializing serving certs CA Bundle ConfigMap failed")
 	}
 
-	_, err = t.client.CreateIfNotExistConfigMap(ctx, cacm)
+	err = t.client.DeleteConfigMap(ctx, cacm)
 	if err != nil {
-		return errors.Wrap(err, "creating serving certs CA Bundle ConfigMap failed")
+		return errors.Wrap(err, "deleting serving certs CA Bundle ConfigMap failed")
 	}
+	// TODO(simonpasquier): end
 
 	sa, err := t.factory.PrometheusOperatorServiceAccount()
 	if err != nil {
