@@ -39,11 +39,10 @@ spec:
         - --config-reloader-memory-limit=0
         - --config-reloader-cpu-request=1m
         - --config-reloader-memory-request=10Mi
+        - --web.listen-address=127.0.0.1:8080
         image: quay.io/prometheus-operator/prometheus-operator:v0.60.1
         name: prometheus-operator
-        ports:
-        - containerPort: 8080
-          name: http
+        ports: []
         resources:
           requests:
             cpu: 1m
@@ -53,6 +52,7 @@ spec:
           capabilities:
             drop:
             - ALL
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
       - args:
         - --logtostderr
@@ -80,7 +80,7 @@ spec:
         volumeMounts:
         - mountPath: /etc/tls/private
           name: prometheus-operator-user-workload-tls
-          readOnly: false
+          readOnly: true
         - mountPath: /etc/kube-rbac-policy
           name: prometheus-operator-uwm-kube-rbac-proxy-config
           readOnly: true

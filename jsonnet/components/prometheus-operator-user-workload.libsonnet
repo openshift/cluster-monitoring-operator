@@ -32,7 +32,9 @@ function(params)
         name: 'prometheus-user-workload-operator',
       },
     },
+
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'prometheus-operator-uwm-kube-rbac-proxy-config'),
+
     deployment+: {
       metadata+: {
         labels+: {
@@ -80,13 +82,9 @@ function(params)
                         '--config-reloader-memory-limit=0',
                         '--config-reloader-cpu-request=1m',
                         '--config-reloader-memory-request=10Mi',
+                        '--web.listen-address=127.0.0.1:8080',
                       ],
-                      securityContext: {
-                        allowPrivilegeEscalation: false,
-                        capabilities: {
-                          drop: ['ALL'],
-                        },
-                      },
+                      ports: [],
                       resources: {
                         requests: {
                           memory: '17Mi',
@@ -107,7 +105,7 @@ function(params)
                         {
                           mountPath: '/etc/tls/private',
                           name: tlsVolumeName,
-                          readOnly: false,
+                          readOnly: true,
                         },
                         {
                           mountPath: '/etc/kube-rbac-policy',
@@ -150,6 +148,7 @@ function(params)
         },
       },
     },
+
     service+: {
       metadata+: {
         annotations+: {
@@ -157,6 +156,7 @@ function(params)
         },
       },
     },
+
     serviceMonitor+: {
       spec+: {
         endpoints: [

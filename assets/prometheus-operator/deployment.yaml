@@ -40,33 +40,29 @@ spec:
         - --config-reloader-memory-limit=0
         - --config-reloader-cpu-request=1m
         - --config-reloader-memory-request=10Mi
-        - --web.enable-tls=true
-        - --web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-        - --web.tls-min-version=VersionTLS12
+        - --web.listen-address=127.0.0.1:8080
         image: quay.io/prometheus-operator/prometheus-operator:v0.60.1
         name: prometheus-operator
-        ports:
-        - containerPort: 8080
-          name: http
+        ports: []
         resources:
           requests:
             cpu: 5m
             memory: 150Mi
-        securityContext: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
-        volumeMounts:
-        - mountPath: /etc/tls/private
-          name: prometheus-operator-tls
-          readOnly: false
       - args:
         - --logtostderr
         - --secure-listen-address=:8443
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-        - --upstream=https://prometheus-operator.openshift-monitoring.svc:8080/
+        - --upstream=http://localhost:8080/
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
-        - --upstream-ca-file=/etc/configmaps/operator-cert-ca-bundle/service-ca.crt
         - --config-file=/etc/kube-rbac-policy/config.yaml
         image: quay.io/brancz/kube-rbac-proxy:v0.13.0
         name: kube-rbac-proxy
@@ -82,13 +78,10 @@ spec:
         volumeMounts:
         - mountPath: /etc/tls/private
           name: prometheus-operator-tls
-          readOnly: false
-        - mountPath: /etc/configmaps/operator-cert-ca-bundle
-          name: operator-certs-ca-bundle
-          readOnly: false
+          readOnly: true
         - mountPath: /etc/tls/client
           name: metrics-client-ca
-          readOnly: false
+          readOnly: true
         - mountPath: /etc/kube-rbac-policy
           name: prometheus-operator-kube-rbac-proxy-config
           readOnly: true
@@ -106,12 +99,6 @@ spec:
       - name: prometheus-operator-tls
         secret:
           secretName: prometheus-operator-tls
-      - configmap:
-          items:
-          - key: service-ca.crt
-            path: service-ca.crt
-          name: operator-certs-ca-bundle
-        name: operator-certs-ca-bundle
       - name: prometheus-operator-kube-rbac-proxy-config
         secret:
           secretName: prometheus-operator-kube-rbac-proxy-config

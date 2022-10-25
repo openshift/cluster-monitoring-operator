@@ -2570,7 +2570,6 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel))
 			}
 
-			args = f.setTLSSecurityConfiguration(args, PrometheusOperatorWebTLSCipherSuitesFlag, PrometheusOperatorWebTLSMinTLSVersionFlag)
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}
@@ -2618,7 +2617,7 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment
 			if f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel != "" {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.UserWorkloadConfiguration.PrometheusOperator.LogLevel))
 			}
-			args = f.setTLSSecurityConfiguration(args, PrometheusOperatorWebTLSCipherSuitesFlag, PrometheusOperatorWebTLSMinTLSVersionFlag)
+
 			d.Spec.Template.Spec.Containers[i].Args = args
 		}
 	}

@@ -741,8 +741,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 
 	prometheusReloaderFound := false
-	prometheusWebTLSCipherSuitesArg := ""
-	prometheusWebTLSVersionArg := ""
+	prometheusWebListenLocal := false
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
@@ -755,8 +754,10 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 			if getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest", container.Name) != "" {
 				prometheusReloaderFound = true
 			}
-			prometheusWebTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
-			prometheusWebTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
+
+			if getContainerArgValue(d.Spec.Template.Spec.Containers, "--web.listen-address=127.0.0.1:8080", container.Name) != "" {
+				prometheusWebListenLocal = true
+			}
 		case "kube-rbac-proxy":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 				t.Fatalf("%s image incorrectly configured", container.Name)
@@ -770,17 +771,8 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatal("Configuring the Prometheus Config reloader image failed")
 	}
 
-	expectedPrometheusWebTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
-	if expectedPrometheusWebTLSCipherSuitesArg != prometheusWebTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", prometheusWebTLSCipherSuitesArg, expectedPrometheusWebTLSCipherSuitesArg)
-	}
-
-	expectedPrometheusWebTLSVersionArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
-	if expectedPrometheusWebTLSVersionArg != prometheusWebTLSVersionArg {
-		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", prometheusWebTLSVersionArg, expectedPrometheusWebTLSVersionArg)
+	if !prometheusWebListenLocal {
+		t.Fatal("expected Prometheus operator to listen on 127.0.0.1:8080")
 	}
 
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
@@ -3736,8 +3728,7 @@ enableUserWorkload: true
 	}
 
 	prometheusReloaderFound := false
-	prometheusWebTLSCipherSuitesArg := ""
-	prometheusWebTLSVersionArg := ""
+	prometheusWebListenLocal := false
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
@@ -3750,9 +3741,9 @@ enableUserWorkload: true
 				prometheusReloaderFound = true
 			}
 
-			prometheusWebTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
-			prometheusWebTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
-
+			if getContainerArgValue(d.Spec.Template.Spec.Containers, "--web.listen-address=127.0.0.1:8080", container.Name) != "" {
+				prometheusWebListenLocal = true
+			}
 		case "kube-rbac-proxy":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 				t.Fatal("kube-rbac-proxy image incorrectly configured")
@@ -3766,18 +3757,8 @@ enableUserWorkload: true
 		t.Fatal("Configuring the Prometheus Config reloader image failed")
 	}
 
-	expectedPrometheusWebTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","),
-	)
-	if expectedPrometheusWebTLSCipherSuitesArg != prometheusWebTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", prometheusWebTLSCipherSuitesArg, expectedPrometheusWebTLSCipherSuitesArg)
-	}
-
-	expectedPrometheusWebTLSVersionArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
-	if expectedPrometheusWebTLSVersionArg != prometheusWebTLSVersionArg {
-		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", prometheusWebTLSVersionArg, expectedPrometheusWebTLSVersionArg)
+	if !prometheusWebListenLocal {
+		t.Fatal("expected Prometheus operator to listen on 127.0.0.1:8080")
 	}
 
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
