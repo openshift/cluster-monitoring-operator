@@ -150,10 +150,6 @@ func makeStatefulSet(tr *monitoringv1.ThanosRuler, config Config, ruleConfigMapN
 }
 
 func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfigMapNames []string) (*appsv1.StatefulSetSpec, error) {
-	// Before editing 'tr' create deep copy, to prevent side effects. For more
-	// details see https://github.com/prometheus-operator/prometheus-operator/issues/1659
-	tr = tr.DeepCopy()
-
 	if tr.Spec.QueryConfig == nil && len(tr.Spec.QueryEndpoints) < 1 {
 		return nil, errors.New(tr.GetName() + ": thanos ruler requires query config or at least one query endpoint to be specified")
 	}
@@ -286,14 +282,18 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 		})
 	}
 
-	if tr.Spec.TracingConfig != nil {
-		trCLIArgs = append(trCLIArgs, "--tracing.config=$(TRACING_CONFIG)")
-		trEnvVars = append(trEnvVars, v1.EnvVar{
-			Name: "TRACING_CONFIG",
-			ValueFrom: &v1.EnvVarSource{
-				SecretKeyRef: tr.Spec.TracingConfig,
-			},
-		})
+	if tr.Spec.TracingConfig != nil || len(tr.Spec.TracingConfigFile) > 0 {
+		if len(tr.Spec.TracingConfigFile) > 0 {
+			trCLIArgs = append(trCLIArgs, "--tracing.config-file="+tr.Spec.TracingConfigFile)
+		} else {
+			trCLIArgs = append(trCLIArgs, "--tracing.config=$(TRACING_CONFIG)")
+			trEnvVars = append(trEnvVars, v1.EnvVar{
+				Name: "TRACING_CONFIG",
+				ValueFrom: &v1.EnvVarSource{
+					SecretKeyRef: tr.Spec.TracingConfig,
+				},
+			})
+		}
 	}
 
 	if tr.Spec.GRPCServerTLSConfig != nil {
