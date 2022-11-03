@@ -575,6 +575,21 @@ data:
     # consumers: (@openshift/openshift-team-cluster-manager)
     - '{__name__="state:rhoam_warning_alerts:max"}'
     #
+    # rhoam_7d_slo_percentile:max Current cluster 7 day percentile
+    # Possible labels: None
+    # This metric is used by CS-SRE to monitor the SLO budget across the fleet.
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    - '{__name__="rhoam_7d_slo_percentile:max"}'
+    #
+    # rhoam_7d_slo_remaining_error_budget:max Time in milliseconds of remaining error budget
+    # Possible labels: None
+    # This metric is used byt CS-SRE to monitor remaining error budget across the fleet
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    - '{__name__="rhoam_7d_slo_remaining_error_budget:max"}'    
+    #
+    #
     # owners: (openshift/openshift-team-master, @openshift/openshift-group-b)
     #
     # cluster_legacy_scheduler_policy reports whether the scheduler operator is
