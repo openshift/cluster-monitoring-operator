@@ -76,7 +76,7 @@ spec:
     caFile: /etc/tls/grpc/ca.crt
     certFile: /etc/tls/grpc/server.crt
     keyFile: /etc/tls/grpc/server.key
-  image: quay.io/thanos/thanos:v0.23.1
+  image: quay.io/thanos/thanos:v0.23.2
   listenLocal: true
   podMetadata:
     annotations:

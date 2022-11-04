@@ -209,10 +209,10 @@ spec:
       openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/thanos/thanos:v0.23.1
+    image: quay.io/thanos/thanos:v0.23.2
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: 0.23.1
+    version: 0.23.2
   version: 2.32.1
