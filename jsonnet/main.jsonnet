@@ -59,7 +59,7 @@ local commonConfig = {
   images: {
     alertmanager: 'quay.io/prometheus/alertmanager:v' + $.versions.alertmanager,
     prometheus: 'quay.io/prometheus/prometheus:v' + $.versions.prometheus,
-    kubeStateMetrics: 'k8s.gcr.io/kube-state-metrics/kube-state-metrics:v' + $.versions.kubeStateMetrics,
+    kubeStateMetrics: 'registry.k8s.io/kube-state-metrics/kube-state-metrics:v' + $.versions.kubeStateMetrics,
     nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions.nodeExporter,
     prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions.prometheusAdapter,
     prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions.prometheusOperator,
