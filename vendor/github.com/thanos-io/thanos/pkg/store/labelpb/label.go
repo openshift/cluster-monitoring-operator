@@ -19,13 +19,7 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 )
 
-var (
-	ErrOutOfOrderLabels = errors.New("out of order labels")
-	ErrEmptyLabels      = errors.New("label set contains a label with empty name or value")
-	ErrDuplicateLabels  = errors.New("label set contains duplicate label names")
-
-	sep = []byte{'\xff'}
-)
+var sep = []byte{'\xff'}
 
 func noAllocString(buf []byte) string {
 	return *(*string)(unsafe.Pointer(&buf))
@@ -77,25 +71,6 @@ func ZLabelSetsToPromLabelSets(lss ...ZLabelSet) []labels.Labels {
 		res = append(res, ls.PromLabels())
 	}
 	return res
-}
-
-// ZLabelSetsFromPromLabels converts []labels.labels to []labelpb.ZLabelSet.
-func ZLabelSetsFromPromLabels(lss ...labels.Labels) []ZLabelSet {
-	sets := make([]ZLabelSet, 0, len(lss))
-	for _, ls := range lss {
-		set := ZLabelSet{
-			Labels: make([]ZLabel, 0, len(ls)),
-		}
-		for _, lbl := range ls {
-			set.Labels = append(set.Labels, ZLabel{
-				Name:  lbl.Name,
-				Value: lbl.Value,
-			})
-		}
-		sets = append(sets, set)
-	}
-
-	return sets
 }
 
 // ZLabel is a Label (also easily transformable to Prometheus labels.Labels) that can be unmarshalled from protobuf
@@ -369,40 +344,6 @@ func HashWithPrefix(prefix string, lbls []ZLabel) uint64 {
 		b = append(b, sep[0])
 	}
 	return xxhash.Sum64(b)
-}
-
-// ValidateLabels validates label names and values (checks for empty
-// names and values, out of order labels and duplicate label names)
-// Returns appropriate error if validation fails on a label.
-func ValidateLabels(lbls []ZLabel) error {
-	if len(lbls) == 0 {
-		return ErrEmptyLabels
-	}
-
-	// Check first label.
-	l0 := lbls[0]
-	if l0.Name == "" || l0.Value == "" {
-		return ErrEmptyLabels
-	}
-
-	// Iterate over the rest, check each for empty / duplicates and
-	// check lexicographical (alphabetically) ordering.
-	for _, l := range lbls[1:] {
-		if l.Name == "" || l.Value == "" {
-			return ErrEmptyLabels
-		}
-
-		if l.Name == l0.Name {
-			return ErrDuplicateLabels
-		}
-
-		if l.Name < l0.Name {
-			return ErrOutOfOrderLabels
-		}
-		l0 = l
-	}
-
-	return nil
 }
 
 // ZLabelSets is a sortable list of ZLabelSet. It assumes the label pairs in each ZLabelSet element are already sorted.

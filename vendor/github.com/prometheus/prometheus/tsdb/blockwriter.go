@@ -15,6 +15,7 @@ package tsdb
 
 import (
 	"context"
+	"io/ioutil"
 	"math"
 	"os"
 
@@ -39,7 +40,7 @@ type BlockWriter struct {
 }
 
 // ErrNoSeriesAppended is returned if the series count is zero while flushing blocks.
-var ErrNoSeriesAppended = errors.New("no series appended, aborting")
+var ErrNoSeriesAppended error = errors.New("no series appended, aborting")
 
 // NewBlockWriter create a new block writer.
 //
@@ -63,7 +64,7 @@ func NewBlockWriter(logger log.Logger, dir string, blockSize int64) (*BlockWrite
 
 // initHead creates and initialises a new TSDB head.
 func (w *BlockWriter) initHead() error {
-	chunkDir, err := os.MkdirTemp(os.TempDir(), "head")
+	chunkDir, err := ioutil.TempDir(os.TempDir(), "head")
 	if err != nil {
 		return errors.Wrap(err, "create temp dir")
 	}
@@ -71,7 +72,7 @@ func (w *BlockWriter) initHead() error {
 	opts := DefaultHeadOptions()
 	opts.ChunkRange = w.blockSize
 	opts.ChunkDirRoot = w.chunkDir
-	h, err := NewHead(nil, w.logger, nil, nil, opts, NewHeadStats())
+	h, err := NewHead(nil, w.logger, nil, opts, NewHeadStats())
 	if err != nil {
 		return errors.Wrap(err, "tsdb.NewHead")
 	}

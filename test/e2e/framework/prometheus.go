@@ -45,33 +45,31 @@ func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName str
 				ServiceAccountName: "prometheus-k8s",
 				Secrets:            []string{tlsSecretName},
 				EnableFeatures:     []string{"remote-write-receiver"},
-				Web: &monitoringv1.PrometheusWebSpec{
-					WebConfigFileFields: monitoringv1.WebConfigFileFields{
-						TLSConfig: &monitoringv1.WebTLSConfig{
-							ClientCA: monitoringv1.SecretOrConfigMap{
-								Secret: &v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: tlsSecretName,
-									},
-									Key: "ca.crt",
-								},
-							},
-							Cert: monitoringv1.SecretOrConfigMap{
-								Secret: &v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: tlsSecretName,
-									},
-									Key: "server.crt",
-								},
-							},
-							KeySecret: v1.SecretKeySelector{
+				Web: &monitoringv1.WebSpec{
+					TLSConfig: &monitoringv1.WebTLSConfig{
+						ClientCA: monitoringv1.SecretOrConfigMap{
+							Secret: &v1.SecretKeySelector{
 								LocalObjectReference: v1.LocalObjectReference{
 									Name: tlsSecretName,
 								},
-								Key: "server.key",
+								Key: "ca.crt",
 							},
-							ClientAuthType: "VerifyClientCertIfGiven",
 						},
+						Cert: monitoringv1.SecretOrConfigMap{
+							Secret: &v1.SecretKeySelector{
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: tlsSecretName,
+								},
+								Key: "server.crt",
+							},
+						},
+						KeySecret: v1.SecretKeySelector{
+							LocalObjectReference: v1.LocalObjectReference{
+								Name: tlsSecretName,
+							},
+							Key: "server.key",
+						},
+						ClientAuthType: "VerifyClientCertIfGiven",
 					},
 				},
 			},

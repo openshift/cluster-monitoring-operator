@@ -17,6 +17,7 @@ package prometheus
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -25,6 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -61,6 +63,7 @@ const (
 var (
 	minShards                   int32 = 1
 	minReplicas                 int32 = 1
+	defaultMaxConcurrency       int32 = 20
 	managedByOperatorLabel            = "managed-by"
 	managedByOperatorLabelValue       = "prometheus-operator"
 	managedByOperatorLabels           = map[string]string{
@@ -96,7 +99,6 @@ func prometheusNameByShard(name string, shard int32) string {
 }
 
 func makeStatefulSet(
-	logger log.Logger,
 	name string,
 	p monitoringv1.Prometheus,
 	config *operator.Config,
@@ -105,6 +107,12 @@ func makeStatefulSet(
 	shard int32,
 	tlsAssetSecrets []string,
 ) (*appsv1.StatefulSet, error) {
+	// p is passed in by value, not by reference. But p contains references like
+	// to annotation map, that do not get copied on function invocation. Ensure to
+	// prevent side effects before editing p by creating a deep copy. For more
+	// details see https://github.com/prometheus-operator/prometheus-operator/issues/1659.
+	p = *p.DeepCopy()
+
 	promVersion := operator.StringValOrDefault(p.Spec.Version, operator.DefaultPrometheusVersion)
 	parsedVersion, err := semver.ParseTolerant(promVersion)
 	if err != nil {
@@ -123,7 +131,25 @@ func makeStatefulSet(
 		p.Spec.Replicas = &intZero
 	}
 
-	spec, err := makeStatefulSetSpec(logger, p, config, shard, ruleConfigMapNames, tlsAssetSecrets, parsedVersion)
+	if p.Spec.Resources.Requests == nil {
+		p.Spec.Resources.Requests = v1.ResourceList{}
+	}
+	_, memoryRequestFound := p.Spec.Resources.Requests[v1.ResourceMemory]
+	memoryLimit, memoryLimitFound := p.Spec.Resources.Limits[v1.ResourceMemory]
+	if !memoryRequestFound && parsedVersion.Major == 1 {
+		defaultMemoryRequest := resource.MustParse("2Gi")
+		compareResult := memoryLimit.Cmp(defaultMemoryRequest)
+		// If limit is given and smaller or equal to 2Gi, then set memory
+		// request to the given limit. This is necessary as if limit < request,
+		// then a Pod is not schedulable.
+		if memoryLimitFound && compareResult <= 0 {
+			p.Spec.Resources.Requests[v1.ResourceMemory] = memoryLimit
+		} else {
+			p.Spec.Resources.Requests[v1.ResourceMemory] = defaultMemoryRequest
+		}
+	}
+
+	spec, err := makeStatefulSetSpec(p, config, shard, ruleConfigMapNames, tlsAssetSecrets, parsedVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "make StatefulSet spec")
 	}
@@ -215,10 +241,6 @@ func makeStatefulSet(
 
 	statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, p.Spec.Volumes...)
 
-	if p.Spec.HostNetwork {
-		statefulset.Spec.Template.Spec.DNSPolicy = v1.DNSClusterFirstWithHostNet
-	}
-
 	return statefulset, nil
 }
 
@@ -303,15 +325,8 @@ func makeStatefulSetService(p *monitoringv1.Prometheus, config operator.Config) 
 	return svc
 }
 
-func makeStatefulSetSpec(
-	logger log.Logger,
-	p monitoringv1.Prometheus,
-	c *operator.Config,
-	shard int32,
-	ruleConfigMapNames []string,
-	tlsAssetSecrets []string,
-	version semver.Version,
-) (*appsv1.StatefulSetSpec, error) {
+func makeStatefulSetSpec(p monitoringv1.Prometheus, c *operator.Config, shard int32, ruleConfigMapNames []string,
+	tlsAssetSecrets []string, version semver.Version) (*appsv1.StatefulSetSpec, error) {
 	// Prometheus may take quite long to shut down to checkpoint existing data.
 	// Allow up to 10 minutes for clean termination.
 	terminationGracePeriod := int64(600)
@@ -331,134 +346,142 @@ func makeStatefulSetSpec(
 		return nil, errors.Errorf("unsupported Prometheus major version %s", version)
 	}
 
-	promArgs := []monitoringv1.Argument{
-		{Name: "web.console.templates", Value: "/etc/prometheus/consoles"},
-		{Name: "web.console.libraries", Value: "/etc/prometheus/console_libraries"},
+	// TODO(slashpai): Refactor the code to cover logging for all components
+	logger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+
+	promArgs := []string{
+		"-web.console.templates=/etc/prometheus/consoles",
+		"-web.console.libraries=/etc/prometheus/console_libraries",
 	}
 
-	// TODO(simonpasquier): log a warning message if the Prometheus version
-	// doesn't support the flag (do it everywhere it needs to be, not only for
-	// this block).
-	retentionTimeFlag := monitoringv1.Argument{Name: "storage.tsdb.retention"}
+	retentionTimeFlag := "-storage.tsdb.retention="
 	if version.GTE(semver.MustParse("2.7.0")) {
-		retentionTimeFlag = monitoringv1.Argument{Name: "storage.tsdb.retention.time"}
+		retentionTimeFlag = "-storage.tsdb.retention.time="
 		if p.Spec.Retention == "" && p.Spec.RetentionSize == "" {
-			retentionTimeFlag.Value = defaultRetention
-			promArgs = append(promArgs, retentionTimeFlag)
+			promArgs = append(promArgs, retentionTimeFlag+defaultRetention)
 		} else {
 			if p.Spec.Retention != "" {
-				retentionTimeFlag.Value = string(p.Spec.Retention)
-				promArgs = append(promArgs, retentionTimeFlag)
+				promArgs = append(promArgs, retentionTimeFlag+string(p.Spec.Retention))
 			}
 
 			if p.Spec.RetentionSize != "" {
-				retentionSizeFlag := monitoringv1.Argument{Name: "storage.tsdb.retention.size", Value: string(p.Spec.RetentionSize)}
-				promArgs = append(promArgs, retentionSizeFlag)
+				promArgs = append(promArgs,
+					fmt.Sprintf("-storage.tsdb.retention.size=%s", p.Spec.RetentionSize),
+				)
 			}
 		}
 	} else {
 		if p.Spec.Retention == "" {
-			retentionTimeFlag.Value = defaultRetention
-			promArgs = append(promArgs, retentionTimeFlag)
+			promArgs = append(promArgs, retentionTimeFlag+defaultRetention)
 		} else {
-			retentionTimeFlag.Value = string(p.Spec.Retention)
-			promArgs = append(promArgs, retentionTimeFlag)
+			promArgs = append(promArgs, retentionTimeFlag+string(p.Spec.Retention))
 		}
 	}
 
 	promArgs = append(promArgs,
-		monitoringv1.Argument{Name: "config.file", Value: path.Join(confOutDir, configEnvsubstFilename)},
-		monitoringv1.Argument{Name: "storage.tsdb.path", Value: storageDir},
-		monitoringv1.Argument{Name: "web.enable-lifecycle"},
+		fmt.Sprintf("-config.file=%s", path.Join(confOutDir, configEnvsubstFilename)),
+		fmt.Sprintf("-storage.tsdb.path=%s", storageDir),
+		"-web.enable-lifecycle",
 	)
+
+	if p.Spec.Query != nil && p.Spec.Query.LookbackDelta != nil {
+		promArgs = append(promArgs,
+			fmt.Sprintf("-query.lookback-delta=%s", *p.Spec.Query.LookbackDelta),
+		)
+	}
 
 	if version.Minor >= 4 {
 		if p.Spec.Rules.Alert.ForOutageTolerance != "" {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "rules.alert.for-outage-tolerance", Value: p.Spec.Rules.Alert.ForOutageTolerance})
+			promArgs = append(promArgs, "-rules.alert.for-outage-tolerance="+p.Spec.Rules.Alert.ForOutageTolerance)
 		}
 		if p.Spec.Rules.Alert.ForGracePeriod != "" {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "rules.alert.for-grace-period", Value: p.Spec.Rules.Alert.ForGracePeriod})
+			promArgs = append(promArgs, "-rules.alert.for-grace-period="+p.Spec.Rules.Alert.ForGracePeriod)
 		}
 		if p.Spec.Rules.Alert.ResendDelay != "" {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "rules.alert.resend-delay", Value: p.Spec.Rules.Alert.ResendDelay})
+			promArgs = append(promArgs, "-rules.alert.resend-delay="+p.Spec.Rules.Alert.ResendDelay)
+		}
+	}
+
+	if version.Minor >= 5 {
+		if p.Spec.Query != nil && p.Spec.Query.MaxSamples != nil {
+			promArgs = append(promArgs,
+				fmt.Sprintf("-query.max-samples=%d", *p.Spec.Query.MaxSamples),
+			)
 		}
 	}
 
 	if p.Spec.Query != nil {
-		if p.Spec.Query.LookbackDelta != nil {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "query.lookback-delta", Value: *p.Spec.Query.LookbackDelta})
-		}
-
-		if version.Minor >= 5 {
-			if p.Spec.Query.MaxSamples != nil && *p.Spec.Query.MaxSamples > 0 {
-				promArgs = append(promArgs, monitoringv1.Argument{Name: "query.max-samples", Value: fmt.Sprintf("%d", *p.Spec.Query.MaxSamples)})
+		if p.Spec.Query.MaxConcurrency != nil {
+			if *p.Spec.Query.MaxConcurrency < 1 {
+				p.Spec.Query.MaxConcurrency = &defaultMaxConcurrency
 			}
+			promArgs = append(promArgs,
+				fmt.Sprintf("-query.max-concurrency=%d", *p.Spec.Query.MaxConcurrency),
+			)
 		}
-
-		if p.Spec.Query.MaxConcurrency != nil && *p.Spec.Query.MaxConcurrency > 1 {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "query.max-concurrency", Value: fmt.Sprintf("%d", *p.Spec.Query.MaxConcurrency)})
-		}
-
 		if p.Spec.Query.Timeout != nil {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "query.timeout", Value: string(*p.Spec.Query.Timeout)})
+			promArgs = append(promArgs,
+				fmt.Sprintf("-query.timeout=%s", *p.Spec.Query.Timeout),
+			)
 		}
 	}
 
-	// TODO(simonpasquier): check that the Prometheus version supports the flag.
 	if p.Spec.Web != nil && p.Spec.Web.PageTitle != nil {
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "web.page-title", Value: *p.Spec.Web.PageTitle})
+		promArgs = append(promArgs,
+			fmt.Sprintf("-web.page-title=%s", *p.Spec.Web.PageTitle),
+		)
 	}
 
 	if p.Spec.EnableAdminAPI {
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "web.enable-admin-api"})
+		promArgs = append(promArgs, "-web.enable-admin-api")
 	}
 
 	if p.Spec.EnableRemoteWriteReceiver {
 		if version.GTE(semver.MustParse("2.33.0")) {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "web.enable-remote-write-receiver"})
+			promArgs = append(promArgs, "-web.enable-remote-write-receiver")
 		} else {
-			level.Warn(logger).Log("msg", "ignoring 'enableRemoteWriteReceiver' not supported by Prometheus", "version", version, "minimum_version", "2.33.0")
+			level.Warn(logger).Log("msg", fmt.Sprintf("ignoring \"enableRemoteWriteReceiver\" not supported by Prometheus version=%s minimum_version=2.33.0", version))
 		}
 	}
 
 	if len(p.Spec.EnableFeatures) > 0 {
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "enable-feature", Value: strings.Join(p.Spec.EnableFeatures[:], ",")})
+		promArgs = append(promArgs, "-enable-feature="+strings.Join(p.Spec.EnableFeatures[:], ","))
 	}
 
 	if p.Spec.ExternalURL != "" {
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "web.external-url", Value: p.Spec.ExternalURL})
+		promArgs = append(promArgs, "-web.external-url="+p.Spec.ExternalURL)
 	}
 
 	webRoutePrefix := "/"
 	if p.Spec.RoutePrefix != "" {
 		webRoutePrefix = p.Spec.RoutePrefix
 	}
-	promArgs = append(promArgs, monitoringv1.Argument{Name: "web.route-prefix", Value: webRoutePrefix})
+	promArgs = append(promArgs, "-web.route-prefix="+webRoutePrefix)
 
 	if p.Spec.LogLevel != "" && p.Spec.LogLevel != "info" {
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "log.level", Value: p.Spec.LogLevel})
+		promArgs = append(promArgs, fmt.Sprintf("-log.level=%s", p.Spec.LogLevel))
 	}
 	if version.GTE(semver.MustParse("2.6.0")) {
 		if p.Spec.LogFormat != "" && p.Spec.LogFormat != "logfmt" {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "log.format", Value: p.Spec.LogFormat})
+			promArgs = append(promArgs, fmt.Sprintf("-log.format=%s", p.Spec.LogFormat))
 		}
 	}
 
 	if version.GTE(semver.MustParse("2.11.0")) && p.Spec.WALCompression != nil {
 		if *p.Spec.WALCompression {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "storage.tsdb.wal-compression"})
+			promArgs = append(promArgs, "-storage.tsdb.wal-compression")
 		} else {
-			promArgs = append(promArgs, monitoringv1.Argument{Name: "no-storage.tsdb.wal-compression"})
+			promArgs = append(promArgs, "-no-storage.tsdb.wal-compression")
 		}
 	}
 
 	if version.GTE(semver.MustParse("2.8.0")) && p.Spec.AllowOverlappingBlocks {
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "storage.tsdb.allow-overlapping-blocks"})
+		promArgs = append(promArgs, "-storage.tsdb.allow-overlapping-blocks")
 	}
 
 	var ports []v1.ContainerPort
 	if p.Spec.ListenLocal {
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "web.listen-address", Value: "127.0.0.1:9090"})
+		promArgs = append(promArgs, "-web.listen-address=127.0.0.1:9090")
 	} else {
 		ports = []v1.ContainerPort{
 			{
@@ -467,6 +490,10 @@ func makeStatefulSetSpec(
 				Protocol:      v1.ProtocolTCP,
 			},
 		}
+	}
+
+	for i, a := range promArgs {
+		promArgs[i] = "-" + a
 	}
 
 	assetsVolume := v1.Volume{
@@ -563,20 +590,17 @@ func makeStatefulSetSpec(
 	// With this we avoid redeploying prometheus when reconfiguring between
 	// HTTP and HTTPS and vice-versa.
 	if version.GTE(semver.MustParse("2.24.0")) {
-		var fields monitoringv1.WebConfigFileFields
+		var webTLSConfig *monitoringv1.WebTLSConfig
 		if p.Spec.Web != nil {
-			fields = p.Spec.Web.WebConfigFileFields
+			webTLSConfig = p.Spec.Web.TLSConfig
 		}
 
-		webConfig, err := webconfig.New(webConfigDir, webConfigSecretName(p.Name), fields)
+		webConfig, err := webconfig.New(webConfigDir, WebConfigSecretName(p.Name), webTLSConfig)
 		if err != nil {
 			return nil, err
 		}
 
-		confArg, configVol, configMount, err := webConfig.GetMountParameters()
-		if err != nil {
-			return nil, err
-		}
+		confArg, configVol, configMount := webConfig.GetMountParameters()
 		promArgs = append(promArgs, confArg)
 		volumes = append(volumes, configVol...)
 		promVolumeMounts = append(promVolumeMounts, configMount...)
@@ -584,15 +608,9 @@ func makeStatefulSetSpec(
 
 	// Mount related secrets
 
-	rn := k8sutil.NewResourceNamerWithPrefix("secret")
 	for _, s := range p.Spec.Secrets {
-		name, err := rn.VolumeName(s)
-		if err != nil {
-			return nil, err
-		}
-
 		volumes = append(volumes, v1.Volume{
-			Name: name,
+			Name: k8sutil.SanitizeVolumeName("secret-" + s),
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
 					SecretName: s,
@@ -600,21 +618,15 @@ func makeStatefulSetSpec(
 			},
 		})
 		promVolumeMounts = append(promVolumeMounts, v1.VolumeMount{
-			Name:      name,
+			Name:      k8sutil.SanitizeVolumeName("secret-" + s),
 			ReadOnly:  true,
 			MountPath: secretsDir + s,
 		})
 	}
 
-	rn = k8sutil.NewResourceNamerWithPrefix("configmap")
 	for _, c := range p.Spec.ConfigMaps {
-		name, err := rn.VolumeName(c)
-		if err != nil {
-			return nil, err
-		}
-
 		volumes = append(volumes, v1.Volume{
-			Name: name,
+			Name: k8sutil.SanitizeVolumeName("configmap-" + c),
 			VolumeSource: v1.VolumeSource{
 				ConfigMap: &v1.ConfigMapVolumeSource{
 					LocalObjectReference: v1.LocalObjectReference{
@@ -624,7 +636,7 @@ func makeStatefulSetSpec(
 			},
 		})
 		promVolumeMounts = append(promVolumeMounts, v1.VolumeMount{
-			Name:      name,
+			Name:      k8sutil.SanitizeVolumeName("configmap-" + c),
 			ReadOnly:  true,
 			MountPath: configmapsDir + c,
 		})
@@ -748,32 +760,27 @@ func makeStatefulSetSpec(
 			return nil, errors.Wrap(err, "failed to build image path")
 		}
 
-		var grpcBindAddress, httpBindAddress string
-		if p.Spec.Thanos.ListenLocal || p.Spec.Thanos.GRPCListenLocal {
-			grpcBindAddress = "127.0.0.1"
+		bindAddress := "" // Listen to all available IP addresses by default
+		if p.Spec.Thanos.ListenLocal {
+			bindAddress = "127.0.0.1"
 		}
 
-		if p.Spec.Thanos.ListenLocal || p.Spec.Thanos.HTTPListenLocal {
-			httpBindAddress = "127.0.0.1"
-		}
-
-		thanosArgs := []monitoringv1.Argument{
-			{Name: "prometheus.url", Value: fmt.Sprintf("%s://%s:9090%s", prometheusURIScheme, c.LocalHost, path.Clean(webRoutePrefix))},
-			{Name: "prometheus.http-client", Value: `{"tls_config": {"insecure_skip_verify":true}}`},
-			{Name: "grpc-address", Value: fmt.Sprintf("%s:10901", grpcBindAddress)},
-			{Name: "http-address", Value: fmt.Sprintf("%s:10902", httpBindAddress)},
+		thanosArgs := []string{"sidecar",
+			fmt.Sprintf("--prometheus.url=%s://%s:9090%s", prometheusURIScheme, c.LocalHost, path.Clean(webRoutePrefix)),
+			fmt.Sprintf("--grpc-address=%s:10901", bindAddress),
+			fmt.Sprintf("--http-address=%s:10902", bindAddress),
 		}
 
 		if p.Spec.Thanos.GRPCServerTLSConfig != nil {
 			tls := p.Spec.Thanos.GRPCServerTLSConfig
 			if tls.CertFile != "" {
-				thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "grpc-server-tls-cert", Value: tls.CertFile})
+				thanosArgs = append(thanosArgs, "--grpc-server-tls-cert="+tls.CertFile)
 			}
 			if tls.KeyFile != "" {
-				thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "grpc-server-tls-key", Value: tls.KeyFile})
+				thanosArgs = append(thanosArgs, "--grpc-server-tls-key="+tls.KeyFile)
 			}
 			if tls.CAFile != "" {
-				thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "grpc-server-tls-client-ca", Value: tls.CAFile})
+				thanosArgs = append(thanosArgs, "--grpc-server-tls-client-ca="+tls.CAFile)
 			}
 		}
 
@@ -783,6 +790,7 @@ func makeStatefulSetSpec(
 			Name:                     "thanos-sidecar",
 			Image:                    thanosImage,
 			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
+			Args:                     thanosArgs,
 			SecurityContext: &v1.SecurityContext{
 				AllowPrivilegeEscalation: &boolFalse,
 				ReadOnlyRootFilesystem:   &boolTrue,
@@ -812,9 +820,9 @@ func makeStatefulSetSpec(
 
 		if p.Spec.Thanos.ObjectStorageConfig != nil || p.Spec.Thanos.ObjectStorageConfigFile != nil {
 			if p.Spec.Thanos.ObjectStorageConfigFile != nil {
-				thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "objstore.config-file", Value: *p.Spec.Thanos.ObjectStorageConfigFile})
+				container.Args = append(container.Args, "--objstore.config-file="+*p.Spec.Thanos.ObjectStorageConfigFile)
 			} else {
-				thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "objstore.config", Value: "$(OBJSTORE_CONFIG)"})
+				container.Args = append(container.Args, "--objstore.config=$(OBJSTORE_CONFIG)")
 				container.Env = append(container.Env, v1.EnvVar{
 					Name: "OBJSTORE_CONFIG",
 					ValueFrom: &v1.EnvVarSource{
@@ -822,7 +830,7 @@ func makeStatefulSetSpec(
 					},
 				})
 			}
-			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "tsdb.path", Value: storageDir})
+			container.Args = append(container.Args, fmt.Sprintf("--tsdb.path=%s", storageDir))
 			container.VolumeMounts = append(
 				container.VolumeMounts,
 				v1.VolumeMount{
@@ -839,9 +847,9 @@ func makeStatefulSetSpec(
 
 		if p.Spec.Thanos.TracingConfig != nil || len(p.Spec.Thanos.TracingConfigFile) > 0 {
 			if len(p.Spec.Thanos.TracingConfigFile) > 0 {
-				thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "tracing.config-file", Value: p.Spec.Thanos.TracingConfigFile})
+				container.Args = append(container.Args, "--tracing.config-file="+p.Spec.Thanos.TracingConfigFile)
 			} else {
-				thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "tracing.config", Value: "$(TRACING_CONFIG)"})
+				container.Args = append(container.Args, "--tracing.config=$(TRACING_CONFIG)")
 				container.Env = append(container.Env, v1.EnvVar{
 					Name: "TRACING_CONFIG",
 					ValueFrom: &v1.EnvVarSource{
@@ -852,35 +860,28 @@ func makeStatefulSetSpec(
 		}
 
 		if p.Spec.Thanos.LogLevel != "" {
-			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "log.level", Value: p.Spec.Thanos.LogLevel})
+			container.Args = append(container.Args, "--log.level="+p.Spec.Thanos.LogLevel)
 		} else if p.Spec.LogLevel != "" {
-			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "log.level", Value: p.Spec.LogLevel})
+			container.Args = append(container.Args, "--log.level="+p.Spec.LogLevel)
 		}
 		if p.Spec.Thanos.LogFormat != "" {
-			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "log.format", Value: p.Spec.Thanos.LogFormat})
+			container.Args = append(container.Args, "--log.format="+p.Spec.Thanos.LogFormat)
 		} else if p.Spec.LogFormat != "" {
-			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "log.format", Value: p.Spec.LogFormat})
+			container.Args = append(container.Args, "--log.format="+p.Spec.LogFormat)
 		}
 
 		if p.Spec.Thanos.MinTime != "" {
-			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "min-time", Value: p.Spec.Thanos.MinTime})
+			container.Args = append(container.Args, "--min-time="+p.Spec.Thanos.MinTime)
 		}
 
 		if p.Spec.Thanos.ReadyTimeout != "" {
-			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "prometheus.ready_timeout", Value: string(p.Spec.Thanos.ReadyTimeout)})
+			container.Args = append(container.Args, "--prometheus.ready_timeout="+string(p.Spec.Thanos.ReadyTimeout))
 		}
-
-		containerArgs, err := buildArgs(thanosArgs, p.Spec.Thanos.AdditionalArgs)
-		if err != nil {
-			return nil, err
-		}
-		container.Args = append([]string{"sidecar"}, containerArgs...)
-
 		additionalContainers = append(additionalContainers, container)
 	}
 	if disableCompaction {
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "storage.tsdb.max-block-duration", Value: "2h"})
-		promArgs = append(promArgs, monitoringv1.Argument{Name: "storage.tsdb.min-block-duration", Value: "2h"})
+		promArgs = append(promArgs, "--storage.tsdb.max-block-duration=2h")
+		promArgs = append(promArgs, "--storage.tsdb.min-block-duration=2h")
 	}
 
 	var watchedDirectories []string
@@ -931,12 +932,6 @@ func makeStatefulSetSpec(
 		return nil, errors.Wrap(err, "failed to merge init containers spec")
 	}
 
-	containerArgs, err := buildArgs(promArgs, p.Spec.AdditionalArgs)
-
-	if err != nil {
-		return nil, err
-	}
-
 	boolFalse := false
 	boolTrue := true
 	operatorContainers := append([]v1.Container{
@@ -944,7 +939,7 @@ func makeStatefulSetSpec(
 			Name:                     "prometheus",
 			Image:                    prometheusImagePath,
 			Ports:                    ports,
-			Args:                     containerArgs,
+			Args:                     promArgs,
 			VolumeMounts:             promVolumeMounts,
 			StartupProbe:             startupProbe,
 			LivenessProbe:            livenessProbe,
@@ -1015,7 +1010,6 @@ func makeStatefulSetSpec(
 				Affinity:                      p.Spec.Affinity,
 				TopologySpreadConstraints:     p.Spec.TopologySpreadConstraints,
 				HostAliases:                   operator.MakeHostAliases(p.Spec.HostAliases),
-				HostNetwork:                   p.Spec.HostNetwork,
 			},
 		},
 	}, nil
@@ -1029,7 +1023,7 @@ func tlsAssetsSecretName(name string) string {
 	return fmt.Sprintf("%s-tls-assets", prefixedName(name))
 }
 
-func webConfigSecretName(name string) string {
+func WebConfigSecretName(name string) string {
 	return fmt.Sprintf("%s-web-config", prefixedName(name))
 }
 
@@ -1085,63 +1079,4 @@ func queryLogFilePath(p *monitoringv1.Prometheus) string {
 	}
 
 	return filepath.Join(defaultQueryLogDirectory, p.Spec.QueryLogFile)
-}
-
-func intersection(a, b []string) (i []string) {
-	m := make(map[string]struct{})
-
-	for _, item := range a {
-		m[item] = struct{}{}
-	}
-
-	for _, item := range b {
-		if _, ok := m[item]; ok {
-			i = append(i, item)
-		}
-
-		negatedItem := strings.TrimPrefix(item, "no-")
-		if item == negatedItem {
-			negatedItem = fmt.Sprintf("no-%s", item)
-		}
-
-		if _, ok := m[negatedItem]; ok {
-			i = append(i, item)
-		}
-	}
-	return i
-}
-
-func extractArgKeys(args []monitoringv1.Argument) []string {
-	var k []string
-	for _, arg := range args {
-		key := arg.Name
-		k = append(k, key)
-	}
-
-	return k
-}
-
-func buildArgs(args []monitoringv1.Argument, additionalArgs []monitoringv1.Argument) ([]string, error) {
-	var containerArgs []string
-
-	argKeys := extractArgKeys(args)
-	additionalArgKeys := extractArgKeys(additionalArgs)
-
-	i := intersection(argKeys, additionalArgKeys)
-	if len(i) > 0 {
-		return nil, errors.Errorf("can't set arguments which are already managed by the operator: %s", strings.Join(i, ","))
-	}
-
-	args = append(args, additionalArgs...)
-
-	for _, arg := range args {
-		if arg.Value != "" {
-			containerArgs = append(containerArgs, fmt.Sprintf("--%s=%s", arg.Name, arg.Value))
-		} else {
-			containerArgs = append(containerArgs, fmt.Sprintf("--%s", arg.Name))
-
-		}
-	}
-
-	return containerArgs, nil
 }

@@ -18,7 +18,6 @@
 package promql
 
 import (
-	"errors"
 	"io"
 
 	"github.com/prometheus/prometheus/model/textparse"
@@ -72,7 +71,7 @@ func fuzzParseMetricWithContentType(in []byte, contentType string) int {
 			break
 		}
 	}
-	if errors.Is(err, io.EOF) {
+	if err == io.EOF {
 		err = nil
 	}
 

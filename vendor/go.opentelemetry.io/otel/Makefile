@@ -25,7 +25,7 @@ TIMEOUT = 60
 .DEFAULT_GOAL := precommit
 
 .PHONY: precommit ci
-precommit: dependabot-generate license-check vanity-import-fix misspell go-mod-tidy golangci-lint-fix test-default
+precommit: dependabot-generate license-check misspell go-mod-tidy golangci-lint-fix test-default
 ci: dependabot-check license-check lint vanity-import-check build test-default check-clean-work-tree test-coverage
 
 # Tools
@@ -45,13 +45,10 @@ SEMCONVGEN = $(TOOLS)/semconvgen
 $(TOOLS)/semconvgen: PACKAGE=go.opentelemetry.io/build-tools/semconvgen
 
 CROSSLINK = $(TOOLS)/crosslink
-$(TOOLS)/crosslink: PACKAGE=go.opentelemetry.io/build-tools/crosslink
-
-SEMCONVKIT = $(TOOLS)/semconvkit
-$(TOOLS)/semconvkit: PACKAGE=go.opentelemetry.io/otel/$(TOOLS_MOD_DIR)/semconvkit
+$(TOOLS)/crosslink: PACKAGE=go.opentelemetry.io/otel/$(TOOLS_MOD_DIR)/crosslink
 
 DBOTCONF = $(TOOLS)/dbotconf
-$(TOOLS)/dbotconf: PACKAGE=go.opentelemetry.io/build-tools/dbotconf
+$(TOOLS)/dbotconf: PACKAGE=go.opentelemetry.io/otel/$(TOOLS_MOD_DIR)/dbotconf
 
 GOLANGCI_LINT = $(TOOLS)/golangci-lint
 $(TOOLS)/golangci-lint: PACKAGE=github.com/golangci/golangci-lint/cmd/golangci-lint
@@ -72,7 +69,7 @@ GOJQ = $(TOOLS)/gojq
 $(TOOLS)/gojq: PACKAGE=github.com/itchyny/gojq/cmd/gojq
 
 .PHONY: tools
-tools: $(CROSSLINK) $(DBOTCONF) $(GOLANGCI_LINT) $(MISSPELL) $(GOCOVMERGE) $(STRINGER) $(PORTO) $(GOJQ) $(SEMCONVGEN) $(MULTIMOD) $(SEMCONVKIT)
+tools: $(CROSSLINK) $(DBOTCONF) $(GOLANGCI_LINT) $(MISSPELL) $(GOCOVMERGE) $(STRINGER) $(PORTO) $(GOJQ) $(SEMCONVGEN) $(MULTIMOD)
 
 # Build
 
@@ -129,7 +126,6 @@ test-coverage: | $(GOCOVMERGE)
 	  (cd "$${dir}" && \
 	    $(GO) list ./... \
 	    | grep -v third_party \
-	    | grep -v 'semconv/v.*' \
 	    | xargs $(GO) test -coverpkg=./... -covermode=$(COVERAGE_MODE) -coverprofile="$(COVERAGE_PROFILE)" && \
 	  $(GO) tool cover -html=coverage.out -o coverage.html); \
 	done; \
@@ -147,8 +143,8 @@ golangci-lint/%: | $(GOLANGCI_LINT)
 
 .PHONY: crosslink
 crosslink: | $(CROSSLINK)
-	@echo "Updating intra-repository dependencies in all go modules" \
-		&& $(CROSSLINK) --root=$(shell pwd) --prune
+	@echo "cross-linking all go modules" \
+		&& $(CROSSLINK)
 
 .PHONY: go-mod-tidy
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
@@ -156,7 +152,7 @@ go-mod-tidy/%: DIR=$*
 go-mod-tidy/%: | crosslink
 	@echo "$(GO) mod tidy in $(DIR)" \
 		&& cd $(DIR) \
-		&& $(GO) mod tidy -compat=1.17
+		&& $(GO) mod tidy
 
 .PHONY: lint-modules
 lint-modules: go-mod-tidy
@@ -166,11 +162,7 @@ lint: misspell lint-modules golangci-lint
 
 .PHONY: vanity-import-check
 vanity-import-check: | $(PORTO)
-	@$(PORTO) --include-internal -l . || echo "(run: make vanity-import-fix)"
-
-.PHONY: vanity-import-fix
-vanity-import-fix: | $(PORTO)
-	@$(PORTO) --include-internal -w .
+	@$(PORTO) --include-internal -l .
 
 .PHONY: misspell
 misspell: | $(MISSPELL)
@@ -178,7 +170,7 @@ misspell: | $(MISSPELL)
 
 .PHONY: license-check
 license-check:
-	@licRes=$$(for f in $$(find . -type f \( -iname '*.go' -o -iname '*.sh' \) ! -path '**/third_party/*' ! -path './.git/*' ) ; do \
+	@licRes=$$(for f in $$(find . -type f \( -iname '*.go' -o -iname '*.sh' \) ! -path '**/third_party/*') ; do \
 	           awk '/Copyright The OpenTelemetry Authors|generated|GENERATED/ && NR<=3 { found=1; next } END { if (!found) print FILENAME }' $$f; \
 	   done); \
 	   if [ -n "$${licRes}" ]; then \
@@ -186,14 +178,26 @@ license-check:
 	           exit 1; \
 	   fi
 
-DEPENDABOT_CONFIG = .github/dependabot.yml
+DEPENDABOT_PATH=./.github/dependabot.yml
 .PHONY: dependabot-check
-dependabot-check: | $(DBOTCONF)
-	@$(DBOTCONF) verify $(DEPENDABOT_CONFIG) || echo "(run: make dependabot-generate)"
+dependabot-check:
+	@result=$$( \
+		for f in $$( find . -type f -name go.mod -exec dirname {} \; | sed 's/^.//' ); \
+			do grep -q "directory: \+$$f" $(DEPENDABOT_PATH) \
+			|| echo "$$f"; \
+		done; \
+	); \
+	if [ -n "$$result" ]; then \
+		echo "missing dependabot entry:"; echo "$$result"; \
+		echo "new modules need to be added to the $(DEPENDABOT_PATH) file"; \
+		echo "(run: make dependabot-generate)"; \
+		exit 1; \
+	fi
 
 .PHONY: dependabot-generate
-dependabot-generate: | $(DBOTCONF)
-	@$(DBOTCONF) generate > $(DEPENDABOT_CONFIG)
+dependabot-generate: $(DBOTCONF)
+	@echo "gerating dependabot configuration"; \
+	$(DBOTCONF)
 
 .PHONY: check-clean-work-tree
 check-clean-work-tree:
@@ -204,15 +208,6 @@ check-clean-work-tree:
 	  git status; \
 	  exit 1; \
 	fi
-
-SEMCONVPKG ?= "semconv/"
-.PHONY: semconv-generate
-semconv-generate: | $(SEMCONVGEN) $(SEMCONVKIT)
-	@[ "$(TAG)" ] || ( echo "TAG unset: missing opentelemetry specification tag"; exit 1 )
-	@[ "$(OTEL_SPEC_REPO)" ] || ( echo "OTEL_SPEC_REPO unset: missing path to opentelemetry specification repo"; exit 1 )
-	@$(SEMCONVGEN) -i "$(OTEL_SPEC_REPO)/semantic_conventions/trace" -t "$(SEMCONVPKG)/template.j2" -s "$(TAG)"
-	@$(SEMCONVGEN) -i "$(OTEL_SPEC_REPO)/semantic_conventions/resource" -t "$(SEMCONVPKG)/template.j2" -s "$(TAG)"
-	@$(SEMCONVKIT) -output "$(SEMCONVPKG)/$(TAG)" -tag "$(TAG)"
 
 .PHONY: prerelease
 prerelease: | $(MULTIMOD)

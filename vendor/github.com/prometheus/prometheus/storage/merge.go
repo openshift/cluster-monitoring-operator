@@ -16,10 +16,11 @@ package storage
 import (
 	"bytes"
 	"container/heap"
-	"fmt"
 	"math"
 	"sort"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/tsdb/chunkenc"
@@ -158,7 +159,7 @@ func (l labelGenericQueriers) SplitByHalf() (labelGenericQueriers, labelGenericQ
 func (q *mergeGenericQuerier) LabelValues(name string, matchers ...*labels.Matcher) ([]string, Warnings, error) {
 	res, ws, err := q.lvals(q.queriers, name, matchers...)
 	if err != nil {
-		return nil, nil, fmt.Errorf("LabelValues() from merge generic querier for label %s: %w", name, err)
+		return nil, nil, errors.Wrapf(err, "LabelValues() from merge generic querier for label %s", name)
 	}
 	return res, ws, nil
 }
@@ -226,7 +227,7 @@ func (q *mergeGenericQuerier) LabelNames(matchers ...*labels.Matcher) ([]string,
 			warnings = append(warnings, wrn...)
 		}
 		if err != nil {
-			return nil, nil, fmt.Errorf("LabelNames() from merge generic querier: %w", err)
+			return nil, nil, errors.Wrap(err, "LabelNames() from merge generic querier")
 		}
 		for _, name := range names {
 			labelNamesMap[name] = struct{}{}
@@ -716,57 +717,4 @@ func (h *chunkIteratorHeap) Pop() interface{} {
 	x := old[n-1]
 	*h = old[0 : n-1]
 	return x
-}
-
-// NewConcatenatingChunkSeriesMerger returns a VerticalChunkSeriesMergeFunc that simply concatenates the
-// chunks from the series. The resultant stream of chunks for a series might be overlapping and unsorted.
-func NewConcatenatingChunkSeriesMerger() VerticalChunkSeriesMergeFunc {
-	return func(series ...ChunkSeries) ChunkSeries {
-		if len(series) == 0 {
-			return nil
-		}
-		return &ChunkSeriesEntry{
-			Lset: series[0].Labels(),
-			ChunkIteratorFn: func() chunks.Iterator {
-				iterators := make([]chunks.Iterator, 0, len(series))
-				for _, s := range series {
-					iterators = append(iterators, s.Iterator())
-				}
-				return &concatenatingChunkIterator{
-					iterators: iterators,
-				}
-			},
-		}
-	}
-}
-
-type concatenatingChunkIterator struct {
-	iterators []chunks.Iterator
-	idx       int
-
-	curr chunks.Meta
-}
-
-func (c *concatenatingChunkIterator) At() chunks.Meta {
-	return c.curr
-}
-
-func (c *concatenatingChunkIterator) Next() bool {
-	if c.idx >= len(c.iterators) {
-		return false
-	}
-	if c.iterators[c.idx].Next() {
-		c.curr = c.iterators[c.idx].At()
-		return true
-	}
-	c.idx++
-	return c.Next()
-}
-
-func (c *concatenatingChunkIterator) Err() error {
-	errs := tsdb_errors.NewMulti()
-	for _, iter := range c.iterators {
-		errs.Add(iter.Err())
-	}
-	return errs.Err()
 }

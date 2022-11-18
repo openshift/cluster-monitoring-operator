@@ -18,6 +18,7 @@
 package fileutil
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,12 +60,12 @@ func CopyDirs(src, dest string) error {
 }
 
 func copyFile(src, dest string) error {
-	data, err := os.ReadFile(src)
+	data, err := ioutil.ReadFile(src)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(dest, data, 0o666)
+	err = ioutil.WriteFile(dest, data, 0o666)
 	if err != nil {
 		return err
 	}
