@@ -16,6 +16,7 @@ package prometheus
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"reflect"
@@ -25,7 +26,6 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/blang/semver/v4"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/mitchellh/hashstructure"
@@ -1377,9 +1377,8 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 
 	p := pobj.(*monitoringv1.Prometheus)
 	p = p.DeepCopy()
-	if err := k8sutil.AddTypeInformationToObject(p); err != nil {
-		return errors.Wrap(err, "failed to set Prometheus type information")
-	}
+	p.APIVersion = monitoringv1.SchemeGroupVersion.String()
+	p.Kind = monitoringv1.PrometheusesKind
 
 	logger := log.With(c.logger, "key", key)
 	if p.Spec.Paused {
@@ -1453,7 +1452,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 			return err
 		}
 
-		sset, err := makeStatefulSet(logger, ssetName, *p, &c.config, ruleConfigMapNames, newSSetInputHash, int32(shard), tlsAssets.ShardNames())
+		sset, err := makeStatefulSet(ssetName, *p, &c.config, ruleConfigMapNames, newSSetInputHash, int32(shard), tlsAssets.ShardNames())
 		if err != nil {
 			return errors.Wrap(err, "making statefulset failed")
 		}
@@ -1565,7 +1564,6 @@ func (c *Operator) status(ctx context.Context, key string) error {
 			LastTransitionTime: metav1.Time{
 				Time: time.Now().UTC(),
 			},
-			ObservedGeneration: p.Generation,
 		}
 		messages []string
 	)
@@ -1640,7 +1638,6 @@ func (c *Operator) status(ctx context.Context, key string) error {
 		LastTransitionTime: metav1.Time{
 			Time: time.Now().UTC(),
 		},
-		ObservedGeneration: p.Generation,
 	}
 	reconciliationStatus, found := c.reconciliations.GetStatus(key)
 	if !found {
@@ -1677,7 +1674,7 @@ func (c *Operator) status(ctx context.Context, key string) error {
 	return nil
 }
 
-// checkPrometheusSpecDeprecation checks for deprecated fields in the prometheus spec and logs a warning if applicable
+//checkPrometheusSpecDeprecation checks for deprecated fields in the prometheus spec and logs a warning if applicable
 func checkPrometheusSpecDeprecation(key string, p *monitoringv1.Prometheus, logger log.Logger) {
 	deprecationWarningf := "prometheus key=%v, field %v is deprecated, '%v' field should be used instead"
 	if p.Spec.BaseImage != "" {
@@ -1707,16 +1704,10 @@ func checkPrometheusSpecDeprecation(key string, p *monitoringv1.Prometheus, logg
 }
 
 func createSSetInputHash(p monitoringv1.Prometheus, c operator.Config, ruleConfigMapNames []string, tlsAssets *operator.ShardedSecret, ssSpec appsv1.StatefulSetSpec) (string, error) {
-	var http2 *bool
-	if p.Spec.Web != nil && p.Spec.Web.WebConfigFileFields.HTTPConfig != nil {
-		http2 = p.Spec.Web.WebConfigFileFields.HTTPConfig.HTTP2
-	}
-
 	hash, err := hashstructure.Hash(struct {
 		PrometheusLabels      map[string]string
 		PrometheusAnnotations map[string]string
 		PrometheusGeneration  int64
-		PrometheusWebHTTP2    *bool
 		Config                operator.Config
 		StatefulSetSpec       appsv1.StatefulSetSpec
 		RuleConfigMaps        []string `hash:"set"`
@@ -1725,7 +1716,6 @@ func createSSetInputHash(p monitoringv1.Prometheus, c operator.Config, ruleConfi
 		PrometheusLabels:      p.Labels,
 		PrometheusAnnotations: p.Annotations,
 		PrometheusGeneration:  p.Generation,
-		PrometheusWebHTTP2:    http2,
 		Config:                c,
 		StatefulSetSpec:       ssSpec,
 		RuleConfigMaps:        ruleConfigMapNames,
@@ -1919,6 +1909,15 @@ func (c *Operator) loadConfigFromSecret(sks *v1.SecretKeySelector, s *v1.SecretL
 	return nil, nil
 }
 
+func gzipConfig(buf *bytes.Buffer, conf []byte) error {
+	w := gzip.NewWriter(buf)
+	defer w.Close()
+	if _, err := w.Write(conf); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *monitoringv1.Prometheus, ruleConfigMapNames []string, store *assets.Store) error {
 	// If no service or pod monitor selectors are configured, the user wants to
 	// manage configuration themselves. Do create an empty Secret if it doesn't
@@ -2059,7 +2058,7 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *mon
 
 	// Compress config to avoid 1mb secret limit for a while
 	var buf bytes.Buffer
-	if err = operator.GzipConfig(&buf, conf); err != nil {
+	if err = gzipConfig(&buf, conf); err != nil {
 		return errors.Wrap(err, "couldn't gzip config")
 	}
 	s.Data[configFilename] = buf.Bytes()
@@ -2113,22 +2112,22 @@ func newTLSAssetSecret(p *monitoringv1.Prometheus, labels map[string]string) *v1
 
 func (c *Operator) createOrUpdateWebConfigSecret(ctx context.Context, p *monitoringv1.Prometheus) error {
 	boolTrue := true
+	client := c.kclient.CoreV1().Secrets(p.Namespace)
 
-	var fields monitoringv1.WebConfigFileFields
+	var tlsConfig *monitoringv1.WebTLSConfig
 	if p.Spec.Web != nil {
-		fields = p.Spec.Web.WebConfigFileFields
+		tlsConfig = p.Spec.Web.TLSConfig
 	}
 
 	webConfig, err := webconfig.New(
 		webConfigDir,
-		webConfigSecretName(p.Name),
-		fields,
+		WebConfigSecretName(p.Name),
+		tlsConfig,
 	)
 	if err != nil {
-		return errors.Wrap(err, "failed to initialize web config")
+		return err
 	}
 
-	secretClient := c.kclient.CoreV1().Secrets(p.Namespace)
 	ownerReference := metav1.OwnerReference{
 		APIVersion:         p.APIVersion,
 		BlockOwnerDeletion: &boolTrue,
@@ -2137,13 +2136,19 @@ func (c *Operator) createOrUpdateWebConfigSecret(ctx context.Context, p *monitor
 		Name:               p.Name,
 		UID:                p.UID,
 	}
-	secretLabels := c.config.Labels.Merge(managedByOperatorLabels)
 
-	if err := webConfig.CreateOrUpdateWebConfigSecret(ctx, secretClient, secretLabels, ownerReference); err != nil {
-		return errors.Wrap(err, "failed to reconcile web config secret")
+	secretLabels := c.config.Labels.Merge(managedByOperatorLabels)
+	secret, err := webConfig.MakeConfigFileSecret(secretLabels, ownerReference)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	err = k8sutil.CreateOrUpdateSecret(ctx, client, secret)
+	if err != nil {
+		return errors.Wrap(err, "failed to create web config for Prometheus")
+	}
+
+	return err
 }
 
 func (c *Operator) selectServiceMonitors(ctx context.Context, p *monitoringv1.Prometheus, store *assets.Store) (map[string]*monitoringv1.ServiceMonitor, error) {
@@ -2177,12 +2182,7 @@ func (c *Operator) selectServiceMonitors(ctx context.Context, p *monitoringv1.Pr
 		err := c.smonInfs.ListAllByNamespace(ns, servMonSelector, func(obj interface{}) {
 			k, ok := c.keyFunc(obj)
 			if ok {
-				svcMon := obj.(*monitoringv1.ServiceMonitor).DeepCopy()
-				if err := k8sutil.AddTypeInformationToObject(svcMon); err != nil {
-					level.Error(c.logger).Log("msg", "failed to set ServiceMonitor type information", "namespace", ns, "err", err)
-					return
-				}
-				serviceMonitors[k] = svcMon
+				serviceMonitors[k] = obj.(*monitoringv1.ServiceMonitor)
 			}
 		})
 		if err != nil {
@@ -2235,7 +2235,7 @@ func (c *Operator) selectServiceMonitors(ctx context.Context, p *monitoringv1.Pr
 
 			for _, rl := range endpoint.RelabelConfigs {
 				if rl.Action != "" {
-					if err = validateRelabelConfig(*p, *rl); err != nil {
+					if err = validateRelabelConfig(*rl); err != nil {
 						break
 					}
 				}
@@ -2243,7 +2243,7 @@ func (c *Operator) selectServiceMonitors(ctx context.Context, p *monitoringv1.Pr
 
 			for _, rl := range endpoint.MetricRelabelConfigs {
 				if rl.Action != "" {
-					if err = validateRelabelConfig(*p, *rl); err != nil {
+					if err = validateRelabelConfig(*rl); err != nil {
 						break
 					}
 				}
@@ -2310,12 +2310,7 @@ func (c *Operator) selectPodMonitors(ctx context.Context, p *monitoringv1.Promet
 		err := c.pmonInfs.ListAllByNamespace(ns, podMonSelector, func(obj interface{}) {
 			k, ok := c.keyFunc(obj)
 			if ok {
-				podMon := obj.(*monitoringv1.PodMonitor).DeepCopy()
-				if err := k8sutil.AddTypeInformationToObject(podMon); err != nil {
-					level.Error(c.logger).Log("msg", "failed to set PodMonitor type information", "namespace", ns, "err", err)
-					return
-				}
-				podMonitors[k] = podMon
+				podMonitors[k] = obj.(*monitoringv1.PodMonitor)
 			}
 		})
 		if err != nil {
@@ -2360,7 +2355,7 @@ func (c *Operator) selectPodMonitors(ctx context.Context, p *monitoringv1.Promet
 
 			for _, rl := range endpoint.RelabelConfigs {
 				if rl.Action != "" {
-					if err = validateRelabelConfig(*p, *rl); err != nil {
+					if err = validateRelabelConfig(*rl); err != nil {
 						break
 					}
 				}
@@ -2368,7 +2363,7 @@ func (c *Operator) selectPodMonitors(ctx context.Context, p *monitoringv1.Promet
 
 			for _, rl := range endpoint.MetricRelabelConfigs {
 				if rl.Action != "" {
-					if err = validateRelabelConfig(*p, *rl); err != nil {
+					if err = validateRelabelConfig(*rl); err != nil {
 						break
 					}
 				}
@@ -2434,12 +2429,7 @@ func (c *Operator) selectProbes(ctx context.Context, p *monitoringv1.Prometheus,
 	for _, ns := range namespaces {
 		err := c.probeInfs.ListAllByNamespace(ns, bMonSelector, func(obj interface{}) {
 			if k, ok := c.keyFunc(obj); ok {
-				probe := obj.(*monitoringv1.Probe).DeepCopy()
-				if err := k8sutil.AddTypeInformationToObject(probe); err != nil {
-					level.Error(c.logger).Log("msg", "failed to set Probe type information", "namespace", ns, "err", err)
-					return
-				}
-				probes[k] = probe
+				probes[k] = obj.(*monitoringv1.Probe)
 			}
 		})
 		if err != nil {
@@ -2502,7 +2492,7 @@ func (c *Operator) selectProbes(ctx context.Context, p *monitoringv1.Prometheus,
 
 		for _, rl := range probe.Spec.MetricRelabelConfigs {
 			if rl.Action != "" {
-				if err = validateRelabelConfig(*p, *rl); err != nil {
+				if err = validateRelabelConfig(*rl); err != nil {
 					rejectFn(probe, err)
 					continue
 				}
@@ -2585,45 +2575,26 @@ func validateRemoteWriteSpec(spec monitoringv1.RemoteWriteSpec) error {
 	return nil
 }
 
-func validateRelabelConfig(p monitoringv1.Prometheus, rc monitoringv1.RelabelConfig) error {
+func validateRelabelConfig(rc monitoringv1.RelabelConfig) error {
 	relabelTarget := regexp.MustCompile(`^(?:(?:[a-zA-Z_]|\$(?:\{\w+\}|\w+))+\w*)+$`)
-	promVersion := operator.StringValOrDefault(p.Spec.Version, operator.DefaultPrometheusVersion)
-	version, err := semver.ParseTolerant(promVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse Prometheus version")
-	}
-	minimumVersion := version.GTE(semver.MustParse("2.36.0"))
-
-	if (rc.Action == string(relabel.Lowercase) || rc.Action == string(relabel.Uppercase)) && !minimumVersion {
-		return errors.Errorf("%s relabel action is only supported from Prometheus version 2.36.0", rc.Action)
-	}
 
 	if _, err := relabel.NewRegexp(rc.Regex); err != nil {
 		return errors.Wrapf(err, "invalid regex %s for relabel configuration", rc.Regex)
 	}
-
 	if rc.Modulus == 0 && rc.Action == string(relabel.HashMod) {
 		return errors.Errorf("relabel configuration for hashmod requires non-zero modulus")
 	}
-
-	if (rc.Action == string(relabel.Replace) || rc.Action == string(relabel.HashMod) || rc.Action == string(relabel.Lowercase) || rc.Action == string(relabel.Uppercase)) && rc.TargetLabel == "" {
+	if (rc.Action == string(relabel.Replace) || rc.Action == string(relabel.HashMod)) && rc.TargetLabel == "" {
 		return errors.Errorf("relabel configuration for %s action needs targetLabel value", rc.Action)
 	}
-
-	if (rc.Action == string(relabel.Replace) || rc.Action == string(relabel.Lowercase) || rc.Action == string(relabel.Uppercase)) && !relabelTarget.MatchString(rc.TargetLabel) {
+	if rc.Action == string(relabel.Replace) && !relabelTarget.MatchString(rc.TargetLabel) {
 		return errors.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
 	}
-
-	if (rc.Action == string(relabel.Lowercase) || rc.Action == string(relabel.Uppercase)) && !(rc.Replacement == relabel.DefaultRelabelConfig.Replacement || rc.Replacement == "") {
-		return errors.Errorf("'replacement' can not be set for %s action", rc.Action)
-	}
-
 	if rc.Action == string(relabel.LabelMap) {
 		if rc.Replacement != "" && !relabelTarget.MatchString(rc.Replacement) {
 			return errors.Errorf("%q is invalid 'replacement' for %s action", rc.Replacement, rc.Action)
 		}
 	}
-
 	if rc.Action == string(relabel.HashMod) && !model.LabelName(rc.TargetLabel).IsValid() {
 		return errors.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
 	}

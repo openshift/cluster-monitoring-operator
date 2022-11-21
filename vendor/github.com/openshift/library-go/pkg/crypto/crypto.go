@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/big"
 	mathrand "math/rand"
 	"net"
@@ -386,7 +387,7 @@ func GetTLSCertificateConfig(certFile, keyFile string) (*TLSCertificateConfig, e
 		return nil, errors.New("keyFile missing")
 	}
 
-	certPEMBlock, err := os.ReadFile(certFile)
+	certPEMBlock, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		return nil, err
 	}
@@ -395,7 +396,7 @@ func GetTLSCertificateConfig(certFile, keyFile string) (*TLSCertificateConfig, e
 		return nil, fmt.Errorf("Error reading %s: %s", certFile, err)
 	}
 
-	keyPEMBlock, err := os.ReadFile(keyFile)
+	keyPEMBlock, err := ioutil.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
 	}
@@ -508,14 +509,14 @@ func (s *SerialFileGenerator) Next(template *x509.Certificate) (int64, error) {
 	// always add a newline at the end to have a valid file
 	serialText += "\n"
 
-	if err := os.WriteFile(s.SerialFile, []byte(serialText), os.FileMode(0640)); err != nil {
+	if err := ioutil.WriteFile(s.SerialFile, []byte(serialText), os.FileMode(0640)); err != nil {
 		return 0, err
 	}
 	return next, nil
 }
 
 func fileToSerial(serialFile string) (int64, error) {
-	serialData, err := os.ReadFile(serialFile)
+	serialData, err := ioutil.ReadFile(serialFile)
 	if err != nil {
 		return 0, err
 	}
@@ -610,7 +611,7 @@ func MakeSelfSignedCA(certFile, keyFile, serialFile, name string, expireDays int
 	var serialGenerator SerialGenerator
 	if len(serialFile) > 0 {
 		// create / overwrite the serial file with a zero padded hex value (ending in a newline to have a valid file)
-		if err := os.WriteFile(serialFile, []byte("00\n"), 0644); err != nil {
+		if err := ioutil.WriteFile(serialFile, []byte("00\n"), 0644); err != nil {
 			return nil, err
 		}
 		serialGenerator, err = NewSerialFileGenerator(serialFile)
@@ -690,54 +691,6 @@ func MakeCAConfigForDuration(name string, caLifetime time.Duration, issuer *CA) 
 		Key:   signerPrivateKey,
 	}
 	return signerConfig, nil
-}
-
-// EnsureSubCA returns a subCA signed by the `ca`, whether it was created
-// (as opposed to pre-existing), and any error that might occur during the subCA
-// creation.
-// If serialFile is an empty string, a RandomSerialGenerator will be used.
-func (ca *CA) EnsureSubCA(certFile, keyFile, serialFile, name string, expireDays int) (*CA, bool, error) {
-	if subCA, err := GetCA(certFile, keyFile, serialFile); err == nil {
-		return subCA, false, err
-	}
-	subCA, err := ca.MakeAndWriteSubCA(certFile, keyFile, serialFile, name, expireDays)
-	return subCA, true, err
-}
-
-// MakeAndWriteSubCA returns a new sub-CA configuration. New cert/key pair is generated
-// while using this function.
-// If serialFile is an empty string, a RandomSerialGenerator will be used.
-func (ca *CA) MakeAndWriteSubCA(certFile, keyFile, serialFile, name string, expireDays int) (*CA, error) {
-	klog.V(4).Infof("Generating sub-CA certificate in %s, key in %s, serial in %s", certFile, keyFile, serialFile)
-
-	subCAConfig, err := MakeCAConfigForDuration(name, time.Duration(expireDays)*time.Hour*24, ca)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := subCAConfig.WriteCertConfigFile(certFile, keyFile); err != nil {
-		return nil, err
-	}
-
-	var serialGenerator SerialGenerator
-	if len(serialFile) > 0 {
-		// create / overwrite the serial file with a zero padded hex value (ending in a newline to have a valid file)
-		if err := os.WriteFile(serialFile, []byte("00\n"), 0644); err != nil {
-			return nil, err
-		}
-
-		serialGenerator, err = NewSerialFileGenerator(serialFile)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		serialGenerator = &RandomSerialGenerator{}
-	}
-
-	return &CA{
-		Config:          subCAConfig,
-		SerialGenerator: serialGenerator,
-	}, nil
 }
 
 func (ca *CA) EnsureServerCert(certFile, keyFile string, hostnames sets.String, expireDays int) (*TLSCertificateConfig, bool, error) {
@@ -863,10 +816,10 @@ func (ca *CA) MakeClientCertificate(certFile, keyFile string, u user.Info, expir
 		return nil, err
 	}
 
-	if err = os.WriteFile(certFile, certData, os.FileMode(0644)); err != nil {
+	if err = ioutil.WriteFile(certFile, certData, os.FileMode(0644)); err != nil {
 		return nil, err
 	}
-	if err = os.WriteFile(keyFile, keyData, os.FileMode(0600)); err != nil {
+	if err = ioutil.WriteFile(keyFile, keyData, os.FileMode(0600)); err != nil {
 		return nil, err
 	}
 

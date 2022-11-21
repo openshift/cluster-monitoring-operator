@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"container/heap"
 	"context"
-	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -30,6 +29,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/grafana/regexp"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	"go.opentelemetry.io/otel"
@@ -118,18 +118,11 @@ type Query interface {
 	// Statement returns the parsed statement of the query.
 	Statement() parser.Statement
 	// Stats returns statistics about the lifetime of the query.
-	Stats() *stats.Statistics
+	Stats() *stats.QueryTimers
 	// Cancel signals that a running query execution should be aborted.
 	Cancel()
 	// String returns the original query string.
 	String() string
-}
-
-type QueryOpts struct {
-	// Enables recording per-step statistics if the engine has it enabled as well. Disabled by default.
-	EnablePerStepStats bool
-	// Lookback delta duration for this query.
-	LookbackDelta time.Duration
 }
 
 // query implements the Query interface.
@@ -142,8 +135,6 @@ type query struct {
 	stmt parser.Statement
 	// Timer stats for the query execution.
 	stats *stats.QueryTimers
-	// Sample stats for the query execution.
-	sampleStats *stats.QuerySamples
 	// Result matrix for reuse.
 	matrix Matrix
 	// Cancellation function for the query.
@@ -168,11 +159,8 @@ func (q *query) String() string {
 }
 
 // Stats implements the Query interface.
-func (q *query) Stats() *stats.Statistics {
-	return &stats.Statistics{
-		Timers:  q.stats,
-		Samples: q.sampleStats,
-	}
+func (q *query) Stats() *stats.QueryTimers {
+	return q.stats
 }
 
 // Cancel implements the Query interface.
@@ -210,10 +198,10 @@ func contextDone(ctx context.Context, env string) error {
 }
 
 func contextErr(err error, env string) error {
-	switch {
-	case errors.Is(err, context.Canceled):
+	switch err {
+	case context.Canceled:
 		return ErrQueryCanceled(env)
-	case errors.Is(err, context.DeadlineExceeded):
+	case context.DeadlineExceeded:
 		return ErrQueryTimeout(env)
 	default:
 		return err
@@ -266,9 +254,6 @@ type EngineOpts struct {
 	// is still provided here for those using the Engine outside of
 	// Prometheus.
 	EnableNegativeOffset bool
-
-	// EnablePerStepStats if true allows for per-step stats to be computed on request. Disabled otherwise.
-	EnablePerStepStats bool
 }
 
 // Engine handles the lifetime of queries from beginning to end.
@@ -285,7 +270,6 @@ type Engine struct {
 	noStepSubqueryIntervalFn func(rangeMillis int64) int64
 	enableAtModifier         bool
 	enableNegativeOffset     bool
-	enablePerStepStats       bool
 }
 
 // NewEngine returns a new engine.
@@ -368,7 +352,6 @@ func NewEngine(opts EngineOpts) *Engine {
 		noStepSubqueryIntervalFn: opts.NoStepSubqueryIntervalFn,
 		enableAtModifier:         opts.EnableAtModifier,
 		enableNegativeOffset:     opts.EnableNegativeOffset,
-		enablePerStepStats:       opts.EnablePerStepStats,
 	}
 }
 
@@ -396,12 +379,12 @@ func (ng *Engine) SetQueryLogger(l QueryLogger) {
 }
 
 // NewInstantQuery returns an evaluation query for the given expression at the given time.
-func (ng *Engine) NewInstantQuery(q storage.Queryable, opts *QueryOpts, qs string, ts time.Time) (Query, error) {
+func (ng *Engine) NewInstantQuery(q storage.Queryable, qs string, ts time.Time) (Query, error) {
 	expr, err := parser.ParseExpr(qs)
 	if err != nil {
 		return nil, err
 	}
-	qry, err := ng.newQuery(q, opts, expr, ts, ts, 0)
+	qry, err := ng.newQuery(q, expr, ts, ts, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -412,15 +395,15 @@ func (ng *Engine) NewInstantQuery(q storage.Queryable, opts *QueryOpts, qs strin
 
 // NewRangeQuery returns an evaluation query for the given time range and with
 // the resolution set by the interval.
-func (ng *Engine) NewRangeQuery(q storage.Queryable, opts *QueryOpts, qs string, start, end time.Time, interval time.Duration) (Query, error) {
+func (ng *Engine) NewRangeQuery(q storage.Queryable, qs string, start, end time.Time, interval time.Duration) (Query, error) {
 	expr, err := parser.ParseExpr(qs)
 	if err != nil {
 		return nil, err
 	}
 	if expr.Type() != parser.ValueTypeVector && expr.Type() != parser.ValueTypeScalar {
-		return nil, fmt.Errorf("invalid expression type %q for range query, must be Scalar or instant Vector", parser.DocumentedType(expr.Type()))
+		return nil, errors.Errorf("invalid expression type %q for range query, must be Scalar or instant Vector", parser.DocumentedType(expr.Type()))
 	}
-	qry, err := ng.newQuery(q, opts, expr, start, end, interval)
+	qry, err := ng.newQuery(q, expr, start, end, interval)
 	if err != nil {
 		return nil, err
 	}
@@ -429,34 +412,22 @@ func (ng *Engine) NewRangeQuery(q storage.Queryable, opts *QueryOpts, qs string,
 	return qry, nil
 }
 
-func (ng *Engine) newQuery(q storage.Queryable, opts *QueryOpts, expr parser.Expr, start, end time.Time, interval time.Duration) (*query, error) {
+func (ng *Engine) newQuery(q storage.Queryable, expr parser.Expr, start, end time.Time, interval time.Duration) (*query, error) {
 	if err := ng.validateOpts(expr); err != nil {
 		return nil, err
 	}
 
-	// Default to empty QueryOpts if not provided.
-	if opts == nil {
-		opts = &QueryOpts{}
-	}
-
-	lookbackDelta := opts.LookbackDelta
-	if lookbackDelta <= 0 {
-		lookbackDelta = ng.lookbackDelta
-	}
-
 	es := &parser.EvalStmt{
-		Expr:          PreprocessExpr(expr, start, end),
-		Start:         start,
-		End:           end,
-		Interval:      interval,
-		LookbackDelta: lookbackDelta,
+		Expr:     PreprocessExpr(expr, start, end),
+		Start:    start,
+		End:      end,
+		Interval: interval,
 	}
 	qry := &query{
-		stmt:        es,
-		ng:          ng,
-		stats:       stats.NewQueryTimers(),
-		sampleStats: stats.NewQuerySamples(ng.enablePerStepStats && opts.EnablePerStepStats),
-		queryable:   q,
+		stmt:      es,
+		ng:        ng,
+		stats:     stats.NewQueryTimers(),
+		queryable: q,
 	}
 	return qry, nil
 }
@@ -519,11 +490,10 @@ func (ng *Engine) validateOpts(expr parser.Expr) error {
 
 func (ng *Engine) newTestQuery(f func(context.Context) error) Query {
 	qry := &query{
-		q:           "test statement",
-		stmt:        parser.TestStmt(f),
-		ng:          ng,
-		stats:       stats.NewQueryTimers(),
-		sampleStats: stats.NewQuerySamples(ng.enablePerStepStats),
+		q:     "test statement",
+		stmt:  parser.TestStmt(f),
+		ng:    ng,
+		stats: stats.NewQueryTimers(),
 	}
 	return qry
 }
@@ -605,7 +575,7 @@ func (ng *Engine) exec(ctx context.Context, q *query) (v parser.Value, ws storag
 		return nil, nil, s(ctx)
 	}
 
-	panic(fmt.Errorf("promql.Engine.exec: unhandled statement of type %T", q.Statement()))
+	panic(errors.Errorf("promql.Engine.exec: unhandled statement of type %T", q.Statement()))
 }
 
 func timeMilliseconds(t time.Time) int64 {
@@ -644,11 +614,9 @@ func (ng *Engine) execEvalStmt(ctx context.Context, query *query, s *parser.Eval
 			ctx:                      ctxInnerEval,
 			maxSamples:               ng.maxSamplesPerQuery,
 			logger:                   ng.logger,
-			lookbackDelta:            s.LookbackDelta,
-			samplesStats:             query.sampleStats,
+			lookbackDelta:            ng.lookbackDelta,
 			noStepSubqueryIntervalFn: ng.noStepSubqueryIntervalFn,
 		}
-		query.sampleStats.InitStepTracking(start, start, 1)
 
 		val, warnings, err := evaluator.Eval(s.Expr)
 		if err != nil {
@@ -665,7 +633,7 @@ func (ng *Engine) execEvalStmt(ctx context.Context, query *query, s *parser.Eval
 		case String:
 			return result, warnings, nil
 		default:
-			panic(fmt.Errorf("promql.Engine.exec: invalid expression type %q", val.Type()))
+			panic(errors.Errorf("promql.Engine.exec: invalid expression type %q", val.Type()))
 		}
 
 		query.matrix = mat
@@ -684,7 +652,7 @@ func (ng *Engine) execEvalStmt(ctx context.Context, query *query, s *parser.Eval
 		case parser.ValueTypeMatrix:
 			return mat, warnings, nil
 		default:
-			panic(fmt.Errorf("promql.Engine.exec: unexpected expression type %q", s.Expr.Type()))
+			panic(errors.Errorf("promql.Engine.exec: unexpected expression type %q", s.Expr.Type()))
 		}
 	}
 
@@ -696,11 +664,9 @@ func (ng *Engine) execEvalStmt(ctx context.Context, query *query, s *parser.Eval
 		ctx:                      ctxInnerEval,
 		maxSamples:               ng.maxSamplesPerQuery,
 		logger:                   ng.logger,
-		lookbackDelta:            s.LookbackDelta,
-		samplesStats:             query.sampleStats,
+		lookbackDelta:            ng.lookbackDelta,
 		noStepSubqueryIntervalFn: ng.noStepSubqueryIntervalFn,
 	}
-	query.sampleStats.InitStepTracking(evaluator.startTimestamp, evaluator.endTimestamp, evaluator.interval)
 	val, warnings, err := evaluator.Eval(s.Expr)
 	if err != nil {
 		return nil, warnings, err
@@ -709,7 +675,7 @@ func (ng *Engine) execEvalStmt(ctx context.Context, query *query, s *parser.Eval
 
 	mat, ok := val.(Matrix)
 	if !ok {
-		panic(fmt.Errorf("promql.Engine.exec: invalid expression type %q", val.Type()))
+		panic(errors.Errorf("promql.Engine.exec: invalid expression type %q", val.Type()))
 	}
 	query.matrix = mat
 
@@ -809,7 +775,7 @@ func (ng *Engine) getTimeRangesForSelector(s *parser.EvalStmt, n *parser.VectorS
 	}
 
 	if evalRange == 0 {
-		start = start - durationMilliseconds(s.LookbackDelta)
+		start = start - durationMilliseconds(ng.lookbackDelta)
 	} else {
 		// For all matrix queries we want to ensure that we have (end-start) + range selected
 		// this way we have `range` data before the start time
@@ -930,13 +896,12 @@ type evaluator struct {
 	currentSamples           int
 	logger                   log.Logger
 	lookbackDelta            time.Duration
-	samplesStats             *stats.QuerySamples
 	noStepSubqueryIntervalFn func(rangeMillis int64) int64
 }
 
 // errorf causes a panic with the input formatted into an error.
 func (ev *evaluator) errorf(format string, args ...interface{}) {
-	ev.error(fmt.Errorf(format, args...))
+	ev.error(errors.Errorf(format, args...))
 }
 
 // error causes a panic with the given error.
@@ -945,7 +910,7 @@ func (ev *evaluator) error(err error) {
 }
 
 // recover is the handler that turns panics into returns from the top level of evaluation.
-func (ev *evaluator) recover(expr parser.Expr, ws *storage.Warnings, errp *error) {
+func (ev *evaluator) recover(ws *storage.Warnings, errp *error) {
 	e := recover()
 	if e == nil {
 		return
@@ -957,8 +922,8 @@ func (ev *evaluator) recover(expr parser.Expr, ws *storage.Warnings, errp *error
 		buf := make([]byte, 64<<10)
 		buf = buf[:runtime.Stack(buf, false)]
 
-		level.Error(ev.logger).Log("msg", "runtime panic in parser", "expr", expr.String(), "err", e, "stacktrace", string(buf))
-		*errp = fmt.Errorf("unexpected error: %w", err)
+		level.Error(ev.logger).Log("msg", "runtime panic in parser", "err", e, "stacktrace", string(buf))
+		*errp = errors.Wrap(err, "unexpected error")
 	case errWithWarnings:
 		*errp = err.err
 		*ws = append(*ws, err.warnings...)
@@ -968,7 +933,7 @@ func (ev *evaluator) recover(expr parser.Expr, ws *storage.Warnings, errp *error
 }
 
 func (ev *evaluator) Eval(expr parser.Expr) (v parser.Value, ws storage.Warnings, err error) {
-	defer ev.recover(expr, &ws, &err)
+	defer ev.recover(&ws, &err)
 
 	v, ws = ev.eval(expr)
 	return v, ws, nil
@@ -1123,7 +1088,6 @@ func (ev *evaluator) rangeEval(prepSeries func(labels.Labels, *EvalSeriesHelper)
 				}
 			}
 			args[i] = vectors[i]
-			ev.samplesStats.UpdatePeak(ev.currentSamples)
 		}
 
 		// Make the function call.
@@ -1139,12 +1103,10 @@ func (ev *evaluator) rangeEval(prepSeries func(labels.Labels, *EvalSeriesHelper)
 		// When we reset currentSamples to tempNumSamples during the next iteration of the loop it also
 		// needs to include the samples from the result here, as they're still in memory.
 		tempNumSamples += len(result)
-		ev.samplesStats.UpdatePeak(ev.currentSamples)
 
 		if ev.currentSamples > ev.maxSamples {
 			ev.error(ErrTooManySamples(env))
 		}
-		ev.samplesStats.UpdatePeak(ev.currentSamples)
 
 		// If this could be an instant query, shortcut so as not to change sort order.
 		if ev.endTimestamp == ev.startTimestamp {
@@ -1154,7 +1116,6 @@ func (ev *evaluator) rangeEval(prepSeries func(labels.Labels, *EvalSeriesHelper)
 				mat[i] = Series{Metric: s.Metric, Points: []Point{s.Point}}
 			}
 			ev.currentSamples = originalNumSamples + mat.TotalSamples()
-			ev.samplesStats.UpdatePeak(ev.currentSamples)
 			return mat, warnings
 		}
 
@@ -1187,20 +1148,13 @@ func (ev *evaluator) rangeEval(prepSeries func(labels.Labels, *EvalSeriesHelper)
 		mat = append(mat, ss)
 	}
 	ev.currentSamples = originalNumSamples + mat.TotalSamples()
-	ev.samplesStats.UpdatePeak(ev.currentSamples)
 	return mat, warnings
 }
 
 // evalSubquery evaluates given SubqueryExpr and returns an equivalent
 // evaluated MatrixSelector in its place. Note that the Name and LabelMatchers are not set.
 func (ev *evaluator) evalSubquery(subq *parser.SubqueryExpr) (*parser.MatrixSelector, int, storage.Warnings) {
-	samplesStats := ev.samplesStats
-	// Avoid double counting samples when running a subquery, those samples will be counted in later stage.
-	ev.samplesStats = ev.samplesStats.NewChild()
 	val, ws := ev.eval(subq)
-	// But do incorporate the peak from the subquery
-	samplesStats.UpdatePeakFromSubquery(ev.samplesStats)
-	ev.samplesStats = samplesStats
 	mat := val.(Matrix)
 	vs := &parser.VectorSelector{
 		OriginalOffset: subq.OriginalOffset,
@@ -1352,7 +1306,7 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 		ws, err := checkAndExpandSeriesSet(ev.ctx, sel)
 		warnings = append(warnings, ws...)
 		if err != nil {
-			ev.error(errWithWarnings{fmt.Errorf("expanding series: %w", err), warnings})
+			ev.error(errWithWarnings{errors.Wrap(err, "expanding series"), warnings})
 		}
 		mat := make(Matrix, 0, len(selVS.Series)) // Output matrix.
 		offset := durationMilliseconds(selVS.Offset)
@@ -1406,7 +1360,6 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 				enh.Ts = ts
 				// Make the function call.
 				outVec := call(inArgs, e.Args, enh)
-				ev.samplesStats.IncrementSamplesAtStep(step, int64(len(points)))
 				enh.Out = outVec[:0]
 				if len(outVec) > 0 {
 					ss.Points = append(ss.Points, Point{V: outVec[0].Point.V, T: ts})
@@ -1424,9 +1377,7 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 			} else {
 				putPointSlice(ss.Points)
 			}
-			ev.samplesStats.UpdatePeak(ev.currentSamples)
 		}
-		ev.samplesStats.UpdatePeak(ev.currentSamples)
 
 		ev.currentSamples -= len(points)
 		putPointSlice(points)
@@ -1549,7 +1500,7 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 	case *parser.VectorSelector:
 		ws, err := checkAndExpandSeriesSet(ev.ctx, e)
 		if err != nil {
-			ev.error(errWithWarnings{fmt.Errorf("expanding series: %w", err), ws})
+			ev.error(errWithWarnings{errors.Wrap(err, "expanding series"), ws})
 		}
 		mat := make(Matrix, 0, len(e.Series))
 		it := storage.NewMemoizedEmptyIterator(durationMilliseconds(ev.lookbackDelta))
@@ -1560,13 +1511,11 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 				Points: getPointSlice(numSteps),
 			}
 
-			for ts, step := ev.startTimestamp, -1; ts <= ev.endTimestamp; ts += ev.interval {
-				step++
+			for ts := ev.startTimestamp; ts <= ev.endTimestamp; ts += ev.interval {
 				_, v, ok := ev.vectorSelectorSingle(it, e, ts)
 				if ok {
 					if ev.currentSamples < ev.maxSamples {
 						ss.Points = append(ss.Points, Point{V: v, T: ts})
-						ev.samplesStats.IncrementSamplesAtStep(step, 1)
 						ev.currentSamples++
 					} else {
 						ev.error(ErrTooManySamples(env))
@@ -1580,7 +1529,6 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 				putPointSlice(ss.Points)
 			}
 		}
-		ev.samplesStats.UpdatePeak(ev.currentSamples)
 		return mat, ws
 
 	case *parser.MatrixSelector:
@@ -1599,7 +1547,6 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 			maxSamples:               ev.maxSamples,
 			logger:                   ev.logger,
 			lookbackDelta:            ev.lookbackDelta,
-			samplesStats:             ev.samplesStats.NewChild(),
 			noStepSubqueryIntervalFn: ev.noStepSubqueryIntervalFn,
 		}
 
@@ -1625,8 +1572,6 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 
 		res, ws := newEv.eval(e.Expr)
 		ev.currentSamples = newEv.currentSamples
-		ev.samplesStats.UpdatePeakFromSubquery(newEv.samplesStats)
-		ev.samplesStats.IncrementSamplesAtTimestamp(ev.endTimestamp, newEv.samplesStats.TotalSamples)
 		return res, ws
 	case *parser.StepInvariantExpr:
 		switch ce := e.Expr.(type) {
@@ -1643,16 +1588,10 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 			maxSamples:               ev.maxSamples,
 			logger:                   ev.logger,
 			lookbackDelta:            ev.lookbackDelta,
-			samplesStats:             ev.samplesStats.NewChild(),
 			noStepSubqueryIntervalFn: ev.noStepSubqueryIntervalFn,
 		}
 		res, ws := newEv.eval(e.Expr)
 		ev.currentSamples = newEv.currentSamples
-		ev.samplesStats.UpdatePeakFromSubquery(newEv.samplesStats)
-		for ts, step := ev.startTimestamp, -1; ts <= ev.endTimestamp; ts = ts + ev.interval {
-			step++
-			ev.samplesStats.IncrementSamplesAtStep(step, newEv.samplesStats.TotalSamples)
-		}
 		switch e.Expr.(type) {
 		case *parser.MatrixSelector, *parser.SubqueryExpr:
 			// We do not duplicate results for range selectors since result is a matrix
@@ -1665,11 +1604,11 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 		// with changed timestamps.
 		mat, ok := res.(Matrix)
 		if !ok {
-			panic(fmt.Errorf("unexpected result in StepInvariantExpr evaluation: %T", expr))
+			panic(errors.Errorf("unexpected result in StepInvariantExpr evaluation: %T", expr))
 		}
 		for i := range mat {
 			if len(mat[i].Points) != 1 {
-				panic(fmt.Errorf("unexpected number of samples"))
+				panic(errors.Errorf("unexpected number of samples"))
 			}
 			for ts := ev.startTimestamp + ev.interval; ts <= ev.endTimestamp; ts = ts + ev.interval {
 				mat[i].Points = append(mat[i].Points, Point{
@@ -1682,18 +1621,17 @@ func (ev *evaluator) eval(expr parser.Expr) (parser.Value, storage.Warnings) {
 				}
 			}
 		}
-		ev.samplesStats.UpdatePeak(ev.currentSamples)
 		return res, ws
 	}
 
-	panic(fmt.Errorf("unhandled expression of type: %T", expr))
+	panic(errors.Errorf("unhandled expression of type: %T", expr))
 }
 
 // vectorSelector evaluates a *parser.VectorSelector expression.
 func (ev *evaluator) vectorSelector(node *parser.VectorSelector, ts int64) (Vector, storage.Warnings) {
 	ws, err := checkAndExpandSeriesSet(ev.ctx, node)
 	if err != nil {
-		ev.error(errWithWarnings{fmt.Errorf("expanding series: %w", err), ws})
+		ev.error(errWithWarnings{errors.Wrap(err, "expanding series"), ws})
 	}
 	vec := make(Vector, 0, len(node.Series))
 	it := storage.NewMemoizedEmptyIterator(durationMilliseconds(ev.lookbackDelta))
@@ -1708,14 +1646,12 @@ func (ev *evaluator) vectorSelector(node *parser.VectorSelector, ts int64) (Vect
 			})
 
 			ev.currentSamples++
-			ev.samplesStats.IncrementSamplesAtTimestamp(ts, 1)
 			if ev.currentSamples > ev.maxSamples {
 				ev.error(ErrTooManySamples(env))
 			}
 		}
 
 	}
-	ev.samplesStats.UpdatePeak(ev.currentSamples)
 	return vec, ws
 }
 
@@ -1777,7 +1713,7 @@ func (ev *evaluator) matrixSelector(node *parser.MatrixSelector) (Matrix, storag
 	)
 	ws, err := checkAndExpandSeriesSet(ev.ctx, node)
 	if err != nil {
-		ev.error(errWithWarnings{fmt.Errorf("expanding series: %w", err), ws})
+		ev.error(errWithWarnings{errors.Wrap(err, "expanding series"), ws})
 	}
 
 	series := vs.Series
@@ -1791,7 +1727,6 @@ func (ev *evaluator) matrixSelector(node *parser.MatrixSelector) (Matrix, storag
 		}
 
 		ss.Points = ev.matrixIterSlice(it, mint, maxt, getPointSlice(16))
-		ev.samplesStats.IncrementSamplesAtTimestamp(ev.startTimestamp, int64(len(ss.Points)))
 
 		if len(ss.Points) > 0 {
 			matrix = append(matrix, ss)
@@ -1863,7 +1798,6 @@ func (ev *evaluator) matrixIterSlice(it *storage.BufferedSeriesIterator, mint, m
 			ev.currentSamples++
 		}
 	}
-	ev.samplesStats.UpdatePeak(ev.currentSamples)
 	return out
 }
 
@@ -2058,16 +1992,14 @@ func (ev *evaluator) VectorBinop(op parser.ItemType, lhs, rhs Vector, matching *
 }
 
 func signatureFunc(on bool, b []byte, names ...string) func(labels.Labels) string {
+	sort.Strings(names)
 	if on {
-		sort.Strings(names)
 		return func(lset labels.Labels) string {
-			return string(lset.BytesWithLabels(b, names...))
+			return string(lset.WithLabels(names...).Bytes(b))
 		}
 	}
-	names = append([]string{labels.MetricName}, names...)
-	sort.Strings(names)
 	return func(lset labels.Labels) string {
-		return string(lset.BytesWithoutLabels(b, names...))
+		return string(lset.WithoutLabels(names...).Bytes(b))
 	}
 }
 
@@ -2102,7 +2034,15 @@ func resultMetric(lhs, rhs labels.Labels, op parser.ItemType, matching *parser.V
 
 	if matching.Card == parser.CardOneToOne {
 		if matching.On {
-			enh.lb.Keep(matching.MatchingLabels...)
+		Outer:
+			for _, l := range lhs {
+				for _, n := range matching.MatchingLabels {
+					if l.Name == n {
+						continue Outer
+					}
+				}
+				enh.lb.Del(l.Name)
+			}
 		} else {
 			enh.lb.Del(matching.MatchingLabels...)
 		}
@@ -2116,7 +2056,7 @@ func resultMetric(lhs, rhs labels.Labels, op parser.ItemType, matching *parser.V
 		}
 	}
 
-	ret := enh.lb.Labels(nil)
+	ret := enh.lb.Labels()
 	enh.resultMetric[str] = ret
 	return ret
 }
@@ -2156,7 +2096,7 @@ func (ev *evaluator) VectorscalarBinop(op parser.ItemType, lhs Vector, rhs Scala
 }
 
 func dropMetricName(l labels.Labels) labels.Labels {
-	return labels.NewBuilder(l).Del(labels.MetricName).Labels(nil)
+	return labels.NewBuilder(l).Del(labels.MetricName).Labels()
 }
 
 // scalarBinop evaluates a binary operation between two Scalars.
@@ -2189,7 +2129,7 @@ func scalarBinop(op parser.ItemType, lhs, rhs float64) float64 {
 	case parser.ATAN2:
 		return math.Atan2(lhs, rhs)
 	}
-	panic(fmt.Errorf("operator %q not allowed for Scalar operations", op))
+	panic(errors.Errorf("operator %q not allowed for Scalar operations", op))
 }
 
 // vectorElemBinop evaluates a binary operation between two Vector elements.
@@ -2222,7 +2162,7 @@ func vectorElemBinop(op parser.ItemType, lhs, rhs float64) (float64, bool) {
 	case parser.ATAN2:
 		return math.Atan2(lhs, rhs), true
 	}
-	panic(fmt.Errorf("operator %q not allowed for operations between Vectors", op))
+	panic(errors.Errorf("operator %q not allowed for operations between Vectors", op))
 }
 
 type groupedAggregation struct {
@@ -2280,7 +2220,7 @@ func (ev *evaluator) aggregation(op parser.ItemType, grouping []string, without 
 		if op == parser.COUNT_VALUES {
 			lb.Reset(metric)
 			lb.Set(valueLabel, strconv.FormatFloat(s.V, 'f', -1, 64))
-			metric = lb.Labels(nil)
+			metric = lb.Labels()
 
 			// We've changed the metric so we have to recompute the grouping key.
 			recomputeGroupingKey = true
@@ -2297,14 +2237,16 @@ func (ev *evaluator) aggregation(op parser.ItemType, grouping []string, without 
 		group, ok := result[groupingKey]
 		// Add a new group if it doesn't exist.
 		if !ok {
-			lb.Reset(metric)
+			var m labels.Labels
+
 			if without {
+				lb.Reset(metric)
 				lb.Del(grouping...)
 				lb.Del(labels.MetricName)
+				m = lb.Labels()
 			} else {
-				lb.Keep(grouping...)
+				m = metric.WithLabels(grouping...)
 			}
-			m := lb.Labels(nil)
 			newAgg := &groupedAggregation{
 				labels:     m,
 				value:      s.V,
@@ -2431,7 +2373,7 @@ func (ev *evaluator) aggregation(op parser.ItemType, grouping []string, without 
 			group.heap = append(group.heap, s)
 
 		default:
-			panic(fmt.Errorf("expected aggregation operator but got %q", op))
+			panic(errors.Errorf("expected aggregation operator but got %q", op))
 		}
 	}
 

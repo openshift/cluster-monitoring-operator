@@ -16,6 +16,7 @@ package tsdb
 import (
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -114,7 +115,7 @@ func repairBadIndexVersion(logger log.Logger, dir string) error {
 }
 
 func readBogusMetaFile(dir string) (*BlockMeta, error) {
-	b, err := os.ReadFile(filepath.Join(dir, metaFilename))
+	b, err := ioutil.ReadFile(filepath.Join(dir, metaFilename))
 	if err != nil {
 		return nil, err
 	}

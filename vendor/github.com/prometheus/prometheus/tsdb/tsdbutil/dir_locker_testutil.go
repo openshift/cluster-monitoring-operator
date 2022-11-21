@@ -15,6 +15,7 @@ package tsdbutil
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -60,7 +61,7 @@ func TestDirLockerUsage(t *testing.T, open func(t *testing.T, data string, creat
 
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			tmpdir, err := os.MkdirTemp("", "test")
+			tmpdir, err := ioutil.TempDir("", "test")
 			require.NoError(t, err)
 			t.Cleanup(func() {
 				require.NoError(t, os.RemoveAll(tmpdir))
@@ -70,7 +71,7 @@ func TestDirLockerUsage(t *testing.T, open func(t *testing.T, data string, creat
 			if c.fileAlreadyExists {
 				tmpLocker, err := NewDirLocker(tmpdir, "tsdb", log.NewNopLogger(), nil)
 				require.NoError(t, err)
-				err = os.WriteFile(tmpLocker.path, []byte{}, 0o644)
+				err = ioutil.WriteFile(tmpLocker.path, []byte{}, 0o644)
 				require.NoError(t, err)
 			}
 

@@ -14,6 +14,7 @@
 package teststorage
 
 import (
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -30,7 +31,7 @@ import (
 // New returns a new TestStorage for testing purposes
 // that removes all associated files on closing.
 func New(t testutil.T) *TestStorage {
-	dir, err := os.MkdirTemp("", "test_storage")
+	dir, err := ioutil.TempDir("", "test_storage")
 	require.NoError(t, err, "unexpected error while opening test directory")
 
 	// Tests just load data for a series sequentially. Thus we

@@ -18,13 +18,14 @@ package textparse
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"math"
 	"sort"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/pkg/errors"
 
 	"github.com/prometheus/prometheus/model/exemplar"
 	"github.com/prometheus/prometheus/model/labels"
@@ -174,8 +175,9 @@ func (p *OpenMetricsParser) Metric(l *labels.Labels) string {
 		*l = append(*l, labels.Label{Name: s[a:b], Value: s[c:d]})
 	}
 
-	// Sort labels.
-	sort.Sort(*l)
+	// Sort labels. We can skip the first entry since the metric name is
+	// already at the right place.
+	sort.Sort((*l)[1:])
 
 	return s
 }
@@ -275,7 +277,7 @@ func (p *OpenMetricsParser) Next() (Entry, error) {
 			case "unknown":
 				p.mtype = MetricTypeUnknown
 			default:
-				return EntryInvalid, fmt.Errorf("invalid metric type %q", s)
+				return EntryInvalid, errors.Errorf("invalid metric type %q", s)
 			}
 		case tHelp:
 			if !utf8.Valid(p.text) {
@@ -292,7 +294,7 @@ func (p *OpenMetricsParser) Next() (Entry, error) {
 			u := yoloString(p.text)
 			if len(u) > 0 {
 				if !strings.HasSuffix(m, u) || len(m) < len(u)+1 || p.l.b[p.offsets[1]-len(u)-1] != '_' {
-					return EntryInvalid, fmt.Errorf("unit not a suffix of metric %q", m)
+					return EntryInvalid, errors.Errorf("unit not a suffix of metric %q", m)
 				}
 			}
 			return EntryUnit, nil
@@ -352,7 +354,7 @@ func (p *OpenMetricsParser) Next() (Entry, error) {
 		return EntrySeries, nil
 
 	default:
-		err = fmt.Errorf("%q %q is not a valid start token", t, string(p.l.cur()))
+		err = errors.Errorf("%q %q is not a valid start token", t, string(p.l.cur()))
 	}
 	return EntryInvalid, err
 }
