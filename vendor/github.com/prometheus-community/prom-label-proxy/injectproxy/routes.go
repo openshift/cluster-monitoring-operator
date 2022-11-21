@@ -15,6 +15,7 @@ package injectproxy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -75,7 +76,7 @@ func WithPassthroughPaths(paths []string) Option {
 	})
 }
 
-// ErrorOnReplace causes the proxy to return 403 if a label matcher we want to
+// WithErrorOnReplace causes the proxy to return 400 if a label matcher we want to
 // inject is present in the query already and matches something different
 func WithErrorOnReplace() Option {
 	return optionFunc(func(o *options) {
@@ -160,6 +161,12 @@ func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error)
 		mux.Handle("/api/v2/silences", r.enforceLabel(enforceMethods(r.silences, "GET", "POST"))),
 		mux.Handle("/api/v2/silence/", r.enforceLabel(enforceMethods(r.deleteSilence, "DELETE"))),
 		mux.Handle("/api/v2/alerts/groups", r.enforceLabel(enforceMethods(r.enforceFilterParameter, "GET"))),
+	)
+
+	errs.Add(
+		mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+		})),
 	)
 
 	if err := errs.Err(); err != nil {
@@ -294,8 +301,13 @@ func (r *routes) query(w http.ResponseWriter, req *http.Request) {
 	// enforce in both places.
 	q, found1, err := enforceQueryValues(e, req.URL.Query())
 	if err != nil {
-		if _, ok := err.(IllegalLabelMatcherError); ok {
+		switch err.(type) {
+		case IllegalLabelMatcherError:
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		case queryParseError:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case enforceLabelError:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
@@ -305,12 +317,17 @@ func (r *routes) query(w http.ResponseWriter, req *http.Request) {
 	// Enforce the query in the POST body if needed.
 	if req.Method == http.MethodPost {
 		if err := req.ParseForm(); err != nil {
-			return
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 		q, found2, err = enforceQueryValues(e, req.PostForm)
 		if err != nil {
-			if _, ok := err.(IllegalLabelMatcherError); ok {
+			switch err.(type) {
+			case IllegalLabelMatcherError:
 				http.Error(w, err.Error(), http.StatusBadRequest)
+			case queryParseError:
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			case enforceLabelError:
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 			return
 		}
@@ -337,11 +354,16 @@ func enforceQueryValues(e *Enforcer, v url.Values) (values string, noQuery bool,
 	}
 	expr, err := parser.ParseExpr(v.Get(queryParam))
 	if err != nil {
-		return "", true, err
+		queryParseError := newQueryParseError(err)
+		return "", true, queryParseError
 	}
 
 	if err := e.EnforceNode(expr); err != nil {
-		return "", true, err
+		if _, ok := err.(IllegalLabelMatcherError); ok {
+			return "", true, err
+		}
+		enforceLabelError := newEnforceLabelError(err)
+		return "", true, enforceLabelError
 	}
 
 	v.Set(queryParam, expr.String())
@@ -404,4 +426,28 @@ func matchersToString(ms ...*labels.Matcher) string {
 		el = append(el, m.String())
 	}
 	return fmt.Sprintf("{%v}", strings.Join(el, ","))
+}
+
+type queryParseError struct {
+	msg string
+}
+
+func (e queryParseError) Error() string {
+	return e.msg
+}
+
+func newQueryParseError(err error) queryParseError {
+	return queryParseError{msg: fmt.Sprintf("error parsing query string %q", err.Error())}
+}
+
+type enforceLabelError struct {
+	msg string
+}
+
+func (e enforceLabelError) Error() string {
+	return e.msg
+}
+
+func newEnforceLabelError(err error) enforceLabelError {
+	return enforceLabelError{msg: fmt.Sprintf("error enforcing label %q", err.Error())}
 }
