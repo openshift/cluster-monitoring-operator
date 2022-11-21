@@ -15,8 +15,10 @@
 package alertmanager
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"path"
 	"reflect"
 	"regexp"
 	"strings"
@@ -33,6 +35,7 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/k8sutil"
 	"github.com/prometheus-operator/prometheus-operator/pkg/listwatch"
 	"github.com/prometheus-operator/prometheus-operator/pkg/operator"
+	"github.com/prometheus-operator/prometheus-operator/pkg/webconfig"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -739,8 +742,9 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 
 	am := aobj.(*monitoringv1.Alertmanager)
 	am = am.DeepCopy()
-	am.APIVersion = monitoringv1.SchemeGroupVersion.String()
-	am.Kind = monitoringv1.AlertmanagersKind
+	if err := k8sutil.AddTypeInformationToObject(am); err != nil {
+		return errors.Wrap(err, "failed to set Alertmanager type information")
+	}
 
 	if am.Spec.Paused {
 		return nil
@@ -758,6 +762,10 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	tlsAssets, err := c.createOrUpdateTLSAssetSecrets(ctx, am, assetStore)
 	if err != nil {
 		return errors.Wrap(err, "creating tls asset secrets failed")
+	}
+
+	if err := c.createOrUpdateWebConfigSecret(ctx, am); err != nil {
+		return errors.Wrap(err, "synchronizing web config secret failed")
 	}
 
 	// Create governing service if it doesn't exist.
@@ -840,19 +848,32 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 }
 
 func createSSetInputHash(a monitoringv1.Alertmanager, c Config, tlsAssets *operator.ShardedSecret, s appsv1.StatefulSetSpec) (string, error) {
+	var http2 *bool
+	if a.Spec.Web != nil && a.Spec.Web.WebConfigFileFields.HTTPConfig != nil {
+		http2 = a.Spec.Web.WebConfigFileFields.HTTPConfig.HTTP2
+	}
+
 	hash, err := hashstructure.Hash(struct {
-		A monitoringv1.Alertmanager
-		C Config
-		S appsv1.StatefulSetSpec
-		T []string `hash:"set"`
-	}{a, c, s, tlsAssets.ShardNames()},
+		AlertmanagerLabels      map[string]string
+		AlertmanagerAnnotations map[string]string
+		AlertmanagerGeneration  int64
+		AlertmanagerWebHTTP2    *bool
+		Config                  Config
+		StatefulSetSpec         appsv1.StatefulSetSpec
+		Assets                  []string `hash:"set"`
+	}{
+		AlertmanagerLabels:      a.Labels,
+		AlertmanagerAnnotations: a.Annotations,
+		AlertmanagerGeneration:  a.Generation,
+		AlertmanagerWebHTTP2:    http2,
+		Config:                  c,
+		StatefulSetSpec:         s,
+		Assets:                  tlsAssets.ShardNames(),
+	},
 		nil,
 	)
 	if err != nil {
-		return "", errors.Wrap(
-			err,
-			"failed to calculate combined hash of Alertmanager CRD and config",
-		)
+		return "", errors.Wrap(err, "failed to calculate combined hash")
 	}
 
 	return fmt.Sprintf("%d", hash), nil
@@ -954,9 +975,19 @@ func (c *Operator) provisionAlertmanagerConfiguration(ctx context.Context, am *m
 			return errors.Wrap(err, "failed to get global AlertmanagerConfig")
 		}
 
-		err = cfgBuilder.initializeFromAlertmanagerConfig(ctx, globalAmConfig)
+		err = cfgBuilder.initializeFromAlertmanagerConfig(ctx, am.Spec.AlertmanagerConfiguration.Global, globalAmConfig)
 		if err != nil {
 			return errors.Wrap(err, "failed to initialize from global AlertmangerConfig")
+		}
+
+		// set templates
+		for _, v := range am.Spec.AlertmanagerConfiguration.Templates {
+			if v.ConfigMap != nil {
+				cfgBuilder.cfg.Templates = append(cfgBuilder.cfg.Templates, path.Join(alertmanagerNotificationTemplatesDir, v.ConfigMap.Key))
+			}
+			if v.Secret != nil {
+				cfgBuilder.cfg.Templates = append(cfgBuilder.cfg.Templates, path.Join(alertmanagerNotificationTemplatesDir, v.Secret.Key))
+			}
 		}
 	} else {
 		// Load the base configuration from the referenced secret.
@@ -1018,7 +1049,12 @@ func (c *Operator) createOrUpdateGeneratedConfigSecret(ctx context.Context, am *
 	for k, v := range additionalData {
 		generatedConfigSecret.Data[k] = v
 	}
-	generatedConfigSecret.Data[alertmanagerConfigFile] = conf
+	// Compress config to avoid 1mb secret limit for a while
+	var buf bytes.Buffer
+	if err := operator.GzipConfig(&buf, conf); err != nil {
+		return errors.Wrap(err, "couldnt gzip config")
+	}
+	generatedConfigSecret.Data[alertmanagerConfigFileCompressed] = buf.Bytes()
 
 	err := k8sutil.CreateOrUpdateSecret(ctx, sClient, generatedConfigSecret)
 	if err != nil {
@@ -1647,7 +1683,42 @@ func newTLSAssetSecret(am *monitoringv1.Alertmanager, labels map[string]string) 
 	}
 }
 
-//checkAlertmanagerSpecDeprecation checks for deprecated fields in the prometheus spec and logs a warning if applicable
+func (c *Operator) createOrUpdateWebConfigSecret(ctx context.Context, a *monitoringv1.Alertmanager) error {
+	boolTrue := true
+
+	var fields monitoringv1.WebConfigFileFields
+	if a.Spec.Web != nil {
+		fields = a.Spec.Web.WebConfigFileFields
+	}
+
+	webConfig, err := webconfig.New(
+		webConfigDir,
+		webConfigSecretName(a.Name),
+		fields,
+	)
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize web config")
+	}
+
+	secretClient := c.kclient.CoreV1().Secrets(a.Namespace)
+	ownerReference := metav1.OwnerReference{
+		APIVersion:         a.APIVersion,
+		BlockOwnerDeletion: &boolTrue,
+		Controller:         &boolTrue,
+		Kind:               a.Kind,
+		Name:               a.Name,
+		UID:                a.UID,
+	}
+	secretLabels := c.config.Labels.Merge(managedByOperatorLabels)
+
+	if err := webConfig.CreateOrUpdateWebConfigSecret(ctx, secretClient, secretLabels, ownerReference); err != nil {
+		return errors.Wrap(err, "failed to reconcile web config secret")
+	}
+
+	return nil
+}
+
+// checkAlertmanagerSpecDeprecation checks for deprecated fields in the prometheus spec and logs a warning if applicable
 func checkAlertmanagerSpecDeprecation(key string, a *monitoringv1.Alertmanager, logger log.Logger) {
 	deprecationWarningf := "alertmanager key=%v, field %v is deprecated, '%v' field should be used instead"
 	if a.Spec.BaseImage != "" {
