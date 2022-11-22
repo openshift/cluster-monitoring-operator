@@ -58,36 +58,11 @@ function(params)
                       },
                       securityContext: {},
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts+: [
-                        {
-                          mountPath: '/etc/tls/private',
-                          name: 'tls-certificates',
-                          readOnly: true,
-                        },
-                      ],
                     }
                   else
                     c,
                 super.containers,
               ),
-            volumes+: [
-              {
-                name: 'tls-certificates',
-                secret: {
-                  secretName: 'prometheus-operator-admission-webhook-tls',
-                  items: [
-                    {
-                      key: 'tls.crt',
-                      path: 'tls.crt',
-                    },
-                    {
-                      key: 'tls.key',
-                      path: 'tls.key',
-                    },
-                  ],
-                },
-              },
-            ],
           } + antiAffinity.antiaffinity(
             aw.deployment.spec.selector.matchLabels,
             aw._config.namespace,

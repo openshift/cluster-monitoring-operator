@@ -246,6 +246,8 @@ local inCluster =
         resources: {
           requests: { cpu: '5m', memory: '30Mi' },
         },
+        tlsSecretName: 'prometheus-operator-admission-webhook-tls',
+        port: 8443,
       },
       prometheusOperator: {
         namespace: $.values.common.namespace,
