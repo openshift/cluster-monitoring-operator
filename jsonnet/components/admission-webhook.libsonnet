@@ -36,11 +36,8 @@ function(params)
                   if c.name == 'prometheus-operator-admission-webhook' then
                     c {
                       args+: [
-                        '--web.enable-tls=true',
                         '--web.tls-cipher-suites=' + params.tlsCipherSuites,
                         '--web.tls-min-version=VersionTLS12',
-                        '--web.cert-file=/etc/tls/private/tls.crt',
-                        '--web.key-file=/etc/tls/private/tls.key',
                       ],
                       livenessProbe: {
                         httpGet: {
@@ -58,36 +55,11 @@ function(params)
                       },
                       securityContext: {},
                       terminationMessagePolicy: 'FallbackToLogsOnError',
-                      volumeMounts+: [
-                        {
-                          mountPath: '/etc/tls/private',
-                          name: 'tls-certificates',
-                          readOnly: true,
-                        },
-                      ],
                     }
                   else
                     c,
                 super.containers,
               ),
-            volumes+: [
-              {
-                name: 'tls-certificates',
-                secret: {
-                  secretName: 'prometheus-operator-admission-webhook-tls',
-                  items: [
-                    {
-                      key: 'tls.crt',
-                      path: 'tls.crt',
-                    },
-                    {
-                      key: 'tls.key',
-                      path: 'tls.key',
-                    },
-                  ],
-                },
-              },
-            ],
           } + antiAffinity.antiaffinity(
             aw.deployment.spec.selector.matchLabels,
             aw._config.namespace,
