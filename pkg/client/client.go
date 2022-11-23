@@ -33,6 +33,8 @@ import (
 	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
+	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -81,67 +83,82 @@ type Client struct {
 	mclient               monitoring.Interface
 	eclient               apiextensionsclient.Interface
 	aggclient             aggregatorclient.Interface
+	eventRecorder         events.Recorder
 }
 
-func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string) (*Client, error) {
-	mclient, err := monitoring.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
+func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
+	client := New(version, namespace, userWorkloadNamespace, options...)
+
+	if client.kclient == nil {
+		kclient, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating kubernetes clientset client")
+		}
+		client.kclient = kclient
 	}
 
-	kclient, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating kubernetes clientset client")
+	if client.eclient == nil {
+		eclient, err := apiextensionsclient.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating apiextensions client")
+		}
+		client.eclient = eclient
 	}
 
-	eclient, err := apiextensionsclient.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating apiextensions client")
+	if client.mclient == nil {
+		mclient, err := monitoring.NewForConfig(cfg)
+		if err != nil {
+			return nil, err
+		}
+		client.mclient = mclient
 	}
 
-	osmclient, err := openshiftmonitoringclientset.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating openshift monitoring client")
+	if client.osmclient == nil {
+		osmclient, err := openshiftmonitoringclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift monitoring client")
+		}
+		client.osmclient = osmclient
 	}
 
-	oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating openshift config client")
+	if client.oscclient == nil {
+		oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift config client")
+		}
+		client.oscclient = oscclient
 	}
 
-	// SCC moved to CRD and CRD does not handle protobuf. Force the SCC client to use JSON instead.
-	jsonClientConfig := rest.CopyConfig(cfg)
-	jsonClientConfig.ContentConfig.AcceptContentTypes = "application/json"
-	jsonClientConfig.ContentConfig.ContentType = "application/json"
+	if client.ossclient == nil {
+		// SCC moved to CRD and CRD does not handle protobuf. Force the SCC client to use JSON instead.
+		jsonClientConfig := rest.CopyConfig(cfg)
+		jsonClientConfig.ContentConfig.AcceptContentTypes = "application/json"
+		jsonClientConfig.ContentConfig.ContentType = "application/json"
 
-	ossclient, err := openshiftsecurityclientset.NewForConfig(jsonClientConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating openshift security client")
+		ossclient, err := openshiftsecurityclientset.NewForConfig(jsonClientConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift security client")
+		}
+		client.ossclient = ossclient
 	}
 
-	osrclient, err := openshiftrouteclientset.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating openshift route client")
+	if client.osrclient == nil {
+		osrclient, err := openshiftrouteclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift route client")
+		}
+		client.osrclient = osrclient
 	}
 
-	aggclient, err := aggregatorclient.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating kubernetes aggregator")
+	if client.aggclient == nil {
+		aggclient, err := aggregatorclient.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating kubernetes aggregator")
+		}
+		client.aggclient = aggclient
 	}
 
-	return New(
-		version,
-		namespace,
-		userWorkloadNamespace,
-		KubernetesClient(kclient),
-		OpenshiftMonitoringClient(osmclient),
-		OpenshiftConfigClient(oscclient),
-		OpenshiftSecurityClient(ossclient),
-		OpenshiftRouteClient(osrclient),
-		MonitoringClient(mclient),
-		ApiExtensionsClient(eclient),
-		AggregatorClient(aggclient),
-	), nil
+	return client, nil
 }
 
 type Option = func(*Client)
@@ -194,6 +211,12 @@ func AggregatorClient(aggclient aggregatorclient.Interface) Option {
 	}
 }
 
+func EventRecorder(eventRecorder events.Recorder) Option {
+	return func(c *Client) {
+		c.eventRecorder = eventRecorder
+	}
+}
+
 func New(version string, namespace, userWorkloadNamespace string, options ...Option) *Client {
 	c := &Client{
 		version:               version,
@@ -210,6 +233,10 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 
 func (c *Client) KubernetesInterface() kubernetes.Interface {
 	return c.kclient
+}
+
+func (c *Client) EventRecorder() events.Recorder {
+	return c.eventRecorder
 }
 
 func (c *Client) Namespace() string {
@@ -1613,43 +1640,8 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
-	sClient := c.kclient.CoreV1().ServiceAccounts(sa.GetNamespace())
-	_, err := sClient.Get(ctx, sa.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := sClient.Create(ctx, sa, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ServiceAccount object failed")
-	}
-	return errors.Wrap(err, "retrieving ServiceAccount object failed")
-	// TODO(JoaoBraveCoding) The code below was reverted due to
-	// https://bugzilla.redhat.com/show_bug.cgi?id=2115527 see also
-	// https://bugzilla.redhat.com/show_bug.cgi?id=2095719 for more context
-	// if err != nil {
-	// 	return errors.Wrap(err, "retrieving ServiceAccount object failed")
-	// }
-
-	// required := sa.DeepCopy()
-	// mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
-	// // Why we use Patch here? ServiceAccounts get a new secret generated whenever
-	// // they are updated, even if nothing has changed. This is likely due to "Update"
-	// // performing a PUT call signifying, that this may be a new ServiceAccount,
-	// // therefore a new token is needed.
-	// oldData, err := json.Marshal(existing)
-	// if err != nil {
-	// 	return errors.Wrap(err, "marshaling existing ServiceAccount object failed")
-	// }
-
-	// newData, err := json.Marshal(required)
-	// if err != nil {
-	// 	return errors.Wrap(err, "marshaling updated ServiceAccount object failed")
-	// }
-
-	// patchBytes, patchErr := strategicpatch.CreateTwoWayMergePatch(oldData, newData, required)
-	// if patchErr != nil {
-	// 	return errors.Wrap(patchErr, "creating ServiceAccount two way merge patch failed")
-	// }
-	// _, err = sClient.Patch(ctx, required.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
-	// return errors.Wrap(err, "patching ServiceAccount object failed")
+	_, _, err := resourceapply.ApplyServiceAccount(ctx, c.kclient.CoreV1(), c.eventRecorder, sa)
+	return errors.Wrap(err, "patching ServiceAccount object failed")
 }
 
 func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.ServiceMonitor) error {

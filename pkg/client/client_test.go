@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	secv1 "github.com/openshift/api/security/v1"
+	"github.com/openshift/library-go/pkg/operator/events"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -948,6 +949,153 @@ func TestCreateOrUpdateService(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
 				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+			}
+		})
+	}
+}
+
+func TestCreateOrUpdateServiceAccount(t *testing.T) {
+	ctx := context.Background()
+	testCases := []struct {
+		name                string
+		initialLabels       map[string]string
+		initialAnnotations  map[string]string
+		initialSecrets      []v1.ObjectReference
+		updatedLabels       map[string]string
+		updatedAnnotations  map[string]string
+		updatedSecrets      []v1.ObjectReference
+		expectedLabels      map[string]string
+		expectedAnnotations map[string]string
+		expectedSecrets     []v1.ObjectReference
+	}{
+
+		{
+			name: "inital labels/annotations are empty",
+			updatedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			updatedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+			},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			expectedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+			},
+		},
+		{
+			name: "label/annotation merge",
+			initialLabels: map[string]string{
+				"app.kubernetes.io/name": "",
+				"label":                  "value",
+			},
+			initialAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "",
+				"annotation":                  "value",
+			},
+			updatedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			updatedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+			},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+				"label":                  "value",
+			},
+			expectedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+				"annotation":                  "value",
+			},
+		},
+		{
+			name: "label/annotation/secret unchanged when secrets change",
+			initialLabels: map[string]string{
+				"app.kubernetes.io/name": "",
+				"label":                  "value",
+			},
+			initialAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "",
+				"annotation":                  "value",
+			},
+			initialSecrets: []v1.ObjectReference{
+				{Namespace: ns, Name: "foo"},
+			},
+			updatedLabels: map[string]string{
+				"app.kubernetes.io/name": "",
+				"label":                  "value",
+			},
+			updatedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "",
+				"annotation":                  "value",
+			},
+			updatedSecrets: []v1.ObjectReference{
+				{Namespace: ns, Name: "bar"},
+			},
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/name": "",
+				"label":                  "value",
+			},
+			expectedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "",
+				"annotation":                  "value",
+			},
+			expectedSecrets: []v1.ObjectReference{
+				{Namespace: ns, Name: "foo"},
+			},
+		},
+	}
+
+	eventRecorder := events.NewInMemoryRecorder("cluster-monitoring-operator")
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			sa := &v1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "prometheus-k8s",
+					Namespace:   ns,
+					Labels:      tc.initialLabels,
+					Annotations: tc.initialAnnotations,
+				},
+				Secrets: tc.initialSecrets,
+			}
+			var c Client
+			if tc.initialAnnotations == nil && tc.initialLabels == nil {
+				c = Client{
+					kclient:       fake.NewSimpleClientset(),
+					eventRecorder: eventRecorder,
+				}
+			} else {
+				c = Client{
+					kclient:       fake.NewSimpleClientset(sa.DeepCopy()),
+					eventRecorder: eventRecorder,
+				}
+				_, err := c.kclient.CoreV1().ServiceAccounts(ns).Get(ctx, sa.Name, metav1.GetOptions{})
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			sa.SetLabels(tc.updatedLabels)
+			sa.SetAnnotations(tc.updatedAnnotations)
+			sa.Secrets = tc.updatedSecrets
+			if err := c.CreateOrUpdateServiceAccount(ctx, sa); err != nil {
+				t.Fatal(err)
+			}
+
+			after, err := c.kclient.CoreV1().ServiceAccounts(ns).Get(ctx, sa.Name, metav1.GetOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
+				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+			}
+			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
+				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+			}
+			if !reflect.DeepEqual(tc.expectedSecrets, after.Secrets) {
+				t.Errorf("expected labels %v, got %v", tc.expectedSecrets, after.Secrets)
 			}
 		})
 	}
