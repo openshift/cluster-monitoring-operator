@@ -1051,60 +1051,10 @@ spec:
                                 Bearer, Basic will cause an error
                               type: string
                           type: object
-                        basicAuth:
-                          description: BasicAuth allow an endpoint to authenticate
-                            over basic authentication
-                          properties:
-                            password:
-                              description: The secret in the service monitor namespace
-                                that contains the password for authentication.
-                              properties:
-                                key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
-                                  type: string
-                                name:
-                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind,
-                                    uid?'
-                                  type: string
-                                optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
-                                  type: boolean
-                              required:
-                              - key
-                              type: object
-                              x-kubernetes-map-type: atomic
-                            username:
-                              description: The secret in the service monitor namespace
-                                that contains the username for authentication.
-                              properties:
-                                key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
-                                  type: string
-                                name:
-                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind,
-                                    uid?'
-                                  type: string
-                                optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
-                                  type: boolean
-                              required:
-                              - key
-                              type: object
-                              x-kubernetes-map-type: atomic
-                          type: object
                         bearerTokenFile:
                           description: BearerTokenFile to read from filesystem to
                             use when authenticating to Alertmanager.
                           type: string
-                        enableHttp2:
-                          description: Whether to enable HTTP2.
-                          type: boolean
                         name:
                           description: Name of Endpoints object in Namespace.
                           type: string
@@ -1133,8 +1083,8 @@ spec:
                           description: TLS Config to use for alertmanager connection.
                           properties:
                             ca:
-                              description: Certificate authority used when verifying
-                                server certificates.
+                              description: Struct containing the CA cert to use for
+                                the targets.
                               properties:
                                 configMap:
                                   description: ConfigMap containing data to use for
@@ -1185,8 +1135,8 @@ spec:
                                 to use for the targets.
                               type: string
                             cert:
-                              description: Client certificate to present when doing
-                                client-authentication.
+                              description: Struct containing the client cert file
+                                for the targets.
                               properties:
                                 configMap:
                                   description: ConfigMap containing data to use for
@@ -1379,8 +1329,8 @@ spec:
                     description: TLS Config to use for accessing apiserver.
                     properties:
                       ca:
-                        description: Certificate authority used when verifying server
-                          certificates.
+                        description: Struct containing the CA cert to use for the
+                          targets.
                         properties:
                           configMap:
                             description: ConfigMap containing data to use for the
@@ -1428,7 +1378,8 @@ spec:
                           to use for the targets.
                         type: string
                       cert:
-                        description: Client certificate to present when doing client-authentication.
+                        description: Struct containing the client cert file for the
+                          targets.
                         properties:
                           configMap:
                             description: ConfigMap containing data to use for the
@@ -4624,11 +4575,6 @@ spec:
                     bearerTokenFile:
                       description: File to read bearer token for remote read.
                       type: string
-                    filterExternalLabels:
-                      description: Whether to use the external labels as selectors
-                        for the remote read endpoint. Requires Prometheus v2.34.0
-                        and above.
-                      type: boolean
                     headers:
                       additionalProperties:
                         type: string
@@ -4751,8 +4697,8 @@ spec:
                       description: TLS Config to use for remote read.
                       properties:
                         ca:
-                          description: Certificate authority used when verifying server
-                            certificates.
+                          description: Struct containing the CA cert to use for the
+                            targets.
                           properties:
                             configMap:
                               description: ConfigMap containing data to use for the
@@ -4800,7 +4746,8 @@ spec:
                             to use for the targets.
                           type: string
                         cert:
-                          description: Client certificate to present when doing client-authentication.
+                          description: Struct containing the client cert file for
+                            the targets.
                           properties:
                             configMap:
                               description: ConfigMap containing data to use for the
@@ -5201,8 +5148,8 @@ spec:
                       description: TLS Config to use for remote write.
                       properties:
                         ca:
-                          description: Certificate authority used when verifying server
-                            certificates.
+                          description: Struct containing the CA cert to use for the
+                            targets.
                           properties:
                             configMap:
                               description: ConfigMap containing data to use for the
@@ -5250,7 +5197,8 @@ spec:
                             to use for the targets.
                           type: string
                         cert:
-                          description: Client certificate to present when doing client-authentication.
+                          description: Struct containing the client cert file for
+                            the targets.
                           properties:
                             configMap:
                               description: ConfigMap containing data to use for the
@@ -5885,9 +5833,9 @@ spec:
                       allows to remove any subPath usage in volume mounts.'
                     type: boolean
                   emptyDir:
-                    description: 'EmptyDirVolumeSource to be used by the StatefulSet.
-                      If specified, used in place of any volumeClaimTemplate. More
-                      info: https://kubernetes.io/docs/concepts/storage/volumes/#emptydir'
+                    description: 'EmptyDirVolumeSource to be used by the Prometheus
+                      StatefulSets. If specified, used in place of any volumeClaimTemplate.
+                      More info: https://kubernetes.io/docs/concepts/storage/volumes/#emptydir'
                     properties:
                       medium:
                         description: 'medium represents what type of storage medium
@@ -5910,9 +5858,9 @@ spec:
                         x-kubernetes-int-or-string: true
                     type: object
                   ephemeral:
-                    description: 'EphemeralVolumeSource to be used by the StatefulSet.
-                      This is a beta field in k8s 1.21, for lower versions, starting
-                      with k8s 1.19, it requires enabling the GenericEphemeralVolume
+                    description: 'EphemeralVolumeSource to be used by the Prometheus
+                      StatefulSets. This is a beta field in k8s 1.21, for lower versions,
+                      starting with k8s 1.19, it requires enabling the GenericEphemeralVolume
                       feature gate. More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#generic-ephemeral-volumes'
                     properties:
                       volumeClaimTemplate:
@@ -6129,10 +6077,7 @@ spec:
                         type: object
                     type: object
                   volumeClaimTemplate:
-                    description: A PVC spec to be used by the StatefulSet. The easiest
-                      way to use a volume that cannot be automatically provisioned
-                      (for whatever reason) is to use a label selector alongside manually
-                      created PersistentVolumes.
+                    description: A PVC spec to be used by the Prometheus StatefulSets.
                     properties:
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this
@@ -6492,8 +6437,8 @@ spec:
                       Maps to the ''--grpc-server-tls-*'' CLI args.'
                     properties:
                       ca:
-                        description: Certificate authority used when verifying server
-                          certificates.
+                        description: Struct containing the CA cert to use for the
+                          targets.
                         properties:
                           configMap:
                             description: ConfigMap containing data to use for the
@@ -6541,7 +6486,8 @@ spec:
                           to use for the targets.
                         type: string
                       cert:
-                        description: Client certificate to present when doing client-authentication.
+                        description: Struct containing the client cert file for the
+                          targets.
                         properties:
                           configMap:
                             description: ConfigMap containing data to use for the
