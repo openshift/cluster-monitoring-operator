@@ -18,7 +18,7 @@
           "subdir": "contrib/mixin"
         }
       },
-      "version": "590911dfe36a972912a8f8ebb593614f00ce1f7e",
+      "version": "6a156bd5556be3fd562b4eb20eed0e5e1f34bcc5",
       "sum": "IkDHlaE0gvvcPjSNurFT+jQ2aCOAbqHF1WVmXbAgkds="
     },
     {
@@ -79,8 +79,8 @@
           "subdir": ""
         }
       },
-      "version": "eb707bf721dc702baeac2827345e531d6fd207e1",
-      "sum": "PzmQo7PuXIvfRMXJtolk/CDFyHYTnbVlVD/8+jkz634="
+      "version": "3c386687c1f8ceb6b79ff887c4a934e9cee1b90a",
+      "sum": "H8lcnk7gQEUoRi58/xq+JTfd2PcjJUjMQHgxGklUiFY="
     },
     {
       "source": {
@@ -131,8 +131,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "35f69e8b03bdfed476769e9e0992bd750a393387",
-      "sum": "V4gSmigbv+NeZ2LQ9goJLgQ9MXsXJ54BAjqQT+86LsM="
+      "version": "b71451784a1b09b0d8c300af3069222ee12b6691",
+      "sum": "ipAlcpqZ9nCl7HUWi9gfeLrn4pJEAAAWbX7kRTaFQAQ="
     },
     {
       "source": {
@@ -141,7 +141,7 @@
           "subdir": "jsonnet/mixin"
         }
       },
-      "version": "740129b60784d3c23689583cc8871dcb07cc6c68",
+      "version": "d186f2e87da8c4fc343e0776c37522536548c6ba",
       "sum": "GQmaVFJwKMiD/P4n3N2LrAZVcwutriWrP8joclDtBYQ=",
       "name": "prometheus-operator-mixin"
     },
@@ -152,8 +152,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "ab3fe2aba8f6e43461819d9648e2b8fae9d74c43",
-      "sum": "O/e9OtVscqHAiAvvWGR372ci6xadmQ09WWGjT7vDlbg="
+      "version": "6c056516c8ec93dfb88189a5c861a8f351d2b99e",
+      "sum": "bASqTnNKFZ9WA4xwdflBMBeLoMnnSguOswHzuPaGLUA="
     },
     {
       "source": {
@@ -183,7 +183,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "30b31cae93b2fe66486f188c07e215b80ebc93f8",
+      "version": "247201005c1380766beb385bcfb6a0d55a852816",
       "sum": "LRx0tbMnoE1p8KEn+i81j2YsA5Sgt3itE5Y6jBf5eOQ=",
       "name": "prometheus"
     },
@@ -214,8 +214,8 @@
           "subdir": "mixin"
         }
       },
-      "version": "894ec8a9ececeb4b94586704f2134716aa2ea836",
-      "sum": "FE6a1GxXu7kzo+zD8XeyVV296Rz/OCvBUNJXJqua6D4="
+      "version": "86b4039948b0918ca2ba121637d1d0d5b3f768c0",
+      "sum": "7tyoT2wSJ8U7+zMmT5w549MRGk5k6ViDSz5A8/sia88="
     }
   ],
   "legacyImports": false
