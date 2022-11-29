@@ -325,6 +325,18 @@ spec:
       record: cluster:usage:openshift:kube_running_pod_ready:avg
     - expr: avg(kube_running_pod_ready{namespace!~"openshift-.*"})
       record: cluster:usage:workload:kube_running_pod_ready:avg
+    - alert: KubePodNotScheduled
+      annotations:
+        description: |-
+          Pod {{ $labels.namespace }}/{{ $labels.pod }} cannot be scheduled for more than 30 minutes.
+          Check the details of the pod with the following command:
+          oc describe -n {{ $labels.namespace }} pod {{ $labels.pod }}
+        summary: Pod cannot be scheduled.
+      expr: last_over_time(kube_pod_status_unschedulable{namespace=~"(openshift-.*|kube-.*|default)"}[5m])
+        == 1
+      for: 30m
+      labels:
+        severity: warning
   - interval: 30s
     name: kubernetes-recurring.rules
     rules:
