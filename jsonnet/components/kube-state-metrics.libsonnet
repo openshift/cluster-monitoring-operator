@@ -145,8 +145,7 @@ function(params)
                           ^kube_secret_labels$,
                           ^kube_.+_annotations$
                         |||,
-                        // TODO: Remove "poddisruptionbudget" once upstream KSM addresses a typo in PDB label metrics allowlist key.
-                        '--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*],poddisruptionbudgets=[*],poddisruptionbudget=[*]',
+                        '--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*],poddisruptionbudgets=[*]',
                       ],
                       securityContext: {},
                       resources: {
