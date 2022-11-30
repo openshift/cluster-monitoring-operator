@@ -1448,7 +1448,7 @@ ingress:
 		"prom-label-proxy": "docker.io/openshift/origin-prom-label-proxy:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -1582,6 +1582,11 @@ ingress:
 
 	if p.Spec.QueryLogFile != "/tmp/test" {
 		t.Fatal("Prometheus query log is not configured correctly")
+	}
+
+	expectedExternalURL := "https://console-openshift-console.apps.foo.devcluster.openshift.com/monitoring"
+	if p.Spec.ExternalURL != expectedExternalURL {
+		t.Fatalf("Prometheus external URL is not configured correctly, expected %s, but got %s", expectedExternalURL, p.Spec.ExternalURL)
 	}
 }
 
@@ -2588,7 +2593,7 @@ ingress:
 		"alertmanager": "docker.io/openshift/origin-prometheus-alertmanager:latest",
 	})
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
 	a, err := f.AlertmanagerMain(
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 	)
@@ -2642,6 +2647,11 @@ ingress:
 
 	if a.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
 		t.Fatal("Alertmanager main topology spread contraints WhenUnsatisfiable not configured correctly")
+	}
+
+	expectedExternalURL := "https://console-openshift-console.apps.foo.devcluster.openshift.com/monitoring"
+	if a.Spec.ExternalURL != expectedExternalURL {
+		t.Fatalf("Alertmanager external URL is not configured correctly, expected %s, but got %s", expectedExternalURL, a.Spec.ExternalURL)
 	}
 
 	storageRequest := a.Spec.Storage.VolumeClaimTemplate.Spec.Resources.Requests[v1.ResourceStorage]
