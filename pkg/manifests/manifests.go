@@ -1945,6 +1945,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.NodeSelector = f.config.UserWorkloadConfiguration.Prometheus.NodeSelector
 	}
 
+	if f.config.UserWorkloadConfiguration.Prometheus.AdditionalScrapeConfigs != nil {
+		p.Spec.AdditionalScrapeConfigs = f.config.UserWorkloadConfiguration.Prometheus.AdditionalScrapeConfigs
+	}
+
 	if len(f.config.UserWorkloadConfiguration.Prometheus.Tolerations) > 0 {
 		p.Spec.Tolerations = f.config.UserWorkloadConfiguration.Prometheus.Tolerations
 	}

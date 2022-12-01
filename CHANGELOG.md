@@ -1,6 +1,7 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
 ## 4.12
+- [#1834](https://github.com/openshift/cluster-monitoring-operator/pull/1834) Expose additionalScrapeConfigs settings for UWM Prometheus.
 - [#1624](https://github.com/openshift/cluster-monitoring-operator/pull/1624) Add option to specify TopologySpreadConstraints for Prometheus, Alertmanager, and ThanosRuler.
 - [#1752](https://github.com/openshift/cluster-monitoring-operator/pull/1752) Add option to improve consistency of prometheus-adapter CPU and RAM time series.
 - [#1803](https://github.com/openshift/cluster-monitoring-operator/pull/1803) Add alert TelemeterClientFailures
