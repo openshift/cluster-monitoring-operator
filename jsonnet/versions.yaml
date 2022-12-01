@@ -16,9 +16,9 @@ versions:
   alertmanager: 0.24.0
   kubeRbacProxy: 0.13.0
   kubeStateMetrics: 2.6.0
-  nodeExporter: 1.4.0
+  nodeExporter: 1.5.0
   promLabelProxy: 0.5.0
-  prometheus: 2.39.1
+  prometheus: 2.40.4
   prometheusAdapter: 0.10.0
   prometheusOperator: 0.61.1
   thanos: 0.28.1
