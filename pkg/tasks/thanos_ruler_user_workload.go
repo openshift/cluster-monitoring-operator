@@ -122,6 +122,16 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "creating Thanos Ruler OAuth Cookie Secret failed")
 	}
 
+	s, err = t.factory.ThanosRulerRBACProxyMetricsSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler kube-rbac-proxy metrics Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ctx, s)
+	if err != nil {
+		return errors.Wrap(err, "creating Thanos Ruler kube-rbac-proxy metrics Secret failed")
+	}
+
 	// Thanos components use https://godoc.org/github.com/prometheus/common/config#NewClientFromConfig
 	// under the hood and the returned http.Client detects whenever the certificates are rotated,
 	// so there is no need for us to rotate the CA.

@@ -76,6 +76,38 @@ spec:
       name: secret-thanos-ruler-tls
     - mountPath: /etc/proxy/secrets
       name: secret-thanos-ruler-oauth-cookie
+  - args:
+    - --secure-listen-address=0.0.0.0:9092
+    - --upstream=http://127.0.0.1:10902
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --client-ca-file=/etc/tls/client/client-ca.crt
+    - --logtostderr=true
+    - --allow-paths=/metrics
+    image: quay.io/openshift/origin-kube-rbac-proxy:latest
+    name: kube-rbac-proxy-metrics
+    ports:
+    - containerPort: 9092
+      name: metrics
+    resources:
+      requests:
+        cpu: 1m
+        memory: 15Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-thanos-ruler-tls
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-thanos-ruler-kube-rbac-proxy-metrics
+    - mountPath: /etc/tls/client
+      name: metrics-client-ca
+      readOnly: true
   enforcedNamespaceLabel: namespace
   grpcServerTlsConfig:
     caFile: /etc/tls/grpc/ca.crt
@@ -131,3 +163,9 @@ spec:
   - name: secret-thanos-ruler-oauth-cookie
     secret:
       secretName: thanos-ruler-oauth-cookie
+  - name: secret-thanos-ruler-kube-rbac-proxy-metrics
+    secret:
+      secretName: thanos-ruler-kube-rbac-proxy-metrics
+  - configMap:
+      name: metrics-client-ca
+    name: metrics-client-ca

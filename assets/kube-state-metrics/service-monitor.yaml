@@ -10,7 +10,7 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     honorLabels: true
     interval: 1m
     metricRelabelings:
@@ -25,9 +25,9 @@ spec:
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: server-name-replaced-at-runtime
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     interval: 1m
     port: https-self
     scheme: https
@@ -35,8 +35,8 @@ spec:
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: server-name-replaced-at-runtime
   jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:

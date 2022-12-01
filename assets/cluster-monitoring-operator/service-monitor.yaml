@@ -12,7 +12,6 @@ spec:
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-      serverName: server-name-replaced-at-runtime
   selector:
     matchLabels:
       app.kubernetes.io/name: cluster-monitoring-operator

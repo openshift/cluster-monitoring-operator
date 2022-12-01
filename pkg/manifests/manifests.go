@@ -255,6 +255,7 @@ var (
 	ThanosRulerOauthCookieSecret            = "thanos-ruler/oauth-cookie-secret.yaml"
 	ThanosRulerQueryConfigSecret            = "thanos-ruler/query-config-secret.yaml"
 	ThanosRulerAlertmanagerConfigSecret     = "thanos-ruler/alertmanagers-config-secret.yaml"
+	ThanosRulerRBACProxyMetricsSecret       = "thanos-ruler/kube-rbac-proxy-metrics-secret.yaml"
 	ThanosRulerServiceAccount               = "thanos-ruler/service-account.yaml"
 	ThanosRulerClusterRole                  = "thanos-ruler/cluster-role.yaml"
 	ThanosRulerClusterRoleBinding           = "thanos-ruler/cluster-role-binding.yaml"
@@ -3776,6 +3777,17 @@ func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
 	return s, nil
 }
 
+func (f *Factory) ThanosRulerRBACProxyMetricsSecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerRBACProxyMetricsSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	s.Namespace = f.namespaceUserWorkload
+
+	return s, nil
+}
+
 func (f *Factory) ThanosRulerCustomResource(
 	queryURL string,
 	trustedCA *v1.ConfigMap,
@@ -3844,6 +3856,9 @@ func (f *Factory) ThanosRulerCustomResource(
 				})
 				t.Spec.Volumes = append(t.Spec.Volumes, volume)
 			}
+		case "kube-rbac-proxy-metrics":
+			t.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
+			t.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
 

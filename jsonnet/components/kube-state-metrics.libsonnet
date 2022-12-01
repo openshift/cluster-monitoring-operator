@@ -25,18 +25,11 @@ function(params)
       spec+: {
         endpoints: [
           {
-            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
             honorLabels: true,
             interval: '1m',
             scrapeTimeout: '1m',
             port: 'https-main',
             scheme: 'https',
-            tlsConfig: {
-              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-              serverName: 'server-name-replaced-at-runtime',
-              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
-              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
-            },
             // Drop the "instance" and "pod" labels since we're runinng only
             // one instance of kube-state-metrics. The "instance" label must be
             // dropped at the metrics relabeling stage (instead of the service
@@ -59,17 +52,10 @@ function(params)
             ],
           },
           {
-            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
             interval: '1m',
             scrapeTimeout: '1m',
             port: 'https-self',
             scheme: 'https',
-            tlsConfig: {
-              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-              serverName: 'server-name-replaced-at-runtime',
-              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
-              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
-            },
           },
         ],
       },

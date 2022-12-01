@@ -103,7 +103,6 @@ function(params) {
             // TODO: this could be fixed by using library-go's controller setup boilerplate
             //       code
             caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-            serverName: 'server-name-replaced-at-runtime',
           },
         },
       ],

@@ -9,7 +9,7 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - bearerTokenFile: ""
     honorLabels: true
     honorTimestamps: true
     interval: 30s
