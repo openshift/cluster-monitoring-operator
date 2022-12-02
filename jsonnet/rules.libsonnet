@@ -428,6 +428,18 @@ function(params) {
           record: 'cluster:usage:workload:kube_running_pod_ready:avg',
           // Report the percentage (0-1) of pending or running workload (everything outside of openshift-*) pods reporting ready
         },
+        {
+          expr: 'last_over_time(kube_pod_status_unschedulable{namespace=~"(openshift-.*|kube-.*|default)"}[5m]) == 1',
+          'for': '30m',
+          alert: 'KubePodNotScheduled',
+          annotations: {
+            description: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} cannot be scheduled for more than 30 minutes.\nCheck the details of the pod with the following command:\noc describe -n {{ $labels.namespace }} pod {{ $labels.pod }}',
+            summary: 'Pod cannot be scheduled.',
+          },
+          labels: {
+            severity: 'warning',
+          },
+        },
       ],
     },
     {
