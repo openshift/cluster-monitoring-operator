@@ -30,7 +30,7 @@ import (
 const (
 	unavailableMessage                        string = "Rollout of the monitoring stack failed and is degraded. Please investigate the degraded status error."
 	asExpectedReason                          string = "AsExpected"
-	StorageNotConfiguredMessage                      = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: https://docs.openshift.com/container-platform/4.8/monitoring/configuring-the-monitoring-stack.html"
+	StorageNotConfiguredMessage                      = "Prometheus is running without persistent storage which can lead to data loss during upgrades and cluster disruptions. Please refer to the official documentation to see how to configure storage for Prometheus: "
 	StorageNotConfiguredReason                       = "PrometheusDataPersistenceNotConfigured"
 	UserAlermanagerConfigMisconfiguredMessage        = "Misconfigured Alertmanager:  Alertmanager for user-defined alerting is enabled in the openshift-monitoring/cluster-monitoring-config configmap by setting 'enableUserAlertmanagerConfig: true' field. This conflicts with a dedicated Alertmanager instance enabled in  openshift-user-workload-monitoring/user-workload-monitoring-config. Alertmanager enabled in openshift-user-workload-monitoring takes precedence over the one in openshift-monitoring, so please remove the 'enableUserAlertmanagerConfig' field in openshift-monitoring/cluster-monitoring-config."
 	UserAlermanagerConfigMisconfiguredReason         = "UserAlertmanagerMisconfigured"

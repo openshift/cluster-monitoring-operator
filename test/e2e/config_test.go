@@ -90,7 +90,7 @@ func TestClusterMonitoringStatus(t *testing.T) {
 				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
 				f.AssertOperatorConditionReason(configv1.OperatorDegraded, client.StorageNotConfiguredReason)
-				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, client.StorageNotConfiguredMessage)
+				f.AssertOperatorConditionMessageContains(configv1.OperatorDegraded, client.StorageNotConfiguredMessage)
 			},
 		},
 		{
