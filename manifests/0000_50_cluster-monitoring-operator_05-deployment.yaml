@@ -96,6 +96,12 @@ spec:
         env:
         - name: RELEASE_VERSION
           value: "0.0.1-snapshot"
+        # Inject the pod's name using the downward API to generate Kubernetes
+        # events with the correct object reference.
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         image: quay.io/openshift/origin-cluster-monitoring-operator:latest
         name: cluster-monitoring-operator
         resources:
