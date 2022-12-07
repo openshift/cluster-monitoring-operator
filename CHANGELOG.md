@@ -3,6 +3,8 @@
 ## 4.13
 
 - [#1830](https://github.com/openshift/cluster-monitoring-operator/pull/1830) Add alert KubePodNotScheduled
+- [#1843](https://github.com/openshift/cluster-monitoring-operator/pull/1830) Node Exporter ignores network interface under name "enP.*".
+
 
 ## 4.12
 - [#1624](https://github.com/openshift/cluster-monitoring-operator/pull/1624) Add option to specify TopologySpreadConstraints for Prometheus, Alertmanager, and ThanosRuler.

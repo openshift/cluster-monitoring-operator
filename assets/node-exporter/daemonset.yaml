@@ -36,7 +36,7 @@ spec:
         - --path.udev.data=/host/root/run/udev/data
         - --no-collector.wifi
         - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/k3s/containerd/.+|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
-        - --collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15})$
+        - --collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15}|enP.*)$
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
         - --no-collector.cpufreq
