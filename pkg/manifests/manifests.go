@@ -25,7 +25,6 @@ import (
 	"io"
 	"net"
 	"net/url"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -491,7 +490,10 @@ func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*mo
 	// TODO(simonpasquier): link to the alerting page of the dev console. It
 	// depends on https://issues.redhat.com/browse/MON-2289.
 	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
-		a.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
+		a.Spec.ExternalURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	alertmanagerConfig := f.config.UserWorkloadConfiguration.Alertmanager
@@ -612,7 +614,10 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 	a.Spec.Image = &f.config.Images.Alertmanager
 
 	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
-		a.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
+		a.Spec.ExternalURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel != "" {
@@ -1582,7 +1587,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	p.Spec.Image = &f.config.Images.Prometheus
 
 	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
-		p.Spec.ExternalURL = path.Join(f.consoleConfig.Status.ConsoleURL, "monitoring")
+		p.Spec.ExternalURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources != nil {
