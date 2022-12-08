@@ -181,6 +181,12 @@ local inCluster =
             rateInterval: '1m',  // adjust the rate interval value to be 4 x the node_exporter's scrape interval (15s).
           },
         },
+        // NOTE: 3 patterns for virutal NICs will be ignored:
+        // 1. veth network interface associated with containers.
+        // 2. OVN renames veth.* to <rand-hex>@if<X> where X is /sys/class/net/<if>/ifindex
+        // thus [a-z0-9]{15}}
+        // 3. enP.* virtual NICs on Azure cluster.
+        ignoredNetworkDevices:: '^(veth.*|[a-f0-9]{15}|enP.*)$',
       },
       openshiftStateMetrics: {
         namespace: $.values.common.namespace,
