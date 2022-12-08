@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blang/semver/v4"
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
@@ -677,7 +678,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	var degradedConditionMessage, degradedConditionReason string
 	if !config.IsStorageConfigured() {
-		degradedConditionMessage = client.StorageNotConfiguredMessage
+		degradedConditionMessage = o.storageNotConfiguredMessage()
 		degradedConditionReason = client.StorageNotConfiguredReason
 	} else if config.HasInconsistentAlertmanagerConfigurations() {
 		degradedConditionMessage = client.UserAlermanagerConfigMisconfiguredMessage
@@ -986,6 +987,33 @@ func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
 		)
 	}
 	return workloads
+}
+
+// storageNotConfiguredMessage returns the message to be set if a pvc has not
+// been configured for Prometheus. This messages includes a link to the
+// documentation on configuring monitoring stack. If the current cluster
+// version can be computed, the link will point to the documentation for that
+// version, else it will point to latest documentation.
+func (o Operator) storageNotConfiguredMessage() string {
+	const docURL = "https://docs.openshift.com/container-platform/%s/monitoring/configuring-the-monitoring-stack.html"
+
+	latestDocMsg := client.StorageNotConfiguredMessage + fmt.Sprintf(docURL, "latest")
+
+	// if cluster version cannot be obtained due to any failure, point to the
+	// latest documentation
+	cv, err := o.client.GetClusterVersion(context.Background(), "version")
+	if err != nil {
+		klog.Warning("failed to find the cluster version: %s", err)
+		return latestDocMsg
+	}
+
+	v, err := semver.Make(cv.Status.Desired.Version)
+	if err != nil {
+		klog.Warning("failed to parse  cluster version: %s", err)
+		return latestDocMsg
+	}
+
+	return client.StorageNotConfiguredMessage + fmt.Sprintf(docURL, fmt.Sprintf("%d.%d", v.Major, v.Minor))
 }
 
 // stateErrorOrUnavailable converts an error to Unavailable & Degraded
