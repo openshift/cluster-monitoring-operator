@@ -53,6 +53,13 @@ function(params)
                           scheme: 'HTTPS',
                         },
                       },
+                      volumeMounts+: [
+                        {
+                          mountPath: '/etc/tls/client',
+                          name: 'metrics-client-ca',
+                          readOnly: false,
+                        },
+                      ],
                       securityContext: {},
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                     }
@@ -60,6 +67,14 @@ function(params)
                     c,
                 super.containers,
               ),
+            volumes+: [
+              {
+                name: 'metrics-client-ca',
+                configMap: {
+                  name: 'metrics-client-ca',
+                },
+              },
+            ],
           } + antiAffinity.antiaffinity(
             aw.deployment.spec.selector.matchLabels,
             aw._config.namespace,

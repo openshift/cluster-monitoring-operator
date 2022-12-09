@@ -71,6 +71,9 @@ spec:
         - mountPath: /etc/tls/private
           name: tls-certificates
           readOnly: true
+        - mountPath: /etc/tls/client
+          name: metrics-client-ca
+          readOnly: false
       priorityClassName: system-cluster-critical
       securityContext: {}
       serviceAccountName: prometheus-operator-admission-webhook
@@ -83,3 +86,6 @@ spec:
           - key: tls.key
             path: tls.key
           secretName: prometheus-operator-admission-webhook-tls
+      - configMap:
+          name: metrics-client-ca
+        name: metrics-client-ca
