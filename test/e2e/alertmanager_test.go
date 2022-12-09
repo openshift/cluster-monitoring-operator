@@ -28,9 +28,7 @@ import (
 	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 
 	"github.com/Jeffail/gabs/v2"
-	configv1 "github.com/openshift/api/config/v1"
 	statusv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -41,13 +39,12 @@ import (
 
 func TestAlertmanagerTrustedCA(t *testing.T) {
 	var (
-		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath), &manifests.APIServerConfig{}, &configv1.Console{})
 		newCM   *v1.ConfigMap
 		lastErr error
 	)
 
 	cm := f.MustGetConfigMap(t, "alertmanager-trusted-ca-bundle", f.Ns)
-	newCM, err := factory.HashTrustedCA(cm, "alertmanager")
+	newCM, err := f.ManifestsFactory.HashTrustedCA(cm, "alertmanager")
 	if err != nil {
 		t.Fatal(errors.Wrap(err, "no trusted CA bundle data available"))
 	}

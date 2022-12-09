@@ -24,7 +24,6 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 
 	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -335,8 +334,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	factory := manifests.NewFactory(f.Ns, "", nil, nil, nil, manifests.NewAssets(assetsPath), &manifests.APIServerConfig{}, &configv1.Console{})
-	adapterSecret, err := factory.PrometheusAdapterSecret(tls, apiAuth)
+	adapterSecret, err := f.ManifestsFactory.PrometheusAdapterSecret(tls, apiAuth)
 	if err != nil {
 		t.Fatal(err)
 	}

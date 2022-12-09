@@ -19,8 +19,6 @@ import (
 	"testing"
 	"time"
 
-	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -31,7 +29,6 @@ import (
 func TestThanosQuerierTrustedCA(t *testing.T) {
 	ctx := context.Background()
 	var (
-		factory = manifests.NewFactory("openshift-monitoring", "", nil, nil, nil, manifests.NewAssets(assetsPath), &manifests.APIServerConfig{}, &configv1.Console{})
 		newCM   *v1.ConfigMap
 		lastErr error
 	)
@@ -44,7 +41,7 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 			return false, nil
 		}
 
-		newCM, err = factory.HashTrustedCA(cm, "thanos-querier")
+		newCM, err = f.ManifestsFactory.HashTrustedCA(cm, "thanos-querier")
 		lastErr = errors.Wrap(err, "no trusted CA bundle data available")
 		if err != nil {
 			return false, nil
