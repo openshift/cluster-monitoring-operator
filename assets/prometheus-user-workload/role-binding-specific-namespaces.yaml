@@ -8,7 +8,7 @@ items:
       app.kubernetes.io/instance: user-workload
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.40.6
+      app.kubernetes.io/version: 2.40.7
     name: prometheus-user-workload
     namespace: openshift-user-workload-monitoring
   roleRef:
