@@ -953,6 +953,15 @@ func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return sm, nil
 }
 
+func (f *Factory) updateNodeExporterArgs(args []string) []string {
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.CpuFreq.Enabled {
+		args = setArg(args, "--collector.cpufreq", "")
+	} else {
+		args = setArg(args, "--no-collector.cpufreq", "")
+	}
+	return args
+}
+
 func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 	ds, err := f.NewDaemonSet(f.assets.MustNewAssetReader(NodeExporterDaemonSet))
 	if err != nil {
@@ -963,6 +972,7 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 		switch container.Name {
 		case "node-exporter":
 			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.NodeExporter
+			ds.Spec.Template.Spec.Containers[i].Args = f.updateNodeExporterArgs(ds.Spec.Template.Spec.Containers[i].Args)
 		case "kube-rbac-proxy":
 			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			ds.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)

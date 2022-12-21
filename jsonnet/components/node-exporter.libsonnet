@@ -151,14 +151,6 @@ function(params)
                             [
                               '--collector.cpu.info',
                               '--collector.textfile.directory=' + textfileDir,
-
-                              // The cpufreq collector seems to be causing high
-                              // load on some nodes with lots of cores.  Disable
-                              // it temporarily as a workaround.
-                              //
-                              // https://bugzilla.redhat.com/show_bug.cgi?id=1972076
-                              // https://github.com/prometheus/node_exporter/issues/1880
-                              '--no-collector.cpufreq',
                             ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts+: [{

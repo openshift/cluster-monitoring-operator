@@ -25,6 +25,9 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [DedicatedServiceMonitors](#dedicatedservicemonitors)
 * [K8sPrometheusAdapter](#k8sprometheusadapter)
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
+* [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
+* [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterConfig](#nodeexporterconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
 * [PrometheusK8sConfig](#prometheusk8sconfig)
 * [PrometheusOperatorConfig](#prometheusoperatorconfig)
@@ -119,6 +122,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent. |
 | telemeterClient | *[TelemeterClientConfig](#telemeterclientconfig) | `TelemeterClientConfig` defines settings for the Telemeter Client component. |
 | thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
+| nodeExporter | [NodeExporterConfig](#nodeexporterconfig) | `NodeExporterConfig` defines settings for the `node-exporter` agent. |
 
 [Back to TOC](#table-of-contents)
 
@@ -168,6 +172,51 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 | -------- | ---- | ----------- |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core) | Defines tolerations for the pods. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorConfig
+
+#### Description
+
+The `NodeExporterCollectorConfig` resource defines settings for individual collectors of the `node-exporter` agent.
+
+
+<em>appears in: [NodeExporterConfig](#nodeexporterconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| cpufreq | [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig) | Defines the configuration of the `cpufreq` collector, which collects CPU frequency statistics. Disabled by default. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorCpufreqConfig
+
+#### Description
+
+The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for the `cpufreq` collector of the `node-exporter` agent. By default, the `cpufreq` collector is disabled. Under certain circumstances, enabling the cpufreq collector increases CPU usage on machines with many cores. If you enable this collector and have machines with many cores, monitor your systems closely for excessive CPU usage. Please refer to https://github.com/prometheus/node_exporter/issues/1880 for more details. A related bug: https://bugzilla.redhat.com/show_bug.cgi?id=1972076
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `cpufreq` colletor. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterConfig
+
+#### Description
+
+The `NodeExporterConfig` resource defines settings for the `node-exporter` agent.
+
+
+<em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| collectors | [NodeExporterCollectorConfig](#nodeexportercollectorconfig) | Defines which collectors are enabled and their additional configuration parameters. |
 
 [Back to TOC](#table-of-contents)
 

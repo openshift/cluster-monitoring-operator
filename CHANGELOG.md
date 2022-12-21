@@ -6,6 +6,7 @@
 - [#1843](https://github.com/openshift/cluster-monitoring-operator/pull/1843) Node Exporter ignores network interface under name "enP.*".
 - [#1860](https://github.com/openshift/cluster-monitoring-operator/pull/1860) Adds runbook for PrometheusRuleFailures
 - [#1868](https://github.com/openshift/cluster-monitoring-operator/pull/1868) In dashboards unstack diagrams with limit/quota/request.
+- [#1855](https://github.com/openshift/cluster-monitoring-operator/pull/1855) Add nodeExporter.collectors.cpufreq settings.
 
 
 ## 4.12

@@ -1,0 +1,25 @@
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
+
+== NodeExporterCollectorCpufreqConfig
+
+=== Description
+
+The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for the `cpufreq` collector of the `node-exporter` agent. By default, the `cpufreq` collector is disabled. Under certain circumstances, enabling the cpufreq collector increases CPU usage on machines with many cores. If you enable this collector and have machines with many cores, monitor your systems closely for excessive CPU usage. Please refer to https://github.com/prometheus/node_exporter/issues/1880 for more details. A related bug: https://bugzilla.redhat.com/show_bug.cgi?id=1972076
+
+
+
+Appears in: link:nodeexportercollectorconfig.adoc[NodeExporterCollectorConfig]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|enabled|bool|A Boolean flag that enables or disables the `cpufreq` colletor.
+
+|===
+
+link:../index.adoc[Back to TOC]

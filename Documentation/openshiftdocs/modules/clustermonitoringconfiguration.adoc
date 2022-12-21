@@ -33,6 +33,8 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 |thanosQuerier|*link:thanosquerierconfig.adoc[ThanosQuerierConfig]|`ThanosQuerierConfig` defines settings for the Thanos Querier component.
 
+|nodeExporter|link:nodeexporterconfig.adoc[NodeExporterConfig]|`NodeExporterConfig` defines settings for the `node-exporter` agent.
+
 |===
 
 link:../index.adoc[Back to TOC]
