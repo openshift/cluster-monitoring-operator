@@ -1,8 +1,6 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  annotations:
-    service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator

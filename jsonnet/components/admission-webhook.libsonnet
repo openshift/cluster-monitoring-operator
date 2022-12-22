@@ -93,9 +93,6 @@ function(params)
           'app.kubernetes.io/component': 'controller',
           'app.kubernetes.io/name': 'prometheus-operator',
         },
-        annotations: {
-          'service.beta.openshift.io/inject-cabundle': 'true',
-        },
       },
       webhooks: [
         {
