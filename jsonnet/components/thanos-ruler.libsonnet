@@ -385,6 +385,12 @@ function(params)
             // Note: this is performing strategic-merge-patch for thanos-ruler container.
             // Remainder of the container configuration is managed by prometheus-operator based on $.thanosRuler.spec
             name: tr.config.name,
+            args: [
+              // The native Go resolver fails to parse compressed responses for SRV records.
+              // The miekgdns resolver doesn't suffer the same issue hence defaulting to it instead.
+              // See https://bugzilla.redhat.com/show_bug.cgi?id=1953518
+              '--query.sd-dns-resolver=miekgdns',
+            ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {

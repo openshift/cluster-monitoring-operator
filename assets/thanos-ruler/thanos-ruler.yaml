@@ -20,7 +20,9 @@ spec:
     key: alertmanagers.yaml
     name: thanos-ruler-alertmanagers-config
   containers:
-  - name: thanos-ruler
+  - args:
+    - --query.sd-dns-resolver=miekgdns
+    name: thanos-ruler
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

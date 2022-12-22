@@ -356,6 +356,10 @@ function(params)
                   '--grpc-client-server-name=prometheus-grpc',
                   '--rule=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local',
                   '--target=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local',
+                  // The native Go resolver fails to parse compressed responses for SRV records.
+                  // The miekgdns resolver doesn't suffer the same issue hence defaulting to it instead.
+                  // See https://bugzilla.redhat.com/show_bug.cgi?id=1953518
+                  '--query.sd-dns-resolver=miekgdns',
                 ],
                 resources: {
                   requests: {
