@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: user-workload
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.24.0
+    app.kubernetes.io/version: 0.25.0
   name: alertmanager-user-workload
   namespace: openshift-user-workload-monitoring
 spec:
