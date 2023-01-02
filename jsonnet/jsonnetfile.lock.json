@@ -18,7 +18,7 @@
           "subdir": "contrib/mixin"
         }
       },
-      "version": "a4c6d1bbce25c56a5d23090544547c2554ad2371",
+      "version": "e73f55d4e94666c99558baa2fd4e365aeaca4dc4",
       "sum": "IkDHlaE0gvvcPjSNurFT+jQ2aCOAbqHF1WVmXbAgkds="
     },
     {
@@ -58,7 +58,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "92239ea6312a4a8fec3ddecce86a505587e98501",
+      "version": "d68f9a6e0b1af7c4c4056dc2b43fb8f3bac01f43",
       "sum": "tDR6yT2GVfw0wTU12iZH+m01HrbIr6g/xN+/8nzNkU0="
     },
     {
@@ -89,7 +89,7 @@
           "subdir": "jsonnet/kube-state-metrics"
         }
       },
-      "version": "44aea58610a9fcfa7ca1158d9c71e55d2e33ace0",
+      "version": "f1288f943a49344b00ed3d02cc07799da7226414",
       "sum": "4PJ2ROxODsoYO/1Y70+dgLZVjW5zlfzB+TDpxJBHwaI="
     },
     {
@@ -99,7 +99,7 @@
           "subdir": "jsonnet/kube-state-metrics-mixin"
         }
       },
-      "version": "44aea58610a9fcfa7ca1158d9c71e55d2e33ace0",
+      "version": "f1288f943a49344b00ed3d02cc07799da7226414",
       "sum": "u8gaydJoxEjzizQ8jY8xSjYgWooPmxw+wIWdDxifMAk="
     },
     {
@@ -120,7 +120,7 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "39bcfd573d705afab775e1d3d749a1ce26939dcd",
+      "version": "528471097f2b273efcc5621deb7b6324fafe2b2e",
       "sum": "ija4yqWaf7s4mr90euiwIP1cZZtsPwp4fpMYEhVRFag=",
       "name": "telemeter-client"
     },
@@ -131,8 +131,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "f4618411fddf8b0647ae9666050a12753f33dce0",
-      "sum": "y1X8522K0LslKgOjXjQ3o1yTM58HIYOhjh/LzY4XVx0="
+      "version": "37d00082289c587f5a02a343ba23cfbe167000e2",
+      "sum": "5onAaPSrjnmgXIAsypnx0W/sIA7iTsHCeCjPrhGxj5A="
     },
     {
       "source": {
@@ -141,7 +141,7 @@
           "subdir": "jsonnet/mixin"
         }
       },
-      "version": "fe4ba64258a56b407a7ca7fd2a8c44fb44ebcada",
+      "version": "5485624cf90dd4de046b4f90757950691d5e71bc",
       "sum": "GQmaVFJwKMiD/P4n3N2LrAZVcwutriWrP8joclDtBYQ=",
       "name": "prometheus-operator-mixin"
     },
@@ -152,8 +152,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "fe4ba64258a56b407a7ca7fd2a8c44fb44ebcada",
-      "sum": "ZZQS9t5+R/90jXoEFEech7Mk93oN54C2586Q47O2YN0="
+      "version": "5485624cf90dd4de046b4f90757950691d5e71bc",
+      "sum": "wJ1E8XxYJ0RJrUuDNWLzE7bzo6JrH7P9q1lAu/xi4Ow="
     },
     {
       "source": {
@@ -162,7 +162,7 @@
           "subdir": "doc/alertmanager-mixin"
         }
       },
-      "version": "1b202b91bf269b737d9fae2930fe4fb1a5c43ab2",
+      "version": "87ad8437fc1e28280e8c5c5fdcb41e0a8904a855",
       "sum": "PsK+V7oETCPKu2gLoPfqY0wwPKH9TzhNj6o2xezjjXc=",
       "name": "alertmanager"
     },
@@ -173,8 +173,8 @@
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "9869d34a24d440ddd661c434556482935a09baac",
-      "sum": "5H6gKQvR23QHpvNvLkNn9DL3Vx37g015eHG2iqrlCzE="
+      "version": "a3bd2e13052929663dbd7d680fab4a952efb1de6",
+      "sum": "TwdaTm0Z++diiLyaKAAimmC6hBL7XbrJc0RHhBCpAdU="
     },
     {
       "source": {
@@ -183,7 +183,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "72a48321dabed43f2cd9e510dda96c50d4a48a58",
+      "version": "49f775d8a0d76532fae36c0392d929bbf110577a",
       "sum": "LRx0tbMnoE1p8KEn+i81j2YsA5Sgt3itE5Y6jBf5eOQ=",
       "name": "prometheus"
     },
@@ -194,7 +194,7 @@
           "subdir": "config/crd/bases"
         }
       },
-      "version": "7bd9bb0f8318539c6daa8a8d8ddfe186fe260ee3",
+      "version": "1b11dfbbf5d8fc5e201d0c22df94f0858ac8f43a",
       "sum": "d1550yhsX4VxdVN7b0gWT0cido/W90P6OGLzLqPwZcs="
     },
     {
@@ -214,8 +214,8 @@
           "subdir": "mixin"
         }
       },
-      "version": "e6f0b6eb3e4a040693b24b964413293e2d08b950",
-      "sum": "7tyoT2wSJ8U7+zMmT5w549MRGk5k6ViDSz5A8/sia88="
+      "version": "b60c09b1184c37f43990ae5071daedcb72f51879",
+      "sum": "Io++1+lp1oQVoQiVRSCXUiGdTIRPV7aL6Ewgs3bShEs="
     }
   ],
   "legacyImports": false
