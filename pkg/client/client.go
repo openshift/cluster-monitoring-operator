@@ -42,6 +42,7 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	thanosoperator "github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -1325,33 +1326,29 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 			klog.V(4).ErrorS(err, "WaitForDaemonSetRollout: failed to get DaemonSet")
 			return false, nil
 		}
+		want := d.Status.DesiredNumberScheduled
+		have := d.Status.NumberAvailable
+		numberUnavailable := want - have
+		maxUnavailableIntStr := intstr.FromInt(1)
+
 		if d.Generation > d.Status.ObservedGeneration {
 			lastErr = errors.Errorf("current generation %d, observed generation: %d",
 				d.Generation, d.Status.ObservedGeneration)
 			return false, nil
 		}
-		if d.Status.UpdatedNumberScheduled != d.Status.DesiredNumberScheduled {
-			lastErr = errors.Errorf("expected %d desired scheduled nodes, got %d updated scheduled nodes",
-				d.Status.DesiredNumberScheduled, d.Status.UpdatedNumberScheduled)
+
+		if d.Spec.UpdateStrategy.RollingUpdate != nil && d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable != nil {
+			maxUnavailableIntStr = *d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable
+		}
+		maxUnavailable, intstrErr := intstr.GetScaledValueFromIntOrPercent(&maxUnavailableIntStr, int(want), true)
+
+		if intstrErr != nil {
+			lastErr = errors.Errorf("The daemonset has an invalid MaxUnavailable value: %v", intstrErr)
 			return false, nil
 		}
 
-		var nodeReadyCount int32
-		nodeList, err := c.kclient.CoreV1().Nodes().List(ctx, metav1.ListOptions{
-			LabelSelector: fields.SelectorFromSet(ds.Spec.Template.Spec.NodeSelector).String()})
-		for _, node := range nodeList.Items {
-			for _, condition := range node.Status.Conditions {
-				if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
-					nodeReadyCount++
-				}
-			}
-		}
-		// It has been noticed that the number of available pods can be greater than
-		// the node ready count. This is because a node can be reported as not ready
-		// but the daemon set status states that all required pods are running.
-		if d.Status.NumberAvailable < nodeReadyCount {
-			lastErr = errors.Errorf("expected %d ready pods for %q daemonset, got %d ",
-				nodeReadyCount, d.GetName(), d.Status.NumberAvailable)
+		if int(numberUnavailable) > maxUnavailable {
+			lastErr = errors.Errorf("Too many daemonset pods are unavailable (%d > %d max unavailable).", numberUnavailable, maxUnavailable)
 			return false, nil
 		}
 		return true, nil
