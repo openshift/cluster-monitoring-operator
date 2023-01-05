@@ -82,7 +82,7 @@ func testMain(m *testing.M) error {
 	err = wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
 		var (
 			body []byte
-			v    int
+			v    float64
 		)
 		body, loopErr = f.ThanosQuerierClient.PrometheusQuery("count(last_over_time(up{job=\"prometheus-k8s\"}[2m]))")
 		if loopErr != nil {

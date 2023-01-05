@@ -327,6 +327,23 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		}
 	}
 
+	telemetrySecret, err := t.factory.PrometheusK8sTelemetrySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Prometheus telemetry secret failed")
+	}
+
+	if t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite {
+		klog.V(4).Info("updating Prometheus telemetry secret")
+		if err = t.client.CreateOrUpdateSecret(ctx, telemetrySecret); err != nil {
+			return errors.Wrap(err, "reconciling Prometheus telemetry secret failed")
+		}
+	} else {
+		klog.V(4).Info("deleting Prometheus telemetry secret")
+		if err = t.client.DeleteSecret(ctx, telemetrySecret); err != nil {
+			return errors.Wrap(err, "deleting Prometheus telemetry secret failed")
+		}
+	}
+
 	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.PrometheusK8sTrustedCABundle()
@@ -355,7 +372,7 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		}
 
 		klog.V(4).Info("initializing Prometheus object")
-		p, err := t.factory.PrometheusK8s(s, trustedCA)
+		p, err := t.factory.PrometheusK8s(s, trustedCA, telemetrySecret)
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus object failed")
 		}

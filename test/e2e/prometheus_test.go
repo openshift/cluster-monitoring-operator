@@ -42,9 +42,9 @@ func TestPrometheusMetrics(t *testing.T) {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
 				t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-monitoring"} == 1)`, service),
-				func(i int) error {
-					if i != expected {
-						return fmt.Errorf("expected %d targets to be up but got %d", expected, i)
+				func(v float64) error {
+					if v != float64(expected) {
+						return fmt.Errorf("expected %d targets to be up but got %f", expected, v)
 					}
 
 					return nil
@@ -92,7 +92,7 @@ func TestAntiAffinity(t *testing.T) {
 
 type remoteWriteTest struct {
 	query       string
-	expected    func(int) bool
+	expected    func(float64) bool
 	description string
 }
 
@@ -167,12 +167,12 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			expected: []remoteWriteTest{
 				{
 					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-0"),
-					expected:    func(v int) bool { return v != 0 },
+					expected:    func(v float64) bool { return v != 0 },
 					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
 				},
 				{
 					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-1"),
-					expected:    func(v int) bool { return v != 0 },
+					expected:    func(v float64) bool { return v != 0 },
 					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
 				},
 			},
@@ -197,12 +197,12 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			expected: []remoteWriteTest{
 				{
 					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-0"),
-					expected:    func(v int) bool { return v != 0 },
+					expected:    func(v float64) bool { return v != 0 },
 					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
 				},
 				{
 					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-1"),
-					expected:    func(v int) bool { return v != 0 },
+					expected:    func(v float64) bool { return v != 0 },
 					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
 				},
 			},
@@ -220,7 +220,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			expected: []remoteWriteTest{
 				{
 					query:       `absent(prometheus_remote_storage_samples_pending{__tmp_openshift_cluster_id__=~".+"})`,
-					expected:    func(v int) bool { return v == 1 },
+					expected:    func(v float64) bool { return v == 1 },
 					description: "Expected to find 0 time series of metric prometheus_remote_storage_samples_pending with the temporary cluster_id label",
 				},
 			},
@@ -243,12 +243,12 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			expected: []remoteWriteTest{
 				{
 					query:       `count(prometheus_remote_storage_samples_pending{cluster_id!=""})`,
-					expected:    func(v int) bool { return v == 4 },
+					expected:    func(v float64) bool { return v == 4 },
 					description: "Expected to find 4 time series of metric prometheus_remote_storage_samples_pending with the cluster_id label",
 				},
 				{
 					query:       `absent(prometheus_remote_storage_samples_pending{__tmp_openshift_cluster_id__=~".+"})`,
-					expected:    func(v int) bool { return v == 1 },
+					expected:    func(v float64) bool { return v == 1 },
 					description: "Expected to find 0 time series of metric prometheus_remote_storage_samples_pending with the temporary cluster_id label",
 				},
 			},
@@ -290,7 +290,7 @@ func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *fram
 	for _, test := range tests {
 		promClient.WaitForQueryReturn(
 			t, 4*time.Minute, test.query,
-			func(v int) error {
+			func(v float64) error {
 				if !test.expected(v) {
 					return fmt.Errorf(test.description)
 				}
@@ -319,7 +319,7 @@ func TestBodySizeLimit(t *testing.T) {
 
 	f.PrometheusK8sClient.WaitForQueryReturn(
 		t, 5*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
-		func(v int) error {
+		func(v float64) error {
 			if v > 0 {
 				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total does not increase up but got %v increase in last 5 minutes", v)
 			}
@@ -336,7 +336,7 @@ func TestBodySizeLimit(t *testing.T) {
 
 	f.PrometheusK8sClient.WaitForQueryReturn(
 		t, 5*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
-		func(v int) error {
+		func(v float64) error {
 			if v == 0 {
 				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total to increase but no increase is observed in last 5 minutes")
 			}

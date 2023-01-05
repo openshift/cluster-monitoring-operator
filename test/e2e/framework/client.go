@@ -280,7 +280,7 @@ func (c *PrometheusClient) getAlertmanager(path string, kvs ...string) ([]byte, 
 // GetFirstValueFromPromQuery takes a query api response body and returns the
 // value of the first timeseries. If body contains multiple timeseries
 // GetFirstValueFromPromQuery errors.
-func GetFirstValueFromPromQuery(body []byte) (int, error) {
+func GetFirstValueFromPromQuery(body []byte) (float64, error) {
 	res, err := gabs.ParseJSON(body)
 	if err != nil {
 		return 0, err
@@ -305,7 +305,7 @@ func GetFirstValueFromPromQuery(body []byte) (int, error) {
 		return 0, err
 	}
 
-	v, err := strconv.Atoi(value.Data().(string))
+	v, err := strconv.ParseFloat(value.Data().(string), 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse query value: %v", err)
 	}
@@ -333,7 +333,7 @@ func GetResultSizeFromPromQuery(body []byte) (int, error) {
 func (c *PrometheusClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeout time.Duration, query string) {
 	t.Helper()
 
-	c.WaitForQueryReturn(t, timeout, query, func(v int) error {
+	c.WaitForQueryReturn(t, timeout, query, func(v float64) error {
 		if v >= 1 {
 			return nil
 		}
@@ -346,7 +346,7 @@ func (c *PrometheusClient) WaitForQueryReturnGreaterEqualOne(t *testing.T, timeo
 func (c *PrometheusClient) WaitForQueryReturnOne(t *testing.T, timeout time.Duration, query string) {
 	t.Helper()
 
-	c.WaitForQueryReturn(t, timeout, query, func(v int) error {
+	c.WaitForQueryReturn(t, timeout, query, func(v float64) error {
 		if v == 1 {
 			return nil
 		}
@@ -357,7 +357,7 @@ func (c *PrometheusClient) WaitForQueryReturnOne(t *testing.T, timeout time.Dura
 
 // WaitForQueryReturn waits for a given PromQL query for a given time interval
 // and validates the **first and only** result with the given validate function.
-func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duration, query string, validate func(int) error) {
+func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duration, query string, validate func(float64) error) {
 	t.Helper()
 
 	err := Poll(5*time.Second, timeout, func() error {

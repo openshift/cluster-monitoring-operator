@@ -367,12 +367,12 @@ func assertMetricsForMonitoringComponents(t *testing.T) {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
 				t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"} == 1)`, service),
-				func(i int) error {
-					if i == expected {
+				func(v float64) error {
+					if v == float64(expected) {
 						return nil
 					}
 
-					return fmt.Errorf("expected %d targets to be up but got %d", expected, i)
+					return fmt.Errorf("expected %d targets to be up but got %f", expected, v)
 				},
 			)
 		})
@@ -384,12 +384,12 @@ func assertAlertmanagerInstancesDiscovered(expectedInstances int) func(_ *testin
 		query := `max by (job) (prometheus_notifications_alertmanagers_discovered{job="prometheus-user-workload"})`
 		f.ThanosQuerierClient.WaitForQueryReturn(
 			t, 15*time.Minute, query,
-			func(i int) error {
-				if i == expectedInstances {
+			func(v float64) error {
+				if v == float64(expectedInstances) {
 					return nil
 				}
 
-				return fmt.Errorf("expected %d targets to be up but got %d", expectedInstances, i)
+				return fmt.Errorf("expected %d targets to be up but got %f", expectedInstances, v)
 			},
 		)
 	}
@@ -419,12 +419,12 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	// assert that the previously deployed user application metrics are available in thanos
 	f.ThanosQuerierClient.WaitForQueryReturn(
 		t, 10*time.Minute, fmt.Sprintf(`version{namespace="%s"}`, userWorkloadTestNs),
-		func(i int) error {
-			if i == 1 {
+		func(v float64) error {
+			if v == 1 {
 				return nil
 			}
 
-			return fmt.Errorf("expected version metric from user application to be equal 1 but got %v", i)
+			return fmt.Errorf("expected version metric from user application to be equal 1 but got %v", v)
 		},
 	)
 
@@ -465,7 +465,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		var (
 			body []byte
-			v    int
+			v    float64
 		)
 		body, loopErr := f.PrometheusK8sClient.PrometheusQuery(`count(up{job="prometheus-user-workload"})`)
 		if loopErr != nil {
@@ -520,11 +520,11 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	// via thanos ruler replica.
 	f.ThanosQuerierClient.WaitForQueryReturn(
 		t, 10*time.Minute, `version:blah:count{thanos_ruler_replica="thanos-ruler-user-workload-0"}`,
-		func(i int) error {
-			if i == 1 {
+		func(v float64) error {
+			if v == 1 {
 				return nil
 			}
-			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", i)
+			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", v)
 		},
 	)
 
@@ -532,11 +532,11 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	// via user workload prometheus.
 	f.ThanosQuerierClient.WaitForQueryReturn(
 		t, 10*time.Minute, `version:blah:leaf:count{prometheus_replica="prometheus-user-workload-0"}`,
-		func(i int) error {
-			if i == 1 {
+		func(v float64) error {
+			if v == 1 {
 				return nil
 			}
-			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", i)
+			return fmt.Errorf("expected count of recording rule from user application to be equal 1 but got %v", v)
 		},
 	)
 

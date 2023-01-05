@@ -62,6 +62,8 @@ const (
 
 	platformAlertmanagerService     = "alertmanager-main"
 	userWorkloadAlertmanagerService = "alertmanager-user-workload"
+
+	telemetryTokenSecretKey = "token"
 )
 
 var (
@@ -145,6 +147,7 @@ var (
 	PrometheusK8sThanosSidecarServiceMonitor      = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
 	PrometheusK8sTAlertmanagerRoleBinding         = "prometheus-k8s/alertmanager-role-binding.yaml"
 	PrometheusK8sPodDisruptionBudget              = "prometheus-k8s/pod-disruption-budget.yaml"
+	PrometheusK8sTelemetry                        = "prometheus-k8s/telemetry-secret.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
@@ -1567,7 +1570,29 @@ func (f *Factory) NewPrometheusK8s() (*monv1.Prometheus, error) {
 	return f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
 }
 
-func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8sTelemetrySecret() (*v1.Secret, error) {
+	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sTelemetry))
+	if err != nil {
+		return nil, err
+	}
+	compositeToken, err := json.Marshal(map[string]string{
+		"cluster_id":          f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
+		"authorization_token": f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Token,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	b := make([]byte, base64.StdEncoding.EncodedLen(len(compositeToken)))
+	base64.StdEncoding.Encode(b, compositeToken)
+	s.Data = map[string][]byte{
+		telemetryTokenSecretKey: b,
+	}
+
+	return s, nil
+}
+
+func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap, telemetrySecret *v1.Secret) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheusK8s()
 	if err != nil {
 		return nil, err
@@ -1625,23 +1650,18 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		return nil, err
 	}
 
-	telemetryEnabled := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled()
 	clusterID := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID
-	if telemetryEnabled && f.config.RemoteWrite {
-
+	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && f.config.RemoteWrite {
 		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
 		if err != nil {
 			return nil, errors.Wrap(err, "generate label selector relabel config")
 		}
 
-		compositeToken, err := json.Marshal(map[string]string{
-			"cluster_id":          clusterID,
-			"authorization_token": f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Token,
-		})
+		p.Spec.Secrets = append(p.Spec.Secrets, telemetrySecret.GetName())
 
 		spec := monv1.RemoteWriteSpec{
-			URL:         f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL,
-			BearerToken: base64.StdEncoding.EncodeToString(compositeToken),
+			URL:             f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL,
+			BearerTokenFile: fmt.Sprintf("/etc/prometheus/secrets/%s/%s", telemetrySecret.GetName(), telemetryTokenSecretKey),
 			QueueConfig: &monv1.QueueConfig{
 				// Amount of samples to load from the WAL into the in-memory
 				// buffer before waiting for samples to be sent successfully
@@ -1678,13 +1698,12 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 					Replacement:  "alerts",
 				},
 			},
+			MetadataConfig: &monv1.MetadataConfig{
+				Send: false,
+			},
 		}
 
 		p.Spec.RemoteWrite = []monv1.RemoteWriteSpec{spec}
-
-	}
-	if !telemetryEnabled {
-		p.Spec.RemoteWrite = nil
 	}
 
 	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite) > 0 {
