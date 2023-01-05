@@ -195,6 +195,7 @@ spec:
       annotations:
         description: Prometheus {{$labels.namespace}}/{{$labels.pod}} has failed to
           evaluate {{ printf "%.0f" $value }} rules in the last 5m.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/PrometheusRuleFailures.md
         summary: Prometheus is failing rule evaluations.
       expr: |
         increase(prometheus_rule_evaluation_failures_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) > 0
