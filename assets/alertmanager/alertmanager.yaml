@@ -122,7 +122,7 @@ spec:
     - --upstream=http://127.0.0.1:9093
     - --label=namespace
     - --error-on-replace
-    image: quay.io/prometheuscommunity/prom-label-proxy:v0.5.0
+    image: quay.io/prometheuscommunity/prom-label-proxy:v0.6.0
     name: prom-label-proxy
     resources:
       requests:
