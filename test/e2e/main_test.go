@@ -29,8 +29,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const assetsPath = "../../assets"
-
 var f *framework.Framework
 
 func TestMain(m *testing.M) {
@@ -115,8 +113,34 @@ func testMain(m *testing.M) error {
 }
 
 func TestTargetsUp(t *testing.T) {
-	// Don't run this test in parallel, as metrics might be influenced by other
-	// tests.
+	ctx := context.Background()
+
+	// Check that all targets are up initially.
+	testTargetsUp(t)
+
+	// Delete the client TLS certificate used by Prometheus to scrape endpoints.
+	// CMO should recreate it and the new certificate should still be trusted
+	// by the endpoints. If a endpoint remains down, it's probably because it
+	// doesn't use the cluster CA bundle.
+	// See https://issues.redhat.com/browse/OCPBUGS-4521.
+	metricsClientCertSecret, err := f.ManifestsFactory.MetricsClientCerts()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = f.KubeClient.CoreV1().Secrets(metricsClientCertSecret.Namespace).Delete(ctx, metricsClientCertSecret.Name, metav1.DeleteOptions{})
+
+	f.AssertSecretExists(metricsClientCertSecret.GetName(), f.Ns)(t)
+
+	// We need to wait a bit before verifying that all targets are up because
+	// it will take some time for the kubelet to propagate the new certificate
+	// to the Prometheus container. 2 minutes should be more than enough.
+	time.Sleep(120 * time.Second)
+	testTargetsUp(t)
+}
+
+func testTargetsUp(t *testing.T) {
+	// Don't run this test in parallel, as other tests might trigger scrape failures.
+	t.Helper()
 
 	targets := []string{
 		"node-exporter",

@@ -28,10 +28,12 @@ import (
 	"testing"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 
 	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 	monClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
@@ -81,6 +83,8 @@ type Framework struct {
 	MonitoringClient             *monClient.MonitoringV1Client
 	MonitoringBetaClient         *monBetaClient.MonitoringV1beta1Client
 	Ns, UserWorkloadMonitoringNs string
+
+	ManifestsFactory *manifests.Factory
 }
 
 // New returns a new cluster monitoring operator end-to-end test framework and
@@ -165,6 +169,16 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		kubeConfigPath:            kubeConfigPath,
 		SchedulingClient:          schedulingClient,
 		OpenShiftMonitoringClient: osmclient,
+		ManifestsFactory: manifests.NewFactory(
+			namespaceName,
+			userWorkloadNamespaceName,
+			nil,
+			nil,
+			nil,
+			manifests.NewAssets("../../assets"),
+			&manifests.APIServerConfig{},
+			&configv1.Console{},
+		),
 	}
 
 	cleanUp, err := f.setup()
