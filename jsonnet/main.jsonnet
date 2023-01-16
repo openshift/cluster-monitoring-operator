@@ -186,6 +186,7 @@ local inCluster =
               // identity that has superuser permissions in Grafana.
               admin_user: 'WHAT_YOU_ARE_DOING_IS_VOIDING_SUPPORT_0000000000000000000000000000000000000000000000000000000000000000',
               cookie_secure: true,
+              content_security_policy: true,
             },
             auth: {
               disable_login_form: true,
