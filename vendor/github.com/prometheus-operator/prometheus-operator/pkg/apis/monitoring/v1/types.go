@@ -96,6 +96,10 @@ type CommonPrometheusFields struct {
 	// Prometheus Operator knows what version of Prometheus is being
 	// configured.
 	Image *string `json:"image,omitempty"`
+	// Image pull policy for the 'prometheus', 'init-config-reloader' and 'config-reloader' containers.
+	// See https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy for more details.
+	// +kubebuilder:validation:Enum="";Always;Never;IfNotPresent
+	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// An optional list of references to secrets in the same namespace
 	// to use for pulling prometheus and alertmanager images from registries
 	// see http://kubernetes.io/docs/user-guide/images#specifying-imagepullsecrets-on-a-pod
@@ -313,7 +317,7 @@ type CommonPrometheusFields struct {
 	// Minimum number of seconds for which a newly created pod should be ready
 	// without any of its container crashing for it to be considered available.
 	// Defaults to 0 (pod will be considered available as soon as it is ready)
-	// This is an alpha field and requires enabling StatefulSetMinReadySeconds feature gate.
+	// This is an alpha field from kubernetes 1.22 until 1.24 which requires enabling the StatefulSetMinReadySeconds feature gate.
 	// +optional
 	MinReadySeconds *uint32 `json:"minReadySeconds,omitempty"`
 	// Pods' hostAliases configuration
@@ -340,6 +344,8 @@ type CommonPrometheusFields struct {
 	// Make sure to understand the security implications if you want to enable it.
 	// When hostNetwork is enabled, this will set dnsPolicy to ClusterFirstWithHostNet automatically.
 	HostNetwork bool `json:"hostNetwork,omitempty"`
+	// PodTargetLabels are added to all Pod/ServiceMonitors' podTargetLabels
+	PodTargetLabels []string `json:"podTargetLabels,omitempty"`
 }
 
 // +genclient
@@ -719,14 +725,15 @@ type StorageSpec struct {
 	// Deprecated: subPath usage will be disabled by default in a future release, this option will become unnecessary.
 	// DisableMountSubPath allows to remove any subPath usage in volume mounts.
 	DisableMountSubPath bool `json:"disableMountSubPath,omitempty"`
-	// EmptyDirVolumeSource to be used by the Prometheus StatefulSets. If specified, used in place of any volumeClaimTemplate. More
+	// EmptyDirVolumeSource to be used by the StatefulSet. If specified, used in place of any volumeClaimTemplate. More
 	// info: https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
 	EmptyDir *v1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
-	// EphemeralVolumeSource to be used by the Prometheus StatefulSets.
+	// EphemeralVolumeSource to be used by the StatefulSet.
 	// This is a beta field in k8s 1.21, for lower versions, starting with k8s 1.19, it requires enabling the GenericEphemeralVolume feature gate.
 	// More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#generic-ephemeral-volumes
 	Ephemeral *v1.EphemeralVolumeSource `json:"ephemeral,omitempty"`
-	// A PVC spec to be used by the Prometheus StatefulSets.
+	// A PVC spec to be used by the StatefulSet. The easiest way to use a volume that cannot be automatically provisioned
+	// (for whatever reason) is to use a label selector alongside manually created PersistentVolumes.
 	VolumeClaimTemplate EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
@@ -1122,6 +1129,9 @@ type RemoteReadSpec struct {
 	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
 	// Optional ProxyURL.
 	ProxyURL string `json:"proxyUrl,omitempty"`
+	// Whether to use the external labels as selectors for the remote read endpoint.
+	// Requires Prometheus v2.34.0 and above.
+	FilterExternalLabels *bool `json:"filterExternalLabels,omitempty"`
 }
 
 // LabelName is a valid Prometheus label name which may only contain ASCII letters, numbers, as well as underscores.
@@ -1133,21 +1143,21 @@ type LabelName string
 // More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs
 // +k8s:openapi-gen=true
 type RelabelConfig struct {
-	//The source labels select values from existing labels. Their content is concatenated
-	//using the configured separator and matched against the configured regular expression
-	//for the replace, keep, and drop actions.
+	// The source labels select values from existing labels. Their content is concatenated
+	// using the configured separator and matched against the configured regular expression
+	// for the replace, keep, and drop actions.
 	SourceLabels []LabelName `json:"sourceLabels,omitempty"`
-	//Separator placed between concatenated source label values. default is ';'.
+	// Separator placed between concatenated source label values. default is ';'.
 	Separator string `json:"separator,omitempty"`
-	//Label to which the resulting value is written in a replace action.
-	//It is mandatory for replace actions. Regex capture groups are available.
+	// Label to which the resulting value is written in a replace action.
+	// It is mandatory for replace actions. Regex capture groups are available.
 	TargetLabel string `json:"targetLabel,omitempty"`
-	//Regular expression against which the extracted value is matched. Default is '(.*)'
+	// Regular expression against which the extracted value is matched. Default is '(.*)'
 	Regex string `json:"regex,omitempty"`
 	// Modulus to take of the hash of the source label values.
 	Modulus uint64 `json:"modulus,omitempty"`
-	//Replacement value against which a regex replace is performed if the
-	//regular expression matches. Regex capture groups are available. Default is '$1'
+	// Replacement value against which a regex replace is performed if the
+	// regular expression matches. Regex capture groups are available. Default is '$1'
 	Replacement string `json:"replacement,omitempty"`
 	//Action to perform based on regex matching. Default is 'replace'.
 	//uppercase and lowercase actions require Prometheus >= 2.36.
@@ -1191,6 +1201,8 @@ type AlertmanagerEndpoints struct {
 	PathPrefix string `json:"pathPrefix,omitempty"`
 	// TLS Config to use for alertmanager connection.
 	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
+	// BasicAuth allow an endpoint to authenticate over basic authentication
+	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
 	// BearerTokenFile to read from filesystem to use when authenticating to
 	// Alertmanager.
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
@@ -1201,6 +1213,8 @@ type AlertmanagerEndpoints struct {
 	APIVersion string `json:"apiVersion,omitempty"`
 	// Timeout is a per-target Alertmanager timeout when pushing alerts.
 	Timeout *Duration `json:"timeout,omitempty"`
+	// Whether to enable HTTP2.
+	EnableHttp2 *bool `json:"enableHttp2,omitempty"`
 }
 
 // +genclient
@@ -1250,6 +1264,9 @@ type ServiceMonitorSpec struct {
 	// Per-scrape limit on length of labels value that will be accepted for a sample.
 	// Only valid in Prometheus versions 2.27.0 and newer.
 	LabelValueLengthLimit uint64 `json:"labelValueLengthLimit,omitempty"`
+	// Attaches node metadata to discovered targets.
+	// Requires Prometheus v2.37.0 and above.
+	AttachMetadata *AttachMetadata `json:"attachMetadata,omitempty"`
 }
 
 // Endpoint defines a scrapeable endpoint serving Prometheus metrics.
@@ -1304,6 +1321,9 @@ type Endpoint struct {
 	FollowRedirects *bool `json:"followRedirects,omitempty"`
 	// Whether to enable HTTP2.
 	EnableHttp2 *bool `json:"enableHttp2,omitempty"`
+	// Drop pods that are not running. (Failed, Succeeded). Enabled by default.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
+	FilterRunning *bool `json:"filterRunning,omitempty"`
 }
 
 // +genclient
@@ -1344,8 +1364,8 @@ type PodMonitorSpec struct {
 	// Per-scrape limit on length of labels value that will be accepted for a sample.
 	// Only valid in Prometheus versions 2.27.0 and newer.
 	LabelValueLengthLimit uint64 `json:"labelValueLengthLimit,omitempty"`
-	// Attaches node metadata to discovered targets. Only valid for role: pod.
-	// Only valid in Prometheus versions 2.35.0 and newer.
+	// Attaches node metadata to discovered targets.
+	// Requires Prometheus v2.35.0 and above.
 	AttachMetadata *AttachMetadata `json:"attachMetadata,omitempty"`
 }
 
@@ -1646,9 +1666,9 @@ func (c *SecretOrConfigMap) Validate() error {
 // SafeTLSConfig specifies safe TLS configuration parameters.
 // +k8s:openapi-gen=true
 type SafeTLSConfig struct {
-	// Struct containing the CA cert to use for the targets.
+	// Certificate authority used when verifying server certificates.
 	CA SecretOrConfigMap `json:"ca,omitempty"`
-	// Struct containing the client cert file for the targets.
+	// Client certificate to present when doing client-authentication.
 	Cert SecretOrConfigMap `json:"cert,omitempty"`
 	// Secret containing the client key file for the targets.
 	KeySecret *v1.SecretKeySelector `json:"keySecret,omitempty"`
@@ -1804,6 +1824,8 @@ type PrometheusRule struct {
 // +k8s:openapi-gen=true
 type PrometheusRuleSpec struct {
 	// Content of Prometheus rule file
+	// +listType=map
+	// +listMapKey=name
 	Groups []RuleGroup `json:"groups,omitempty"`
 }
 
@@ -1811,14 +1833,19 @@ type PrometheusRuleSpec struct {
 // upstream Prometheus struct definitions don't have json struct tags.
 
 // RuleGroup is a list of sequentially evaluated recording and alerting rules.
-// Note: PartialResponseStrategy is only used by ThanosRuler and will
-// be ignored by Prometheus instances.  Valid values for this field are 'warn'
-// or 'abort'.  More info: https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response
 // +k8s:openapi-gen=true
 type RuleGroup struct {
-	Name                    string `json:"name"`
-	Interval                string `json:"interval,omitempty"`
-	Rules                   []Rule `json:"rules"`
+	// Name of the rule group.
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// Interval determines how often rules in the group are evaluated.
+	Interval Duration `json:"interval,omitempty"`
+	// List of alerting and recording rules.
+	Rules []Rule `json:"rules"`
+	// PartialResponseStrategy is only used by ThanosRuler and will
+	// be ignored by Prometheus instances.
+	// More info: https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response
+	// +kubebuilder:validation:Pattern="^(?i)(abort|warn)?$"
 	PartialResponseStrategy string `json:"partial_response_strategy,omitempty"`
 }
 
@@ -1826,12 +1853,21 @@ type RuleGroup struct {
 // See Prometheus documentation: [alerting](https://www.prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) or [recording](https://www.prometheus.io/docs/prometheus/latest/configuration/recording_rules/#recording-rules) rule
 // +k8s:openapi-gen=true
 type Rule struct {
-	Record      string             `json:"record,omitempty"`
-	Alert       string             `json:"alert,omitempty"`
-	Expr        intstr.IntOrString `json:"expr"`
-	For         string             `json:"for,omitempty"`
-	Labels      map[string]string  `json:"labels,omitempty"`
-	Annotations map[string]string  `json:"annotations,omitempty"`
+	// Name of the time series to output to. Must be a valid metric name.
+	// Only one of `record` and `alert` must be set.
+	Record string `json:"record,omitempty"`
+	// Name of the alert. Must be a valid label value.
+	// Only one of `record` and `alert` must be set.
+	Alert string `json:"alert,omitempty"`
+	// PromQL expression to evaluate.
+	Expr intstr.IntOrString `json:"expr"`
+	// Alerts are considered firing once they have been returned for this long.
+	For Duration `json:"for,omitempty"`
+	// Labels to add or overwrite.
+	Labels map[string]string `json:"labels,omitempty"`
+	// Annotations to add to each alert.
+	// Only valid for alerting rules.
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // +genclient
@@ -1867,6 +1903,10 @@ type AlertmanagerSpec struct {
 	// Prometheus Operator knows what version of Alertmanager is being
 	// configured.
 	Image *string `json:"image,omitempty"`
+	// Image pull policy for the 'alertmanager', 'init-config-reloader' and 'config-reloader' containers.
+	// See https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy for more details.
+	// +kubebuilder:validation:Enum="";Always;Never;IfNotPresent
+	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Version the cluster should be on.
 	Version string `json:"version,omitempty"`
 	// Tag of Alertmanager container image to be deployed. Defaults to the value of `version`.
@@ -1903,10 +1943,11 @@ type AlertmanagerSpec struct {
 	//
 	// The Alertmanager configuration should be available under the
 	// `alertmanager.yaml` key. Additional keys from the original secret are
-	// copied to the generated secret.
+	// copied to the generated secret and mounted into the
+	// `/etc/alertmanager/config` directory in the `alertmanager` container.
 	//
 	// If either the secret or the `alertmanager.yaml` key is missing, the
-	// operator provisions an Alertmanager configuration with one empty
+	// operator provisions a minimal Alertmanager configuration with one empty
 	// receiver (effectively dropping alert notifications).
 	ConfigSecret string `json:"configSecret,omitempty"`
 	// Log level for Alertmanager to be configured with.
@@ -2004,13 +2045,16 @@ type AlertmanagerSpec struct {
 	ForceEnableClusterMode bool `json:"forceEnableClusterMode,omitempty"`
 	// AlertmanagerConfigs to be selected for to merge and configure Alertmanager with.
 	AlertmanagerConfigSelector *metav1.LabelSelector `json:"alertmanagerConfigSelector,omitempty"`
+	// The AlertmanagerConfigMatcherStrategy defines how AlertmanagerConfig objects match the alerts.
+	// In the future more options may be added.
+	AlertmanagerConfigMatcherStrategy AlertmanagerConfigMatcherStrategy `json:"alertmanagerConfigMatcherStrategy,omitempty"`
 	// Namespaces to be selected for AlertmanagerConfig discovery. If nil, only
 	// check own namespace.
 	AlertmanagerConfigNamespaceSelector *metav1.LabelSelector `json:"alertmanagerConfigNamespaceSelector,omitempty"`
 	// Minimum number of seconds for which a newly created pod should be ready
 	// without any of its container crashing for it to be considered available.
 	// Defaults to 0 (pod will be considered available as soon as it is ready)
-	// This is an alpha field and requires enabling StatefulSetMinReadySeconds feature gate.
+	// This is an alpha field from kubernetes 1.22 until 1.24 which requires enabling the StatefulSetMinReadySeconds feature gate.
 	// +optional
 	MinReadySeconds *uint32 `json:"minReadySeconds,omitempty"`
 	// Pods' hostAliases configuration
@@ -2023,6 +2067,16 @@ type AlertmanagerSpec struct {
 	// If defined, it takes precedence over the `configSecret` field.
 	// This field may change in future releases.
 	AlertmanagerConfiguration *AlertmanagerConfiguration `json:"alertmanagerConfiguration,omitempty"`
+}
+
+// AlertmanagerConfigMatcherStrategy defines the strategy used by AlertmanagerConfig objects to match alerts.
+type AlertmanagerConfigMatcherStrategy struct {
+	// If set to `OnNamespace`, the operator injects a label matcher matching the namespace of the AlertmanagerConfig object for all its routes and inhibition rules.
+	// `None` will not add any additional matchers other than the ones specified in the AlertmanagerConfig.
+	// Default is `OnNamespace`.
+	// +kubebuilder:validation:Enum="OnNamespace";"None"
+	// +kubebuilder:default:="OnNamespace"
+	Type string `json:"type,omitempty"`
 }
 
 // AlertmanagerConfiguration defines the Alertmanager configuration.
@@ -2222,7 +2276,7 @@ func (l *PrometheusRuleList) DeepCopyObject() runtime.Object {
 	return l.DeepCopy()
 }
 
-// ProbeTLSConfig specifies TLS configuration parameters.
+// ProbeTLSConfig specifies TLS configuration parameters for the prober.
 // +k8s:openapi-gen=true
 type ProbeTLSConfig struct {
 	SafeTLSConfig `json:",inline"`

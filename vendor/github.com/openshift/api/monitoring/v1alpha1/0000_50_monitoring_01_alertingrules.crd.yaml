@@ -3,8 +3,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.openshift.io: https://github.com/openshift/api/pull/1179
-    release.openshift.io/feature-set: TechPreviewNoUpgrade
     description: OpenShift Monitoring alerting rules
+    release.openshift.io/feature-set: TechPreviewNoUpgrade
   name: alertingrules.monitoring.openshift.io
 spec:
   group: monitoring.openshift.io

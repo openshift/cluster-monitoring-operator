@@ -348,14 +348,14 @@ func (rc *RuleController) convertRuleGroups(groups []osmv1alpha1.RuleGroup) []mo
 	monv1Groups := make([]monv1.RuleGroup, len(groups))
 
 	for i, group := range groups {
-		monv1Group := monv1.RuleGroup{Name: group.Name, Interval: group.Interval}
+		monv1Group := monv1.RuleGroup{Name: group.Name, Interval: monv1.Duration(group.Interval)}
 		monv1Group.Rules = make([]monv1.Rule, len(group.Rules))
 
 		for j, rule := range group.Rules {
 			monv1Rule := monv1.Rule{
 				Alert:       rule.Alert,
 				Expr:        rule.Expr,
-				For:         rule.For,
+				For:         monv1.Duration(rule.For),
 				Labels:      rule.Labels,
 				Annotations: rule.Annotations,
 			}
