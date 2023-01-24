@@ -5,6 +5,7 @@
 - [#1830](https://github.com/openshift/cluster-monitoring-operator/pull/1830) Add alert KubePodNotScheduled
 - [#1843](https://github.com/openshift/cluster-monitoring-operator/pull/1843) Node Exporter ignores network interface under name "enP.*".
 - [#1860](https://github.com/openshift/cluster-monitoring-operator/pull/1860) Adds runbook for PrometheusRuleFailures
+- [#1868](https://github.com/openshift/cluster-monitoring-operator/pull/1868) In dashboards unstack diagrams with limit/quota/request.
 
 
 ## 4.12
