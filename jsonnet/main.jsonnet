@@ -182,12 +182,19 @@ local inCluster =
             fsMountpointSelector: 'mountpoint!~"/var/lib/ibmc-s3fs.*"',
           },
         },
-        // NOTE: 3 patterns for virutal NICs will be ignored:
+        // NOTE:
+        // "ignoredNetworkDevices" sets the 2 arguments "--collector.netclass.ignored-devices" and "--collector.netdev.device-exclude".
+        // 5 kinds of virtual NICs will be ignored:
         // 1. veth network interface associated with containers.
         // 2. OVN renames veth.* to <rand-hex>@if<X> where X is /sys/class/net/<if>/ifindex
         // thus [a-z0-9]{15}}
         // 3. enP.* virtual NICs on Azure cluster.
-        ignoredNetworkDevices:: '^(veth.*|[a-f0-9]{15}|enP.*)$',
+        // 4. OVN virtual interfaces ovn-k8s-mp[0-9]*
+        // 5. virtual tunnels and bridges: tun[0-9]*|br[0-9]*|br-ex|br-int|br-ext
+        // Refer to:
+        // https://issues.redhat.com/browse/OCPBUGS-1321
+        // https://issues.redhat.com/browse/OCPBUGS-2729
+        ignoredNetworkDevices:: '^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*)$',
       },
       openshiftStateMetrics: {
         namespace: $.values.common.namespace,
