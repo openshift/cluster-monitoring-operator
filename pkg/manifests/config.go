@@ -269,6 +269,10 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.EtcdConfig == nil {
 		c.ClusterMonitoringConfiguration.EtcdConfig = &EtcdConfig{}
 	}
+
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile == "" {
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile = FullScrapeProfile
+	}
 }
 
 func (c *Config) SetImages(images map[string]string) {

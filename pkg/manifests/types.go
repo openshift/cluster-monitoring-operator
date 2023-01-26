@@ -19,6 +19,15 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+type ScrapeProfile string
+
+const (
+	FullScrapeProfile    = "full"
+	MinimalScrapeProfile = "minimal"
+)
+
+var ScrapeProfiles = []ScrapeProfile{FullScrapeProfile, MinimalScrapeProfile}
+
 // The `ClusterMonitoringConfiguration` resource defines settings that
 // customize the default platform monitoring stack through the
 // `cluster-monitoring-config` config map in the `openshift-monitoring`
@@ -191,8 +200,8 @@ type PrometheusK8sConfig struct {
 	// In the `full` profile (default) Prometheus will scrape all the metrics
 	// that are exposed by the different platform components. In the `minimal`
 	// profile Prometheus will only scrape metrics necessary for platform
-	// alerts, recording rules, telemetry and console dashboards. 
-	ScrapeProfile string `json:"scrapeProfile,omitempty"`
+	// alerts, recording rules, telemetry and console dashboards.
+	ScrapeProfile ScrapeProfile `json:"scrapeProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,
 	// volume size and name.

@@ -113,31 +113,17 @@ func (t *NodeExporterTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling node-exporter rules PrometheusRule failed")
 	}
 
-	smn, err := t.factory.NodeExporterServiceMonitor()
+	sms, err := t.factory.NodeExporterServiceMonitors()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
+		return errors.Wrap(err, "initializing node-exporter ServiceMonitors failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(ctx, smn)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
+	for _, sm := range sms {
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+		if err != nil {
+			return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
+		}
 	}
 
-	smn, err = t.factory.NodeExporterOperationalServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(ctx, smn)
-	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
-	}
-
-	smn, err = t.factory.NodeExporterUponlyServiceMonitor()
-	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ServiceMonitor failed")
-	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(ctx, smn)
-	return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
+	return nil
 }

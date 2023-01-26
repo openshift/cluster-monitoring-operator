@@ -64,6 +64,8 @@ const (
 	userWorkloadAlertmanagerService = "alertmanager-user-workload"
 
 	telemetryTokenSecretKey = "token"
+
+	scrapeProfileLabel = "monitoring.openshift.io/scrape-profile"
 )
 
 var (
@@ -94,16 +96,15 @@ var (
 	AlertmanagerUserWorkloadPodDisruptionBudget    = "alertmanager-user-workload/pod-disruption-budget.yaml"
 	AlertmanagerUserWorkloadServiceMonitor         = "alertmanager-user-workload/service-monitor.yaml"
 
-	KubeStateMetricsClusterRoleBinding        = "kube-state-metrics/cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole               = "kube-state-metrics/cluster-role.yaml"
-	KubeStateMetricsDeployment                = "kube-state-metrics/deployment.yaml"
-	KubeStateMetricsServiceAccount            = "kube-state-metrics/service-account.yaml"
-	KubeStateMetricsService                   = "kube-state-metrics/service.yaml"
-	KubeStateMetricsServiceMonitor            = "kube-state-metrics/service-monitor.yaml"
-	KubeStateMetricsOperationalServiceMonitor = "kube-state-metrics/operational-service-monitor.yaml"
-	KubeStateMetricsUponlyServiceMonitor      = "kube-state-metrics/uponly-service-monitor.yaml"
-	KubeStateMetricsPrometheusRule            = "kube-state-metrics/prometheus-rule.yaml"
-	KubeStateMetricsKubeRbacProxySecret       = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
+	KubeStateMetricsClusterRoleBinding    = "kube-state-metrics/cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole           = "kube-state-metrics/cluster-role.yaml"
+	KubeStateMetricsDeployment            = "kube-state-metrics/deployment.yaml"
+	KubeStateMetricsServiceAccount        = "kube-state-metrics/service-account.yaml"
+	KubeStateMetricsService               = "kube-state-metrics/service.yaml"
+	KubeStateMetricsServiceMonitor        = "kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsMinimalServiceMonitor = "kube-state-metrics/minimal-service-monitor.yaml"
+	KubeStateMetricsPrometheusRule        = "kube-state-metrics/prometheus-rule.yaml"
+	KubeStateMetricsKubeRbacProxySecret   = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
 
 	OpenShiftStateMetricsClusterRoleBinding  = "openshift-state-metrics/cluster-role-binding.yaml"
 	OpenShiftStateMetricsClusterRole         = "openshift-state-metrics/cluster-role.yaml"
@@ -120,8 +121,7 @@ var (
 	NodeExporterClusterRoleBinding         = "node-exporter/cluster-role-binding.yaml"
 	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
 	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
-	NodeExporterOperationalServiceMonitor  = "node-exporter/operational-service-monitor.yaml"
-	NodeExporterUponlyServiceMonitor       = "node-exporter/uponly-service-monitor.yaml"
+	NodeExporterMinimalServiceMonitor      = "node-exporter/minimal-service-monitor.yaml"
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
 
@@ -188,8 +188,7 @@ var (
 	PrometheusAdapterRoleBindingAuthReader              = "prometheus-adapter/role-binding-auth-reader.yaml"
 	PrometheusAdapterService                            = "prometheus-adapter/service.yaml"
 	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
-	PrometheusAdapterOperationalServiceMonitor          = "prometheus-adapter/operational-service-monitor.yaml"
-	PrometheusAdapterUponlyServiceMonitor               = "prometheus-adapter/uponly-service-monitor.yaml"
+	PrometheusAdapterMinimalServiceMonitor              = "prometheus-adapter/minimal-service-monitor.yaml"
 	PrometheusAdapterServiceAccount                     = "prometheus-adapter/service-account.yaml"
 
 	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
@@ -278,14 +277,12 @@ var (
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
-	ControlPlanePrometheusRule                   = "control-plane/prometheus-rule.yaml"
-	ControlPlaneKubeletServiceMonitor            = "control-plane/service-monitor-kubelet.yaml"
-	ControlPlaneKubeletOperationalServiceMonitor = "control-plane/operational-service-monitor-kubelet.yaml"
-	ControlPlaneKubeletUponlyServiceMonitor      = "control-plane/uponly-service-monitor-kubelet.yaml"
-	ControlPlaneKubeletServiceMonitorPA          = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
-	ControlPlaneEtcdServiceMonitor               = "control-plane/service-monitor-etcd.yaml"
-	ControlPlaneEtcdOperationalServiceMonitor    = "control-plane/operational-service-monitor-etcd.yaml"
-	ControlPlaneEtcdUponlyServiceMonitor         = "control-plane/uponly-service-monitor-etcd.yaml"
+	ControlPlanePrometheusRule               = "control-plane/prometheus-rule.yaml"
+	ControlPlaneKubeletServiceMonitor        = "control-plane/service-monitor-kubelet.yaml"
+	ControlPlaneKubeletMinimalServiceMonitor = "control-plane/minimal-service-monitor-kubelet.yaml"
+	ControlPlaneKubeletServiceMonitorPA      = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
+	ControlPlaneEtcdServiceMonitor           = "control-plane/service-monitor-etcd.yaml"
+	ControlPlaneEtcdMinimalServiceMonitor    = "control-plane/minimal-service-monitor-etcd.yaml"
 )
 
 var (
@@ -713,25 +710,16 @@ func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetReader(KubeStateMetricsClusterRole))
 }
 
+func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
+}
+
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsServiceMonitor))
 }
 
-func (f *Factory) KubeStateMetricsOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsOperationalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
-	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
-	sm.Namespace = f.namespace
-
-	return sm, nil
-}
-
-func (f *Factory) KubeStateMetricsUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsUponlyServiceMonitor))
+func (f *Factory) KubeStateMetricsMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsMinimalServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -837,6 +825,10 @@ func (f *Factory) OpenShiftStateMetricsRBACProxySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(OpenShiftStateMetricsKubeRbacProxySecret))
 }
 
+func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
+}
+
 func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterServiceMonitor))
 }
@@ -863,20 +855,8 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 	return args
 }
 
-func (f *Factory) NodeExporterOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterOperationalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("node-exporter.%s.svc", f.namespace)
-	sm.Namespace = f.namespace
-
-	return sm, nil
-}
-
-func (f *Factory) NodeExporterUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterUponlyServiceMonitor))
+func (f *Factory) NodeExporterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterMinimalServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1560,27 +1540,25 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 	return nil
 }
 
-func (f *Factory) setupScrapeProfiles(p *monv1.Prometheus, scrapeProfile string) error {
-	if scrapeProfile == "" {
-		scrapeProfile = "full"
-	}
-
-	if scrapeProfile != "full" && scrapeProfile != "operational" && scrapeProfile != "uponly" {
-		return errors.Wrap(ErrConfigValidation, `scrape profile provided is unknown, supported scrape profiles are: full, operational, uponly`)
-	}
-
-	profiles := []string{"full", "operational", "uponly"}
-	for i, profile := range profiles {
+func (f *Factory) setupScrapeProfiles(p *monv1.Prometheus, scrapeProfile ScrapeProfile) error {
+	profiles := []string{}
+	foundProfile := false
+	for _, profile := range ScrapeProfiles {
 		if profile == scrapeProfile {
-			profiles = append(profiles[:i], profiles[i+1:]...)
-			break
+			foundProfile = true
+			continue
 		}
+		profiles = append(profiles, string(profile))
+	}
+
+	if !foundProfile {
+		return errors.Wrap(ErrConfigValidation, fmt.Sprintf(`scrape profile provided is unknown, supported scrape profiles are: %v`, ScrapeProfiles))
 	}
 
 	labelSelector := &metav1.LabelSelector{
 		MatchExpressions: []metav1.LabelSelectorRequirement{
 			{
-				Key:      "monitoring.openshift.io/scrape-profile",
+				Key:      scrapeProfileLabel,
 				Operator: metav1.LabelSelectorOpNotIn,
 				Values:   profiles,
 			},
@@ -1589,7 +1567,6 @@ func (f *Factory) setupScrapeProfiles(p *monv1.Prometheus, scrapeProfile string)
 
 	p.Spec.ServiceMonitorSelector = labelSelector
 	p.Spec.PodMonitorSelector = labelSelector
-	p.Spec.ProbeSelector = labelSelector
 
 	return nil
 }
@@ -1930,24 +1907,16 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 	return f.NewService(f.assets.MustNewAssetReader(PrometheusAdapterService))
 }
 
+func (f *Factory) PrometheusAdapterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.PrometheusAdapterServiceMonitor, f.PrometheusAdapterMinimalServiceMonitor)
+}
+
 func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterServiceMonitor))
 }
 
-func (f *Factory) PrometheusAdapterOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterOperationalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	sm.Namespace = f.namespace
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-adapter.%s.svc", f.namespace)
-
-	return sm, nil
-}
-
-func (f *Factory) PrometheusAdapterUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterUponlyServiceMonitor))
+func (f *Factory) PrometheusAdapterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterMinimalServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -2402,12 +2371,16 @@ func (f *Factory) ControlPlaneEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap)
 	}, nil
 }
 
+func (f *Factory) ControlPlaneEtcdServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.ControlPlaneEtcdServiceMonitor, f.ControlPlaneEtcdMinimalServiceMonitor)
+}
+
 func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdServiceMonitor))
 }
 
-func (f *Factory) ControlPlaneEtcdOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdOperationalServiceMonitor))
+func (f *Factory) ControlPlaneEtcdMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdMinimalServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -2417,34 +2390,16 @@ func (f *Factory) ControlPlaneEtcdOperationalServiceMonitor() (*monv1.ServiceMon
 	return s, nil
 }
 
-func (f *Factory) ControlPlaneEtcdUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdUponlyServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
+func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletServiceMonitor))
 }
 
-func (f *Factory) ControlPlaneKubeletOperationalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletOperationalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
-func (f *Factory) ControlPlaneKubeletUponlyServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletUponlyServiceMonitor))
+func (f *Factory) ControlPlaneKubeletMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletMinimalServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -3426,6 +3381,21 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 			},
 		},
 		Data: m,
+	}, nil
+}
+
+func serviceMonitors(fullServiceMonitor, minimalServiceMonitor func() (*monv1.ServiceMonitor, error)) ([]*monv1.ServiceMonitor, error) {
+	sMonitor, err := fullServiceMonitor()
+	if err != nil {
+		return nil, err
+	}
+	sMonitorMinimal, err := minimalServiceMonitor()
+	if err != nil {
+		return nil, err
+	}
+	return []*monv1.ServiceMonitor{
+		sMonitor,
+		sMonitorMinimal,
 	}, nil
 }
 

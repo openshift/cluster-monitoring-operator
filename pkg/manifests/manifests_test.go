@@ -1709,28 +1709,22 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 func TestPrometheusScrapeProfile(t *testing.T) {
 	for _, tc := range []struct {
 		name                  string
-		scrapeProfile         string
+		scrapeProfile         ScrapeProfile
 		expectedLabelSelector *metav1.LabelSelector
 		errExpected           bool
 	}{
 		{
-			name:          "no scrape profile",
-			scrapeProfile: "",
-			expectedLabelSelector: &metav1.LabelSelector{
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "monitoring.openshift.io/scrape-profile",
-						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"operational", "uponly"},
-					},
-				},
-			},
-			errExpected: false,
+			// This test is supposed to fail because defaulting is done at
+			// the manifest/config.go level and not manifest/manifest.go
+			name:                  "no scrape profile",
+			scrapeProfile:         "",
+			expectedLabelSelector: nil,
+			errExpected:           true,
 		},
 		{
 			name:                  "unknown scrape profile",
 			scrapeProfile:         "foo",
-			expectedLabelSelector: &metav1.LabelSelector{},
+			expectedLabelSelector: nil,
 			errExpected:           true,
 		},
 		{
@@ -1741,35 +1735,21 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 					{
 						Key:      "monitoring.openshift.io/scrape-profile",
 						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"operational", "uponly"},
+						Values:   []string{"minimal"},
 					},
 				},
 			},
 			errExpected: false,
 		},
 		{
-			name:          "operational scrape profile",
-			scrapeProfile: "operational",
+			name:          "minimal scrape profile",
+			scrapeProfile: "minimal",
 			expectedLabelSelector: &metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
 						Key:      "monitoring.openshift.io/scrape-profile",
 						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"full", "uponly"},
-					},
-				},
-			},
-			errExpected: false,
-		},
-		{
-			name:          "uponly scrape profile",
-			scrapeProfile: "uponly",
-			expectedLabelSelector: &metav1.LabelSelector{
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "monitoring.openshift.io/scrape-profile",
-						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"full", "operational"},
+						Values:   []string{"full"},
 					},
 				},
 			},
@@ -1783,6 +1763,7 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 			)
 			if err != nil {
 				if !tc.errExpected {
@@ -1799,9 +1780,6 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 			}
 			if !reflect.DeepEqual(p.Spec.PodMonitorSelector, tc.expectedLabelSelector) {
 				t.Fatalf("Label selector for pod monitor is not configured correctly, got %v, expected %v", p.Spec.PodMonitorSelector, tc.expectedLabelSelector)
-			}
-			if !reflect.DeepEqual(p.Spec.ProbeSelector, tc.expectedLabelSelector) {
-				t.Fatalf("Label selector for probe is not configured correctly, got %v, expected %v", p.Spec.ProbeSelector, tc.expectedLabelSelector)
 			}
 		})
 	}

@@ -234,36 +234,16 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 		}
 	}
 	{
-		sm, err := t.factory.PrometheusAdapterServiceMonitor()
+		sms, err := t.factory.PrometheusAdapterServiceMonitors()
 		if err != nil {
-			return errors.Wrap(err, "initializing PrometheusAdapter ServiceMonitor failed")
+			return errors.Wrap(err, "initializing PrometheusAdapter ServiceMonitors failed")
 		}
 
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-		if err != nil {
-			return errors.Wrap(err, "reconciling PrometheusAdapter ServiceMonitor failed")
-		}
-	}
-	{
-		sm, err := t.factory.PrometheusAdapterOperationalServiceMonitor()
-		if err != nil {
-			return errors.Wrap(err, "initializing PrometheusAdapter operational ServiceMonitor failed")
-		}
-
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-		if err != nil {
-			return errors.Wrap(err, "reconciling PrometheusAdapter ServiceMonitor failed")
-		}
-	}
-	{
-		sm, err := t.factory.PrometheusAdapterUponlyServiceMonitor()
-		if err != nil {
-			return errors.Wrap(err, "initializing PrometheusAdapter uponly ServiceMonitor failed")
-		}
-
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-		if err != nil {
-			return errors.Wrap(err, "reconciling PrometheusAdapter ServiceMonitor failed")
+		for _, sm := range sms {
+			err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+			if err != nil {
+				return errors.Wrap(err, "reconciling PrometheusAdapter ServiceMonitor failed")
+			}
 		}
 	}
 	{
