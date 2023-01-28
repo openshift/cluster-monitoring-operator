@@ -93,17 +93,24 @@ function(params) {
       },
       endpoints: [
         {
-          bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
           port: 'https',
           scheme: 'https',
           tlsConfig: {
-            // don't specify the certificate authentication for the operator since
-            // it itself creates the client CA copy in the namespace and therefore
-            // we cannot use it in the operator's kube-rbac-proxy config
-            // TODO: this could be fixed by using library-go's controller setup boilerplate
-            //       code
+            certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
+            keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
+            insecureSkipVerify: false,
             caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
           },
+          metricRelabelings: [
+            // Drop metrics that come automatically from the Kubernetes
+            // apiserver package but aren't interesting for the cluster
+            // monitoring operator.
+            {
+              sourceLabels: ['__name__'],
+              action: 'drop',
+              regex: '(apiserver|go_sched|workqueue)_.+',
+            },
+          ],
         },
       ],
     },

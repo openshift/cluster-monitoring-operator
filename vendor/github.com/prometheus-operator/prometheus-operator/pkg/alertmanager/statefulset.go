@@ -218,7 +218,6 @@ func makeStatefulSetService(p *monitoringv1.Alertmanager, config Config) *v1.Ser
 
 func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSecrets []string) (*appsv1.StatefulSetSpec, error) {
 	amVersion := operator.StringValOrDefault(a.Spec.Version, operator.DefaultAlertmanagerVersion)
-
 	amImagePath, err := operator.BuildImagePath(
 		operator.StringPtrValOrDefault(a.Spec.Image, ""),
 		operator.StringValOrDefault(a.Spec.BaseImage, config.AlertmanagerDefaultBaseImage),
@@ -653,14 +652,15 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 
 	defaultContainers := []v1.Container{
 		{
-			Args:           amArgs,
-			Name:           "alertmanager",
-			Image:          amImagePath,
-			Ports:          ports,
-			VolumeMounts:   amVolumeMounts,
-			LivenessProbe:  livenessProbe,
-			ReadinessProbe: readinessProbe,
-			Resources:      a.Spec.Resources,
+			Args:            amArgs,
+			Name:            "alertmanager",
+			Image:           amImagePath,
+			ImagePullPolicy: a.Spec.ImagePullPolicy,
+			Ports:           ports,
+			VolumeMounts:    amVolumeMounts,
+			LivenessProbe:   livenessProbe,
+			ReadinessProbe:  readinessProbe,
+			Resources:       a.Spec.Resources,
 			SecurityContext: &v1.SecurityContext{
 				AllowPrivilegeEscalation: &boolFalse,
 				ReadOnlyRootFilesystem:   &boolTrue,
@@ -698,6 +698,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 			operator.Shard(-1),
 			operator.ConfigFile(path.Join(alertmanagerConfigDir, alertmanagerConfigFileCompressed)),
 			operator.ConfigEnvsubstFile(path.Join(alertmanagerConfigOutDir, alertmanagerConfigEnvsubstFilename)),
+			operator.ImagePullPolicy(a.Spec.ImagePullPolicy),
 		),
 	}
 

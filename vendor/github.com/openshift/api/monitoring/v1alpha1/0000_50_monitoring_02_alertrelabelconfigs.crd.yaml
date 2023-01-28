@@ -3,8 +3,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.openshift.io: https://github.com/openshift/api/pull/1179
-    release.openshift.io/feature-set: TechPreviewNoUpgrade
     description: OpenShift Monitoring alert relabel configurations
+    release.openshift.io/feature-set: TechPreviewNoUpgrade
   name: alertrelabelconfigs.monitoring.openshift.io
 spec:
   group: monitoring.openshift.io

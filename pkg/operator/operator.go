@@ -25,13 +25,12 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
-
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
-
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/component-base/metrics"
+	"k8s.io/component-base/metrics/legacyregistry"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -164,8 +163,8 @@ type Operator struct {
 
 	queue workqueue.RateLimitingInterface
 
-	reconcileAttempts prometheus.Counter
-	reconcileStatus   prometheus.Gauge
+	reconcileAttempts *metrics.Counter
+	reconcileStatus   *metrics.Gauge
 
 	failedReconcileAttempts int
 
@@ -235,7 +234,22 @@ func New(
 		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
 		ruleController:            ruleController,
 		relabelController:         relabelController,
+		reconcileAttempts: metrics.NewCounter(&metrics.CounterOpts{
+			Name:           "cluster_monitoring_operator_reconcile_attempts_total",
+			Help:           "Number of attempts to reconcile the operator configuration",
+			StabilityLevel: metrics.ALPHA,
+		}),
+		reconcileStatus: metrics.NewGauge(&metrics.GaugeOpts{
+			Name:           "cluster_monitoring_operator_last_reconciliation_successful",
+			Help:           "Latest reconciliation state. Set to 1 if last reconciliation succeeded, else 0.",
+			StabilityLevel: metrics.ALPHA,
+		}),
 	}
+
+	legacyregistry.MustRegister(
+		o.reconcileAttempts,
+		o.reconcileStatus,
+	)
 
 	informer := cache.NewSharedIndexInformer(
 		o.client.SecretListWatchForNamespace(namespace), &v1.Secret{}, resyncPeriod, cache.Indexers{},
@@ -374,24 +388,6 @@ func New(
 	o.controllersToRunFunc = append(o.controllersToRunFunc, csrController.Run, o.ruleController.Run, o.relabelController.Run)
 
 	return o, nil
-}
-
-// RegisterMetrics registers the operator's metrics with the given registerer.
-func (o *Operator) RegisterMetrics(r prometheus.Registerer) {
-	o.reconcileAttempts = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "cluster_monitoring_operator_reconcile_attempts_total",
-		Help: "Number of attempts to reconcile the operator configuration",
-	})
-
-	o.reconcileStatus = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "cluster_monitoring_operator_last_reconciliation_successful",
-		Help: "Latest reconciliation state. Set to 1 if last reconciliation succeeded, else 0.",
-	})
-
-	r.MustRegister(
-		o.reconcileAttempts,
-		o.reconcileStatus,
-	)
 }
 
 // Run the controller.

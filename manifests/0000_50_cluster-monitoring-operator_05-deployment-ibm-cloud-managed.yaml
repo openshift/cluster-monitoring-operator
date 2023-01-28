@@ -23,33 +23,14 @@ spec:
     spec:
       containers:
       - args:
-        - --logtostderr
-        - --secure-listen-address=:8443
-        - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-        - --upstream=http://127.0.0.1:8080/
-        - --tls-cert-file=/etc/tls/private/tls.crt
-        - --tls-private-key-file=/etc/tls/private/tls.key
-        image: quay.io/openshift/origin-kube-rbac-proxy:latest
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-        resources:
-          requests:
-            cpu: 1m
-            memory: 20Mi
-        terminationMessagePolicy: FallbackToLogsOnError
-        volumeMounts:
-        - mountPath: /etc/tls/private
-          name: cluster-monitoring-operator-tls
-          readOnly: false
-      - args:
         - -namespace=openshift-monitoring
         - -namespace-user-workload=openshift-user-workload-monitoring
         - -configmap=cluster-monitoring-config
         - -release-version=$(RELEASE_VERSION)
         - -logtostderr=true
         - -v=2
+        - -cert-file=/etc/tls/private/tls.crt
+        - -key-file=/etc/tls/private/tls.key
         - -images=prometheus-operator=quay.io/openshift/origin-prometheus-operator:latest
         - -images=prometheus-config-reloader=quay.io/openshift/origin-prometheus-config-reloader:latest
         - -images=prometheus-operator-admission-webhook=quay.io/openshift/origin-prometheus-operator-admission-webhook:latest
@@ -74,14 +55,21 @@ spec:
               fieldPath: metadata.name
         image: quay.io/openshift/origin-cluster-monitoring-operator:latest
         name: cluster-monitoring-operator
+        ports:
+        - containerPort: 8443
+          name: https
         resources:
           requests:
             cpu: 10m
             memory: 75Mi
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
+        - mountPath: /etc/tls/private
+          name: cluster-monitoring-operator-tls
+          readOnly: true
         - mountPath: /etc/cluster-monitoring-operator/telemetry
           name: telemetry-config
+          readOnly: true
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical

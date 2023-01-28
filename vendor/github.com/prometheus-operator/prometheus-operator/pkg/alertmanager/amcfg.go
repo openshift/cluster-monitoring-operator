@@ -16,6 +16,7 @@ package alertmanager
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"path"
@@ -88,6 +89,10 @@ func checkAlertmanagerConfigRootRoute(rootRoute *route) error {
 		return errors.New("'mute_time_intervals' not permitted on root route")
 	}
 
+	if len(rootRoute.ActiveTimeIntervals) > 0 {
+		return errors.New("'active_time_intervals' not permitted on root route")
+	}
+
 	return nil
 }
 
@@ -99,6 +104,82 @@ func (c alertmanagerConfig) String() string {
 	return string(b)
 }
 
+type enforcer interface {
+	processRoute(types.NamespacedName, *route) *route
+	processInhibitRule(types.NamespacedName, *inhibitRule) *inhibitRule
+}
+
+// No enforcement
+type noopEnforcer struct{}
+
+func (ne *noopEnforcer) processInhibitRule(crKey types.NamespacedName, ir *inhibitRule) *inhibitRule {
+	return ir
+}
+
+func (ne *noopEnforcer) processRoute(crKey types.NamespacedName, r *route) *route {
+	r.Continue = true
+	return r
+}
+
+// Enforcing the namespace label
+type namespaceEnforcer struct {
+	matchersV2Allowed bool
+}
+
+// processInhibitRule for namespaceEnforcer modifies the inhibition rule to match alerts
+// originating only from the given namespace.
+func (ne *namespaceEnforcer) processInhibitRule(crKey types.NamespacedName, ir *inhibitRule) *inhibitRule {
+	// Inhibition rule created from AlertmanagerConfig resources should only match
+	// alerts that come from the same namespace.
+	delete(ir.SourceMatchRE, inhibitRuleNamespaceKey)
+	delete(ir.TargetMatchRE, inhibitRuleNamespaceKey)
+
+	if !ne.matchersV2Allowed {
+		ir.SourceMatch[inhibitRuleNamespaceKey] = crKey.Namespace
+		ir.TargetMatch[inhibitRuleNamespaceKey] = crKey.Namespace
+
+		return ir
+	}
+
+	v2NamespaceMatcher := monitoringv1alpha1.Matcher{
+		Name:      inhibitRuleNamespaceKey,
+		Value:     crKey.Namespace,
+		MatchType: monitoringv1alpha1.MatchEqual,
+	}.String()
+
+	if !contains(v2NamespaceMatcher, ir.SourceMatchers) {
+		ir.SourceMatchers = append(ir.SourceMatchers, v2NamespaceMatcher)
+	}
+	if !contains(v2NamespaceMatcher, ir.TargetMatchers) {
+		ir.TargetMatchers = append(ir.TargetMatchers, v2NamespaceMatcher)
+	}
+
+	delete(ir.SourceMatch, inhibitRuleNamespaceKey)
+	delete(ir.TargetMatch, inhibitRuleNamespaceKey)
+
+	return ir
+}
+
+// processRoute on namespaceEnforcer modifies the route configuration to match alerts
+// originating only from the given namespace.
+func (ne *namespaceEnforcer) processRoute(crKey types.NamespacedName, r *route) *route {
+	// Routes created from AlertmanagerConfig resources should only match
+	// alerts that come from the same namespace.
+	if ne.matchersV2Allowed {
+		r.Matchers = append(r.Matchers, monitoringv1alpha1.Matcher{
+			Name:      "namespace",
+			Value:     crKey.Namespace,
+			MatchType: monitoringv1alpha1.MatchEqual,
+		}.String())
+	} else {
+		r.Match["namespace"] = crKey.Namespace
+	}
+	// Alerts should still be evaluated by the following routes.
+	r.Continue = true
+
+	return r
+}
+
 // configBuilder knows how to build an Alertmanager configuration from a raw
 // configuration and/or AlertmanagerConfig objects.
 type configBuilder struct {
@@ -106,15 +187,26 @@ type configBuilder struct {
 	logger    log.Logger
 	amVersion semver.Version
 	store     *assets.Store
+	enforcer  enforcer
 }
 
-func newConfigBuilder(logger log.Logger, amVersion semver.Version, store *assets.Store) *configBuilder {
+func newConfigBuilder(logger log.Logger, amVersion semver.Version, store *assets.Store, matcherStrategy monitoringv1.AlertmanagerConfigMatcherStrategy) *configBuilder {
 	cg := &configBuilder{
 		logger:    logger,
 		amVersion: amVersion,
 		store:     store,
+		enforcer:  getEnforcer(matcherStrategy, amVersion),
 	}
 	return cg
+}
+
+func getEnforcer(matcherStrategy monitoringv1.AlertmanagerConfigMatcherStrategy, amVersion semver.Version) enforcer {
+	if matcherStrategy.Type == "None" {
+		return &noopEnforcer{}
+	}
+	return &namespaceEnforcer{
+		matchersV2Allowed: amVersion.GTE(semver.MustParse("0.22.0")),
+	}
 }
 
 func (cb *configBuilder) marshalJSON() ([]byte, error) {
@@ -206,11 +298,11 @@ func (cb *configBuilder) addAlertmanagerConfigs(ctx context.Context, amConfigs m
 		// Add inhibitRules to baseConfig.InhibitRules.
 		for _, inhibitRule := range amConfigs[amConfigIdentifier].Spec.InhibitRules {
 			cb.cfg.InhibitRules = append(cb.cfg.InhibitRules,
-				cb.enforceNamespaceForInhibitRule(
+				cb.enforcer.processInhibitRule(
+					crKey,
 					cb.convertInhibitRule(
 						&inhibitRule,
 					),
-					crKey.Namespace,
 				),
 			)
 		}
@@ -221,12 +313,12 @@ func (cb *configBuilder) addAlertmanagerConfigs(ctx context.Context, amConfigs m
 		}
 
 		subRoutes = append(subRoutes,
-			cb.enforceNamespaceForRoute(
+			cb.enforcer.processRoute(
+				crKey,
 				cb.convertRoute(
 					amConfigs[amConfigIdentifier].Spec.Route,
 					crKey,
 				),
-				amConfigs[amConfigIdentifier].Namespace,
 			),
 		)
 
@@ -258,65 +350,6 @@ func (cb *configBuilder) addAlertmanagerConfigs(ctx context.Context, amConfigs m
 	}
 
 	return nil
-}
-
-// enforceNamespaceForInhibitRule modifies the inhibition rule to match alerts
-// originating only from the given namespace.
-func (cb *configBuilder) enforceNamespaceForInhibitRule(ir *inhibitRule, namespace string) *inhibitRule {
-	matchersV2Allowed := cb.amVersion.GTE(semver.MustParse("0.22.0"))
-
-	// Inhibition rule created from AlertmanagerConfig resources should only match
-	// alerts that come from the same namespace.
-	delete(ir.SourceMatchRE, inhibitRuleNamespaceKey)
-	delete(ir.TargetMatchRE, inhibitRuleNamespaceKey)
-
-	if !matchersV2Allowed {
-		ir.SourceMatch[inhibitRuleNamespaceKey] = namespace
-		ir.TargetMatch[inhibitRuleNamespaceKey] = namespace
-
-		return ir
-	}
-
-	v2NamespaceMatcher := monitoringv1alpha1.Matcher{
-		Name:      inhibitRuleNamespaceKey,
-		Value:     namespace,
-		MatchType: monitoringv1alpha1.MatchEqual,
-	}.String()
-
-	if !contains(v2NamespaceMatcher, ir.SourceMatchers) {
-		ir.SourceMatchers = append(ir.SourceMatchers, v2NamespaceMatcher)
-	}
-	if !contains(v2NamespaceMatcher, ir.TargetMatchers) {
-		ir.TargetMatchers = append(ir.TargetMatchers, v2NamespaceMatcher)
-	}
-
-	delete(ir.SourceMatch, inhibitRuleNamespaceKey)
-	delete(ir.TargetMatch, inhibitRuleNamespaceKey)
-
-	return ir
-}
-
-// enforceNamespaceForRoute modifies the route configuration to match alerts
-// originating only from the given namespace.
-func (cb *configBuilder) enforceNamespaceForRoute(r *route, namespace string) *route {
-	matchersV2Allowed := cb.amVersion.GTE(semver.MustParse("0.22.0"))
-
-	// Routes created from AlertmanagerConfig resources should only match
-	// alerts that come from the same namespace.
-	if matchersV2Allowed {
-		r.Matchers = append(r.Matchers, monitoringv1alpha1.Matcher{
-			Name:      "namespace",
-			Value:     namespace,
-			MatchType: monitoringv1alpha1.MatchEqual,
-		}.String())
-	} else {
-		r.Match["namespace"] = namespace
-	}
-
-	// Alerts should still be evaluated by the following routes.
-	r.Continue = true
-
-	return r
 }
 
 func (cb *configBuilder) getValidURLFromSecret(ctx context.Context, namespace string, selector v1.SecretKeySelector) (string, error) {
@@ -404,18 +437,26 @@ func (cb *configBuilder) convertRoute(in *monitoringv1alpha1.Route, crKey types.
 		}
 	}
 
+	var prefixedActiveTimeIntervals []string
+	if len(in.ActiveTimeIntervals) > 0 {
+		for _, ati := range in.ActiveTimeIntervals {
+			prefixedActiveTimeIntervals = append(prefixedActiveTimeIntervals, makeNamespacedString(ati, crKey))
+		}
+	}
+
 	return &route{
-		Receiver:          receiver,
-		GroupByStr:        in.GroupBy,
-		GroupWait:         in.GroupWait,
-		GroupInterval:     in.GroupInterval,
-		RepeatInterval:    in.RepeatInterval,
-		Continue:          in.Continue,
-		Match:             match,
-		MatchRE:           matchRE,
-		Matchers:          matchers,
-		Routes:            routes,
-		MuteTimeIntervals: prefixedMuteTimeIntervals,
+		Receiver:            receiver,
+		GroupByStr:          in.GroupBy,
+		GroupWait:           in.GroupWait,
+		GroupInterval:       in.GroupInterval,
+		RepeatInterval:      in.RepeatInterval,
+		Continue:            in.Continue,
+		Match:               match,
+		MatchRE:             matchRE,
+		Matchers:            matchers,
+		Routes:              routes,
+		MuteTimeIntervals:   prefixedMuteTimeIntervals,
+		ActiveTimeIntervals: prefixedActiveTimeIntervals,
 	}
 }
 
@@ -635,7 +676,6 @@ func (cb *configBuilder) convertSlackConfig(ctx context.Context, in monitoringv1
 			}
 
 			if a.ConfirmField != nil {
-
 				action.ConfirmField = &slackConfirmationField{
 					Text:        a.ConfirmField.Text,
 					Title:       a.ConfirmField.Title,
@@ -809,7 +849,6 @@ func (cb *configBuilder) convertOpsgenieConfig(ctx context.Context, in monitorin
 }
 
 func (cb *configBuilder) convertWeChatConfig(ctx context.Context, in monitoringv1alpha1.WeChatConfig, crKey types.NamespacedName) (*weChatConfig, error) {
-
 	out := &weChatConfig{
 		VSendResolved: in.SendResolved,
 		APIURL:        in.APIURL,
@@ -1049,28 +1088,31 @@ func (cb *configBuilder) convertSnsConfig(ctx context.Context, in monitoringv1al
 	}
 
 	if in.Sigv4 != nil {
-		accessKey, err := cb.store.GetSecretKey(ctx, crKey.Namespace, *in.Sigv4.AccessKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get access key")
-		}
-
-		secretKey, err := cb.store.GetSecretKey(ctx, crKey.Namespace, *in.Sigv4.SecretKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get AWS secret key")
-
-		}
-
 		out.Sigv4 = sigV4Config{
-			Region:    in.Sigv4.Region,
-			AccessKey: accessKey,
-			SecretKey: secretKey,
-			Profile:   in.Sigv4.Profile,
-			RoleARN:   in.Sigv4.RoleArn,
+			Region:  in.Sigv4.Region,
+			Profile: in.Sigv4.Profile,
+			RoleARN: in.Sigv4.RoleArn,
+		}
+
+		if in.Sigv4.AccessKey != nil && in.Sigv4.SecretKey != nil {
+			accessKey, err := cb.store.GetSecretKey(ctx, crKey.Namespace, *in.Sigv4.AccessKey)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get access key")
+			}
+
+			secretKey, err := cb.store.GetSecretKey(ctx, crKey.Namespace, *in.Sigv4.SecretKey)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get AWS secret key")
+
+			}
+			out.Sigv4.AccessKey = accessKey
+			out.Sigv4.SecretKey = secretKey
 		}
 	}
 
 	return out, nil
 }
+
 func (cb *configBuilder) convertInhibitRule(in *monitoringv1alpha1.InhibitRule) *inhibitRule {
 	matchersV2Allowed := cb.amVersion.GTE(semver.MustParse("0.22.0"))
 	var sourceMatchers []string
@@ -1140,8 +1182,8 @@ func (cb *configBuilder) convertInhibitRule(in *monitoringv1alpha1.InhibitRule) 
 	}
 }
 
-func convertMuteTimeInterval(in *monitoringv1alpha1.MuteTimeInterval, crKey types.NamespacedName) (*muteTimeInterval, error) {
-	muteTimeInterval := &muteTimeInterval{}
+func convertMuteTimeInterval(in *monitoringv1alpha1.MuteTimeInterval, crKey types.NamespacedName) (*timeInterval, error) {
+	muteTimeInterval := &timeInterval{}
 
 	for _, timeInterval := range in.TimeIntervals {
 		ti := timeinterval.TimeInterval{}
@@ -1303,7 +1345,7 @@ func (cb *configBuilder) convertHTTPConfig(ctx context.Context, in monitoringv1a
 	return out, nil
 }
 
-func (cb *configBuilder) convertTLSConfig(ctx context.Context, in *monitoringv1.SafeTLSConfig, crKey types.NamespacedName) tlsConfig {
+func (cb *configBuilder) convertTLSConfig(ctx context.Context, in *monitoringv1.SafeTLSConfig, crKey types.NamespacedName) *tlsConfig {
 	out := tlsConfig{
 		ServerName:         in.ServerName,
 		InsecureSkipVerify: in.InsecureSkipVerify,
@@ -1319,10 +1361,10 @@ func (cb *configBuilder) convertTLSConfig(ctx context.Context, in *monitoringv1.
 		out.KeyFile = path.Join(tlsAssetsDir, assets.TLSAssetKeyFromSecretSelector(crKey.Namespace, in.KeySecret).String())
 	}
 
-	return out
+	return &out
 }
 
-// sanitize the config against a specific AlertManager version
+// sanitize the config against a specific Alertmanager version
 // types may be sanitized in one of two ways:
 // 1. stripping the unsupported config and log a warning
 // 2. error which ensures that config will not be reconciled - this will be logged by a calling function
@@ -1347,10 +1389,28 @@ func (c *alertmanagerConfig) sanitize(amVersion semver.Version, logger log.Logge
 		}
 	}
 
-	if len(c.MuteTimeIntervals) > 0 && !amVersion.GTE(semver.MustParse("0.22.0")) {
+	if len(c.MuteTimeIntervals) > 0 && amVersion.LT(semver.MustParse("0.22.0")) {
 		// mute time intervals are unsupported < 0.22.0, and we already log the situation
 		// when handling the routes so just set to nil
 		c.MuteTimeIntervals = nil
+	}
+
+	if len(c.TimeIntervals) > 0 && amVersion.LT(semver.MustParse("0.24.0")) {
+		// time intervals are unsupported < 0.24.0, and we already log the situation
+		// when handling the routes so just set to nil
+		c.TimeIntervals = nil
+	}
+
+	for _, ti := range c.MuteTimeIntervals {
+		if err := ti.sanitize(amVersion, logger); err != nil {
+			return errors.Wrapf(err, "mute_time_intervals[%s]", ti.Name)
+		}
+	}
+
+	for _, ti := range c.TimeIntervals {
+		if err := ti.sanitize(amVersion, logger); err != nil {
+			return errors.Wrapf(err, "time_intervals[%s]", ti.Name)
+		}
 	}
 
 	return c.Route.sanitize(amVersion, logger)
@@ -1369,51 +1429,139 @@ func (gc *globalConfig) sanitize(amVersion semver.Version, logger log.Logger) er
 	}
 
 	// We need to sanitize the config for slack globally
-	// As of v0.22.0 AlertManager config supports passing URL via file name
-	fileURLAllowed := amVersion.GTE(semver.MustParse("0.22.0"))
+	// As of v0.22.0 Alertmanager config supports passing URL via file name
 	if gc.SlackAPIURLFile != "" {
-
 		if gc.SlackAPIURL != nil {
 			msg := "'slack_api_url' and 'slack_api_url_file' are mutually exclusive - 'slack_api_url' has taken precedence"
 			level.Warn(logger).Log("msg", msg)
 			gc.SlackAPIURLFile = ""
 		}
 
-		if !fileURLAllowed {
-			msg := "'slack_api_url_file' supported in AlertManager >= 0.22.0 only - dropping field from provided config"
+		if amVersion.LT(semver.MustParse("0.22.0")) {
+			msg := "'slack_api_url_file' supported in Alertmanager >= 0.22.0 only - dropping field from provided config"
 			level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
 			gc.SlackAPIURLFile = ""
 		}
 	}
 
-	if len(gc.OpsGenieAPIKeyFile) > 0 && !amVersion.GTE(semver.MustParse("0.24.0")) {
-		msg := "'opsgenie_api_key_file' supported in AlertManager >= 0.24.0 only - dropping field from provided config"
+	if gc.OpsGenieAPIKeyFile != "" && amVersion.LT(semver.MustParse("0.24.0")) {
+		msg := "'opsgenie_api_key_file' supported in Alertmanager >= 0.24.0 only - dropping field from provided config"
 		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
 		gc.OpsGenieAPIKeyFile = ""
+	}
+
+	if gc.SMTPAuthPasswordFile != "" && amVersion.LT(semver.MustParse("0.25.0")) {
+		msg := "'smtp_auth_password_file' supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		gc.SMTPAuthPasswordFile = ""
+	}
+
+	if gc.SMTPAuthPassword != "" && gc.SMTPAuthPasswordFile != "" {
+		msg := "'smtp_auth_password' and 'smtp_auth_password_file' are mutually exclusive - 'smtp_auth_password' has taken precedence"
+		level.Warn(logger).Log("msg", msg)
+		gc.SMTPAuthPasswordFile = ""
+	}
+
+	if gc.VictorOpsAPIKeyFile != "" && amVersion.LT(semver.MustParse("0.25.0")) {
+		msg := "'victorops_api_key_file' supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		gc.VictorOpsAPIKeyFile = ""
+	}
+
+	if gc.VictorOpsAPIKey != "" && gc.VictorOpsAPIKeyFile != "" {
+		msg := "'victorops_api_key' and 'victorops_api_key_file' are mutually exclusive - 'victorops_api_key' has taken precedence"
+		level.Warn(logger).Log("msg", msg)
+		gc.VictorOpsAPIKeyFile = ""
 	}
 
 	return nil
 }
 
-// sanitize httpClientConfig
 func (hc *httpClientConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
 	if hc == nil {
 		return nil
 	}
 
 	if hc.Authorization != nil && !amVersion.GTE(semver.MustParse("0.22.0")) {
-		return fmt.Errorf("'authorization' set in 'http_config' but supported in AlertManager >= 0.22.0 only")
+		return fmt.Errorf("'authorization' set in 'http_config' but supported in Alertmanager >= 0.22.0 only")
 	}
 
 	if hc.OAuth2 != nil && !amVersion.GTE(semver.MustParse("0.22.0")) {
-		return fmt.Errorf("'oauth2' set in 'http_config' but supported in AlertManager >= 0.22.0 only")
+		return fmt.Errorf("'oauth2' set in 'http_config' but supported in Alertmanager >= 0.22.0 only")
 	}
 
 	if hc.FollowRedirects != nil && !amVersion.GTE(semver.MustParse("0.22.0")) {
-		msg := "'follow_redirects' set in 'http_config' but supported in AlertManager >= 0.22.0 only - dropping field from provided config"
+		msg := "'follow_redirects' set in 'http_config' but supported in Alertmanager >= 0.22.0 only - dropping field from provided config"
 		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
 		hc.FollowRedirects = nil
 	}
+
+	if hc.EnableHTTP2 != nil && !amVersion.GTE(semver.MustParse("0.25.0")) {
+		msg := "'enable_http2' set in 'http_config' but supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		hc.EnableHTTP2 = nil
+	}
+
+	if err := hc.TLSConfig.sanitize(amVersion, logger); err != nil {
+		return err
+	}
+
+	return hc.OAuth2.sanitize(amVersion, logger)
+}
+
+var tlsVersions = map[string]int{
+	"":      0x0000,
+	"TLS13": tls.VersionTLS13,
+	"TLS12": tls.VersionTLS12,
+	"TLS11": tls.VersionTLS11,
+	"TLS10": tls.VersionTLS10,
+}
+
+func (tc *tlsConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
+	if tc == nil {
+		return nil
+	}
+
+	if tc.MinVersion != "" && !amVersion.GTE(semver.MustParse("0.25.0")) {
+		msg := "'min_version' set in 'tls_config' but supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		tc.MinVersion = ""
+	}
+
+	if tc.MaxVersion != "" && !amVersion.GTE(semver.MustParse("0.25.0")) {
+		msg := "'max_version' set in 'tls_config' but supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		tc.MaxVersion = ""
+	}
+
+	minVersion, found := tlsVersions[tc.MinVersion]
+	if !found {
+		return fmt.Errorf("unknown TLS version: %s", tc.MinVersion)
+	}
+
+	maxVersion, found := tlsVersions[tc.MaxVersion]
+	if !found {
+		return fmt.Errorf("unknown TLS version: %s", tc.MaxVersion)
+	}
+
+	if minVersion != 0 && maxVersion != 0 && minVersion > maxVersion {
+		return fmt.Errorf("max TLS version %q must be greater than or equal to min TLS version %q", tc.MaxVersion, tc.MinVersion)
+	}
+
+	return nil
+}
+
+func (o *oauth2) sanitize(amVersion semver.Version, logger log.Logger) error {
+	if o == nil {
+		return nil
+	}
+
+	if o.ProxyURL != "" && !amVersion.GTE(semver.MustParse("0.25.0")) {
+		msg := "'proxy_url' set in 'oauth2' but supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		o.ProxyURL = ""
+	}
+
 	return nil
 }
 
@@ -1423,6 +1571,12 @@ func (r *receiver) sanitize(amVersion semver.Version, logger log.Logger) error {
 		return nil
 	}
 	withLogger := log.With(logger, "receiver", r.Name)
+
+	for _, conf := range r.EmailConfigs {
+		if err := conf.sanitize(amVersion, withLogger); err != nil {
+			return err
+		}
+	}
 
 	for _, conf := range r.OpsgenieConfigs {
 		if err := conf.sanitize(amVersion, withLogger); err != nil {
@@ -1478,6 +1632,33 @@ func (r *receiver) sanitize(amVersion semver.Version, logger log.Logger) error {
 		}
 	}
 
+	for _, conf := range r.DiscordConfigs {
+		if err := conf.sanitize(amVersion, withLogger); err != nil {
+			return err
+		}
+	}
+
+	for _, conf := range r.WebexConfigs {
+		if err := conf.sanitize(amVersion, withLogger); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ec *emailConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
+	if ec.AuthPasswordFile != "" && amVersion.LT(semver.MustParse("0.25.0")) {
+		msg := "'auth_password_file' supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		ec.AuthPasswordFile = ""
+	}
+
+	if ec.AuthPassword != "" && ec.AuthPasswordFile != "" {
+		level.Warn(logger).Log("msg", "'auth_password' and 'auth_password_file' are mutually exclusive for email receiver config - 'auth_password' has taken precedence")
+		ec.AuthPasswordFile = ""
+	}
+
 	return nil
 }
 
@@ -1489,18 +1670,18 @@ func (ogc *opsgenieConfig) sanitize(amVersion semver.Version, logger log.Logger)
 	lessThanV0_24 := amVersion.LT(semver.MustParse("0.24.0"))
 
 	if ogc.Actions != "" && lessThanV0_24 {
-		msg := "opsgenie_config 'actions' supported in AlertManager >= 0.24.0 only - dropping field from provided config"
+		msg := "opsgenie_config 'actions' supported in Alertmanager >= 0.24.0 only - dropping field from provided config"
 		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
 		ogc.Actions = ""
 	}
 
 	if ogc.Entity != "" && lessThanV0_24 {
-		msg := "opsgenie_config 'entity' supported in AlertManager >= 0.24.0 only - dropping field from provided config"
+		msg := "opsgenie_config 'entity' supported in Alertmanager >= 0.24.0 only - dropping field from provided config"
 		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
 		ogc.Entity = ""
 	}
 	if ogc.UpdateAlerts != nil && lessThanV0_24 {
-		msg := "update_alerts 'entity' supported in AlertManager >= 0.24.0 only - dropping field from provided config"
+		msg := "update_alerts 'entity' supported in Alertmanager >= 0.24.0 only - dropping field from provided config"
 		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
 		ogc.UpdateAlerts = nil
 	}
@@ -1520,7 +1701,7 @@ func (ogc *opsgenieConfig) sanitize(amVersion semver.Version, logger log.Logger)
 	}
 
 	if lessThanV0_24 {
-		msg := "'api_key_file' supported in AlertManager >= 0.24.0 only - dropping field from provided config"
+		msg := "'api_key_file' supported in Alertmanager >= 0.24.0 only - dropping field from provided config"
 		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
 		ogc.APIKeyFile = ""
 	}
@@ -1530,18 +1711,49 @@ func (ogc *opsgenieConfig) sanitize(amVersion semver.Version, logger log.Logger)
 
 func (ops *opsgenieResponder) sanitize(amVersion semver.Version, logger log.Logger) error {
 	if ops.Type == "teams" && amVersion.LT(semver.MustParse("0.24.0")) {
-		return fmt.Errorf("'teams' set in 'opsgenieResponder' but supported in AlertManager >= 0.24.0 only")
+		return fmt.Errorf("'teams' set in 'opsgenieResponder' but supported in Alertmanager >= 0.24.0 only")
 	}
 	return nil
 }
 
 func (pdc *pagerdutyConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
+	lessThanV0_25 := amVersion.LT(semver.MustParse("0.25.0"))
+
+	if pdc.Source != "" && lessThanV0_25 {
+		msg := "'source' supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		pdc.Source = ""
+	}
+
+	if pdc.RoutingKeyFile != "" && lessThanV0_25 {
+		msg := "'routing_key_file' supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		pdc.RoutingKeyFile = ""
+	}
+
+	if pdc.ServiceKeyFile != "" && lessThanV0_25 {
+		msg := "'service_key_file' supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		pdc.ServiceKeyFile = ""
+	}
+
+	if pdc.ServiceKey != "" && pdc.ServiceKeyFile != "" {
+		msg := "'service_key' and 'service_key_file' are mutually exclusive for pagerdury receiver config - 'service_key' has taken precedence"
+		level.Warn(logger).Log("msg", msg)
+		pdc.ServiceKeyFile = ""
+	}
+
+	if pdc.RoutingKey != "" && pdc.RoutingKeyFile != "" {
+		msg := "'routing_key' and 'routing_key_file' are mutually exclusive for pagerdury receiver config - 'routing_key' has taken precedence"
+		level.Warn(logger).Log("msg", msg)
+		pdc.RoutingKeyFile = ""
+	}
+
 	return pdc.HTTPConfig.sanitize(amVersion, logger)
 }
 
 func (poc *pushoverConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
 	return poc.HTTPConfig.sanitize(amVersion, logger)
-
 }
 
 func (sc *slackConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
@@ -1554,17 +1766,16 @@ func (sc *slackConfig) sanitize(amVersion semver.Version, logger log.Logger) err
 	}
 
 	// We need to sanitize the config for slack receivers
-	// As of v0.22.0 AlertManager config supports passing URL via file name
-	fileURLAllowed := amVersion.GTE(semver.MustParse("0.22.0"))
-	if sc.APIURL != "" {
-		msg := "'api_url' and 'api_url_file' are mutually exclusive for slack receiver config - 'api_url' has taken precedence"
-		level.Warn(logger).Log("msg", msg)
+	// As of v0.22.0 Alertmanager config supports passing URL via file name
+	if sc.APIURLFile != "" && amVersion.LT(semver.MustParse("0.22.0")) {
+		msg := "'api_url_file' supported in Alertmanager >= 0.22.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
 		sc.APIURLFile = ""
 	}
 
-	if !fileURLAllowed {
-		msg := "'api_url_file' supported in AlertManager >= 0.22.0 only - dropping field from provided config"
-		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+	if sc.APIURL != "" && sc.APIURLFile != "" {
+		msg := "'api_url' and 'api_url_file' are mutually exclusive for slack receiver config - 'api_url' has taken precedence"
+		level.Warn(logger).Log("msg", msg)
 		sc.APIURLFile = ""
 	}
 
@@ -1572,7 +1783,23 @@ func (sc *slackConfig) sanitize(amVersion semver.Version, logger log.Logger) err
 }
 
 func (voc *victorOpsConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
-	return voc.HTTPConfig.sanitize(amVersion, logger)
+	if err := voc.HTTPConfig.sanitize(amVersion, logger); err != nil {
+		return err
+	}
+
+	if voc.APIKeyFile != "" && amVersion.LT(semver.MustParse("0.25.0")) {
+		msg := "'api_key_file' supported in Alertmanager >= 0.25.0 only - dropping field from provided config"
+		level.Warn(logger).Log("msg", msg, "current_version", amVersion.String())
+		voc.APIKeyFile = ""
+	}
+
+	if voc.APIKey != "" && voc.APIKeyFile != "" {
+		msg := "'api_key' and 'api_key_file' are mutually exclusive for victorops receiver config - 'api_url' has taken precedence"
+		level.Warn(logger).Log("msg", msg)
+		voc.APIKeyFile = ""
+	}
+
+	return nil
 }
 
 func (whc *webhookConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
@@ -1599,6 +1826,28 @@ func (tc *telegramConfig) sanitize(amVersion semver.Version, logger log.Logger) 
 
 	if tc.BotToken == "" {
 		return fmt.Errorf("mandatory field %q is empty", "botToken")
+	}
+
+	return tc.HTTPConfig.sanitize(amVersion, logger)
+}
+
+func (tc *discordConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
+	discordAllowed := amVersion.GTE(semver.MustParse("0.25.0"))
+	if !discordAllowed {
+		return fmt.Errorf(`invalid syntax in receivers config; discord integration is available in Alertmanager >= 0.25.0`)
+	}
+
+	return tc.HTTPConfig.sanitize(amVersion, logger)
+}
+
+func (tc *webexConfig) sanitize(amVersion semver.Version, logger log.Logger) error {
+	webexAllowed := amVersion.GTE(semver.MustParse("0.25.0"))
+	if !webexAllowed {
+		return fmt.Errorf(`invalid syntax in receivers config; webex integration is available in Alertmanager >= 0.25.0`)
+	}
+
+	if tc.RoomID == "" {
+		return errors.Errorf("mandatory field %q is empty", "room_id")
 	}
 
 	return tc.HTTPConfig.sanitize(amVersion, logger)
@@ -1635,6 +1884,21 @@ func (ir *inhibitRule) sanitize(amVersion semver.Version, logger log.Logger) err
 	return nil
 }
 
+func (ti *timeInterval) sanitize(amVersion semver.Version, logger log.Logger) error {
+	if amVersion.GTE(semver.MustParse("0.25.0")) {
+		return nil
+	}
+
+	for i, tis := range ti.TimeIntervals {
+		if tis.Location != nil {
+			level.Warn(logger).Log("msg", "time_interval location is supported in Alertmanager >= 0.25.0 only - dropping config")
+			ti.TimeIntervals[i].Location = nil
+		}
+	}
+
+	return nil
+}
+
 // sanitize a route and all its child routes.
 // Warns if the config is using deprecated syntax against a later version.
 // Returns an error if the config could potentially break routing logic
@@ -1645,6 +1909,7 @@ func (r *route) sanitize(amVersion semver.Version, logger log.Logger) error {
 
 	matchersV2Allowed := amVersion.GTE(semver.MustParse("0.22.0"))
 	muteTimeIntervalsAllowed := matchersV2Allowed
+	activeTimeIntervalsAllowed := amVersion.GTE(semver.MustParse("0.24.0"))
 	withLogger := log.With(logger, "receiver", r.Receiver)
 
 	if !matchersV2Allowed && checkNotEmptyStrSlice(r.Matchers) {
@@ -1660,6 +1925,12 @@ func (r *route) sanitize(amVersion semver.Version, logger log.Logger) error {
 		msg := "named mute time intervals in route is supported in Alertmanager >= 0.22.0 only - dropping config"
 		level.Warn(withLogger).Log("msg", msg, "mute_time_intervals", r.MuteTimeIntervals)
 		r.MuteTimeIntervals = nil
+	}
+
+	if !activeTimeIntervalsAllowed {
+		msg := "active time intervals in route is supported in Alertmanager >= 0.24.0 only - dropping config"
+		level.Warn(withLogger).Log("msg", msg, "active_time_intervals", r.ActiveTimeIntervals)
+		r.ActiveTimeIntervals = nil
 	}
 
 	for i, child := range r.Routes {

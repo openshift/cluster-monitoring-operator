@@ -25,14 +25,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
 
@@ -95,6 +94,8 @@ func Main() int {
 	telemetryConfigFile := flagset.String("telemetry-config", "/etc/cluster-monitoring-operator/telemetry/metrics.yaml", "Path to telemetry-config.")
 	remoteWrite := flagset.Bool("enabled-remote-write", false, "Whether to use legacy telemetry write protocol or Prometheus remote write.")
 	assetsPath := flagset.String("assets", "/assets", "The path to the assets directory.")
+	certFile := flagset.String("cert-file", "", "The path to the server certificate")
+	keyFile := flagset.String("key-file", "", "The path to the server key")
 	images := images{}
 	flag.Var(&images, "images", "Images to use for containers managed by the cluster-monitoring-operator.")
 	flag.Parse()
@@ -150,12 +151,6 @@ func Main() int {
 		return 1
 	}
 
-	r := prometheus.NewRegistry()
-	r.MustRegister(
-		prometheus.NewGoCollector(),
-		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
-	)
-
 	config, err := clientcmd.BuildConfigFromFlags(*apiserver, *kubeconfigPath)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
@@ -191,9 +186,8 @@ func Main() int {
 		return 1
 	}
 
-	o.RegisterMetrics(r)
+	// Start the pprof endpoints on the loopback interface.
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
@@ -204,6 +198,13 @@ func Main() int {
 	wg, ctx := errgroup.WithContext(ctx)
 
 	wg.Go(func() error { return o.Run(ctx) })
+
+	srv, err := metrics.NewServer("cluster-monitoring-operator", config, *certFile, *keyFile)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+		return 1
+	}
+	wg.Go(func() error { return srv.Run(ctx) })
 
 	term := make(chan os.Signal)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
