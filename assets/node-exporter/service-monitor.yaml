@@ -26,6 +26,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: node-exporter.openshift-monitoring.svc
   jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
