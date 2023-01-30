@@ -9,7 +9,7 @@ function(params) {
     _config+:: {
       namespace: cfg.namespace,
       tlsCipherSuites: [
-        // List from https://github.com/prometheus-operator/kube-prometheus/blob/master/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet
+        // List from https://github.com/jan--f/kube-prometheus/blob/master/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet
         'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256',
         'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
         'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384',

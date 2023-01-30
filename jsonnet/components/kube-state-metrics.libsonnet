@@ -1,7 +1,7 @@
 local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
 
-local kubeStateMetrics = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-state-metrics.libsonnet';
+local kubeStateMetrics = import 'github.com/jan--f/kube-prometheus/jsonnet/kube-prometheus/components/kube-state-metrics.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)

@@ -325,7 +325,7 @@ local inCluster =
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
-            // Temporarily commented since upstream change https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/767 not merged yet
+            // Temporarily commented since upstream change https://github.com/jan--f/kubernetes-mixin/pull/767 not merged yet
             // diskDeviceSelector: $.values.nodeExporter.mixin._config.diskDeviceSelector,
             diskDeviceSelector: 'device=~"(/dev.+)|%s"' % std.join('|', ['mmcblk.p.+', 'nvme.+', 'rbd.+', 'sd.+', 'vd.+', 'xvd.+', 'dm-.+', 'dasd.+']),
             hostNetworkInterfaceSelector: 'device!~"veth.+"',
@@ -383,7 +383,7 @@ local inCluster =
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
   (import './utils/anti-affinity.libsonnet') +
-  (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
+  (import 'github.com/jan--f/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
   (import './utils/ibm-cloud-managed-profile.libsonnet') +
   (import './components/prometheus-adapter-audit.libsonnet') +
   {};  // Including empty object to simplify adding and removing imports during development

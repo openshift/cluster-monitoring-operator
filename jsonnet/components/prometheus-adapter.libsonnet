@@ -13,7 +13,7 @@ local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory;
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 
-local prometheusAdapter = (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet');
+local prometheusAdapter = (import 'github.com/jan--f/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet');
 
 function(params)
   local cfg = params;

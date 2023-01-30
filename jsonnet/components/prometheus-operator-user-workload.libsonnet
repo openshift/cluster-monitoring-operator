@@ -1,6 +1,6 @@
 local tlsVolumeName = 'prometheus-operator-user-workload-tls';
 
-local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
+local operator = import 'github.com/jan--f/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)

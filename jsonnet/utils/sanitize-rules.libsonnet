@@ -1,4 +1,4 @@
-local k8sMixinUtils = import 'github.com/kubernetes-monitoring/kubernetes-mixin/lib/utils.libsonnet';
+local k8sMixinUtils = import 'github.com/jan--f/kubernetes-mixin/lib/utils.libsonnet';
 
 local excludedRuleGroups = [
   'kube-apiserver-availability.rules',

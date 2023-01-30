@@ -8687,6 +8687,33 @@ data:
                     "useTags": false
                 },
                 {
+                    "allValue": ".+",
+                    "current": {
+                        "text": "all",
+                        "value": "$__all"
+                    },
+                    "datasource": "$datasource",
+                    "hide": 0,
+                    "includeAll": true,
+                    "label": null,
+                    "multi": false,
+                    "name": "role",
+                    "options": [
+
+                    ],
+                    "query": "label_values(kube_node_role{cluster=\"$cluster\"}, role)",
+                    "refresh": 2,
+                    "regex": "",
+                    "sort": 1,
+                    "tagValuesQuery": "",
+                    "tags": [
+
+                    ],
+                    "tagsQuery": "",
+                    "type": "query",
+                    "useTags": false
+                },
+                {
                     "allValue": null,
                     "current": {
                         "text": "",
@@ -8701,7 +8728,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_node_info{cluster=\"$cluster\"}, node)",
+                    "query": "label_values(kube_node_info{cluster=\"$cluster\"} * on (node) group_right kube_node_role{cluster=\"$cluster\", role=~\"$role\"}, node)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,

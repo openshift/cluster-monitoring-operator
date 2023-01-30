@@ -2,7 +2,7 @@ local tlsVolumeName = 'prometheus-operator-tls';
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 
-local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
+local operator = import 'github.com/jan--f/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 local conversionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/conversion.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 

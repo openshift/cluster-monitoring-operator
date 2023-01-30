@@ -1,4 +1,4 @@
-local controlPlane = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/k8s-control-plane.libsonnet';
+local controlPlane = import 'github.com/jan--f/kube-prometheus/jsonnet/kube-prometheus/components/k8s-control-plane.libsonnet';
 
 function(params)
   local cfg = params;

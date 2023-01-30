@@ -4,7 +4,7 @@ local tlsVolumeName = 'node-exporter-tls';
 local wtmpPath = '/var/log/wtmp';
 local wtmpVolumeName = 'node-exporter-wtmp';
 
-local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
+local nodeExporter = import 'github.com/jan--f/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 
 function(params)

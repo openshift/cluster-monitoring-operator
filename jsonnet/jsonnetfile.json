@@ -13,11 +13,11 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/prometheus-operator/kube-prometheus",
+          "remote": "https://github.com/jan--f/kube-prometheus",
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "main"
+      "version": "node-role-variable"
     },
     {
       "source": {
