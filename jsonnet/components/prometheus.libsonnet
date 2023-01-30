@@ -230,7 +230,6 @@ function(params)
             scheme: 'https',
             tlsConfig: {
               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-              serverName: 'prometheus-k8s',
               certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
               keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },
@@ -264,7 +263,6 @@ function(params)
             scheme: 'https',
             tlsConfig: {
               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-              serverName: 'prometheus-k8s-thanos-sidecar',
               certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
               keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             },

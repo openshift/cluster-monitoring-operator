@@ -100,6 +100,7 @@ function(params) {
             keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
             insecureSkipVerify: false,
             caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+            serverName: std.format('%s.%s.svc', [cfg.name, cfg.namespace]),
           },
           metricRelabelings: [
             // Drop metrics that come automatically from the Kubernetes
@@ -122,7 +123,7 @@ function(params) {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
     metadata: {
-      name: 'cluster-monitoring-operator',
+      name: cfg.name,
       annotations: {
         'include.release.openshift.io/ibm-cloud-managed': 'true',
         'include.release.openshift.io/self-managed-high-availability': 'true',
