@@ -38,6 +38,35 @@ function(params)
       },
     },
 
+    configMap+: {
+      data: {
+        'config.yaml': std.manifestYamlDoc(pa._config.config {
+          // The containerQuery is overwritten to ignore metrics scraped from unmanaged ServiceMonitors.
+          // Label selector `job="kubelet"` is added.
+          // refer to: https://issues.redhat.com/browse/OCPBUGS-4069
+          // The orginal query is at https://github.com/prometheus-operator/kube-prometheus/blob/release-0.12/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet#L40
+          resourceRules+: {
+            cpu+: {
+              containerQuery: |||
+                sum by (<<.GroupBy>>) (
+                  irate (
+                      %(containerMetricsPrefix)scontainer_cpu_usage_seconds_total{<<.LabelMatchers>>,container!="",pod!="",job="kubelet"}[%(kubelet)s]
+                  )
+                )
+              ||| % { kubelet: pa._config.rangeIntervals.kubelet, containerMetricsPrefix: pa._config.containerMetricsPrefix },
+            },
+            memory+: {
+              containerQuery: |||
+                sum by (<<.GroupBy>>) (
+                  %(containerMetricsPrefix)scontainer_memory_working_set_bytes{<<.LabelMatchers>>,container!="",pod!="",job="kubelet"}
+                )
+              ||| % { containerMetricsPrefix: pa._config.containerMetricsPrefix },
+            },
+          },
+        }),
+      },
+    },
+
     clusterRoleAggregatedMetricsReader+:
       {
         metadata+: {
