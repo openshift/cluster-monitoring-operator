@@ -32,10 +32,12 @@ import (
 type Server struct {
 	name              string
 	kubeClient        *kubernetes.Clientset
+	kubeConfig        string
 	certFile, keyFile string
 }
 
-func NewServer(name string, config *rest.Config, certFile, keyFile string) (*Server, error) {
+// NewServer returns a functional Server.
+func NewServer(name string, config *rest.Config, kubeConfig, certFile, keyFile string) (*Server, error) {
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
@@ -44,12 +46,15 @@ func NewServer(name string, config *rest.Config, certFile, keyFile string) (*Ser
 	return &Server{
 		name:       name,
 		kubeClient: kubeClient,
+		kubeConfig: kubeConfig,
 		certFile:   certFile,
 		keyFile:    keyFile,
 	}, nil
 }
 
-// Run starts the HTTP server exposing the Prometheus /metrics endpoint on port :8443.
+// Run starts the HTTPS server exposing the Prometheus /metrics endpoint on port :8443.
+// The server performs authn/authz as prescribed by
+// https://github.com/openshift/enhancements/blob/master/enhancements/monitoring/client-cert-scraping.md.
 func (s *Server) Run(ctx context.Context) error {
 	var server *genericapiserver.GenericAPIServer
 
@@ -66,7 +71,7 @@ func (s *Server) Run(ctx context.Context) error {
 		servingInfo,
 		operatorv1alpha1.DelegatedAuthentication{},
 		operatorv1alpha1.DelegatedAuthorization{},
-		"",
+		s.kubeConfig,
 		s.kubeClient,
 		nil, // disable leader election
 	)
