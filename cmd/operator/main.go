@@ -199,7 +199,7 @@ func Main() int {
 
 	wg.Go(func() error { return o.Run(ctx) })
 
-	srv, err := metrics.NewServer("cluster-monitoring-operator", config, *certFile, *keyFile)
+	srv, err := metrics.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
