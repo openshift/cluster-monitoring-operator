@@ -897,6 +897,15 @@ func getArgValue(container v1.Container, flag string) (argValue, bool) {
 	return argValue{}, false
 }
 
+func argumentPresent(container v1.Container, flag string) bool {
+	for _, arg := range container.Args {
+		if arg == flag {
+			return true
+		}
+	}
+	return false
+}
+
 func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 	for _, tc := range []struct {
 		name                              string
@@ -2800,6 +2809,73 @@ func TestNodeExporter(t *testing.T) {
 	if !reflect.DeepEqual(ds, ds2) {
 		t.Fatal("expected NodeExporterDaemonSet to be an idempotent function")
 	}
+}
+
+func TestNodeExporterCollectorSettings(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		config      string
+		argsPresent []string
+		argsAbsent  []string
+	}{
+		{
+			name:        "default config",
+			config:      "",
+			argsPresent: []string{"--no-collector.cpufreq"},
+			argsAbsent:  []string{"--collector.cpufreq"},
+		},
+		{
+			name: "enable cpufreq collector",
+			config: `
+nodeExporter:
+  collectors:
+    cpufreq:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.cpufreq"},
+			argsAbsent:  []string{"--no-collector.cpufreq"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(st *testing.T) {
+			c, err := NewConfigFromString(test.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			c.SetImages(map[string]string{
+				"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
+				"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
+			})
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			ds, err := f.NodeExporterDaemonSet()
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, container := range ds.Spec.Template.Spec.Containers {
+				switch container.Name {
+				case "node-exporter":
+					for _, arg := range test.argsPresent {
+						exist := argumentPresent(container, arg)
+						if !exist {
+							t.Fatalf("missing %s argument for Node Exporter", arg)
+						}
+					}
+
+					for _, arg := range test.argsAbsent {
+						exist := argumentPresent(container, arg)
+						if exist {
+							t.Fatalf("unexpected %s argument for Node Exporter", arg)
+						}
+					}
+				}
+			}
+		})
+
+	}
+
 }
 
 func TestKubeStateMetrics(t *testing.T) {

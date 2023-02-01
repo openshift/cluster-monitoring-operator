@@ -48,6 +48,8 @@ type ClusterMonitoringConfiguration struct {
 	TelemeterClientConfig *TelemeterClientConfig `json:"telemeterClient,omitempty"`
 	// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
+	// `NodeExporterConfig` defines settings for the `node-exporter` agent.
+	NodeExporterConfig NodeExporterConfig `json:"nodeExporter,omitempty"`
 }
 
 // The `AlertmanagerMainConfig` resource defines settings for the
@@ -239,6 +241,32 @@ type ThanosQuerierConfig struct {
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+}
+
+// The `NodeExporterConfig` resource defines settings for the `node-exporter` agent.
+type NodeExporterConfig struct {
+	// Defines which collectors are enabled and their additional configuration parameters.
+	Collectors NodeExporterCollectorConfig `json:"collectors,omitempty"`
+}
+
+// The `NodeExporterCollectorConfig` resource defines settings for individual collectors
+// of the `node-exporter` agent.
+type NodeExporterCollectorConfig struct {
+	// Defines the configuration of the `cpufreq` collector, which collects CPU frequency statistics.
+	// Disabled by default.
+	CpuFreq NodeExporterCollectorCpufreqConfig `json:"cpufreq,omitempty"`
+}
+
+// The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
+// the `cpufreq` collector of the `node-exporter` agent.
+// By default, the `cpufreq` collector is disabled.
+// Under certain circumstances, enabling the cpufreq collector increases CPU usage on machines with many cores.
+// If you enable this collector and have machines with many cores, monitor your systems closely for excessive CPU usage.
+// Please refer to https://github.com/prometheus/node_exporter/issues/1880 for more details.
+// A related bug: https://bugzilla.redhat.com/show_bug.cgi?id=1972076
+type NodeExporterCollectorCpufreqConfig struct {
+	// A Boolean flag that enables or disables the `cpufreq` colletor.
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // The `UserWorkloadConfiguration` resource defines the settings
