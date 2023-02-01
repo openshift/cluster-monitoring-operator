@@ -34,30 +34,52 @@ func TestNodeExporterCollectorEnablement(t *testing.T) {
 		})
 	})
 
-	f.PrometheusK8sClient.WaitForQueryReturn(
-		t, 5*time.Minute, `absent(node_scrape_collector_success{collector="cpufreq"})`,
-		func(v float64) error {
-			if v == 1 {
-				return nil
-			}
-			return fmt.Errorf("expecting absent(node_scrape_collector_success{collector=\"cpufreq\"}) = 1 but got %v.", v)
-		},
-	)
-
-	data := `nodeExporter:
+	tests := []struct {
+		nameCollector string
+		config        string
+	}{
+		{
+			nameCollector: "cpufreq",
+			config: `
+nodeExporter:
   collectors:
     cpufreq:
-      enabled: true
-`
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
-
-	f.PrometheusK8sClient.WaitForQueryReturn(
-		t, 5*time.Minute, `min(node_scrape_collector_success{collector="cpufreq"})`,
-		func(v float64) error {
-			if v == 0 {
-				return fmt.Errorf("expecting min(node_scrape_collector_success{collector=\"cpufreq\"})> 0 but got %v.", v)
-			}
-			return nil
+      enabled: true`,
 		},
-	)
+		{
+			nameCollector: "tcpstat",
+			config: `
+nodeExporter:
+  collectors:
+    tcpstat:
+      enabled: true`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run("Enable Collector: "+test.nameCollector, func(st *testing.T) {
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t, 5*time.Minute, fmt.Sprintf(`absent(node_scrape_collector_success{collector="%s"})`, test.nameCollector),
+				func(v float64) error {
+					if v == 1 {
+						return nil
+					}
+					return fmt.Errorf(`expecting absent(node_scrape_collector_success{collector="%s"}) = 1 but got %v.`, test.nameCollector, v)
+				},
+			)
+
+			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
+
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t, 5*time.Minute, fmt.Sprintf(`min(node_scrape_collector_success{collector="%s"})`, test.nameCollector),
+				func(v float64) error {
+					if v == 0 {
+						return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="%s"})> 0 but got %v.`, test.nameCollector, v)
+					}
+					return nil
+				},
+			)
+		})
+	}
+
 }
