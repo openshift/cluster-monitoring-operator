@@ -2832,10 +2832,12 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 		argsAbsent  []string
 	}{
 		{
-			name:        "default config",
-			config:      "",
-			argsPresent: []string{"--no-collector.cpufreq"},
-			argsAbsent:  []string{"--collector.cpufreq"},
+			name:   "default config",
+			config: "",
+			argsPresent: []string{"--no-collector.cpufreq",
+				"--no-collector.tcpstat"},
+			argsAbsent: []string{"--collector.cpufreq",
+				"--collector.tcpstat"},
 		},
 		{
 			name: "enable cpufreq collector",
@@ -2847,6 +2849,17 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.cpufreq"},
 			argsAbsent:  []string{"--no-collector.cpufreq"},
+		},
+		{
+			name: "enable tcpstat collector",
+			config: `
+nodeExporter:
+  collectors:
+    tcpstat:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.tcpstat"},
+			argsAbsent:  []string{"--no-collector.tcpstat"},
 		},
 	}
 

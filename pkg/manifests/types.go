@@ -261,6 +261,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `cpufreq` collector, which collects CPU frequency statistics.
 	// Disabled by default.
 	CpuFreq NodeExporterCollectorCpufreqConfig `json:"cpufreq,omitempty"`
+	// Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics.
+	// Disabled by default.
+	TcpStat NodeExporterCollectorTcpStatConfig `json:"tcpstat,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -272,6 +275,14 @@ type NodeExporterCollectorConfig struct {
 // A related bug: https://bugzilla.redhat.com/show_bug.cgi?id=1972076
 type NodeExporterCollectorCpufreqConfig struct {
 	// A Boolean flag that enables or disables the `cpufreq` colletor.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorTcpStatConfig` resource works as an on/off switch for
+// the `tcpstat` collector of the `node-exporter` agent.
+// By default, the `tcpstat` collector is disabled.
+type NodeExporterCollectorTcpStatConfig struct {
+	// A Boolean flag that enables or disables the `tcpstat` colletor.
 	Enabled bool `json:"enabled,omitempty"`
 }
 

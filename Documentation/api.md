@@ -27,6 +27,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
 * [NodeExporterConfig](#nodeexporterconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
 * [PrometheusK8sConfig](#prometheusk8sconfig)
@@ -188,6 +189,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | cpufreq | [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig) | Defines the configuration of the `cpufreq` collector, which collects CPU frequency statistics. Disabled by default. |
+| tcpstat | [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig) | Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -203,6 +205,21 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `cpufreq` colletor. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorTcpStatConfig
+
+#### Description
+
+The `NodeExporterCollectorTcpStatConfig` resource works as an on/off switch for the `tcpstat` collector of the `node-exporter` agent. By default, the `tcpstat` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `tcpstat` colletor. |
 
 [Back to TOC](#table-of-contents)
 
