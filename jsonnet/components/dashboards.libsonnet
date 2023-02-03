@@ -1,4 +1,5 @@
 local kubernetesGrafana = import 'github.com/brancz/kubernetes-grafana/grafana/grafana.libsonnet';
+local grafana = import 'github.com/grafana/grafonnet-lib/grafonnet/grafana.libsonnet';
 
 function(params)
   local cfg = params;
@@ -49,7 +50,16 @@ function(params)
       false
   ;
 
-  local glib = kubernetesGrafana(cfg) {};
+  local nodeDashboards = [
+    'k8s-resources-node.json',
+    'node-rsrc-use.json',
+  ];
+
+  local glib = kubernetesGrafana(cfg) + {
+    _config+: {
+      clusterLabel: 'cluster',
+    },
+  };
 
   local unstackDashboards = function(dashboards)
     std.map(
@@ -69,6 +79,62 @@ function(params)
                       panel, row.panels),
                 }, data[k].rows),
             }
+            for k in std.objectFields(data)
+          },
+        };
+        updatedDashboard {
+          data: { [k]: std.manifestJsonEx(updatedDashboard.data[k], '    ') for k in std.objectFields(updatedDashboard.data) },
+        },
+      dashboards
+    );
+
+  local addRoleTemplate = function(templateList)
+    local template = grafana.template;
+    std.flattenArrays([
+      if std.member(['node', 'instance'], t.name) then
+        [
+          template.new(
+            name='role',
+            datasource='$datasource',
+            query='label_values(kube_node_role{%(clusterLabel)s="$cluster"}, role)' % glib._config,
+            allValues='.+',
+            current='all',
+            hide='',
+            refresh=2,
+            includeAll=true,
+            sort=1
+          ),
+          template.new(
+            name=t.name,
+            datasource='$datasource',
+            query='label_values(kube_node_info{%(clusterLabel)s="$cluster"} * on (node) group_right kube_node_role{%(clusterLabel)s="$cluster", role=~"$role"}, node)' % glib._config,
+            current='',
+            hide='',
+            refresh=2,
+            includeAll=false,
+            multi=true,
+            sort=1
+          ),
+        ]
+      else
+        [t]
+      for t in templateList
+    ]);
+
+  local nodeRoleTemplate = function(dashboards)
+    std.map(
+      function(dashboard)
+        local data = { [k]: std.parseJson(dashboard.data[k]) for k in std.objectFields(dashboard.data) };
+        local updatedDashboard = dashboard {
+          data: {
+            [k]: if std.member(nodeDashboards, k) then
+              data[k] {
+                templating: {
+                  list: addRoleTemplate(data[k].templating.list),
+                },
+              }
+            else
+              data[k]
             for k in std.objectFields(data)
           },
         };
@@ -101,7 +167,7 @@ function(params)
         // so charts with metrics such as request/quota/limit show all metrics in
         // an unstacked way to avoid confusion.
         // please refer to: https://issues.redhat.com/browse/OCPBUGS-5353
-        unstackDashboards(glib.dashboardDefinitions.items),
+        nodeRoleTemplate(unstackDashboards(glib.dashboardDefinitions.items)),
       ),
     },
   }
