@@ -185,7 +185,6 @@ function(params)
             interval: '30s',
             scheme: 'https',
             tlsConfig: {
-              serverName: 'prometheus-user-workload',
               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
               certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
               keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',

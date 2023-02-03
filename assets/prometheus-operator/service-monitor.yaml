@@ -19,6 +19,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: prometheus-operator.openshift-monitoring.svc
   selector:
     matchLabels:
       app.kubernetes.io/component: controller

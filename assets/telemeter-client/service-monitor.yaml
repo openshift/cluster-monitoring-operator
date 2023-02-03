@@ -16,6 +16,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: telemeter-client.openshift-monitoring.svc
   jobLabel: k8s-app
   selector:
     matchLabels:

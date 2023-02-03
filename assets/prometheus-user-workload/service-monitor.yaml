@@ -20,7 +20,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: prometheus-user-workload
+      serverName: prometheus-user-workload.openshift-user-workload-monitoring.svc
   selector:
     matchLabels:
       app.kubernetes.io/component: prometheus

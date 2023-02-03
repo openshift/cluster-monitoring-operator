@@ -20,7 +20,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: alertmanager-main
+      serverName: alertmanager-main.openshift-monitoring.svc
   selector:
     matchLabels:
       app.kubernetes.io/component: alert-router

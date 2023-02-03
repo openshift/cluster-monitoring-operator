@@ -14,6 +14,7 @@
                           if !(std.objectHas(o.metadata.labels, 'app.kubernetes.io/name') && o.metadata.labels['app.kubernetes.io/name'] == 'kubelet') then
                             {
                               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+                              serverName: std.format('%s.%s.svc', [if o.metadata.name != 'thanos-sidecar' then o.metadata.name else 'prometheus-' + o.metadata.labels['app.kubernetes.io/instance'] + '-' + o.metadata.name, o.metadata.namespace]),
                             }
                           else
                             {},
