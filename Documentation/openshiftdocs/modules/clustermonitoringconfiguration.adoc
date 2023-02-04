@@ -15,23 +15,23 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 [options="header"]
 |===
 | Property | Type | Description 
-|alertmanagerMain|*link:alertmanagermainconfig.adoc[AlertmanagerMainConfig]|`AlertmanagerMainConfig` defines settings for the Alertmanager component in the `openshift-monitoring` namespace.
+|alertmanagerMain|link:alertmanagermainconfig.adoc[AlertmanagerMainConfig]|`AlertmanagerMainConfig` defines settings for the Alertmanager component in the `openshift-monitoring` namespace.
 
-|enableUserWorkload|*bool|`UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
+|enableUserWorkload|bool|`UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
 
-|k8sPrometheusAdapter|*link:k8sprometheusadapter.adoc[K8sPrometheusAdapter]|`K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
+|k8sPrometheusAdapter|link:k8sprometheusadapter.adoc[K8sPrometheusAdapter]|`K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 
-|kubeStateMetrics|*link:kubestatemetricsconfig.adoc[KubeStateMetricsConfig]|`KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
+|kubeStateMetrics|link:kubestatemetricsconfig.adoc[KubeStateMetricsConfig]|`KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
 
-|prometheusK8s|*link:prometheusk8sconfig.adoc[PrometheusK8sConfig]|`PrometheusK8sConfig` defines settings for the Prometheus component.
+|prometheusK8s|link:prometheusk8sconfig.adoc[PrometheusK8sConfig]|`PrometheusK8sConfig` defines settings for the Prometheus component.
 
-|prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|`PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
+|prometheusOperator|link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|`PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
 
-|openshiftStateMetrics|*link:openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]|`OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
+|openshiftStateMetrics|link:openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]|`OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 
-|telemeterClient|*link:telemeterclientconfig.adoc[TelemeterClientConfig]|`TelemeterClientConfig` defines settings for the Telemeter Client component.
+|telemeterClient|link:telemeterclientconfig.adoc[TelemeterClientConfig]|`TelemeterClientConfig` defines settings for the Telemeter Client component.
 
-|thanosQuerier|*link:thanosquerierconfig.adoc[ThanosQuerierConfig]|`ThanosQuerierConfig` defines settings for the Thanos Querier component.
+|thanosQuerier|link:thanosquerierconfig.adoc[ThanosQuerierConfig]|`ThanosQuerierConfig` defines settings for the Thanos Querier component.
 
 |nodeExporter|link:nodeexporterconfig.adoc[NodeExporterConfig]|`NodeExporterConfig` defines settings for the `node-exporter` agent.
 

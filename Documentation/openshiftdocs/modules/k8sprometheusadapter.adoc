@@ -18,13 +18,13 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
-|audit|*Audit|Defines the audit configuration used by the Prometheus Adapter instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`.
+|audit|Audit|Defines the audit configuration used by the Prometheus Adapter instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`.
 
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
-|dedicatedServiceMonitors|*link:dedicatedservicemonitors.adoc[DedicatedServiceMonitors]|Defines dedicated service monitors.
+|dedicatedServiceMonitors|link:dedicatedservicemonitors.adoc[DedicatedServiceMonitors]|Defines dedicated service monitors.
 
 |===
 

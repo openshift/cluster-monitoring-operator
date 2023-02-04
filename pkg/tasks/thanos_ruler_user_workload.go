@@ -39,7 +39,7 @@ func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Fa
 }
 
 func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) error {
-	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
+	if t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		return t.create(ctx)
 	}
 

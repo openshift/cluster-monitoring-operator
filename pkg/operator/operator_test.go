@@ -165,12 +165,12 @@ func TestGetProxyReader(t *testing.T) {
 	ctx := context.Background()
 	emptyConfig := &manifests.Config{
 		ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
-			HTTPConfig: &manifests.HTTPConfig{},
+			HTTPConfig: manifests.HTTPConfig{},
 		},
 	}
 	nonEmptyConfig := &manifests.Config{
 		ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
-			HTTPConfig: &manifests.HTTPConfig{
+			HTTPConfig: manifests.HTTPConfig{
 				HTTPProxy: "foo",
 			},
 		},

@@ -45,8 +45,8 @@ const (
 )
 
 type Config struct {
-	Images      *Images `json:"-"`
-	RemoteWrite bool    `json:"-"`
+	Images      Images `json:"-"`
+	RemoteWrite bool   `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
@@ -57,12 +57,7 @@ func (c Config) IsStorageConfigured() bool {
 		return false
 	}
 
-	prometheusK8sConfig := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
-	if prometheusK8sConfig == nil {
-		return false
-	}
-
-	return prometheusK8sConfig.VolumeClaimTemplate != nil
+	return c.ClusterMonitoringConfiguration.PrometheusK8sConfig.VolumeClaimTemplate != nil
 }
 
 func (c Config) HasInconsistentAlertmanagerConfigurations() bool {
@@ -70,14 +65,8 @@ func (c Config) HasInconsistentAlertmanagerConfigurations() bool {
 		return false
 	}
 
-	amConfig := c.ClusterMonitoringConfiguration.AlertmanagerMainConfig
-	uwmConfig := c.UserWorkloadConfiguration.Alertmanager
-
-	if amConfig == nil || uwmConfig == nil {
-		return false
-	}
-
-	return amConfig.EnableUserAlertManagerConfig && uwmConfig.Enabled
+	return c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.EnableUserAlertManagerConfig &&
+		c.UserWorkloadConfiguration.Alertmanager.Enabled
 }
 
 // AdditionalAlertmanagerConfigsForPrometheusUserWorkload returns the alertmanager configurations for
@@ -144,7 +133,7 @@ type HTTPConfig struct {
 }
 
 func (a AlertmanagerMainConfig) IsEnabled() bool {
-	return a.Enabled == nil || *a.Enabled
+	return a.Enabled
 }
 
 // Audit profile configurations
@@ -160,16 +149,11 @@ type Audit struct {
 }
 
 type EtcdConfig struct {
-	Enabled *bool `json:"-"`
+	Enabled bool `json:"-"`
 }
 
-// IsEnabled returns the underlying value of the `Enabled` boolean pointer.
-// It defaults to false if the pointer is nil.
 func (e *EtcdConfig) IsEnabled() bool {
-	if e.Enabled == nil {
-		return false
-	}
-	return *e.Enabled
+	return e.Enabled
 }
 
 func (cfg *TelemeterClientConfig) IsEnabled() bool {
@@ -188,74 +172,38 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 
 func NewConfig(content io.Reader) (*Config, error) {
 	c := Config{}
-	cmc := ClusterMonitoringConfiguration{}
-	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(&cmc)
+	cmc := defaultClusterMonitoringConfiguration()
+	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(cmc)
 	if err != nil {
 		return nil, err
 	}
-	c.ClusterMonitoringConfiguration = &cmc
-	res := &c
-	res.applyDefaults()
+	c.ClusterMonitoringConfiguration = cmc
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
-	return res, nil
+	c.applyDefaults()
+	return &c, nil
+}
+
+func defaultClusterMonitoringConfiguration() *ClusterMonitoringConfiguration {
+	cmc := ClusterMonitoringConfiguration{}
+
+	cmc.PrometheusK8sConfig = PrometheusK8sConfig{
+		Retention: DefaultRetentionValue,
+	}
+	cmc.AlertmanagerMainConfig = AlertmanagerMainConfig{
+		Enabled: true,
+	}
+	cmc.TelemeterClientConfig = TelemeterClientConfig{
+		TelemeterServerURL: "https://infogw.api.openshift.com/",
+	}
+	cmc.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
+
+	return &cmc
 }
 
 func (c *Config) applyDefaults() {
-	if c.Images == nil {
-		c.Images = &Images{}
-	}
-	if c.ClusterMonitoringConfiguration == nil {
-		c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
-	}
-	if c.ClusterMonitoringConfiguration.PrometheusOperatorConfig == nil {
-		c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" && c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize == "" {
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" &&
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = DefaultRetentionValue
-	}
-	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
-		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
-		disable := false
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = &disable
-	}
-	if c.ClusterMonitoringConfiguration.ThanosQuerierConfig == nil {
-		c.ClusterMonitoringConfiguration.ThanosQuerierConfig = &ThanosQuerierConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.KubeStateMetricsConfig == nil {
-		c.ClusterMonitoringConfiguration.KubeStateMetricsConfig = &KubeStateMetricsConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig == nil {
-		c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig = &OpenShiftStateMetricsConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.HTTPConfig == nil {
-		c.ClusterMonitoringConfiguration.HTTPConfig = &HTTPConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.TelemeterClientConfig == nil {
-		c.ClusterMonitoringConfiguration.TelemeterClientConfig = &TelemeterClientConfig{
-			TelemeterServerURL: "https://infogw.api.openshift.com/",
-		}
-	}
-
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors = &DedicatedServiceMonitors{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile == "" {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
-	}
-
-	if c.ClusterMonitoringConfiguration.EtcdConfig == nil {
-		c.ClusterMonitoringConfiguration.EtcdConfig = &EtcdConfig{}
 	}
 }
 
@@ -392,10 +340,8 @@ func NewConfigFromString(content string) (*Config, error) {
 
 func NewDefaultConfig() *Config {
 	c := &Config{}
-	cmc := ClusterMonitoringConfiguration{}
-	c.ClusterMonitoringConfiguration = &cmc
+	c.ClusterMonitoringConfiguration = defaultClusterMonitoringConfiguration()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
-	c.applyDefaults()
 	return c
 }
 

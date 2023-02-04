@@ -815,6 +815,7 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 	} else {
 		args = setArg(args, "--no-collector.tcpstat", "")
 	}
+
 	return args
 }
 
@@ -1732,11 +1733,11 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
 
 	config := f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter
-	if config != nil && len(config.NodeSelector) > 0 {
+	if len(config.NodeSelector) > 0 {
 		spec.NodeSelector = config.NodeSelector
 	}
 
-	if config != nil && len(config.Tolerations) > 0 {
+	if len(config.Tolerations) > 0 {
 		spec.Tolerations = config.Tolerations
 	}
 	dep.Namespace = f.namespace

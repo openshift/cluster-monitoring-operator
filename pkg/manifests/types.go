@@ -26,28 +26,28 @@ import (
 type ClusterMonitoringConfiguration struct {
 	// `AlertmanagerMainConfig` defines settings for the
 	// Alertmanager component in the `openshift-monitoring` namespace.
-	AlertmanagerMainConfig *AlertmanagerMainConfig `json:"alertmanagerMain,omitempty"`
+	AlertmanagerMainConfig AlertmanagerMainConfig `json:"alertmanagerMain,omitempty"`
 	// OmitFromDoc
-	EtcdConfig *EtcdConfig `json:"-"`
+	EtcdConfig EtcdConfig `json:"-"`
 	// `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
-	UserWorkloadEnabled *bool `json:"enableUserWorkload,omitempty"`
+	UserWorkloadEnabled bool `json:"enableUserWorkload,omitempty"`
 	// OmitFromDoc
-	HTTPConfig *HTTPConfig `json:"http,omitempty"`
+	HTTPConfig HTTPConfig `json:"http,omitempty"`
 	// `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
-	K8sPrometheusAdapter *K8sPrometheusAdapter `json:"k8sPrometheusAdapter,omitempty"`
+	K8sPrometheusAdapter K8sPrometheusAdapter `json:"k8sPrometheusAdapter,omitempty"`
 	// `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
-	KubeStateMetricsConfig *KubeStateMetricsConfig `json:"kubeStateMetrics,omitempty"`
+	KubeStateMetricsConfig KubeStateMetricsConfig `json:"kubeStateMetrics,omitempty"`
 	// `PrometheusK8sConfig` defines settings for the Prometheus component.
-	PrometheusK8sConfig *PrometheusK8sConfig `json:"prometheusK8s,omitempty"`
+	PrometheusK8sConfig PrometheusK8sConfig `json:"prometheusK8s,omitempty"`
 	// `PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
-	PrometheusOperatorConfig *PrometheusOperatorConfig `json:"prometheusOperator,omitempty"`
+	PrometheusOperatorConfig PrometheusOperatorConfig `json:"prometheusOperator,omitempty"`
 	// `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
-	OpenShiftMetricsConfig *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics,omitempty"`
+	OpenShiftMetricsConfig OpenShiftStateMetricsConfig `json:"openshiftStateMetrics,omitempty"`
 	// `TelemeterClientConfig` defines settings for the Telemeter Client
 	// component.
-	TelemeterClientConfig *TelemeterClientConfig `json:"telemeterClient,omitempty"`
+	TelemeterClientConfig TelemeterClientConfig `json:"telemeterClient,omitempty"`
 	// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
-	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
+	ThanosQuerierConfig ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
 	// `NodeExporterConfig` defines settings for the `node-exporter` agent.
 	NodeExporterConfig NodeExporterConfig `json:"nodeExporter,omitempty"`
 }
@@ -58,7 +58,7 @@ type AlertmanagerMainConfig struct {
 	// A Boolean flag that enables or disables the main Alertmanager instance
 	// in the `openshift-monitoring` namespace.
 	// The default value is `true`.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// A Boolean flag that enables or disables user-defined namespaces
 	// to be selected for `AlertmanagerConfig` lookups. This setting only
 	// applies if the user workload monitoring instance of Alertmanager
@@ -94,13 +94,13 @@ type K8sPrometheusAdapter struct {
 	// Defines the audit configuration used by the Prometheus Adapter instance.
 	// Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`.
 	// The default value is `metadata`.
-	Audit *Audit `json:"audit,omitempty"`
+	Audit Audit `json:"audit,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines dedicated service monitors.
-	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
+	DedicatedServiceMonitors DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
 }
 
 // You can use the `DedicatedServiceMonitors` resource to configure dedicated

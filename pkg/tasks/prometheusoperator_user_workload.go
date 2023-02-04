@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 
@@ -37,7 +38,7 @@ func NewPrometheusOperatorUserWorkloadTask(client *client.Client, factory *manif
 }
 
 func (t *PrometheusOperatorUserWorkloadTask) Run(ctx context.Context) error {
-	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
+	if t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		return t.create(ctx)
 	}
 
