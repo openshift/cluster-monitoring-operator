@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: prometheus-adapter
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.10.0
-    monitoring.openshift.io/scrape-profile: uponly
-  name: prometheus-adapter-uponly
+    monitoring.openshift.io/scrape-profile: minimal
+  name: prometheus-adapter-minimal
   namespace: openshift-monitoring
 spec:
   endpoints:
@@ -18,8 +18,8 @@ spec:
       regex: (apiserver_client_certificate_.*|apiserver_envelope_.*|apiserver_flowcontrol_.*|apiserver_storage_.*|apiserver_webhooks_.*|workqueue_.*)
       sourceLabels:
       - __name__
-    - action: drop
-      regex: .+
+    - action: keep
+      regex: (apiserver_audit_event_total|apiserver_current_inflight_requests|apiserver_request_duration_seconds_bucket|apiserver_request_duration_seconds_count|apiserver_request_total)
       sourceLabels:
       - __name__
     port: https
@@ -29,6 +29,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: prometheus-adapter-minimal.openshift-monitoring.svc
   selector:
     matchLabels:
       app.kubernetes.io/component: metrics-adapter

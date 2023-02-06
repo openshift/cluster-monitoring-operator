@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 2.7.0
-    monitoring.openshift.io/scrape-profile: operational
-  name: kube-state-metrics-operational
+    monitoring.openshift.io/scrape-profile: minimal
+  name: kube-state-metrics-minimal
   namespace: openshift-monitoring
 spec:
   endpoints:
@@ -32,6 +32,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: kube-state-metrics-minimal.openshift-monitoring.svc
   - bearerTokenFile: ""
     interval: 1m
     metricRelabelings:
@@ -47,6 +48,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: kube-state-metrics-minimal.openshift-monitoring.svc
   jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:

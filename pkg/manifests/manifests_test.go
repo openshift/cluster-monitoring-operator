@@ -1711,24 +1711,9 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 		name                  string
 		scrapeProfile         ScrapeProfile
 		expectedLabelSelector *metav1.LabelSelector
-		errExpected           bool
 	}{
 		{
-			// This test is supposed to fail because defaulting is done at
-			// the manifest/config.go level and not manifest/manifest.go
-			name:                  "no scrape profile",
-			scrapeProfile:         "",
-			expectedLabelSelector: nil,
-			errExpected:           true,
-		},
-		{
-			name:                  "unknown scrape profile",
-			scrapeProfile:         "foo",
-			expectedLabelSelector: nil,
-			errExpected:           true,
-		},
-		{
-			name:          "full scrape profile",
+			name:          "full_scrape_profile",
 			scrapeProfile: "full",
 			expectedLabelSelector: &metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
@@ -1739,10 +1724,9 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 					},
 				},
 			},
-			errExpected: false,
 		},
 		{
-			name:          "minimal scrape profile",
+			name:          "minimal_scrape_profile",
 			scrapeProfile: "minimal",
 			expectedLabelSelector: &metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
@@ -1753,7 +1737,6 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 					},
 				},
 			},
-			errExpected: false,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1766,13 +1749,7 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 			)
 			if err != nil {
-				if !tc.errExpected {
-					t.Fatalf("Expecting no error but got %v", err)
-				}
-				return
-			}
-			if tc.errExpected {
-				t.Fatalf("Expected scrape profile %s to give an error, but err is nil", tc.scrapeProfile)
+				t.Fatalf("Unexpected error but got %v", err)
 			}
 
 			if !reflect.DeepEqual(p.Spec.ServiceMonitorSelector, tc.expectedLabelSelector) {

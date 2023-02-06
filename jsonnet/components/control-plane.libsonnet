@@ -47,11 +47,11 @@ function(params)
       },
     },
 
-    operationalServiceMonitorEtcd: self.serviceMonitorEtcd {
+    minimalServiceMonitorEtcd: self.serviceMonitorEtcd {
       metadata+: {
-        name: super.name + '-operational',
+        name: super.name + '-minimal',
         labels+: {
-          'monitoring.openshift.io/scrape-profile': 'operational',
+          'monitoring.openshift.io/scrape-profile': 'minimal',
         },
       },
       spec+: {
@@ -77,29 +77,6 @@ function(params)
                                         'grpc_server_handling_seconds_bucket',
                                         'grpc_server_started_total',
                                       ]) + ')',
-              },
-            ],
-          },
-          super.endpoints
-        ),
-      },
-    },
-
-    uponlyServiceMonitorEtcd: self.serviceMonitorEtcd {
-      metadata+: {
-        name: super.name + '-uponly',
-        labels+: {
-          'monitoring.openshift.io/scrape-profile': 'uponly',
-        },
-      },
-      spec+: {
-        endpoints: std.map(
-          function(e) e {
-            metricRelabelings+: [
-              {
-                sourceLabels: ['__name__'],
-                action: 'drop',
-                regex: '.+',
               },
             ],
           },
@@ -199,11 +176,11 @@ function(params)
       },
     },
 
-    operationalServiceMonitorKubelet: self.serviceMonitorKubelet {
+    minimalServiceMonitorKubelet: self.serviceMonitorKubelet {
       metadata+: {
-        name: super.name + '-operational',
+        name: super.name + '-minimal',
         labels+: {
-          'monitoring.openshift.io/scrape-profile': 'operational',
+          'monitoring.openshift.io/scrape-profile': 'minimal',
         },
       },
       spec+: {
@@ -277,30 +254,6 @@ function(params)
         ),
       },
     },
-
-    uponlyServiceMonitorKubelet: self.serviceMonitorKubelet {
-      metadata+: {
-        name: super.name + '-uponly',
-        labels+: {
-          'monitoring.openshift.io/scrape-profile': 'uponly',
-        },
-      },
-      spec+: {
-        endpoints: std.map(
-          function(e) e {
-            metricRelabelings+: [
-              {
-                sourceLabels: ['__name__'],
-                action: 'drop',
-                regex: '.+',
-              },
-            ],
-          },
-          super.endpoints
-        ),
-      },
-    },
-
 
     // This adds a kubelet ServiceMonitor for special use with
     // prometheus-adapter if enabled by the configuration of the cluster monitoring operator.

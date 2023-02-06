@@ -23,6 +23,7 @@ import (
 	"math"
 
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/pkg/errors"
 	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -197,6 +198,19 @@ func NewConfig(content io.Reader) (*Config, error) {
 	res := &c
 	res.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
+
+	// Validate ScrapeProfile field
+	foundProfile := false
+	for _, profile := range ScrapeProfiles {
+		if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile {
+			foundProfile = true
+			continue
+		}
+	}
+	if !foundProfile {
+		return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`scrape profile provided is unknown, supported scrape profiles are: %v`, ScrapeProfiles))
+	}
+
 	return res, nil
 }
 

@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfigParsing(t *testing.T) {
@@ -353,6 +355,60 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 				t.Fatalf("incorrect EnforcedBodySizeLimit is set: got %s, expected %s",
 					c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit,
 					tt.expectBodySizeLimit)
+			}
+		})
+	}
+}
+
+func TestScrapeProfile(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		config        string
+		expectedsp    ScrapeProfile
+		expectedError bool
+	}{
+		{
+			name:          "default",
+			config:        "",
+			expectedsp:    ScrapeProfile("full"),
+			expectedError: false,
+		},
+		{
+			name: "full_profile",
+			config: `prometheusk8s:
+  scrapeProfile: full
+  `,
+			expectedsp:    ScrapeProfile("full"),
+			expectedError: false,
+		},
+		{
+			name: "minimal_profile",
+			config: `prometheusk8s:
+  scrapeProfile: minimal
+  `,
+			expectedsp:    ScrapeProfile("minimal"),
+			expectedError: false,
+		},
+		{
+			name: "incorrect_profile",
+			config: `prometheusk8s:
+  scrapeProfile: foo
+  `,
+			expectedsp:    "",
+			expectedError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			if err != nil {
+				if tc.expectedError {
+					return
+				}
+				require.NoError(t, err)
+			}
+
+			if tc.expectedsp != c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile {
+				t.Fatalf("incorrect scrape profile set, expected %s got %s", tc.expectedsp, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile)
 			}
 		})
 	}

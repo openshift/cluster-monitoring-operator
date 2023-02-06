@@ -67,11 +67,11 @@ function(params)
       },
     },
 
-    operationalServiceMonitor: self.serviceMonitor {
+    minimalServiceMonitor: self.serviceMonitor {
       metadata+: {
-        name: super.name + '-operational',
+        name: super.name + '-minimal',
         labels+: {
-          'monitoring.openshift.io/scrape-profile': 'operational',
+          'monitoring.openshift.io/scrape-profile': 'minimal',
         },
       },
       spec+: {
@@ -153,30 +153,6 @@ function(params)
                                              ]) + ')',
                      }],
                    } else {},
-          super.endpoints
-        ),
-      },
-    },
-
-    uponlyServiceMonitor: self.serviceMonitor {
-      metadata+: {
-        name: super.name + '-uponly',
-        labels+: {
-          'monitoring.openshift.io/scrape-profile': 'uponly',
-        },
-      },
-      spec+: {
-        endpoints: std.map(
-          function(e)
-            e {
-              metricRelabelings+: [
-                {
-                  sourceLabels: ['__name__'],
-                  action: 'drop',
-                  regex: '.+',
-                },
-              ],
-            },
           super.endpoints
         ),
       },

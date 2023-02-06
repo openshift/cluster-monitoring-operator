@@ -719,16 +719,7 @@ func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error
 }
 
 func (f *Factory) KubeStateMetricsMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsMinimalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
-	sm.Spec.Endpoints[1].TLSConfig.ServerName = fmt.Sprintf("kube-state-metrics.%s.svc", f.namespace)
-	sm.Namespace = f.namespace
-
-	return sm, nil
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsMinimalServiceMonitor))
 }
 
 func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
@@ -856,15 +847,7 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 }
 
 func (f *Factory) NodeExporterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterMinimalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("node-exporter.%s.svc", f.namespace)
-	sm.Namespace = f.namespace
-
-	return sm, nil
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterMinimalServiceMonitor))
 }
 
 func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
@@ -1541,18 +1524,12 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 }
 
 func (f *Factory) setupScrapeProfiles(p *monv1.Prometheus, scrapeProfile ScrapeProfile) error {
-	profiles := []string{}
-	foundProfile := false
+	profiles := make([]string, 0, len(ScrapeProfiles)-1)
 	for _, profile := range ScrapeProfiles {
 		if profile == scrapeProfile {
-			foundProfile = true
 			continue
 		}
 		profiles = append(profiles, string(profile))
-	}
-
-	if !foundProfile {
-		return errors.Wrap(ErrConfigValidation, fmt.Sprintf(`scrape profile provided is unknown, supported scrape profiles are: %v`, ScrapeProfiles))
 	}
 
 	labelSelector := &metav1.LabelSelector{
@@ -1916,15 +1893,7 @@ func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, erro
 }
 
 func (f *Factory) PrometheusAdapterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterMinimalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	sm.Namespace = f.namespace
-	sm.Spec.Endpoints[0].TLSConfig.ServerName = fmt.Sprintf("prometheus-adapter.%s.svc", f.namespace)
-
-	return sm, nil
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterMinimalServiceMonitor))
 }
 
 func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1.ConfigMap) (*v1.Secret, error) {
@@ -2380,14 +2349,7 @@ func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error
 }
 
 func (f *Factory) ControlPlaneEtcdMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdMinimalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdMinimalServiceMonitor))
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
@@ -2399,14 +2361,7 @@ func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, er
 }
 
 func (f *Factory) ControlPlaneKubeletMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	s, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletMinimalServiceMonitor))
-	if err != nil {
-		return nil, err
-	}
-
-	s.Namespace = f.namespace
-
-	return s, nil
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletMinimalServiceMonitor))
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitorPA() (*monv1.ServiceMonitor, error) {
