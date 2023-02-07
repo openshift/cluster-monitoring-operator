@@ -35,6 +35,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/strings/slices"
 )
 
 type fakeInfrastructureReader struct {
@@ -2596,6 +2597,9 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
     requests:
       cpu: 10m
       memory: 75Mi
+  secrets:
+  - test-secret
+  - slack-api-token
   volumeClaimTemplate:
     spec:
       resources:
@@ -2646,6 +2650,14 @@ ingress:
 	}
 	if memoryRequestPtr.String() != "75Mi" {
 		t.Fatal("Alertmanager memory request is not configured correctly:", memoryRequestPtr.String())
+	}
+
+	if !slices.Contains(a.Spec.Secrets, "test-secret") {
+		t.Fatal("Alertmanager secret `test-secret` is not configured correctly")
+	}
+
+	if !slices.Contains(a.Spec.Secrets, "slack-api-token") {
+		t.Fatal("Alertmanager secret `slack-api-token` is not configured correctly")
 	}
 
 	if a.Spec.NodeSelector["type"] != "worker" {

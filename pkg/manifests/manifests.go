@@ -582,6 +582,10 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 		a.Spec.Resources = *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources
 	}
 
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets != nil {
+		a.Spec.Secrets = append(a.Spec.Secrets, f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets...)
+	}
+
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.EnableUserAlertManagerConfig &&
 		!f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{}
