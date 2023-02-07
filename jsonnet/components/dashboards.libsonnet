@@ -96,7 +96,18 @@ function(params)
           template.new(
             name='role',
             datasource='$datasource',
-            query='label_values(kube_node_role{%(clusterLabel)s="$cluster"}, role)' % glib._config,
+            query='label_values(kube_node_role{%(clusterLabel)s="$cluster"} * on(node) group_left kube_node_labels{%(clusterLabel)s="$cluster", label_topology_kubernetes_io_zone=~"$zone"}, role)' % glib._config,
+            allValues='.+',
+            current='all',
+            hide='',
+            refresh=2,
+            includeAll=true,
+            sort=1
+          ),
+          template.new(
+            name='zone',
+            datasource='$datasource',
+            query='label_values(kube_node_role{%(clusterLabel)s="$cluster" role=~"$role"} * on(node) group_left(label_topology_kubernetes_io_zone) kube_node_labels{%(clusterLabel)s="$cluster"}, label_topology_kubernetes_io_zone)' % glib._config,
             allValues='.+',
             current='all',
             hide='',
@@ -107,7 +118,7 @@ function(params)
           template.new(
             name=t.name,
             datasource='$datasource',
-            query='label_values(kube_node_info{%(clusterLabel)s="$cluster"} * on (node) group_right kube_node_role{%(clusterLabel)s="$cluster", role=~"$role"}, node)' % glib._config,
+            query='label_values(kube_node_info{%(clusterLabel)s="$cluster"} * on (node) group_right() (kube_node_role{%(clusterLabel)s="$cluster", role=~"$role"} * on(node) group_left kube_node_labels{%(clusterLabel)s="$cluster", label_topology_kubernetes_io_zone=~"$zone"}), node)' % glib._config,
             current='',
             hide='',
             refresh=2,
