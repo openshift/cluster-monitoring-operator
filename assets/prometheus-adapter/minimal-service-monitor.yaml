@@ -14,10 +14,6 @@ spec:
   - bearerTokenFile: ""
     interval: 30s
     metricRelabelings:
-    - action: drop
-      regex: (apiserver_client_certificate_.*|apiserver_envelope_.*|apiserver_flowcontrol_.*|apiserver_storage_.*|apiserver_webhooks_.*|workqueue_.*)
-      sourceLabels:
-      - __name__
     - action: keep
       regex: (apiserver_audit_event_total|apiserver_current_inflight_requests|apiserver_request_duration_seconds_bucket|apiserver_request_duration_seconds_count|apiserver_request_total)
       sourceLabels:
@@ -29,7 +25,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: prometheus-adapter-minimal.openshift-monitoring.svc
+      serverName: prometheus-adapter.openshift-monitoring.svc
   selector:
     matchLabels:
       app.kubernetes.io/component: metrics-adapter

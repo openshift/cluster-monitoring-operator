@@ -9,8 +9,7 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - bearerTokenFile: ""
-    interval: 30s
+  - interval: 30s
     metricRelabelings:
     - action: keep
       regex: (etcd_disk_backend_commit_duration_seconds_bucket|etcd_disk_wal_fsync_duration_seconds_bucket|etcd_mvcc_db_total_size_in_bytes|etcd_mvcc_db_total_size_in_use_in_bytes|etcd_network_peer_round_trip_time_seconds_bucket|etcd_network_peer_sent_failures_total|etcd_server_has_leader|etcd_server_is_leader|etcd_server_proposals_failed_total|etcd_server_quota_backend_bytes|grpc_server_handled_total|grpc_server_handling_seconds_bucket|grpc_server_started_total)
@@ -19,11 +18,9 @@ spec:
     port: etcd-metrics
     scheme: https
     tlsConfig:
-      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
-      insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: etcd-minimal.openshift-monitoring.svc
+      caFile: /etc/prometheus/secrets/kube-etcd-client-certs/etcd-client-ca.crt
+      certFile: /etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.crt
+      keyFile: /etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.key
   jobLabel: k8s-app
   namespaceSelector:
     matchNames:

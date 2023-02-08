@@ -1,3 +1,4 @@
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local controlPlane = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/k8s-control-plane.libsonnet';
 
 function(params)
@@ -47,43 +48,24 @@ function(params)
       },
     },
 
-    minimalServiceMonitorEtcd: self.serviceMonitorEtcd {
-      metadata+: {
-        name: super.name + '-minimal',
-        labels+: {
-          'monitoring.openshift.io/scrape-profile': 'minimal',
-        },
-      },
-      spec+: {
-        endpoints: std.map(
-          function(e) e {
-            metricRelabelings+: [
-              {
-                sourceLabels: ['__name__'],
-                action: 'keep',
-                regex: '(' + std.join('|',
-                                      [
-                                        'etcd_disk_backend_commit_duration_seconds_bucket',
-                                        'etcd_disk_wal_fsync_duration_seconds_bucket',
-                                        'etcd_mvcc_db_total_size_in_bytes',
-                                        'etcd_mvcc_db_total_size_in_use_in_bytes',
-                                        'etcd_network_peer_round_trip_time_seconds_bucket',
-                                        'etcd_network_peer_sent_failures_total',
-                                        'etcd_server_has_leader',
-                                        'etcd_server_is_leader',
-                                        'etcd_server_proposals_failed_total',
-                                        'etcd_server_quota_backend_bytes',
-                                        'grpc_server_handled_total',
-                                        'grpc_server_handling_seconds_bucket',
-                                        'grpc_server_started_total',
-                                      ]) + ')',
-              },
-            ],
-          },
-          super.endpoints
-        ),
-      },
-    },
+    minimalServiceMonitorEtcd: generateServiceMonitor.minimal(
+      self.serviceMonitorEtcd, std.join('|',
+                                        [
+                                          'etcd_disk_backend_commit_duration_seconds_bucket',
+                                          'etcd_disk_wal_fsync_duration_seconds_bucket',
+                                          'etcd_mvcc_db_total_size_in_bytes',
+                                          'etcd_mvcc_db_total_size_in_use_in_bytes',
+                                          'etcd_network_peer_round_trip_time_seconds_bucket',
+                                          'etcd_network_peer_sent_failures_total',
+                                          'etcd_server_has_leader',
+                                          'etcd_server_is_leader',
+                                          'etcd_server_proposals_failed_total',
+                                          'etcd_server_quota_backend_bytes',
+                                          'grpc_server_handled_total',
+                                          'grpc_server_handling_seconds_bucket',
+                                          'grpc_server_started_total',
+                                        ])
+    ),
 
     // This changes the kubelet's certificates to be validated when
     // scraping.
@@ -176,84 +158,37 @@ function(params)
       },
     },
 
-    minimalServiceMonitorKubelet: self.serviceMonitorKubelet {
-      metadata+: {
-        name: super.name + '-minimal',
-        labels+: {
-          'monitoring.openshift.io/scrape-profile': 'minimal',
-        },
-      },
-      spec+: {
-        endpoints: std.map(
-          function(e) e +
-                      if !std.objectHas(e, 'metricRelabelings') && e.port == 'https-metrics' then {
-                        metricRelabelings+: [
-                          {
-                            sourceLabels: ['__name__'],
-                            action: 'drop',
-                            regex: '.+',
-                          },
-                        ],
-                      } else {} +
-                             if std.objectHas(e, 'metricRelabelings') && e.port == 'https-metrics' then {
-                               metricRelabelings+: [
-                                 {
-                                   sourceLabels: ['__name__'],
-                                   action: 'keep',
-                                   regex: '(' + std.join('|',
-                                                         [
-                                                           'apiserver_audit_event_total',
-                                                           'kubelet_certificate_manager_client_expiration_renew_errors',
-                                                           'kubelet_containers_per_pod_count_sum',
-                                                           'kubelet_node_name',
-                                                           'kubelet_pleg_relist_duration_seconds_bucket',
-                                                           'kubelet_pod_worker_duration_seconds_bucket',
-                                                           'kubelet_server_expiration_renew_errors',
-                                                           'kubelet_volume_stats_available_bytes',
-                                                           'kubelet_volume_stats_capacity_bytes',
-                                                           'kubelet_volume_stats_inodes',
-                                                           'kubelet_volume_stats_inodes_free',
-                                                           'kubelet_volume_stats_inodes_used',
-                                                           'kubelet_volume_stats_used_bytes',
-                                                         ]) + ')',
-                                 },
-                               ],
-                             } else {} +
-                                    if std.objectHas(e, 'path') && e.path == '/metrics/cadvisor' then {
-                                      metricRelabelings+: [
-                                        {
-                                          sourceLabels: ['__name__'],
-                                          action: 'keep',
-                                          regex: '(' + std.join('|',
-                                                                [
-                                                                  'container_cpu_usage_seconds_total',
-                                                                  'container_fs_usage_bytes',
-                                                                  'container_memory_cache',
-                                                                  'container_memory_rss',
-                                                                  'container_memory_swap',
-                                                                  'container_memory_usage_bytes',
-                                                                  'container_memory_working_set_bytes',
-                                                                  'container_spec_cpu_shares',
-                                                                  'machine_cpu_cores',
-                                                                  'machine_memory_bytesmachine_cpu_cores',
-                                                                  'machine_memory_bytes',
-                                                                ]) + ')',
-                                        },
-                                      ],
-                                    } else {} +
-                                           if std.objectHas(e, 'path') && e.path == '/metrics/probes' then {
-                                             metricRelabelings+: [
-                                               {
-                                                 sourceLabels: ['__name__'],
-                                                 action: 'drop',
-                                                 regex: '.+',
-                                               },
-                                             ],
-                                           } else {},
-          super.endpoints
-        ),
-      },
-    },
+    minimalServiceMonitorKubelet: generateServiceMonitor.minimal(
+      self.serviceMonitorKubelet, std.join('|',
+                                           [
+                                             // https-metrics
+                                             'apiserver_audit_event_total',
+                                             'kubelet_certificate_manager_client_expiration_renew_errors',
+                                             'kubelet_containers_per_pod_count_sum',
+                                             'kubelet_node_name',
+                                             'kubelet_pleg_relist_duration_seconds_bucket',
+                                             'kubelet_pod_worker_duration_seconds_bucket',
+                                             'kubelet_server_expiration_renew_errors',
+                                             'kubelet_volume_stats_available_bytes',
+                                             'kubelet_volume_stats_capacity_bytes',
+                                             'kubelet_volume_stats_inodes',
+                                             'kubelet_volume_stats_inodes_free',
+                                             'kubelet_volume_stats_inodes_used',
+                                             'kubelet_volume_stats_used_bytes',
+                                             // /metrics/cadvisor
+                                             'container_cpu_usage_seconds_total',
+                                             'container_fs_usage_bytes',
+                                             'container_memory_cache',
+                                             'container_memory_rss',
+                                             'container_memory_swap',
+                                             'container_memory_usage_bytes',
+                                             'container_memory_working_set_bytes',
+                                             'container_spec_cpu_shares',
+                                             'machine_cpu_cores',
+                                             'machine_memory_bytesmachine_cpu_cores',
+                                             'machine_memory_bytes',
+                                           ])
+    ),
 
     // This adds a kubelet ServiceMonitor for special use with
     // prometheus-adapter if enabled by the configuration of the cluster monitoring operator.
