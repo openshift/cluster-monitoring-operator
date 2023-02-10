@@ -20,6 +20,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type AlertmanagerUserWorkloadTask struct {
@@ -89,6 +90,18 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 	err = t.client.CreateIfNotExistSecret(ctx, rsm)
 	if err != nil {
 		return errors.Wrap(err, "creating Alertmanager User Workload RBAC proxy metric Secret failed")
+	}
+
+	if t.config.UserWorkloadConfiguration.Alertmanager.Secrets != nil {
+		for _, secret := range t.config.UserWorkloadConfiguration.Alertmanager.Secrets {
+			obj := types.NamespacedName{
+				Name:      secret,
+				Namespace: "openshift-user-workload-monitoring",
+			}
+			if _, err = t.client.WaitForSecretByNsName(ctx, obj); err != nil {
+				return errors.Wrapf(err, "failed to find Alertmanager secret %q", secret)
+			}
+		}
 	}
 
 	cr, err := t.factory.AlertmanagerUserWorkloadClusterRole()

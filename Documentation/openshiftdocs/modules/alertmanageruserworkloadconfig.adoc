@@ -26,6 +26,8 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 
 |resources|*v1.ResourceRequirements|Defines resource requests and limits for the Alertmanager container.
 
+|secrets|[]string|Defines a list of secrets that need to be mounted into the Alertmanager. The secrets must reside within the same namespace as the Alertmanager object. They will be added as volumes named secret-<secret-name> and mounted at /etc/alertmanager/secrets/<secret-name> within the 'alertmanager' container of the Alertmanager Pods.
+
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.

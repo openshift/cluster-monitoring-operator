@@ -460,6 +460,8 @@ func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*mo
 		a.Spec.Resources = *alertmanagerConfig.Resources
 	}
 
+	a.Spec.Secrets = append(a.Spec.Secrets, alertmanagerConfig.Secrets...)
+
 	if alertmanagerConfig.EnableAlertmanagerConfig {
 		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{}
 
