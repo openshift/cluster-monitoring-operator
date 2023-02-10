@@ -601,6 +601,14 @@ function(params) {
           expr: 'sum by(hw_version)(vsphere_node_hw_version_total)',
           record: 'cluster:vsphere_node_hw_version_total:sum',
         },
+        {
+          expr: 'max by(source)(vsphere_topology_tags)',
+          record: 'cluster:vsphere_topology_tags:max',
+        },
+        {
+          expr: 'max by(scope)(vsphere_infrastructure_failure_domains)',
+          record: 'cluster:vsphere_infrastructure_failure_domains:max',
+        },
       ],
     },
   ],
