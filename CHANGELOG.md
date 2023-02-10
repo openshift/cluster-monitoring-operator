@@ -12,7 +12,6 @@
 - [#1888](https://github.com/openshift/cluster-monitoring-operator/pull/1888) Add nodeExporter.collectors.netdev settings.
 - [#1884](https://github.com/openshift/cluster-monitoring-operator/issues/1882) Allow configuring secrets in alertmanager component (UWM)
 
-
 ## 4.12
 - [#1624](https://github.com/openshift/cluster-monitoring-operator/pull/1624) Add option to specify TopologySpreadConstraints for Prometheus, Alertmanager, and ThanosRuler.
 - [#1752](https://github.com/openshift/cluster-monitoring-operator/pull/1752) Add option to improve consistency of prometheus-adapter CPU and RAM time series.

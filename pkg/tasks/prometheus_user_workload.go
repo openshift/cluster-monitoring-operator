@@ -269,19 +269,21 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling UserWorkload Thanos sidecar ServiceMonitor failed")
 	}
 
-	r, err := t.factory.PrometheusUserWorkloadFederateRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus federate Route failed")
-	}
+	if _, err := t.client.GetClusterOperator(ctx, "ingress"); err != nil {
+		r, err := t.factory.PrometheusUserWorkloadFederateRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing UserWorkload Prometheus federate Route failed")
+		}
 
-	err = t.client.CreateOrUpdateRoute(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload federate Route failed")
-	}
+		err = t.client.CreateOrUpdateRoute(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "reconciling UserWorkload federate Route failed")
+		}
 
-	_, err = t.client.WaitForRouteReady(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "waiting for UserWorkload federate Route to become ready failed")
+		_, err = t.client.WaitForRouteReady(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "waiting for UserWorkload federate Route to become ready failed")
+		}
 	}
 
 	return nil

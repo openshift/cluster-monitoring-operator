@@ -515,6 +515,10 @@ func (c *Client) GetInfrastructure(ctx context.Context, name string) (*configv1.
 	return c.oscclient.ConfigV1().Infrastructures().Get(ctx, name, metav1.GetOptions{})
 }
 
+func (c *Client) GetClusterOperator(ctx context.Context, name string) (*configv1.ClusterOperator, error) {
+	return c.oscclient.ConfigV1().ClusterOperators().Get(ctx, name, metav1.GetOptions{})
+}
+
 func (c *Client) GetAPIServerConfig(ctx context.Context, name string) (*configv1.APIServer, error) {
 	return c.oscclient.ConfigV1().APIServers().Get(ctx, name, metav1.GetOptions{})
 }
