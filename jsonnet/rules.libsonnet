@@ -313,18 +313,6 @@ function(params) {
           record: 'cluster:kube_persistentvolume_plugin_type_counts:sum',
         },
         {
-          expr: 'sum by(version)(vsphere_vcenter_info)',
-          record: 'cluster:vsphere_vcenter_info:sum',
-        },
-        {
-          expr: 'sum by(version)(vsphere_esxi_version_total)',
-          record: 'cluster:vsphere_esxi_version_total:sum',
-        },
-        {
-          expr: 'sum by(hw_version)(vsphere_node_hw_version_total)',
-          record: 'cluster:vsphere_node_hw_version_total:sum',
-        },
-        {
           expr: |||
             sum(
               min by (node) (kube_node_status_condition{condition="Ready",status="true"})
@@ -595,6 +583,23 @@ function(params) {
         {
           expr: 'sum(rate(apiserver_request_total{job="apiserver"}[10m])) BY (code)',
           record: 'code:apiserver_request_total:rate:sum',
+        },
+      ],
+    },
+    {
+      name: 'openshift-vsphere.rules',
+      rules: [
+        {
+          expr: 'sum by(version)(vsphere_vcenter_info)',
+          record: 'cluster:vsphere_vcenter_info:sum',
+        },
+        {
+          expr: 'sum by(version)(vsphere_esxi_version_total)',
+          record: 'cluster:vsphere_esxi_version_total:sum',
+        },
+        {
+          expr: 'sum by(hw_version)(vsphere_node_hw_version_total)',
+          record: 'cluster:vsphere_node_hw_version_total:sum',
         },
       ],
     },
