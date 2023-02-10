@@ -345,6 +345,25 @@ func (c *Client) ConsoleListWatch(ctx context.Context) *cache.ListWatch {
 	}
 }
 
+func (c *Client) ClusterOperatorListWatch(ctx context.Context, name string) *cache.ListWatch {
+	ClusterOperatorInterface := c.oscclient.ConfigV1().ClusterOperators()
+
+	return &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			return ClusterOperatorInterface.List(ctx,
+				metav1.ListOptions{
+					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
+				})
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return ClusterOperatorInterface.Watch(ctx,
+				metav1.ListOptions{
+					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
+				})
+		},
+	}
+}
+
 func (c *Client) EnsurePrometheusUserWorkloadConfigMapExists(ctx context.Context, cm *v1.ConfigMap) error {
 	_, err := c.CreateIfNotExistConfigMap(ctx, cm)
 	return errors.Wrapf(err, "creating empty  ConfigMap object fauled")
