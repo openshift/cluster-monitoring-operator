@@ -8701,34 +8701,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_node_role{cluster=\"$cluster\"} * on(node) group_left kube_node_labels{cluster=\"$cluster\", label_topology_kubernetes_io_zone=~\"$zone\"}, role)",
-                    "refresh": 2,
-                    "regex": "",
-                    "sort": 1,
-                    "tagValuesQuery": "",
-                    "tags": [
-
-                    ],
-                    "tagsQuery": "",
-                    "type": "query",
-                    "useTags": false
-                },
-                {
-                    "allValue": ".+",
-                    "current": {
-                        "text": "all",
-                        "value": "$__all"
-                    },
-                    "datasource": "$datasource",
-                    "hide": 0,
-                    "includeAll": true,
-                    "label": null,
-                    "multi": false,
-                    "name": "zone",
-                    "options": [
-
-                    ],
-                    "query": "label_values(kube_node_role{cluster=\"$cluster\" role=~\"$role\"} * on(node) group_left(label_topology_kubernetes_io_zone) kube_node_labels{cluster=\"$cluster\"}, label_topology_kubernetes_io_zone)",
+                    "query": "label_values(kube_node_role{cluster=\"$cluster\"} * on(node) group_left kube_node_labels{cluster=\"$cluster\", label_topology_kubernetes_io_zone=~\".+\"}, role)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
@@ -8755,7 +8728,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_node_info{cluster=\"$cluster\"} * on (node) group_right() (kube_node_role{cluster=\"$cluster\", role=~\"$role\"} * on(node) group_left kube_node_labels{cluster=\"$cluster\", label_topology_kubernetes_io_zone=~\"$zone\"}), node)",
+                    "query": "label_values(kube_node_info{cluster=\"$cluster\"} * on (node) group_right() (kube_node_role{cluster=\"$cluster\", role=~\"$role\"} * on(node) group_left kube_node_labels{cluster=\"$cluster\", label_topology_kubernetes_io_zone=~\".+\"}), node)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
@@ -18511,34 +18484,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_node_role{cluster=\"$cluster\"} * on(node) group_left kube_node_labels{cluster=\"$cluster\", label_topology_kubernetes_io_zone=~\"$zone\"}, role)",
-                    "refresh": 2,
-                    "regex": "",
-                    "sort": 1,
-                    "tagValuesQuery": "",
-                    "tags": [
-
-                    ],
-                    "tagsQuery": "",
-                    "type": "query",
-                    "useTags": false
-                },
-                {
-                    "allValue": ".+",
-                    "current": {
-                        "text": "all",
-                        "value": "$__all"
-                    },
-                    "datasource": "$datasource",
-                    "hide": 0,
-                    "includeAll": true,
-                    "label": null,
-                    "multi": false,
-                    "name": "zone",
-                    "options": [
-
-                    ],
-                    "query": "label_values(kube_node_role{cluster=\"$cluster\" role=~\"$role\"} * on(node) group_left(label_topology_kubernetes_io_zone) kube_node_labels{cluster=\"$cluster\"}, label_topology_kubernetes_io_zone)",
+                    "query": "label_values(kube_node_role{cluster=\"$cluster\"} * on(node) group_left kube_node_labels{cluster=\"$cluster\", label_topology_kubernetes_io_zone=~\".+\"}, role)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
@@ -18565,7 +18511,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_node_info{cluster=\"$cluster\"} * on (node) group_right() (kube_node_role{cluster=\"$cluster\", role=~\"$role\"} * on(node) group_left kube_node_labels{cluster=\"$cluster\", label_topology_kubernetes_io_zone=~\"$zone\"}), node)",
+                    "query": "label_values(kube_node_info{cluster=\"$cluster\"} * on (node) group_right() (kube_node_role{cluster=\"$cluster\", role=~\"$role\"} * on(node) group_left kube_node_labels{cluster=\"$cluster\", label_topology_kubernetes_io_zone=~\".+\"}), node)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
