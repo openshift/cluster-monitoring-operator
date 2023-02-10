@@ -64,7 +64,7 @@ nodeExporter:
 					if v == 1 {
 						return nil
 					}
-					return fmt.Errorf(`expecting absent(node_scrape_collector_success{collector="%s"}) = 1 but got %v.`, test.nameCollector, v)
+					return fmt.Errorf(`expecting absent(node_scrape_collector_success{collector="%s"}[1m]) = 1 but got %v.`, test.nameCollector, v)
 				},
 			)
 
@@ -74,7 +74,59 @@ nodeExporter:
 				t, 5*time.Minute, fmt.Sprintf(`min(node_scrape_collector_success{collector="%s"})`, test.nameCollector),
 				func(v float64) error {
 					if v == 0 {
-						return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="%s"})> 0 but got %v.`, test.nameCollector, v)
+						return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="%s"}[1m])> 0 but got %v.`, test.nameCollector, v)
+					}
+					return nil
+				},
+			)
+		})
+	}
+
+}
+
+func TestNodeExporterCollectorDisablement(t *testing.T) {
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterMonitorConfigMapName,
+				Namespace: f.Ns,
+			},
+		})
+	})
+
+	tests := []struct {
+		nameCollector string
+		config        string
+	}{
+		{
+			nameCollector: "netdev",
+			config: `
+nodeExporter:
+  collectors:
+    netdev:
+      enabled: false`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run("Disable Collector: "+test.nameCollector, func(st *testing.T) {
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t, 5*time.Minute, fmt.Sprintf(`absent_over_time(node_scrape_collector_success{collector="%s"}[1m])`, test.nameCollector),
+				func(v float64) error {
+					if v == 1 {
+						return nil
+					}
+					return fmt.Errorf(`expecting absent_over_time(node_scrape_collector_success{collector="%s"}[1m]) = 1 but got %v.`, test.nameCollector, v)
+				},
+			)
+
+			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
+
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t, 5*time.Minute, fmt.Sprintf(`min_over_time(node_scrape_collector_success{collector="%s"}[1m])`, test.nameCollector),
+				func(v float64) error {
+					if v == 0 {
+						return fmt.Errorf(`expecting min_over_time(node_scrape_collector_success{collector="%s"}[1m])> 0 but got %v.`, test.nameCollector, v)
 					}
 					return nil
 				},

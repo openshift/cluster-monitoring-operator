@@ -197,6 +197,12 @@ func defaultClusterMonitoringConfiguration() *ClusterMonitoringConfiguration {
 	}
 	cmc.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
 
+	cmc.NodeExporterConfig = NodeExporterConfig{
+		Collectors: NodeExporterCollectorConfig{
+			NetDev: NodeExporterCollectorNetDevConfig{Enabled: true},
+		},
+	}
+
 	return &cmc
 }
 

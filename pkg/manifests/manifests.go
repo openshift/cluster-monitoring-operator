@@ -816,6 +816,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 		args = setArg(args, "--no-collector.tcpstat", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled {
+		args = setArg(args, "--collector.netdev", "")
+	} else {
+		args = setArg(args, "--no-collector.netdev", "")
+	}
+
 	return args
 }
 

@@ -2836,9 +2836,11 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 			config: "",
 			argsPresent: []string{"--no-collector.cpufreq",
 				"--no-collector.tcpstat",
+				"--collector.netdev",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
+				"--no-collector.netdev",
 			},
 		},
 		{
@@ -2862,6 +2864,17 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.tcpstat"},
 			argsAbsent:  []string{"--no-collector.tcpstat"},
+		},
+		{
+			name: "disable netdev collector",
+			config: `
+nodeExporter:
+  collectors:
+    netdev:
+      enabled: false
+`,
+			argsPresent: []string{"--no-collector.netdev"},
+			argsAbsent:  []string{"--collector.netdev"},
 		},
 	}
 
