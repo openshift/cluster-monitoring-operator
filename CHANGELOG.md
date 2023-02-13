@@ -7,6 +7,7 @@
 - [#1860](https://github.com/openshift/cluster-monitoring-operator/pull/1860) Adds runbook for PrometheusRuleFailures
 - [#1868](https://github.com/openshift/cluster-monitoring-operator/pull/1868) In dashboards unstack diagrams with limit/quota/request.
 - [#1855](https://github.com/openshift/cluster-monitoring-operator/pull/1855) Add nodeExporter.collectors.cpufreq settings.
+- [#1882](https://github.com/openshift/cluster-monitoring-operator/issues/1882) Allow configuring secrets in alertmanager component (platform)
 
 
 ## 4.12

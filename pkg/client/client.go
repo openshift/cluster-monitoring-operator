@@ -1235,6 +1235,16 @@ func (c *Client) WaitForSecret(ctx context.Context, s *v1.Secret) (*v1.Secret, e
 	return result, nil
 }
 
+func (c *Client) WaitForSecretByNsName(ctx context.Context, obj types.NamespacedName) (*v1.Secret, error) {
+	secret := v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      obj.Name,
+			Namespace: obj.Namespace,
+		},
+	}
+	return c.WaitForSecret(ctx, &secret)
+}
+
 func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (string, error) {
 	host := ""
 	var lastErr error

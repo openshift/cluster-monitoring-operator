@@ -73,6 +73,12 @@ type AlertmanagerMainConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines resource requests and limits for the Alertmanager container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+	// Defines a list of secrets that need to be mounted into the Alertmanager.
+	// The secrets must reside within the same namespace as the Alertmanager object.
+	// They will be added as volumes named secret-<secret-name> and mounted at
+	// /etc/alertmanager/secrets/<secret-name> within the 'alertmanager' container of
+	// the Alertmanager Pods.
+	Secrets []string `json:"secrets,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
