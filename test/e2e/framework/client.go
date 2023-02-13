@@ -383,6 +383,33 @@ func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duratio
 	}
 }
 
+// WaitForQueryReturnEmpty waits for a given PromQL query return an empty response for a given time interval
+func (c *PrometheusClient) WaitForQueryReturnEmpty(t *testing.T, timeout time.Duration, query string) {
+	t.Helper()
+
+	err := Poll(5*time.Second, timeout, func() error {
+		body, err := c.PrometheusQuery(query)
+		if err != nil {
+			return errors.Wrapf(err, "error getting response for query %q", query)
+		}
+
+		size, err := GetResultSizeFromPromQuery(body)
+		if err != nil {
+			return errors.Wrapf(err, "error getting body size from body %q for query %q", string(body), query)
+		}
+
+		if size > 0 {
+			return fmt.Errorf("expecting empty response but get %d results for query %s", size, query)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 // WaitForRulesReturn waits for Prometheus rules for a given time interval
 // and validates the **first and only** result with the given validate function.
 func (c *PrometheusClient) WaitForRulesReturn(t *testing.T, timeout time.Duration, validate func([]byte) error) {

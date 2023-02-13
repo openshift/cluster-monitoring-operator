@@ -83,3 +83,78 @@ nodeExporter:
 	}
 
 }
+
+func TestNodeExporterCollectorDisablement(t *testing.T) {
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterMonitorConfigMapName,
+				Namespace: f.Ns,
+			},
+		})
+	})
+
+	tests := []struct {
+		nameCollector string
+		config        string
+		metrics       []string
+	}{
+		{
+			nameCollector: "netdev",
+			config: `
+nodeExporter:
+  collectors:
+    netdev:
+      enabled: false`,
+			metrics: []string{
+				"node_network_receive_bytes_total",
+				"node_network_receive_compressed_total",
+				"node_network_receive_drop_total",
+				"node_network_receive_errs_total",
+				"node_network_receive_fifo_total",
+				"node_network_receive_frame_total",
+				"node_network_receive_multicast_total",
+				"node_network_receive_nohandler_total",
+				"node_network_receive_packets_total",
+				"node_network_transmit_bytes_total",
+				"node_network_transmit_carrier_total",
+				"node_network_transmit_colls_total",
+				"node_network_transmit_compressed_total",
+				"node_network_transmit_drop_total",
+				"node_network_transmit_errs_total",
+				"node_network_transmit_fifo_total",
+				"node_network_transmit_packets_total",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run("Disable Collector: "+test.nameCollector, func(st *testing.T) {
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t, 5*time.Minute, fmt.Sprintf(`min(node_scrape_collector_success{collector="%s"})`, test.nameCollector),
+				func(v float64) error {
+					if v == 1 {
+						return nil
+					}
+					return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="%s"}) = 1 but got %v.`, test.nameCollector, v)
+				},
+			)
+
+			for _, metric := range test.metrics {
+				f.PrometheusK8sClient.WaitForQueryReturnEmpty(t, 5*time.Minute, fmt.Sprintf(`absent(%s)`, metric))
+			}
+
+			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
+
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t, 5*time.Minute, fmt.Sprintf(`absent_over_time(node_scrape_collector_success{collector="%s"}[1m])`, test.nameCollector),
+				func(v float64) error {
+					if v == 0 {
+						return fmt.Errorf(`expecting absent_over_time(node_scrape_collector_success{collector="%s"}[1m])> 0 but got %v.`, test.nameCollector, v)
+					}
+					return nil
+				},
+			)
+		})
+	}
+}

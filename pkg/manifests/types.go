@@ -264,6 +264,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics.
 	// Disabled by default.
 	TcpStat NodeExporterCollectorTcpStatConfig `json:"tcpstat,omitempty"`
+	// Defines the configuration of the `netdev` collector, which collects network devices statistics.
+	// Enabled by default.
+	NetDev NodeExporterCollectorNetDevConfig `json:"netdev,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -283,6 +286,32 @@ type NodeExporterCollectorCpufreqConfig struct {
 // By default, the `tcpstat` collector is disabled.
 type NodeExporterCollectorTcpStatConfig struct {
 	// A Boolean flag that enables or disables the `tcpstat` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for
+// the `netdev` collector of the `node-exporter` agent.
+// By default, the `netdev` collector is enabled.
+// If disabled, these metrics become unavailable:
+// `node_network_receive_bytes_total`,
+// `node_network_receive_compressed_total`,
+// `node_network_receive_drop_total`,
+// `node_network_receive_errs_total`,
+// `node_network_receive_fifo_total`,
+// `node_network_receive_frame_total`,
+// `node_network_receive_multicast_total`,
+// `node_network_receive_nohandler_total`,
+// `node_network_receive_packets_total`,
+// `node_network_transmit_bytes_total`,
+// `node_network_transmit_carrier_total`,
+// `node_network_transmit_colls_total`,
+// `node_network_transmit_compressed_total`,
+// `node_network_transmit_drop_total`,
+// `node_network_transmit_errs_total`,
+// `node_network_transmit_fifo_total`,
+// `node_network_transmit_packets_total`.
+type NodeExporterCollectorNetDevConfig struct {
+	// A Boolean flag that enables or disables the `netdev` collector.
 	Enabled bool `json:"enabled,omitempty"`
 }
 

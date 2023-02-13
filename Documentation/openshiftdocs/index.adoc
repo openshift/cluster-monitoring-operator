@@ -47,6 +47,7 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/kubestatemetricsconfig.adoc[KubeStateMetricsConfig]
 * link:modules/nodeexportercollectorconfig.adoc[NodeExporterCollectorConfig]
 * link:modules/nodeexportercollectorcpufreqconfig.adoc[NodeExporterCollectorCpufreqConfig]
+* link:modules/nodeexportercollectornetdevconfig.adoc[NodeExporterCollectorNetDevConfig]
 * link:modules/nodeexportercollectortcpstatconfig.adoc[NodeExporterCollectorTcpStatConfig]
 * link:modules/nodeexporterconfig.adoc[NodeExporterConfig]
 * link:modules/openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]

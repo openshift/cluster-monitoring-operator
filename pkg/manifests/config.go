@@ -188,7 +188,7 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 
 func NewConfig(content io.Reader) (*Config, error) {
 	c := Config{}
-	cmc := ClusterMonitoringConfiguration{}
+	cmc := defaultClusterMonitoringConfiguration()
 	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(&cmc)
 	if err != nil {
 		return nil, err
@@ -198,6 +198,18 @@ func NewConfig(content io.Reader) (*Config, error) {
 	res.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
 	return res, nil
+}
+
+func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
+	return ClusterMonitoringConfiguration{
+		NodeExporterConfig: NodeExporterConfig{
+			Collectors: NodeExporterCollectorConfig{
+				NetDev: NodeExporterCollectorNetDevConfig{
+					Enabled: true,
+				},
+			},
+		},
+	}
 }
 
 func (c *Config) applyDefaults() {
@@ -392,7 +404,7 @@ func NewConfigFromString(content string) (*Config, error) {
 
 func NewDefaultConfig() *Config {
 	c := &Config{}
-	cmc := ClusterMonitoringConfiguration{}
+	cmc := defaultClusterMonitoringConfiguration()
 	c.ClusterMonitoringConfiguration = &cmc
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
 	c.applyDefaults()
