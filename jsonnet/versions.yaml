@@ -20,5 +20,5 @@ versions:
   promLabelProxy: 0.6.0
   prometheus: 2.42.0
   prometheusAdapter: 0.10.0
-  prometheusOperator: 0.62.0
+  prometheusOperator: 0.63.0
   thanos: 0.30.2
