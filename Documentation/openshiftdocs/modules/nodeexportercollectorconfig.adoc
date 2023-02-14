@@ -26,6 +26,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |netclass|link:nodeexportercollectornetclassconfig.adoc[NodeExporterCollectorNetClassConfig]|Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default.
 
+|buddyinfo|link:nodeexportercollectorbuddyinfoconfig.adoc[NodeExporterCollectorBuddyInfoConfig]|Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`. Disabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]

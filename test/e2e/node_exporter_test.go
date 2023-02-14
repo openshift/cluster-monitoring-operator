@@ -54,6 +54,14 @@ nodeExporter:
     tcpstat:
       enabled: true`,
 		},
+		{
+			nameCollector: "buddyinfo",
+			config: `
+nodeExporter:
+  collectors:
+    buddyinfo:
+      enabled: true`,
+		},
 	}
 
 	for _, test := range tests {

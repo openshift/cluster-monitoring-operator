@@ -833,6 +833,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 		args = setArg(args, "--no-collector.netclass", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.BuddyInfo.Enabled {
+		args = setArg(args, "--collector.buddyinfo", "")
+	} else {
+		args = setArg(args, "--no-collector.buddyinfo", "")
+	}
+
 	return args
 }
 
