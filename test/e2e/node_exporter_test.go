@@ -126,6 +126,32 @@ nodeExporter:
 				"node_network_transmit_packets_total",
 			},
 		},
+		{
+			nameCollector: "netclass",
+			config: `
+nodeExporter:
+  collectors:
+    netclass:
+      enabled: false`,
+			metrics: []string{
+				"node_network_carrier",
+				"node_network_carrier_changes_total",
+				"node_network_carrier_down_changes_total",
+				"node_network_carrier_up_changes_total",
+				"node_network_dormant",
+				"node_network_flags",
+				"node_network_iface_id",
+				"node_network_iface_link",
+				"node_network_iface_link_mode",
+				"node_network_info",
+				"node_network_mtu_bytes",
+				"node_network_net_dev_group",
+				"node_network_protocol_type",
+				"node_network_speed_bytes",
+				"node_network_transmit_queue_length",
+				"node_network_up",
+			},
+		},
 	}
 
 	for _, test := range tests {

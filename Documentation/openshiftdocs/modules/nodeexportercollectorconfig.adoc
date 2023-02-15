@@ -24,6 +24,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |netdev|link:nodeexportercollectornetdevconfig.adoc[NodeExporterCollectorNetDevConfig]|Defines the configuration of the `netdev` collector, which collects network devices statistics. Enabled by default.
 
+|netclass|link:nodeexportercollectornetclassconfig.adoc[NodeExporterCollectorNetClassConfig]|Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]

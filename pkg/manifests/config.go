@@ -207,6 +207,9 @@ func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
 				NetDev: NodeExporterCollectorNetDevConfig{
 					Enabled: true,
 				},
+				NetClass: NodeExporterCollectorNetClassConfig{
+					Enabled: true,
+				},
 			},
 		},
 	}

@@ -11,6 +11,7 @@
 - [#1876](https://github.com/openshift/cluster-monitoring-operator/pull/1876) Add nodeExporter.collectors.tcpstat settings.
 - [#1888](https://github.com/openshift/cluster-monitoring-operator/pull/1888) Add nodeExporter.collectors.netdev settings.
 - [#1884](https://github.com/openshift/cluster-monitoring-operator/issues/1882) Allow configuring secrets in alertmanager component (UWM)
+- [#1893](https://github.com/openshift/cluster-monitoring-operator/pull/1893) Add nodeExporter.collectors.netclass settings.
 
 
 ## 4.12

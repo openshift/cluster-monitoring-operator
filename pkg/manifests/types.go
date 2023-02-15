@@ -267,6 +267,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `netdev` collector, which collects network devices statistics.
 	// Enabled by default.
 	NetDev NodeExporterCollectorNetDevConfig `json:"netdev,omitempty"`
+	// Defines the configuration of the `netclass` collector, which collects information about network devices.
+	// Enabled by default.
+	NetClass NodeExporterCollectorNetClassConfig `json:"netclass,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -312,6 +315,33 @@ type NodeExporterCollectorTcpStatConfig struct {
 // `node_network_transmit_packets_total`.
 type NodeExporterCollectorNetDevConfig struct {
 	// A Boolean flag that enables or disables the `netdev` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorNetClassConfig` resource works as an on/off switch for
+// the `netclass` collector of the `node-exporter` agent.
+// By default, the `netclass` collector is enabled.
+// If disabled, these metrics become unavailable:
+// `node_network_info`,
+// `node_network_address_assign_type`,
+// `node_network_carrier`,
+// `node_network_carrier_changes_total`,
+// `node_network_carrier_up_changes_total`,
+// `node_network_carrier_down_changes_total`,
+// `node_network_device_id`,
+// `node_network_dormant`,
+// `node_network_flags`,
+// `node_network_iface_id`,
+// `node_network_iface_link`,
+// `node_network_iface_link_mode`,
+// `node_network_mtu_bytes`,
+// `node_network_name_assign_type`,
+// `node_network_net_dev_group`,
+// `node_network_speed_bytes`,
+// `node_network_transmit_queue_length`,
+// `node_network_protocol_type`.
+type NodeExporterCollectorNetClassConfig struct {
+	// A Boolean flag that enables or disables the `netclass` collector.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
