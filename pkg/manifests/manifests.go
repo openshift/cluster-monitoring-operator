@@ -823,6 +823,7 @@ func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
 }
 
 func (f *Factory) updateNodeExporterArgs(args []string) []string {
+	args = setArg(args, fmt.Sprintf("--runtime.gomaxprocs=%d", f.config.ClusterMonitoringConfiguration.NodeExporterConfig.MaxProcs), "")
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.CpuFreq.Enabled {
 		args = setArg(args, "--collector.cpufreq", "")
 	} else {

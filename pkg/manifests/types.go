@@ -270,6 +270,13 @@ type ThanosQuerierConfig struct {
 type NodeExporterConfig struct {
 	// Defines which collectors are enabled and their additional configuration parameters.
 	Collectors NodeExporterCollectorConfig `json:"collectors,omitempty"`
+	// The target number of CPUs on which the Node Exporter's process will run.
+	// The default value here is `0`, which means that Node Exporter runs on all CPUs.
+	// If a kernel deadlock occurs or if performance degrades when reading from `sysfs` concurrently,
+	// you can change this value to `1`, which limits Node Exporter to running on one CPU.
+	// For nodes with a high CPU count, you can set the limit to a low number, which  saves resources by preventing Go routines from being scheduled to run on all CPUs.
+	// However, I/O performance degrades if the `maxProcs` value is set too low, and there are many metrics to collect.
+	MaxProcs uint32 `json:"maxProcs,omitempty"`
 }
 
 // The `NodeExporterCollectorConfig` resource defines settings for individual collectors

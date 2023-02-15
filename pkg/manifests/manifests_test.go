@@ -3035,6 +3035,71 @@ nodeExporter:
 
 }
 
+func TestNodeExporterGeneralSettings(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		config      string
+		argsPresent []string
+		argsAbsent  []string
+	}{
+		{
+			name:        "default config",
+			config:      "",
+			argsPresent: []string{"--runtime.gomaxprocs=0"},
+			argsAbsent:  []string{},
+		},
+		{
+			name: "gomaxprocs setting",
+			config: `
+nodeExporter:
+  maxProcs: 4
+`,
+			argsPresent: []string{"--runtime.gomaxprocs=4"},
+			argsAbsent:  []string{"--runtime.gomaxprocs=0"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(st *testing.T) {
+			c, err := NewConfigFromString(test.config, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			c.SetImages(map[string]string{
+				"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
+				"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
+			})
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			ds, err := f.NodeExporterDaemonSet()
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, container := range ds.Spec.Template.Spec.Containers {
+				switch container.Name {
+				case "node-exporter":
+					for _, arg := range test.argsPresent {
+						exist := argumentPresent(container, arg)
+						if !exist {
+							t.Fatalf("missing %s argument for Node Exporter", arg)
+						}
+					}
+
+					for _, arg := range test.argsAbsent {
+						exist := argumentPresent(container, arg)
+						if exist {
+							t.Fatalf("unexpected %s argument for Node Exporter", arg)
+						}
+					}
+				}
+			}
+		})
+
+	}
+
+}
+
 func TestKubeStateMetrics(t *testing.T) {
 	c, err := NewConfigFromString(``, false)
 	if err != nil {

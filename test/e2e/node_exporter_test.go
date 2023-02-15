@@ -192,3 +192,69 @@ nodeExporter:
 		})
 	}
 }
+
+// This test ensures neccessary collectors stay operational after changing generic options in Node Exporter.
+func TestNodeExporterGenericOptions(t *testing.T) {
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterMonitorConfigMapName,
+				Namespace: f.Ns,
+			},
+		})
+	})
+
+	collectorsToCheck := []string{
+		"cpu",
+		"diskstats",
+		"filesystem",
+		"hwmon",
+		"loadavg",
+		"meminfo",
+		"netclass",
+		"netdev",
+		"netstat",
+		"os",
+		"stat",
+		"time",
+		"uname",
+		"vmstat",
+	}
+
+	tests := []struct {
+		name        string
+		config      string
+		argsPresent []string
+	}{
+		{
+			name:   "default config",
+			config: "",
+		},
+		{
+			name: "maxprocs = 1",
+			config: `
+nodeExporter:
+  maxProcs: 1`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(st *testing.T) {
+			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
+
+			for _, nameCollector := range collectorsToCheck {
+
+				f.PrometheusK8sClient.WaitForQueryReturn(
+					t, 5*time.Minute, fmt.Sprintf(`min(node_scrape_collector_success{collector="%s"})`, nameCollector),
+					func(v float64) error {
+						if v != 1 {
+							return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="%s"}) = 1 but got %v.`, nameCollector, v)
+						}
+						return nil
+					},
+				)
+			}
+		})
+	}
+
+}
