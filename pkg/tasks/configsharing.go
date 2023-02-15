@@ -42,7 +42,11 @@ func NewConfigSharingTask(client *client.Client, factory *manifests.Factory, con
 
 func (t *ConfigSharingTask) Run(ctx context.Context) error {
 	var amURL, promURL, thanosURL *url.URL
-	if _, err := t.client.GetClusterOperator(ctx, "ingress"); err != nil {
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
+	if err != nil {
+		return errors.Wrap(err, "checking for Route capability failed")
+	}
+	if hasRoutes {
 		promRoute, err := t.factory.PrometheusK8sAPIRoute()
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus Route failed")
@@ -79,7 +83,6 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 	var (
 		svc                  *v1.Service
 		webPort, tenancyPort int
-		err                  error
 	)
 	if t.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		// User-defined alerts are routed to the UWM Alertmanager.

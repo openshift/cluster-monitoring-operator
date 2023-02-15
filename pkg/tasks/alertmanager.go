@@ -50,7 +50,11 @@ func (t *AlertmanagerTask) Run(ctx context.Context) error {
 }
 
 func (t *AlertmanagerTask) create(ctx context.Context) error {
-	if _, err := t.client.GetClusterOperator(ctx, "ingress"); err != nil {
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
+	if err != nil {
+		return errors.Wrap(err, "checking for Route capability failed")
+	}
+	if hasRoutes {
 		r, err := t.factory.AlertmanagerRoute()
 		if err != nil {
 			return errors.Wrap(err, "initializing Alertmanager Route failed")

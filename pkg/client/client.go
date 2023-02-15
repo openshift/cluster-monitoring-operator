@@ -364,6 +364,14 @@ func (c *Client) ClusterOperatorListWatch(ctx context.Context, name string) *cac
 	}
 }
 
+func (c *Client) HasRouteCapability(ctx context.Context) (bool, error) {
+	_, err := c.oscclient.ConfigV1().ClusterOperators().Get(ctx, "ingress", metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, err
+}
+
 func (c *Client) EnsurePrometheusUserWorkloadConfigMapExists(ctx context.Context, cm *v1.ConfigMap) error {
 	_, err := c.CreateIfNotExistConfigMap(ctx, cm)
 	return errors.Wrapf(err, "creating empty  ConfigMap object fauled")
@@ -513,10 +521,6 @@ func (c *Client) GetProxy(ctx context.Context, name string) (*configv1.Proxy, er
 
 func (c *Client) GetInfrastructure(ctx context.Context, name string) (*configv1.Infrastructure, error) {
 	return c.oscclient.ConfigV1().Infrastructures().Get(ctx, name, metav1.GetOptions{})
-}
-
-func (c *Client) GetClusterOperator(ctx context.Context, name string) (*configv1.ClusterOperator, error) {
-	return c.oscclient.ConfigV1().ClusterOperators().Get(ctx, name, metav1.GetOptions{})
 }
 
 func (c *Client) GetAPIServerConfig(ctx context.Context, name string) (*configv1.APIServer, error) {

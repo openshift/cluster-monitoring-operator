@@ -49,7 +49,11 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Thanos Querier Service failed")
 	}
 
-	if _, err := t.client.GetClusterOperator(ctx, "ingress"); err != nil {
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
+	if err != nil {
+		return errors.Wrap(err, "checking for Route capability failed")
+	}
+	if hasRoutes {
 		r, err := t.factory.ThanosQuerierRoute()
 		if err != nil {
 			return errors.Wrap(err, "initializing Thanos Querier Route failed")

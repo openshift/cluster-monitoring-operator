@@ -84,7 +84,11 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "creating kubelet serving CA Bundle ConfigMap failed")
 	}
 
-	if _, err := t.client.GetClusterOperator(ctx, "ingress"); err != nil {
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
+	if err != nil {
+		return errors.Wrap(err, "checking for Route capability failed")
+	}
+	if hasRoutes {
 		r, err := t.factory.PrometheusK8sAPIRoute()
 		if err != nil {
 			return errors.Wrap(err, "initializing Prometheus API Route failed")
