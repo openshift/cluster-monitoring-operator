@@ -826,6 +826,9 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {
 		args = setArg(args, "--collector.netclass", "")
+		if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.UseNetlink {
+			args = setArg(args, "--collector.netclass.netlink", "")
+		}
 	} else {
 		args = setArg(args, "--no-collector.netclass", "")
 	}

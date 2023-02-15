@@ -225,6 +225,7 @@ The `NodeExporterCollectorNetClassConfig` resource works as an on/off switch for
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `netclass` collector. |
+| useNetlink | bool | A Boolean flag that activates the `netlink` implementation of the `netclass` collector. This implementation improves the performance of the `netclass` collector by omitting these metrics: `node_network_address_assign_type`, `node_network_name_assign_type`, `node_network_device_id`. |
 
 [Back to TOC](#table-of-contents)
 
