@@ -809,6 +809,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 	} else {
 		args = setArg(args, "--no-collector.cpufreq", "")
 	}
+
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.TcpStat.Enabled {
+		args = setArg(args, "--collector.tcpstat", "")
+	} else {
+		args = setArg(args, "--no-collector.tcpstat", "")
+	}
 	return args
 }
 
