@@ -15,7 +15,7 @@ spec:
     interval: 30s
     metricRelabelings:
     - action: keep
-      regex: (apiserver_audit_event_total|apiserver_current_inflight_requests|apiserver_request_duration_seconds_bucket|apiserver_request_duration_seconds_count|apiserver_request_total)
+      regex: (apiserver_audit_event_total|apiserver_current_inflight_requests|apiserver_request_duration_seconds_bucket|apiserver_request_duration_seconds_count|apiserver_request_total|process_start_time_seconds)
       sourceLabels:
       - __name__
     port: https

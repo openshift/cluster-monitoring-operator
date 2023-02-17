@@ -15,20 +15,22 @@
                             {
                               caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
                               // For setting serverName the following logic is applied:
-                              // 1. Default behaviour for the majority of ServiceMonitors
-                              // 2. ServiceMonitors that end with -minimal or -$FUTURE_SCRAPE_PROFILE cannot just set
-                              // server name with o.metadata.name, thus we strip - and $PROFILE_NAME from o.metadata.name
-                              // 3. PrometheusThanos sidecar also have to be handled in a special fashion due to the
-                              // ServiceAccount having a different name than the ServiceMonitor
+                              // 1. Prometheus thanos sidecar, the SA that is created for thanos sidescars has a
+                              //    different name than the ServiceMonitor. The name format follows the following convention
+                              //    "prometheus-$PROM_INSTANCE-thanos-sidecar", $PROM_INSTANCE is either "k8s" or "user-workload"
+                              // 2. ServiceMonitors that adopted ScrapeProfiles end with -$SCRAPE_PROFILE,
+                              //    thus we strip - and $PROFILE_NAME from o.metadata.name
+                              // 3. Default behaviour for the majority of ServiceMonitors. ServiceMonitor has the same
+                              //    name as the SA
                               serverName: std.format('%s.%s.svc',
                                                      [
-                                                       if o.metadata.name != 'thanos-sidecar' then
-                                                         if !std.objectHas(o.metadata.labels, 'monitoring.openshift.io/scrape-profile') || o.metadata.labels['monitoring.openshift.io/scrape-profile'] == 'full' then
-                                                           o.metadata.name
-                                                         else
-                                                           std.rstripChars(o.metadata.name, '-' + o.metadata.labels['monitoring.openshift.io/scrape-profile'])
+                                                       if o.metadata.name == 'thanos-sidecar' then
+                                                         'prometheus-' + o.metadata.labels['app.kubernetes.io/instance'] + '-' + o.metadata.name
                                                        else
-                                                         'prometheus-' + o.metadata.labels['app.kubernetes.io/instance'] + '-' + o.metadata.name,
+                                                         if std.objectHas(o.metadata.labels, 'monitoring.openshift.io/scrape-profile') then
+                                                           std.rstripChars(o.metadata.name, '-' + o.metadata.labels['monitoring.openshift.io/scrape-profile'])
+                                                         else
+                                                           o.metadata.name,
                                                        o.metadata.namespace,
                                                      ]),
                             }

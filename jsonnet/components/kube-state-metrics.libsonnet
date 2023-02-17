@@ -71,7 +71,6 @@ function(params)
     minimalServiceMonitor: generateServiceMonitor.minimal(
       self.serviceMonitor, std.join('|',
                                     [
-                                      // https-main
                                       'kube_daemonset_status_current_number_scheduled',
                                       'kube_daemonset_status_desired_number_scheduled',
                                       'kube_daemonset_status_number_available',
@@ -112,12 +111,15 @@ function(params)
                                       'kube_pod_owner',
                                       'kube_pod_status_phase',
                                       'kube_pod_status_ready',
+                                      'kube_pod_status_unschedulable',
                                       'kube_poddisruptionbudget_status_current_healthy',
                                       'kube_poddisruptionbudget_status_desired_healthy',
                                       'kube_poddisruptionbudget_status_expected_pods',
                                       'kube_replicaset_owner',
                                       'kube_replicationcontroller_owner',
                                       'kube_resourcequota',
+                                      'kube_state_metrics_list_total',
+                                      'kube_state_metrics_watch_total',
                                       'kube_statefulset_metadata_generation',
                                       'kube_statefulset_replicas',
                                       'kube_statefulset_status_current_revision',
@@ -127,9 +129,7 @@ function(params)
                                       'kube_statefulset_status_replicas_updated',
                                       'kube_statefulset_status_update_revision',
                                       'kube_storageclass_info',
-                                      // https-self
-                                      'kube_state_metrics_list_total',
-                                      'kube_state_metrics_watch_total',
+                                      'process_start_time_seconds',
                                     ])
     ),
 

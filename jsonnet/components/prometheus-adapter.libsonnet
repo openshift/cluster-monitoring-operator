@@ -88,6 +88,7 @@ function(params)
                                       'apiserver_request_duration_seconds_bucket',
                                       'apiserver_request_duration_seconds_count',
                                       'apiserver_request_total',
+                                      'process_start_time_seconds',
                                     ])
     ),
 
