@@ -27,6 +27,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
 * [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
 * [NodeExporterConfig](#nodeexporterconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
@@ -190,6 +191,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | -------- | ---- | ----------- |
 | cpufreq | [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig) | Defines the configuration of the `cpufreq` collector, which collects CPU frequency statistics. Disabled by default. |
 | tcpstat | [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig) | Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics. Disabled by default. |
+| netdev | [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig) | Defines the configuration of the `netdev` collector, which collects network devices statistics. Enabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -205,6 +207,21 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `cpufreq` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorNetDevConfig
+
+#### Description
+
+The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for the `netdev` collector of the `node-exporter` agent. By default, the `netdev` collector is enabled. If disabled, these metrics become unavailable: `node_network_receive_bytes_total`, `node_network_receive_compressed_total`, `node_network_receive_drop_total`, `node_network_receive_errs_total`, `node_network_receive_fifo_total`, `node_network_receive_frame_total`, `node_network_receive_multicast_total`, `node_network_receive_nohandler_total`, `node_network_receive_packets_total`, `node_network_transmit_bytes_total`, `node_network_transmit_carrier_total`, `node_network_transmit_colls_total`, `node_network_transmit_compressed_total`, `node_network_transmit_drop_total`, `node_network_transmit_errs_total`, `node_network_transmit_fifo_total`, `node_network_transmit_packets_total`.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `netdev` collector. |
 
 [Back to TOC](#table-of-contents)
 
