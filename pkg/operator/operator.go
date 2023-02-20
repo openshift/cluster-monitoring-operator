@@ -122,8 +122,9 @@ func (pc *ProxyConfig) NoProxy() string {
 }
 
 const (
-	resyncPeriod = 15 * time.Minute
-	maxFailCount = 2
+	resyncPeriod         = 15 * time.Minute
+	reconciliationPeriod = 5 * time.Minute
+	maxFailCount         = 2
 
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
@@ -442,13 +443,13 @@ func (o *Operator) Run(ctx context.Context) error {
 
 	go o.worker(ctx)
 
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(reconciliationPeriod)
 	defer ticker.Stop()
 
 	key := o.namespace + "/" + o.configMapName
 	_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
 	if !exists {
-		klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", resyncPeriod)
+		klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", reconciliationPeriod)
 		o.enqueue(key)
 	}
 
@@ -459,7 +460,7 @@ func (o *Operator) Run(ctx context.Context) error {
 		case <-ticker.C:
 			_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
 			if !exists {
-				klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", resyncPeriod)
+				klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", reconciliationPeriod)
 				o.enqueue(key)
 			}
 		}
