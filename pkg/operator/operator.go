@@ -226,7 +226,7 @@ func New(
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
-		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(50*time.Millisecond, 3*time.Minute), "cluster-monitoring"),
+		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(50*time.Millisecond, 10*time.Second), "cluster-monitoring"),
 		informers:                 make([]cache.SharedIndexInformer, 0),
 		assets:                    a,
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
