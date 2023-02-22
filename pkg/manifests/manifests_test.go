@@ -2764,6 +2764,28 @@ ingress:
 
 }
 
+func TestAlertManagerUserWorkloadSecretsConfiguration(t *testing.T) {
+	c := NewDefaultConfig()
+	c.UserWorkloadConfiguration.Alertmanager.Secrets = []string{"test-secret", "slack-api-token"}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	a, err := f.AlertmanagerUserWorkload(
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !slices.Contains(a.Spec.Secrets, "test-secret") {
+		t.Fatal("Alertmanager secret `test-secret` is not configured correctly")
+	}
+
+	if !slices.Contains(a.Spec.Secrets, "slack-api-token") {
+		t.Fatal("Alertmanager secret `slack-api-token` is not configured correctly")
+	}
+}
+
 func TestNodeExporter(t *testing.T) {
 	c, err := NewConfigFromString(``)
 	if err != nil {

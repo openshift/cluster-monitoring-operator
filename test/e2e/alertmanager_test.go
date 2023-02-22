@@ -26,6 +26,7 @@ import (
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/Jeffail/gabs/v2"
 	statusv1 "github.com/openshift/api/config/v1"
@@ -890,4 +891,97 @@ func assertLabelSelectorRequirement(reqs []metav1.LabelSelectorRequirement, must
 	}
 
 	return fmt.Errorf("required label selector %v not found in %v", mustInclude, reqs)
+}
+
+// TestAlertmanagerUWMSecrets ensures secrets
+// are mounted correctly in UWM AlertManager container
+func TestAlertmanagerUWMSecrets(t *testing.T) {
+	amSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				"group":                    "amsecret-e2e",
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Data: map[string][]byte{
+			"username": []byte("admin"),
+			"password": []byte("password"),
+		},
+	}
+
+	if err := f.OperatorClient.CreateIfNotExistSecret(ctx, amSecret); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name               string
+		config             string
+		userWorkloadConfig string
+		amName             string
+		amNamespace        string
+	}{
+		{
+			name:   "user-workload-alertmanager-secrets",
+			config: `enableUserWorkload: true`,
+			userWorkloadConfig: `alertmanager:
+  enabled: true
+  secrets:
+  - test-secret`,
+			amName:      "user-workload",
+			amNamespace: f.UserWorkloadMonitoringNs,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cm := getUserWorkloadEnabledConfigMap(t, f)
+			f.MustCreateOrUpdateConfigMap(t, cm)
+			t.Cleanup(func() {
+				f.MustDeleteConfigMap(t, cm)
+			})
+
+			uwmConfigMap := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      userWorkloadMonitorConfigMapName,
+					Namespace: f.UserWorkloadMonitoringNs,
+					Labels: map[string]string{
+						framework.E2eTestLabelName: framework.E2eTestLabelValue,
+					},
+				},
+				Data: map[string]string{
+					"config.yaml": tc.userWorkloadConfig,
+				},
+			}
+			f.MustCreateOrUpdateConfigMap(t, uwmConfigMap)
+			t.Cleanup(func() {
+				f.MustDeleteConfigMap(t, uwmConfigMap)
+			})
+
+			am := testAlertmanagerReady(t, tc.amName, tc.amNamespace)
+			if !slices.Contains(am.Spec.Secrets, "test-secret") {
+				t.Fatal("Alertmanager secret `test-secret` is not configured correctly")
+			}
+
+			amPods, err := f.KubeClient.CoreV1().Pods(f.UserWorkloadMonitoringNs).List(ctx, metav1.ListOptions{
+				LabelSelector: fmt.Sprintf("app.kubernetes.io/instance=%s", tc.amName),
+				FieldSelector: "status.phase=Running",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			amVolumeMounts := amPods.Items[0].Spec.Containers[0].VolumeMounts
+			var secretMountedCorrectly bool
+			for _, vm := range amVolumeMounts {
+				if vm.Name == "secret-test-secret" && vm.MountPath == "/etc/alertmanager/secrets/test-secret" {
+					secretMountedCorrectly = true
+					break
+				}
+			}
+
+			if !secretMountedCorrectly {
+				t.Fatalf("expected `test-secret` to be mounted correctly in alertmanager container")
+			}
+		})
+	}
 }
