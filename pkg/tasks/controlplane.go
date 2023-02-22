@@ -17,9 +17,11 @@ package tasks
 import (
 	"context"
 
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
 )
 
 type ControlPlaneTask struct {
@@ -83,14 +85,14 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "reconciling control-plane etcd ServiceMonitor failed")
 		}
-		etcdCA, err := t.client.GetConfigmap(ctx, "openshift-config", "etcd-metric-serving-ca")
+		etcdCA, err := t.client.WaitForConfigMapByNsName(ctx, types.NamespacedName{Namespace: "openshift-config", Name: "etcd-metric-serving-ca"})
 		if err != nil {
-			return errors.Wrap(err, "failed to load etcd client CA")
+			return errors.Wrap(err, "failed to wait for openshift-config/etcd-metric-serving-ca configmap")
 		}
 
-		etcdClientSecret, err := t.client.GetSecret(ctx, "openshift-config", "etcd-metric-client")
+		etcdClientSecret, err := t.client.WaitForSecretByNsName(ctx, types.NamespacedName{Namespace: "openshift-config", Name: "etcd-metric-client"})
 		if err != nil {
-			return errors.Wrap(err, "failed to load etcd client secret")
+			return errors.Wrap(err, "failed to wait for openshift-config/etcd-metric-client secret")
 		}
 
 		promEtcdSecret, err := t.factory.ControlPlaneEtcdSecret(etcdClientSecret, etcdCA)

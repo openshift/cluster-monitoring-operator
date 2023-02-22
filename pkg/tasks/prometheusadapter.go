@@ -3,10 +3,12 @@ package tasks
 import (
 	"context"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 type PrometheusAdapterTask struct {
@@ -183,14 +185,14 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 			cmName = cm.Name
 		}
 
-		tlsSecret, err := t.client.GetSecret(ctx, t.namespace, "prometheus-adapter-tls")
+		tlsSecret, err := t.client.WaitForSecretByNsName(ctx, types.NamespacedName{Namespace: t.namespace, Name: "prometheus-adapter-tls"})
 		if err != nil {
-			return errors.Wrap(err, "failed to load prometheus-adapter-tls secret")
+			return errors.Wrap(err, "failed to wait for prometheus-adapter-tls secret")
 		}
 
-		apiAuthConfigmap, err := t.client.GetConfigmap(ctx, "kube-system", "extension-apiserver-authentication")
+		apiAuthConfigmap, err := t.client.WaitForConfigMapByNsName(ctx, types.NamespacedName{Namespace: "kube-system", Name: "extension-apiserver-authentication"})
 		if err != nil {
-			return errors.Wrap(err, "failed to load kube-system/extension-apiserver-authentication configmap")
+			return errors.Wrap(err, "failed to wait for kube-system/extension-apiserver-authentication configmap")
 		}
 
 		secret, err := t.factory.PrometheusAdapterSecret(tlsSecret, apiAuthConfigmap)
