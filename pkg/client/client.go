@@ -1204,22 +1204,21 @@ func (c *Client) WaitForSecret(ctx context.Context, s *v1.Secret) (*v1.Secret, e
 	var lastErr error
 	if err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
 		var err error
+
 		result, err = c.kclient.CoreV1().Secrets(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
-
-		if apierrors.IsNotFound(err) {
-			lastErr = err
-			return false, nil
-		}
-
 		if err != nil {
 			lastErr = err
-			klog.V(4).ErrorS(err, "WaitForSecret: failed to get Secret")
 			return false, nil
 		}
 
-		for _, v := range result.Data {
+		if len(result.Data) == 0 {
+			lastErr = errors.New("secret contains no data")
+			return false, nil
+		}
+
+		for k, v := range result.Data {
 			if len(v) == 0 {
-				lastErr = errors.New("secret contains no data")
+				lastErr = fmt.Errorf("%q key has empty value", k)
 				return false, nil
 			}
 		}
@@ -1243,6 +1242,52 @@ func (c *Client) WaitForSecretByNsName(ctx context.Context, obj types.Namespaced
 		},
 	}
 	return c.WaitForSecret(ctx, &secret)
+}
+
+func (c *Client) WaitForConfigMap(ctx context.Context, cm *v1.ConfigMap) (*v1.ConfigMap, error) {
+	var result *v1.ConfigMap
+	var lastErr error
+	if err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
+		var err error
+
+		result, err = c.kclient.CoreV1().ConfigMaps(cm.Namespace).Get(ctx, cm.Name, metav1.GetOptions{})
+		if err != nil {
+			lastErr = err
+			return false, nil
+		}
+
+		if len(result.Data) == 0 {
+			lastErr = errors.New("configmap contains no data")
+			return false, nil
+		}
+
+		for k, v := range result.Data {
+			if len(v) == 0 {
+				lastErr = fmt.Errorf("%q key has empty value", k)
+				return false, nil
+			}
+		}
+
+		return true, nil
+	}); err != nil {
+		if err == wait.ErrWaitTimeout && lastErr != nil {
+			err = lastErr
+		}
+		return nil, errors.Wrapf(err, "waiting for ConfigMap %s/%s", cm.GetNamespace(), cm.GetName())
+	}
+
+	return result, nil
+}
+
+func (c *Client) WaitForConfigMapByNsName(ctx context.Context, obj types.NamespacedName) (*v1.ConfigMap, error) {
+	return c.WaitForConfigMap(
+		ctx,
+		&v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      obj.Name,
+				Namespace: obj.Namespace,
+			},
+		})
 }
 
 func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (string, error) {
