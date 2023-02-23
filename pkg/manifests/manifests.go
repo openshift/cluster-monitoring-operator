@@ -711,7 +711,7 @@ func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
+	return serviceMonitors(f.config.TechPreview, f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -817,7 +817,7 @@ func (f *Factory) OpenShiftStateMetricsRBACProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
+	return serviceMonitors(f.config.TechPreview, f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
 }
 
 func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -1271,7 +1271,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		return nil, err
 	}
 
-	if err := f.setupProfilesToIgnore(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile); err != nil {
+	if err := setupProfilesToIgnore(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile); err != nil {
 		return nil, err
 	}
 
@@ -1526,13 +1526,13 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 // setupProfilesToIgnore configures the label selectors of the Prometheus ("p")
 // to select any ServiceMonitor's or PodMonitor's that doesn't have the scrape
 // profile label or that matches the Scrape Profile ("sp").
-func (f *Factory) setupProfilesToIgnore(p *monv1.Prometheus, sp ScrapeProfile) error {
-	// Our goal is to configure Prometheus select both the resources
-	// that either don't have the scrape profile label or have the
-	// desired value. However with label selectors we are not able
-	// to express OR conditions. Hence, the only alternative is to
-	// configure Prometheus to not select any resource that matches
-	// either of the scrape profiles that we are not interested in.
+func setupProfilesToIgnore(p *monv1.Prometheus, sp ScrapeProfile) error {
+	// Our goal is to configure Prometheus to select both the resources that
+	// either don't have the scrape profile label or have the desired value.
+	// However with label selectors we are not able to express OR conditions.
+	// Hence, the only alternative is to configure Prometheus to not select any
+	// resource that matches either of the scrape profiles that we are not
+	// interested in.
 	profiles := make([]string, 0, len(ScrapeProfiles)-1)
 	for _, profile := range ScrapeProfiles {
 		if profile == sp {
@@ -1894,7 +1894,7 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 }
 
 func (f *Factory) PrometheusAdapterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.PrometheusAdapterServiceMonitor, f.PrometheusAdapterMinimalServiceMonitor)
+	return serviceMonitors(f.config.TechPreview, f.PrometheusAdapterServiceMonitor, f.PrometheusAdapterMinimalServiceMonitor)
 }
 
 func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -2350,7 +2350,7 @@ func (f *Factory) ControlPlaneEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap)
 }
 
 func (f *Factory) ControlPlaneEtcdServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.ControlPlaneEtcdServiceMonitor, f.ControlPlaneEtcdMinimalServiceMonitor)
+	return serviceMonitors(f.config.TechPreview, f.ControlPlaneEtcdServiceMonitor, f.ControlPlaneEtcdMinimalServiceMonitor)
 }
 
 func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -2362,7 +2362,7 @@ func (f *Factory) ControlPlaneEtcdMinimalServiceMonitor() (*monv1.ServiceMonitor
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
+	return serviceMonitors(f.config.TechPreview, f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -3348,7 +3348,7 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 	}, nil
 }
 
-func serviceMonitors(fullServiceMonitor, minimalServiceMonitor func() (*monv1.ServiceMonitor, error)) ([]*monv1.ServiceMonitor, error) {
+func serviceMonitors(appendMinimal bool, fullServiceMonitor, minimalServiceMonitor func() (*monv1.ServiceMonitor, error)) ([]*monv1.ServiceMonitor, error) {
 	sMonitor, err := fullServiceMonitor()
 	if err != nil {
 		return nil, err
@@ -3357,10 +3357,11 @@ func serviceMonitors(fullServiceMonitor, minimalServiceMonitor func() (*monv1.Se
 	if err != nil {
 		return nil, err
 	}
-	return []*monv1.ServiceMonitor{
-		sMonitor,
-		sMonitorMinimal,
-	}, nil
+	sms := []*monv1.ServiceMonitor{sMonitor}
+	if appendMinimal {
+		sms = append(sms, sMonitorMinimal)
+	}
+	return sms, nil
 }
 
 func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteSpec) []monv1.RemoteWriteSpec {

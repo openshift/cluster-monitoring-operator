@@ -714,7 +714,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
   image: quay.io/test/prometheus-operator
   prometheusConfigReloaderImage: quay.io/test/prometheus-config-reloader
   configReloaderImage: quay.io/test/configmap-reload
-`)
+`, false)
 
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
@@ -804,7 +804,7 @@ func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusOperator:
   nodeSelector:
     type: master
-`)
+`, false)
 
 	c.SetImages(map[string]string{
 		"prometheus-operator-admission-webhook": "docker.io/openshift/origin-prometheus-operator-admission-webhook:latest",
@@ -917,7 +917,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "simple remote write",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
+				c, err := NewConfigFromString("", false)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -944,7 +944,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "simple remote write with relabel config",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
+				c, err := NewConfigFromString("", false)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -985,7 +985,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "multiple remote write with relabel config",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
+				c, err := NewConfigFromString("", false)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1247,7 +1247,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
         endpointParams:
           param1: value1
           param2: value2
-`)
+`, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1391,7 +1391,7 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config)
+			c, err := NewConfigFromString(tc.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1450,7 +1450,7 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   queryLogFile: /tmp/test
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
-`)
+`, false)
 
 	if err != nil {
 		t.Fatal(err)
@@ -1841,7 +1841,7 @@ func TestPrometheusK8sConfigurationBodySizeLimit(t *testing.T) {
 	c, err := NewConfigFromString(`
 prometheusK8s:
     enforcedBodySizeLimit: "10MB"
-  `)
+  `, false)
 
 	if err != nil {
 		t.Fatal(err)
@@ -2055,7 +2055,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config)
+			c, err := NewConfigFromString(tt.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2376,7 +2376,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config)
+			c, err := NewConfigFromString(tt.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2475,7 +2475,7 @@ k8sPrometheusAdapter:
 
 	for _, test := range tt {
 		t.Run(test.scenario, func(t *testing.T) {
-			c, err := NewConfigFromString(test.config)
+			c, err := NewConfigFromString(test.config, false)
 			if err != nil {
 				t.Logf("%s\n\n", test.config)
 				t.Fatal(err)
@@ -2531,7 +2531,7 @@ func TestK8sPrometheusAdapterConfiguration(t *testing.T) {
 k8sPrometheusAdapter:
   nodeSelector:
     test: value
-`)
+`, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2592,7 +2592,7 @@ func TestAlertmanagerMainStartupProbe(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config)
+			c, err := NewConfigFromString(tc.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2662,7 +2662,7 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
           storage: 10Gi
 ingress:
   baseAddress: monitoring-demo.staging.core-os.net
-`)
+`, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2842,7 +2842,7 @@ func TestAlertManagerUserWorkloadSecretsConfiguration(t *testing.T) {
 }
 
 func TestNodeExporter(t *testing.T) {
-	c, err := NewConfigFromString(``)
+	c, err := NewConfigFromString(``, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2957,7 +2957,7 @@ nodeExporter:
 
 	for _, test := range tests {
 		t.Run(test.name, func(st *testing.T) {
-			c, err := NewConfigFromString(test.config)
+			c, err := NewConfigFromString(test.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2996,7 +2996,7 @@ nodeExporter:
 }
 
 func TestKubeStateMetrics(t *testing.T) {
-	c, err := NewConfigFromString(``)
+	c, err := NewConfigFromString(``, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3055,7 +3055,7 @@ func TestKubeStateMetrics(t *testing.T) {
 }
 
 func TestOpenShiftStateMetrics(t *testing.T) {
-	c, err := NewConfigFromString(``)
+	c, err := NewConfigFromString(``, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3172,7 +3172,7 @@ func TestThanosQuerierConfiguration(t *testing.T) {
       cpu: 3m
       memory: 4Mi
   logLevel: debug
-  enableRequestLogging: true`)
+  enableRequestLogging: true`, false)
 
 	if err != nil {
 		t.Fatal(err)
@@ -3325,7 +3325,7 @@ grpc:
 }
 
 func TestTelemeterConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(``)
+	c, err := NewConfigFromString(``, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3425,7 +3425,7 @@ func TestTelemeterClientSecret(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config)
+			c, err := NewConfigFromString(tc.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -3459,7 +3459,7 @@ func TestTelemeterClientSecret(t *testing.T) {
 }
 
 func TestThanosRulerConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(``)
+	c, err := NewConfigFromString(``, false)
 	uwc, err := NewUserConfigFromString(`thanosRuler:
   topologySpreadConstraints:
   - maxSkew: 1
@@ -3921,7 +3921,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`
 enableUserWorkload: true
-`)
+`, false)
 
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
@@ -4023,7 +4023,7 @@ func TestPrometheusOperatorNodeSelector(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(`
 enableUserWorkload: true
-`)
+`, false)
 			if err != nil {
 				t.Fatal(err)
 			}

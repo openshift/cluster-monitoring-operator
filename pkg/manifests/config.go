@@ -48,6 +48,7 @@ const (
 type Config struct {
 	Images      *Images `json:"-"`
 	RemoteWrite bool    `json:"-"`
+	TechPreview bool    `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
@@ -187,7 +188,7 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	return true
 }
 
-func NewConfig(content io.Reader) (*Config, error) {
+func NewConfig(content io.Reader, tp bool) (*Config, error) {
 	c := Config{}
 	cmc := defaultClusterMonitoringConfiguration()
 	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(&cmc)
@@ -198,7 +199,12 @@ func NewConfig(content io.Reader) (*Config, error) {
 	res := &c
 	res.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
+	// The operator should only create some manifests if techPreview is enabled
+	c.TechPreview = tp
 
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile != FullScrapeProfile && !tp {
+		return nil, errors.Wrap(ErrConfigValidation, "scrapeProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
+	}
 	// Validate ScrapeProfile field
 	foundProfile := false
 	for _, profile := range ScrapeProfiles {
@@ -412,12 +418,17 @@ func calculateBodySizeLimit(podCapacity int) string {
 	return fmt.Sprintf("%dMB", int(math.Ceil(float64(bodySize)/(1024*1024))))
 }
 
-func NewConfigFromString(content string) (*Config, error) {
+// NewConfigFromString transforms a string containing configuration in the
+// openshift-monitoring/cluster-monitoring-configuration format into a data
+// struture that facilitates programmatical checks of that configuration. The
+// content of the data structure might change if TechPreview is enabeld (tp), as
+// some features are only meant for TechPreview.
+func NewConfigFromString(content string, tp bool) (*Config, error) {
 	if content == "" {
 		return NewDefaultConfig(), nil
 	}
 
-	return NewConfig(bytes.NewBuffer([]byte(content)))
+	return NewConfig(bytes.NewBuffer([]byte(content)), tp)
 }
 
 func NewDefaultConfig() *Config {
