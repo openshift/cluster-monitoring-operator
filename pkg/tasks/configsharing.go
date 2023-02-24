@@ -41,37 +41,43 @@ func NewConfigSharingTask(client *client.Client, factory *manifests.Factory, con
 }
 
 func (t *ConfigSharingTask) Run(ctx context.Context) error {
-	promRoute, err := t.factory.PrometheusK8sAPIRoute()
+	var amURL, promURL, thanosURL *url.URL
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Route failed")
+		return errors.Wrap(err, "checking for Route capability failed")
 	}
-
-	promURL, err := t.client.GetRouteURL(ctx, promRoute)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve Prometheus host")
-	}
-
-	var amURL *url.URL
-	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
-		amRoute, err := t.factory.AlertmanagerRoute()
+	if hasRoutes {
+		promRoute, err := t.factory.PrometheusK8sAPIRoute()
 		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager Route failed")
+			return errors.Wrap(err, "initializing Prometheus Route failed")
 		}
 
-		amURL, err = t.client.GetRouteURL(ctx, amRoute)
+		promURL, err = t.client.GetRouteURL(ctx, promRoute)
 		if err != nil {
-			return errors.Wrap(err, "failed to retrieve Alertmanager host")
+			return errors.Wrap(err, "failed to retrieve Prometheus host")
 		}
-	}
 
-	thanosRoute, err := t.factory.ThanosQuerierRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Querier Route failed")
-	}
+		if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+			amRoute, err := t.factory.AlertmanagerRoute()
+			if err != nil {
+				return errors.Wrap(err, "initializing Alertmanager Route failed")
+			}
 
-	thanosURL, err := t.client.GetRouteURL(ctx, thanosRoute)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve Thanos Querier host")
+			amURL, err = t.client.GetRouteURL(ctx, amRoute)
+			if err != nil {
+				return errors.Wrap(err, "failed to retrieve Alertmanager host")
+			}
+		}
+
+		thanosRoute, err := t.factory.ThanosQuerierRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Thanos Querier Route failed")
+		}
+
+		thanosURL, err = t.client.GetRouteURL(ctx, thanosRoute)
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve Thanos Querier host")
+		}
 	}
 
 	var (

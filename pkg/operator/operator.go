@@ -341,6 +341,23 @@ func New(
 	})
 	o.informers = append(o.informers, informer)
 
+	informer = cache.NewSharedIndexInformer(
+		o.client.ClusterOperatorListWatch(ctx, "ingress"),
+		&configv1.ClusterOperator{}, resyncPeriod, cache.Indexers{},
+	)
+
+	// According to the component-selection enhancement proposal [1] the
+	// ingress cluster operator (or capability) could be added after an
+	// installation where this functionality was initially turned off. The
+	// other way around is not possible (install with ingress and deactivate
+	// later).
+	// So we only add a watch for the add event here.
+	// [1] https://github.com/openshift/enhancements/blob/ab2b0aea4291cb74a49bca1983013d154d386cb7/enhancements/installer/component-selection.m#capabilities-can-be-installed
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: o.handleEvent,
+	})
+	o.informers = append(o.informers, informer)
+
 	// Setup PVC informers to sync annotation updates.
 	for _, ns := range []string{o.namespace, o.namespaceUserWorkload} {
 		informer = cache.NewSharedIndexInformer(
@@ -499,6 +516,12 @@ func (o *Operator) handleEvent(obj interface{}) {
 
 	if _, ok := obj.(*configv1.Console); ok {
 		klog.Info("Triggering update due to a console update")
+		o.enqueue(cmoConfigMap)
+		return
+	}
+
+	if _, ok := obj.(*configv1.ClusterOperator); ok {
+		klog.Info("Triggering update due to a cluster operator update")
 		o.enqueue(cmoConfigMap)
 		return
 	}

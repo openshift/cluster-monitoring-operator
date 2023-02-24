@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -57,19 +58,25 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Thanos Ruler Service failed")
 	}
 
-	r, err := t.factory.ThanosRulerRoute()
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Ruler Route failed")
+		return errors.Wrap(err, "checking for Route capability failed")
 	}
+	if hasRoutes {
+		r, err := t.factory.ThanosRulerRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Thanos Ruler Route failed")
+		}
 
-	err = t.client.CreateOrUpdateRoute(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Thanos Ruler Route failed")
-	}
+		err = t.client.CreateOrUpdateRoute(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Thanos Ruler Route failed")
+		}
 
-	_, err = t.client.WaitForRouteReady(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Thanos Ruler Route to become ready failed")
+		_, err = t.client.WaitForRouteReady(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Thanos Ruler Route to become ready failed")
+		}
 	}
 
 	cr, err := t.factory.ThanosRulerClusterRole()
@@ -215,11 +222,18 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 			return errors.Wrap(err, "error deleting expired UserWorkload Thanos Ruler GRPC TLS secret")
 		}
 
-		querierRoute, err := t.factory.ThanosQuerierRoute()
+		hasRoutes, err := t.client.HasRouteCapability(ctx)
 		if err != nil {
-			return errors.Wrap(err, "initializing Thanos Querier Route failed")
+			return errors.Wrap(err, "checking for Route capability failed")
 		}
-		queryURL, err := t.client.GetRouteURL(ctx, querierRoute)
+		var queryURL *url.URL
+		if hasRoutes {
+			querierRoute, err := t.factory.ThanosQuerierRoute()
+			if err != nil {
+				return errors.Wrap(err, "initializing Thanos Querier Route failed")
+			}
+			queryURL, err = t.client.GetRouteURL(ctx, querierRoute)
+		}
 
 		pdb, err := t.factory.ThanosRulerPodDisruptionBudget()
 		if err != nil {

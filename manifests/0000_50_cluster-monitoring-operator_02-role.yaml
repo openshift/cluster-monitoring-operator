@@ -111,6 +111,8 @@ rules:
   - get
   - update
   - create
+  - list
+  - watch
 - apiGroups:
   - config.openshift.io
   resources:

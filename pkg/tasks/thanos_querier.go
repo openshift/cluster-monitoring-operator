@@ -49,19 +49,25 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Thanos Querier Service failed")
 	}
 
-	r, err := t.factory.ThanosQuerierRoute()
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Querier Route failed")
+		return errors.Wrap(err, "checking for Route capability failed")
 	}
+	if hasRoutes {
+		r, err := t.factory.ThanosQuerierRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Thanos Querier Route failed")
+		}
 
-	err = t.client.CreateOrUpdateRoute(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Thanos Querier Route failed")
-	}
+		err = t.client.CreateOrUpdateRoute(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Thanos Querier Route failed")
+		}
 
-	_, err = t.client.WaitForRouteReady(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Thanos Querier Route to become ready failed")
+		_, err = t.client.WaitForRouteReady(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Thanos Querier Route to become ready failed")
+		}
 	}
 
 	s, err := t.factory.ThanosQuerierOauthCookieSecret()

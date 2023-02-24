@@ -84,34 +84,40 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "creating kubelet serving CA Bundle ConfigMap failed")
 	}
 
-	r, err := t.factory.PrometheusK8sAPIRoute()
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus API Route failed")
+		return errors.Wrap(err, "checking for Route capability failed")
 	}
+	if hasRoutes {
+		r, err := t.factory.PrometheusK8sAPIRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus API Route failed")
+		}
 
-	err = t.client.CreateOrUpdateRoute(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus API Route failed")
-	}
+		err = t.client.CreateOrUpdateRoute(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus API Route failed")
+		}
 
-	_, err = t.client.WaitForRouteReady(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus API Route to become ready failed")
-	}
+		_, err = t.client.WaitForRouteReady(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Prometheus API Route to become ready failed")
+		}
 
-	fr, err := t.factory.PrometheusK8sFederateRoute()
-	if err != nil {
-		return errors.Wrap(err, "initializing Prometheus Federate Route failed")
-	}
+		fr, err := t.factory.PrometheusK8sFederateRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Prometheus Federate Route failed")
+		}
 
-	err = t.client.CreateOrUpdateRoute(ctx, fr)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Prometheus Federate Route failed")
-	}
+		err = t.client.CreateOrUpdateRoute(ctx, fr)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Prometheus Federate Route failed")
+		}
 
-	_, err = t.client.WaitForRouteReady(ctx, fr)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus Federate Route to become ready failed")
+		_, err = t.client.WaitForRouteReady(ctx, fr)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Prometheus Federate Route to become ready failed")
+		}
 	}
 
 	ps, err := t.factory.PrometheusK8sProxySecret()

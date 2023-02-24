@@ -191,7 +191,7 @@ function(params) {
       {
         apiGroups: ['config.openshift.io'],
         resources: ['clusteroperators', 'clusteroperators/status'],
-        verbs: ['get', 'update', 'create'],
+        verbs: ['get', 'update', 'create', 'list', 'watch'],
       },
       {
         apiGroups: ['config.openshift.io'],

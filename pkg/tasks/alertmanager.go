@@ -50,19 +50,25 @@ func (t *AlertmanagerTask) Run(ctx context.Context) error {
 }
 
 func (t *AlertmanagerTask) create(ctx context.Context) error {
-	r, err := t.factory.AlertmanagerRoute()
+	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager Route failed")
+		return errors.Wrap(err, "checking for Route capability failed")
 	}
+	if hasRoutes {
+		r, err := t.factory.AlertmanagerRoute()
+		if err != nil {
+			return errors.Wrap(err, "initializing Alertmanager Route failed")
+		}
 
-	err = t.client.CreateOrUpdateRoute(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "reconciling Alertmanager Route failed")
-	}
+		err = t.client.CreateOrUpdateRoute(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "reconciling Alertmanager Route failed")
+		}
 
-	_, err = t.client.WaitForRouteReady(ctx, r)
-	if err != nil {
-		return errors.Wrap(err, "waiting for Alertmanager Route to become ready failed")
+		_, err = t.client.WaitForRouteReady(ctx, r)
+		if err != nil {
+			return errors.Wrap(err, "waiting for Alertmanager Route to become ready failed")
+		}
 	}
 
 	s, err := t.factory.AlertmanagerConfig()
