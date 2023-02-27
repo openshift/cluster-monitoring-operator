@@ -1,5 +1,5 @@
 {
-  staticAuthSecret(cfgNamespace, cfgCommonLabels, cfgName):: {
+  staticAuthSecret(cfgNamespace, cfgCommonLabels, cfgName, additionalConfig={}):: {
     apiVersion: 'v1',
     kind: 'Secret',
     metadata: {
@@ -23,7 +23,7 @@
             },
           ],
         },
-      },),
+      } + additionalConfig),
     },
   },
 }

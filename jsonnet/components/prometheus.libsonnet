@@ -203,7 +203,25 @@ function(params)
       data: {},
     },
 
-    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-rbac-proxy'),
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(
+      cfg.namespace,
+      cfg.commonLabels,
+      'kube-rbac-proxy',
+      {
+        authorization+: {
+          static+: [
+            {
+              user: {
+                name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
+              },
+              verb: 'get',
+              path: '/federate',
+              resourceRequest: false,
+            },
+          ],
+        },
+      },
+    ),
 
     // Secret holding the token to authenticate against the Telemetry server when using native remote-write.
     telemetrySecret: {
@@ -397,7 +415,7 @@ function(params)
             args: [
               '--secure-listen-address=0.0.0.0:9092',
               '--upstream=http://127.0.0.1:9090',
-              '--allow-paths=/metrics',
+              '--allow-paths=/metrics,/federate',
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
