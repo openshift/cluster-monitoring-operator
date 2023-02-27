@@ -27,6 +27,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
 * [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
 * [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
 * [NodeExporterConfig](#nodeexporterconfig)
@@ -193,6 +194,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | cpufreq | [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig) | Defines the configuration of the `cpufreq` collector, which collects CPU frequency statistics. Disabled by default. |
 | tcpstat | [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig) | Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics. Disabled by default. |
 | netdev | [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig) | Defines the configuration of the `netdev` collector, which collects network devices statistics. Enabled by default. |
+| netclass | [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig) | Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -208,6 +210,21 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `cpufreq` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorNetClassConfig
+
+#### Description
+
+The `NodeExporterCollectorNetClassConfig` resource works as an on/off switch for the `netclass` collector of the `node-exporter` agent. By default, the `netclass` collector is enabled. If disabled, these metrics become unavailable: `node_network_info`, `node_network_address_assign_type`, `node_network_carrier`, `node_network_carrier_changes_total`, `node_network_carrier_up_changes_total`, `node_network_carrier_down_changes_total`, `node_network_device_id`, `node_network_dormant`, `node_network_flags`, `node_network_iface_id`, `node_network_iface_link`, `node_network_iface_link_mode`, `node_network_mtu_bytes`, `node_network_name_assign_type`, `node_network_net_dev_group`, `node_network_speed_bytes`, `node_network_transmit_queue_length`, `node_network_protocol_type`.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `netclass` collector. |
 
 [Back to TOC](#table-of-contents)
 

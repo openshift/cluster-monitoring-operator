@@ -824,6 +824,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 		args = setArg(args, "--no-collector.netdev", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {
+		args = setArg(args, "--collector.netclass", "")
+	} else {
+		args = setArg(args, "--no-collector.netclass", "")
+	}
+
 	return args
 }
 
