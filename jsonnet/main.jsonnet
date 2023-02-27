@@ -79,6 +79,10 @@ local commonConfig = {
   // TLS Cipher suite applied to every component serving HTTPS traffic
   tlsCipherSuites: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
   prometheusAdapterMetricPrefix: 'pa_',
+  // Set label used in dashboards to identify the cluster explicitly so we can
+  // use that value in jsonnet/components/dashboard.libsonnet for our role
+  // template instead of relying on the upstream default never changing.
+  dashboardClusterLabel: 'cluster',
 };
 
 // objects deployed in openshift-monitoring namespace
@@ -159,6 +163,7 @@ local inCluster =
           for k in std.objectFields(allDashboards)
           if std.setMember(k, includeDashboards)
         },
+        clusterLabel: $.values.common.dashboardClusterLabel,
       },
       kubeStateMetrics: {
         namespace: $.values.common.namespace,
@@ -180,6 +185,7 @@ local inCluster =
             diskDeviceSelector: 'device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"',
             rateInterval: '1m',  // adjust the rate interval value to be 4 x the node_exporter's scrape interval (15s).
             fsMountpointSelector: 'mountpoint!~"/var/lib/ibmc-s3fs.*"',
+            clusterLabel: $.values.common.dashboardClusterLabel,
           },
         },
         // NOTE:
@@ -335,6 +341,7 @@ local inCluster =
             kubeletPodLimit: 250,
             pvExcludedSelector: 'label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"',
             containerfsSelector: 'id!=""',
+            clusterLabel: $.values.common.dashboardClusterLabel,
           },
         },
         prometheusAdapterMetricPrefix: $.values.common.prometheusAdapterMetricPrefix,
