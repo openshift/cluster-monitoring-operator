@@ -1706,19 +1706,19 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 		})
 	}
 }
-func TestPrometheusScrapeProfile(t *testing.T) {
+func TestPrometheusCollectionProfile(t *testing.T) {
 	for _, tc := range []struct {
 		name                  string
-		scrapeProfile         ScrapeProfile
+		collectionProfile     CollectionProfile
 		expectedLabelSelector *metav1.LabelSelector
 	}{
 		{
-			name:          "full_scrape_profile",
-			scrapeProfile: "full",
+			name:              "full_collection_profile",
+			collectionProfile: "full",
 			expectedLabelSelector: &metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
-						Key:      "monitoring.openshift.io/scrape-profile",
+						Key:      "monitoring.openshift.io/collection-profile",
 						Operator: metav1.LabelSelectorOpNotIn,
 						Values:   []string{"minimal"},
 					},
@@ -1726,12 +1726,12 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 			},
 		},
 		{
-			name:          "minimal_scrape_profile",
-			scrapeProfile: "minimal",
+			name:              "minimal_collection_profile",
+			collectionProfile: "minimal",
 			expectedLabelSelector: &metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
-						Key:      "monitoring.openshift.io/scrape-profile",
+						Key:      "monitoring.openshift.io/collection-profile",
 						Operator: metav1.LabelSelectorOpNotIn,
 						Values:   []string{"full"},
 					},
@@ -1741,7 +1741,7 @@ func TestPrometheusScrapeProfile(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			c := NewDefaultConfig()
-			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile = tc.scrapeProfile
+			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = tc.collectionProfile
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},

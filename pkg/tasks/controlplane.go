@@ -56,7 +56,7 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 	for _, sm := range sms {
 		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 		if err != nil {
-			return errors.Wrap(err, "reconciling control-plane kubelet ServiceMonitor failed")
+			return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
 		}
 	}
 
@@ -86,7 +86,7 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		for _, sm := range sms {
 			err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 			if err != nil {
-				return errors.Wrap(err, "reconciling control-plane etcd ServiceMonitor failed")
+				return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
 			}
 		}
 
@@ -113,7 +113,7 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		for _, sm := range sms {
 			err = t.client.DeleteServiceMonitor(ctx, sm)
 			if err != nil {
-				return errors.Wrap(err, "deleting control-plane etcd ServiceMonitor failed")
+				return errors.Wrapf(err, "deleting %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
 			}
 		}
 	}

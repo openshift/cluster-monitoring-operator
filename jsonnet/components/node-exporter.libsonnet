@@ -28,7 +28,7 @@ function(params)
     serviceMonitor+: {
       metadata+: {
         labels+: {
-          'monitoring.openshift.io/scrape-profile': 'full',
+          'monitoring.openshift.io/collection-profile': 'full',
         },
       },
     },

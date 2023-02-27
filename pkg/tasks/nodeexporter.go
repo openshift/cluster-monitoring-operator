@@ -121,7 +121,7 @@ func (t *NodeExporterTask) Run(ctx context.Context) error {
 	for _, sm := range sms {
 		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 		if err != nil {
-			return errors.Wrap(err, "reconciling node-exporter ServiceMonitor failed")
+			return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
 		}
 	}
 

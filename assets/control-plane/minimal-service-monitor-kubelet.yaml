@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/name: kubelet
     app.kubernetes.io/part-of: openshift-monitoring
     k8s-app: kubelet
-    monitoring.openshift.io/scrape-profile: minimal
+    monitoring.openshift.io/collection-profile: minimal
   name: kubelet-minimal
   namespace: openshift-monitoring
 spec:

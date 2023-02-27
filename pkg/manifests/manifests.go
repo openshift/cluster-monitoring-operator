@@ -65,7 +65,7 @@ const (
 
 	telemetryTokenSecretKey = "token"
 
-	scrapeProfileLabel = "monitoring.openshift.io/scrape-profile"
+	collectionProfileLabel = "monitoring.openshift.io/collection-profile"
 )
 
 var (
@@ -1271,7 +1271,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		return nil, err
 	}
 
-	if err := setupProfilesToIgnore(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile); err != nil {
+	if err := setupProfilesToIgnore(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile); err != nil {
 		return nil, err
 	}
 
@@ -1525,17 +1525,17 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 
 // setupProfilesToIgnore configures the label selectors of the Prometheus ("p")
 // to select any ServiceMonitor's or PodMonitor's that doesn't have the scrape
-// profile label or that matches the Scrape Profile ("sp").
-func setupProfilesToIgnore(p *monv1.Prometheus, sp ScrapeProfile) error {
+// profile label or that matches the CollectionProfile ("cp").
+func setupProfilesToIgnore(p *monv1.Prometheus, cp CollectionProfile) error {
 	// Our goal is to configure Prometheus to select both the resources that
-	// either don't have the scrape profile label or have the desired value.
+	// either don't have the collection profile label or have the desired value.
 	// However with label selectors we are not able to express OR conditions.
 	// Hence, the only alternative is to configure Prometheus to not select any
-	// resource that matches either of the scrape profiles that we are not
+	// resource that matches either of the collection profiles that we are not
 	// interested in.
-	profiles := make([]string, 0, len(ScrapeProfiles)-1)
-	for _, profile := range ScrapeProfiles {
-		if profile == sp {
+	profiles := make([]string, 0, len(SupportedCollectionProfiles)-1)
+	for _, profile := range SupportedCollectionProfiles {
+		if profile == cp {
 			continue
 		}
 		profiles = append(profiles, string(profile))
@@ -1544,7 +1544,7 @@ func setupProfilesToIgnore(p *monv1.Prometheus, sp ScrapeProfile) error {
 	labelSelector := &metav1.LabelSelector{
 		MatchExpressions: []metav1.LabelSelectorRequirement{
 			{
-				Key:      scrapeProfileLabel,
+				Key:      collectionProfileLabel,
 				Operator: metav1.LabelSelectorOpNotIn,
 				Values:   profiles,
 			},
@@ -1553,6 +1553,7 @@ func setupProfilesToIgnore(p *monv1.Prometheus, sp ScrapeProfile) error {
 
 	p.Spec.ServiceMonitorSelector = labelSelector
 	p.Spec.PodMonitorSelector = labelSelector
+	p.Spec.ProbeSelector = labelSelector
 
 	return nil
 }

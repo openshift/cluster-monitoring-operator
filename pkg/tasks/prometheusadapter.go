@@ -242,7 +242,7 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 		for _, sm := range sms {
 			err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 			if err != nil {
-				return errors.Wrap(err, "reconciling PrometheusAdapter ServiceMonitor failed")
+				return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
 			}
 		}
 	}

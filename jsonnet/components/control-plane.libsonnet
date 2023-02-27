@@ -19,7 +19,7 @@ function(params)
         labels: {
           'app.kubernetes.io/name': 'etcd',
           'k8s-app': 'etcd',
-          'monitoring.openshift.io/scrape-profile': 'full',
+          'monitoring.openshift.io/collection-profile': 'full',
         },
       },
       spec: {
@@ -74,7 +74,7 @@ function(params)
       metadata+: {
         labels+: {
           'k8s-app': 'kubelet',
-          'monitoring.openshift.io/scrape-profile': 'full',
+          'monitoring.openshift.io/collection-profile': 'full',
         },
       },
       spec+: {

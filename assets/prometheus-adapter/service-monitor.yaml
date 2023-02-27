@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/name: prometheus-adapter
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.10.0
-    monitoring.openshift.io/scrape-profile: full
+    monitoring.openshift.io/collection-profile: full
   name: prometheus-adapter
   namespace: openshift-monitoring
 spec:

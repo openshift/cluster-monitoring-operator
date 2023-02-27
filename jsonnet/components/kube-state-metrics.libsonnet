@@ -26,7 +26,7 @@ function(params)
       metadata+: {
         name: super.name,
         labels+: {
-          'monitoring.openshift.io/scrape-profile': 'full',
+          'monitoring.openshift.io/collection-profile': 'full',
         },
       },
       spec+: {

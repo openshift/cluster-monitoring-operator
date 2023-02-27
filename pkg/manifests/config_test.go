@@ -359,39 +359,39 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 	}
 }
 
-func TestScrapeProfile(t *testing.T) {
+func TestCollectionProfile(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		config        string
-		expectedsp    ScrapeProfile
+		expectedsp    CollectionProfile
 		expectedError bool
 	}{
 		{
 			name:          "default",
 			config:        "",
-			expectedsp:    ScrapeProfile("full"),
+			expectedsp:    CollectionProfile("full"),
 			expectedError: false,
 		},
 		{
 			name: "full_profile",
 			config: `prometheusk8s:
-  scrapeProfile: full
+  collectionProfile: full
   `,
-			expectedsp:    ScrapeProfile("full"),
+			expectedsp:    CollectionProfile("full"),
 			expectedError: false,
 		},
 		{
 			name: "minimal_profile",
 			config: `prometheusk8s:
-  scrapeProfile: minimal
+  collectionProfile: minimal
   `,
-			expectedsp:    ScrapeProfile("minimal"),
+			expectedsp:    CollectionProfile("minimal"),
 			expectedError: false,
 		},
 		{
 			name: "incorrect_profile",
 			config: `prometheusk8s:
-  scrapeProfile: foo
+  collectionProfile: foo
   `,
 			expectedsp:    "",
 			expectedError: true,
@@ -406,8 +406,8 @@ func TestScrapeProfile(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			if tc.expectedsp != c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile {
-				t.Fatalf("incorrect scrape profile set, expected %s got %s", tc.expectedsp, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile)
+			if tc.expectedsp != c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
+				t.Fatalf("incorrect collection profile set, expected %s got %s", tc.expectedsp, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile)
 			}
 		})
 	}

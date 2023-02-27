@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"strings"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
@@ -188,6 +189,14 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	return true
 }
 
+func (cps CollectionProfiles) String() string {
+	jointProfiles := make([]string, 0, len(cps))
+	for _, cp := range cps {
+		jointProfiles = append(jointProfiles, string(cp))
+	}
+	return strings.Join(jointProfiles, ", ")
+}
+
 func NewConfig(content io.Reader, tp bool) (*Config, error) {
 	c := Config{}
 	cmc := defaultClusterMonitoringConfiguration()
@@ -202,19 +211,19 @@ func NewConfig(content io.Reader, tp bool) (*Config, error) {
 	// The operator should only create some manifests if techPreview is enabled
 	c.TechPreview = tp
 
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile != FullScrapeProfile && !tp {
-		return nil, errors.Wrap(ErrConfigValidation, "scrapeProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !tp {
+		return nil, errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
 	}
-	// Validate ScrapeProfile field
+	// Validate CollectionProfile field
 	foundProfile := false
-	for _, profile := range ScrapeProfiles {
-		if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile {
+	for _, profile := range SupportedCollectionProfiles {
+		if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
 			foundProfile = true
 			continue
 		}
 	}
 	if !foundProfile {
-		return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`scrape profile provided is unknown, supported scrape profiles are: %v`, ScrapeProfiles))
+		return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
 	}
 
 	return res, nil
@@ -290,8 +299,8 @@ func (c *Config) applyDefaults() {
 		c.ClusterMonitoringConfiguration.EtcdConfig = &EtcdConfig{}
 	}
 
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile == "" {
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ScrapeProfile = FullScrapeProfile
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
 	}
 }
 

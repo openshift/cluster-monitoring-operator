@@ -42,7 +42,7 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines the pod's topology spread constraints.
 
-|scrapeProfile|ScrapeProfile|Defines the scraping profile which Prometheus will use to scrape metrics from the platform components. Supported values are `full` or `minimal`. In the `full` profile (default) Prometheus will scrape all the metrics that are exposed by the different platform components. In the `minimal` profile Prometheus will only scrape metrics necessary for platform alerts, recording rules, telemetry and console dashboards.
+|collectionProfile|CollectionProfile|Defines the scraping profile which Prometheus will use to scrape metrics from the platform components. Supported values are `full` or `minimal`. In the `full` profile (default) Prometheus will scrape all the desired metrics that are exposed by the different platform components. In the `minimal` profile Prometheus will only scrape metrics necessary for platform alerts, recording rules, telemetry and console dashboards.
 
 |volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Prometheus. Use this setting to configure the persistent volume claim, including storage class, volume size and name.
 

@@ -19,14 +19,15 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-type ScrapeProfile string
+type CollectionProfile string
+type CollectionProfiles []CollectionProfile
 
 const (
-	FullScrapeProfile    = "full"
-	MinimalScrapeProfile = "minimal"
+	FullCollectionProfile    = "full"
+	MinimalCollectionProfile = "minimal"
 )
 
-var ScrapeProfiles = []ScrapeProfile{FullScrapeProfile, MinimalScrapeProfile}
+var SupportedCollectionProfiles = CollectionProfiles{FullCollectionProfile, MinimalCollectionProfile}
 
 // The `ClusterMonitoringConfiguration` resource defines settings that
 // customize the default platform monitoring stack through the
@@ -197,11 +198,11 @@ type PrometheusK8sConfig struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Defines the scraping profile which Prometheus will use to scrape metrics
 	// from the platform components. Supported values are `full` or `minimal`.
-	// In the `full` profile (default) Prometheus will scrape all the metrics
-	// that are exposed by the different platform components. In the `minimal`
-	// profile Prometheus will only scrape metrics necessary for platform
-	// alerts, recording rules, telemetry and console dashboards.
-	ScrapeProfile ScrapeProfile `json:"scrapeProfile,omitempty"`
+	// In the `full` profile (default) Prometheus will scrape all the desired
+	// metrics that are exposed by the different platform components. In the
+	// `minimal` profile Prometheus will only scrape metrics necessary for
+	// platform alerts, recording rules, telemetry and console dashboards.
+	CollectionProfile CollectionProfile `json:"collectionProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,
 	// volume size and name.

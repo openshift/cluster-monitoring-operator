@@ -1,9 +1,9 @@
 {
   local minimalLabel = {
-    'monitoring.openshift.io/scrape-profile': 'minimal',
+    'monitoring.openshift.io/collection-profile': 'minimal',
   },
   // 1. Add the prefix minimal to the ServiceMonitor name
-  // 2. Add the minimal label "monitoring.openshift.io/scrape-profile: minimal"
+  // 2. Add the minimal label "monitoring.openshift.io/collection-profile: minimal"
   // 3. Add a metricRelabelings with action keep and regex equal to metrics
   local minimal(sm, metrics) = sm {
     metadata+: {

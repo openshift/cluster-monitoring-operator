@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: etcd
     k8s-app: etcd
-    monitoring.openshift.io/scrape-profile: minimal
+    monitoring.openshift.io/collection-profile: minimal
   name: etcd-minimal
   namespace: openshift-monitoring
 spec:
