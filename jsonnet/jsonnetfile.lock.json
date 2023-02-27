@@ -18,7 +18,7 @@
           "subdir": "contrib/mixin"
         }
       },
-      "version": "65aa0fa3050ebc28793cb07a6b9efc8f464c9e1b",
+      "version": "858d25c43bbc52b5cc7541814eb35b7f9a241a14",
       "sum": "IkDHlaE0gvvcPjSNurFT+jQ2aCOAbqHF1WVmXbAgkds="
     },
     {
@@ -58,7 +58,7 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "4288145d17d2efe8f32bcada567a3e9a3dd49a8c",
+      "version": "7c72d8eedb2520fc050e3dc4febdd400ab2a1920",
       "sum": "tDR6yT2GVfw0wTU12iZH+m01HrbIr6g/xN+/8nzNkU0="
     },
     {
@@ -89,7 +89,7 @@
           "subdir": "jsonnet/kube-state-metrics"
         }
       },
-      "version": "5da24c250f342751981a7e4bd33cee3fd5d718cb",
+      "version": "3a7e617949cd33428ac75110b7be863867e5fc46",
       "sum": "4PJ2ROxODsoYO/1Y70+dgLZVjW5zlfzB+TDpxJBHwaI="
     },
     {
@@ -99,7 +99,7 @@
           "subdir": "jsonnet/kube-state-metrics-mixin"
         }
       },
-      "version": "5da24c250f342751981a7e4bd33cee3fd5d718cb",
+      "version": "3a7e617949cd33428ac75110b7be863867e5fc46",
       "sum": "u8gaydJoxEjzizQ8jY8xSjYgWooPmxw+wIWdDxifMAk="
     },
     {
@@ -120,8 +120,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "60ffe9203d0a788958002214a7d7147bbb51418d",
-      "sum": "if6NYZND+4dHIVss4q/b/2Bd0uw7oAMi7N8qay746Pg=",
+      "version": "ee1ba4699b82ecb2033f886af12b9e2e451d2296",
+      "sum": "CGBrF6OtNwal33cdS+hUvgQa0slORIJVnuG65KcfhtA=",
       "name": "telemeter-client"
     },
     {
@@ -131,8 +131,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "c936a999acdbee7b1134bcf4be230e458d3ed9cd",
-      "sum": "pMcR7IB216CAQc6K3nsBXy4oukBuWLTDWR/gqpN01zM="
+      "version": "74cb76d338f021bdca9af635c2eef6b196804b57",
+      "sum": "TSwD8sJRNZKgSF/11NkW2OMucFVp+DOwfOk9272/PdA="
     },
     {
       "source": {
@@ -141,7 +141,7 @@
           "subdir": "jsonnet/mixin"
         }
       },
-      "version": "6be89b4010d06cbd2561b6650b6399438900a944",
+      "version": "f337e4ecf88d2c228c2325249bf338c6aa999488",
       "sum": "GQmaVFJwKMiD/P4n3N2LrAZVcwutriWrP8joclDtBYQ=",
       "name": "prometheus-operator-mixin"
     },
@@ -152,8 +152,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "6be89b4010d06cbd2561b6650b6399438900a944",
-      "sum": "9FAnfN2tcmIdCt98CjTSmYG7tOYoTFtwIUhw+QKIhRk="
+      "version": "f337e4ecf88d2c228c2325249bf338c6aa999488",
+      "sum": "Rf7+tECEqPn/NuvgJlL81K8oKiZ+O3/8LmTfTNmSp6U="
     },
     {
       "source": {
@@ -162,7 +162,7 @@
           "subdir": "doc/alertmanager-mixin"
         }
       },
-      "version": "7923bc5f8ec6df5f0515f346fdd0d30bd28895c3",
+      "version": "eea788a968c870e3bd78a228e394f745701f18a0",
       "sum": "PsK+V7oETCPKu2gLoPfqY0wwPKH9TzhNj6o2xezjjXc=",
       "name": "alertmanager"
     },
@@ -173,7 +173,7 @@
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "6a0598e563213ae95edb6f5152ffc8156abd0932",
+      "version": "c914f0052629e3c99449bdfb4fa7189ce09e77b5",
       "sum": "TwdaTm0Z++diiLyaKAAimmC6hBL7XbrJc0RHhBCpAdU="
     },
     {
@@ -183,7 +183,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "c70d85baed260f6013afd18d6cd0ffcac4339861",
+      "version": "8f3b2fc9aeaf1bd3f839e820e7f9ffc571006e89",
       "sum": "LRx0tbMnoE1p8KEn+i81j2YsA5Sgt3itE5Y6jBf5eOQ=",
       "name": "prometheus"
     },
@@ -194,8 +194,8 @@
           "subdir": "config/crd/bases"
         }
       },
-      "version": "31b9ac3c75e7aa904ea1b5fca37f6b2ea2622230",
-      "sum": "d1550yhsX4VxdVN7b0gWT0cido/W90P6OGLzLqPwZcs="
+      "version": "874e4542aca0994105c0fa9f981749119751c504",
+      "sum": "bY/Pcrrbynguq8/HaI88cQ3B2hLv/xc+76QILY7IL+g="
     },
     {
       "source": {
@@ -214,8 +214,8 @@
           "subdir": "mixin"
         }
       },
-      "version": "48e82c5bd2c4b67e7a8ac7d11344303ee88c8e74",
-      "sum": "JGtDv5cQBGsDVhCjG0sOhVPaNO3LvP9+Lf0iVTrEPQI="
+      "version": "fdeea3917591fc363a329cbe23af37c6fff0b5f0",
+      "sum": "QIPkur4Hka3BId8ek3OkriAUKphk0mC/NORqJhFgxag="
     }
   ],
   "legacyImports": false
