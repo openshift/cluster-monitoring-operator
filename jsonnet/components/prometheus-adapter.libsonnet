@@ -112,6 +112,23 @@ function(params)
                           '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
+                        // In some cases where clusters have a high number of CRDs it can happen
+                        // that prometheus-adapter takes too long to boot since it has to discover all
+                        // the APIs that the cluster has. This makes the pod fail the liveness probe
+                        // which leads to a crashloop.
+                        // To avoid this we add this startupProbe that gives the Pod a total of 210 seconds
+                        // for it to discover all the APIs
+                        // 210 = initialDelaySeconds + periodSeconds * failureThreshold
+                        startupProbe: {
+                          httpGet: {
+                            path: '/livez',
+                            port: 'https',
+                            scheme: 'HTTPS',
+                          },
+                          initialDelaySeconds: 30,
+                          periodSeconds: 10,
+                          failureThreshold: 18,
+                        },
                         volumeMounts: [
                           {
                             mountPath: '/tmp',
