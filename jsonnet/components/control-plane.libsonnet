@@ -198,7 +198,6 @@ function(params)
                                              'machine_cpu_cores',
                                              'machine_memory_bytes',
                                              'process_start_time_seconds',
-                                             'process_start_time_seconds',
                                              'rest_client_requests_total',
                                              'storage_operation_duration_seconds_count',
                                            ])

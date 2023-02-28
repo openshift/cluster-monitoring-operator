@@ -26,6 +26,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
+	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
@@ -190,11 +191,13 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 }
 
 func (cps CollectionProfiles) String() string {
-	jointProfiles := make([]string, 0, len(cps))
-	for _, cp := range cps {
-		jointProfiles = append(jointProfiles, string(cp))
+	var sb strings.Builder
+	for i := 0; i < len(cps)-1; i++ {
+		sb.WriteString(string(cps[i]))
+		sb.WriteString(", ")
 	}
-	return strings.Join(jointProfiles, ", ")
+	sb.WriteString(string(cps[len(cps)-1]))
+	return sb.String()
 }
 
 func NewConfig(content io.Reader, tp bool) (*Config, error) {
@@ -215,14 +218,7 @@ func NewConfig(content io.Reader, tp bool) (*Config, error) {
 		return nil, errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
 	}
 	// Validate CollectionProfile field
-	foundProfile := false
-	for _, profile := range SupportedCollectionProfiles {
-		if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
-			foundProfile = true
-			continue
-		}
-	}
-	if !foundProfile {
+	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
 		return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
 	}
 
