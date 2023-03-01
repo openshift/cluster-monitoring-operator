@@ -915,6 +915,10 @@ func TestAlertmanagerUWMSecrets(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Cleanup(func() {
+		f.OperatorClient.DeleteSecret(ctx, amSecret)
+	})
+
 	for _, tc := range []struct {
 		name               string
 		config             string
