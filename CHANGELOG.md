@@ -13,6 +13,7 @@
 - [#1884](https://github.com/openshift/cluster-monitoring-operator/issues/1882) Allow configuring secrets in alertmanager component (UWM)
 - [#1893](https://github.com/openshift/cluster-monitoring-operator/pull/1893) Add nodeExporter.collectors.netclass settings.
 - [#1894](https://github.com/openshift/cluster-monitoring-operator/pull/1894) Add toggle netlink implementation of netclass collector in Node Exporter.
+- [#1891](https://github.com/openshift/cluster-monitoring-operator/pull/1891) Add nodeExporter.collectors.buddyinfo settings.
 
 ## 4.12
 - [#1624](https://github.com/openshift/cluster-monitoring-operator/pull/1624) Add option to specify TopologySpreadConstraints for Prometheus, Alertmanager, and ThanosRuler.

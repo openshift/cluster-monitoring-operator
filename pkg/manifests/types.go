@@ -270,6 +270,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `netclass` collector, which collects information about network devices.
 	// Enabled by default.
 	NetClass NodeExporterCollectorNetClassConfig `json:"netclass,omitempty"`
+	// Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`.
+	// Disabled by default.
+	BuddyInfo NodeExporterCollectorBuddyInfoConfig `json:"buddyinfo,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -349,6 +352,14 @@ type NodeExporterCollectorNetClassConfig struct {
 	// `node_network_name_assign_type`,
 	// `node_network_device_id`.
 	UseNetlink bool `json:"useNetlink,omitempty"`
+}
+
+// The `NodeExporterCollectorBuddyInfoConfig` resource works as an on/off switch for
+// the `buddyinfo` collector of the `node-exporter` agent.
+// By default, the `buddyinfo` collector is disabled.
+type NodeExporterCollectorBuddyInfoConfig struct {
+	// A Boolean flag that enables or disables the `buddyinfo` collector.
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // The `UserWorkloadConfiguration` resource defines the settings

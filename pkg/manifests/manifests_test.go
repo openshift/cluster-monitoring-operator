@@ -2861,11 +2861,13 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.netdev",
 				"--collector.netclass",
 				"--collector.netclass.netlink",
+				"--no-collector.buddyinfo",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
 				"--no-collector.netdev",
 				"--no-collector.netclass",
+				"--collector.buddyinfo",
 			},
 		},
 		{
@@ -2924,6 +2926,17 @@ nodeExporter:
 			argsPresent: []string{"--collector.netclass"},
 			argsAbsent: []string{"--no-collector.netclass",
 				"--collector.netclass.netlink"},
+		},
+		{
+			name: "enable buddyinfo collector",
+			config: `
+nodeExporter:
+  collectors:
+    buddyinfo:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.buddyinfo"},
+			argsAbsent:  []string{"--no-collector.buddyinfo"},
 		},
 	}
 

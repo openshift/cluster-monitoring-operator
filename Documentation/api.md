@@ -25,6 +25,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [DedicatedServiceMonitors](#dedicatedservicemonitors)
 * [K8sPrometheusAdapter](#k8sprometheusadapter)
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
+* [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
@@ -180,6 +181,21 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 
 [Back to TOC](#table-of-contents)
 
+## NodeExporterCollectorBuddyInfoConfig
+
+#### Description
+
+The `NodeExporterCollectorBuddyInfoConfig` resource works as an on/off switch for the `buddyinfo` collector of the `node-exporter` agent. By default, the `buddyinfo` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `buddyinfo` collector. |
+
+[Back to TOC](#table-of-contents)
+
 ## NodeExporterCollectorConfig
 
 #### Description
@@ -195,6 +211,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | tcpstat | [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig) | Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics. Disabled by default. |
 | netdev | [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig) | Defines the configuration of the `netdev` collector, which collects network devices statistics. Enabled by default. |
 | netclass | [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig) | Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default. |
+| buddyinfo | [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig) | Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
 
