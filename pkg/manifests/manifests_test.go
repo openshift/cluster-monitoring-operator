@@ -2860,6 +2860,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--no-collector.tcpstat",
 				"--collector.netdev",
 				"--collector.netclass",
+				"--collector.netclass.netlink",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
@@ -2910,6 +2911,19 @@ nodeExporter:
 `,
 			argsPresent: []string{"--no-collector.netclass"},
 			argsAbsent:  []string{"--collector.netclass"},
+		},
+		{
+			name: "disable netlink mode in netclass collector",
+			config: `
+nodeExporter:
+  collectors:
+    netclass:
+      enabled: true
+      useNetlink: false
+`,
+			argsPresent: []string{"--collector.netclass"},
+			argsAbsent: []string{"--no-collector.netclass",
+				"--collector.netclass.netlink"},
 		},
 	}
 

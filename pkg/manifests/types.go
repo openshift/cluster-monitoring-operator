@@ -343,6 +343,12 @@ type NodeExporterCollectorNetDevConfig struct {
 type NodeExporterCollectorNetClassConfig struct {
 	// A Boolean flag that enables or disables the `netclass` collector.
 	Enabled bool `json:"enabled,omitempty"`
+	// A Boolean flag that activates the `netlink` implementation of the `netclass` collector.
+	// This implementation improves the performance of the `netclass` collector by omitting these metrics:
+	// `node_network_address_assign_type`,
+	// `node_network_name_assign_type`,
+	// `node_network_device_id`.
+	UseNetlink bool `json:"useNetlink,omitempty"`
 }
 
 // The `UserWorkloadConfiguration` resource defines the settings
