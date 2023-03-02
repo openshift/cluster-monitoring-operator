@@ -157,7 +157,7 @@ enableUserWorkload: true`,
 	}
 }
 
-func testAlertmanagerReady(t *testing.T, name, namespace string) *monitoringv1.Alertmanager {
+func testAlertmanagerReady(t *testing.T, name, ns string, validator ...validator) *monitoringv1.Alertmanager {
 	t.Helper()
 
 	var (
@@ -166,10 +166,17 @@ func testAlertmanagerReady(t *testing.T, name, namespace string) *monitoringv1.A
 	)
 
 	if err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		am, lastErr = f.MonitoringClient.Alertmanagers(namespace).Get(ctx, name, metav1.GetOptions{})
+		am, lastErr = f.MonitoringClient.Alertmanagers(ns).Get(ctx, name, metav1.GetOptions{})
 		if lastErr != nil {
-			lastErr = fmt.Errorf("%s/%s: %w", namespace, name, lastErr)
+			lastErr = fmt.Errorf("%s/%s: %w", ns, name, lastErr)
 			return false, nil
+		}
+
+		for _, v := range validator {
+			if err := v.Validate(am); err != nil {
+				lastErr = err
+				return false, nil
+			}
 		}
 
 		return true, nil
@@ -891,6 +898,96 @@ func assertLabelSelectorRequirement(reqs []metav1.LabelSelectorRequirement, must
 	}
 
 	return fmt.Errorf("required label selector %v not found in %v", mustInclude, reqs)
+}
+
+// TestAlertmanagerPlatformSecrets ensures secrets
+// are mounted correctly in Platform AlertManager container
+func TestAlertmanagerPlatformSecrets(t *testing.T) {
+	amSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: f.Ns,
+			Labels: map[string]string{
+				"group":                    "amsecret-e2e",
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Data: map[string][]byte{
+			"username": []byte("admin"),
+			"password": []byte("password"),
+		},
+	}
+
+	if err := f.OperatorClient.CreateIfNotExistSecret(ctx, amSecret); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		f.OperatorClient.DeleteSecret(ctx, amSecret)
+	})
+
+	for _, tc := range []struct {
+		name        string
+		config      string
+		amName      string
+		amNamespace string
+	}{
+		{
+			name: "platform-alertmanager-secrets",
+			config: `alertmanagerMain:
+  secrets:
+  - test-secret`,
+			amName:      "main",
+			amNamespace: f.Ns,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cm := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      clusterMonitorConfigMapName,
+					Namespace: f.Ns,
+					Labels: map[string]string{
+						framework.E2eTestLabelName: framework.E2eTestLabelValue,
+					},
+				},
+				Data: map[string]string{
+					"config.yaml": tc.config,
+				},
+			}
+
+			amGeneration := testAlertmanagerReady(t, tc.amName, tc.amNamespace).GetGeneration()
+			f.MustCreateOrUpdateConfigMap(t, cm)
+			t.Cleanup(func() {
+				f.MustDeleteConfigMap(t, cm)
+			})
+
+			am := testAlertmanagerReady(t, tc.amName, tc.amNamespace, genChange(amGeneration))
+			if !slices.Contains(am.Spec.Secrets, "test-secret") {
+				t.Fatal("Alertmanager secret `test-secret` is not configured correctly")
+			}
+
+			amPods, err := f.KubeClient.CoreV1().Pods(f.Ns).List(ctx, metav1.ListOptions{
+				LabelSelector: fmt.Sprintf("app.kubernetes.io/instance=%s", tc.amName),
+				FieldSelector: "status.phase=Running",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			amVolumeMounts := amPods.Items[0].Spec.Containers[0].VolumeMounts
+			var secretsMountedCorrectly bool
+			for _, vm := range amVolumeMounts {
+				if vm.Name == "secret-test-secret" && vm.MountPath == "/etc/alertmanager/secrets/test-secret" {
+					secretsMountedCorrectly = true
+					break
+				}
+			}
+
+			if !secretsMountedCorrectly {
+				t.Fatalf("expected `test-secret` to be mounted correctly in alertmanager container")
+			}
+		})
+	}
 }
 
 // TestAlertmanagerUWMSecrets ensures secrets
