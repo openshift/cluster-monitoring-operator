@@ -4031,6 +4031,79 @@ enableUserWorkload: true
 	}
 }
 
+func TestSetArg(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		expectedArgs []string
+		argName      string
+		argValue     string
+	}{
+		{
+			name: "shared prefix",
+			args: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+			},
+			expectedArgs: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+			},
+			argName:  "--collector.netclass",
+			argValue: "",
+		},
+		{
+			name: "modify value",
+			args: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+			},
+			expectedArgs: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15})$",
+			},
+			argName:  "--collector.netclass.ignored-devices=",
+			argValue: "^(veth.*|[a-f0-9]{15})$",
+		},
+		{
+			name: "append flag",
+			args: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+			},
+			expectedArgs: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+				"--collector.netdev",
+			},
+			argName:  "--collector.netdev",
+			argValue: "",
+		},
+		{
+			name: "append argument with value",
+			args: []string{
+				"--collector.netclass",
+			},
+			expectedArgs: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+			},
+			argName:  "--collector.netclass.ignored-devices=",
+			argValue: "^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			newArgs := setArg(test.args, test.argName, test.argValue)
+			if !reflect.DeepEqual(test.expectedArgs, newArgs) {
+				t.Fatalf("expecting: %v get: %v ", test.expectedArgs, newArgs)
+			}
+		})
+	}
+
+}
+
 func volumeConfigured(volumes []v1.Volume, volumeName string) bool {
 	for _, volume := range volumes {
 		if volume.Name == volumeName {
