@@ -112,7 +112,7 @@ This targets needs `docker` to be installed on host and was not tested with othe
 
 ## Testing
 
-Supposing $KUBECONFIOG is set to the config file of a Kubernetes cluster running the codes to test. We can run all tests by using this command `make test`.
+Supposing $KUBECONFIG is set to the config file of a Kubernetes cluster running the codes to test. We can run all tests by using this command `make test`.
 
 The testing consist of 3 aspects:
 - unit tests, can be run seperately by `make test-unit`.
