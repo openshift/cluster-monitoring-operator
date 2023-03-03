@@ -48,14 +48,16 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling kubernetes mixin rules PrometheusRule failed")
 	}
 
-	smk, err := t.factory.ControlPlaneKubeletServiceMonitor()
+	sms, err := t.factory.ControlPlaneKubeletServiceMonitors()
 	if err != nil {
-		return errors.Wrap(err, "initializing control-plane kubelet ServiceMonitor failed")
+		return errors.Wrap(err, "initializing control-plane kubelet ServiceMonitors failed")
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(ctx, smk)
-	if err != nil {
-		return errors.Wrap(err, "reconciling control-plane kubelet ServiceMonitor failed")
+	for _, sm := range sms {
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+		if err != nil {
+			return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+		}
 	}
 
 	smkpa, err := t.factory.ControlPlaneKubeletServiceMonitorPA()
@@ -75,16 +77,19 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		}
 	}
 
-	sme, err := t.factory.ControlPlaneEtcdServiceMonitor()
+	sms, err = t.factory.ControlPlaneEtcdServiceMonitors()
 	if err != nil {
-		return errors.Wrap(err, "initializing control-plane etcd ServiceMonitor failed")
+		return errors.Wrap(err, "initializing control-plane etcd ServiceMonitors failed")
 	}
 
 	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, sme)
-		if err != nil {
-			return errors.Wrap(err, "reconciling control-plane etcd ServiceMonitor failed")
+		for _, sm := range sms {
+			err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+			if err != nil {
+				return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+			}
 		}
+
 		etcdCA, err := t.client.WaitForConfigMapByNsName(ctx, types.NamespacedName{Namespace: "openshift-config", Name: "etcd-metric-serving-ca"})
 		if err != nil {
 			return errors.Wrap(err, "failed to wait for openshift-config/etcd-metric-serving-ca configmap")
@@ -105,9 +110,11 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 			return errors.Wrap(err, "reconciling prometheus etcd service monitor secret")
 		}
 	} else {
-		err = t.client.DeleteServiceMonitor(ctx, sme)
-		if err != nil {
-			return errors.Wrap(err, "deleting control-plane etcd ServiceMonitor failed")
+		for _, sm := range sms {
+			err = t.client.DeleteServiceMonitor(ctx, sm)
+			if err != nil {
+				return errors.Wrapf(err, "deleting %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+			}
 		}
 	}
 

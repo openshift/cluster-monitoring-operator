@@ -4,6 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: etcd
     k8s-app: etcd
+    monitoring.openshift.io/collection-profile: full
   name: etcd
   namespace: openshift-monitoring
 spec:

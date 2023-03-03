@@ -5,6 +5,7 @@ metadata:
     app.kubernetes.io/name: kubelet
     app.kubernetes.io/part-of: openshift-monitoring
     k8s-app: kubelet
+    monitoring.openshift.io/collection-profile: full
   name: kubelet-resource-metrics
   namespace: openshift-monitoring
 spec:

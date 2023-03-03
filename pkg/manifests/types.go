@@ -19,6 +19,16 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+type CollectionProfile string
+type CollectionProfiles []CollectionProfile
+
+const (
+	FullCollectionProfile    = "full"
+	MinimalCollectionProfile = "minimal"
+)
+
+var SupportedCollectionProfiles = CollectionProfiles{FullCollectionProfile, MinimalCollectionProfile}
+
 // The `ClusterMonitoringConfiguration` resource defines settings that
 // customize the default platform monitoring stack through the
 // `cluster-monitoring-config` config map in the `openshift-monitoring`
@@ -186,6 +196,13 @@ type PrometheusK8sConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines the pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Defines the metrics collection profile that Prometheus uses to collect
+	// metrics from the platform components. Supported values are `full` or
+	// `minimal`. In the `full` profile (default), Prometheus collects all
+	// metrics that are exposed by the platform components. In the `minimal`
+	// profile, Prometheus only collects metrics necessary for the default
+	// platform alerts, recording rules, telemetry and console dashboards.
+	CollectionProfile CollectionProfile `json:"collectionProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,
 	// volume size and name.

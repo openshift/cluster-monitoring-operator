@@ -6,16 +6,16 @@ metadata:
     app.kubernetes.io/name: prometheus-adapter
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.10.0
-    monitoring.openshift.io/collection-profile: full
-  name: prometheus-adapter
+    monitoring.openshift.io/collection-profile: minimal
+  name: prometheus-adapter-minimal
   namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: ""
     interval: 30s
     metricRelabelings:
-    - action: drop
-      regex: (apiserver_client_certificate_.*|apiserver_envelope_.*|apiserver_flowcontrol_.*|apiserver_storage_.*|apiserver_webhooks_.*|workqueue_.*)
+    - action: keep
+      regex: (apiserver_audit_event_total|apiserver_current_inflight_requests|apiserver_request_duration_seconds_bucket|apiserver_request_duration_seconds_count|apiserver_request_total|process_start_time_seconds)
       sourceLabels:
       - __name__
     port: https

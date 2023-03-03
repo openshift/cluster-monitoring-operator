@@ -234,14 +234,16 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 		}
 	}
 	{
-		sm, err := t.factory.PrometheusAdapterServiceMonitor()
+		sms, err := t.factory.PrometheusAdapterServiceMonitors()
 		if err != nil {
-			return errors.Wrap(err, "initializing PrometheusAdapter ServiceMonitor failed")
+			return errors.Wrap(err, "initializing PrometheusAdapter ServiceMonitors failed")
 		}
 
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-		if err != nil {
-			return errors.Wrap(err, "reconciling PrometheusAdapter ServiceMonitor failed")
+		for _, sm := range sms {
+			err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+			if err != nil {
+				return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+			}
 		}
 	}
 	{

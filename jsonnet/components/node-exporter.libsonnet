@@ -6,6 +6,7 @@ local wtmpVolumeName = 'node-exporter-wtmp';
 
 local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 function(params)
   local cfg = params;
@@ -22,6 +23,65 @@ function(params)
         },
       },
     },
+
+    // This changes node-exporter to be scraped with validating TLS.
+    serviceMonitor+: {
+      metadata+: {
+        labels+: {
+          'monitoring.openshift.io/collection-profile': 'full',
+        },
+      },
+    },
+
+    minimalServiceMonitor: generateServiceMonitor.minimal(
+      self.serviceMonitor, std.join('|',
+                                    [
+                                      'node_cpu_info',
+                                      'node_cpu_seconds_total',
+                                      'node_disk_io_time_seconds_total',
+                                      'node_disk_io_time_weighted_seconds_total',
+                                      'node_disk_read_time_seconds_total',
+                                      'node_disk_reads_completed_total',
+                                      'node_disk_write_time_seconds_total',
+                                      'node_disk_writes_completed_total',
+                                      'node_filefd_allocated',
+                                      'node_filefd_maximum',
+                                      'node_filesystem_avail_bytes',
+                                      'node_filesystem_files',
+                                      'node_filesystem_files_free',
+                                      'node_filesystem_free_bytes',
+                                      'node_filesystem_readonly',
+                                      'node_filesystem_size_bytes',
+                                      'node_load1',
+                                      'node_memory_Buffers_bytes',
+                                      'node_memory_Cached_bytes',
+                                      'node_memory_MemAvailable_bytes',
+                                      'node_memory_MemFree_bytes',
+                                      'node_memory_MemTotal_bytes',
+                                      'node_memory_Slab_bytes',
+                                      'node_netstat_TcpExt_TCPSynRetrans',
+                                      'node_netstat_Tcp_OutSegs',
+                                      'node_netstat_Tcp_RetransSegs',
+                                      'node_network_receive_bytes_total',
+                                      'node_network_receive_drop_total',
+                                      'node_network_receive_errs_total',
+                                      'node_network_receive_packets_total',
+                                      'node_network_transmit_bytes_total',
+                                      'node_network_transmit_drop_total',
+                                      'node_network_transmit_errs_total',
+                                      'node_network_transmit_packets_total',
+                                      'node_network_up',
+                                      'node_nf_conntrack_entries',
+                                      'node_nf_conntrack_entries_limit',
+                                      'node_textfile_scrape_error',
+                                      'node_timex_maxerror_seconds',
+                                      'node_timex_offset_seconds',
+                                      'node_timex_sync_status',
+                                      'node_vmstat_pgmajfault',
+                                      'process_start_time_seconds',
+                                      'virt_platform',
+                                    ])
+    ),
 
     securityContextConstraints: {
       allowHostDirVolumePlugin: true,

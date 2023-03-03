@@ -1,0 +1,57 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 2.8.1
+    monitoring.openshift.io/collection-profile: minimal
+  name: kube-state-metrics-minimal
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: ""
+    honorLabels: true
+    interval: 1m
+    metricRelabelings:
+    - action: labeldrop
+      regex: instance
+    - action: keep
+      regex: (kube_daemonset_status_current_number_scheduled|kube_daemonset_status_desired_number_scheduled|kube_daemonset_status_number_available|kube_daemonset_status_number_misscheduled|kube_daemonset_status_updated_number_scheduled|kube_deployment_metadata_generation|kube_deployment_spec_replicas|kube_deployment_status_observed_generation|kube_deployment_status_replicas_available|kube_deployment_status_replicas_updated|kube_horizontalpodautoscaler_spec_max_replicas|kube_horizontalpodautoscaler_spec_min_replicas|kube_horizontalpodautoscaler_status_current_replicas|kube_horizontalpodautoscaler_status_desired_replicas|kube_job_failed|kube_job_status_active|kube_job_status_start_time|kube_node_info|kube_node_labels|kube_node_role|kube_node_spec_taint|kube_node_spec_unschedulable|kube_node_status_allocatable|kube_node_status_capacity|kube_node_status_condition|kube_persistentvolume_info|kube_persistentvolume_status_phase|kube_persistentvolumeclaim_access_mode|kube_persistentvolumeclaim_info|kube_persistentvolumeclaim_labels|kube_persistentvolumeclaim_resource_requests_storage_bytes|kube_pod_container_resource_limits|kube_pod_container_resource_requests|kube_pod_container_status_last_terminated_reason|kube_pod_container_status_restarts_total|kube_pod_container_status_waiting_reason|kube_pod_info|kube_pod_owner|kube_pod_status_phase|kube_pod_status_ready|kube_pod_status_unschedulable|kube_poddisruptionbudget_status_current_healthy|kube_poddisruptionbudget_status_desired_healthy|kube_poddisruptionbudget_status_expected_pods|kube_replicaset_owner|kube_replicationcontroller_owner|kube_resourcequota|kube_state_metrics_list_total|kube_state_metrics_watch_total|kube_statefulset_metadata_generation|kube_statefulset_replicas|kube_statefulset_status_current_revision|kube_statefulset_status_observed_generation|kube_statefulset_status_replicas|kube_statefulset_status_replicas_ready|kube_statefulset_status_replicas_updated|kube_statefulset_status_update_revision|kube_storageclass_info|process_start_time_seconds)
+      sourceLabels:
+      - __name__
+    port: https-main
+    relabelings:
+    - action: labeldrop
+      regex: pod
+    scheme: https
+    scrapeTimeout: 1m
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: kube-state-metrics.openshift-monitoring.svc
+  - bearerTokenFile: ""
+    interval: 1m
+    metricRelabelings:
+    - action: keep
+      regex: (kube_daemonset_status_current_number_scheduled|kube_daemonset_status_desired_number_scheduled|kube_daemonset_status_number_available|kube_daemonset_status_number_misscheduled|kube_daemonset_status_updated_number_scheduled|kube_deployment_metadata_generation|kube_deployment_spec_replicas|kube_deployment_status_observed_generation|kube_deployment_status_replicas_available|kube_deployment_status_replicas_updated|kube_horizontalpodautoscaler_spec_max_replicas|kube_horizontalpodautoscaler_spec_min_replicas|kube_horizontalpodautoscaler_status_current_replicas|kube_horizontalpodautoscaler_status_desired_replicas|kube_job_failed|kube_job_status_active|kube_job_status_start_time|kube_node_info|kube_node_labels|kube_node_role|kube_node_spec_taint|kube_node_spec_unschedulable|kube_node_status_allocatable|kube_node_status_capacity|kube_node_status_condition|kube_persistentvolume_info|kube_persistentvolume_status_phase|kube_persistentvolumeclaim_access_mode|kube_persistentvolumeclaim_info|kube_persistentvolumeclaim_labels|kube_persistentvolumeclaim_resource_requests_storage_bytes|kube_pod_container_resource_limits|kube_pod_container_resource_requests|kube_pod_container_status_last_terminated_reason|kube_pod_container_status_restarts_total|kube_pod_container_status_waiting_reason|kube_pod_info|kube_pod_owner|kube_pod_status_phase|kube_pod_status_ready|kube_pod_status_unschedulable|kube_poddisruptionbudget_status_current_healthy|kube_poddisruptionbudget_status_desired_healthy|kube_poddisruptionbudget_status_expected_pods|kube_replicaset_owner|kube_replicationcontroller_owner|kube_resourcequota|kube_state_metrics_list_total|kube_state_metrics_watch_total|kube_statefulset_metadata_generation|kube_statefulset_replicas|kube_statefulset_status_current_revision|kube_statefulset_status_observed_generation|kube_statefulset_status_replicas|kube_statefulset_status_replicas_ready|kube_statefulset_status_replicas_updated|kube_statefulset_status_update_revision|kube_storageclass_info|process_start_time_seconds)
+      sourceLabels:
+      - __name__
+    port: https-self
+    scheme: https
+    scrapeTimeout: 1m
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: kube-state-metrics.openshift-monitoring.svc
+  jobLabel: app.kubernetes.io/name
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/name: kube-state-metrics
+      app.kubernetes.io/part-of: openshift-monitoring

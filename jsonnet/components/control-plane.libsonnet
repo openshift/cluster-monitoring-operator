@@ -1,3 +1,4 @@
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local controlPlane = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/k8s-control-plane.libsonnet';
 
 function(params)
@@ -18,6 +19,7 @@ function(params)
         labels: {
           'app.kubernetes.io/name': 'etcd',
           'k8s-app': 'etcd',
+          'monitoring.openshift.io/collection-profile': 'full',
         },
       },
       spec: {
@@ -46,12 +48,33 @@ function(params)
       },
     },
 
+    minimalServiceMonitorEtcd: generateServiceMonitor.minimal(
+      self.serviceMonitorEtcd, std.join('|',
+                                        [
+                                          'etcd_disk_backend_commit_duration_seconds_bucket',
+                                          'etcd_disk_wal_fsync_duration_seconds_bucket',
+                                          'etcd_mvcc_db_total_size_in_bytes',
+                                          'etcd_mvcc_db_total_size_in_use_in_bytes',
+                                          'etcd_network_peer_round_trip_time_seconds_bucket',
+                                          'etcd_network_peer_sent_failures_total',
+                                          'etcd_server_has_leader',
+                                          'etcd_server_is_leader',
+                                          'etcd_server_proposals_failed_total',
+                                          'etcd_server_quota_backend_bytes',
+                                          'grpc_server_handled_total',
+                                          'grpc_server_handling_seconds_bucket',
+                                          'grpc_server_started_total',
+                                          'process_start_time_seconds',
+                                        ])
+    ),
+
     // This changes the kubelet's certificates to be validated when
     // scraping.
     serviceMonitorKubelet+: {
       metadata+: {
         labels+: {
           'k8s-app': 'kubelet',
+          'monitoring.openshift.io/collection-profile': 'full',
         },
       },
       spec+: {
@@ -135,6 +158,50 @@ function(params)
           }],
       },
     },
+
+    minimalServiceMonitorKubelet: generateServiceMonitor.minimal(
+      self.serviceMonitorKubelet, std.join('|',
+                                           [
+                                             'apiserver_audit_event_total',
+                                             'container_cpu_cfs_periods_total',
+                                             'container_cpu_cfs_throttled_periods_total',
+                                             'container_cpu_usage_seconds_total',
+                                             'container_fs_reads_bytes_total',
+                                             'container_fs_reads_total',
+                                             'container_fs_usage_bytes',
+                                             'container_fs_writes_bytes_total',
+                                             'container_fs_writes_total',
+                                             'container_memory_cache',
+                                             'container_memory_rss',
+                                             'container_memory_swap',
+                                             'container_memory_usage_bytes',
+                                             'container_memory_working_set_bytes',
+                                             'container_network_receive_bytes_total',
+                                             'container_network_receive_packets_dropped_total',
+                                             'container_network_receive_packets_total',
+                                             'container_network_transmit_bytes_total',
+                                             'container_network_transmit_packets_dropped_total',
+                                             'container_network_transmit_packets_total',
+                                             'container_spec_cpu_shares',
+                                             'kubelet_certificate_manager_client_expiration_renew_errors',
+                                             'kubelet_containers_per_pod_count_sum',
+                                             'kubelet_node_name',
+                                             'kubelet_pleg_relist_duration_seconds_bucket',
+                                             'kubelet_pod_worker_duration_seconds_bucket',
+                                             'kubelet_server_expiration_renew_errors',
+                                             'kubelet_volume_stats_available_bytes',
+                                             'kubelet_volume_stats_capacity_bytes',
+                                             'kubelet_volume_stats_inodes',
+                                             'kubelet_volume_stats_inodes_free',
+                                             'kubelet_volume_stats_inodes_used',
+                                             'kubelet_volume_stats_used_bytes',
+                                             'machine_cpu_cores',
+                                             'machine_memory_bytes',
+                                             'process_start_time_seconds',
+                                             'rest_client_requests_total',
+                                             'storage_operation_duration_seconds_count',
+                                           ])
+    ),
 
     // This adds a kubelet ServiceMonitor for special use with
     // prometheus-adapter if enabled by the configuration of the cluster monitoring operator.

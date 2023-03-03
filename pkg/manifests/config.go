@@ -21,9 +21,12 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"strings"
 
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/pkg/errors"
 	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
+	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
@@ -47,6 +50,7 @@ const (
 type Config struct {
 	Images      *Images `json:"-"`
 	RemoteWrite bool    `json:"-"`
+	TechPreview bool    `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
@@ -186,7 +190,17 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	return true
 }
 
-func NewConfig(content io.Reader) (*Config, error) {
+func (cps CollectionProfiles) String() string {
+	var sb strings.Builder
+	for i := 0; i < len(cps)-1; i++ {
+		sb.WriteString(string(cps[i]))
+		sb.WriteString(", ")
+	}
+	sb.WriteString(string(cps[len(cps)-1]))
+	return sb.String()
+}
+
+func NewConfig(content io.Reader, tp bool) (*Config, error) {
 	c := Config{}
 	cmc := defaultClusterMonitoringConfiguration()
 	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(&cmc)
@@ -197,6 +211,17 @@ func NewConfig(content io.Reader) (*Config, error) {
 	res := &c
 	res.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
+	// The operator should only create some manifests if techPreview is enabled
+	c.TechPreview = tp
+
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !tp {
+		return nil, errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
+	}
+	// Validate CollectionProfile field
+	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
+		return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
+	}
+
 	return res, nil
 }
 
@@ -272,6 +297,10 @@ func (c *Config) applyDefaults() {
 
 	if c.ClusterMonitoringConfiguration.EtcdConfig == nil {
 		c.ClusterMonitoringConfiguration.EtcdConfig = &EtcdConfig{}
+	}
+
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
 	}
 }
 
@@ -398,12 +427,17 @@ func calculateBodySizeLimit(podCapacity int) string {
 	return fmt.Sprintf("%dMB", int(math.Ceil(float64(bodySize)/(1024*1024))))
 }
 
-func NewConfigFromString(content string) (*Config, error) {
+// NewConfigFromString transforms a string containing configuration in the
+// openshift-monitoring/cluster-monitoring-configuration format into a data
+// struture that facilitates programmatical checks of that configuration. The
+// content of the data structure might change if TechPreview is enabeld (tp), as
+// some features are only meant for TechPreview.
+func NewConfigFromString(content string, tp bool) (*Config, error) {
 	if content == "" {
 		return NewDefaultConfig(), nil
 	}
 
-	return NewConfig(bytes.NewBuffer([]byte(content)))
+	return NewConfig(bytes.NewBuffer([]byte(content)), tp)
 }
 
 func NewDefaultConfig() *Config {

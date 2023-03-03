@@ -12,6 +12,7 @@ local servingCertsCABundleFileName = 'service-ca.crt';
 local servingCertsCABundleMountPath = '/etc/%s' % servingCertsCABundleDirectory;
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 local prometheusAdapter = (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet');
 
@@ -70,6 +71,26 @@ function(params)
           type: 'ClusterIP',
         },
       },
+
+    serviceMonitor+: {
+      metadata+: {
+        labels+: {
+          'monitoring.openshift.io/collection-profile': 'full',
+        },
+      },
+    },
+
+    minimalServiceMonitor: generateServiceMonitor.minimal(
+      self.serviceMonitor, std.join('|',
+                                    [
+                                      'apiserver_audit_event_total',
+                                      'apiserver_current_inflight_requests',
+                                      'apiserver_request_duration_seconds_bucket',
+                                      'apiserver_request_duration_seconds_count',
+                                      'apiserver_request_total',
+                                      'process_start_time_seconds',
+                                    ])
+    ),
 
     deployment+:
       {

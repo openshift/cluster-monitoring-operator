@@ -64,6 +64,8 @@ const (
 	userWorkloadAlertmanagerService = "alertmanager-user-workload"
 
 	telemetryTokenSecretKey = "token"
+
+	collectionProfileLabel = "monitoring.openshift.io/collection-profile"
 )
 
 var (
@@ -94,14 +96,15 @@ var (
 	AlertmanagerUserWorkloadPodDisruptionBudget    = "alertmanager-user-workload/pod-disruption-budget.yaml"
 	AlertmanagerUserWorkloadServiceMonitor         = "alertmanager-user-workload/service-monitor.yaml"
 
-	KubeStateMetricsClusterRoleBinding  = "kube-state-metrics/cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole         = "kube-state-metrics/cluster-role.yaml"
-	KubeStateMetricsDeployment          = "kube-state-metrics/deployment.yaml"
-	KubeStateMetricsServiceAccount      = "kube-state-metrics/service-account.yaml"
-	KubeStateMetricsService             = "kube-state-metrics/service.yaml"
-	KubeStateMetricsServiceMonitor      = "kube-state-metrics/service-monitor.yaml"
-	KubeStateMetricsPrometheusRule      = "kube-state-metrics/prometheus-rule.yaml"
-	KubeStateMetricsKubeRbacProxySecret = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
+	KubeStateMetricsClusterRoleBinding    = "kube-state-metrics/cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole           = "kube-state-metrics/cluster-role.yaml"
+	KubeStateMetricsDeployment            = "kube-state-metrics/deployment.yaml"
+	KubeStateMetricsServiceAccount        = "kube-state-metrics/service-account.yaml"
+	KubeStateMetricsService               = "kube-state-metrics/service.yaml"
+	KubeStateMetricsServiceMonitor        = "kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsMinimalServiceMonitor = "kube-state-metrics/minimal-service-monitor.yaml"
+	KubeStateMetricsPrometheusRule        = "kube-state-metrics/prometheus-rule.yaml"
+	KubeStateMetricsKubeRbacProxySecret   = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
 
 	OpenShiftStateMetricsClusterRoleBinding  = "openshift-state-metrics/cluster-role-binding.yaml"
 	OpenShiftStateMetricsClusterRole         = "openshift-state-metrics/cluster-role.yaml"
@@ -118,6 +121,7 @@ var (
 	NodeExporterClusterRoleBinding         = "node-exporter/cluster-role-binding.yaml"
 	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
 	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
+	NodeExporterMinimalServiceMonitor      = "node-exporter/minimal-service-monitor.yaml"
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
 
@@ -184,6 +188,7 @@ var (
 	PrometheusAdapterRoleBindingAuthReader              = "prometheus-adapter/role-binding-auth-reader.yaml"
 	PrometheusAdapterService                            = "prometheus-adapter/service.yaml"
 	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
+	PrometheusAdapterMinimalServiceMonitor              = "prometheus-adapter/minimal-service-monitor.yaml"
 	PrometheusAdapterServiceAccount                     = "prometheus-adapter/service-account.yaml"
 
 	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
@@ -272,10 +277,12 @@ var (
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
-	ControlPlanePrometheusRule          = "control-plane/prometheus-rule.yaml"
-	ControlPlaneKubeletServiceMonitor   = "control-plane/service-monitor-kubelet.yaml"
-	ControlPlaneKubeletServiceMonitorPA = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
-	ControlPlaneEtcdServiceMonitor      = "control-plane/service-monitor-etcd.yaml"
+	ControlPlanePrometheusRule               = "control-plane/prometheus-rule.yaml"
+	ControlPlaneKubeletServiceMonitor        = "control-plane/service-monitor-kubelet.yaml"
+	ControlPlaneKubeletMinimalServiceMonitor = "control-plane/minimal-service-monitor-kubelet.yaml"
+	ControlPlaneKubeletServiceMonitorPA      = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
+	ControlPlaneEtcdServiceMonitor           = "control-plane/service-monitor-etcd.yaml"
+	ControlPlaneEtcdMinimalServiceMonitor    = "control-plane/minimal-service-monitor-etcd.yaml"
 )
 
 var (
@@ -701,8 +708,16 @@ func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetReader(KubeStateMetricsClusterRole))
 }
 
+func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.config.TechPreview, f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
+}
+
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsServiceMonitor))
+}
+
+func (f *Factory) KubeStateMetricsMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsMinimalServiceMonitor))
 }
 
 func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
@@ -799,6 +814,10 @@ func (f *Factory) OpenShiftStateMetricsRBACProxySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(OpenShiftStateMetricsKubeRbacProxySecret))
 }
 
+func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.config.TechPreview, f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
+}
+
 func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterServiceMonitor))
 }
@@ -838,6 +857,10 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 	}
 
 	return args
+}
+
+func (f *Factory) NodeExporterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterMinimalServiceMonitor))
 }
 
 func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
@@ -1261,6 +1284,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		return nil, err
 	}
 
+	if err := setupProfilesToIgnore(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile); err != nil {
+		return nil, err
+	}
+
 	clusterID := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID
 	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && f.config.RemoteWrite {
 		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
@@ -1506,6 +1533,41 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 			Name:      "query-log",
 			MountPath: dirPath,
 		})
+	return nil
+}
+
+// setupProfilesToIgnore configures the label selectors of the Prometheus ("p")
+// to select any ServiceMonitor's or PodMonitor's that doesn't have the scrape
+// profile label or that matches the CollectionProfile ("cp").
+func setupProfilesToIgnore(p *monv1.Prometheus, cp CollectionProfile) error {
+	// Our goal is to configure Prometheus to select both the resources that
+	// either don't have the collection profile label or have the desired value.
+	// However with label selectors we are not able to express OR conditions.
+	// Hence, the only alternative is to configure Prometheus to not select any
+	// resource that matches either of the collection profiles that we are not
+	// interested in.
+	profiles := make([]string, 0, len(SupportedCollectionProfiles)-1)
+	for _, profile := range SupportedCollectionProfiles {
+		if profile == cp {
+			continue
+		}
+		profiles = append(profiles, string(profile))
+	}
+
+	labelSelector := &metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      collectionProfileLabel,
+				Operator: metav1.LabelSelectorOpNotIn,
+				Values:   profiles,
+			},
+		},
+	}
+
+	p.Spec.ServiceMonitorSelector = labelSelector
+	p.Spec.PodMonitorSelector = labelSelector
+	p.Spec.ProbeSelector = labelSelector
+
 	return nil
 }
 
@@ -1845,8 +1907,16 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 	return f.NewService(f.assets.MustNewAssetReader(PrometheusAdapterService))
 }
 
+func (f *Factory) PrometheusAdapterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.config.TechPreview, f.PrometheusAdapterServiceMonitor, f.PrometheusAdapterMinimalServiceMonitor)
+}
+
 func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterServiceMonitor))
+}
+
+func (f *Factory) PrometheusAdapterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterMinimalServiceMonitor))
 }
 
 func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1.ConfigMap) (*v1.Secret, error) {
@@ -2293,12 +2363,28 @@ func (f *Factory) ControlPlaneEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap)
 	}, nil
 }
 
+func (f *Factory) ControlPlaneEtcdServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.config.TechPreview, f.ControlPlaneEtcdServiceMonitor, f.ControlPlaneEtcdMinimalServiceMonitor)
+}
+
 func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdServiceMonitor))
 }
 
+func (f *Factory) ControlPlaneEtcdMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdMinimalServiceMonitor))
+}
+
+func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return serviceMonitors(f.config.TechPreview, f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
+}
+
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletServiceMonitor))
+}
+
+func (f *Factory) ControlPlaneKubeletMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletMinimalServiceMonitor))
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitorPA() (*monv1.ServiceMonitor, error) {
@@ -3274,6 +3360,22 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 		},
 		Data: m,
 	}, nil
+}
+
+func serviceMonitors(appendMinimal bool, fullServiceMonitor, minimalServiceMonitor func() (*monv1.ServiceMonitor, error)) ([]*monv1.ServiceMonitor, error) {
+	sMonitor, err := fullServiceMonitor()
+	if err != nil {
+		return nil, err
+	}
+	sMonitorMinimal, err := minimalServiceMonitor()
+	if err != nil {
+		return nil, err
+	}
+	sms := []*monv1.ServiceMonitor{sMonitor}
+	if appendMinimal {
+		sms = append(sms, sMonitorMinimal)
+	}
+	return sms, nil
 }
 
 func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteSpec) []monv1.RemoteWriteSpec {

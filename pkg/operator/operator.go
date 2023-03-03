@@ -838,7 +838,7 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 	return uwc, nil
 }
 
-func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
+func (o *Operator) loadConfig(key string, tp bool) (*manifests.Config, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
 		return nil, errors.Wrap(err, "an error occurred when retrieving the Cluster Monitoring ConfigMap")
@@ -856,7 +856,7 @@ func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 		return nil, errors.New("the Cluster Monitoring ConfigMap doesn't contain a 'config.yaml' key")
 	}
 
-	cParsed, err := manifests.NewConfigFromString(configContent)
+	cParsed, err := manifests.NewConfigFromString(configContent, tp)
 	if err != nil {
 		return nil, errors.Wrap(err, "the Cluster Monitoring ConfigMap could not be parsed")
 	}
@@ -865,7 +865,12 @@ func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 }
 
 func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, error) {
-	c, err := o.loadConfig(key)
+	tp, err := o.client.TechPreviewEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := o.loadConfig(key, tp)
 	if err != nil {
 		return nil, err
 	}

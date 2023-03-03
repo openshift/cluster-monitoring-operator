@@ -15,12 +15,13 @@
 package manifests
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfigParsing(t *testing.T) {
@@ -28,7 +29,7 @@ func TestConfigParsing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c, err := NewConfig(f)
+	c, err := NewConfig(f, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +62,7 @@ func TestNewUserConfigFromStringParsing(t *testing.T) {
 }
 
 func TestEmptyConfigIsValid(t *testing.T) {
-	_, err := NewConfigFromString("")
+	_, err := NewConfigFromString("", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,14 +175,14 @@ func TestTelemeterClientConfig(t *testing.T) {
 }
 
 func TestEtcdDefaultsToDisabled(t *testing.T) {
-	c, err := NewConfigFromString("")
+	c, err := NewConfigFromString("", false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if c.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
 		t.Error("an empty configuration should have etcd disabled")
 	}
-	c, err = NewConfigFromString(`{"etcd":{}}`)
+	c, err = NewConfigFromString(`{"etcd":{}}`, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,21 +192,21 @@ func TestEtcdDefaultsToDisabled(t *testing.T) {
 }
 
 func TestPromAdapterDedicatedSMsDefaultsToDisabled(t *testing.T) {
-	c, err := NewConfigFromString("")
+	c, err := NewConfigFromString("", false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
 		t.Error("an empty configuration should have prometheus-adapter dedicated ServiceMonitors dislabled")
 	}
-	c, err = NewConfigFromString(`{"k8sPrometheusAdapter":{}}`)
+	c, err = NewConfigFromString(`{"k8sPrometheusAdapter":{}}`, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
 		t.Error("an empty k8sPrometheusAdapter configuration should have prometheus-adapter dedicated ServiceMonitors dislabled")
 	}
-	c, err = NewConfigFromString(`{"k8sPrometheusAdapter":{"dedicatedServiceMonitors":{}}}`)
+	c, err = NewConfigFromString(`{"k8sPrometheusAdapter":{"dedicatedServiceMonitors":{}}}`, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +222,7 @@ func TestHttpProxyConfig(t *testing.T) {
   noProxy: https://example.com
 `
 
-	c, err := NewConfig(bytes.NewBufferString(conf))
+	c, err := NewConfigFromString(conf, false)
 	if err != nil {
 		t.Errorf("expected no error parsing config - %v", err)
 	}
@@ -333,7 +334,7 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config)
+			c, err := NewConfigFromString(tt.config, false)
 			if err != nil {
 				t.Fatalf("config parsing error")
 			}
@@ -353,6 +354,60 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 				t.Fatalf("incorrect EnforcedBodySizeLimit is set: got %s, expected %s",
 					c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit,
 					tt.expectBodySizeLimit)
+			}
+		})
+	}
+}
+
+func TestCollectionProfile(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		config        string
+		expectedsp    CollectionProfile
+		expectedError bool
+	}{
+		{
+			name:          "default",
+			config:        "",
+			expectedsp:    CollectionProfile("full"),
+			expectedError: false,
+		},
+		{
+			name: "full_profile",
+			config: `prometheusk8s:
+  collectionProfile: full
+  `,
+			expectedsp:    CollectionProfile("full"),
+			expectedError: false,
+		},
+		{
+			name: "minimal_profile",
+			config: `prometheusk8s:
+  collectionProfile: minimal
+  `,
+			expectedsp:    CollectionProfile("minimal"),
+			expectedError: false,
+		},
+		{
+			name: "incorrect_profile",
+			config: `prometheusk8s:
+  collectionProfile: foo
+  `,
+			expectedsp:    "",
+			expectedError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config, true)
+			if err != nil {
+				if tc.expectedError {
+					return
+				}
+				require.NoError(t, err)
+			}
+
+			if tc.expectedsp != c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
+				t.Fatalf("incorrect collection profile set, expected %s got %s", tc.expectedsp, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile)
 			}
 		})
 	}

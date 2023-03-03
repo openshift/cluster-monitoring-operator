@@ -104,14 +104,15 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling kube-state-metrics rules PrometheusRule failed")
 	}
 
-	sm, err := t.factory.KubeStateMetricsServiceMonitor()
+	sms, err := t.factory.KubeStateMetricsServiceMonitors()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitor failed")
+		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitors failed")
 	}
-
-	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-	if err != nil {
-		errors.Wrap(err, "reconciling kube-state-metrics ServiceMonitor failed")
+	for _, sm := range sms {
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+		if err != nil {
+			return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+		}
 	}
 
 	return nil

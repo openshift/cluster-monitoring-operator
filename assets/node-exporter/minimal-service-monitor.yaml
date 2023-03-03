@@ -1,0 +1,41 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 1.5.0
+    monitoring.openshift.io/collection-profile: minimal
+  name: node-exporter-minimal
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: ""
+    interval: 15s
+    metricRelabelings:
+    - action: keep
+      regex: (node_cpu_info|node_cpu_seconds_total|node_disk_io_time_seconds_total|node_disk_io_time_weighted_seconds_total|node_disk_read_time_seconds_total|node_disk_reads_completed_total|node_disk_write_time_seconds_total|node_disk_writes_completed_total|node_filefd_allocated|node_filefd_maximum|node_filesystem_avail_bytes|node_filesystem_files|node_filesystem_files_free|node_filesystem_free_bytes|node_filesystem_readonly|node_filesystem_size_bytes|node_load1|node_memory_Buffers_bytes|node_memory_Cached_bytes|node_memory_MemAvailable_bytes|node_memory_MemFree_bytes|node_memory_MemTotal_bytes|node_memory_Slab_bytes|node_netstat_TcpExt_TCPSynRetrans|node_netstat_Tcp_OutSegs|node_netstat_Tcp_RetransSegs|node_network_receive_bytes_total|node_network_receive_drop_total|node_network_receive_errs_total|node_network_receive_packets_total|node_network_transmit_bytes_total|node_network_transmit_drop_total|node_network_transmit_errs_total|node_network_transmit_packets_total|node_network_up|node_nf_conntrack_entries|node_nf_conntrack_entries_limit|node_textfile_scrape_error|node_timex_maxerror_seconds|node_timex_offset_seconds|node_timex_sync_status|node_vmstat_pgmajfault|process_start_time_seconds|virt_platform)
+      sourceLabels:
+      - __name__
+    port: https
+    relabelings:
+    - action: replace
+      regex: (.*)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: instance
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: node-exporter.openshift-monitoring.svc
+  jobLabel: app.kubernetes.io/name
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/name: node-exporter
+      app.kubernetes.io/part-of: openshift-monitoring
