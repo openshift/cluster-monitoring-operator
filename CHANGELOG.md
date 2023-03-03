@@ -15,6 +15,7 @@
 - [#1893](https://github.com/openshift/cluster-monitoring-operator/pull/1893) Add nodeExporter.collectors.netclass settings.
 - [#1894](https://github.com/openshift/cluster-monitoring-operator/pull/1894) Add toggle netlink implementation of netclass collector in Node Exporter.
 - [#1891](https://github.com/openshift/cluster-monitoring-operator/pull/1891) Add nodeExporter.collectors.buddyinfo settings.
+- [#1895](https://github.com/openshift/cluster-monitoring-operator/pull/1895) Add nodeExporter.maxProcs setting.
 
 ## 4.12
 - [#1624](https://github.com/openshift/cluster-monitoring-operator/pull/1624) Add option to specify TopologySpreadConstraints for Prometheus, Alertmanager, and ThanosRuler.
