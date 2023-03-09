@@ -22,15 +22,26 @@ while IFS= read -r line; do
 	files+=("$line")
 done < <(jq -r 'keys[]' "${TMP}/main.json")
 
-for file in "${files[@]}"
-do
-	dir=$(dirname "${file}")
-	path="${prefix}/${dir}"
-	mkdir -p "${path}"
-	# convert file name from camelCase to snake-case
-	fullfile=$(echo "${file}" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
-	jq -r ".[\"${file}\"]" "${TMP}/main.json" | gojsontoyaml > "${prefix}/${fullfile}.yaml"
+maxProc=$(nproc || echo 4)
+
+# process all files in parallel
+for file in "${files[@]}"; do
+	{
+		dir=$(dirname "${file}")
+		path="${prefix}/${dir}"
+		mkdir -p "${path}"
+
+		# convert file name from camelCase to snake-case
+		fullfile=$(echo "${file}" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+		jq -r ".[\"${file}\"]" "${TMP}/main.json" | gojsontoyaml > "${prefix}/${fullfile}.yaml"
+	}&
+
+	# wait for at least one of the jobs to finish if there are more than maxProc jobs
+	while [[ $(jobs -r | wc -l ) -ge "$maxProc" ]]; do wait -n; done
 done
+# wait for all jobs to finish
+wait
+
 
 # shellcheck disable=SC1003
 # Produce dashboard definitions in format understandable by CVO (it doesn't accept ConfigMapList)
