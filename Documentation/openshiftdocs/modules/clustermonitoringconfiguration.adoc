@@ -35,6 +35,8 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 |nodeExporter|link:nodeexporterconfig.adoc[NodeExporterConfig]|`NodeExporterConfig` defines settings for the `node-exporter` agent.
 
+|monitoringPlugin|*link:monitoringpluginconfig.adoc[MonitoringPluginConfig]|`MonitoringPluginConfig` defines settings for the monitoring `console-plugin`.
+
 |===
 
 link:../index.adoc[Back to TOC]
