@@ -139,6 +139,7 @@ type Images struct {
 	KubeRbacProxy                      string
 	TelemeterClient                    string
 	Thanos                             string
+	MonitoringPlugin                   string
 }
 
 type HTTPConfig struct {
@@ -319,6 +320,7 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
 	c.Images.OpenShiftStateMetrics = images["openshift-state-metrics"]
 	c.Images.Thanos = images["thanos"]
+	c.Images.MonitoringPlugin = images["monitoring-plugin"]
 }
 
 func (c *Config) SetTelemetryMatches(matches []string) {

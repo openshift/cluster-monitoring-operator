@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -24,15 +25,21 @@ import (
 
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
+	"golang.org/x/exp/slices"
 
 	configv1 "github.com/openshift/api/config/v1"
+	consolev1 "github.com/openshift/api/console/v1"
 	osmv1 "github.com/openshift/api/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
+
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
+	openshiftconsoleclientset "github.com/openshift/client-go/console/clientset/versioned"
 	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
+	openshiftoperatorclientset "github.com/openshift/client-go/operator/clientset/versioned"
 	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
+
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
@@ -70,6 +77,7 @@ const (
 	deploymentCreateTimeout = 5 * time.Minute
 	deploymentDeleteTimeout = 5 * time.Minute
 	metadataPrefix          = "monitoring.openshift.io/"
+	clusterConsole          = "cluster"
 )
 
 type Client struct {
@@ -81,6 +89,8 @@ type Client struct {
 	oscclient             openshiftconfigclientset.Interface
 	ossclient             openshiftsecurityclientset.Interface
 	osrclient             openshiftrouteclientset.Interface
+	osopclient            openshiftoperatorclientset.Interface
+	osconclient           openshiftconsoleclientset.Interface
 	mclient               monitoring.Interface
 	eclient               apiextensionsclient.Interface
 	aggclient             aggregatorclient.Interface
@@ -159,6 +169,22 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 		client.aggclient = aggclient
 	}
 
+	if client.osopclient == nil {
+		osopclient, err := openshiftoperatorclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift operator client")
+		}
+		client.osopclient = osopclient
+	}
+
+	if client.osconclient == nil {
+		osconclient, err := openshiftconsoleclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating openshift console client")
+		}
+		client.osconclient = osconclient
+	}
+
 	return client, nil
 }
 
@@ -191,6 +217,12 @@ func OpenshiftSecurityClient(ossclient openshiftsecurityclientset.Interface) Opt
 func OpenshiftRouteClient(osrclient openshiftrouteclientset.Interface) Option {
 	return func(c *Client) {
 		c.osrclient = osrclient
+	}
+}
+
+func OpenshiftOperatorClient(osopclient openshiftoperatorclientset.Interface) Option {
+	return func(c *Client) {
+		c.osopclient = osopclient
 	}
 }
 
@@ -1830,6 +1862,63 @@ func (c *Client) PodCapacity(ctx context.Context) (int, error) {
 	return int(podCapacityTotal), nil
 }
 
+func (c *Client) CreateOrUpdateConsolePlugin(ctx context.Context, plg *consolev1.ConsolePlugin) error {
+	conClient := c.osconclient.ConsoleV1().ConsolePlugins()
+	existing, err := conClient.Get(ctx, plg.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := conClient.Create(ctx, plg, metav1.CreateOptions{})
+		return errors.Wrap(err, "creating ConsolePlugin object failed")
+	}
+	if err != nil {
+		return errors.Wrap(err, "retrieving ConsolePlugin object failed")
+	}
+
+	required := plg.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+	required.ResourceVersion = existing.ResourceVersion
+
+	_, err = conClient.Update(ctx, required, metav1.UpdateOptions{})
+	return errors.Wrap(err, "updating ConsolePlugin object failed")
+}
+
+func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
+	consoleClient := c.osopclient.OperatorV1().Consoles()
+
+	console, err := consoleClient.Get(ctx, clusterConsole, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "retrieving console %q failed", clusterConsole)
+	}
+
+	if slices.Contains(console.Spec.Plugins, name) {
+		klog.V(5).Info("console already contains plugin", name)
+		return nil
+	}
+
+	var patches []jsonPatch
+
+	if console.Spec.Plugins == nil {
+		patches = []jsonPatch{{
+			Op:    "add",
+			Path:  "/spec/plugins",
+			Value: []string{name},
+		}}
+	} else {
+		patches = []jsonPatch{{
+			Op:    "add",
+			Path:  "/spec/plugins/-",
+			Value: name,
+		}}
+	}
+
+	patchBytes, err := json.Marshal(patches)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = consoleClient.Patch(ctx, clusterConsole, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
+	return errors.Wrapf(err, "registering console-plugin %q with console %q failed", name, clusterConsole)
+}
+
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
 // over `existing` keys and values. Additionally function performs filtering of labels and annotations from `exiting` map
 // where keys starting from string defined in `metadataPrefix` are deleted. This prevents issues with preserving stale
@@ -1849,4 +1938,10 @@ func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {
 
 	_ = mergo.Merge(&required.Annotations, existing.Annotations)
 	_ = mergo.Merge(&required.Labels, existing.Labels)
+}
+
+type jsonPatch struct {
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value,omitempty"`
 }

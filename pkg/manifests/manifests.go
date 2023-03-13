@@ -31,15 +31,18 @@ import (
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
+	consolev1 "github.com/openshift/api/console/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/openshift/library-go/pkg/crypto"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"golang.org/x/exp/slices"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -283,6 +286,14 @@ var (
 	ControlPlaneKubeletServiceMonitorPA      = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
 	ControlPlaneEtcdServiceMonitor           = "control-plane/service-monitor-etcd.yaml"
 	ControlPlaneEtcdMinimalServiceMonitor    = "control-plane/minimal-service-monitor-etcd.yaml"
+
+	MonitoringPlugin                    = "monitoring-plugin/console-plugin.yaml"
+	MonitoringPluginConfigMap           = "monitoring-plugin/config-map.yaml"
+	MonitoringPluginDeployment          = "monitoring-plugin/deployment.yaml"
+	MonitoringPluginDeploymentContainer = "monitoring-plugin"
+	MonitoringPluginServiceAccount      = "monitoring-plugin/service-account.yaml"
+	MonitoringPluginService             = "monitoring-plugin/service.yaml"
+	MonitoringPluginPodDisruptionBudget = "monitoring-plugin/pod-disruption-budget.yaml"
 )
 
 var (
@@ -2558,6 +2569,74 @@ func (f *Factory) NewValidatingWebhook(manifest io.Reader) (*admissionv1.Validat
 	return NewValidatingWebhook(manifest)
 }
 
+func (f *Factory) NewConsolePlugin(manifest io.Reader) (*consolev1.ConsolePlugin, error) {
+	return NewConsolePlugin(manifest)
+}
+
+func (f *Factory) MonitoringPlugin() (*consolev1.ConsolePlugin, error) {
+	return f.NewConsolePlugin(f.assets.MustNewAssetReader(MonitoringPlugin))
+}
+
+func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
+	d, err := f.NewDeployment(f.assets.MustNewAssetReader(MonitoringPluginDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	// ensure console-plugin container is present even if config isn't defined so that,
+	// we validate that deployment has the expected container name. Thereby avoiding
+	// any suprises should user add config later.
+	podSpec := d.Spec.Template.Spec
+	containers := podSpec.Containers
+	idx := slices.IndexFunc(containers, containerNameEquals(MonitoringPluginDeploymentContainer))
+	if idx < 0 {
+		return nil, errors.Errorf(
+			"failed to find console-plugin container %q in deployment %q",
+			MonitoringPluginDeploymentContainer, MonitoringPluginDeployment)
+	}
+
+	containers[idx].Image = f.config.Images.MonitoringPlugin
+
+	cfg := f.config.ClusterMonitoringConfiguration.MonitoringPluginConfig
+	if cfg == nil {
+		return d, nil
+	}
+
+	if cfg.Resources != nil {
+		containers[idx].Resources = *cfg.Resources
+	}
+
+	if cfg.NodeSelector != nil {
+		podSpec.NodeSelector = cfg.NodeSelector
+	}
+
+	if len(cfg.Tolerations) > 0 {
+		podSpec.Tolerations = cfg.Tolerations
+	}
+
+	if len(cfg.TopologySpreadConstraints) > 0 {
+		podSpec.TopologySpreadConstraints = cfg.TopologySpreadConstraints
+	}
+
+	return d, nil
+}
+
+func (f *Factory) MonitoringPluginPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(MonitoringPluginPodDisruptionBudget))
+}
+
+func (f *Factory) MonitoringPluginServiceAccount() (*v1.ServiceAccount, error) {
+	return f.NewServiceAccount(f.assets.MustNewAssetReader(MonitoringPluginServiceAccount))
+}
+
+func (f *Factory) MonitoringPluginService() (*v1.Service, error) {
+	return f.NewService(f.assets.MustNewAssetReader(MonitoringPluginService))
+}
+
+func (f *Factory) MonitoringPluginConfigMap() (*v1.ConfigMap, error) {
+	return f.NewConfigMap(f.assets.MustNewAssetReader(MonitoringPluginConfigMap))
+}
+
 func (f *Factory) ThanosQuerierPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(ThanosQuerierPodDisruptionBudget))
 }
@@ -3289,6 +3368,16 @@ func NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookCon
 	return &v, nil
 }
 
+func NewConsolePlugin(manifest io.Reader) (*consolev1.ConsolePlugin, error) {
+	cp := consolev1.ConsolePlugin{}
+	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cp, nil
+}
+
 // HashTrustedCA synthesizes a configmap just by copying "ca-bundle.crt" from the given configmap
 // and naming it by hashing the contents of "ca-bundle.crt".
 // It adds "monitoring.openshift.io/name" and "monitoring.openshift.io/hash" labels.
@@ -3541,4 +3630,10 @@ func doubleServiceMonitorInterval(sm *monv1.ServiceMonitor) error {
 		}
 	}
 	return nil
+}
+
+func containerNameEquals(name string) func(corev1.Container) bool {
+	return func(c corev1.Container) bool {
+		return c.Name == name
+	}
 }

@@ -60,6 +60,8 @@ type ClusterMonitoringConfiguration struct {
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
 	// `NodeExporterConfig` defines settings for the `node-exporter` agent.
 	NodeExporterConfig NodeExporterConfig `json:"nodeExporter,omitempty"`
+	// `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`.
+	MonitoringPluginConfig *MonitoringPluginConfig `json:"monitoringPlugin,omitempty"`
 }
 
 // The `AlertmanagerMainConfig` resource defines settings for the
@@ -560,6 +562,19 @@ type ThanosRulerConfig struct {
 	// Defines persistent storage for Thanos Ruler. Use this setting to
 	// configure the storage class and size of a volume.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
+}
+
+// The `MonitoringPluginConfig` resource defines settings for the
+// Console Plugin component in the `openshift-monitoring` namespace.
+type MonitoringPluginConfig struct {
+	// Defines the nodes on which the Pods are scheduled.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Defines resource requests and limits for the console-plugin container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+	// Defines tolerations for the pods.
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// Defines a pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 // ----- Common Types -----
