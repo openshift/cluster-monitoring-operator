@@ -6,6 +6,7 @@ repos:
   alertmanager: openshift/prometheus-alertmanager
   kubeRbacProxy: openshift/kube-rbac-proxy
   kubeStateMetrics: openshift/kube-state-metrics
+  monitoringPlugin: openshift/monitoring-plugin
   nodeExporter: openshift/node_exporter
   promLabelProxy: openshift/prom-label-proxy
   prometheus: openshift/prometheus
@@ -16,6 +17,7 @@ versions:
   alertmanager: 0.25.0
   kubeRbacProxy: 0.14.1
   kubeStateMetrics: 2.8.2
+  monitoringPlugin: 4.14.0
   nodeExporter: 1.5.0
   promLabelProxy: 0.6.0
   prometheus: 2.43.0
