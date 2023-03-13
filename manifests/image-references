@@ -66,3 +66,7 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-thanos:latest
+  - name: monitoring-plugin
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-monitoring-plugin:latest

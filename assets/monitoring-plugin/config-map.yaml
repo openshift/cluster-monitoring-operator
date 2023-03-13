@@ -1,0 +1,25 @@
+apiVersion: v1
+data:
+  nginx.conf: |
+    error_log /dev/stdout info;
+    events {}
+    http {
+      include            /etc/nginx/mime.types;
+      default_type       application/octet-stream;
+      keepalive_timeout  65;
+      server {
+        listen              9443 ssl;
+        ssl_certificate     /var/cert/tls.crt;
+        ssl_certificate_key /var/cert/tls.key;
+        root                /usr/share/nginx/html;
+      }
+    }
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: monitoring-plugin
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: monitoring-plugin
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: monitoring-plugin
+  namespace: openshift-monitoring

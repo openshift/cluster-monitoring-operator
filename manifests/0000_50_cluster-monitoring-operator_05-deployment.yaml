@@ -74,6 +74,7 @@ spec:
         - "-images=prom-label-proxy=quay.io/openshift/origin-prom-label-proxy:latest"
         - "-images=k8s-prometheus-adapter=quay.io/openshift/origin-k8s-prometheus-adapter:latest"
         - "-images=thanos=quay.io/openshift/origin-thanos:latest"
+        - "-images=monitoring-plugin=quay.io/openshift/origin-monitoring-plugin:latest"
         env:
         - name: RELEASE_VERSION
           value: "0.0.1-snapshot"

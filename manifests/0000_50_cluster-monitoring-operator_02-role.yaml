@@ -163,6 +163,27 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  verbs:
+  - get
+<<<<<<< HEAD
+  - list
+  - update
+  - patch
+=======
+  - patch
+- apiGroups:
+  - console.openshift.io
+  resources:
+  - consoleplugins
+  verbs:
+  - get
+  - create
+  - update
+>>>>>>> 4431403e (gnen)
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
