@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
@@ -51,7 +52,7 @@ func (t *MetricsClientCATask) reconcileUWMConfigMap(ctx context.Context, apiAuth
 		return err
 	}
 
-	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
+	if t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		return t.client.CreateOrUpdateConfigMap(ctx, cm)
 	}
 

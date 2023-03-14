@@ -879,13 +879,13 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	// its enabled by admin via Cluster Monitoring ConfigMap.  The above
 	// loadConfig() already initializes the structs with nil values for
 	// UserWorkloadConfiguration struct.
-	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled {
+	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		c.UserWorkloadConfiguration, err = o.loadUserWorkloadConfig(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
-	o.userWorkloadEnabled = *c.ClusterMonitoringConfiguration.UserWorkloadEnabled
+	o.userWorkloadEnabled = c.ClusterMonitoringConfiguration.UserWorkloadEnabled
 
 	err = c.LoadEnforcedBodySizeLimit(o.client, ctx)
 	if err != nil {
@@ -932,8 +932,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 		certFound && len(certContent) > 0 &&
 		keyFound && len(keyContent) > 0 {
 
-		trueBool := true
-		c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &trueBool
+		c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = true
 	}
 
 	return c, nil

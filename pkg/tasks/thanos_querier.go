@@ -198,7 +198,7 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 
 		dep, err := t.factory.ThanosQuerierDeployment(
 			s,
-			*t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled,
+			t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled,
 			trustedCA,
 		)
 		if err != nil {

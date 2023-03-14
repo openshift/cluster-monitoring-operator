@@ -48,9 +48,9 @@ const (
 )
 
 type Config struct {
-	Images      *Images `json:"-"`
-	RemoteWrite bool    `json:"-"`
-	TechPreview bool    `json:"-"`
+	Images      Images `json:"-"`
+	RemoteWrite bool   `json:"-"`
+	TechPreview bool   `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
@@ -61,12 +61,7 @@ func (c Config) IsStorageConfigured() bool {
 		return false
 	}
 
-	prometheusK8sConfig := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
-	if prometheusK8sConfig == nil {
-		return false
-	}
-
-	return prometheusK8sConfig.VolumeClaimTemplate != nil
+	return c.ClusterMonitoringConfiguration.PrometheusK8sConfig.VolumeClaimTemplate != nil
 }
 
 func (c Config) HasInconsistentAlertmanagerConfigurations() bool {
@@ -74,14 +69,13 @@ func (c Config) HasInconsistentAlertmanagerConfigurations() bool {
 		return false
 	}
 
-	amConfig := c.ClusterMonitoringConfiguration.AlertmanagerMainConfig
 	uwmConfig := c.UserWorkloadConfiguration.Alertmanager
 
-	if amConfig == nil || uwmConfig == nil {
+	if uwmConfig == nil {
 		return false
 	}
 
-	return amConfig.EnableUserAlertManagerConfig && uwmConfig.Enabled
+	return c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.EnableUserAlertManagerConfig && uwmConfig.Enabled
 }
 
 // AdditionalAlertmanagerConfigsForPrometheusUserWorkload returns the alertmanager configurations for
@@ -148,7 +142,7 @@ type HTTPConfig struct {
 }
 
 func (a AlertmanagerMainConfig) IsEnabled() bool {
-	return a.Enabled == nil || *a.Enabled
+	return a.Enabled
 }
 
 // Audit profile configurations
@@ -164,16 +158,13 @@ type Audit struct {
 }
 
 type EtcdConfig struct {
-	Enabled *bool `json:"-"`
+	Enabled bool `json:"-"`
 }
 
 // IsEnabled returns the underlying value of the `Enabled` boolean pointer.
 // It defaults to false if the pointer is nil.
 func (e *EtcdConfig) IsEnabled() bool {
-	if e.Enabled == nil {
-		return false
-	}
-	return *e.Enabled
+	return e.Enabled
 }
 
 func (cfg *TelemeterClientConfig) IsEnabled() bool {
@@ -181,7 +172,7 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 		return false
 	}
 
-	if (cfg.Enabled != nil && *cfg.Enabled == false) ||
+	if cfg.Enabled == false ||
 		cfg.ClusterID == "" ||
 		cfg.Token == "" {
 		return false
@@ -227,6 +218,14 @@ func NewConfig(content io.Reader, tp bool) (*Config, error) {
 
 func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
 	return ClusterMonitoringConfiguration{
+		AlertmanagerMainConfig: AlertmanagerMainConfig{
+			Enabled: true,
+		},
+		K8sPrometheusAdapter: K8sPrometheusAdapter{
+			Audit: Audit{
+				Profile: auditv1.LevelMetadata,
+			},
+		},
 		NodeExporterConfig: NodeExporterConfig{
 			Collectors: NodeExporterCollectorConfig{
 				NetDev: NodeExporterCollectorNetDevConfig{
@@ -238,69 +237,23 @@ func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
 				},
 			},
 		},
+		PrometheusK8sConfig: PrometheusK8sConfig{
+			CollectionProfile: FullCollectionProfile,
+		},
+		TelemeterClientConfig: TelemeterClientConfig{
+			Enabled:            true,
+			TelemeterServerURL: "https://infogw.api.openshift.com/",
+		},
 	}
 }
 
 func (c *Config) applyDefaults() {
-	if c.Images == nil {
-		c.Images = &Images{}
-	}
 	if c.ClusterMonitoringConfiguration == nil {
-		c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
-	}
-	if c.ClusterMonitoringConfiguration.PrometheusOperatorConfig == nil {
-		c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
+		cmc := defaultClusterMonitoringConfiguration()
+		c.ClusterMonitoringConfiguration = &cmc
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" && c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = DefaultRetentionValue
-	}
-	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
-		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
-		disable := false
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = &disable
-	}
-	if c.ClusterMonitoringConfiguration.ThanosQuerierConfig == nil {
-		c.ClusterMonitoringConfiguration.ThanosQuerierConfig = &ThanosQuerierConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.KubeStateMetricsConfig == nil {
-		c.ClusterMonitoringConfiguration.KubeStateMetricsConfig = &KubeStateMetricsConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig == nil {
-		c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig = &OpenShiftStateMetricsConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.HTTPConfig == nil {
-		c.ClusterMonitoringConfiguration.HTTPConfig = &HTTPConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.TelemeterClientConfig == nil {
-		c.ClusterMonitoringConfiguration.TelemeterClientConfig = &TelemeterClientConfig{
-			TelemeterServerURL: "https://infogw.api.openshift.com/",
-		}
-	}
-
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors = &DedicatedServiceMonitors{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile == "" {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
-	}
-
-	if c.ClusterMonitoringConfiguration.EtcdConfig == nil {
-		c.ClusterMonitoringConfiguration.EtcdConfig = &EtcdConfig{}
-	}
-
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
 	}
 }
 

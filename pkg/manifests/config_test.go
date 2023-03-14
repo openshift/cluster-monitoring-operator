@@ -76,8 +76,6 @@ func TestEmptyUserConfigIsValid(t *testing.T) {
 }
 
 func TestTelemeterClientConfig(t *testing.T) {
-	truev, falsev := true, false
-
 	tcs := []struct {
 		enabled bool
 		cfg     *TelemeterClientConfig
@@ -92,33 +90,33 @@ func TestTelemeterClientConfig(t *testing.T) {
 		},
 		{
 			cfg: &TelemeterClientConfig{
-				Enabled: &truev,
+				Enabled: true,
 			},
 			enabled: false,
 		},
 		{
 			cfg: &TelemeterClientConfig{
-				Enabled: &falsev,
-			},
-			enabled: false,
-		},
-		{
-			cfg: &TelemeterClientConfig{
-				ClusterID: "test",
+				Enabled: false,
 			},
 			enabled: false,
 		},
 		{
 			cfg: &TelemeterClientConfig{
 				ClusterID: "test",
-				Enabled:   &falsev,
 			},
 			enabled: false,
 		},
 		{
 			cfg: &TelemeterClientConfig{
 				ClusterID: "test",
-				Enabled:   &truev,
+				Enabled:   false,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemeterClientConfig{
+				ClusterID: "test",
+				Enabled:   true,
 			},
 			enabled: false,
 		},
@@ -131,14 +129,14 @@ func TestTelemeterClientConfig(t *testing.T) {
 		{
 			cfg: &TelemeterClientConfig{
 				Token:   "test",
-				Enabled: &falsev,
+				Enabled: false,
 			},
 			enabled: false,
 		},
 		{
 			cfg: &TelemeterClientConfig{
 				Token:   "test",
-				Enabled: &truev,
+				Enabled: true,
 			},
 			enabled: false,
 		},
@@ -146,14 +144,7 @@ func TestTelemeterClientConfig(t *testing.T) {
 			cfg: &TelemeterClientConfig{
 				ClusterID: "test",
 				Token:     "test",
-			},
-			enabled: true, // opt-in by default
-		},
-		{
-			cfg: &TelemeterClientConfig{
-				ClusterID: "test",
-				Token:     "test",
-				Enabled:   &truev,
+				Enabled:   true,
 			},
 			enabled: true,
 		},
@@ -161,7 +152,7 @@ func TestTelemeterClientConfig(t *testing.T) {
 			cfg: &TelemeterClientConfig{
 				ClusterID: "test",
 				Token:     "test",
-				Enabled:   &falsev, // explicitely opt-out
+				Enabled:   false, // explicitely opt-out
 			},
 			enabled: false,
 		},
