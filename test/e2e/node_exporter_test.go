@@ -155,7 +155,6 @@ nodeExporter:
 				"node_network_mtu_bytes",
 				"node_network_net_dev_group",
 				"node_network_protocol_type",
-				"node_network_speed_bytes",
 				"node_network_transmit_queue_length",
 				"node_network_up",
 			},
