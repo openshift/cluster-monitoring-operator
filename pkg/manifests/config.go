@@ -234,7 +234,7 @@ func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
 				},
 				NetClass: NodeExporterCollectorNetClassConfig{
 					Enabled:    true,
-					UseNetlink: true,
+					UseNetlink: false,
 				},
 			},
 		},
