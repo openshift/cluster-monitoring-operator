@@ -2209,7 +2209,8 @@ func (f *Factory) setTLSSecurityConfiguration(args []string, tlsCipherSuitesArg 
 func setArg(args []string, argName string, argValue string) []string {
 	found := false
 	for i, arg := range args {
-		if strings.HasPrefix(arg, argName) {
+		if arg == argName ||
+			(argName[len(argName)-1] == '=' && strings.HasPrefix(arg, argName)) {
 			args[i] = argName + argValue
 			found = true
 		}
