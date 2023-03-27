@@ -128,6 +128,27 @@ function(params)
                           '--secure-port=6443',
                           '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                         ],
+                        // OCPBUGS-10895: configure a startup probe to prevent
+                        // the container from being killed by kubelet in case
+                        // the prometheus-adapter initialization takes more
+                        // time than usual which can happen on clusters with
+                        // lots of CRDs and/or high Kube API latencies.
+                        // We also reset the initial delay for the other probes.
+                        livenessProbe+: {
+                          initialDelaySeconds: 0,
+                        },
+                        readinessProbe+: {
+                          initialDelaySeconds: 0,
+                        },
+                        startupProbe: {
+                          httpGet: {
+                            path: '/livez',
+                            port: 'https',
+                            scheme: 'HTTPS',
+                          },
+                          periodSeconds: 10,
+                          failureThreshold: 18,
+                        },
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [
                           {
