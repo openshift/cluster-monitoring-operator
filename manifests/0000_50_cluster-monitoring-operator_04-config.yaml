@@ -979,6 +979,11 @@ data:
     # cluster:vsphere_csi_migration:max shows if CSI migration for vSphere was enabled or not.
     - '{__name__="cluster:vsphere_csi_migration:max"}'
     #
+    # owners: (https://github.com/maistra/istio-operator, OpenShift Service Mesh team)
+    #
+    # cluster:servicemesh_member_count:sum represents the Service Mesh Control Plane Namespaces counter sum of the cluster
+    - '{__name__="cluster:servicemesh_member_count:sum"}'
+    #
     # owners: (@openshift/openshift-team-api, @polynomial)
     #
     # apiserver_list_watch_request_success_total:rate:sum represents the rate of change for successful LIST and WATCH requests over a 5 minute period.
