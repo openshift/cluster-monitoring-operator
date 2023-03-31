@@ -29,6 +29,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig)
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
 * [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
@@ -234,6 +235,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | netclass | [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig) | Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default. |
 | buddyinfo | [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig) | Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`. Disabled by default. |
 | mountstats | [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig) | Defines the configuration of the `mountstats` collector, which collects statistics about NFS volume I/O activities. Disabled by default. |
+| ksmd | [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig) | Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -249,6 +251,21 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `cpufreq` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorKSMDConfig
+
+#### Description
+
+The `NodeExporterCollectorKSMDConfig` resource works as an on/off switch for the `ksmd` collector of the `node-exporter` agent. By default, the `ksmd` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `ksmd` collector. |
 
 [Back to TOC](#table-of-contents)
 

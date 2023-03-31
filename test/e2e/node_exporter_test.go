@@ -70,6 +70,14 @@ nodeExporter:
     mountstats:
       enabled: true`,
 		},
+		{
+			nameCollector: "ksmd",
+			config: `
+nodeExporter:
+  collectors:
+    ksmd:
+      enabled: true`,
+		},
 	}
 
 	for _, test := range tests {
