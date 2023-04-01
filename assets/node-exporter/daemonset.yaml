@@ -137,7 +137,9 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
-      securityContext: {}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
       serviceAccountName: node-exporter
       tolerations:
       - operator: Exists
