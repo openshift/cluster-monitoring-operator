@@ -262,7 +262,6 @@ function(params)
                 },
               },
             ],
-            securityContext: {},
             priorityClassName: 'system-cluster-critical',
             tolerations: [
               { operator: 'Exists' },
