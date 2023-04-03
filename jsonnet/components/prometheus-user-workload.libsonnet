@@ -499,6 +499,9 @@ function(params)
               },
             },
           },
+          {
+            name: 'prometheus',
+          },
         ],
       },
     },
