@@ -28,6 +28,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
 * [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
 * [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
@@ -212,6 +213,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | netdev | [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig) | Defines the configuration of the `netdev` collector, which collects network devices statistics. Enabled by default. |
 | netclass | [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig) | Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default. |
 | buddyinfo | [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig) | Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`. Disabled by default. |
+| mountstats | [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig) | Defines the configuration of the `mountstats` collector, which collects statistics about NFS volume I/O activities. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -227,6 +229,21 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `cpufreq` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorMountStatsConfig
+
+#### Description
+
+The `NodeExporterCollectorMountStatsConfig` resource works as an on/off switch for the `mountstats` collector of the `node-exporter` agent. By default, the `mountstats` collector is disabled. If enabled, these metrics become available:\n\n\t`node_mountstats_nfs_read_bytes_total`,\n\t`node_mountstats_nfs_write_bytes_total`,\n\t`node_mountstats_nfs_operations_requests_total`.\n\nPlease be aware that these metrics can have a high cardinality. If you enable this collector, closely monitor any increases in memory usage for the `prometheus-k8s` pods.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `mountstats` collector. |
 
 [Back to TOC](#table-of-contents)
 

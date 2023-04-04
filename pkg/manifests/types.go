@@ -297,6 +297,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`.
 	// Disabled by default.
 	BuddyInfo NodeExporterCollectorBuddyInfoConfig `json:"buddyinfo,omitempty"`
+	// Defines the configuration of the `mountstats` collector, which collects statistics about NFS volume I/O activities.
+	// Disabled by default.
+	MountStats NodeExporterCollectorMountStatsConfig `json:"mountstats,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -385,6 +388,22 @@ type NodeExporterCollectorNetClassConfig struct {
 // By default, the `buddyinfo` collector is disabled.
 type NodeExporterCollectorBuddyInfoConfig struct {
 	// A Boolean flag that enables or disables the `buddyinfo` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorMountStatsConfig` resource works as an on/off switch for
+// the `mountstats` collector of the `node-exporter` agent.
+// By default, the `mountstats` collector is disabled.
+// If enabled, these metrics become available:
+//
+//	`node_mountstats_nfs_read_bytes_total`,
+//	`node_mountstats_nfs_write_bytes_total`,
+//	`node_mountstats_nfs_operations_requests_total`.
+//
+// Please be aware that these metrics can have a high cardinality.
+// If you enable this collector, closely monitor any increases in memory usage for the `prometheus-k8s` pods.
+type NodeExporterCollectorMountStatsConfig struct {
+	// A Boolean flag that enables or disables the `mountstats` collector.
 	Enabled bool `json:"enabled,omitempty"`
 }
 

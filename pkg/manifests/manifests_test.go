@@ -2993,6 +2993,17 @@ nodeExporter:
 			argsPresent: []string{"--collector.buddyinfo"},
 			argsAbsent:  []string{"--no-collector.buddyinfo"},
 		},
+		{
+			name: "enable mountstats collector",
+			config: `
+nodeExporter:
+  collectors:
+    mountstats:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.mountstats"},
+			argsAbsent:  []string{"--no-collector.mountstats"},
+		},
 	}
 
 	for _, test := range tests {

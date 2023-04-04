@@ -62,6 +62,14 @@ nodeExporter:
     buddyinfo:
       enabled: true`,
 		},
+		{
+			nameCollector: "mountstats",
+			config: `
+nodeExporter:
+  collectors:
+    mountstats:
+      enabled: true`,
+		},
 	}
 
 	for _, test := range tests {
