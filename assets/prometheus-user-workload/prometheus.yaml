@@ -162,6 +162,7 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
+  - name: prometheus
   enableFeatures: []
   enforcedNamespaceLabel: namespace
   externalLabels: {}
