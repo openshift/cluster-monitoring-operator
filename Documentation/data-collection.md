@@ -989,8 +989,8 @@ data:
     #
     # owners: (https://github.com/maistra/istio-operator, OpenShift Service Mesh team)
     #
-    # cluster:servicemesh_member_count:sum represents the Service Mesh Control Plane Namespaces counter sum of the cluster
-    - '{__name__="cluster:servicemesh_member_count:sum"}'
+    # cluster:servicemesh_members:sum represents the Service Mesh Control Plane Namespaces counter sum of the cluster
+    - '{__name__="cluster:servicemesh_members:sum"}'
     #
     # owners: (@openshift/openshift-team-api, @polynomial)
     #
