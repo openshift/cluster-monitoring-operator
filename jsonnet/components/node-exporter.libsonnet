@@ -207,10 +207,12 @@ function(params)
                       // gather that data (especially for bare metal clusters), and
                       // add flags to collect the node_cpu_info metric + metrics
                       // from the text file.
+                      // Disable btrfs collector as btrfs is not included in RHEL kernels
                       args: [a for a in c.args if (a != '--no-collector.hwmon')] +
                             [
                               '--collector.cpu.info',
                               '--collector.textfile.directory=' + textfileDir,
+                              '--no-collector.btrfs',
                             ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts+: [{
