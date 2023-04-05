@@ -13,6 +13,20 @@ spec:
   endpoints:
   - bearerTokenFile: ""
     interval: 15s
+    metricRelabelings:
+    - action: replace
+      regex: (node_mountstats_nfs_read_bytes_total|node_mountstats_nfs_write_bytes_total|node_mountstats_nfs_operations_requests_total)
+      replacement: "true"
+      sourceLabels:
+      - __name__
+      targetLabel: __tmp_keep
+    - action: drop
+      regex: node_mountstats_nfs_.+;
+      sourceLabels:
+      - __name__
+      - __tmp_keep
+    - action: labeldrop
+      regex: __tmp_keep
     port: https
     relabelings:
     - action: replace
