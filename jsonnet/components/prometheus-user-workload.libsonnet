@@ -500,6 +500,9 @@ function(params)
               },
             },
           },
+          {
+            name: 'prometheus',
+          },
         ],
       },
     },
