@@ -1,0 +1,57 @@
+# Test rules about role of node
+
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  # cluster:master_nodes contains all nodes with kube_node_role{role="master"}.
+  # 2 labels are generated for each node:
+  # - label_node_role_kubernetes_io="master"
+  # - label_node_role_kubernetes_io_master="true"
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-1",role="worker"}'
+        values: "1"
+      - series: 'kube_node_labels{node="worker-2",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-2",role="worker"}'
+        values: "1"
+      - series: 'kube_node_labels{node="master-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-1",role="master"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:master_nodes
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:master_nodes{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="master",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos",label_node_role_kubernetes_io_master="true", node="master-1"}'
+            value: 1
+  # cluster:infra_nodes contains all nodes with kube_node_role{role="infra"}.
+  # Only 1 label is generated for each node:
+  # - label_node_role_kubernetes_io_infra="true"
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-1",role="worker"}'
+        values: "1"
+      - series: 'kube_node_labels{node="infra-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="infra-1",role="infra"}'
+        values: "1"
+      - series: 'kube_node_labels{node="infra-2",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="infra-2",role="infra"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:infra_nodes
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:infra_nodes{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io_infra="true",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos", node="infra-1"}'
+            value: 1
+          - labels: 'cluster:infra_nodes{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io_infra="true",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos", node="infra-2"}'
+            value: 1
