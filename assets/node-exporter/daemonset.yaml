@@ -40,6 +40,7 @@ spec:
         - --collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$
         - --collector.cpu.info
         - --collector.textfile.directory=/var/node_exporter/textfile
+        - --no-collector.btrfs
         image: quay.io/prometheus/node-exporter:v1.5.0
         name: node-exporter
         resources:
