@@ -907,10 +907,29 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.processes", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Systemd.Enabled {
+		args = setArg(args, "--collector.systemd", "")
+
+		pattern, err := regexListToArg(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Systemd.Units)
+		if err != nil {
+			return nil, fmt.Errorf("systemd unit pattern valiation error: %s", err)
+		}
+		args = setArg(args, "--collector.systemd.unit-include=", pattern)
+	} else {
+		args = setArg(args, "--no-collector.systemd", "")
+	}
+
 	return args, nil
 }
 
+// concatenate all patterns into a single regexp using OR
 func regexListToArg(list []string) (string, error) {
+	for _, pattern := range list {
+		_, err := regexp.Compile(pattern)
+		if err != nil {
+			return "", fmt.Errorf("invalid regexp pattern: %s", pattern)
+		}
+	}
 	r := "^(" + strings.Join(list, "|") + ")$"
 	_, err := regexp.Compile(r)
 	return r, err

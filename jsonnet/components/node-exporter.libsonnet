@@ -281,6 +281,13 @@ function(params)
                       // node-exporter has issue in rolling out with security context
                       // changes in kube-prometheus hence overidding the changes
                       securityContext: {},
+                      env: [
+                        {
+                          // This is required for the systemd collector to connect to the host's dbus socket.
+                          name: 'DBUS_SYSTEM_BUS_ADDRESS',
+                          value: 'unix:path=/host/root/var/run/dbus/system_bus_socket',
+                        },
+                      ],
                     },
                 super.containers,
               ),

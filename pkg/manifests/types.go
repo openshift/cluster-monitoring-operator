@@ -317,6 +317,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system.
 	// Disabled by default.
 	Processes NodeExporterCollectorProcessesConfig `json:"processes,omitempty"`
+	// Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services.
+	// Disabled by default.
+	Systemd NodeExporterCollectorSystemdConfig `json:"systemd,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -448,6 +451,30 @@ type NodeExporterCollectorKSMDConfig struct {
 type NodeExporterCollectorProcessesConfig struct {
 	// A Boolean flag that enables or disables the `processes` collector.
 	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorSystemdConfig` resource works as an on/off switch for
+// the `systemd` collector of the `node-exporter` agent.
+// By default, the `systemd` collector is disabled.
+// If enabled, the following metrics become available:
+// `node_systemd_system_running`,
+// `node_systemd_timer_last_trigger_seconds`,
+// `node_systemd_units`,
+// `node_systemd_version`.
+// If the unit uses a socket, it also generates these 3 metrics:
+// `node_systemd_socket_accepted_connections_total`,
+// `node_systemd_socket_current_connections`,
+// `node_systemd_socket_refused_connections_total`.
+// You can use the `units` parameter to select the systemd units to be included by the `systemd` collector.
+// The selected units are used to generate the `node_systemd_unit_state` metric, which shows the state of each systemd unit.
+// However, this metric's cardinality might be high (at least 5 series per unit per node).
+// If you enable this collector with a long list of selected units, closely monitor the `prometheus-k8s` deployment for excessive memory usage.
+type NodeExporterCollectorSystemdConfig struct {
+	// A Boolean flag that enables or disables the `systemd` collector.
+	Enabled bool `json:"enabled,omitempty"`
+	// A list of regular expression (regex) patterns that match systemd units to be included by the `systemd` collector.
+	// By default, the list is empty, so the collector exposes no metrics for systemd units.
+	Units []string `json:"units,omitempty"`
 }
 
 // The `UserWorkloadConfiguration` resource defines the settings

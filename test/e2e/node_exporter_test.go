@@ -77,6 +77,14 @@ nodeExporter:
     processes:
       enabled: true`,
 		},
+		{
+			nameCollector: "systemd",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true`,
+		},
 	}
 
 	for _, test := range tests {
@@ -321,4 +329,81 @@ nodeExporter:
 			}
 		})
 	}
+}
+
+func TestNodeExporterSystemdUnits(t *testing.T) {
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
+	})
+	configNoUnits := `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+`
+
+	t.Run("default without units", func(st *testing.T) {
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, configNoUnits))
+
+		// Systemd collector should be enabled.
+		f.PrometheusK8sClient.WaitForQueryReturn(
+			t, 5*time.Minute, `min(node_scrape_collector_success{collector="systemd"})`,
+			func(v float64) error {
+				if v != 1 {
+					return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="systemd"}) 1 but got %v.`, v)
+				}
+				return nil
+			},
+		)
+
+		// Systemd collector should not collect unit state.
+		f.PrometheusK8sClient.WaitForQueryReturn(
+			t, 5*time.Minute, `absent(node_systemd_unit_state)`,
+			func(v float64) error {
+				if v != 1 {
+					return fmt.Errorf(`expecting absent(node_systemd_unit_state) = 1 but got %v.`, v)
+				}
+				return nil
+			},
+		)
+
+	})
+	configWithUnits := `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - network.+
+      - nss.+
+`
+
+	t.Run("enabled with units", func(st *testing.T) {
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, configWithUnits))
+
+		// Systemd collector should be enabled.
+		f.PrometheusK8sClient.WaitForQueryReturn(
+			t, 5*time.Minute, `min(node_scrape_collector_success{collector="systemd"})`,
+			func(v float64) error {
+				if v != 1 {
+					return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="systemd"}) 1 but got %v.`, v)
+				}
+				return nil
+			},
+		)
+
+		// Systemd collector should collect unit state.
+		// One node_systemd_unit_state metric should be 1 while the rest should be 0 for each unit.
+		f.PrometheusK8sClient.WaitForQueryReturn(
+			t, 5*time.Minute, `max(node_systemd_unit_state)`,
+			func(v float64) error {
+				if v != 1 {
+					return fmt.Errorf(`expecting max(node_systemd_unit_state) = 1 but got %v.`, v)
+				}
+				return nil
+			},
+		)
+
+	})
+
 }

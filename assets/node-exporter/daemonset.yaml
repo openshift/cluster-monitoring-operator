@@ -54,6 +54,9 @@ spec:
           fi
           echo "ts=$(date --iso-8601=seconds) num_cpus=$NUM_CPUS gomaxprocs=$GOMAXPROCS"
           exec /bin/node_exporter "$0" "$@"
+        env:
+        - name: DBUS_SYSTEM_BUS_ADDRESS
+          value: unix:path=/host/root/var/run/dbus/system_bus_socket
         image: quay.io/prometheus/node-exporter:v1.6.0
         name: node-exporter
         resources:

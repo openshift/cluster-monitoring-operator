@@ -237,6 +237,9 @@ func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
 					Enabled:    true,
 					UseNetlink: true,
 				},
+				Systemd: NodeExporterCollectorSystemdConfig{
+					Enabled: false,
+				},
 			},
 		},
 	}

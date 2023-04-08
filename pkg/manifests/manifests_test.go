@@ -2924,6 +2924,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--no-collector.processes",
 				"--collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
 				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+				"--no-collector.systemd",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
@@ -2932,6 +2933,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.buddyinfo",
 				"--collector.ksmd",
 				"--collector.processes",
+				"--collector.systemd",
 			},
 		},
 		{
@@ -3063,6 +3065,33 @@ nodeExporter:
 			},
 			argsAbsent: []string{"--no-collector.netclass", "--no-collector.netdev"},
 		},
+		{
+			name: "enable systemd collector without units",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.systemd",
+				"--collector.systemd.unit-include=^()$"},
+			argsAbsent: []string{"--no-collector.systemd"},
+		},
+		{
+			name: "enable systemd collector with units",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - network.+
+      - nss.+
+`,
+			argsPresent: []string{"--collector.systemd",
+				"--collector.systemd.unit-include=^(network.+|nss.+)$"},
+			argsAbsent: []string{"--no-collector.systemd"},
+		},
 	}
 
 	for _, test := range tests {
@@ -3103,6 +3132,36 @@ nodeExporter:
 
 	}
 
+}
+
+func TestNodeExporterSystemdUnits(t *testing.T) {
+
+	testName := "enable systemd collector with invalid units parttern"
+	config := `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - network.+
+      - /\
+`
+	t.Run(testName, func(st *testing.T) {
+		c, err := NewConfigFromString(config, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		c.SetImages(map[string]string{
+			"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
+			"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
+		})
+
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		_, err = f.NodeExporterDaemonSet()
+		if err == nil || !strings.Contains(err.Error(), "systemd unit pattern valiation error:") {
+			t.Fatalf(`expected error "systemd unit pattern valiation error:.*", got %v`, err)
+		}
+	})
 }
 
 func TestNodeExporterGeneralSettings(t *testing.T) {
