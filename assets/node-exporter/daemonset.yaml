@@ -41,6 +41,7 @@ spec:
         - --no-collector.cpufreq
         - --collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|tun[0-9]*|br[0-9]*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext)$
         - --path.udev.data=/host/root/run/udev/data
+        - --no-collector.btrfs
         image: quay.io/prometheus/node-exporter:v1.4.0
         name: node-exporter
         resources:
