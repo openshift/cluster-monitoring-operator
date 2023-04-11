@@ -299,12 +299,6 @@ function(params) {
         resources: ['persistentvolumeclaims'],
         verbs: ['get', 'list', 'watch', 'update', 'delete'],
       },
-      // CMO needs permissions to create and update console plugin
-      {
-        apiGroups: ['console.openshift.io'],
-        resources: ['consoleplugins'],
-        verbs: ['get', 'list', 'watch', 'create', 'update', 'delete'],
-      },
 
     ],
   },
