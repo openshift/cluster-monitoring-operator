@@ -499,6 +499,10 @@ function(params)
               },
             },
           },
+
+          // NOTE: It is important to have the container - prometheus specified
+          // so that CMO will apply all the required customizations.
+          // See e.g pkg/manifests/manifests.go where the startup probe is added
           {
             name: 'prometheus',
           },
