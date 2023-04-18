@@ -15,6 +15,8 @@
 package strings
 
 import (
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"regexp"
 	stdlib_strings "strings"
 )
@@ -35,12 +37,16 @@ func addWordBoundariesToNumbers(s string) string {
 	return string(b)
 }
 
+func titleCaseWord(word string) string {
+	return cases.Title(language.Und, cases.NoLower).String(word)
+}
+
 func translateWord(word string, initCase bool) string {
 	if val, ok := wordMapping[word]; ok {
 		return val
 	}
 	if initCase {
-		return stdlib_strings.Title(word)
+		return titleCaseWord(word)
 	}
 	return word
 }
@@ -65,5 +71,6 @@ func ToPascalCase(s string) string {
 	for i, substr := range bits {
 		ret += translateWord(substr, i != 0)
 	}
-	return stdlib_strings.Title(ret)
+
+	return titleCaseWord(ret)
 }

@@ -17,7 +17,7 @@ package manifests
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -53,7 +53,7 @@ func (a *Assets) GetAsset(name string) ([]byte, error) {
 	// fallback to loading manifest from disk
 	klog.V(4).Infof("Reading manifest from file: %s\n", filePath)
 
-	f, err := ioutil.ReadFile(filePath)
+	f, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read asset %v", name)
 	}
