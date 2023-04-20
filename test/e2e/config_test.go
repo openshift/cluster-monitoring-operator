@@ -560,6 +560,7 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests("*", containerName, mem, cpu),
+					expectContainerArg("--web.disable-cors", containerName),
 				},
 			),
 		},

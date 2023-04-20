@@ -258,6 +258,10 @@ type ThanosQuerierConfig struct {
 	// The possible values are `error`, `warn`, `info`, and `debug`.
 	// The default value is `info`.
 	LogLevel string `json:"logLevel,omitempty"`
+	// A Boolean flag that enables setting CORS headers.
+	// The headers would allow access from any origin.
+	// The default value is `false`.
+	EnableCORS bool `json:"enableCORS,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines resource requests and limits for the Thanos Querier container.

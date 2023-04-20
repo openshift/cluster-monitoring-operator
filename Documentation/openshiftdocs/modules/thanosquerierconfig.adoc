@@ -22,6 +22,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |logLevel|string|Defines the log level setting for Thanos Querier. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`.
 
+|enableCORS|bool|A Boolean flag that enables setting CORS headers. The headers would allow access from any origin. The default value is `false`.
+
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
 |resources|*v1.ResourceRequirements|Defines resource requests and limits for the Thanos Querier container.
