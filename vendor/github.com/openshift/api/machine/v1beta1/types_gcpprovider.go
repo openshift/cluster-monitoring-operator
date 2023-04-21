@@ -55,13 +55,26 @@ const (
 	IntegrityMonitoringPolicyDisabled IntegrityMonitoringPolicy = "Disabled"
 )
 
+// ConfidentialComputePolicy represents the confidential compute configuration for the GCP machine.
+type ConfidentialComputePolicy string
+
+const (
+	// ConfidentialComputePolicyEnabled enables confidential compute for the GCP machine.
+	ConfidentialComputePolicyEnabled ConfidentialComputePolicy = "Enabled"
+	// ConfidentialComputePolicyDisabled disables confidential compute for the GCP machine.
+	ConfidentialComputePolicyDisabled ConfidentialComputePolicy = "Disabled"
+)
+
 // GCPMachineProviderSpec is the type that will be embedded in a Machine.Spec.ProviderSpec field
 // for an GCP virtual machine. It is used by the GCP machine actuator to create a single Machine.
 // Compatibility level 2: Stable within a major release for a minimum of 9 months or 3 minor releases (whichever is longer).
 // +openshift:compatibility-gen:level=2
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type GCPMachineProviderSpec struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is the standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// UserDataSecret contains a local reference to a secret that contains the
 	// UserData to apply to the instance
@@ -129,6 +142,13 @@ type GCPMachineProviderSpec struct {
 	// ShieldedInstanceConfig is the Shielded VM configuration for the VM
 	// +optional
 	ShieldedInstanceConfig GCPShieldedInstanceConfig `json:"shieldedInstanceConfig,omitempty"`
+
+	// confidentialCompute Defines whether the instance should have confidential compute enabled.
+	// If enabled OnHostMaintenance is required to be set to "Terminate".
+	// If omitted, the platform chooses a default, which is subject to change over time, currently that default is false.
+	// +kubebuilder:validation:Enum=Enabled;Disabled
+	// +optional
+	ConfidentialCompute ConfidentialComputePolicy `json:"confidentialCompute,omitempty"`
 }
 
 // GCPDisk describes disks for GCP.

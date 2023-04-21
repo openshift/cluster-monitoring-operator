@@ -11,7 +11,10 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // Compatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).
 // +openshift:compatibility-gen:level=1
 type FeatureGate struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is the standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec holds user settable values for configuration
@@ -80,6 +83,9 @@ type FeatureGateStatus struct {
 // +openshift:compatibility-gen:level=1
 type FeatureGateList struct {
 	metav1.TypeMeta `json:",inline"`
+
+	// metadata is the standard list's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	metav1.ListMeta `json:"metadata"`
 
 	Items []FeatureGate `json:"items"`
@@ -114,26 +120,24 @@ var FeatureSets = map[FeatureSet]*FeatureGateEnabledDisabled{
 		with("BuildCSIVolumes").                   // sig-build, adkaplan, OCP specific
 		with("NodeSwap").                          // sig-node, ehashman, Kubernetes feature gate
 		with("MachineAPIProviderOpenStack").       // openstack, egarcia (#forum-openstack), OCP specific
-		with("CGroupsV2").                         // sig-node, harche, OCP specific
-		with("Crun").                              // sig-node, haircommander, OCP specific
 		with("InsightsConfigAPI").                 // insights, tremes (#ccx), OCP specific
-		with("CSIInlineVolumeAdmission").          // sig-storage, jdobson, OCP specific
 		with("MatchLabelKeysInPodTopologySpread"). // sig-scheduling, ingvagabund (#forum-workloads), Kubernetes feature gate
 		with("RetroactiveDefaultStorageClass").    // sig-storage, RomanBednar, Kubernetes feature gate
-		toFeatures(),
+		with("PDBUnhealthyPodEvictionPolicy").     // sig-apps, atiratree (#forum-workloads), Kubernetes feature gate
+		with("DynamicResourceAllocation").         // sig-scheduling, jchaloup (#forum-workloads), Kubernetes feature gate
+		with("ValidatingAdmissionPolicy").         // sig-api-machinery, benluddy
+		with("AdmissionWebhookMatchConditions").   // sig-api-machinery, benluddy
+		toFeatures(defaultFeatures),
 	LatencySensitive: newDefaultFeatures().
 		with(
 			"TopologyManager", // sig-pod, sjenning
 		).
-		toFeatures(),
+		toFeatures(defaultFeatures),
 }
 
 var defaultFeatures = &FeatureGateEnabledDisabled{
 	Enabled: []string{
-		"APIPriorityAndFairness",         // sig-apimachinery, deads2k
-		"RotateKubeletServerCertificate", // sig-pod, sjenning
-		"DownwardAPIHugePages",           // sig-node, rphillips
-		"OpenShiftPodSecurityAdmission",     // bz-auth, stlaz, OCP specific
+		"OpenShiftPodSecurityAdmission", // bz-auth, stlaz, OCP specific
 	},
 	Disabled: []string{
 		"RetroactiveDefaultStorageClass", // sig-storage, RomanBednar, Kubernetes feature gate
@@ -177,7 +181,7 @@ func (f *featureSetBuilder) isForcedOn(needle string) bool {
 	return false
 }
 
-func (f *featureSetBuilder) toFeatures() *FeatureGateEnabledDisabled {
+func (f *featureSetBuilder) toFeatures(defaultFeatures *FeatureGateEnabledDisabled) *FeatureGateEnabledDisabled {
 	finalOn := []string{}
 	finalOff := []string{}
 
