@@ -374,9 +374,7 @@ type NodeExporterCollectorNetClassConfig struct {
 	// This implementation improves the performance of the `netclass` collector by omitting these metrics:
 	// `node_network_address_assign_type`,
 	// `node_network_name_assign_type`,
-	// `node_network_device_id`,
-	// `node_network_speed_bytes`.
-	// In addition, The `node_network_info` metric lacks the `duplex` label.
+	// `node_network_device_id`.
 	UseNetlink bool `json:"useNetlink,omitempty"`
 }
 
