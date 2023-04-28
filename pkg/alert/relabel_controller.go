@@ -20,16 +20,14 @@ import (
 	"sort"
 	"strings"
 
-	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
+	osmv1 "github.com/openshift/api/monitoring/v1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
@@ -46,7 +44,7 @@ const (
 // defaultRelabelConfig is the default relabel config that is always appended to
 // the generated configs.  It ensures there is a label indicating the source of
 // platform alerts.
-var defaultRelabelConfig = &osmv1alpha1.RelabelConfig{
+var defaultRelabelConfig = &osmv1.RelabelConfig{
 	Action:      "replace",
 	Replacement: "platform",
 	TargetLabel: "openshift_io_alert_source",
@@ -62,35 +60,12 @@ type RelabelConfigController struct {
 
 // NewRelabelConfigController returns a new RelabelConfigController instance.
 func NewRelabelConfigController(ctx context.Context, client *client.Client) (*RelabelConfigController, error) {
-	tp, err := client.TechPreviewEnabled(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// Only AlertRelabelConfig resources in the operator namespace are watched.
+	lw := client.AlertRelabelConfigListWatchForNamespace(client.Namespace())
 
-	var lw cache.ListerWatcher
-	if tp {
-		// Only AlertRelabelConfig resources in the operator namespace are watched.
-		lw = client.AlertRelabelConfigListWatchForNamespace(client.Namespace())
-	} else {
-		// Instantiate a fake lister/watcher that returns no items. It ensures
-		// that the controller adds the default relabeling rule to the
-		// generated secret.
-		lw = &cache.ListWatch{
-			ListFunc: func(metav1.ListOptions) (runtime.Object, error) {
-				return &osmv1alpha1.AlertRelabelConfigList{
-					TypeMeta: metav1.TypeMeta{
-						Kind: "List",
-					},
-				}, nil
-			},
-			WatchFunc: func(metav1.ListOptions) (watch.Interface, error) {
-				return watch.NewFake(), nil
-			},
-		}
-	}
 	relabelConfigInformer := cache.NewSharedIndexInformer(
 		lw,
-		&osmv1alpha1.AlertRelabelConfig{},
+		&osmv1.AlertRelabelConfig{},
 		resyncPeriod,
 		cache.Indexers{},
 	)
@@ -242,9 +217,9 @@ func (c *RelabelConfigController) handleAlertRelabelConfigDelete(obj interface{}
 // handleAlertRelabelConfigUpdate handles update events for the AlertRelabelConfig informer.
 func (c *RelabelConfigController) handleAlertRelabelConfigUpdate(oldObj, newObj interface{}) {
 	// If the ResourceVersion hasn't changed, there's nothing to do.
-	if oldObj.(*osmv1alpha1.AlertRelabelConfig).ResourceVersion == newObj.(*osmv1alpha1.AlertRelabelConfig).ResourceVersion {
+	if oldObj.(*osmv1.AlertRelabelConfig).ResourceVersion == newObj.(*osmv1.AlertRelabelConfig).ResourceVersion {
 		klog.V(4).Info("Skipping AlertRelabelConfig update due to identical ResourceVersion (%s)",
-			newObj.(*osmv1alpha1.AlertRelabelConfig).ResourceVersion)
+			newObj.(*osmv1.AlertRelabelConfig).ResourceVersion)
 		return
 	}
 
@@ -279,12 +254,12 @@ func (c *RelabelConfigController) handleSecretDelete(obj interface{}) {
 func (c *RelabelConfigController) sync(ctx context.Context, key string) error {
 	klog.V(4).Infof("AlertRelabelConfig sync for key: %s", key)
 
-	relabelConfigs := make(map[string]*osmv1alpha1.AlertRelabelConfig)
+	relabelConfigs := make(map[string]*osmv1.AlertRelabelConfig)
 	relabelConfigKeys := []string{}
 
 	// Collect all non-deleted AlertRelabelConfig objects from the store.
 	for _, obj := range c.relabelConfigInformer.GetStore().List() {
-		rc, ok := obj.(*osmv1alpha1.AlertRelabelConfig)
+		rc, ok := obj.(*osmv1.AlertRelabelConfig)
 		if !ok {
 			klog.V(4).Infof("AlertRelabelConfig sync skipping object with type %T", obj)
 			continue
@@ -350,7 +325,7 @@ func (c *RelabelConfigController) sync(ctx context.Context, key string) error {
 }
 
 // generateRelabelConfig converts an osmv1alpha1.RelabelConfig to a yaml.Node.
-func generateRelabelConfig(c *osmv1alpha1.RelabelConfig) (*yaml.Node, error) {
+func generateRelabelConfig(c *osmv1.RelabelConfig) (*yaml.Node, error) {
 	var sourceLabels model.LabelNames
 	for _, l := range c.SourceLabels {
 		sourceLabels = append(sourceLabels, model.LabelName(l))
