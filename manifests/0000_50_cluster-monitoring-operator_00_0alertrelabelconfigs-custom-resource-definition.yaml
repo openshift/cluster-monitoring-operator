@@ -2,12 +2,11 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.openshift.io: https://github.com/openshift/api/pull/1179
+    api-approved.openshift.io: https://github.com/openshift/api/pull/1406
     description: OpenShift Monitoring alert relabel configurations
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    release.openshift.io/feature-set: TechPreviewNoUpgrade
   name: alertrelabelconfigs.monitoring.openshift.io
 spec:
   group: monitoring.openshift.io
@@ -18,13 +17,12 @@ spec:
     singular: alertrelabelconfig
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - name: v1
     schema:
       openAPIV3Schema:
         description: "AlertRelabelConfig defines a set of relabel configs for alerts.
-          \n Compatibility level 4: No compatibility is provided, the API can change
-          at any point for any reason. These capabilities should not be used by applications
-          needing long term support."
+          \n Compatibility level 1: Stable within a major release for a minimum of
+          12 months or 3 minor releases (whichever is longer)."
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -53,8 +51,8 @@ spec:
                     action:
                       default: Replace
                       description: 'action to perform based on regex matching. Must
-                        be one of: Replace, Keep, Drop, HashMod, LabelMap, LabelDrop,
-                        or LabelKeep.  Default is: ''Replace'''
+                        be one of: ''Replace'', ''Keep'', ''Drop'', ''HashMod'', ''LabelMap'',
+                        ''LabelDrop'', or ''LabelKeep''. Default is: ''Replace'''
                       enum:
                       - Replace
                       - Keep
@@ -68,41 +66,88 @@ spec:
                       description: modulus to take of the hash of the source label
                         values.  This can be combined with the 'HashMod' action to
                         set 'target_label' to the 'modulus' of a hash of the concatenated
-                        'source_labels'.
+                        'source_labels'. This is only valid if sourceLabels is not
+                        empty and action is not 'LabelKeep' or 'LabelDrop'.
                       format: int64
                       type: integer
                     regex:
+                      default: (.*)
                       description: 'regex against which the extracted value is matched.
-                        Default is: ''(.*)'''
+                        Default is: ''(.*)'' regex is required for all actions except
+                        ''HashMod'''
+                      maxLength: 2048
                       type: string
                     replacement:
                       description: 'replacement value against which a regex replace
                         is performed if the regular expression matches. This is required
-                        if the action is ''Replace'' or ''LabelMap''. Regex capture
+                        if the action is ''Replace'' or ''LabelMap'' and forbidden
+                        for actions ''LabelKeep'' and ''LabelDrop''. Regex capture
                         groups are available. Default is: ''$1'''
+                      maxLength: 2048
                       type: string
                     separator:
                       description: separator placed between concatenated source label
                         values. When omitted, Prometheus will use its default value
                         of ';'.
+                      maxLength: 2048
                       type: string
                     sourceLabels:
                       description: sourceLabels select values from existing labels.
                         Their content is concatenated using the configured separator
                         and matched against the configured regular expression for
-                        the Replace, Keep, and Drop actions.
+                        the 'Replace', 'Keep', and 'Drop' actions. Not allowed for
+                        actions 'LabelKeep' and 'LabelDrop'.
                       items:
                         description: LabelName is a valid Prometheus label name which
                           may only contain ASCII letters, numbers, and underscores.
+                        maxLength: 2048
                         pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
                         type: string
                       type: array
                     targetLabel:
                       description: targetLabel to which the resulting value is written
-                        in a 'Replace' action. It is mandatory for 'Replace' and 'HashMod'
-                        actions. Regex capture groups are available.
+                        in a 'Replace' action. It is required for 'Replace' and 'HashMod'
+                        actions and forbidden for actions 'LabelKeep' and 'LabelDrop'.
+                        Regex capture groups are available.
+                      maxLength: 2048
                       type: string
                   type: object
+                  x-kubernetes-validations:
+                  - message: relabel action hashmod requires non-zero modulus
+                    rule: self.action != 'HashMod' || self.modulus != 0
+                  - message: targetLabel is required when action is Replace or HashMod
+                    rule: (self.action != 'Replace' && self.action != 'HashMod') ||
+                      has(self.targetLabel)
+                  - message: LabelKeep and LabelDrop actions require only 'regex',
+                      and no other fields (found sourceLabels)
+                    rule: (self.action != 'LabelDrop' && self.action != 'LabelKeep')
+                      || !has(self.sourceLabels)
+                  - message: LabelKeep and LabelDrop actions require only 'regex',
+                      and no other fields (found targetLabel)
+                    rule: (self.action != 'LabelDrop' && self.action != 'LabelKeep')
+                      || !has(self.targetLabel)
+                  - message: LabelKeep and LabelDrop actions require only 'regex',
+                      and no other fields (found modulus)
+                    rule: (self.action != 'LabelDrop' && self.action != 'LabelKeep')
+                      || !has(self.modulus)
+                  - message: LabelKeep and LabelDrop actions require only 'regex',
+                      and no other fields (found separator)
+                    rule: (self.action != 'LabelDrop' && self.action != 'LabelKeep')
+                      || !has(self.separator)
+                  - message: LabelKeep and LabelDrop actions require only 'regex',
+                      and no other fields (found replacement)
+                    rule: (self.action != 'LabelDrop' && self.action != 'LabelKeep')
+                      || !has(self.replacement)
+                  - message: modulus requires sourceLabels to be present
+                    rule: '!has(self.modulus) || (has(self.modulus) && size(self.sourceLabels)
+                      > 0)'
+                  - message: sourceLabels is required for actions Replace, Keep, Drop,
+                      HashMod and LabelMap
+                    rule: (self.action == 'LabelDrop' || self.action == 'LabelKeep')
+                      || has(self.sourceLabels)
+                  - message: replacement is required for actions Replace and LabelMap
+                    rule: (self.action != 'Replace' && self.action != 'LabelMap')
+                      || has(self.replacement)
                 minItems: 1
                 type: array
             required:

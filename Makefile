@@ -143,10 +143,10 @@ json-manifests: $(JSON_MANIFESTS_DIR) $(JSON_MANIFESTS)
 .PHONY: json-crds
 json-crds: jsonnet/crds/alertingrules-custom-resource-definition.json jsonnet/crds/alertrelabelconfigs-custom-resource-definition.json
 
-jsonnet/crds/alertingrules-custom-resource-definition.json: vendor/github.com/openshift/api/monitoring/v1alpha1/0000_50_monitoring_01_alertingrules.crd.yaml
+jsonnet/crds/alertingrules-custom-resource-definition.json: vendor/github.com/openshift/api/monitoring/v1/0000_50_monitoring_01_alertingrules.crd.yaml
 	$(GOJSONTOYAML_BIN) -yamltojson < $< > $@
 
-jsonnet/crds/alertrelabelconfigs-custom-resource-definition.json: vendor/github.com/openshift/api/monitoring/v1alpha1/0000_50_monitoring_02_alertrelabelconfigs.crd.yaml
+jsonnet/crds/alertrelabelconfigs-custom-resource-definition.json: vendor/github.com/openshift/api/monitoring/v1/0000_50_monitoring_02_alertrelabelconfigs.crd.yaml
 	$(GOJSONTOYAML_BIN) -yamltojson < $< > $@
 
 .PHONY: versions
