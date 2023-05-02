@@ -590,7 +590,7 @@ function(params) {
       name: 'openshift-vsphere.rules',
       rules: [
         {
-          expr: 'sum by(version)(vsphere_vcenter_info)',
+          expr: 'sum by(version, build)(vsphere_vcenter_info)',
           record: 'cluster:vsphere_vcenter_info:sum',
         },
         {
