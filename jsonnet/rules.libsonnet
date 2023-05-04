@@ -609,6 +609,10 @@ function(params) {
           expr: 'max by(scope)(vsphere_infrastructure_failure_domains)',
           record: 'cluster:vsphere_infrastructure_failure_domains:max',
         },
+        {
+          expr: 'max by(status)(vsphere_csi_migration{status=~"|LegacyDeprecatedInTreeDriver|CSIWithMigrationDriver"})',
+          record: 'cluster:vsphere_csi_migration:max',
+        },
       ],
     },
   ],
