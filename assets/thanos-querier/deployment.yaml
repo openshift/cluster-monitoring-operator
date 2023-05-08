@@ -51,7 +51,7 @@ spec:
         - --log.format=logfmt
         - --query.replica-label=prometheus_replica
         - --query.replica-label=thanos_ruler_replica
-        - --store=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
+        - --endpoint=dnssrv+_grpc._tcp.prometheus-operated.openshift-monitoring.svc.cluster.local
         - --query.auto-downsampling
         - --store.sd-dns-resolver=miekgdns
         - --grpc-client-tls-secure
