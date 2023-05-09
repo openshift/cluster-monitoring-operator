@@ -1,21 +1,38 @@
 local tlsVolumeName = 'prometheus-operator-tls';
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
-
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 local conversionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/conversion.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local rbac = import '../utils/rbac.libsonnet';
 
 function(params)
-  local cfg = params;
-  operator(cfg) + {
+  local po = operator(params);
+
+  po {
     '0alertmanagerConfigCustomResourceDefinition'+:
       // Add v1beta1 AlertmanagerConfig version.
       (import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/alertmanagerconfigs-v1beta1-crd.libsonnet') +
       // Enable conversion webhook.
-      conversionWebhook(cfg.conversionWebhook),
+      conversionWebhook(params.conversionWebhook),
 
-    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'prometheus-operator-kube-rbac-proxy-config'),
+    // The cluster monitoring operator doesn't need/support the PrometheusAgent and
+    // ScrapeConfig CRDs so they need to be removed from the generated assets.
+    '0prometheusagentCustomResourceDefinition':: {},
+    '0scrapeconfigCustomResourceDefinition':: {},
+
+    // For the same reason, the permissions on PrometheusAgent and ScrapeConfig resources should be removed.
+    clusterRole: rbac.removeRulesByResourcePrefix(
+      rbac.removeRulesByResourcePrefix(
+        po.clusterRole,
+        'monitoring.coreos.com',
+        'prometheusagents',
+      ),
+      'monitoring.coreos.com',
+      'scrapeconfigs',
+    ),
+
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(params.namespace, params.commonLabels, 'prometheus-operator-kube-rbac-proxy-config'),
     deployment+: {
       metadata+: {
         labels+: {
@@ -49,9 +66,9 @@ function(params)
                     // without requiring client TLS authentication.
                     c {
                       args+: [
-                        '--prometheus-instance-namespaces=' + cfg.namespace,
-                        '--thanos-ruler-instance-namespaces=' + cfg.namespace,
-                        '--alertmanager-instance-namespaces=' + cfg.namespace,
+                        '--prometheus-instance-namespaces=' + params.namespace,
+                        '--thanos-ruler-instance-namespaces=' + params.namespace,
+                        '--alertmanager-instance-namespaces=' + params.namespace,
                         '--config-reloader-cpu-limit=0',
                         '--config-reloader-memory-limit=0',
                         '--config-reloader-cpu-request=1m',
@@ -76,7 +93,7 @@ function(params)
                       args: [
                         '--logtostderr',
                         '--secure-listen-address=:8443',
-                        '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                        '--tls-cipher-suites=' + params.tlsCipherSuites,
                         '--upstream=http://localhost:8080/',
                         '--tls-cert-file=/etc/tls/private/tls.crt',
                         '--tls-private-key-file=/etc/tls/private/tls.key',
@@ -165,7 +182,7 @@ function(params)
       kind: 'ConfigMap',
       metadata: {
         name: 'operator-certs-ca-bundle',
-        namespace: cfg.namespace,
+        namespace: params.namespace,
       },
     },
   }
