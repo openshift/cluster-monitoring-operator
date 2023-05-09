@@ -938,7 +938,7 @@ data:
     # owners: (https://github.com/openshift/vmware-vsphere-csi-driver-operator, @openshift/storage)
     #
     # cluster:vsphere_infrastructure_failure_domains:max shows how many vSphere failure domains, vCenters, datacenters and datastores are configured in a cluster.
-    # '{__name__="cluster:vsphere_infrastructure_failure_domains:max"}'
+    - '{__name__="cluster:vsphere_infrastructure_failure_domains:max"}'
     #
     # owners: (https://github.com/openshift/vmware-vsphere-csi-driver-operator, @openshift/storage)
     #
