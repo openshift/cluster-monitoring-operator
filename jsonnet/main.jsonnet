@@ -189,21 +189,8 @@ local inCluster =
             clusterLabel: $.values.common.dashboardClusterLabel,
           },
         },
-        // NOTE:
-        // "ignoredNetworkDevices" sets the 2 arguments "--collector.netclass.ignored-devices" and "--collector.netdev.device-exclude".
-        // 6 kinds of virtual NICs will be ignored:
-        // 1. veth network interface associated with containers.
-        // 2. OVN renames veth.* to <rand-hex>@if<X> where X is /sys/class/net/<if>/ifindex
-        // thus [a-z0-9]{15}
-        // 3. enP.* virtual NICs on Azure cluster.
-        // 4. OVN virtual interfaces ovn-k8s-mp[0-9]*
-        // 5. virtual tunnels and bridges: tun[0-9]*|br[0-9]*|br-ex|br-int|br-ext
-        // 6. Calico Virtual NICs cali[a-f0-9]*
-        // Refer to:
-        // https://issues.redhat.com/browse/OCPBUGS-1321
-        // https://issues.redhat.com/browse/OCPBUGS-2729
-        // https://issues.redhat.com/browse/OCPBUGS-7282
-        ignoredNetworkDevices:: '^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$',
+        // The list of ignored devices is replaced by CMO at runtime depending on its configuration.
+        ignoredNetworkDevices:: '^.*$',
       },
       openshiftStateMetrics: {
         namespace: $.values.common.namespace,
