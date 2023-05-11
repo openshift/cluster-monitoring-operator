@@ -208,7 +208,7 @@ function(params)
                       // add flags to collect the node_cpu_info metric + metrics
                       // from the text file.
                       // Disable btrfs collector as btrfs is not included in RHEL kernels
-                      args: [a for a in c.args if (a != '--no-collector.hwmon')] +
+                      args: [a for a in c.args if (a != '--no-collector.hwmon' && a != '--no-collector.btrfs')] +
                             [
                               '--collector.cpu.info',
                               '--collector.textfile.directory=' + textfileDir,
