@@ -233,7 +233,7 @@ spec:
       record: cluster:alertmanager_integrations:max
     - expr: sum by(plugin_name, volume_mode)(pv_collector_total_pv_count)
       record: cluster:kube_persistentvolume_plugin_type_counts:sum
-    - expr: sum by(version)(vsphere_vcenter_info)
+    - expr: sum by(version, build)(vsphere_vcenter_info)
       record: cluster:vsphere_vcenter_info:sum
     - expr: sum by(version)(vsphere_esxi_version_total)
       record: cluster:vsphere_esxi_version_total:sum

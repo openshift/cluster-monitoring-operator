@@ -313,7 +313,7 @@ function(params) {
           record: 'cluster:kube_persistentvolume_plugin_type_counts:sum',
         },
         {
-          expr: 'sum by(version)(vsphere_vcenter_info)',
+          expr: 'sum by(version, build)(vsphere_vcenter_info)',
           record: 'cluster:vsphere_vcenter_info:sum',
         },
         {
