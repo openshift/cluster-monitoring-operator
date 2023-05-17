@@ -166,7 +166,7 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 			return errors.Wrap(err, "initializing Alertmanager User Workload object failed")
 		}
 
-		err = t.client.CreateOrUpdateAlertmanager(ctx, a)
+		_, err = t.client.CreateOrUpdateAlertmanager(ctx, a)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Alertmanager User Workload object failed")
 		}

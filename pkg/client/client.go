@@ -595,15 +595,15 @@ func (c *Client) CreateOrUpdatePrometheusRule(ctx context.Context, p *monv1.Prom
 	return errors.Wrap(err, "updating PrometheusRule object failed")
 }
 
-func (c *Client) CreateOrUpdateAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
+func (c *Client) CreateOrUpdateAlertmanager(ctx context.Context, a *monv1.Alertmanager) (*monv1.Alertmanager, error) {
 	aclient := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace())
 	existing, err := aclient.Get(ctx, a.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := aclient.Create(ctx, a, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Alertmanager object failed")
+		existing, err := aclient.Create(ctx, a, metav1.CreateOptions{})
+		return existing, errors.Wrap(err, "creating Alertmanager object failed")
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Alertmanager object failed")
+		return nil, errors.Wrap(err, "retrieving Alertmanager object failed")
 	}
 
 	required := a.DeepCopy()
@@ -611,8 +611,8 @@ func (c *Client) CreateOrUpdateAlertmanager(ctx context.Context, a *monv1.Alertm
 
 	required.ResourceVersion = existing.ResourceVersion
 
-	_, err = aclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Alertmanager object failed")
+	existing, err = aclient.Update(ctx, required, metav1.UpdateOptions{})
+	return existing, errors.Wrap(err, "updating Alertmanager object failed")
 }
 
 func (c *Client) DeleteAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {

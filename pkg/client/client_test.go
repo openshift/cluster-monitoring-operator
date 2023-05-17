@@ -2016,7 +2016,7 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 
 			alertmanager.SetLabels(tc.updatedLabels)
 			alertmanager.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateAlertmanager(ctx, alertmanager); err != nil {
+			if _, err := c.CreateOrUpdateAlertmanager(ctx, alertmanager); err != nil {
 				t.Fatal(err)
 			}
 

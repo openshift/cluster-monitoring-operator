@@ -79,7 +79,7 @@ func createAlertmanager(t *testing.T) {
 			Replicas: &replicas,
 		},
 	}
-	if err := f.OperatorClient.CreateOrUpdateAlertmanager(ctx, &additionalAlertmanager); err != nil {
+	if _, err := f.OperatorClient.CreateOrUpdateAlertmanager(ctx, &additionalAlertmanager); err != nil {
 		t.Fatal(err)
 	}
 

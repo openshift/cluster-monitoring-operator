@@ -20,6 +20,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -50,6 +51,19 @@ func (t *AlertmanagerTask) Run(ctx context.Context) error {
 }
 
 func (t *AlertmanagerTask) create(ctx context.Context) error {
+
+	// TODO: called twice
+	a, err := t.factory.AlertmanagerMain(nil)
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager object failed")
+	}
+
+	// TODO: called twice
+	a, err = t.client.CreateOrUpdateAlertmanager(ctx, a)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Alertmanager object failed")
+	}
+
 	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
 		return errors.Wrap(err, "checking for Route capability failed")
@@ -74,6 +88,20 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 	s, err := t.factory.AlertmanagerConfig()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager configuration Secret failed")
+	}
+
+	// Add owner
+	// TODO: Temp, factorize this
+	isController := true
+	s.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
+		// TODO: without hardcode?
+		{
+			APIVersion: "monitoring.coreos.com/v1",
+			Kind:       "Alertmanager",
+			Name:       a.Name,
+			UID:        a.UID,
+			Controller: &isController,
+		},
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, s)
@@ -197,14 +225,11 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 			return errors.Wrap(err, "initializing Alertmanager object failed")
 		}
 
-		err = t.client.CreateOrUpdateAlertmanager(ctx, a)
+		_, err = t.client.CreateOrUpdateAlertmanager(ctx, a)
 		if err != nil {
 			return errors.Wrap(err, "reconciling Alertmanager object failed")
 		}
-		err = t.client.WaitForAlertmanager(ctx, a)
-		if err != nil {
-			return errors.Wrap(err, "waiting for Alertmanager object changes failed")
-		}
+
 	}
 	pr, err := t.factory.AlertmanagerPrometheusRule()
 	if err != nil {
@@ -221,7 +246,17 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
-	return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
+	if err != nil {
+		return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
+	}
+
+	// Wait at the end
+	err = t.client.WaitForAlertmanager(ctx, a)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Alertmanager object changes failed")
+	}
+	// TODO: need this?
+	return nil
 }
 
 func (t *AlertmanagerTask) destroy(ctx context.Context) error {
@@ -235,15 +270,16 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		return errors.Wrap(err, "deleting Alertmanager Route failed")
 	}
 
-	s, err := t.factory.AlertmanagerConfig()
-	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager configuration Secret failed")
-	}
+	// TODO: Should be removed by Kube GC
+	//s, err := t.factory.AlertmanagerConfig()
+	//if err != nil {
+	//	return errors.Wrap(err, "initializing Alertmanager configuration Secret failed")
+	//}
 
-	err = t.client.DeleteSecret(ctx, s)
-	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager configuration Secret failed")
-	}
+	//err = t.client.DeleteSecret(ctx, s)
+	//if err != nil {
+	//	return errors.Wrap(err, "deleting Alertmanager configuration Secret failed")
+	//}
 
 	rs, err := t.factory.AlertmanagerRBACProxySecret()
 	if err != nil {
@@ -350,6 +386,8 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		}
 	}
 
+	// TODO: to simplify, maybe remove filters (to apply to all AM with those metrics), agggregate and always deploy.
+	// or duplicate or add 2 owners or don t add any owner and manage deletion manually
 	// Delete the rules only if both platform and UWM Alertmanagers are disabled.
 	if !t.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		pr, err := t.factory.AlertmanagerPrometheusRule()
