@@ -86,6 +86,7 @@ func TestTelemeterRemoteWrite(t *testing.T) {
 	}
 
 	// Check that Prometheus sends samples to Telemeter.
+	// check flaky test
 	f.PrometheusK8sClient.WaitForQueryReturn(
 		t,
 		5*time.Minute,

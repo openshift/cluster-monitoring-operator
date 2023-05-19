@@ -34,7 +34,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --config-file=/etc/kube-rbac-policy/config.yaml
         - --client-ca-file=/etc/tls/client/client-ca.crt
-        image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.14.1
         name: kube-rbac-proxy-main
         ports:
         - containerPort: 8443
@@ -62,7 +62,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --config-file=/etc/kube-rbac-policy/config.yaml
         - --client-ca-file=/etc/tls/client/client-ca.crt
-        image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.14.1
         name: kube-rbac-proxy-self
         ports:
         - containerPort: 9443

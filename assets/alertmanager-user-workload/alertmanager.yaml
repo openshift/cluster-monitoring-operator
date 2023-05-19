@@ -30,7 +30,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --logtostderr=true
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+    image: quay.io/brancz/kube-rbac-proxy:v0.14.1
     name: alertmanager-proxy
     ports:
     - containerPort: 9095
@@ -56,7 +56,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --logtostderr=true
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+    image: quay.io/brancz/kube-rbac-proxy:v0.14.1
     name: tenancy-proxy
     ports:
     - containerPort: 9092
@@ -86,7 +86,7 @@ spec:
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --logtostderr=true
     - --allow-paths=/metrics
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+    image: quay.io/brancz/kube-rbac-proxy:v0.14.1
     name: kube-rbac-proxy-metric
     ports:
     - containerPort: 9097
