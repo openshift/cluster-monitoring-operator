@@ -151,6 +151,11 @@ jsonnet/crds/alertrelabelconfigs-custom-resource-definition.json: vendor/github.
 versions: $(GOJSONTOYAML_BIN)
 	./hack/generate-versions.sh
 
+.PHONY: check-versions
+check-versions: VERSION_FILE=jsonnet/versions.yaml
+check-versions:
+	export VERSION_FILE=$(VERSION_FILE) && $(MAKE) versions && git diff --exit-code -- ${VERSION_FILE}
+
 .PHONY: docs
 docs: $(EMBEDMD_BIN) $(DOCGEN_BIN) Documentation/telemetry/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
