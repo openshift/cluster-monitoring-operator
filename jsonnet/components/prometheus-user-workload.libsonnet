@@ -20,6 +20,8 @@ function(params)
     serviceMonitorCoreDNS:: {},
     secretEtcdCerts:: {},
 
+    trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'prometheus-user-workload-trusted-ca-bundle'),
+
     grpcTlsSecret: {
       apiVersion: 'v1',
       kind: 'Secret',

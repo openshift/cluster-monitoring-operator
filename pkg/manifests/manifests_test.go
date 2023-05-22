@@ -506,7 +506,10 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusUserWorkload(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+	_, err = f.PrometheusUserWorkload(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3700,6 +3703,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 			getSpec: func(f *Factory) (spec, error) {
 				p, err := f.PrometheusUserWorkload(
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				)
 				if err != nil {
 					return spec{}, err
