@@ -18,8 +18,8 @@
           "subdir": "contrib/mixin"
         }
       },
-      "version": "7a98ab3ae0d66239f3802b43b26530c3e9c299c7",
-      "sum": "IkDHlaE0gvvcPjSNurFT+jQ2aCOAbqHF1WVmXbAgkds="
+      "version": "633e2dcc26888c3b29ec03366853baef2d419b19",
+      "sum": "QTzBqwjnM6cGGVBhOiVJyA+ZVTkmCTuH6C6YW7XKRFw="
     },
     {
       "source": {
@@ -38,7 +38,7 @@
           "subdir": "grafonnet"
         }
       },
-      "version": "30280196507e0fe6fa978a3e0eaca3a62844f817",
+      "version": "f0b70307b8e5f12236b277883d998af129a8211f",
       "sum": "342u++/7rViR/zj2jeJOjshzglkZ1SY+hFNuyCBFMdc="
     },
     {
@@ -48,7 +48,7 @@
           "subdir": "grafonnet-7.0"
         }
       },
-      "version": "30280196507e0fe6fa978a3e0eaca3a62844f817",
+      "version": "f0b70307b8e5f12236b277883d998af129a8211f",
       "sum": "gCtR9s/4D5fxU9aKXg0Bru+/njZhA0YjLjPiASc61FM="
     },
     {
@@ -58,8 +58,8 @@
           "subdir": "grafana-builder"
         }
       },
-      "version": "e9f44d885c53d9ebdc849203f06ed74c7eccd362",
-      "sum": "tDR6yT2GVfw0wTU12iZH+m01HrbIr6g/xN+/8nzNkU0="
+      "version": "207b7e68d01e2f5dfb8dddf455479a676cdd4a9a",
+      "sum": "wp/L/9smcsHIiy24DH5WWMv2fcSckN2Lw/m7qDszaWU="
     },
     {
       "source": {
@@ -79,8 +79,8 @@
           "subdir": ""
         }
       },
-      "version": "07ee0700006ecbc8704ff0b2790fccac18c36c6d",
-      "sum": "lKvjoL0XAZa7+qswrvdV4TzoTiE2KRB73GNyduq/Ygg="
+      "version": "d87b757edc73a5f5b78e9f6a9bbae9023131c946",
+      "sum": "fsAZNroGj9QOUt63dI78jcahPnCXlBhpfxuPJC3dTac="
     },
     {
       "source": {
@@ -89,8 +89,8 @@
           "subdir": "jsonnet/kube-state-metrics"
         }
       },
-      "version": "054f2a4e712f6b9f89ee227b56db307d8a24cd5d",
-      "sum": "4PJ2ROxODsoYO/1Y70+dgLZVjW5zlfzB+TDpxJBHwaI="
+      "version": "42e7742caeadb1ba9cefc8162157db62cbd74fd8",
+      "sum": "+dOzAK+fwsFf97uZpjcjTcEJEC1H8hh/j8f5uIQK/5g="
     },
     {
       "source": {
@@ -99,8 +99,8 @@
           "subdir": "jsonnet/kube-state-metrics-mixin"
         }
       },
-      "version": "054f2a4e712f6b9f89ee227b56db307d8a24cd5d",
-      "sum": "u8gaydJoxEjzizQ8jY8xSjYgWooPmxw+wIWdDxifMAk="
+      "version": "42e7742caeadb1ba9cefc8162157db62cbd74fd8",
+      "sum": "qclI7LwucTjBef3PkGBkKxF0mfZPbHnn4rlNWKGtR4c="
     },
     {
       "source": {
@@ -109,7 +109,7 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "7beb8807e2c0092b5e580a29903ff060140d8ff0",
+      "version": "5843d45e43d162e810a08c554d160166bc79b6d3",
       "sum": "9/dHjMKxPKGTAPV1fMAV0RuBck0O+Xyj/FkZjlN7DMs=",
       "name": "openshift-state-metrics"
     },
@@ -120,7 +120,7 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "ee1ba4699b82ecb2033f886af12b9e2e451d2296",
+      "version": "f89e6dc822513285ba010fdc8bff13939bbc62e5",
       "sum": "CGBrF6OtNwal33cdS+hUvgQa0slORIJVnuG65KcfhtA=",
       "name": "telemeter-client"
     },
@@ -131,8 +131,8 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "274d5856c72932d93c4fee5eea335e2d99134ff7",
-      "sum": "f7GllMNkhsfGwxxu2D2Kze7RLQChv4rfb/WlHL4uAMs="
+      "version": "76d9ce06042523352d94c23349967f5928069883",
+      "sum": "SBxH8BJxZ5gTl9+oS0es1SijbDPZY08eASaGP/JUsl0="
     },
     {
       "source": {
@@ -141,8 +141,8 @@
           "subdir": "jsonnet/mixin"
         }
       },
-      "version": "4acdc01e8bdf0abc8ce1bf87d9c684edb0ab44d0",
-      "sum": "GQmaVFJwKMiD/P4n3N2LrAZVcwutriWrP8joclDtBYQ=",
+      "version": "b5327e7e66e818b8b924332191d4888d45d270e4",
+      "sum": "n3flMIzlADeyygb0uipZ4KPp2uNSjdtkrwgHjTC7Ca4=",
       "name": "prometheus-operator-mixin"
     },
     {
@@ -152,8 +152,8 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "4acdc01e8bdf0abc8ce1bf87d9c684edb0ab44d0",
-      "sum": "aByD2Nl33aUKhxijXIjT09utrzpE8DRGitrAP9CJWdg="
+      "version": "b5327e7e66e818b8b924332191d4888d45d270e4",
+      "sum": "cNcVEO+LVAJK7fGxfL8RAIo/G/9ZU/ZUhCzUpdcgytc="
     },
     {
       "source": {
@@ -162,7 +162,7 @@
           "subdir": "doc/alertmanager-mixin"
         }
       },
-      "version": "41eb1213bb1c7ce0aa9e6464e297976d9c81cfe5",
+      "version": "5adc7369c838c31fcbaa7d413951a2dc01ae87ae",
       "sum": "PsK+V7oETCPKu2gLoPfqY0wwPKH9TzhNj6o2xezjjXc=",
       "name": "alertmanager"
     },
@@ -173,8 +173,8 @@
           "subdir": "docs/node-mixin"
         }
       },
-      "version": "c914f0052629e3c99449bdfb4fa7189ce09e77b5",
-      "sum": "TwdaTm0Z++diiLyaKAAimmC6hBL7XbrJc0RHhBCpAdU="
+      "version": "dcb10ff291080da630cda9ba5646ccb7f5dc8e75",
+      "sum": "aFUI56y6Y8EpniS4cfYqrSaHFnxeomIw4S4+Sz8yPtQ="
     },
     {
       "source": {
@@ -183,7 +183,7 @@
           "subdir": "documentation/prometheus-mixin"
         }
       },
-      "version": "d2f5fdd17eb525cfc49e606744c3004fa93b6948",
+      "version": "8c5d4b4add2c528701cced254d1272824b9ec3ba",
       "sum": "LRx0tbMnoE1p8KEn+i81j2YsA5Sgt3itE5Y6jBf5eOQ=",
       "name": "prometheus"
     },
@@ -194,8 +194,8 @@
           "subdir": "config/crd/bases"
         }
       },
-      "version": "e88234910527fe08f125f718319d1e9b93463ec5",
-      "sum": "bY/Pcrrbynguq8/HaI88cQ3B2hLv/xc+76QILY7IL+g="
+      "version": "dfc8e4b819309fc0e132795cbf760d879063a1c3",
+      "sum": "MK8+uumteRncS0hkyjocvU2vdtlGbfBRPcU0/mJnU2M="
     },
     {
       "source": {
@@ -204,8 +204,8 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "6a7455882cf45acfe96768d682bf5d714669c02c",
-      "sum": "Lmo908G1ILvI/a2Y4rsrOi7NmxJeelUS3SlrklrdfWc="
+      "version": "4ab42ad96ee821908bce6e588468b52f688d6441",
+      "sum": "WKmaEjW5PqoY43HYnMAy/z2YYkqGD6QC6ZPW8RaRtMg="
     },
     {
       "source": {
@@ -214,8 +214,8 @@
           "subdir": "mixin"
         }
       },
-      "version": "b1d083f611552724807d48859dd25206e623724c",
-      "sum": "QIPkur4Hka3BId8ek3OkriAUKphk0mC/NORqJhFgxag="
+      "version": "528944910da2402195841ba4b5b065432896ece4",
+      "sum": "zSLNV/0bN4DcVKojzCqjmhfjtzTY4pDKZXqbAUzw5R0="
     }
   ],
   "legacyImports": false
