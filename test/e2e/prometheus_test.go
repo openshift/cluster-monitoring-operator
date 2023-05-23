@@ -166,14 +166,14 @@ func TestPrometheusRemoteWrite(t *testing.T) {
           key: ca.crt`,
 			expected: []remoteWriteTest{
 				{
-					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-0"),
-					expected:    func(v float64) bool { return v != 0 },
-					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
+					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-0"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0, found %[1]s",
 				},
 				{
-					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-1"),
-					expected:    func(v float64) bool { return v != 0 },
-					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
+					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-1"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1, found %[1]s",
 				},
 			},
 		},
@@ -196,14 +196,14 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 `,
 			expected: []remoteWriteTest{
 				{
-					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-0"),
-					expected:    func(v float64) bool { return v != 0 },
-					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
+					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-0"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0, found %[1]s",
 				},
 				{
-					query:       fmt.Sprintf(`ceil(delta(prometheus_remote_storage_samples_pending{pod="%[1]s",prometheus_replica="%[1]s"}[1m]))`, "prometheus-k8s-1"),
-					expected:    func(v float64) bool { return v != 0 },
-					description: "prometheus_remote_storage_samples_pending indicates no remote write progress, expected a continuously changing delta",
+					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-1"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1, found %[1]s",
 				},
 			},
 		},
@@ -219,9 +219,13 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 `,
 			expected: []remoteWriteTest{
 				{
-					query:       `absent(prometheus_remote_storage_samples_pending{__tmp_openshift_cluster_id__=~".+"})`,
+					query: `absent(prometheus_build_info{__tmp_openshift_cluster_id__=~".+"})`,
+					// absent returns 1 if query result is empty, an empty vector otherwise.
+					// Hence the description below will never appear in a test output as
+					// promClient.WaitForQueryReturn will return an error before it runs the
+					// validation function.
 					expected:    func(v float64) bool { return v == 1 },
-					description: "Expected to find 0 time series of metric prometheus_remote_storage_samples_pending with the temporary cluster_id label",
+					description: "Expected to find 0 time series of metric prometheus_build_info with the temporary cluster_id label, but absent() returned an empty vector, indicating the time series exists",
 				},
 			},
 		},
@@ -242,14 +246,14 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 `,
 			expected: []remoteWriteTest{
 				{
-					query:       `count(prometheus_remote_storage_samples_pending{cluster_id!=""})`,
-					expected:    func(v float64) bool { return v == 4 },
-					description: "Expected to find 4 time series of metric prometheus_remote_storage_samples_pending with the cluster_id label",
+					query:       `sum (prometheus_build_info{cluster_id!="",prometheus_replica="prometheus-k8s-0"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0, found %[1]s",
 				},
 				{
-					query:       `absent(prometheus_remote_storage_samples_pending{__tmp_openshift_cluster_id__=~".+"})`,
-					expected:    func(v float64) bool { return v == 1 },
-					description: "Expected to find 0 time series of metric prometheus_remote_storage_samples_pending with the temporary cluster_id label",
+					query:       `sum (prometheus_build_info{cluster_id!="",prometheus_replica="prometheus-k8s-1"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1, found %[1]s",
 				},
 			},
 		},
@@ -292,7 +296,7 @@ func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *fram
 			t, 6*time.Minute, test.query,
 			func(v float64) error {
 				if !test.expected(v) {
-					return fmt.Errorf(test.description)
+					return fmt.Errorf(test.description, v)
 				}
 				return nil
 			},
