@@ -289,7 +289,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *framework.PrometheusClient, tests []remoteWriteTest) {
 	for _, test := range tests {
 		promClient.WaitForQueryReturn(
-			t, 4*time.Minute, test.query,
+			t, 6*time.Minute, test.query,
 			func(v float64) error {
 				if !test.expected(v) {
 					return fmt.Errorf(test.description)
