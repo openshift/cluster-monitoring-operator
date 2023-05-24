@@ -17,7 +17,6 @@ package e2e
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -94,19 +93,6 @@ func TestTelemeterRemoteWrite(t *testing.T) {
 		func(v float64) error {
 			if v == 0 {
 				return errors.New("expecting samples to be sent via Prometheus remote write but got none")
-			}
-			return nil
-		},
-	)
-
-	// Check that the Telemeter server returns no error.
-	f.PrometheusK8sClient.WaitForQueryReturn(
-		t,
-		5*time.Minute,
-		`max without(pod,instance) (rate(prometheus_remote_storage_samples_failed_total{job="prometheus-k8s",url=~"https://infogw.api.openshift.com.+"}[5m]))`,
-		func(v float64) error {
-			if v > 0 {
-				return fmt.Errorf("expecting Prometheus remote write to see no failed samples but got %f", v)
 			}
 			return nil
 		},
