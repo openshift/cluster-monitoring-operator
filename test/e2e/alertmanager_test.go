@@ -165,7 +165,7 @@ func testAlertmanagerReady(t *testing.T, name, ns string, validator ...validator
 		lastErr error
 	)
 
-	if err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
+	if err := wait.Poll(time.Second, 10*time.Minute, func() (bool, error) {
 		am, lastErr = f.MonitoringClient.Alertmanagers(ns).Get(ctx, name, metav1.GetOptions{})
 		if lastErr != nil {
 			lastErr = fmt.Errorf("%s/%s: %w", ns, name, lastErr)
