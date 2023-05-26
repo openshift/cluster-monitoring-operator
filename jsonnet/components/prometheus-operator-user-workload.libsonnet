@@ -2,10 +2,12 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
 
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local rbac = import '../utils/rbac.libsonnet';
 
 function(params)
-  local cfg = params;
-  operator(cfg) + {
+  local po = operator(params);
+
+  po {
 
     mixin:: null,
     prometheusRule:: null,
@@ -17,8 +19,19 @@ function(params)
     '0prometheusruleCustomResourceDefinition':: {},
     '0thanosrulerCustomResourceDefinition':: {},
     '0probeCustomResourceDefinition':: {},
+    '0prometheusagentCustomResourceDefinition':: {},
+    '0scrapeconfigCustomResourceDefinition':: {},
 
-    clusterRole+: {
+    // See jsonnet/components/prometheus-operator.libsonnet
+    clusterRole: rbac.removeRulesByResourcePrefix(
+      rbac.removeRulesByResourcePrefix(
+        po.clusterRole,
+        'monitoring.coreos.com',
+        'prometheusagents',
+      ),
+      'monitoring.coreos.com',
+      'scrapeconfigs',
+    ) + {
       metadata+: {
         name: 'prometheus-user-workload-operator',
       },
@@ -33,7 +46,7 @@ function(params)
       },
     },
 
-    kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'prometheus-operator-uwm-kube-rbac-proxy-config'),
+    kubeRbacProxySecret: generateSecret.staticAuthSecret(params.namespace, params.commonLabels, 'prometheus-operator-uwm-kube-rbac-proxy-config'),
 
     deployment+: {
       metadata+: {
@@ -75,9 +88,9 @@ function(params)
                         function(arg) !std.startsWith(arg, '--kubelet-service'),
                         super.args,
                       ) + [
-                        '--prometheus-instance-namespaces=' + cfg.namespace,
-                        '--alertmanager-instance-namespaces=' + cfg.namespace,
-                        '--thanos-ruler-instance-namespaces=' + cfg.namespace,
+                        '--prometheus-instance-namespaces=' + params.namespace,
+                        '--alertmanager-instance-namespaces=' + params.namespace,
+                        '--thanos-ruler-instance-namespaces=' + params.namespace,
                         '--config-reloader-cpu-limit=0',
                         '--config-reloader-memory-limit=0',
                         '--config-reloader-cpu-request=1m',
