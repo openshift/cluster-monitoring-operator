@@ -1,10 +1,10 @@
 ---
 extends: default
-ignore: | 
+ignore: |
  vendor/
  manifests/cluster-monitoring-operator-role.yaml
 
-rules: 
+rules:
   indentation:
     spaces: 2
     indent-sequences: consistent

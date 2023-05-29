@@ -136,7 +136,7 @@ const (
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
 	metricsClientCerts            = "openshift-monitoring/metrics-client-certs"
 
-	// Canonical name of the cluster-wide infrastrucure resource.
+	// Canonical name of the cluster-wide infrastructure resource.
 	clusterResourceName = "cluster"
 )
 
@@ -695,7 +695,6 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	}
 
 	if taskErrors := tl.RunAll(ctx); len(taskErrors) > 0 {
-
 		report, failedTask := generateRunReportFromTaskErrors(taskErrors)
 		o.reportFailed(ctx, report)
 		return errors.Errorf("cluster monitoring update failed (reason: %s)", failedTask)
@@ -742,7 +741,6 @@ func (o *Operator) reportFailed(ctx context.Context, report runReport) {
 	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
 		klog.ErrorS(err, "failed to update cluster operator status")
 	}
-
 }
 
 func (o *Operator) loadInfrastructureConfig(ctx context.Context) *InfrastructureConfig {
@@ -759,7 +757,7 @@ func (o *Operator) loadInfrastructureConfig(ctx context.Context) *Infrastructure
 
 		klog.Info("Using last known infrastructure configuration")
 	} else {
-		klog.V(5).Infof("Cluster infrastructure: plaform=%s controlPlaneTopology=%s infrastructureTopology=%s", infrastructure.Status.Platform, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
+		klog.V(5).Infof("Cluster infrastructure: plaform=%s controlPlaneTopology=%s infrastructureTopology=%s", infrastructure.Status.PlatformStatus, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
 
 		infrastructureConfig = NewInfrastructureConfig(infrastructure)
 		o.lastKnowInfrastructureConfig = infrastructureConfig
@@ -931,7 +929,6 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	if caFound && len(caContent) > 0 &&
 		certFound && len(certContent) > 0 &&
 		keyFound && len(keyContent) > 0 {
-
 		trueBool := true
 		c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &trueBool
 	}
@@ -1049,7 +1046,6 @@ func (o Operator) storageNotConfiguredMessage() string {
 // stateErrorOrUnavailable converts an error to Unavailable & Degraded
 // StateErrors if it is not already a StateError.
 func stateErrorOrUnavailable(err error) []*client.StateError {
-
 	// unpack aggregate before converting to state errors
 	var serr *client.StateError
 	if errors.As(err, &serr) {
@@ -1064,7 +1060,6 @@ func stateErrorOrUnavailable(err error) []*client.StateError {
 }
 
 func toStateErrors(err error) []*client.StateError {
-
 	serrs := []*client.StateError{}
 
 	var aggregate apiutilerrors.Aggregate
@@ -1081,7 +1076,6 @@ func toStateErrors(err error) []*client.StateError {
 }
 
 func generateRunReportFromTaskErrors(tge tasks.TaskGroupErrors) (runReport, string) {
-
 	failedTask := cmostr.ToPascalCase(tge[0].Name) + "Failed"
 	if len(tge) > 1 {
 		failedTask = "MultipleTasksFailed"
@@ -1091,12 +1085,9 @@ func generateRunReportFromTaskErrors(tge tasks.TaskGroupErrors) (runReport, stri
 	available := &stateInfo{reason: failedTask, status: client.UnknownStatus}
 
 	for _, terr := range tge {
-
 		// each task can return a single or multiple errors (as an Aggregate)
 		// each error can be a StateError or a generic error (fmt.Errorf)
-
 		for _, serr := range toStateErrors(terr.Err) {
-
 			switch serr.State {
 			case client.DegradedState:
 				degraded.messages = append(degraded.messages, serr.Reason)
@@ -1130,7 +1121,7 @@ func generateRunReportFromTaskErrors(tge tasks.TaskGroupErrors) (runReport, stri
 	return rpt, failedTask
 }
 
-// stateInfo satifies a client.StateInfo
+// stateInfo satisfies a client.StateInfo
 type stateInfo struct {
 	status   client.Status
 	reason   string

@@ -36,7 +36,6 @@ type RuleGroups struct {
 }
 
 func extractMetricNamesNew(fileName string) ([]string, error) {
-
 	var metricNames []string
 	metricNamesMap := map[string]struct{}{}
 	var ruleGroups RuleGroups

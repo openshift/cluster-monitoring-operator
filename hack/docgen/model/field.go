@@ -145,12 +145,11 @@ func isInternalType(typ ast.Expr) bool {
 
 // IsRequired returns true if the field is mandatory.
 func (f *Field) IsRequired() interface{} {
-	jsonTag := ""
 	if f.Tag == nil {
 		return false
 	}
 
-	jsonTag = reflect.StructTag(f.Tag.Value[1 : len(f.Tag.Value)-1]).Get("json") // Delete first and last quotation
+	jsonTag := reflect.StructTag(f.Tag.Value[1 : len(f.Tag.Value)-1]).Get("json") // Delete first and last quotation
 	return !strings.Contains(jsonTag, "omitempty")
 }
 
