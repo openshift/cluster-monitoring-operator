@@ -385,7 +385,7 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		return errors.Wrap(err, "deleting UserWorkload trusted CA Bundle ConfigMap failed")
 	}
 
-	err = t.client.DeleteConfigMap(ctx, hashedTrustedCA)
+	err = t.client.DeleteHashedConfigMap(ctx, hashedTrustedCA.GetNamespace(), "prometheus-user-workload", hashedTrustedCA.Labels["monitoring.openshift.io/hash"])
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload trusted CA Bundle ConfigMap failed")
 	}

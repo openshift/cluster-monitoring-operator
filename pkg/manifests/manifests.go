@@ -1693,6 +1693,25 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 		return nil, err
 	}
 
+	var trustedCABundleVolumeName string
+	if trustedCABundleCM != nil {
+		trustedCABundleVolumeName = "prometheus-user-workload-trusted-ca-bundle"
+		volume := trustedCABundleVolume(trustedCABundleCM.Name, trustedCABundleVolumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  TrustedCABundleKey,
+			Path: "tls-ca-bundle.pem",
+		})
+		p.Spec.Volumes = append(p.Spec.Volumes, volume)
+	}
+	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
+		Name: "secret-grpc-tls",
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: grpcTLS.GetName(),
+			},
+		},
+	})
+
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
 		case "prometheus":
@@ -1704,6 +1723,13 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 			p.Spec.Containers[i].StartupProbe = &v1.Probe{
 				PeriodSeconds:    15,
 				FailureThreshold: 240,
+			}
+			// Support CA bundles for Prometheus UWM.
+			if trustedCABundleVolumeName != "" {
+				p.Spec.Containers[i].VolumeMounts = append(
+					p.Spec.Containers[i].VolumeMounts,
+					trustedCABundleVolumeMount(trustedCABundleVolumeName),
+				)
 			}
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-federate", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
@@ -1717,15 +1743,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 		setupAlerting(p, platformAlertmanagerService, f.namespace)
 	}
 
-	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
-		Name: "secret-grpc-tls",
-		VolumeSource: v1.VolumeSource{
-			Secret: &v1.SecretVolumeSource{
-				SecretName: grpcTLS.GetName(),
-			},
-		},
-	})
-
 	alertManagerConfigs := f.config.AdditionalAlertmanagerConfigsForPrometheusUserWorkload()
 	if len(alertManagerConfigs) > 0 {
 		p.Spec.AdditionalAlertManagerConfigs = &v1.SecretKeySelector{
@@ -1735,27 +1752,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 			},
 		}
 		p.Spec.Secrets = append(p.Spec.Secrets, getAdditionalAlertmanagerSecrets(alertManagerConfigs)...)
-	}
-
-	if trustedCABundleCM != nil {
-		volumeName := "prometheus-user-workload-trusted-ca-bundle"
-		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  TrustedCABundleKey,
-			Path: "tls-ca-bundle.pem",
-		})
-		p.Spec.Volumes = append(p.Spec.Volumes, volume)
-
-		// we only need the trusted CA bundle in:
-		// 1. Prometheus, because users might want to configure external remote write.
-		for i, container := range p.Spec.Containers {
-			if container.Name == "prometheus" {
-				p.Spec.Containers[i].VolumeMounts = append(
-					p.Spec.Containers[i].VolumeMounts,
-					trustedCABundleVolumeMount(volumeName),
-				)
-			}
-		}
 	}
 
 	return p, nil
