@@ -32,9 +32,11 @@ JB_BIN=$(BIN_DIR)/jb
 GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
 JSONNET_BIN=$(BIN_DIR)/jsonnet
 JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
+GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
+GOLANGCI_LINT_VERSION=v1.52.2
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN)
+TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(GOLANGCI_LINT_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -165,11 +167,15 @@ Documentation/telemetry/telemeter_query: manifests/0000_50_cluster-monitoring-op
 ##############
 
 .PHONY: format
-format: go-fmt shellcheck jsonnet-fmt
+format: go-fmt golangci-lint shellcheck jsonnet-fmt
 
 .PHONY: go-fmt
 go-fmt:
 	go fmt ./...
+
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT_BIN)
+	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage -c .golangci.yaml
 
 .PHONY: jsonnet-fmt
 jsonnet-fmt: $(JSONNETFMT_BIN)
@@ -228,3 +234,4 @@ $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools.go
 	@cd hack/tools && go list -mod=mod -tags tools -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
 	@GOBIN=$(BIN_DIR) go install $(GO_PKG)/hack/docgen
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
