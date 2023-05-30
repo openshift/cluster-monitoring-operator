@@ -194,6 +194,7 @@ func Main() int {
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	//nolint:errcheck
 	go http.ListenAndServe("127.0.0.1:8080", mux)
 
 	wg, ctx := errgroup.WithContext(ctx)
