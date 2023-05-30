@@ -16,11 +16,8 @@ package tasks
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/pkg/errors"
@@ -276,12 +273,4 @@ func (t *TelemeterClientTask) destroy(ctx context.Context) error {
 
 	err = t.client.DeleteConfigMap(ctx, cacm)
 	return errors.Wrap(err, "creating Telemeter Client serving certs CA Bundle ConfigMap failed")
-}
-
-func generateTelemeterWhitelistRec(telemetryMatches []string) (string, error) {
-	expr, err := promqlgen.GroupLabelSelectors(telemetryMatches)
-	if err != nil {
-		return "", nil
-	}
-	return fmt.Sprintf(`count(%s)`, expr), nil
 }
