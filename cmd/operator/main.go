@@ -82,6 +82,7 @@ type telemetryConfig struct {
 	Matches []string `json:"matches"`
 }
 
+//nolint:govet
 func Main() int {
 	flagset := flag.CommandLine
 	klog.InitFlags(flagset)
