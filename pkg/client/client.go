@@ -923,7 +923,6 @@ func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) err
 // validatePrometheusResource is a helper method for ValidatePrometheus.
 // NOTE: this function is refactored out of wait.Poll for testing
 func (c Client) validatePrometheusResource(ctx context.Context, prom types.NamespacedName) (bool, []error) {
-
 	p, err := c.mclient.MonitoringV1().Prometheuses(prom.Namespace).Get(ctx, prom.Name, metav1.GetOptions{})
 	if err != nil {
 		// failing to get Prometheus -> Degraded: Unknown & Unavailable: Unknown
@@ -951,7 +950,6 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 			klog.V(4).Info("validate prometheus failed to get prometheus reconciled condition: ", err)
 			// failing to get Prometheus.Status.Condtion -> Degraded: Unknown
 			return false, []error{NewUnknownDegradedError(err.Error())}
-
 		} else if reconciled.Status != monv1.PrometheusConditionTrue {
 			klog.V(4).Info("validate prometheus failed reconciled condition: ", reconciled.Status)
 			msg := fmt.Sprintf("%s: %s", reconciled.Reason, reconciled.Message)
@@ -1762,7 +1760,6 @@ func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apire
 	}
 	_, err = apsc.Update(ctx, required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating APIService object failed")
-
 }
 
 func (c *Client) WaitForCRDReady(ctx context.Context, crd *extensionsobj.CustomResourceDefinition) error {

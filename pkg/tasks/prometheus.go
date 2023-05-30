@@ -41,7 +41,6 @@ func NewPrometheusTask(client *client.Client, factory *manifests.Factory, config
 }
 
 func (t *PrometheusTask) Run(ctx context.Context) error {
-
 	errs := []error{}
 
 	err := t.create(ctx)

@@ -336,7 +336,6 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 
 		if err := t.client.DeleteConfigMap(ctx, trustedCA); err != nil {
 			return errors.Wrap(err, "deleting Alertmanager trusted CA bundle failed")
-
 		}
 
 		a, err := t.factory.AlertmanagerMain(trustedCA)

@@ -36,7 +36,6 @@ func NewPrometheusValidationTask(client *client.Client, factory *manifests.Facto
 }
 
 func (t *PrometheusValidationTask) Run(ctx context.Context) error {
-
 	prom, err := t.factory.NewPrometheusK8s()
 	if err != nil {
 		return err
