@@ -313,7 +313,7 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		ctx,
 		s.GetNamespace(),
 		"prometheus-k8s-grpc-tls",
-		string(s.Labels["monitoring.openshift.io/hash"]),
+		s.Labels["monitoring.openshift.io/hash"],
 	)
 	if err != nil {
 		return errors.Wrap(err, "error creating Prometheus Client GRPC TLS secret")

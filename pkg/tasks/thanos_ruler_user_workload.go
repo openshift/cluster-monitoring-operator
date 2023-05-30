@@ -216,7 +216,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 			ctx,
 			grpcSecret.GetNamespace(),
 			"thanos-ruler-grpc-tls",
-			string(grpcSecret.Labels["monitoring.openshift.io/hash"]),
+			grpcSecret.Labels["monitoring.openshift.io/hash"],
 		)
 		if err != nil {
 			return errors.Wrap(err, "error deleting expired UserWorkload Thanos Ruler GRPC TLS secret")

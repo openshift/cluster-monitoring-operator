@@ -200,7 +200,7 @@ func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
 			return errors.Wrap(err, "failed to create prometheus adapter secret")
 		}
 
-		err = t.deleteOldPrometheusAdapterSecrets(string(secret.Labels["monitoring.openshift.io/hash"]))
+		err = t.deleteOldPrometheusAdapterSecrets(secret.Labels["monitoring.openshift.io/hash"])
 		if err != nil {
 			return errors.Wrap(err, "deleting old prometheus adapter secrets failed")
 		}
