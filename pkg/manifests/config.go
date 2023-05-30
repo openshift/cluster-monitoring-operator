@@ -181,7 +181,7 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 		return false
 	}
 
-	if (cfg.Enabled != nil && *cfg.Enabled == false) ||
+	if (cfg.Enabled != nil && !*cfg.Enabled) ||
 		cfg.ClusterID == "" ||
 		cfg.Token == "" {
 		return false
