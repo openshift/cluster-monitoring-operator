@@ -233,6 +233,9 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 				return errors.Wrap(err, "initializing Thanos Querier Route failed")
 			}
 			queryURL, err = t.client.GetRouteURL(ctx, querierRoute)
+			if err != nil {
+				return errors.Wrap(err, "error getting Thanos Querier Route url")
+			}
 		}
 
 		pdb, err := t.factory.ThanosRulerPodDisruptionBudget()

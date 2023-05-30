@@ -335,6 +335,10 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		"server.key", string(grpcTLS.Data["prometheus-server.key"]),
 	)
 
+	if err != nil {
+		return errors.Wrap(err, "error hashing TLS secrets")
+	}
+
 	pdb, err := t.factory.PrometheusUserWorkloadPodDisruptionBudget()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus PodDisruptionBudget object failed")

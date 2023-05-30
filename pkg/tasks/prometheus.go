@@ -275,6 +275,7 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "initializing Metrics Client Certs secret failed")
 	}
 
+	//nolint:ineffassign
 	metricsCerts, err = t.client.WaitForSecret(ctx, metricsCerts)
 	if err != nil {
 		return errors.Wrap(err, "waiting for Metrics Client Certs secret failed")
