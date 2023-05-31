@@ -3026,12 +3026,11 @@ func (f *Factory) mountThanosRulerAlertmanagerSecrets(t *monv1.ThanosRuler) {
 }
 
 func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, alertmanagerConfig *v1.Secret) {
-	digest := ""
 	if alertmanagerConfig == nil {
 		return
 	}
 	digestBytes := md5.Sum([]byte(alertmanagerConfig.StringData["alertmanagers.yaml"]))
-	digest = fmt.Sprintf("%x", digestBytes)
+	digest := fmt.Sprintf("%x", digestBytes)
 	for i, _ := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
