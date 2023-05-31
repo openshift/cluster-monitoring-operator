@@ -173,7 +173,7 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		ctx,
 		s.GetNamespace(),
 		"thanos-querier-grpc-tls",
-		string(s.Labels["monitoring.openshift.io/hash"]),
+		s.Labels["monitoring.openshift.io/hash"],
 	)
 	if err != nil {
 		return errors.Wrap(err, "error creating Thanos Querier Client GRPC TLS secret")
