@@ -21,7 +21,7 @@ import (
 
 // errMapReader wraps a map[string]string and exposes read methods
 // for values and slices.
-// It tracks the first occured error in errMapReader.err
+// It tracks the first occurred error in errMapReader.err
 // when reading values from the underlying map.
 type errMapReader struct {
 	src map[string]string
@@ -35,7 +35,7 @@ func newErrMapReader(src map[string]string) *errMapReader {
 // value returns the value from the underlying map if it is present.
 // If it is not present, an error is generated, errMapReader.err is updated
 // and empty string is returned.
-// If an error already occured in a previous call, empty string is returned.
+// If an error already occurred in a previous call, empty string is returned.
 func (r *errMapReader) value(key string) string {
 	if r.err != nil {
 		return ""
@@ -51,7 +51,7 @@ func (r *errMapReader) value(key string) string {
 }
 
 // slice calls errMapReader.Value(key) and parses the resulting string as a JSON list of strings.
-// If an error already occured in a previous call, empty string is returned.
+// If an error already occurred in a previous call, empty string is returned.
 // If an error occurs during parsing, errMapReader.err is updated
 // and nil is returned.
 func (r *errMapReader) slice(key string) []string {
@@ -77,7 +77,7 @@ func (r *errMapReader) slice(key string) []string {
 	return ret
 }
 
-// Error returns the first error that occured
+// Error returns the first error that occurred
 // when reading values from the underlying map.
 func (r *errMapReader) Error() error {
 	return r.err
