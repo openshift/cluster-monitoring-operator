@@ -78,7 +78,6 @@ func GroupLabelSelectors(matches []string) (string, error) {
 				newLabelSet[lm.Name] = []string{lm.Value}
 			}
 		}
-
 	}
 
 	keys := make([]string, 0, len(newLabelSet))

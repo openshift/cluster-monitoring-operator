@@ -411,7 +411,6 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	}
 
 	return poperator.ValidateSizeField(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
-
 }
 
 func calculateBodySizeLimit(podCapacity int) string {
