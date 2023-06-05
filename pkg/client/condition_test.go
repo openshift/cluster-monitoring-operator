@@ -24,6 +24,12 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type byType []configv1.ClusterOperatorStatusCondition
+
+func (b byType) Len() int           { return len(b) }
+func (b byType) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byType) Less(i, j int) bool { return b[i].Type < b[j].Type }
+
 func TestConditions(t *testing.T) {
 	type checkFunc func(*conditions) error
 

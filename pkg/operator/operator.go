@@ -1186,19 +1186,6 @@ func newRunReportForError(reason string, err error) runReport {
 		},
 	}
 }
-func (r runReport) isDegraded() bool {
-	if isNilOrAsExpected(r.degraded) {
-		return false
-	}
-	return true
-}
-
-func (r runReport) isUnavailable() bool {
-	if isNilOrAsExpected(r.available) {
-		return false
-	}
-	return true
-}
 
 func (r runReport) Available() client.StateInfo {
 	return r.available
@@ -1206,17 +1193,4 @@ func (r runReport) Available() client.StateInfo {
 
 func (r runReport) Degraded() client.StateInfo {
 	return r.degraded
-}
-
-func isNilOrAsExpected(s client.StateInfo) bool {
-	if s == nil {
-		return true
-	}
-
-	switch s.(type) {
-	case *expectedStatus:
-		return true
-	default:
-		return false
-	}
 }

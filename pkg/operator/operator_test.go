@@ -446,6 +446,33 @@ func TestUpgradeableStatus(t *testing.T) {
 	}
 }
 
+func isNilOrAsExpected(s client.StateInfo) bool {
+	if s == nil {
+		return true
+	}
+
+	switch s.(type) {
+	case *expectedStatus:
+		return true
+	default:
+		return false
+	}
+}
+
+func isDegraded(r runReport) bool {
+	if isNilOrAsExpected(r.degraded) {
+		return false
+	}
+	return true
+}
+
+func isUnavailable(r runReport) bool {
+	if isNilOrAsExpected(r.available) {
+		return false
+	}
+	return true
+}
+
 func TestRunReport(t *testing.T) {
 	tt := []struct {
 		name       string
@@ -483,11 +510,11 @@ func TestRunReport(t *testing.T) {
 				available: tc.available,
 			}
 
-			if got, want := rr.isDegraded(), tc.isDegraded; got != want {
+			if got, want := isDegraded(rr), tc.isDegraded; got != want {
 				t.Errorf("expected degraded to be %t but got %t", want, got)
 			}
 
-			if got, want := rr.isUnavailable(), tc.isUnavailable; got != want {
+			if got, want := isUnavailable(rr), tc.isUnavailable; got != want {
 				t.Errorf("expected degraded to be %t but got %t", want, got)
 			}
 		})
