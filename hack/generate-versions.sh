@@ -15,20 +15,20 @@ TMP_BIN="$(pwd)/tmp/bin"
 # Ensure that we use the binaries from the versions defined in hack/tools/go.mod.
 PATH="${TMP_BIN}:${PATH}"
 
+MAIN_BRANCH="master"
+
 # Set default variable values
 : "${VERSION_FILE:=jsonnet/versions.yaml}"
-: "${INTERACTIVE:=true}"
+# PULL_BASE_REF will also be set by CI
+: "${PULL_BASE_REF:=master}"
+
+if [ "$PULL_BASE_REF" != "$MAIN_BRANCH" ]; then
+	echo >&2 "Components versions are only updated on '${MAIN_BRANCH}' branch for now. Nothing to do against '${PULL_BASE_REF}'."
+	exit 0
+fi
 
 version_from_remote() {
-	curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/master/VERSION"
-}
-
-# Fallback mechanism when VERSION file is empty or not found
-version_from_user() {
-	ver=""
-	echo >&2 -n "Cannot determine version of ${1}. Please provide version manually (without alphabetical prefixes) and press ENTER: "
-	read -r ver
-	echo "$ver"
+	curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/${MAIN_BRANCH}/VERSION"
 }
 
 CONTENT="$(gojsontoyaml -yamltojson <"${VERSION_FILE}")"
@@ -41,14 +41,6 @@ for c in $COMPONENTS; do
 	SLUG=$(echo "$CONTENT" | jq -r --arg COMPONENT "$c" '.repos[$COMPONENT]')
 	REMOTE="$(version_from_remote "$SLUG")"
 	REMOTE="${REMOTE#v}"
-
-	if [ "$REMOTE" = "" ] && [ "$INTERACTIVE" != "true" ]; then
-		REMOTE="$LOCAL"
-	fi
-
-	if [ "$REMOTE" = "" ] && [ "$INTERACTIVE" = "true" ]; then
-		REMOTE="$(version_from_user "${c}")"
-	fi
 
 	if [ "$REMOTE" != "$LOCAL" ]; then
 		echo >&2 "Version upgrade of ${c} from '${LOCAL}' to '${REMOTE}'"
