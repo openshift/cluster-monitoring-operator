@@ -207,7 +207,7 @@ func Main() int {
 	}
 	wg.Go(func() error { return srv.Run(ctx) })
 
-	term := make(chan os.Signal)
+	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 
 	select {
