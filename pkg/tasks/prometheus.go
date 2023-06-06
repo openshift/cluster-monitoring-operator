@@ -280,6 +280,16 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "waiting for Metrics Client Certs secret failed")
 	}
 
+	federateCerts, err := t.factory.FederateClientCerts()
+	if err != nil {
+		return errors.Wrap(err, "initializing Federate Client Certs secret failed")
+	}
+
+	_, err = t.client.WaitForSecret(ctx, federateCerts)
+	if err != nil {
+		return errors.Wrap(err, "waiting for Federate Client Certs secret failed")
+	}
+
 	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Prometheus GRPC secret failed")
