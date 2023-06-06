@@ -466,6 +466,7 @@ The `ThanosQuerierConfig` resource defines settings for the Thanos Querier compo
 | -------- | ---- | ----------- |
 | enableRequestLogging | bool | A Boolean flag that enables or disables request logging. The default value is `false`. |
 | logLevel | string | Defines the log level setting for Thanos Querier. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`. |
+| enableCORS | bool | A Boolean flag that enables setting CORS headers. The headers would allow access from any origin. The default value is `false`. |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core) | Defines resource requests and limits for the Thanos Querier container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#toleration-v1-core) | Defines tolerations for the pods. |

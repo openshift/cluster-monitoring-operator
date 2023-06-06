@@ -3277,7 +3277,8 @@ func TestThanosQuerierConfiguration(t *testing.T) {
       cpu: 3m
       memory: 4Mi
   logLevel: debug
-  enableRequestLogging: true`, false)
+  enableRequestLogging: true
+  enableCORS: true`, false)
 
 	if err != nil {
 		t.Fatal(err)
@@ -3397,6 +3398,19 @@ grpc:
 				}
 				if got.value != expectResult {
 					t.Fatalf("unexpected flag value for Thanos query, wanted %s but got %s", expectResult, got.value)
+				}
+			}
+
+			{
+				// test CORS headers flag
+				const (
+					disableCORSFlag = "--web.disable-cors"
+				)
+
+				_, ok := getArgValue(c, disableCORSFlag)
+				if ok {
+					// For now this "index out of range" prior to this if the flag is set
+					t.Fatalf("CORS headers should be enabled on Thanos query")
 				}
 			}
 

@@ -2621,6 +2621,11 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 				)
 			}
 
+			if !f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.EnableCORS {
+				d.Spec.Template.Spec.Containers[i].Args = append(
+					d.Spec.Template.Spec.Containers[i].Args, "--web.disable-cors")
+			}
+
 		case "prom-label-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 

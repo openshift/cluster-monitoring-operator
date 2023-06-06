@@ -4,6 +4,7 @@
 
 - [#1937](https://github.com/openshift/cluster-monitoring-operator/pull/1937) Disables btrfs collector
 - [#1910](https://github.com/openshift/cluster-monitoring-operator/pull/1910) Add new web console usage metrics
+- [#1950](https://github.com/openshift/cluster-monitoring-operator/pull/1950) Disable CORS headers on Thanos querier by defaut and add a flag to enable them back.
 
 ## 4.13
 
