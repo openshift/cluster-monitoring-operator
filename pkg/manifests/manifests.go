@@ -3017,7 +3017,7 @@ func (f *Factory) mountThanosRulerAlertmanagerSecrets(t *monv1.ThanosRuler) {
 	}
 
 	t.Spec.Volumes = append(t.Spec.Volumes, volumes...)
-	for i, _ := range t.Spec.Containers {
+	for i := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
 			t.Spec.Containers[i].VolumeMounts = append(t.Spec.Containers[i].VolumeMounts, volumeMounts...)
@@ -3031,7 +3031,7 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 	}
 	digestBytes := md5.Sum([]byte(alertmanagerConfig.StringData["alertmanagers.yaml"]))
 	digest := fmt.Sprintf("%x", digestBytes)
-	for i, _ := range t.Spec.Containers {
+	for i := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
 		if containerName == "thanos-ruler" {
 			// Thanos ruler does not refresh its config when the alertmanagers secret changes.
