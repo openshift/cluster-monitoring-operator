@@ -15,11 +15,18 @@
 package e2e
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/go-kit/log" // logger is required for promConfig.Load
+	promConfig "github.com/prometheus/prometheus/config"
+	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -306,7 +313,9 @@ func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *fram
 
 func TestBodySizeLimit(t *testing.T) {
 	const (
-		bodySizeLimitSmall = "1MB"
+		bodySizeLimitSmall         = "1MB"
+		bodySizeLimitSmallNumber   = 1 * 1024 * 1024
+		prometheusConfigSecretName = "prometheus-k8s"
 	)
 
 	cm := f.MustGetConfigMap(t, clusterMonitorConfigMapName, f.Ns)
@@ -321,16 +330,16 @@ func TestBodySizeLimit(t *testing.T) {
 
 	defer restoreConfig()
 
-	f.PrometheusK8sClient.WaitForQueryReturn(
-		t, 5*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
-		func(v float64) error {
-			if v > 0 {
-				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total does not increase up but got %v increase in last 5 minutes", v)
-			}
+	prometheusConfig, err := getPrometheusConfig(t, prometheusConfigSecretName)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-			return nil
-		},
-	)
+	for _, scrapeConfig := range prometheusConfig.ScrapeConfigs {
+		if scrapeConfig.BodySizeLimit != 0 {
+			t.Fatalf("expected scrapeConfig.BodySizeLimit to be 0 but got %v before changing config", scrapeConfig.BodySizeLimit)
+		}
+	}
 
 	data := fmt.Sprintf(`prometheusK8s:
   logLevel: debug
@@ -338,15 +347,41 @@ func TestBodySizeLimit(t *testing.T) {
 `, bodySizeLimitSmall)
 	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
-	f.PrometheusK8sClient.WaitForQueryReturn(
-		t, 5*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
-		func(v float64) error {
-			if v == 0 {
-				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total to increase but no increase is observed in last 5 minutes")
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		prometheusConfig, err := getPrometheusConfig(t, prometheusConfigSecretName)
+		if err != nil {
+			return err
+		}
+		for _, scrapeConfig := range prometheusConfig.ScrapeConfigs {
+			if scrapeConfig.BodySizeLimit != bodySizeLimitSmallNumber {
+				return fmt.Errorf("expected scrapeConfig.BodySizeLimit to be %v but got %v after changing config", bodySizeLimitSmallNumber, scrapeConfig.BodySizeLimit)
 			}
+		}
 
-			return nil
-		},
-	)
+		return nil
+	})
 
+	if err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+func getPrometheusConfig(t *testing.T, prometheusConfigSecretName string) (*promConfig.Config, error) {
+	secretPrometheusConfig := f.MustGetSecret(t, prometheusConfigSecretName, f.Ns)
+	zippedData := secretPrometheusConfig.Data["prometheus.yaml.gz"]
+	reader, err := gzip.NewReader(bytes.NewReader(zippedData))
+	if err != nil {
+		return nil, err
+	}
+	unzippedData, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	mockLogger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	prometheusConfig, err := promConfig.Load(string(unzippedData), false, mockLogger)
+	if err != nil {
+		return nil, err
+	}
+	return prometheusConfig, nil
 }
