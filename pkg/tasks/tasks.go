@@ -78,6 +78,7 @@ func (tg *TaskGroup) RunConcurrently(ctx context.Context) TaskGroupErrors {
 		})
 	}
 
+	//nolint:errcheck
 	g.Wait()
 	// To be able to use the range function on the buffered channel
 	// the channel needs to closed. Otherwise the range will keep waiting

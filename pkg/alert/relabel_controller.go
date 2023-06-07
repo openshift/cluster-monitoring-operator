@@ -91,17 +91,23 @@ func NewRelabelConfigController(ctx context.Context, client *client.Client) (*Re
 		secretInformer:        secretInformer,
 	}
 
-	relabelConfigInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err := relabelConfigInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleAlertRelabelConfigAdd,
 		UpdateFunc: controller.handleAlertRelabelConfigUpdate,
 		DeleteFunc: controller.handleAlertRelabelConfigDelete,
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleSecretAdd,
 		UpdateFunc: controller.handleSecretUpdate,
 		DeleteFunc: controller.handleSecretDelete,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return controller, nil
 }

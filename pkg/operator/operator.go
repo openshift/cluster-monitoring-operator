@@ -255,66 +255,87 @@ func New(
 	informer := cache.NewSharedIndexInformer(
 		o.client.SecretListWatchForNamespace(namespace), &v1.Secret{}, resyncPeriod, cache.Indexers{},
 	)
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 		DeleteFunc: o.handleEvent,
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	o.cmapInf = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace(namespace), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
-	o.cmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = o.cmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 		DeleteFunc: o.handleEvent,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace(namespaceUserWorkload), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 		DeleteFunc: o.handleEvent,
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("kube-system"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config-managed"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
 		o.client.InfrastructureListWatchForResource(ctx, clusterResourceName),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
@@ -322,11 +343,14 @@ func New(
 		&configv1.APIServer{}, resyncPeriod, cache.Indexers{},
 	)
 
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) {
 			o.handleEvent(newObj)
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
@@ -334,11 +358,14 @@ func New(
 		&configv1.Console{}, resyncPeriod, cache.Indexers{},
 	)
 
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) {
 			o.handleEvent(newObj)
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
@@ -353,9 +380,12 @@ func New(
 	// later).
 	// So we only add a watch for the add event here.
 	// [1] https://github.com/openshift/enhancements/blob/ab2b0aea4291cb74a49bca1983013d154d386cb7/enhancements/installer/component-selection.m#capabilities-can-be-installed
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: o.handleEvent,
 	})
+	if err != nil {
+		return nil, err
+	}
 	o.informers = append(o.informers, informer)
 
 	// Setup PVC informers to sync annotation updates.
@@ -364,9 +394,12 @@ func New(
 			o.client.PersistentVolumeClaimListWatchForNamespace(ns),
 			&v1.PersistentVolumeClaim{}, resyncPeriod, cache.Indexers{},
 		)
-		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 		})
+		if err != nil {
+			return nil, err
+		}
 		o.informers = append(o.informers, informer)
 	}
 

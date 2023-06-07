@@ -88,17 +88,23 @@ func NewRuleController(ctx context.Context, client *client.Client, version strin
 		queue:            queue,
 	}
 
-	ruleInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err := ruleInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    rc.handleAlertingRuleAdd,
 		UpdateFunc: rc.handleAlertingRuleUpdate,
 		DeleteFunc: rc.handleAlertingRuleDelete,
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	promRuleInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = promRuleInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    nil, // No need to handle adds.
 		UpdateFunc: rc.handlePrometheusRuleUpdate,
 		DeleteFunc: rc.handlePrometheusRuleDelete,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return rc, nil
 }

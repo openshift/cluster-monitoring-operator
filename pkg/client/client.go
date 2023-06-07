@@ -1847,6 +1847,6 @@ func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {
 		}
 	}
 
-	mergo.Merge(&required.Annotations, existing.Annotations)
-	mergo.Merge(&required.Labels, existing.Labels)
+	_ = mergo.Merge(&required.Annotations, existing.Annotations)
+	_ = mergo.Merge(&required.Labels, existing.Labels)
 }
