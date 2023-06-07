@@ -7,6 +7,7 @@ require (
 	github.com/Jeffail/gabs/v2 v2.6.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-kit/log v0.2.1
 	github.com/imdario/mergo v0.3.13
 	github.com/openshift/api v0.0.0-20230120195050-6ba31fa438f2
 	github.com/openshift/client-go v0.0.0-20230120202327-72f107311084
@@ -62,7 +63,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
-	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
