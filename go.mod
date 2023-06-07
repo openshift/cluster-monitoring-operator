@@ -8,8 +8,8 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/imdario/mergo v0.3.13
-	github.com/openshift/api v0.0.0-20230120195050-6ba31fa438f2
-	github.com/openshift/client-go v0.0.0-20230120202327-72f107311084
+	github.com/openshift/api v0.0.0-20230417092139-1b2161d23365
+	github.com/openshift/client-go v0.0.0-20230419131419-497c7032c581
 	github.com/openshift/library-go v0.0.0-20230120214501-9bc305884fcb
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator v0.62.0
@@ -21,20 +21,20 @@ require (
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/exp v0.0.0-20221212164502-fae10dda9338
 	golang.org/x/sync v0.1.0
-	golang.org/x/text v0.7.0
+	golang.org/x/text v0.8.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.26.1
+	k8s.io/api v0.26.3
 	k8s.io/apiextensions-apiserver v0.26.1
-	k8s.io/apimachinery v0.26.1
+	k8s.io/apimachinery v0.26.3
 	k8s.io/apiserver v0.26.1
 	k8s.io/client-go v0.26.1
 	k8s.io/component-base v0.26.1
-	k8s.io/klog/v2 v2.80.1
+	k8s.io/klog/v2 v2.90.1
 	k8s.io/kube-aggregator v0.26.1
 	k8s.io/kubectl v0.26.1
 	k8s.io/metrics v0.26.1
-	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
+	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
 )
 
 require (
@@ -146,10 +146,10 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/oauth2 v0.3.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221207170731-23e4bf6bdc37 // indirect

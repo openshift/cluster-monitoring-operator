@@ -24,16 +24,14 @@ import (
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/pointer"
 
-	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
+	osmv1 "github.com/openshift/api/monitoring/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -59,34 +57,11 @@ type RuleController struct {
 
 // NewRuleController returns a new AlertingRule controller instance.
 func NewRuleController(ctx context.Context, client *client.Client, version string) (*RuleController, error) {
-	tp, err := client.TechPreviewEnabled(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var lw cache.ListerWatcher
-	if tp {
-		// AlertingRule resources are only allowed in the operator namespace.
-		lw = client.AlertingRuleListWatchForNamespace(client.Namespace())
-	} else {
-		// Instantiate a fake lister/watcher that returns no items.
-		lw = &cache.ListWatch{
-			ListFunc: func(metav1.ListOptions) (runtime.Object, error) {
-				return &osmv1alpha1.AlertingRuleList{
-					TypeMeta: metav1.TypeMeta{
-						Kind: "List",
-					},
-				}, nil
-			},
-			WatchFunc: func(metav1.ListOptions) (watch.Interface, error) {
-				return watch.NewFake(), nil
-			},
-		}
-	}
+	lw := client.AlertingRuleListWatchForNamespace(client.Namespace())
 
 	ruleInformer := cache.NewSharedIndexInformer(
 		lw,
-		&osmv1alpha1.AlertingRule{},
+		&osmv1.AlertingRule{},
 		resyncPeriod,
 		cache.Indexers{},
 	)
@@ -201,12 +176,12 @@ func (rc *RuleController) handleAlertingRuleDelete(obj interface{}) {
 
 // handleAlertingRuleUpdate handles update events for the AlertingRule informer.
 func (rc *RuleController) handleAlertingRuleUpdate(oldObj, newObj interface{}) {
-	oldAR, ok := oldObj.(*osmv1alpha1.AlertingRule)
+	oldAR, ok := oldObj.(*osmv1.AlertingRule)
 	if !ok {
 		return
 	}
 
-	newAR, ok := newObj.(*osmv1alpha1.AlertingRule)
+	newAR, ok := newObj.(*osmv1.AlertingRule)
 	if !ok {
 		return
 	}
@@ -286,7 +261,7 @@ func (rc *RuleController) sync(ctx context.Context, key string) error {
 
 	klog.V(4).Infof("Syncing AlertingRule: %s", key)
 
-	rule.APIVersion = osmv1alpha1.GroupVersion.String()
+	rule.APIVersion = osmv1.GroupVersion.String()
 	rule.Kind = "AlertingRule"
 
 	// Generate the new or updated PrometheusRule object.
@@ -344,7 +319,7 @@ func (rc *RuleController) promRuleName(namespace, name string, uid types.UID) st
 // corresponding upstream prometheus-operator versions.  It ensures each rule has
 // a static label identifying the rule as coming from platform-monitoring, while
 // being user-defined.
-func (rc *RuleController) convertRuleGroups(groups []osmv1alpha1.RuleGroup) []monv1.RuleGroup {
+func (rc *RuleController) convertRuleGroups(groups []osmv1.RuleGroup) []monv1.RuleGroup {
 	monv1Groups := make([]monv1.RuleGroup, len(groups))
 
 	for i, group := range groups {
@@ -450,7 +425,7 @@ func (rc *RuleController) handlePrometheusRuleDelete(obj interface{}) {
 // firstAlertingRuleOwner returns the name of the first owner reference found that
 // is an AlertingRule resource, or an empty string if there is none.
 func firstAlertingRuleOwner(refs []metav1.OwnerReference) string {
-	apiVersion, kind := osmv1alpha1.GroupVersion.String(), "AlertingRule"
+	apiVersion, kind := osmv1.GroupVersion.String(), "AlertingRule"
 
 	for _, ref := range refs {
 		if ref.APIVersion == apiVersion && ref.Kind == kind {

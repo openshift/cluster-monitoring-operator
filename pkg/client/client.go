@@ -26,7 +26,7 @@ import (
 	"github.com/pkg/errors"
 
 	configv1 "github.com/openshift/api/config/v1"
-	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
+	osmv1 "github.com/openshift/api/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
@@ -249,7 +249,7 @@ func (c *Client) UserWorkloadNamespace() string {
 }
 
 func (c *Client) AlertingRuleListWatchForNamespace(ns string) *cache.ListWatch {
-	return cache.NewListWatchFromClient(c.osmclient.MonitoringV1alpha1().RESTClient(), "alertingrules", ns, fields.Everything())
+	return cache.NewListWatchFromClient(c.osmclient.MonitoringV1().RESTClient(), "alertingrules", ns, fields.Everything())
 }
 
 func (c *Client) PrometheusRuleListWatchForNamespace(ns string) *cache.ListWatch {
@@ -258,7 +258,7 @@ func (c *Client) PrometheusRuleListWatchForNamespace(ns string) *cache.ListWatch
 
 func (c *Client) AlertRelabelConfigListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(
-		c.osmclient.MonitoringV1alpha1().RESTClient(),
+		c.osmclient.MonitoringV1().RESTClient(),
 		"alertrelabelconfigs",
 		ns,
 		fields.Everything(),
@@ -401,15 +401,15 @@ func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
 	})
 }
 
-func (c *Client) UpdateAlertingRuleStatus(ctx context.Context, rule *osmv1alpha1.AlertingRule) error {
+func (c *Client) UpdateAlertingRuleStatus(ctx context.Context, rule *osmv1.AlertingRule) error {
 	ns := rule.GetNamespace()
 
-	_, err := c.osmclient.MonitoringV1alpha1().AlertingRules(ns).UpdateStatus(ctx, rule, metav1.UpdateOptions{})
+	_, err := c.osmclient.MonitoringV1().AlertingRules(ns).UpdateStatus(ctx, rule, metav1.UpdateOptions{})
 	return err
 }
 
-func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv1alpha1.AlertRelabelConfig) error {
-	arcClient := c.osmclient.MonitoringV1alpha1().AlertRelabelConfigs(arc.GetNamespace())
+func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv1.AlertRelabelConfig) error {
+	arcClient := c.osmclient.MonitoringV1().AlertRelabelConfigs(arc.GetNamespace())
 	existing, err := arcClient.Get(ctx, arc.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := arcClient.Create(ctx, arc, metav1.CreateOptions{})
@@ -552,8 +552,8 @@ func (c *Client) GetPrometheusRule(ctx context.Context, namespace, name string) 
 	return c.mclient.MonitoringV1().PrometheusRules(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
-func (c *Client) GetAlertingRule(ctx context.Context, namespace, name string) (*osmv1alpha1.AlertingRule, error) {
-	return c.osmclient.MonitoringV1alpha1().AlertingRules(namespace).Get(ctx, name, metav1.GetOptions{})
+func (c *Client) GetAlertingRule(ctx context.Context, namespace, name string) (*osmv1.AlertingRule, error) {
+	return c.osmclient.MonitoringV1().AlertingRules(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Prometheus) error {

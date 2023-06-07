@@ -23,8 +23,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	configv1 "github.com/openshift/api/config/v1"
-	osmv1alpha1 "github.com/openshift/api/monitoring/v1alpha1"
+	osmv1 "github.com/openshift/api/monitoring/v1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v2"
@@ -40,18 +39,9 @@ const (
 func TestAlertRelabelConfigTechPreview(t *testing.T) {
 	ctx := context.Background()
 
-	fg, err := f.OpenShiftConfigClient.ConfigV1().FeatureGates().Get(ctx, "cluster", metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if fg.Spec.FeatureSet != configv1.TechPreviewNoUpgrade {
-		t.Skip("TechPreview not enabled")
-	}
-
 	arcName := framework.E2eTestLabelValue
 
-	arc := &osmv1alpha1.AlertRelabelConfig{
+	arc := &osmv1.AlertRelabelConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      arcName,
 			Namespace: f.Ns,
@@ -59,10 +49,10 @@ func TestAlertRelabelConfigTechPreview(t *testing.T) {
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 		},
-		Spec: osmv1alpha1.AlertRelabelConfigSpec{
-			Configs: []osmv1alpha1.RelabelConfig{
+		Spec: osmv1.AlertRelabelConfigSpec{
+			Configs: []osmv1.RelabelConfig{
 				{
-					SourceLabels: []osmv1alpha1.LabelName{"alertname", "severity"},
+					SourceLabels: []osmv1.LabelName{"alertname", "severity"},
 					Regex:        "Watchdog;none",
 					TargetLabel:  "severity",
 					Replacement:  "critical",
@@ -72,11 +62,11 @@ func TestAlertRelabelConfigTechPreview(t *testing.T) {
 		},
 	}
 
-	relabelConfigs := f.OpenShiftMonitoringClient.MonitoringV1alpha1().AlertRelabelConfigs(f.Ns)
+	relabelConfigs := f.OpenShiftMonitoringClient.MonitoringV1().AlertRelabelConfigs(f.Ns)
 	secrets := f.KubeClient.CoreV1().Secrets(f.Ns)
 
 	// Create an AlertRelabelConfig.
-	_, err = relabelConfigs.Create(ctx, arc, metav1.CreateOptions{})
+	_, err := relabelConfigs.Create(ctx, arc, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(errors.Wrap(err, "failed to create AlertRelabelConfig"))
 	}
@@ -139,7 +129,7 @@ func TestAlertRelabelConfigTechPreview(t *testing.T) {
 	}
 }
 
-func relabelConfigsEqual(arc osmv1alpha1.RelabelConfig, fromSecret relabel.Config) error {
+func relabelConfigsEqual(arc osmv1.RelabelConfig, fromSecret relabel.Config) error {
 	if len(arc.SourceLabels) != len(fromSecret.SourceLabels) {
 		return fmt.Errorf("SourceLabels have different lengths (%d != %d)",
 			len(arc.SourceLabels), len(fromSecret.SourceLabels))
