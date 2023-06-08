@@ -67,6 +67,17 @@ function(params) {
     data: {},
   },
 
+  federateClientCerts: {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      name: 'federate-client-certs',
+      namespace: cfg.namespace,
+    },
+    type: 'Opaque',
+    data: {},
+  },
+
   metricsClientCa: {
     apiVersion: 'v1',
     kind: 'ConfigMap',
