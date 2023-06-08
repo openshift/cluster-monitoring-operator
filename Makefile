@@ -36,6 +36,7 @@ GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
 GOLANGCI_LINT_VERSION=v1.52.2
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
+MISSPELL_BIN=$(BIN_DIR)/misspell
 TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(GOLANGCI_LINT_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
@@ -47,6 +48,8 @@ JSONNET_SRC=$(shell find ./jsonnet -type f -not -path "./jsonnet/vendor*")
 JSONNET_VENDOR=jsonnet/vendor
 
 GO_BUILD_RECIPE=GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build --ldflags="-s -X $(GO_PKG)/pkg/operator.Version=$(VERSION)"
+MARKDOWN_DOCS=$(shell find . -type f -name '*.md' ! -path '*/vendor/*' ! -path './git/*'  \
+				! -name 'data-collection.md' ! -name 'sample-metrics.md' | sort)
 
 .PHONY: all
 all: clean format generate build test
@@ -172,7 +175,7 @@ Documentation/telemetry/telemeter_query: manifests/0000_50_cluster-monitoring-op
 ##############
 
 .PHONY: format
-format: go-fmt golangci-lint shellcheck jsonnet-fmt
+format: go-fmt golangci-lint shellcheck jsonnet-fmt misspell
 
 .PHONY: go-fmt
 go-fmt:
@@ -181,6 +184,14 @@ go-fmt:
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT_BIN)
 	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage -c .golangci.yaml
+
+.PHONY:
+misspell:
+	$(MISSPELL_BIN) -error $(MARKDOWN_DOCS)
+
+.PHONY:
+misspell-fix:
+	$(MISSPELL_BIN) -w $(MARKDOWN_DOCS)
 
 .PHONY: jsonnet-fmt
 jsonnet-fmt: $(JSONNETFMT_BIN)
