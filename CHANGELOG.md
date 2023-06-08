@@ -4,7 +4,7 @@
 
 - [#1937](https://github.com/openshift/cluster-monitoring-operator/pull/1937) Disables btrfs collector
 - [#1910](https://github.com/openshift/cluster-monitoring-operator/pull/1910) Add new web console usage metrics
-- [#1950](https://github.com/openshift/cluster-monitoring-operator/pull/1950) Disable CORS headers on Thanos querier by defaut and add a flag to enable them back.
+- [#1950](https://github.com/openshift/cluster-monitoring-operator/pull/1950) Disable CORS headers on Thanos querier by default and add a flag to enable them back.
 
 ## 4.13
 
@@ -73,7 +73,7 @@
 - [#1308](https://github.com/openshift/cluster-monitoring-operator/pull/1308) Expose remote_write to user for in-cluster deployment and UWM.
 - [#1241](https://github.com/openshift/cluster-monitoring-operator/pull/1241) Add config option to disable Grafana deployment.
 - [#1278](https://github.com/openshift/cluster-monitoring-operator/pull/1278) Add EnforcedTargetLimit option for user-workload Prometheus.
-- [#1291](https://github.com/openshift/cluster-monitoring-operator/pull/1291) Drop high caredinality cAdvisor metrics via [kube-prometheus #1250](https://github.com/prometheus-operator/kube-prometheus/pull/1250)
+- [#1291](https://github.com/openshift/cluster-monitoring-operator/pull/1291) Drop high cardinality cAdvisor metrics via [kube-prometheus #1250](https://github.com/prometheus-operator/kube-prometheus/pull/1250)
 - [#1270](https://github.com/openshift/cluster-monitoring-operator/pull/1270) Show a message in the degraded condition when Platform Monitoring Prometheus runs without persistent storage.
 - [#1241](https://github.com/openshift/cluster-monitoring-operator/pull/1241) Allow configuring additional Alertmanagers in User Workload Prometheus and Thanos Ruler.
 - [#1293](https://github.com/openshift/cluster-monitoring-operator/pull/1270) Allow disabling the local Alertmanager.
@@ -125,13 +125,13 @@
 - [#854](https://github.com/openshift/cluster-monitoring-operator/pull/854) Change KubeQuotaExceeded to KubeQuotaFullyUsed.
 - [#859](https://github.com/openshift/cluster-monitoring-operator/pull/859) Remove the `hostport` parameter from the configuration.
 - [#859](https://github.com/openshift/cluster-monitoring-operator/pull/865) Allow users to configure EnforcedSampleLimit for User workload monitoring Prometheus tenant.
-- [#894](https://github.com/openshift/cluster-monitoring-operator/pull/894) Bump jsonnet depdencies:
-  - kubernetes-mixin: https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/475: alerts: adjust error message accrodingly to recent change
+- [#894](https://github.com/openshift/cluster-monitoring-operator/pull/894) Bump jsonnet dependencies:
+  - kubernetes-mixin: https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/475: alerts: adjust error message accordingly to recent change
   - prometheus-operator: https://github.com/coreos/kube-prometheus/pull/610: Add PrometheusOperatorListErrors and fix PrometheusOperatorWatchErrors threshold
   - etcd: https://github.com/etcd-io/etcd/pull/12122: Documentation/etcd-mixin: Reformulate alerting rules to use `without` rather than `by`
   - kubelet: https://github.com/coreos/kube-prometheus/pull/623: Add scraping of endpoint for kubelet probe metrics
   - thanos: https://github.com/thanos-io/thanos/pull/2374: mixin: Added critical Rules alerts.
-- [#898](https://github.com/openshift/cluster-monitoring-operator/pull/898) Bump jsonnet depdencies for kube-mixin:
+- [#898](https://github.com/openshift/cluster-monitoring-operator/pull/898) Bump jsonnet dependencies for kube-mixin:
   - Adjusts severity levels of many alerts from critical to warning as they were cause based alerts
   - Adjusts KubeStatefulSetUpdateNotRolledOut, KubeDaemonSetRolloutStuck
   - Removes KubeAPILatencyHigh and KubeAPIErrorsHigh
