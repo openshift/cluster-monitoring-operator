@@ -257,3 +257,17 @@ nodeExporter:
 	}
 
 }
+
+func TestNodeExporterGoMaxProcs(t *testing.T) {
+	t.Run("limited GOMAXPROCS", func(st *testing.T) {
+		f.PrometheusK8sClient.WaitForQueryReturn(
+			t, 5*time.Minute, `max(go_sched_gomaxprocs_threads{job="node-exporter"})`,
+			func(v float64) error {
+				if v > 4 {
+					return fmt.Errorf(`expecting max(go_sched_gomaxprocs_threads{job="node-exporter"}) <= 4 but got %v.`, v)
+				}
+				return nil
+			},
+		)
+	})
+}
