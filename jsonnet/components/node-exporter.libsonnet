@@ -214,6 +214,21 @@ function(params)
                               '--collector.textfile.directory=' + textfileDir,
                               '--no-collector.btrfs',
                             ],
+                      command: [
+                        '/bin/sh',
+                        '-c',
+                        |||
+                          export GOMAXPROCS=4
+                          # We don't take CPU affinity into account as the container doesn't have integer CPU requests.
+                          # In case of error, fallback to the default value.
+                          NUM_CPUS=$(grep -c '^processor' "/proc/cpuinfo" 2>/dev/null || echo "0")
+                          if [ "$NUM_CPUS" -lt "$GOMAXPROCS" ]; then
+                            export GOMAXPROCS="$NUM_CPUS"
+                          fi
+                          echo "ts=$(date --iso-8601=seconds) num_cpus=$NUM_CPUS gomaxprocs=$GOMAXPROCS"
+                          exec /bin/node_exporter "$0" "$@"
+                        |||,
+                      ],
                       terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts+: [{
                         mountPath: textfileDir,
