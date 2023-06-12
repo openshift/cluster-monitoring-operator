@@ -3,6 +3,7 @@
 ## 4.14
 
 - [#1937](https://github.com/openshift/cluster-monitoring-operator/pull/1937) Disables btrfs collector
+- [#1910](https://github.com/openshift/cluster-monitoring-operator/pull/1910) Add new web console usage metrics
 
 ## 4.13
 
@@ -15,10 +16,11 @@
 - [#1882](https://github.com/openshift/cluster-monitoring-operator/issues/1882) Allow configuring secrets in alertmanager component (platform)
 - [#1876](https://github.com/openshift/cluster-monitoring-operator/pull/1876) Add nodeExporter.collectors.tcpstat settings.
 - [#1888](https://github.com/openshift/cluster-monitoring-operator/pull/1888) Add nodeExporter.collectors.netdev settings.
-- [#1884](https://github.com/openshift/cluster-monitoring-operator/issues/1882) Allow configuring secrets in alertmanager component (UWM)
+- [#1884](https://github.com/openshift/cluster-monitoring-operator/issues/1884) Allow configuring secrets in alertmanager component (UWM)
 - [#1893](https://github.com/openshift/cluster-monitoring-operator/pull/1893) Add nodeExporter.collectors.netclass settings.
 - [#1894](https://github.com/openshift/cluster-monitoring-operator/pull/1894) Add toggle netlink implementation of netclass collector in Node Exporter.
 - [#1891](https://github.com/openshift/cluster-monitoring-operator/pull/1891) Add nodeExporter.collectors.buddyinfo settings.
+- [#1976](https://github.com/openshift/cluster-monitoring-operator/pull/1976) Add new web console usage metrics
 
 ## 4.12
 - [#1624](https://github.com/openshift/cluster-monitoring-operator/pull/1624) Add option to specify TopologySpreadConstraints for Prometheus, Alertmanager, and ThanosRuler.

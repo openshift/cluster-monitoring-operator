@@ -417,6 +417,56 @@ data:
     # consumers: (@openshift/openshift-team-cluster-manager)
     - '{__name__="console_url"}'
     #
+    # owners: (@openshift/hybrid-application-console-maintainers)
+    # cluster:console_auth_login_requests_total:sum gives the total number of login requests initiated from the web console.
+    #
+    - '{__name__="cluster:console_auth_login_requests_total:sum"}'
+    #
+    # owners: (@openshift/hybrid-application-console-maintainers)
+    # cluster:console_auth_login_successes_total:sum gives the total number of successful logins initiated from the web console.
+    # Labels:
+    # * `role`, one of `kubeadmin`, `cluster-admin` or `developer`. The value is based on whether or not the logged-in user can list all namespaces.
+    #
+    - '{__name__="cluster:console_auth_login_successes_total:sum"}'
+    #
+    # owners: (@openshift/hybrid-application-console-maintainers)
+    # cluster:console_auth_login_failures_total:sum gives the total number of login failures initiated from the web console.
+    # This might include canceled OAuth logins depending on the user OAuth provider/configuration.
+    # Labels:
+    # * `reason`, currently always `unknown`
+    #
+    - '{__name__="cluster:console_auth_login_failures_total:sum"}'
+    #
+    # owners: (@openshift/hybrid-application-console-maintainers)
+    # cluster:console_auth_logout_requests_total:sum gives the total number of logout requests sent from the web console.
+    # Labels:
+    # * `reason`, currently always `unknown`
+    #
+    - '{__name__="cluster:console_auth_logout_requests_total:sum"}'
+    #
+    # owners: (@openshift/hybrid-application-console-maintainers)
+    # cluster:console_usage_users:max contains the number of web console users splitten into the roles.
+    # Labels:
+    # * `role`: `kubeadmin`, `cluster-admin` or `developer`. The value is based on whether or not the user can list all namespaces.
+    #
+    - '{__name__="cluster:console_usage_users:max"}'
+    #
+    # owners: (@openshift/hybrid-application-console-maintainers)
+    # cluster:console_plugins_info:max reports information about the web console plugins and their state.
+    # Labels:
+    # * `name`: `redhat`, `demo` or `other`.
+    # * `state`: `enabled`, `disabled` or `notfound`
+    #
+    - '{__name__="cluster:console_plugins_info:max"}'
+    #
+    # owners: (@openshift/hybrid-application-console-maintainers)
+    # cluster:console_customization_perspectives_info:max reports information about customized web console perspectives.
+    # Labels:
+    # * `name`, one of `admin`, `dev`, `acm` or `other`
+    # * `state`, one of `enabled`, `disabled`, `only-for-cluster-admins`, `only-for-developers` or `custom-permissions`
+    #
+    - '{__name__="cluster:console_customization_perspectives_info:max"}'
+    #
     # owners: (@openshift/networking)
     #
     # ovnkube_master_egress_routing_via_host" informs if the OVN-K cluster's gateway mode is
