@@ -417,6 +417,13 @@ github.com/openshift/client-go/config/clientset/versioned
 github.com/openshift/client-go/config/clientset/versioned/scheme
 github.com/openshift/client-go/config/clientset/versioned/typed/config/v1
 github.com/openshift/client-go/config/clientset/versioned/typed/config/v1alpha1
+github.com/openshift/client-go/console/applyconfigurations/console/v1
+github.com/openshift/client-go/console/applyconfigurations/console/v1alpha1
+github.com/openshift/client-go/console/applyconfigurations/internal
+github.com/openshift/client-go/console/clientset/versioned
+github.com/openshift/client-go/console/clientset/versioned/scheme
+github.com/openshift/client-go/console/clientset/versioned/typed/console/v1
+github.com/openshift/client-go/console/clientset/versioned/typed/console/v1alpha1
 github.com/openshift/client-go/monitoring/applyconfigurations/internal
 github.com/openshift/client-go/monitoring/applyconfigurations/monitoring/v1
 github.com/openshift/client-go/monitoring/applyconfigurations/monitoring/v1alpha1
@@ -424,6 +431,13 @@ github.com/openshift/client-go/monitoring/clientset/versioned
 github.com/openshift/client-go/monitoring/clientset/versioned/scheme
 github.com/openshift/client-go/monitoring/clientset/versioned/typed/monitoring/v1
 github.com/openshift/client-go/monitoring/clientset/versioned/typed/monitoring/v1alpha1
+github.com/openshift/client-go/operator/applyconfigurations/internal
+github.com/openshift/client-go/operator/applyconfigurations/operator/v1
+github.com/openshift/client-go/operator/applyconfigurations/operator/v1alpha1
+github.com/openshift/client-go/operator/clientset/versioned
+github.com/openshift/client-go/operator/clientset/versioned/scheme
+github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1
+github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1alpha1
 github.com/openshift/client-go/route/applyconfigurations/internal
 github.com/openshift/client-go/route/applyconfigurations/route/v1
 github.com/openshift/client-go/route/clientset/versioned

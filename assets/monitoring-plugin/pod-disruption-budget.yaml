@@ -1,0 +1,18 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: monitoring-plugin
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: monitoring-plugin
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: monitoring-plugin
+  namespace: openshift-monitoring
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: monitoring-plugin
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
+      app.kubernetes.io/name: monitoring-plugin
+      app.kubernetes.io/part-of: openshift-monitoring

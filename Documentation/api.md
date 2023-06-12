@@ -25,6 +25,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [DedicatedServiceMonitors](#dedicatedservicemonitors)
 * [K8sPrometheusAdapter](#k8sprometheusadapter)
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
+* [MonitoringPluginConfig](#monitoringpluginconfig)
 * [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
@@ -129,6 +130,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | telemeterClient | *[TelemeterClientConfig](#telemeterclientconfig) | `TelemeterClientConfig` defines settings for the Telemeter Client component. |
 | thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
 | nodeExporter | [NodeExporterConfig](#nodeexporterconfig) | `NodeExporterConfig` defines settings for the `node-exporter` agent. |
+| monitoringPlugin | *[MonitoringPluginConfig](#monitoringpluginconfig) | `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`. |
 
 [Back to TOC](#table-of-contents)
 
@@ -178,6 +180,24 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 | -------- | ---- | ----------- |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#toleration-v1-core) | Defines tolerations for the pods. |
+
+[Back to TOC](#table-of-contents)
+
+## MonitoringPluginConfig
+
+#### Description
+
+The `MonitoringPluginConfig` resource defines settings for the Console Plugin component in the `openshift-monitoring` namespace.
+
+
+<em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| nodeSelector | map[string]string | Defines the nodes on which the Pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core) | Defines resource requests and limits for the console-plugin container. |
+| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#toleration-v1-core) | Defines tolerations for the pods. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 
 [Back to TOC](#table-of-contents)
 

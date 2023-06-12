@@ -45,6 +45,7 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/dedicatedservicemonitors.adoc[DedicatedServiceMonitors]
 * link:modules/k8sprometheusadapter.adoc[K8sPrometheusAdapter]
 * link:modules/kubestatemetricsconfig.adoc[KubeStateMetricsConfig]
+* link:modules/monitoringpluginconfig.adoc[MonitoringPluginConfig]
 * link:modules/nodeexportercollectorbuddyinfoconfig.adoc[NodeExporterCollectorBuddyInfoConfig]
 * link:modules/nodeexportercollectorconfig.adoc[NodeExporterCollectorConfig]
 * link:modules/nodeexportercollectorcpufreqconfig.adoc[NodeExporterCollectorCpufreqConfig]

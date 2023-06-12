@@ -789,6 +789,51 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 	}
 }
 
+func TestClusterMonitorConsolePlugin(t *testing.T) {
+	const (
+		deploymentName = "monitoring-plugin"
+		cpu            = "10m"
+		mem            = "13Mi"
+		labelSelector  = "app.kubernetes.io/instance=monitoring-plugin"
+		containerName  = "monitoring-plugin"
+	)
+
+	// ensure console-plugin is running before the change
+	f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns)
+
+	data := fmt.Sprintf(`
+consolePlugin:
+  resources:
+    requests:
+      cpu: %s
+      memory: %s
+  tolerations:
+    - operator: "Exists"
+`, cpu, mem)
+
+	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+
+	for _, tc := range []scenario{
+		{
+			name:      "assert that deployment is created and rolled out",
+			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				labelSelector,
+				[]framework.PodAssertion{
+					expectCatchAllToleration(),
+					expectMatchingRequests("*", containerName, mem, cpu),
+				},
+			),
+		},
+	} {
+		t.Run(tc.name, tc.assertion)
+	}
+}
+
 func configMapWithData(t *testing.T, addData string) *v1.ConfigMap {
 	t.Helper()
 	return &v1.ConfigMap{

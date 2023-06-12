@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: monitoring-plugin
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: monitoring-plugin
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: monitoring-plugin
+  namespace: openshift-monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: monitoring-plugin
+      app.kubernetes.io/managed-by: cluster-monitoring-operator
+      app.kubernetes.io/name: monitoring-plugin
+      app.kubernetes.io/part-of: openshift-monitoring
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        app.kubernetes.io/component: monitoring-plugin
+        app.kubernetes.io/managed-by: cluster-monitoring-operator
+        app.kubernetes.io/name: monitoring-plugin
+        app.kubernetes.io/part-of: openshift-monitoring
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: monitoring-plugin
+                app.kubernetes.io/managed-by: cluster-monitoring-operator
+                app.kubernetes.io/name: monitoring-plugin
+                app.kubernetes.io/part-of: openshift-monitoring
+            namespaces:
+            - openshift-monitoring
+            topologyKey: kubernetes.io/hostname
+      automountServiceAccountToken: false
+      containers:
+      - image: quay.io/openshift/origin-monitoring-plugin:4.14.0
+        imagePullPolicy: IfNotPresent
+        name: monitoring-plugin
+        ports:
+        - containerPort: 9443
+          name: https
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /var/cert
+          name: monitoring-plugin-cert
+          readOnly: true
+        - mountPath: /etc/nginx/nginx.conf
+          name: nginx-conf
+          readOnly: true
+          subPath: nginx.conf
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: monitoring-plugin
+        name: nginx-conf
+      - name: monitoring-plugin-cert
+        secret:
+          defaultMode: 420
+          secretName: monitoring-plugin-cert

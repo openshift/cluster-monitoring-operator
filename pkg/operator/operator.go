@@ -746,6 +746,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				tasks.NewTaskSpec("Updating Thanos Querier", tasks.NewThanosQuerierTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating User Workload Thanos Ruler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
 				tasks.NewTaskSpec("Updating Control Plane components", tasks.NewControlPlaneTask(o.client, factory, config)),
+				tasks.NewTaskSpec("Updating Console Plugin components", tasks.NewMonitoringPluginTask(o.client, factory, config)),
 			}),
 		// The shared configmap depends on resources being created by the previous tasks hence run it last.
 		tasks.NewTaskGroup(

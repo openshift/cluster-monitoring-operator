@@ -1,0 +1,18 @@
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  labels:
+    app.kubernetes.io/component: monitoring-plugin
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: monitoring-plugin
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: monitoring-plugin
+spec:
+  backend:
+    service:
+      basePath: /
+      name: monitoring-plugin
+      namespace: openshift-monitoring
+      port: 9443
+    type: Service
+  displayName: monitoring-plugin

@@ -17,6 +17,7 @@ local prometheusOperatorUserWorkload = import './components/prometheus-operator-
 local prometheus = import './components/prometheus.libsonnet';
 local prometheusUserWorkload = import './components/prometheus-user-workload.libsonnet';
 local clusterMonitoringOperator = import './components/cluster-monitoring-operator.libsonnet';
+local monitoringPlugin = import './components/monitoring-plugin.libsonnet';
 
 local thanosRuler = import './components/thanos-ruler.libsonnet';
 local thanosQuerier = import './components/thanos-querier.libsonnet';
@@ -69,7 +70,7 @@ local commonConfig = {
     telemeter: '',
     thanos: 'quay.io/thanos/thanos:v' + $.versions.thanos,
     kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v' + $.versions.kubeRbacProxy,
-
+    monitoringPlugin: 'quay.io/openshift/origin-monitoring-plugin:' + $.versions.monitoringPlugin,
     openshiftOauthProxy: 'quay.io/openshift/oauth-proxy:latest',
   },
   // Labels applied to every object
@@ -327,6 +328,11 @@ local inCluster =
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
+      monitoringPlugin: {
+        namespace: $.values.common.namespace,
+        commonLabels+: $.values.common.commonLabels,
+        image: $.values.common.images.monitoringPlugin,
+      },
       controlPlane: {
         namespace: $.values.common.namespace,
         commonLabels+: $.values.common.commonLabels,
@@ -372,7 +378,8 @@ local inCluster =
                 inCluster.prometheusOperator.clusterRole.rules +
                 inCluster.telemeterClient.clusterRole.rules +
                 inCluster.thanosQuerier.clusterRole.rules +
-                inCluster.thanosRuler.clusterRole.rules,
+                inCluster.thanosRuler.clusterRole.rules +
+                [],
       },
     },
     alertmanager: alertmanager($.values.alertmanager),
@@ -389,6 +396,7 @@ local inCluster =
     thanosQuerier: thanosQuerier($.values.thanosQuerier),
 
     telemeterClient: telemeterClient($.values.telemeterClient),
+    monitoringPlugin: monitoringPlugin($.values.monitoringPlugin),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
   (import './utils/anti-affinity.libsonnet') +
@@ -477,6 +485,7 @@ sanitizeAlertRules(addAnnotations(removeLimits(removeNetworkPolicy(
     { ['prometheus-adapter/' + name]: inCluster.prometheusAdapter[name] for name in std.objectFields(inCluster.prometheusAdapter) } +
     // needs to be removed once remote-write is allowed for sending telemetry
     { ['telemeter-client/' + name]: inCluster.telemeterClient[name] for name in std.objectFields(inCluster.telemeterClient) } +
+    { ['monitoring-plugin/' + name]: inCluster.monitoringPlugin[name] for name in std.objectFields(inCluster.monitoringPlugin) } +
     { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
     { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
     { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +

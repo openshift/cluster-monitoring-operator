@@ -240,6 +240,18 @@ function(params) {
         resources: ['persistentvolumes'],
         verbs: ['get'],
       },
+      // The operator needs to patch operator console to add monitoring console-plugin
+      {
+        apiGroups: ['operator.openshift.io'],
+        resources: ['consoles'],
+        verbs: ['get', 'patch'],
+      },
+      // CMO needs permissions to create and update console plugin
+      {
+        apiGroups: ['console.openshift.io'],
+        resources: ['consoleplugins'],
+        verbs: ['get', 'create', 'update'],
+      },
     ],
   },
 
