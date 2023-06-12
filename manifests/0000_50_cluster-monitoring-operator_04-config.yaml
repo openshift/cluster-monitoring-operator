@@ -417,20 +417,20 @@ data:
     # owners: (@openshift/hybrid-application-console-maintainers)
     # cluster:console_auth_login_successes_total:sum gives the total number of successful logins initiated from the web console.
     # Labels:
-    # * `role`, one of `kubeadmin`, `cluster-admin` or `developer`. The value is based whether or not the logged-in user can list all namespaces.
+    # * `role`, one of `kubeadmin`, `cluster-admin` or `developer`. The value is based on whether or not the logged-in user can list all namespaces.
     #
     - '{__name__="cluster:console_auth_login_successes_total:sum"}'
     #
     # owners: (@openshift/hybrid-application-console-maintainers)
     # cluster:console_auth_login_failures_total:sum gives the total number of login failures initiated from the web console.
-    # This might include canceled OAuth logins depenending on the user OAuth provider/configuration.
+    # This might include canceled OAuth logins depending on the user OAuth provider/configuration.
     # Labels:
     # * `reason`, currently always `unknown`
     #
     - '{__name__="cluster:console_auth_login_failures_total:sum"}'
     #
     # owners: (@openshift/hybrid-application-console-maintainers)
-    # cluster:console_auth_logout_requests_total:sum gives the total number of logout requests send from the web console.
+    # cluster:console_auth_logout_requests_total:sum gives the total number of logout requests sent from the web console.
     # Labels:
     # * `reason`, currently always `unknown`
     #
@@ -439,7 +439,7 @@ data:
     # owners: (@openshift/hybrid-application-console-maintainers)
     # cluster:console_usage_users:max contains the number of web console users splitten into the roles.
     # Labels:
-    # * `role`: `kubeadmin`, `cluster-admin` or `developer`. The value is based whether or not the user can list all namespaces.
+    # * `role`: `kubeadmin`, `cluster-admin` or `developer`. The value is based on whether or not the user can list all namespaces.
     #
     - '{__name__="cluster:console_usage_users:max"}'
     #
