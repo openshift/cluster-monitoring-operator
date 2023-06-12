@@ -221,19 +221,31 @@ func TestNodeExporterGenericOptions(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		config      string
-		argsPresent []string
+		name             string
+		config           string
+		verifyGoMaxProcs func(float64) error
 	}{
 		{
 			name:   "default config",
 			config: "",
+			verifyGoMaxProcs: func(maxProcs float64) error {
+				if maxProcs > 4 {
+					return fmt.Errorf("GOMAXPROCS should be limited to 4")
+				}
+				return nil
+			},
 		},
 		{
 			name: "maxprocs = 1",
 			config: `
 nodeExporter:
   maxProcs: 1`,
+			verifyGoMaxProcs: func(maxProcs float64) error {
+				if maxProcs != 1 {
+					return fmt.Errorf("GOMAXPROCS should be set to 1 as in the configuration")
+				}
+				return nil
+			},
 		},
 	}
 
@@ -253,21 +265,13 @@ nodeExporter:
 					},
 				)
 			}
+
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t, 5*time.Minute, `max(go_sched_gomaxprocs_threads{job="node-exporter"})`,
+				test.verifyGoMaxProcs,
+			)
+
 		})
 	}
 
-}
-
-func TestNodeExporterGoMaxProcs(t *testing.T) {
-	t.Run("limited GOMAXPROCS", func(st *testing.T) {
-		f.PrometheusK8sClient.WaitForQueryReturn(
-			t, 5*time.Minute, `max(go_sched_gomaxprocs_threads{job="node-exporter"})`,
-			func(v float64) error {
-				if v > 4 {
-					return fmt.Errorf(`expecting max(go_sched_gomaxprocs_threads{job="node-exporter"}) <= 4 but got %v.`, v)
-				}
-				return nil
-			},
-		)
-	})
 }
