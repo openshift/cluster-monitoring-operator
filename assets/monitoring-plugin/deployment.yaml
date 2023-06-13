@@ -44,7 +44,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: false
       containers:
-      - image: quay.io/openshift/origin-monitoring-plugin:4.14.0
+      - image: quay.io/openshift/origin-monitoring-plugin:1.0.0
         imagePullPolicy: IfNotPresent
         name: monitoring-plugin
         ports:
