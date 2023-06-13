@@ -210,19 +210,9 @@ function(params)
       {
         authorization+: {
           static+: [
-            // prometheus-k8s is needed for mTLS due to cert is signed with this SA
-            // instead for token auth telemeter-client SA is required
             {
               user: {
                 name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
-              },
-              verb: 'get',
-              path: '/federate',
-              resourceRequest: false,
-            },
-            {
-              user: {
-                name: 'system:serviceaccount:openshift-monitoring:telemeter-client',
               },
               verb: 'get',
               path: '/federate',
@@ -432,7 +422,6 @@ function(params)
               '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--logtostderr=true',
-              '--v=10',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [

@@ -121,7 +121,7 @@ func TestTelemeterClient(t *testing.T) {
 			`federate_samples{job="telemeter-client"}`,
 			func(v float64) error {
 				if v < 10 {
-					return fmt.Errorf("expecting federate samples from telemeter client more than 10 but got %f", v)
+					return fmt.Errorf("expecting federate samples from telemeter client greater than or equal to 10 but got %f", v)
 				}
 				return nil
 			},
