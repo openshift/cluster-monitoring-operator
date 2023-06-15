@@ -11,7 +11,7 @@ This document was created by the Linux Kernel community and is a simple statemen
 # Notes
 Cluster Monitoring Operator is part of OpenShift and therefore follows the [OpenShift Life Cycle](https://access.redhat.com/support/policy/updates/openshift)
 
-You should keep this in mind when decding in which release you want your feature or fix.
+You should keep this in mind when deciding in which release you want your feature or fix.
 
 # Contribution Flow
 Before you get started, you have to perform the following **mandatory** steps:
@@ -115,9 +115,9 @@ This targets needs `docker` to be installed on host and was not tested with othe
 Supposing $KUBECONFIG is set to the config file of a Kubernetes cluster running the codes to test. We can run all tests by using this command `make test`.
 
 The testing consist of 3 aspects:
-- unit tests, can be run seperately by `make test-unit`.
-- Prometheus rule tests, can be run seperately by `make test-rules`.
-- end to end tests, can be run seperately by `make test-e2e`.
+- unit tests, can be run separately by `make test-unit`.
+- Prometheus rule tests, can be run separately by `make test-rules`.
+- end to end tests, can be run separately by `make test-e2e`.
 
 If we need to run a specific test case of the E2E test, we can use the following command.
 ```bash
@@ -127,7 +127,7 @@ Attention that we have to pass a valid $KUBECONFIG explicitly `--kubeconfig $KUB
 
 To run a specific test case of unit tests, we can use the command `go test -v $PACKAGE_DIR -run $TEST_FUNC_NAME`.
 The `$PACKAGE_DIR` is where the source files of a Go package lives. The `$TEST_FUNC_NAME` is the test function whose name always starts with "Test" (regex pattern `TEST\w+`).
-For example, we have a test function `TestImageParsing` in package `manifests`.The source file `./pkg/manifests/image_test.go` and other source code files of this package lives in `./pkg/manifests`. So we can use the following commnad to run the test function `TestImageParsing` in package `manifests`.
+For example, we have a test function `TestImageParsing` in package `manifests`.The source file `./pkg/manifests/image_test.go` and other source code files of this package lives in `./pkg/manifests`. So we can use the following command to run the test function `TestImageParsing` in package `manifests`.
 ```bash
 go test -v ./pkg/manifests -run TestImageParsing
 ```
