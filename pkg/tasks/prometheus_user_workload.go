@@ -369,23 +369,12 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		return errors.Wrap(err, "initializing UserWorkload CA bundle ConfigMap failed")
 	}
 
-	cbs := &caBundleSyncer{
-		client:  t.client,
-		factory: t.factory,
-		prefix:  "prometheus-user-workload",
-	}
-
-	hashedTrustedCA, err := cbs.syncTrustedCABundle(ctx, trustedCA)
-	if err != nil {
-		return errors.Wrap(err, "syncing UserWorkload trusted CA bundle ConfigMap failed")
-	}
-
 	err = t.client.DeleteConfigMap(ctx, trustedCA)
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload trusted CA Bundle ConfigMap failed")
 	}
 
-	err = t.client.DeleteHashedConfigMap(ctx, hashedTrustedCA.GetNamespace(), "prometheus-user-workload", hashedTrustedCA.Labels["monitoring.openshift.io/hash"])
+	err = t.client.DeleteHashedConfigMap(ctx, trustedCA.GetNamespace(), "prometheus-user-workload", "")
 	if err != nil {
 		return errors.Wrap(err, "deleting UserWorkload trusted CA Bundle ConfigMap failed")
 	}
