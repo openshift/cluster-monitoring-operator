@@ -7,7 +7,8 @@ reviewers:
 - slashpai
 - sthaha
 - JoaoBraveCoding
-- juanrh
+- danielmellado
+- marioferh
 
 approvers:
 - bparees
@@ -17,7 +18,8 @@ approvers:
 - slashpai
 - sthaha
 - JoaoBraveCoding
-- juanrh
+- danielmellado
+- marioferh
 
 emeritus_approvers:
 - brancz
@@ -33,3 +35,4 @@ emeritus_approvers:
 - bison
 - prashbnair
 - arajkumar
+- juanrh
