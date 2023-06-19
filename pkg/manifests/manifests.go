@@ -34,7 +34,6 @@ import (
 	consolev1 "github.com/openshift/api/console/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/openshift/library-go/pkg/crypto"
 	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -50,6 +49,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 )
 
 const (
@@ -157,6 +158,7 @@ var (
 	PrometheusK8sTelemetry                        = "prometheus-k8s/telemetry-secret.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
+	PrometheusUserWorkloadTrustedCABundle             = "prometheus-user-workload/trusted-ca-bundle.yaml"
 	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
 	PrometheusUserWorkloadClusterRole                 = "prometheus-user-workload/cluster-role.yaml"
 	PrometheusUserWorkloadClusterRoleBinding          = "prometheus-user-workload/cluster-role-binding.yaml"
@@ -1219,6 +1221,10 @@ func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
 	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusK8sTrustedCABundle))
 }
 
+func (f *Factory) PrometheusUserWorkloadTrustedCABundle() (*v1.ConfigMap, error) {
+	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusUserWorkloadTrustedCABundle))
+}
+
 func (f *Factory) NewPrometheusK8s() (*monv1.Prometheus, error) {
 	return f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
 }
@@ -1629,7 +1635,7 @@ func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*
 	}, nil
 }
 
-func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusUserWorkload))
 	if err != nil {
 		return nil, err
@@ -1705,6 +1711,25 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		return nil, err
 	}
 
+	var trustedCABundleVolumeName string
+	if trustedCABundleCM != nil {
+		trustedCABundleVolumeName = "prometheus-user-workload-trusted-ca-bundle"
+		volume := trustedCABundleVolume(trustedCABundleCM.Name, trustedCABundleVolumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  TrustedCABundleKey,
+			Path: "tls-ca-bundle.pem",
+		})
+		p.Spec.Volumes = append(p.Spec.Volumes, volume)
+	}
+	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
+		Name: "secret-grpc-tls",
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: grpcTLS.GetName(),
+			},
+		},
+	})
+
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
 		case "prometheus":
@@ -1717,6 +1742,13 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 				PeriodSeconds:    15,
 				FailureThreshold: 240,
 			}
+			// Support CA bundles for Prometheus UWM.
+			if trustedCABundleVolumeName != "" {
+				p.Spec.Containers[i].VolumeMounts = append(
+					p.Spec.Containers[i].VolumeMounts,
+					trustedCABundleVolumeMount(trustedCABundleVolumeName),
+				)
+			}
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-federate", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
@@ -1728,15 +1760,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	} else {
 		setupAlerting(p, platformAlertmanagerService, f.namespace)
 	}
-
-	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
-		Name: "secret-grpc-tls",
-		VolumeSource: v1.VolumeSource{
-			Secret: &v1.SecretVolumeSource{
-				SecretName: grpcTLS.GetName(),
-			},
-		},
-	})
 
 	alertManagerConfigs := f.config.AdditionalAlertmanagerConfigsForPrometheusUserWorkload()
 	if len(alertManagerConfigs) > 0 {

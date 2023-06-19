@@ -17,10 +17,11 @@ package tasks
 import (
 	"context"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 type PrometheusUserWorkloadTask struct {
@@ -209,6 +210,22 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "creating or updating UserWorkload Prometheus RBAC federate endpoint Secret failed")
 	}
 
+	trustedCA, err := t.factory.PrometheusUserWorkloadTrustedCABundle()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload CA bundle ConfigMap failed")
+	}
+
+	cbs := &caBundleSyncer{
+		client:  t.client,
+		factory: t.factory,
+		prefix:  "prometheus-user-workload",
+	}
+
+	trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
+	if err != nil {
+		return errors.Wrap(err, "syncing UserWorkload trusted CA bundle ConfigMap failed")
+	}
+
 	secret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus additionalAlertmanagerConfigs secret failed")
@@ -232,7 +249,7 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 	}
 
 	klog.V(4).Info("initializing UserWorkload Prometheus object")
-	p, err := t.factory.PrometheusUserWorkload(s)
+	p, err := t.factory.PrometheusUserWorkload(s, trustedCA)
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus object failed")
 	}
@@ -351,7 +368,22 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		}
 	}
 
-	p, err := t.factory.PrometheusUserWorkload(s)
+	trustedCA, err := t.factory.PrometheusUserWorkloadTrustedCABundle()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload CA bundle ConfigMap failed")
+	}
+
+	err = t.client.DeleteConfigMap(ctx, trustedCA)
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload trusted CA Bundle ConfigMap failed")
+	}
+
+	err = t.client.DeleteHashedConfigMap(ctx, trustedCA.GetNamespace(), "prometheus-user-workload", "")
+	if err != nil {
+		return errors.Wrap(err, "deleting UserWorkload trusted CA Bundle ConfigMap failed")
+	}
+
+	p, err := t.factory.PrometheusUserWorkload(s, nil)
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus object failed")
 	}
