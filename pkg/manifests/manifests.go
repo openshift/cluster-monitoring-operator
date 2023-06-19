@@ -869,6 +869,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 		args = setArg(args, "--no-collector.buddyinfo", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.MountStats.Enabled {
+		args = setArg(args, "--collector.mountstats", "")
+	} else {
+		args = setArg(args, "--no-collector.mountstats", "")
+	}
+
 	return args
 }
 
