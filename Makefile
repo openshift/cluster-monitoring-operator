@@ -61,6 +61,10 @@ clean:
 
 .PHONY: run-local
 run-local: build
+	PATH="$(PATH):$(BIN_DIR)" KUBECONFIG=$(KUBECONFIG) ./hack/local-cmo.sh --no-cmo-login
+
+.PHONY: run-local-as-cmo
+run-local-as-cmo: build
 	PATH="$(PATH):$(BIN_DIR)" KUBECONFIG=$(KUBECONFIG) ./hack/local-cmo.sh
 
 .PHONY: build
