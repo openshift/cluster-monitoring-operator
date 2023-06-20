@@ -15,11 +15,11 @@ repos:
   thanos: openshift/thanos
 versions:
   alertmanager: 0.25.0
-  kubeRbacProxy: 0.14.1
+  kubeRbacProxy: 0.14.2
   kubeStateMetrics: 2.8.2
   monitoringPlugin: 1.0.0
   nodeExporter: 1.6.0
-  promLabelProxy: 0.6.0
+  promLabelProxy: 0.7.0
   prometheus: 2.43.0
   prometheusAdapter: 0.10.0
   prometheusOperator: 0.66.0
