@@ -120,8 +120,8 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "f89e6dc822513285ba010fdc8bff13939bbc62e5",
-      "sum": "CGBrF6OtNwal33cdS+hUvgQa0slORIJVnuG65KcfhtA=",
+      "version": "9d50dd68b8b26316770db5fb1188bdcfe5a5b20e",
+      "sum": "J6AvgvLAMOdprhPQ3Z/hRDgyzDBeUhiZcpu+neY8MKc=",
       "name": "telemeter-client"
     },
     {
