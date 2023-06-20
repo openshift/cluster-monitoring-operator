@@ -17,6 +17,7 @@ package e2e
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -97,4 +98,33 @@ func TestTelemeterRemoteWrite(t *testing.T) {
 			return nil
 		},
 	)
+}
+
+// TestTelemeterClient verifies that the telemeter client can collect metrics from the monitoring stack and forward them to the telemeter server.
+func TestTelemeterClient(t *testing.T) {
+	{
+		f.PrometheusK8sClient.WaitForQueryReturn(
+			t,
+			5*time.Minute,
+			`metricsclient_request_send{client="federate_to",job="telemeter-client",status_code="200"}`,
+			func(v float64) error {
+				if v == 0 {
+					return fmt.Errorf("expecting metricsclient request send more than 0 but got none")
+				}
+				return nil
+			},
+		)
+
+		f.PrometheusK8sClient.WaitForQueryReturn(
+			t,
+			5*time.Minute,
+			`federate_samples{job="telemeter-client"}`,
+			func(v float64) error {
+				if v < 10 {
+					return fmt.Errorf("expecting federate samples from telemeter client greater than or equal to 10 but got %f", v)
+				}
+				return nil
+			},
+		)
+	}
 }
