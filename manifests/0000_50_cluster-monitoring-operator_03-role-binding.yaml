@@ -65,7 +65,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: cluster-monitoring-operator-techpreview-only
+  name: cluster-monitoring-operator-alert-customization
   namespace: openshift-monitoring
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
