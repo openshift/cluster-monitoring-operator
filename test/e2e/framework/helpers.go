@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,10 +14,60 @@ import (
 const (
 	ClusterMonitorConfigMapName      = "cluster-monitoring-config"
 	UserWorkloadMonitorConfigMapName = "user-workload-monitoring-config"
-	E2eTestLabelName                 = "app.kubernetes.io/created-by"
-	E2eTestLabelValue                = "cmo-e2e-test"
-	E2eTestLabel                     = E2eTestLabelName + ": " + E2eTestLabelValue
+
+	E2eTestLabelName  = "app.kubernetes.io/created-by"
+	E2eTestLabelValue = "cmo-e2e-test"
+	E2eTestLabel      = E2eTestLabelName + ": " + E2eTestLabelValue
 )
+
+// BuildCMOConfigMap returns a ConfigMap holding the provided Cluster
+// Monitoring Operator's config.
+// If the config isn't valid YAML, the test will fail.
+func (f *Framework) BuildCMOConfigMap(t *testing.T, config string) *v1.ConfigMap {
+	t.Helper()
+
+	cm, err := f.buildConfigMap(metav1.ObjectMeta{Name: ClusterMonitorConfigMapName, Namespace: f.Ns}, config)
+	if err != nil {
+		t.Fatal("invalid CMO config", err)
+	}
+
+	return cm
+}
+
+// BuildUserWorkloadConfigMap returns a ConfigMap holding the provided User
+// Workload Monitoring's config.
+// If the config isn't valid YAML, the test will fail.
+func (f *Framework) BuildUserWorkloadConfigMap(t *testing.T, config string) *v1.ConfigMap {
+	t.Helper()
+
+	cm, err := f.buildConfigMap(metav1.ObjectMeta{Name: UserWorkloadMonitorConfigMapName, Namespace: f.UserWorkloadMonitoringNs}, config)
+	if err != nil {
+		t.Fatal("invalid user-workload config", err)
+	}
+
+	return cm
+}
+
+func (f *Framework) buildConfigMap(o metav1.ObjectMeta, config string) (*v1.ConfigMap, error) {
+	s := map[string]interface{}{}
+	err := yaml.Unmarshal([]byte(config), &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      o.Name,
+			Namespace: o.Namespace,
+			Labels: map[string]string{
+				E2eTestLabelName: E2eTestLabelValue,
+			},
+		},
+		Data: map[string]string{
+			"config.yaml": config,
+		},
+	}, nil
+}
 
 // MustCreateOrUpdateConfigMap or fail the test
 func (f *Framework) MustCreateOrUpdateConfigMap(t *testing.T, cm *v1.ConfigMap) {
@@ -127,6 +178,7 @@ func ensureCreatedByTestLabel(obj metav1.Object) {
 		})
 		return
 	}
+
 	if _, ok := labels[E2eTestLabelName]; !ok {
 		labels[E2eTestLabelName] = E2eTestLabelValue
 	}

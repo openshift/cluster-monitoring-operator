@@ -45,16 +45,8 @@ type scenario struct {
 func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheus:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		`prometheus:
   enforcedTargetLimit: 10
   volumeClaimTemplate:
     spec:
@@ -62,9 +54,7 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
         requests:
           storage: 2Gi
 `,
-		},
-	}
-
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
@@ -112,16 +102,8 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheus:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		`prometheus:
   enforcedTargetLimit: 10
   volumeClaimTemplate:
     spec:
@@ -129,9 +111,7 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
         requests:
           storage: 2Gi
 `,
-		},
-	}
-
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
@@ -166,16 +146,8 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheus:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		`prometheus:
   enforcedTargetLimit: 10
   volumeClaimTemplate:
     spec:
@@ -183,9 +155,7 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
         requests:
           storage: 2Gi
 `,
-		},
-	}
-
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
@@ -205,13 +175,8 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheus:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		`prometheus:
   enforcedTargetLimit: 10
   volumeClaimTemplate:
     spec:
@@ -219,9 +184,7 @@ func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
         requests:
           storage: 2Gi
 `,
-		},
-	}
-
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
@@ -242,16 +205,8 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheus:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		`prometheus:
   additionalAlertmanagerConfigs:
   - scheme: https
     pathPrefix: /prefix
@@ -269,8 +224,7 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
         key: tls.ca
     staticConfigs: ["127.0.0.1", "127.0.0.2"]
 `,
-		},
-	}
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
@@ -397,18 +351,7 @@ func assertAlertmanagerInstancesDiscovered(expectedInstances int) func(_ *testin
 
 func disableAdditionalAlertmanagerConfigs(t *testing.T) {
 	ctx := context.Background()
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheus: {}`,
-		},
-	}
+	uwmCM := f.BuildUserWorkloadConfigMap(t, `prometheus: {}`)
 
 	if err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM); err != nil {
 		t.Fatal(err)

@@ -79,7 +79,7 @@ func TestMetricsAPIAvailability(t *testing.T) {
 `,
 		},
 	} {
-		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.cmoConfig))
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, tc.cmoConfig))
 
 		f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
 		f.AssertOperatorCondition(configv1.OperatorProgressing, configv1.ConditionFalse)(t)
@@ -133,7 +133,7 @@ func TestNodeMetricsPresence(t *testing.T) {
 `,
 		},
 	} {
-		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.cmoConfig))
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, tc.cmoConfig))
 
 		f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
 		f.AssertOperatorCondition(configv1.OperatorProgressing, configv1.ConditionFalse)(t)
@@ -202,7 +202,7 @@ func TestPodMetricsPresence(t *testing.T) {
 `,
 		},
 	} {
-		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.cmoConfig))
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, tc.cmoConfig))
 
 		f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
 		f.AssertOperatorCondition(configv1.OperatorProgressing, configv1.ConditionFalse)(t)

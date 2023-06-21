@@ -5,9 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestImageRegistryPods(t *testing.T) {
@@ -51,16 +49,8 @@ func TestImageRegistryPods(t *testing.T) {
 	}
 
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheus:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		`prometheus:
   enforcedTargetLimit: 10
   volumeClaimTemplate:
     spec:
@@ -68,9 +58,7 @@ func TestImageRegistryPods(t *testing.T) {
         requests:
           storage: 2Gi
 `,
-		},
-	}
-
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 

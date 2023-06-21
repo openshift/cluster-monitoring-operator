@@ -10,30 +10,20 @@ import (
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `thanosRuler:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		`thanosRuler:
   additionalAlertmanagerConfigs:
   - scheme: http
     apiVersion: v2
     staticConfigs: ["dnssrv+_web._tcp.alertmanager-operated.openshift-user-workload-monitoring.svc"]
 `,
-		},
-	}
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	t.Cleanup(func() {
 		deleteAlertmanager(t)

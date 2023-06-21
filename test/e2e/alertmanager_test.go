@@ -108,35 +108,13 @@ enableUserWorkload: true`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cm := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      clusterMonitorConfigMapName,
-					Namespace: f.Ns,
-					Labels: map[string]string{
-						framework.E2eTestLabelName: framework.E2eTestLabelValue,
-					},
-				},
-				Data: map[string]string{
-					"config.yaml": tc.config,
-				},
-			}
+			cm := f.BuildCMOConfigMap(t, tc.config)
 			f.MustCreateOrUpdateConfigMap(t, cm)
 			t.Cleanup(func() {
 				f.MustDeleteConfigMap(t, cm)
 			})
 
-			uwmConfigMap := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      userWorkloadMonitorConfigMapName,
-					Namespace: f.UserWorkloadMonitoringNs,
-					Labels: map[string]string{
-						framework.E2eTestLabelName: framework.E2eTestLabelValue,
-					},
-				},
-				Data: map[string]string{
-					"config.yaml": tc.userWorkloadConfig,
-				},
-			}
+			uwmConfigMap := f.BuildUserWorkloadConfigMap(t, tc.userWorkloadConfig)
 			f.MustCreateOrUpdateConfigMap(t, uwmConfigMap)
 			t.Cleanup(func() {
 				f.MustDeleteConfigMap(t, uwmConfigMap)
@@ -453,7 +431,7 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 	data := fmt.Sprintf(`alertmanagerMain:
   logLevel: warn
 `)
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, test := range []scenario{
 		{
@@ -537,20 +515,7 @@ func TestAlertmanagerOAuthProxy(t *testing.T) {
 
 // Users should be able to disable Alertmanager through the cluster-monitoring-config
 func TestAlertmanagerDisabling(t *testing.T) {
-	// Disable alertmanager
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `alertmanagerMain: { enabled: false }`,
-		},
-	}
-	f.MustCreateOrUpdateConfigMap(t, cm)
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, "alertmanagerMain: { enabled: false }"))
 
 	assertions := []struct {
 		name      string
@@ -705,35 +670,13 @@ enableUserWorkload: true`,
 				wr.tearDown(t, f)
 			})
 
-			cm := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      clusterMonitorConfigMapName,
-					Namespace: f.Ns,
-					Labels: map[string]string{
-						framework.E2eTestLabelName: framework.E2eTestLabelValue,
-					},
-				},
-				Data: map[string]string{
-					"config.yaml": tc.config,
-				},
-			}
+			cm := f.BuildCMOConfigMap(t, tc.config)
 			f.MustCreateOrUpdateConfigMap(t, cm)
 			t.Cleanup(func() {
 				f.MustDeleteConfigMap(t, cm)
 			})
 
-			uwmConfigMap := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      userWorkloadMonitorConfigMapName,
-					Namespace: f.UserWorkloadMonitoringNs,
-					Labels: map[string]string{
-						framework.E2eTestLabelName: framework.E2eTestLabelValue,
-					},
-				},
-				Data: map[string]string{
-					"config.yaml": tc.userWorkloadConfig,
-				},
-			}
+			uwmConfigMap := f.BuildUserWorkloadConfigMap(t, tc.userWorkloadConfig)
 			f.MustCreateOrUpdateConfigMap(t, uwmConfigMap)
 			t.Cleanup(func() {
 				f.MustDeleteConfigMap(t, uwmConfigMap)
@@ -942,20 +885,9 @@ func TestAlertmanagerPlatformSecrets(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cm := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      clusterMonitorConfigMapName,
-					Namespace: f.Ns,
-					Labels: map[string]string{
-						framework.E2eTestLabelName: framework.E2eTestLabelValue,
-					},
-				},
-				Data: map[string]string{
-					"config.yaml": tc.config,
-				},
-			}
-
 			amGeneration := testAlertmanagerReady(t, tc.amName, tc.amNamespace).GetGeneration()
+
+			cm := f.BuildCMOConfigMap(t, tc.config)
 			f.MustCreateOrUpdateConfigMap(t, cm)
 			t.Cleanup(func() {
 				f.MustDeleteConfigMap(t, cm)
@@ -1041,18 +973,7 @@ func TestAlertmanagerUWMSecrets(t *testing.T) {
 				f.MustDeleteConfigMap(t, cm)
 			})
 
-			uwmConfigMap := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      userWorkloadMonitorConfigMapName,
-					Namespace: f.UserWorkloadMonitoringNs,
-					Labels: map[string]string{
-						framework.E2eTestLabelName: framework.E2eTestLabelValue,
-					},
-				},
-				Data: map[string]string{
-					"config.yaml": tc.userWorkloadConfig,
-				},
-			}
+			uwmConfigMap := f.BuildUserWorkloadConfigMap(t, tc.userWorkloadConfig)
 			f.MustCreateOrUpdateConfigMap(t, uwmConfigMap)
 			t.Cleanup(func() {
 				f.MustDeleteConfigMap(t, uwmConfigMap)
