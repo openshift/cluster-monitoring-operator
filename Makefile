@@ -62,9 +62,19 @@ clean:
 # Building #
 ############
 
+# run-local builds and runs operator out of cluster.
+# use make run-local SWITCH_TO_CMO=false to not switch the login to CMO
+# service-account. E.g. when logged in kube:admin and what to run operator
+# as kube:admin
 .PHONY: run-local
 run-local: build
-	PATH="$(PATH):$(BIN_DIR)" KUBECONFIG=$(KUBECONFIG) ./hack/local-cmo.sh
+	@if $${SWITCH_TO_CMO:-true} ; then \
+		PATH="$(PATH):$(BIN_DIR)" \
+		KUBECONFIG=$(KUBECONFIG)  ./hack/local-cmo.sh ;\
+	else \
+		PATH="$(PATH):$(BIN_DIR)" \
+		KUBECONFIG=$(KUBECONFIG) ./hack/local-cmo.sh --no-cmo-login ;\
+	fi
 
 .PHONY: build
 build: operator
