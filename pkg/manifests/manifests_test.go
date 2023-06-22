@@ -2919,6 +2919,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.netdev",
 				"--collector.netclass",
 				"--no-collector.buddyinfo",
+				"--no-collector.ksmd",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
@@ -2926,6 +2927,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--no-collector.netclass",
 				"--collector.netclass.netlink",
 				"--collector.buddyinfo",
+				"--collector.ksmd",
 			},
 		},
 		{
@@ -3006,6 +3008,17 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.mountstats"},
 			argsAbsent:  []string{"--no-collector.mountstats"},
+		},
+		{
+			name: "enable ksmd collector",
+			config: `
+nodeExporter:
+  collectors:
+    ksmd:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.ksmd"},
+			argsAbsent:  []string{"--no-collector.ksmd"},
 		},
 	}
 

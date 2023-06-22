@@ -877,6 +877,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 		args = setArg(args, "--no-collector.mountstats", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Ksmd.Enabled {
+		args = setArg(args, "--collector.ksmd", "")
+	} else {
+		args = setArg(args, "--no-collector.ksmd", "")
+	}
+
 	return args
 }
 

@@ -30,6 +30,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |mountstats|link:nodeexportercollectormountstatsconfig.adoc[NodeExporterCollectorMountStatsConfig]|Defines the configuration of the `mountstats` collector, which collects statistics about NFS volume I/O activities. Disabled by default.
 
+|ksmd|link:nodeexportercollectorksmdconfig.adoc[NodeExporterCollectorKSMDConfig]|Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon. Disabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]

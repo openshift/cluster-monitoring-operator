@@ -306,6 +306,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `mountstats` collector, which collects statistics about NFS volume I/O activities.
 	// Disabled by default.
 	MountStats NodeExporterCollectorMountStatsConfig `json:"mountstats,omitempty"`
+	// Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon.
+	// Disabled by default.
+	Ksmd NodeExporterCollectorKSMDConfig `json:"ksmd,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -410,6 +413,14 @@ type NodeExporterCollectorBuddyInfoConfig struct {
 // If you enable this collector, closely monitor any increases in memory usage for the `prometheus-k8s` pods.
 type NodeExporterCollectorMountStatsConfig struct {
 	// A Boolean flag that enables or disables the `mountstats` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorKSMDConfig` resource works as an on/off switch for
+// the `ksmd` collector of the `node-exporter` agent.
+// By default, the `ksmd` collector is disabled.
+type NodeExporterCollectorKSMDConfig struct {
+	// A Boolean flag that enables or disables the `ksmd` collector.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
