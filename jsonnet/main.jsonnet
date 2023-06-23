@@ -77,7 +77,6 @@ local commonConfig = {
   // Labels applied to every object
   commonLabels: {
     'app.kubernetes.io/part-of': 'openshift-monitoring',
-    'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
   },
   // TLS Cipher suite applied to every component serving HTTPS traffic
   tlsCipherSuites: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
@@ -469,6 +468,7 @@ local userWorkload =
 
 // Manifestation
 addLabels(
+  commonConfig.commonLabels,
   addAnnotations(
     sanitizeAlertRules(
       removeLimits(
@@ -502,5 +502,4 @@ addLabels(
       )
     )
   ),
-  commonConfig.commonLabels,
 )

@@ -8,6 +8,9 @@ kind: SecurityContextConstraints
 metadata:
   annotations:
     kubernetes.io/description: node-exporter scc is used for the Prometheus node exporter
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
   name: node-exporter
 readOnlyRootFilesystem: false
 runAsUser:

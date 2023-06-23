@@ -38,5 +38,8 @@ data:
     - "level": "RequestResponse"
 kind: ConfigMap
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
   name: prometheus-adapter-audit-profiles
   namespace: openshift-monitoring

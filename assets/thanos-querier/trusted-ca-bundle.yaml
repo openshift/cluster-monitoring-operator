@@ -3,6 +3,8 @@ data: {}
 kind: ConfigMap
 metadata:
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
     config.openshift.io/inject-trusted-cabundle: "true"
   name: thanos-querier-trusted-ca-bundle
   namespace: openshift-monitoring

@@ -3,6 +3,8 @@ data: {}
 kind: ConfigMap
 metadata:
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
     config.openshift.io/inject-trusted-cabundle: "true"
   name: prometheus-user-workload-trusted-ca-bundle
   namespace: openshift-user-workload-monitoring
