@@ -15,6 +15,7 @@
 package operator
 
 import (
+	"sort"
 	"strings"
 
 	"k8s.io/client-go/rest"
@@ -27,15 +28,17 @@ type Config struct {
 	Host                         string
 	ClusterDomain                string
 	KubeletObject                string
+	KubeletSelector              string
 	ListenAddress                string
 	TLSInsecure                  bool
 	TLSConfig                    rest.TLSClientConfig
 	ServerTLSConfig              server.TLSServerConfig
-	ReloaderConfig               ReloaderConfig
+	ReloaderConfig               ContainerConfig
 	AlertmanagerDefaultBaseImage string
 	PrometheusDefaultBaseImage   string
 	ThanosDefaultBaseImage       string
 	Namespaces                   Namespaces
+	Annotations                  Annotations
 	Labels                       Labels
 	LocalHost                    string
 	LogLevel                     string
@@ -46,12 +49,54 @@ type Config struct {
 	SecretListWatchSelector      string
 }
 
-type ReloaderConfig struct {
+// ContainerConfig holds some configuration for the ConfigReloader sidecar
+// that can be set through prometheus-operator command line arguments
+type ContainerConfig struct {
 	CPURequest    string
 	CPULimit      string
 	MemoryRequest string
 	MemoryLimit   string
 	Image         string
+	EnableProbes  bool
+}
+
+type Annotations struct {
+	AnnotationsString string
+	AnnotationsMap    map[string]string
+}
+
+// Implement the flag.Value interface
+func (annotations *Annotations) String() string {
+	return annotations.AnnotationsString
+}
+
+// Merge annotations create a new map with annotations merged.
+func (annotations *Annotations) Merge(otherAnnotations map[string]string) map[string]string {
+	mergedAnnotations := map[string]string{}
+
+	for key, value := range otherAnnotations {
+		mergedAnnotations[key] = value
+	}
+
+	for key, value := range annotations.AnnotationsMap {
+		mergedAnnotations[key] = value
+	}
+	return mergedAnnotations
+}
+
+// Set implements the flag.Set interface.
+func (annotations *Annotations) Set(value string) error {
+	m := map[string]string{}
+	if value != "" {
+		splited := strings.Split(value, ",")
+		for _, pair := range splited {
+			sp := strings.Split(pair, "=")
+			m[sp[0]] = sp[1]
+		}
+	}
+	(*annotations).AnnotationsMap = m
+	(*annotations).AnnotationsString = value
+	return nil
 }
 
 type Labels struct {
@@ -91,6 +136,16 @@ func (labels *Labels) Set(value string) error {
 	(*labels).LabelsMap = m
 	(*labels).LabelsString = value
 	return nil
+}
+
+// Returns an arrary with the keys of the label map sorted
+func (labels *Labels) SortedKeys() []string {
+	keys := make([]string, 0, len(labels.LabelsMap))
+	for key := range labels.LabelsMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 type Namespaces struct {

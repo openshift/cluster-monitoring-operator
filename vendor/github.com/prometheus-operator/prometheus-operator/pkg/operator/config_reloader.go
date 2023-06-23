@@ -17,19 +17,31 @@ package operator
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strconv"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const configReloaderPort = 8080
+const (
+	configReloaderPort = 8080
+
+	// ShardEnvVar is the name of the environment variable injected into the
+	// config-reloader container that contains the shard number.
+	ShardEnvVar = "SHARD"
+
+	// PodNameEnvVar is the name of the environment variable injected in the
+	// config-reloader container that contains the pod name.
+	PodNameEnvVar = "POD_NAME"
+)
 
 // ConfigReloader contains the options to configure
 // a config-reloader container
 type ConfigReloader struct {
 	name               string
-	config             ReloaderConfig
+	config             ContainerConfig
 	configFile         string
 	configEnvsubstFile string
 	imagePullPolicy    v1.PullPolicy
@@ -74,8 +86,8 @@ func ConfigEnvsubstFile(configEnvsubstFile string) ReloaderOption {
 	}
 }
 
-// ReloaderResources sets the config option for the config-reloader container
-func ReloaderResources(rc ReloaderConfig) ReloaderOption {
+// ReloaderConfig sets the config option for the config-reloader container
+func ReloaderConfig(rc ContainerConfig) ReloaderOption {
 	return func(c *ConfigReloader) {
 		c.config = rc
 	}
@@ -150,7 +162,7 @@ func CreateConfigReloader(name string, options ...ReloaderOption) v1.Container {
 		args    = make([]string, 0)
 		envVars = []v1.EnvVar{
 			{
-				Name: "POD_NAME",
+				Name: PodNameEnvVar,
 				ValueFrom: &v1.EnvVarSource{
 					FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"},
 				},
@@ -223,14 +235,14 @@ func CreateConfigReloader(name string, options ...ReloaderOption) v1.Container {
 
 	if configReloader.shard != nil {
 		envVars = append(envVars, v1.EnvVar{
-			Name:  "SHARD",
+			Name:  ShardEnvVar,
 			Value: strconv.Itoa(int(*configReloader.shard)),
 		})
 	}
 
 	boolFalse := false
 	boolTrue := true
-	return v1.Container{
+	c := v1.Container{
 		Name:                     name,
 		Image:                    configReloader.config.Image,
 		ImagePullPolicy:          configReloader.imagePullPolicy,
@@ -249,4 +261,25 @@ func CreateConfigReloader(name string, options ...ReloaderOption) v1.Container {
 			},
 		},
 	}
+
+	if !configReloader.runOnce && configReloader.config.EnableProbes {
+		c = addProbes(c)
+	}
+
+	return c
+}
+
+func addProbes(c v1.Container) v1.Container {
+	probe := &v1.Probe{
+		ProbeHandler: v1.ProbeHandler{
+			HTTPGet: &v1.HTTPGetAction{
+				Path: path.Clean("/healthz"),
+				Port: intstr.FromInt(configReloaderPort),
+			},
+		},
+	}
+
+	c.LivenessProbe = probe
+	c.ReadinessProbe = probe
+	return c
 }

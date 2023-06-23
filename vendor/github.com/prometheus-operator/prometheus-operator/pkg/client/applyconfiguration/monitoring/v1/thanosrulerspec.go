@@ -42,6 +42,7 @@ type ThanosRulerSpecApplyConfiguration struct {
 	ServiceAccountName                 *string                                         `json:"serviceAccountName,omitempty"`
 	Storage                            *StorageSpecApplyConfiguration                  `json:"storage,omitempty"`
 	Volumes                            []corev1.Volume                                 `json:"volumes,omitempty"`
+	VolumeMounts                       []corev1.VolumeMount                            `json:"volumeMounts,omitempty"`
 	ObjectStorageConfig                *corev1.SecretKeySelector                       `json:"objectStorageConfig,omitempty"`
 	ObjectStorageConfigFile            *string                                         `json:"objectStorageConfigFile,omitempty"`
 	ListenLocal                        *bool                                           `json:"listenLocal,omitempty"`
@@ -73,6 +74,7 @@ type ThanosRulerSpecApplyConfiguration struct {
 	AlertRelabelConfigs                *corev1.SecretKeySelector                       `json:"alertRelabelConfigs,omitempty"`
 	AlertRelabelConfigFile             *string                                         `json:"alertRelabelConfigFile,omitempty"`
 	HostAliases                        []HostAliasApplyConfiguration                   `json:"hostAliases,omitempty"`
+	AdditionalArgs                     []ArgumentApplyConfiguration                    `json:"additionalArgs,omitempty"`
 }
 
 // ThanosRulerSpecApplyConfiguration constructs an declarative configuration of the ThanosRulerSpec type for use with
@@ -227,6 +229,16 @@ func (b *ThanosRulerSpecApplyConfiguration) WithStorage(value *StorageSpecApplyC
 func (b *ThanosRulerSpecApplyConfiguration) WithVolumes(values ...corev1.Volume) *ThanosRulerSpecApplyConfiguration {
 	for i := range values {
 		b.Volumes = append(b.Volumes, values[i])
+	}
+	return b
+}
+
+// WithVolumeMounts adds the given value to the VolumeMounts field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the VolumeMounts field.
+func (b *ThanosRulerSpecApplyConfiguration) WithVolumeMounts(values ...corev1.VolumeMount) *ThanosRulerSpecApplyConfiguration {
+	for i := range values {
+		b.VolumeMounts = append(b.VolumeMounts, values[i])
 	}
 	return b
 }
@@ -506,6 +518,19 @@ func (b *ThanosRulerSpecApplyConfiguration) WithHostAliases(values ...*HostAlias
 			panic("nil value passed to WithHostAliases")
 		}
 		b.HostAliases = append(b.HostAliases, *values[i])
+	}
+	return b
+}
+
+// WithAdditionalArgs adds the given value to the AdditionalArgs field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the AdditionalArgs field.
+func (b *ThanosRulerSpecApplyConfiguration) WithAdditionalArgs(values ...*ArgumentApplyConfiguration) *ThanosRulerSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithAdditionalArgs")
+		}
+		b.AdditionalArgs = append(b.AdditionalArgs, *values[i])
 	}
 	return b
 }
