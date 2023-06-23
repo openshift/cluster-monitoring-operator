@@ -58,6 +58,23 @@ type InfrastructureConfig struct {
 	hostedControlPlane            bool
 }
 
+var (
+	// The cluster-policy-controller will automatically approve the
+	// CertificateSigningRequest resources issued for the prometheus-k8s
+	// service account.
+	// See https://github.com/openshift/cluster-policy-controller/blob/cc787e1b1e177696817b66689a03471914083a67/pkg/cmd/controller/csr.go#L21-L46.
+	csrOption = csr.CSROption{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "system:openshift:openshift-monitoring-",
+			Labels: map[string]string{
+				"metrics.openshift.io/csr.subject": "prometheus",
+			},
+		},
+		Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
+		SignerName: certapiv1.KubeAPIServerClientSignerName,
+	}
+)
+
 // NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
 func NewDefaultInfrastructureConfig() *InfrastructureConfig {
 	return &InfrastructureConfig{
@@ -411,21 +428,15 @@ func New(
 	)
 	o.informerFactories = append(o.informerFactories, kubeInformersOperatorNS)
 
+	// csrController runs a controller that requests a client TLS certificate
+	// for Prometheus k8s. This certificate is used to authenticate against the
+	// /metrics endpoint of the targets.
 	csrController, err := csr.NewClientCertificateController(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
 			SecretName:      "metrics-client-certs",
 		},
-		csr.CSROption{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "system:openshift:openshift-monitoring-",
-				Labels: map[string]string{
-					"metrics.openshift.io/csr.subject": "prometheus",
-				},
-			},
-			Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
-			SignerName: certapiv1.KubeAPIServerClientSignerName,
-		},
+		csrOption,
 		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
 		o.client.KubernetesInterface().CertificatesV1().CertificateSigningRequests(),
 		kubeInformersOperatorNS.Core().V1().Secrets(),
@@ -438,22 +449,15 @@ func New(
 		return nil, errors.Wrap(err, "failed to create client certificate controller")
 	}
 
-	// csrFederateController runs a controller that requests a client TLS certificate for the telemeter client. This certificate is used to authenticate against the Prometheus /federate API endpoint.
+	// csrFederateController runs a controller that requests a client TLS
+	// certificate for the telemeter client. This certificate is used to
+	// authenticate against the Prometheus /federate API endpoint.
 	csrFederateController, err := csr.NewClientCertificateController(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
 			SecretName:      "federate-client-certs",
 		},
-		csr.CSROption{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "system:openshift:openshift-monitoring-",
-				Labels: map[string]string{
-					"metrics.openshift.io/csr.subject": "prometheus",
-				},
-			},
-			Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
-			SignerName: certapiv1.KubeAPIServerClientSignerName,
-		},
+		csrOption,
 		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
 		o.client.KubernetesInterface().CertificatesV1().CertificateSigningRequests(),
 		kubeInformersOperatorNS.Core().V1().Secrets(),
