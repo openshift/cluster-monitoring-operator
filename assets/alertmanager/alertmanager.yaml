@@ -159,3 +159,7 @@ spec:
   - configMap:
       name: metrics-client-ca
     name: metrics-client-ca
+  web:
+    httpConfig:
+      headers:
+        contentSecurityPolicy: frame-ancestors 'none'

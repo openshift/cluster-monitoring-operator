@@ -218,6 +218,13 @@ function(params)
           runAsUser: 65534,
         },
         priorityClassName: 'system-cluster-critical',
+        web: {
+          httpConfig: {
+            headers: {
+              contentSecurityPolicy: "frame-ancestors 'none'",
+            },
+          },
+        },
         secrets: [
           'alertmanager-main-tls',
           'alertmanager-main-proxy',

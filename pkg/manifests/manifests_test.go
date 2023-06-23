@@ -1419,6 +1419,52 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 	}
 }
 
+func TestPrometheusK8sHttpConfig(t *testing.T) {
+	config :=
+		`prometheusK8s:`
+
+	c, err := NewConfigFromString(config, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	p, err := f.PrometheusK8s(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if p.Spec.Web.HTTPConfig.Headers.ContentSecurityPolicy != "frame-ancestors 'none'" {
+		t.Fatal("httpconfig headers wrong")
+	}
+}
+
+func TestAlertmanagerHttpConfig(t *testing.T) {
+	config :=
+		`AlertmanagerMain:`
+
+	c, err := NewConfigFromString(config, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	a, err := f.AlertmanagerMain(
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if a.Spec.Web.HTTPConfig.Headers.ContentSecurityPolicy != "frame-ancestors 'none'" {
+		t.Fatal("httpconfig headers wrong")
+	}
+}
+
 func TestPrometheusK8sConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusK8s:
   retention: 25h
