@@ -2911,6 +2911,10 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap, s *v1
 	if len(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Tolerations) > 0 {
 		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Tolerations
 	}
+	if len(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TopologySpreadConstraints) > 0 {
+		d.Spec.Template.Spec.TopologySpreadConstraints =
+			f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TopologySpreadConstraints
+	}
 	d.Namespace = f.namespace
 	return d, nil
 }
