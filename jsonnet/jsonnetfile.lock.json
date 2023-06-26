@@ -105,6 +105,17 @@
     {
       "source": {
         "git": {
+          "remote": "https://github.com/marioferh/telemeter.git",
+          "subdir": "jsonnet/telemeter"
+        }
+      },
+      "version": "31a28a557480559838a86e30595526f975093d6d",
+      "sum": "+H/r8W0OFuvLksczP2NnqOMrU0svqt7COsCMXqRosac=",
+      "name": "telemeter-client"
+    },
+    {
+      "source": {
+        "git": {
           "remote": "https://github.com/openshift/openshift-state-metrics.git",
           "subdir": "jsonnet"
         }
@@ -112,17 +123,6 @@
       "version": "5843d45e43d162e810a08c554d160166bc79b6d3",
       "sum": "9/dHjMKxPKGTAPV1fMAV0RuBck0O+Xyj/FkZjlN7DMs=",
       "name": "openshift-state-metrics"
-    },
-    {
-      "source": {
-        "git": {
-          "remote": "https://github.com/openshift/telemeter.git",
-          "subdir": "jsonnet/telemeter"
-        }
-      },
-      "version": "a8eaf7c6f0112888870a3599fccb731d16421360",
-      "sum": "q5Ks8a8hGq/KsttHxnIrWnJNY7s4pN1NCDmjGp+/QQM=",
-      "name": "telemeter-client"
     },
     {
       "source": {

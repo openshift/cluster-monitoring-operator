@@ -5,7 +5,7 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 function(params) {
   local cfg = params,
   //local osm = import 'github.com/openshift/openshift-state-metrics/jsonnet/openshift-state-metrics.libsonnet';
-  local tc = (import 'github.com/openshift/telemeter/jsonnet/telemeter/client.libsonnet') + {
+  local tc = (import 'github.com/marioferh/telemeter/jsonnet/telemeter/client.libsonnet') + {
     _config+:: {
       namespace: cfg.namespace,
       tlsCipherSuites: [

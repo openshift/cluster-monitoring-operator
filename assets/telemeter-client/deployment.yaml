@@ -32,7 +32,6 @@ spec:
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --from-ca-file=/etc/serving-certs-ca-bundle/service-ca.crt
-        - --from-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
         - --to=$(TO)
         - --to-token-file=/etc/telemeter/token
         - --listen=localhost:8080
