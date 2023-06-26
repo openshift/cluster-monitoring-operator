@@ -248,6 +248,8 @@ type TelemeterClientConfig struct {
 	Token string `json:"token,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations"`
+	// Defines a pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 // The `ThanosQuerierConfig` resource defines settings for the Thanos Querier
