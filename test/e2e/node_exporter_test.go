@@ -18,20 +18,11 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	corev1 "k8s.io/api/core/v1"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestNodeExporterCollectorEnablement(t *testing.T) {
 	t.Cleanup(func() {
-		f.MustDeleteConfigMap(t, &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterMonitorConfigMapName,
-				Namespace: f.Ns,
-			},
-		})
+		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
 
 	tests := []struct {
@@ -92,7 +83,7 @@ nodeExporter:
 				},
 			)
 
-			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
+			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, test.config))
 
 			f.PrometheusK8sClient.WaitForQueryReturn(
 				t, 5*time.Minute, fmt.Sprintf(`min(node_scrape_collector_success{collector="%s"})`, test.nameCollector),
@@ -110,12 +101,7 @@ nodeExporter:
 
 func TestNodeExporterCollectorDisablement(t *testing.T) {
 	t.Cleanup(func() {
-		f.MustDeleteConfigMap(t, &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterMonitorConfigMapName,
-				Namespace: f.Ns,
-			},
-		})
+		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
 
 	tests := []struct {
@@ -193,7 +179,7 @@ nodeExporter:
 				f.PrometheusK8sClient.WaitForQueryReturnEmpty(t, 5*time.Minute, fmt.Sprintf(`absent(%s)`, metric))
 			}
 
-			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
+			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, test.config))
 
 			f.PrometheusK8sClient.WaitForQueryReturn(
 				t, 5*time.Minute, fmt.Sprintf(`absent_over_time(node_scrape_collector_success{collector="%s"}[1m])`, test.nameCollector),
@@ -211,12 +197,7 @@ nodeExporter:
 // This test ensures neccessary collectors stay operational after changing generic options in Node Exporter.
 func TestNodeExporterGenericOptions(t *testing.T) {
 	t.Cleanup(func() {
-		f.MustDeleteConfigMap(t, &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterMonitorConfigMapName,
-				Namespace: f.Ns,
-			},
-		})
+		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
 
 	collectorsToCheck := []string{
@@ -255,7 +236,7 @@ nodeExporter:
 
 	for _, test := range tests {
 		t.Run(test.name, func(st *testing.T) {
-			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
+			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, test.config))
 
 			for _, nameCollector := range collectorsToCheck {
 

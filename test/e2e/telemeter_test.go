@@ -21,8 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -30,19 +28,9 @@ import (
 // TestTelemeterRemoteWrite verifies that the monitoring stack can send data to
 // the telemeter server using the native Prometheus remote write endpoint.
 func TestTelemeterRemoteWrite(t *testing.T) {
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": "{}",
-		},
-	}
+	cm := f.BuildCMOConfigMap(t, "{}")
 	f.MustCreateOrUpdateConfigMap(t, cm)
+
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, cm)
 	})

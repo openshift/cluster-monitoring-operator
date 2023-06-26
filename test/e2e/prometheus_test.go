@@ -282,7 +282,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, cmoConfigMap))
+			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, cmoConfigMap))
 
 			f.AssertOperatorCondition(osConfigv1.OperatorDegraded, osConfigv1.ConditionFalse)(t)
 			f.AssertOperatorCondition(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
@@ -318,7 +318,7 @@ func TestBodySizeLimit(t *testing.T) {
 		prometheusConfigSecretName = "prometheus-k8s"
 	)
 
-	cm := f.MustGetConfigMap(t, clusterMonitorConfigMapName, f.Ns)
+	cm := f.MustGetConfigMap(t, framework.ClusterMonitorConfigMapName, f.Ns)
 	cmBackup := cm.DeepCopy()
 	cmBackup.ObjectMeta.ResourceVersion = ""
 	cmBackup.ObjectMeta.UID = ""
@@ -345,7 +345,7 @@ func TestBodySizeLimit(t *testing.T) {
   logLevel: debug
   enforcedBodySizeLimit: %s
 `, bodySizeLimitSmall)
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		prometheusConfig, err := getPrometheusConfig(t, prometheusConfigSecretName)
@@ -364,7 +364,6 @@ func TestBodySizeLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 }
 
 func getPrometheusConfig(t *testing.T, prometheusConfigSecretName string) (*promConfig.Config, error) {

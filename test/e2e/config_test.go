@@ -29,11 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	clusterMonitorConfigMapName      = "cluster-monitoring-config"
-	userWorkloadMonitorConfigMapName = "user-workload-monitoring-config"
-)
-
 func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	// Enable user workload monitoring to assess that an invalid configuration
 	// doesn't rollback the last known and valid configuration.
@@ -47,7 +42,7 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	// Push an invalid configuration.
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
+			Name:      framework.ClusterMonitorConfigMapName,
 			Namespace: f.Ns,
 			Labels: map[string]string{
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
@@ -176,18 +171,10 @@ prometheusK8s:
 			},
 		},
 	} {
-		f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.config))
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, tc.config))
 
 		if tc.userWorkloadConfig != "" {
-			uwmCM := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      userWorkloadMonitorConfigMapName,
-					Namespace: f.UserWorkloadMonitoringNs,
-				},
-				Data: map[string]string{
-					"config.yaml": tc.userWorkloadConfig,
-				},
-			}
+			uwmCM := f.BuildUserWorkloadConfigMap(t, tc.userWorkloadConfig)
 			f.MustCreateOrUpdateConfigMap(t, uwmCM)
 		}
 
@@ -205,7 +192,7 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, tc := range []scenario{
 		{
@@ -260,7 +247,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
       cpu: %s
       memory: %s
 `, storage, cpu, mem)
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, tc := range []scenario{
 		{
@@ -331,7 +318,7 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `, cpu, mem, storage)
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, tc := range []scenario{
 		{
@@ -367,7 +354,7 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, tc := range []scenario{
 		{
@@ -398,7 +385,7 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, tc := range []scenario{
 		{
@@ -429,7 +416,7 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, tc := range []scenario{
 		{
@@ -483,9 +470,9 @@ func TestTelemeterClientSecret(t *testing.T) {
 	} {
 
 		t.Run(tc.name, func(t *testing.T) {
-			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.oldC))
+			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, tc.oldC))
 			oldS := f.MustGetSecret(t, "telemeter-client", f.Ns)
-			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, tc.newC))
+			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, tc.newC))
 			if tc.tokenChanged {
 				f.AssertValueInSecretNotEquals(oldS.GetName(), oldS.GetNamespace(), "token", string(oldS.Data["token"]))
 				f.AssertValueInSecretNotEquals(oldS.GetName(), oldS.GetNamespace(), "salt", string(oldS.Data["salt"]))
@@ -506,7 +493,7 @@ func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
   tolerations:
     - operator: "Exists"
 `
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, tc := range []scenario{
 		{
@@ -545,7 +532,7 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
       cpu: %s
       memory: %s
 `, cpu, mem)
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, test := range []scenario{
 		{
@@ -576,22 +563,13 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `prometheusOperator:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		`prometheusOperator:
   logLevel: debug
   tolerations:
     - operator: "Exists"
 `,
-		},
-	}
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 
 	for _, test := range []scenario{
@@ -625,16 +603,8 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		crName          = "user-workload"
 	)
 
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": fmt.Sprintf(`prometheus:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		fmt.Sprintf(`prometheus:
   enforcedTargetLimit: 10
   enforcedLabelLimit: 500
   enforcedLabelNameLengthLimit: 50
@@ -659,8 +629,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
       cpu: %s
       memory: %s
 `, storage, cpu, mem),
-		},
-	}
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 
 	for _, tc := range []scenario{
@@ -735,16 +704,8 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      userWorkloadMonitorConfigMapName,
-			Namespace: f.UserWorkloadMonitoringNs,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": fmt.Sprintf(`thanosRuler:
+	uwmCM := f.BuildUserWorkloadConfigMap(t,
+		fmt.Sprintf(`thanosRuler:
   logLevel: debug
   retention: 15d
   tolerations:
@@ -759,8 +720,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
       cpu: %s
       memory: %s
 `, storage, cpu, mem),
-		},
-	}
+	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 
 	for _, tc := range []scenario{
@@ -811,7 +771,7 @@ consolePlugin:
     - operator: "Exists"
 `, cpu, mem)
 
-	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, tc := range []scenario{
 		{
@@ -831,22 +791,6 @@ consolePlugin:
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
-	}
-}
-
-func configMapWithData(t *testing.T, addData string) *v1.ConfigMap {
-	t.Helper()
-	return &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterMonitorConfigMapName,
-			Namespace: f.Ns,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": addData,
-		},
 	}
 }
 

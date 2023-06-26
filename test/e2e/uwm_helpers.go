@@ -27,19 +27,8 @@ var (
 // getUserWorkloadEnabledConfigMap returns a config map with uwm enabled
 func getUserWorkloadEnabledConfigMap(t *testing.T, f *framework.Framework) *v1.ConfigMap {
 	t.Helper()
-	return &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      framework.ClusterMonitorConfigMapName,
-			Namespace: f.Ns,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string]string{
-			"config.yaml": `enableUserWorkload: true
-`,
-		},
-	}
+
+	return f.BuildCMOConfigMap(t, "enableUserWorkload: true")
 }
 
 // setupUserWorkloadAssets enables UWM via the config map and asserts resources are up and running
