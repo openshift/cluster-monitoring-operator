@@ -125,7 +125,7 @@ spec:
           secretName: telemeter-client
       - name: telemeter-client-tls
         secret:
-          secretName: telemeter-client-certs
+          secretName: telemeter-client-tls
       - name: federate-client-tls
         secret:
           secretName: federate-client-certs
