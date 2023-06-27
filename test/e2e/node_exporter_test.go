@@ -257,12 +257,7 @@ nodeExporter:
 
 func TestNodeExporterNetworkDevicesExclusion(t *testing.T) {
 	t.Cleanup(func() {
-		f.MustDeleteConfigMap(t, &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterMonitorConfigMapName,
-				Namespace: f.Ns,
-			},
-		})
+		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
 
 	tests := []struct {
@@ -301,6 +296,7 @@ nodeExporter:
 
 	for _, test := range tests {
 		t.Run("Network Devices Exclusion: "+test.name, func(st *testing.T) {
+			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, test.config))
 			q := fmt.Sprintf(`sum(rate(node_network_receive_bytes_total{%s}[1m])))`, test.filter)
 			f.PrometheusK8sClient.WaitForQueryReturn(
 				t, 5*time.Minute, q,
@@ -311,8 +307,6 @@ nodeExporter:
 					return nil
 				},
 			)
-
-			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
 		})
 	}
 }
