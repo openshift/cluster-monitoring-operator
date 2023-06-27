@@ -214,7 +214,7 @@ main() {
 		kubeconfig="$CMO_KUBECONFIG"
 	}
 
-	info "Running operator as $(oc whoami)"
+	info "Running operator as $(oc --kubeconfig="$kubeconfig" whoami)"
 
 	run go run ./cmd/operator/... "${images[@]}" \
 		-assets assets/ \
