@@ -377,6 +377,25 @@ func (c *Client) ConsoleListWatch(ctx context.Context) *cache.ListWatch {
 	}
 }
 
+func (c *Client) ClusterVersionListWatch(ctx context.Context, name string) *cache.ListWatch {
+	clusterVersionInterface := c.oscclient.ConfigV1().ClusterVersions()
+
+	return &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			return clusterVersionInterface.List(ctx,
+				metav1.ListOptions{
+					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
+				})
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return clusterVersionInterface.Watch(ctx,
+				metav1.ListOptions{
+					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
+				})
+		},
+	}
+}
+
 func (c *Client) ClusterOperatorListWatch(ctx context.Context, name string) *cache.ListWatch {
 	ClusterOperatorInterface := c.oscclient.ConfigV1().ClusterOperators()
 
@@ -1860,6 +1879,19 @@ func (c *Client) PodCapacity(ctx context.Context) (int, error) {
 	}
 
 	return int(podCapacityTotal), nil
+}
+
+func (c *Client) HasClusterCapability(ctx context.Context, capability configv1.ClusterVersionCapability) (bool, error) {
+	version, err := c.oscclient.ConfigV1().ClusterVersions().Get(ctx, "version", metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	return slices.Contains(version.Status.Capabilities.EnabledCapabilities, capability), nil
+}
+
+func (c *Client) HasConsoleCapability(ctx context.Context) (bool, error) {
+	return c.HasClusterCapability(ctx, configv1.ClusterVersionCapabilityConsole)
 }
 
 func (c *Client) CreateOrUpdateConsolePlugin(ctx context.Context, plg *consolev1.ConsolePlugin) error {

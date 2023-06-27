@@ -33,6 +33,7 @@ import (
 	"k8s.io/component-base/metrics/legacyregistry"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
@@ -406,6 +407,20 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Many of the cluster capabilities such as Console can be enabled after
+	// installation. So this watches for any updates to the ClusterVersion - version
+	informer = cache.NewSharedIndexInformer(
+		o.client.ClusterVersionListWatch(ctx, "version"),
+		&configv1.ClusterVersion{}, resyncPeriod, cache.Indexers{},
+	)
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+	})
+	if err != nil {
+		return nil, err
+	}
+	o.informers = append(o.informers, informer)
+
 	// Setup PVC informers to sync annotation updates.
 	for _, ns := range []string{o.namespace, o.namespaceUserWorkload} {
 		informer = cache.NewSharedIndexInformer(
@@ -565,32 +580,27 @@ func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 func (o *Operator) handleEvent(obj interface{}) {
 	cmoConfigMap := o.namespace + "/" + o.configMapName
 
-	if _, ok := obj.(*configv1.Infrastructure); ok {
-		klog.Infof("Triggering update due to an infrastructure update")
-		o.enqueue(cmoConfigMap)
-		return
-	}
-
-	if _, ok := obj.(*configv1.APIServer); ok {
-		klog.Infof("Triggering update due to an apiserver config update")
-		o.enqueue(cmoConfigMap)
-		return
-	}
-
-	if _, ok := obj.(*v1.PersistentVolumeClaim); ok {
-		klog.Info("Triggering update due to a PVC update")
-		o.enqueue(cmoConfigMap)
-		return
-	}
-
-	if _, ok := obj.(*configv1.Console); ok {
-		klog.Info("Triggering update due to a console update")
-		o.enqueue(cmoConfigMap)
-		return
-	}
-
-	if _, ok := obj.(*configv1.ClusterOperator); ok {
-		klog.Info("Triggering update due to a cluster operator update")
+	switch obj.(type) {
+	case *v1.PersistentVolumeClaim,
+		*configv1.Infrastructure,
+		*configv1.APIServer,
+		*configv1.Console,
+		*configv1.ClusterOperator,
+		*configv1.ClusterVersion:
+		// Log GroupKind and Name of the obj
+		rtObj := obj.(k8sruntime.Object)
+		gk := rtObj.GetObjectKind().GroupVersionKind().GroupKind()
+		metaObj := obj.(metav1.Object)
+		name := metaObj.GetName()
+		if ns := metaObj.GetNamespace(); ns != "" {
+			name = ns + "/" + name
+		}
+		// NOTE: use %T to print the type if the gv information is absent
+		objKind := gk.String()
+		if objKind == "" {
+			objKind = fmt.Sprintf("%T", obj)
+		}
+		klog.Infof("Triggering an update due to a change in %s - %s", objKind, name)
 		o.enqueue(cmoConfigMap)
 		return
 	}
