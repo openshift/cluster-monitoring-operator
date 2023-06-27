@@ -855,6 +855,8 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled ||
 		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {
 		devs := *f.config.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices
+		// An empty list would generate a regular expression matching empty strings: ^()$
+		// It's more safe to avoid that, and not set the exclusion regex at all
 		if len(devs) > 0 {
 			var err error
 			excludedDevices, err = regexListToArg(devs)

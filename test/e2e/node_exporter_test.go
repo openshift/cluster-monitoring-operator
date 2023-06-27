@@ -194,7 +194,7 @@ nodeExporter:
 	}
 }
 
-// This test ensures neccessary collectors stay operational after changing generic options in Node Exporter.
+// This test ensures necessary collectors stay operational after changing generic options in Node Exporter.
 func TestNodeExporterGenericOptions(t *testing.T) {
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
@@ -253,4 +253,66 @@ nodeExporter:
 		})
 	}
 
+}
+
+func TestNodeExporterNetworkDevicesExclusion(t *testing.T) {
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterMonitorConfigMapName,
+				Namespace: f.Ns,
+			},
+		})
+	})
+
+	tests := []struct {
+		name      string
+		config    string
+		filter    string
+		predicate func(float64) bool
+	}{
+		{
+			name:      "default devices generate metrics",
+			predicate: func(f float64) bool { return f > 0 },
+		},
+		{
+			name:      "default devices include 'lo'",
+			filter:    `device="lo"`,
+			predicate: func(f float64) bool { return f > 0 },
+		},
+		{
+			name: "excluding 'lo'",
+			config: `
+nodeExporter:
+  ignoredNetworkDevices:
+  - lo`,
+			filter:    `device="lo"`,
+			predicate: func(f float64) bool { return f == 0 },
+		},
+		{
+			name: "excluding all",
+			config: `
+nodeExporter:
+  ignoredNetworkDevices:
+  - .*`,
+			predicate: func(f float64) bool { return f == 0 },
+		},
+	}
+
+	for _, test := range tests {
+		t.Run("Network Devices Exclusion: "+test.name, func(st *testing.T) {
+			q := fmt.Sprintf(`sum(rate(node_network_receive_bytes_total{%s}[1m])))`, test.filter)
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t, 5*time.Minute, q,
+				func(v float64) error {
+					if !test.predicate(v) {
+						return fmt.Errorf(`predicate failed for %s with query: '%s', got: %v.`, test.name, q, v)
+					}
+					return nil
+				},
+			)
+
+			f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, test.config))
+		})
+	}
 }
