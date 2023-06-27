@@ -42,7 +42,7 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(ctx context.Context, trustedCA *v
 		lastErr error
 		lastCM  *v1.ConfigMap
 	)
-	err = wait.PollImmediate(5*time.Second, 5*time.Minute, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		var err error
 		lastCM, err = cbs.client.GetConfigmap(ctx, trustedCA.GetNamespace(), trustedCA.GetName())
 
@@ -64,7 +64,7 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(ctx context.Context, trustedCA *v
 		return true, nil
 	})
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = errors.Errorf("%v: %v", err, lastErr)
 		}
 		return nil, errors.Wrapf(err, "waiting for config map key %q in %s/%s ConfigMap object failed", manifests.TrustedCABundleKey, trustedCA.GetNamespace(), trustedCA.GetName())

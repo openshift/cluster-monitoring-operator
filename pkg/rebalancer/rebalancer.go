@@ -126,7 +126,7 @@ func (r *Rebalancer) RebalanceWorkloads(ctx context.Context, workload *Workload)
 	// If the workloads were balanced by the operator, we wait for 5 minutes
 	// before setting the status so that we don't set upgradeable=false after
 	// balancing the pods.
-	err = wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 		klog.V(4).Infof("Waiting until workload in namespace %s with label %q becomes correctly balanced.", workload.Namespace, workload.LabelSelector)
 		return r.WorkloadCorrectlyBalanced(ctx, workload)
 	})

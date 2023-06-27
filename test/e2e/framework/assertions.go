@@ -14,6 +14,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -301,11 +302,9 @@ func (f *Framework) AssertThanosRulerExists(name, namespace string) func(t *test
 
 func (f *Framework) AssertPrometheusExists(name, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
-		err := f.OperatorClient.WaitForPrometheus(ctx, &monitoringv1.Prometheus{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
+		err := f.OperatorClient.ValidatePrometheus(ctx, types.NamespacedName{
+			Name:      name,
+			Namespace: namespace,
 		})
 		if err != nil {
 			t.Fatal(err)

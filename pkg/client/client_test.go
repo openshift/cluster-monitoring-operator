@@ -2177,32 +2177,32 @@ func TestValidatePrometheus(t *testing.T) {
 			name: "prometheus missing conditions",
 			// status: nil,
 			errs: []error{
-				NewUnknownAvailabiltyError("prometheus: missing condition type - Available"),
-				NewUnknownDegradedError("prometheus: missing condition type - Available"),
+				NewUnknownAvailabiltyError("prometheus: failed to find condition type \"Available\""),
+				NewUnknownDegradedError("prometheus: failed to find condition type \"Available\""),
 			},
 		}, {
 			name: "prometheus availabe but missing reconciled",
 			status: monv1.PrometheusStatus{
-				Conditions: []monv1.PrometheusCondition{
+				Conditions: []monv1.Condition{
 					{
-						Type:   monv1.PrometheusAvailable,
-						Status: monv1.PrometheusConditionTrue,
+						Type:   monv1.Available,
+						Status: monv1.ConditionTrue,
 					},
 				},
 			},
 			errs: []error{
-				NewUnknownDegradedError("prometheus: missing condition type - Reconciled"),
+				NewUnknownDegradedError("prometheus: failed to find condition type \"Reconciled\""),
 			},
 		}, {
 			name: "prometheus availabe but not reconciled",
 			status: monv1.PrometheusStatus{
-				Conditions: []monv1.PrometheusCondition{
+				Conditions: []monv1.Condition{
 					{
-						Type:   monv1.PrometheusAvailable,
-						Status: monv1.PrometheusConditionTrue,
+						Type:   monv1.Available,
+						Status: monv1.ConditionTrue,
 					}, {
-						Type:    monv1.PrometheusReconciled,
-						Status:  monv1.PrometheusConditionUnknown,
+						Type:    monv1.Reconciled,
+						Status:  monv1.ConditionUnknown,
 						Reason:  "reason",
 						Message: "human readable message",
 					},
@@ -2214,10 +2214,10 @@ func TestValidatePrometheus(t *testing.T) {
 		}, {
 			name: "prometheus not availabe",
 			status: monv1.PrometheusStatus{
-				Conditions: []monv1.PrometheusCondition{
+				Conditions: []monv1.Condition{
 					{
-						Type:    monv1.PrometheusAvailable,
-						Status:  monv1.PrometheusConditionFalse,
+						Type:    monv1.Available,
+						Status:  monv1.ConditionFalse,
 						Reason:  "reason",
 						Message: "human readable message",
 					},
@@ -2231,13 +2231,13 @@ func TestValidatePrometheus(t *testing.T) {
 			name: "prometheus availabe and reconciled",
 			stop: true,
 			status: monv1.PrometheusStatus{
-				Conditions: []monv1.PrometheusCondition{
+				Conditions: []monv1.Condition{
 					{
-						Type:   monv1.PrometheusAvailable,
-						Status: monv1.PrometheusConditionTrue,
+						Type:   monv1.Available,
+						Status: monv1.ConditionTrue,
 					}, {
-						Type:   monv1.PrometheusReconciled,
-						Status: monv1.PrometheusConditionTrue,
+						Type:   monv1.Reconciled,
+						Status: monv1.ConditionTrue,
 					},
 				},
 			},
@@ -2262,7 +2262,6 @@ func TestValidatePrometheus(t *testing.T) {
 			}
 
 			assertErrorsMatch(t, tc.errs, errs)
-
 		})
 	}
 }
