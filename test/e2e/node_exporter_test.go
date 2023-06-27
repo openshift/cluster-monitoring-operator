@@ -264,16 +264,16 @@ func TestNodeExporterNetworkDevicesExclusion(t *testing.T) {
 		name      string
 		config    string
 		filter    string
-		predicate func(float64) bool
+		mustExist bool
 	}{
 		{
 			name:      "default devices generate metrics",
-			predicate: func(f float64) bool { return f > 0 },
+			mustExist: true,
 		},
 		{
 			name:      "default devices include 'lo'",
 			filter:    `device="lo"`,
-			predicate: func(f float64) bool { return f > 0 },
+			mustExist: true,
 		},
 		{
 			name: "excluding 'lo'",
@@ -282,7 +282,7 @@ nodeExporter:
   ignoredNetworkDevices:
   - lo`,
 			filter:    `device="lo"`,
-			predicate: func(f float64) bool { return f == 0 },
+			mustExist: false,
 		},
 		{
 			name: "excluding all",
@@ -290,23 +290,27 @@ nodeExporter:
 nodeExporter:
   ignoredNetworkDevices:
   - .*`,
-			predicate: func(f float64) bool { return f == 0 },
+			mustExist: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run("Network Devices Exclusion: "+test.name, func(st *testing.T) {
 			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, test.config))
-			q := fmt.Sprintf(`sum(rate(node_network_receive_bytes_total{%s}[1m])))`, test.filter)
-			f.PrometheusK8sClient.WaitForQueryReturn(
-				t, 5*time.Minute, q,
-				func(v float64) error {
-					if !test.predicate(v) {
-						return fmt.Errorf(`predicate failed for %s with query: '%s', got: %v.`, test.name, q, v)
-					}
-					return nil
-				},
-			)
+			q := fmt.Sprintf(`sum(rate(node_network_receive_bytes_total{%s}[30s]))`, test.filter)
+			if test.mustExist {
+				f.PrometheusK8sClient.WaitForQueryReturn(
+					t, 5*time.Minute, q,
+					func(v float64) error {
+						if v > 0 {
+							return nil
+						}
+						return fmt.Errorf(`test %s failed, expecting query '%s' to return a positive value, got: %v.`, test.name, q, v)
+					},
+				)
+			} else {
+				f.PrometheusK8sClient.WaitForQueryReturnEmpty(t, 5*time.Minute, fmt.Sprintf(`absent(%s)`, q))
+			}
 		})
 	}
 }
