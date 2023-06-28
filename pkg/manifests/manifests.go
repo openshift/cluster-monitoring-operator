@@ -758,6 +758,10 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Tolerations
 	}
 
+	if len(f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.TopologySpreadConstraints) > 0 {
+		d.Spec.Template.Spec.TopologySpreadConstraints = f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.TopologySpreadConstraints
+	}
+
 	return d, nil
 }
 
