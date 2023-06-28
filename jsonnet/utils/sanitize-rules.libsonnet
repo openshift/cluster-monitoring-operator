@@ -379,6 +379,7 @@ local includeRunbooks = {
   ClusterOperatorDegraded: openShiftRunbookCMO('ClusterOperatorDegraded.md'),
   ClusterOperatorDown: openShiftRunbookCMO('ClusterOperatorDown.md'),
   KubeAPIDown: openShiftRunbookCMO('KubeAPIDown.md'),
+  #KubeAPIDegraded: openShiftRunBookCMO('KubeAPIDegraded.md'),
   KubeDeploymentReplicasMismatch: openShiftRunbookCMO('KubeDeploymentReplicasMismatch.md'),
   KubeJobFailed: openShiftRunbookCMO('KubeJobFailed.md'),
   KubeNodeNotReady: openShiftRunbookCMO('KubeNodeNotReady.md'),

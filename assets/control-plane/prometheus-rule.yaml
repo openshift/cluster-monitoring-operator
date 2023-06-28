@@ -475,6 +475,16 @@ spec:
       for: 15m
       labels:
         severity: critical
+    - alert: KubeAPIDegraded
+      annotations:
+        description: KubeAPI is degraded.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeAPIDegraded.md
+        summary: Kubernetes API is in degraded state.
+      expr: |
+        cluster_operator_conditions{condition="Degraded",name="kube-apiserver"}==1
+      for: 15m
+      labels:
+        severity: warning
     - alert: KubeAPITerminatedRequests
       annotations:
         description: The kubernetes apiserver has terminated {{ $value | humanizePercentage
