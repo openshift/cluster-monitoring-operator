@@ -328,6 +328,10 @@ func (f *Framework) AssertPodConfiguration(namespace, labelSelector string, asse
 				return fmt.Errorf("%w - failed to get Pods", err)
 			}
 
+			if len(pods.Items) == 0 {
+				return fmt.Errorf("failed to find pods matching %s in %s", labelSelector, namespace)
+			}
+
 			// for each pod in the list of matching labels run each assertion
 			for _, p := range pods.Items {
 				for _, assertion := range assertions {

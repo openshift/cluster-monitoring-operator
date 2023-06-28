@@ -396,7 +396,7 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
 			name: "assert pod configuration is as expected",
 			assertion: f.AssertPodConfiguration(
 				f.Ns,
-				"k8s-app=openshift-state-metrics",
+				"app.kubernetes.io/name=openshift-state-metrics",
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
@@ -427,7 +427,7 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 			name: "assert pod configuration is as expected",
 			assertion: f.AssertPodConfiguration(
 				f.Ns,
-				"app.kubernetes.io/component=dashboard",
+				"app.kubernetes.io/name=telemeter-client",
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 				},
@@ -735,7 +735,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 		{
 			name: "assert pod configuration is as expected",
 			assertion: f.AssertPodConfiguration(
-				f.Ns,
+				f.UserWorkloadMonitoringNs,
 				"app.kubernetes.io/name=thanos-ruler",
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
