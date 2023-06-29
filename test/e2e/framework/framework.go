@@ -16,11 +16,8 @@ package framework
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -52,8 +49,6 @@ import (
 	schedulingv1client "k8s.io/client-go/kubernetes/typed/scheduling/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/portforward"
-	"k8s.io/client-go/transport/spdy"
 	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
@@ -520,37 +515,6 @@ func Poll(interval, timeout time.Duration, f func() error) error {
 	}
 
 	return err
-}
-
-// StartPortForward initiates a port forwarding connection to a pod on the localhost interface.
-//
-// StartPortForward blocks until the port forwarding proxy server is ready to receive connections.
-func (f *Framework) StartPortForward(scheme string, name string, ns string, port string) error {
-	roundTripper, upgrader, err := spdy.RoundTripperFor(f.RestConfig)
-	if err != nil {
-		return err
-	}
-
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", ns, name)
-	hostIP := strings.TrimLeft(f.RestConfig.Host, "htps:/")
-	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL)
-
-	stopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
-	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
-	forwarder, err := portforward.New(dialer, []string{port}, stopChan, readyChan, out, errOut)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		if err := forwarder.ForwardPorts(); err != nil {
-			panic(err)
-		}
-	}()
-
-	<-readyChan
-	return nil
 }
 
 func (f *Framework) CreateOrUpdateAlertmanagerConfig(ctx context.Context, a *v1beta1.AlertmanagerConfig) error {
