@@ -286,7 +286,7 @@ type NodeExporterConfig struct {
 	// A list of network devices, as regular expressions, to be excluded from the relevant collector configuration such as `netdev` and `netclass`.
 	// When not set, the Cluster Monitoring Operator uses a predefined list of devices to be excluded to minimize the impact on memory usage.
 	// When set as an empty list, no devices are excluded.
-	// If you modify this setting, watch the prometheus-k8s deployment closely for excessive memory usage.
+	// If you modify this setting, monitor the `prometheus-k8s` deployment closely for excessive memory usage.
 	IgnoredNetworkDevices *[]string `json:"ignoredNetworkDevices,omitempty"`
 }
 
