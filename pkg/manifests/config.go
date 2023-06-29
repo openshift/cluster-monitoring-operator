@@ -304,15 +304,15 @@ func (c *Config) applyDefaults() {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
 	}
 
-	// defaultExcludedDevices is the default for 2 arguments "--collector.netclass.ignored-devices" and "--collector.netdev.device-exclude".
-	// 6 kinds of virtual NICs are ignored by default:
-	// 1. veth network interface associated with containers.
-	// 2. OVN renames veth.* to <rand-hex>@if<X> where X is /sys/class/net/<if>/ifindex
-	// thus [a-f0-9]{15}
-	// 3. enP.* virtual NICs on Azure cluster.
-	// 4. OVN virtual interfaces ovn-k8s-mp[0-9]*
-	// 5. virtual tunnels and bridges: tun[0-9]*|br[0-9]*|br-ex|br-int|br-ext
-	// 6. Calico Virtual NICs cali[a-f0-9]*
+	// `defaultExcludedDevices` is the default for two arguments: `collector.netclass.ignored-devices` and `--collector.netdev.device-exclude`.
+	// The following virtual NICs are ignored by default:
+	// * `veth` network interface associated with containers.
+	// * OVN renames `veth.*` to `<rand-hex>@if<X>` where `X` is `/sys/class/net/<if>/ifindex`
+	// thus `[a-f0-9]{15}`
+	// * `enP.*` virtual NICs on Azure cluster
+	// * OVN virtual interfaces `ovn-k8s-mp[0-9]*`
+	// * virtual tunnels and bridges: `tun[0-9]*|br[0-9]*|br-ex|br-int|br-ext`
+	// * Calico Virtual NICs `cali[a-f0-9]*`
 	// Refer to:
 	// https://issues.redhat.com/browse/OCPBUGS-1321
 	// https://issues.redhat.com/browse/OCPBUGS-2729

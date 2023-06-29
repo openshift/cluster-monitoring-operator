@@ -189,7 +189,7 @@ local inCluster =
             clusterLabel: $.values.common.dashboardClusterLabel,
           },
         },
-        // The list of ignored devices is replaced by CMO at runtime depending on its configuration.
+        // The list of ignored devices is replaced by the Cluster Monitoring Operator (CMO) at runtime depending on the configuration of the CMO.
         ignoredNetworkDevices:: '^.*$',
       },
       openshiftStateMetrics: {
