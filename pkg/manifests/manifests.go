@@ -2621,8 +2621,8 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 
 	// ensure console-plugin container is present even if config isn't defined so that,
 	// we validate that deployment has the expected container name. Thereby avoiding
-	// any suprises should user add config later.
-	podSpec := d.Spec.Template.Spec
+	// any surprises should user add config later.
+	podSpec := &d.Spec.Template.Spec
 	containers := podSpec.Containers
 	idx := slices.IndexFunc(containers, containerNameEquals(MonitoringPluginDeploymentContainer))
 	if idx < 0 {

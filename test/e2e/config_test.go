@@ -754,7 +754,7 @@ func TestClusterMonitorConsolePlugin(t *testing.T) {
 		deploymentName = "monitoring-plugin"
 		cpu            = "10m"
 		mem            = "13Mi"
-		labelSelector  = "app.kubernetes.io/instance=monitoring-plugin"
+		labelSelector  = "app.kubernetes.io/name=monitoring-plugin"
 		containerName  = "monitoring-plugin"
 	)
 
@@ -762,7 +762,7 @@ func TestClusterMonitorConsolePlugin(t *testing.T) {
 	f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns)
 
 	data := fmt.Sprintf(`
-consolePlugin:
+monitoringPlugin:
   resources:
     requests:
       cpu: %s
@@ -784,6 +784,7 @@ consolePlugin:
 				f.Ns,
 				labelSelector,
 				[]framework.PodAssertion{
+					expectTolerationsEqual(1),
 					expectCatchAllToleration(),
 					expectMatchingRequests("*", containerName, mem, cpu),
 				},
@@ -791,6 +792,17 @@ consolePlugin:
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
+	}
+}
+
+// checks that the toleration is present
+// this toleration will match all so will not affect rolling out workloads
+func expectTolerationsEqual(exp int) framework.PodAssertion {
+	return func(pod v1.Pod) error {
+		if got := len(pod.Spec.Tolerations); got != exp {
+			return fmt.Errorf("expected to find %d tolerations in %s but found %d", exp, pod.Name, got)
+		}
+		return nil
 	}
 }
 
