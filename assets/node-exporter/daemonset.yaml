@@ -125,8 +125,7 @@ spec:
       - command:
         - /bin/sh
         - -c
-        - '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init
-          -perm /111 -type f -exec {} \;'
+        - '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init -perm /111 -type f -exec {} \;'
         env:
         - name: TMPDIR
           value: /tmp

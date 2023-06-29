@@ -17,14 +17,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 
 	"github.com/efficientgo/tools/core/pkg/merrors"
+	"github.com/metalmatze/signal/server/signalhttp"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql/parser"
 )
@@ -38,8 +40,9 @@ type routes struct {
 	upstream *url.URL
 	handler  http.Handler
 	label    string
+	el       ExtractLabeler
 
-	mux            *http.ServeMux
+	mux            http.Handler
 	modifiers      map[string]func(*http.Response) error
 	errorOnReplace bool
 }
@@ -48,6 +51,7 @@ type options struct {
 	enableLabelAPIs  bool
 	passthroughPaths []string
 	errorOnReplace   bool
+	registerer       prometheus.Registerer
 }
 
 type Option interface {
@@ -58,6 +62,13 @@ type optionFunc func(*options)
 
 func (f optionFunc) apply(o *options) {
 	f(o)
+}
+
+// WithPrometheusRegistry configures the proxy to use the given registerer.
+func WithPrometheusRegistry(reg prometheus.Registerer) Option {
+	return optionFunc(func(o *options) {
+		o.registerer = reg
+	})
 }
 
 // WithEnabledLabelsAPI enables proxying to labels API. If false, "501 Not implemented" will be return for those.
@@ -84,17 +95,22 @@ func WithErrorOnReplace() Option {
 	})
 }
 
-// strictMux is a mux that wraps standard HTTP handler with safer handler that allows safe user provided handler registrations.
-type strictMux struct {
-	seen map[string]struct{}
-
-	m *http.ServeMux
+// mux abstracts away the behavior we expect from the http.ServeMux type in this package.
+type mux interface {
+	http.Handler
+	Handle(string, http.Handler)
 }
 
-func newStrictMux() *strictMux {
+// strictMux is a mux that wraps standard HTTP handler with safer handler that allows safe user provided handler registrations.
+type strictMux struct {
+	mux
+	seen map[string]struct{}
+}
+
+func newStrictMux(m mux) *strictMux {
 	return &strictMux{
-		seen: map[string]struct{}{},
-		m:    http.NewServeMux(),
+		m,
+		map[string]struct{}{},
 	}
 
 }
@@ -120,47 +136,174 @@ func (s *strictMux) Handle(pattern string, handler http.Handler) error {
 		}
 	}
 
-	s.m.Handle(sanitized, handler)
-	s.m.Handle(sanitized+"/", handler)
+	s.mux.Handle(sanitized, handler)
+	s.mux.Handle(sanitized+"/", handler)
 	s.seen[sanitized] = struct{}{}
 
 	return nil
 }
 
-func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error) {
+// instrumentedMux wraps a mux and instruments it.
+type instrumentedMux struct {
+	mux
+	i signalhttp.HandlerInstrumenter
+}
+
+func newInstrumentedMux(m mux, r prometheus.Registerer) *instrumentedMux {
+	return &instrumentedMux{
+		m,
+		signalhttp.NewHandlerInstrumenter(r, []string{"handler"}),
+	}
+}
+
+// Handle implements the mux interface.
+func (i *instrumentedMux) Handle(pattern string, handler http.Handler) {
+	i.mux.Handle(pattern, i.i.NewHandler(prometheus.Labels{"handler": pattern}, handler))
+}
+
+// ExtractLabeler is an HTTP handler that extract the label value to be
+// enforced from the HTTP request.  If a valid label value is found, it should
+// store it in the request's context.  Otherwise it should return an error in
+// the HTTP response (usually 400 or 500).
+type ExtractLabeler interface {
+	ExtractLabel(next http.HandlerFunc) http.Handler
+}
+
+// HTTPFormEnforcer enforces a label value extracted from the HTTP form and query parameters.
+type HTTPFormEnforcer struct {
+	ParameterName string
+}
+
+// ExtractLabel implements the ExtractLabeler interface.
+func (hff HTTPFormEnforcer) ExtractLabel(next http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		labelValue, err := hff.getLabelValue(r)
+		if err != nil {
+			prometheusAPIError(w, humanFriendlyErrorMessage(err), http.StatusBadRequest)
+			return
+		}
+
+		// Remove the proxy label from the query parameters.
+		q := r.URL.Query()
+		q.Del(hff.ParameterName)
+		r.URL.RawQuery = q.Encode()
+
+		// Remove the param from the PostForm.
+		if r.Method == http.MethodPost {
+			if err := r.ParseForm(); err != nil {
+				prometheusAPIError(w, fmt.Sprintf("Failed to parse the PostForm: %v", err), http.StatusInternalServerError)
+				return
+			}
+			if r.PostForm.Get(hff.ParameterName) != "" {
+				r.PostForm.Del(hff.ParameterName)
+				newBody := r.PostForm.Encode()
+				// We are replacing request body, close previous one (r.FormValue ensures it is read fully and not nil).
+				_ = r.Body.Close()
+				r.Body = io.NopCloser(strings.NewReader(newBody))
+				r.ContentLength = int64(len(newBody))
+			}
+		}
+
+		next.ServeHTTP(w, r.WithContext(WithLabelValue(r.Context(), labelValue)))
+	})
+}
+
+func (hff HTTPFormEnforcer) getLabelValue(r *http.Request) (string, error) {
+	formValue := r.FormValue(hff.ParameterName)
+	if formValue == "" {
+		return "", fmt.Errorf("the %q query parameter must be provided", hff.ParameterName)
+	}
+
+	return formValue, nil
+}
+
+// HTTPHeaderEnforcer enforces a label value extracted from the HTTP headers.
+type HTTPHeaderEnforcer struct {
+	Name string
+}
+
+// ExtractLabel implements the ExtractLabeler interface.
+func (hhe HTTPHeaderEnforcer) ExtractLabel(next http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		labelValue, err := hhe.getLabelValue(r)
+		if err != nil {
+			prometheusAPIError(w, humanFriendlyErrorMessage(err), http.StatusBadRequest)
+			return
+		}
+
+		next.ServeHTTP(w, r.WithContext(WithLabelValue(r.Context(), labelValue)))
+	})
+}
+
+func (hhe HTTPHeaderEnforcer) getLabelValue(r *http.Request) (string, error) {
+	headerValues := r.Header[hhe.Name]
+
+	if len(headerValues) == 0 {
+		return "", fmt.Errorf("missing HTTP header %q", hhe.Name)
+	}
+
+	if len(headerValues) > 1 {
+		return "", fmt.Errorf("multiple values for the http header %q", hhe.Name)
+	}
+
+	return headerValues[0], nil
+}
+
+// StaticLabelEnforcer enforces a static label value.
+type StaticLabelEnforcer string
+
+// ExtractLabel implements the ExtractLabeler interface.
+func (sle StaticLabelEnforcer) ExtractLabel(next http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next(w, r.WithContext(WithLabelValue(r.Context(), string(sle))))
+	})
+}
+
+func NewRoutes(upstream *url.URL, label string, extractLabeler ExtractLabeler, opts ...Option) (*routes, error) {
 	opt := options{}
 	for _, o := range opts {
 		o.apply(&opt)
 	}
 
+	if opt.registerer == nil {
+		opt.registerer = prometheus.NewRegistry()
+	}
+
 	proxy := httputil.NewSingleHostReverseProxy(upstream)
 
-	r := &routes{upstream: upstream, handler: proxy, label: label, errorOnReplace: opt.errorOnReplace}
-	mux := newStrictMux()
+	r := &routes{
+		upstream:       upstream,
+		handler:        proxy,
+		label:          label,
+		el:             extractLabeler,
+		errorOnReplace: opt.errorOnReplace,
+	}
+	mux := newStrictMux(newInstrumentedMux(http.NewServeMux(), opt.registerer))
 
 	errs := merrors.New(
-		mux.Handle("/federate", r.enforceLabel(enforceMethods(r.matcher, "GET"))),
-		mux.Handle("/api/v1/query", r.enforceLabel(enforceMethods(r.query, "GET", "POST"))),
-		mux.Handle("/api/v1/query_range", r.enforceLabel(enforceMethods(r.query, "GET", "POST"))),
-		mux.Handle("/api/v1/alerts", r.enforceLabel(enforceMethods(r.passthrough, "GET"))),
-		mux.Handle("/api/v1/rules", r.enforceLabel(enforceMethods(r.passthrough, "GET"))),
-		mux.Handle("/api/v1/series", r.enforceLabel(enforceMethods(r.matcher, "GET", "POST"))),
-		mux.Handle("/api/v1/query_exemplars", r.enforceLabel(enforceMethods(r.query, "GET", "POST"))),
+		mux.Handle("/federate", r.el.ExtractLabel(enforceMethods(r.matcher, "GET"))),
+		mux.Handle("/api/v1/query", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
+		mux.Handle("/api/v1/query_range", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
+		mux.Handle("/api/v1/alerts", r.el.ExtractLabel(enforceMethods(r.passthrough, "GET"))),
+		mux.Handle("/api/v1/rules", r.el.ExtractLabel(enforceMethods(r.passthrough, "GET"))),
+		mux.Handle("/api/v1/series", r.el.ExtractLabel(enforceMethods(r.matcher, "GET", "POST"))),
+		mux.Handle("/api/v1/query_exemplars", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
 	)
 
 	if opt.enableLabelAPIs {
 		errs.Add(
-			mux.Handle("/api/v1/labels", r.enforceLabel(enforceMethods(r.matcher, "GET", "POST"))),
+			mux.Handle("/api/v1/labels", r.el.ExtractLabel(enforceMethods(r.matcher, "GET", "POST"))),
 			// Full path is /api/v1/label/<label_name>/values but http mux does not support patterns.
 			// This is fine though as we don't care about name for matcher injector.
-			mux.Handle("/api/v1/label/", r.enforceLabel(enforceMethods(r.matcher, "GET"))),
+			mux.Handle("/api/v1/label/", r.el.ExtractLabel(enforceMethods(r.matcher, "GET"))),
 		)
 	}
 
 	errs.Add(
-		mux.Handle("/api/v2/silences", r.enforceLabel(enforceMethods(r.silences, "GET", "POST"))),
-		mux.Handle("/api/v2/silence/", r.enforceLabel(enforceMethods(r.deleteSilence, "DELETE"))),
-		mux.Handle("/api/v2/alerts/groups", r.enforceLabel(enforceMethods(r.enforceFilterParameter, "GET"))),
+		mux.Handle("/api/v2/silences", r.el.ExtractLabel(enforceMethods(r.silences, "GET", "POST"))),
+		mux.Handle("/api/v2/silence/", r.el.ExtractLabel(enforceMethods(r.deleteSilence, "DELETE"))),
+		mux.Handle("/api/v2/alerts/groups", r.el.ExtractLabel(enforceMethods(r.enforceFilterParameter, "GET"))),
+		mux.Handle("/api/v2/alerts", r.el.ExtractLabel(enforceMethods(r.alerts, "GET"))),
 	)
 
 	errs.Add(
@@ -194,48 +337,13 @@ func NewRoutes(upstream *url.URL, label string, opts ...Option) (*routes, error)
 		}
 	}
 
-	r.mux = mux.m
+	r.mux = mux
 	r.modifiers = map[string]func(*http.Response) error{
 		"/api/v1/rules":  modifyAPIResponse(r.filterRules),
 		"/api/v1/alerts": modifyAPIResponse(r.filterAlerts),
 	}
 	proxy.ModifyResponse = r.ModifyResponse
 	return r, nil
-}
-
-func (r *routes) enforceLabel(h http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		lvalue := req.FormValue(r.label)
-		if lvalue == "" {
-			http.Error(w, fmt.Sprintf("Bad request. The %q query parameter must be provided.", r.label), http.StatusBadRequest)
-			return
-		}
-		req = req.WithContext(withLabelValue(req.Context(), lvalue))
-
-		// Remove the proxy label from the query parameters.
-		q := req.URL.Query()
-		if q.Get(r.label) != "" {
-			q.Del(r.label)
-		}
-		req.URL.RawQuery = q.Encode()
-		// Remove the proxy label from the PostForm.
-		if req.Method == http.MethodPost {
-			if err := req.ParseForm(); err != nil {
-				http.Error(w, fmt.Sprintf("Failed to parse the PostForm: %v", err), http.StatusInternalServerError)
-				return
-			}
-			if req.PostForm.Get(r.label) != "" {
-				req.PostForm.Del(r.label)
-				newBody := req.PostForm.Encode()
-				// We are replacing request body, close previous one (req.FormValue ensures it is read fully and not nil).
-				_ = req.Body.Close()
-				req.Body = ioutil.NopCloser(strings.NewReader(newBody))
-				req.ContentLength = int64(len(newBody))
-			}
-		}
-
-		h.ServeHTTP(w, req)
-	})
 }
 
 func (r *routes) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -267,7 +375,10 @@ type ctxKey int
 
 const keyLabel ctxKey = iota
 
-func mustLabelValue(ctx context.Context) string {
+// MustLabelValue returns a label (previously stored using WithLabelValue())
+// from the given context.
+// It will panic if no label is found or the value is empty.
+func MustLabelValue(ctx context.Context) string {
 	label, ok := ctx.Value(keyLabel).(string)
 	if !ok {
 		panic(fmt.Sprintf("can't find the %q value in the context", keyLabel))
@@ -278,7 +389,8 @@ func mustLabelValue(ctx context.Context) string {
 	return label
 }
 
-func withLabelValue(ctx context.Context, label string) context.Context {
+// WithLabelValue stores a label in the given context.
+func WithLabelValue(ctx context.Context, label string) context.Context {
 	return context.WithValue(ctx, keyLabel, label)
 }
 
@@ -291,7 +403,7 @@ func (r *routes) query(w http.ResponseWriter, req *http.Request) {
 		[]*labels.Matcher{{
 			Name:  r.label,
 			Type:  labels.MatchEqual,
-			Value: mustLabelValue(req.Context()),
+			Value: MustLabelValue(req.Context()),
 		}}...)
 
 	// The `query` can come in the URL query string and/or the POST body.
@@ -303,11 +415,11 @@ func (r *routes) query(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		switch err.(type) {
 		case IllegalLabelMatcherError:
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			prometheusAPIError(w, err.Error(), http.StatusBadRequest)
 		case queryParseError:
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			prometheusAPIError(w, err.Error(), http.StatusBadRequest)
 		case enforceLabelError:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			prometheusAPIError(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
@@ -317,23 +429,23 @@ func (r *routes) query(w http.ResponseWriter, req *http.Request) {
 	// Enforce the query in the POST body if needed.
 	if req.Method == http.MethodPost {
 		if err := req.ParseForm(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			prometheusAPIError(w, err.Error(), http.StatusBadRequest)
 		}
 		q, found2, err = enforceQueryValues(e, req.PostForm)
 		if err != nil {
 			switch err.(type) {
 			case IllegalLabelMatcherError:
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				prometheusAPIError(w, err.Error(), http.StatusBadRequest)
 			case queryParseError:
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				prometheusAPIError(w, err.Error(), http.StatusBadRequest)
 			case enforceLabelError:
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				prometheusAPIError(w, err.Error(), http.StatusInternalServerError)
 			}
 			return
 		}
 		// We are replacing request body, close previous one (ParseForm ensures it is read fully and not nil).
 		_ = req.Body.Close()
-		req.Body = ioutil.NopCloser(strings.NewReader(q))
+		req.Body = io.NopCloser(strings.NewReader(q))
 		req.ContentLength = int64(len(q))
 	}
 
@@ -377,7 +489,7 @@ func (r *routes) matcher(w http.ResponseWriter, req *http.Request) {
 	matcher := &labels.Matcher{
 		Name:  r.label,
 		Type:  labels.MatchEqual,
-		Value: mustLabelValue(req.Context()),
+		Value: MustLabelValue(req.Context()),
 	}
 	q := req.URL.Query()
 
@@ -396,7 +508,7 @@ func (r *routes) matcher(w http.ResponseWriter, req *http.Request) {
 		// We are replacing request body, close previous one (ParseForm ensures it is read fully and not nil).
 		_ = req.Body.Close()
 		newBody := q.Encode()
-		req.Body = ioutil.NopCloser(strings.NewReader(newBody))
+		req.Body = io.NopCloser(strings.NewReader(newBody))
 		req.ContentLength = int64(len(newBody))
 	}
 	r.handler.ServeHTTP(w, req)
@@ -450,4 +562,14 @@ func (e enforceLabelError) Error() string {
 
 func newEnforceLabelError(err error) enforceLabelError {
 	return enforceLabelError{msg: fmt.Sprintf("error enforcing label %q", err.Error())}
+}
+
+// humanFriendlyErrorMessage returns an error message with a capitalized first letter
+// and a punctuation at the end.
+func humanFriendlyErrorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	errMsg := err.Error()
+	return fmt.Sprintf("%s%s.", strings.ToUpper(errMsg[:1]), errMsg[1:])
 }

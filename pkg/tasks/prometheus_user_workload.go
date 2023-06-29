@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -261,7 +262,7 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 	}
 
 	klog.V(4).Info("waiting for UserWorkload Prometheus object changes")
-	err = t.client.WaitForPrometheus(ctx, p)
+	err = t.client.ValidatePrometheus(ctx, types.NamespacedName{Namespace: p.Namespace, Name: p.Name})
 	if err != nil {
 		return errors.Wrap(err, "waiting for UserWorkload Prometheus object changes failed")
 	}

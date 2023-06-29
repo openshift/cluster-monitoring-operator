@@ -216,7 +216,7 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 						{
 							Alert: "VersionAlert",
 							Expr:  intstr.FromString(fmt.Sprintf(`version{namespace="%s",job="prometheus-example-app"} == 1`, userWorkloadTestNs)),
-							For:   "1s",
+							For:   func(d monitoringv1.Duration) *monitoringv1.Duration { return &d }("1s"),
 						},
 					},
 				},

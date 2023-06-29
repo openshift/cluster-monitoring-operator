@@ -42,11 +42,8 @@ import (
 
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
-	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
-	prometheusoperator "github.com/prometheus-operator/prometheus-operator/pkg/prometheus"
-	"github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	thanosoperator "github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -429,7 +426,7 @@ func (c *Client) EnsurePrometheusUserWorkloadConfigMapExists(ctx context.Context
 }
 
 func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
-	return wait.Poll(time.Second, time.Minute*5, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, time.Second, time.Minute*5, false, func(ctx context.Context) (bool, error) {
 		_, err := c.mclient.MonitoringV1().Prometheuses(c.namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			klog.V(4).ErrorS(err, "AssurePrometheusOperatorCRsExist: failed to list Prometheuses")
@@ -784,8 +781,16 @@ func (c *Client) DeletePrometheus(ctx context.Context, p *monv1.Prometheus) erro
 	}
 
 	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
-		pods, err := c.KubernetesInterface().CoreV1().Pods(p.GetNamespace()).List(ctx, prometheusoperator.ListOptions(p.GetName()))
+	if err := wait.PollUntilContextTimeout(ctx, time.Second*10, time.Minute*10, false, func(ctx context.Context) (bool, error) {
+		pods, err := c.KubernetesInterface().CoreV1().Pods(p.GetNamespace()).List(
+			ctx,
+			metav1.ListOptions{
+				LabelSelector: fields.SelectorFromSet(fields.Set(map[string]string{
+					"app.kubernetes.io/name": "prometheus",
+					"prometheus":             p.GetName(),
+				})).String(),
+			},
+		)
 		if err != nil {
 			lastErr = err
 			klog.V(4).ErrorS(err, "DeletePrometheus: failed to list Pods")
@@ -798,7 +803,7 @@ func (c *Client) DeletePrometheus(ctx context.Context, p *monv1.Prometheus) erro
 		lastErr = errors.Errorf("%d pods still present", len(pods.Items))
 		return len(pods.Items) == 0, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for Prometheus %s/%s deletion", p.GetNamespace(), p.GetName())
@@ -816,7 +821,7 @@ func (c *Client) DeleteThanosRuler(ctx context.Context, tr *monv1.ThanosRuler) e
 	}
 
 	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*10, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second*10, time.Minute*10, false, func(ctx context.Context) (bool, error) {
 		pods, err := c.KubernetesInterface().CoreV1().Pods(tr.GetNamespace()).List(ctx, thanosoperator.ListOptions(tr.GetName()))
 		if err != nil {
 			lastErr = err
@@ -830,7 +835,7 @@ func (c *Client) DeleteThanosRuler(ctx context.Context, tr *monv1.ThanosRuler) e
 		lastErr = errors.Errorf("%d pods still present", len(pods.Items))
 		return len(pods.Items) == 0, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for Thanos Ruler %s/%s deletion", tr.GetNamespace(), tr.GetName())
@@ -934,43 +939,6 @@ func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
 	return err
 }
 
-func (c *Client) WaitForPrometheus(ctx context.Context, p *monv1.Prometheus) error {
-	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
-		p, err := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace()).Get(ctx, p.GetName(), metav1.GetOptions{})
-		if err != nil {
-			lastErr = err
-			klog.V(4).ErrorS(err, "WaitForPrometheus: failed to get Prometheus object")
-			return false, nil
-		}
-		status, _, err := prometheusoperator.Status(ctx, c.kclient.(*kubernetes.Clientset), p)
-		if err != nil {
-			lastErr = err
-			klog.V(4).ErrorS(err, "WaitForPrometheus: failed to get Prometheus status")
-			return false, nil
-		}
-
-		expectedReplicas := *p.Spec.Replicas
-		if expectedReplicas != status.UpdatedReplicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
-				expectedReplicas, status.UpdatedReplicas)
-			return false, nil
-		}
-		if status.AvailableReplicas < expectedReplicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
-				expectedReplicas, status.AvailableReplicas)
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		return errors.Wrapf(err, "waiting for Prometheus %s/%s", p.GetNamespace(), p.GetName())
-	}
-	return nil
-}
-
 // validatePrometheusResource is a helper method for ValidatePrometheus.
 // NOTE: this function is refactored out of wait.Poll for testing
 func (c Client) validatePrometheusResource(ctx context.Context, prom types.NamespacedName) (bool, []error) {
@@ -984,9 +952,9 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 		}
 	}
 
-	avail, err := prometheusConditonForType(p.Status.Conditions, monv1.PrometheusAvailable)
+	avail, err := getMonitoringCondition(p.Status.Conditions, monv1.Available)
 	if err != nil {
-		klog.V(4).Info("validate prometheus failed to get prometheus avail condition: ", err)
+		err = fmt.Errorf("prometheus: %w", err)
 		// failing to get Prometheus.Status.Condtion -> Degraded: Unknown & Unavailable: Unknown
 		return false, []error{
 			NewUnknownAvailabiltyError(err.Error()),
@@ -994,14 +962,14 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 		}
 	}
 
-	if avail.Status == monv1.PrometheusConditionTrue {
+	if avail.Status == monv1.ConditionTrue {
 		// Prometheus is Available; check reconciled Condition as well
-		reconciled, err := prometheusConditonForType(p.Status.Conditions, monv1.PrometheusReconciled)
+		reconciled, err := getMonitoringCondition(p.Status.Conditions, monv1.Reconciled)
 		if err != nil {
-			klog.V(4).Info("validate prometheus failed to get prometheus reconciled condition: ", err)
+			err = fmt.Errorf("prometheus: %w", err)
 			// failing to get Prometheus.Status.Condtion -> Degraded: Unknown
 			return false, []error{NewUnknownDegradedError(err.Error())}
-		} else if reconciled.Status != monv1.PrometheusConditionTrue {
+		} else if reconciled.Status != monv1.ConditionTrue {
 			klog.V(4).Info("validate prometheus failed reconciled condition: ", reconciled.Status)
 			msg := fmt.Sprintf("%s: %s", reconciled.Reason, reconciled.Message)
 			return false, []error{NewDegradedError(msg)}
@@ -1017,7 +985,7 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 	msg := fmt.Sprintf("%s: %s", avail.Reason, avail.Message)
 	errs := []error{NewDegradedError(msg)}
 
-	if avail.Status == monv1.PrometheusConditionFalse {
+	if avail.Status == monv1.ConditionFalse {
 		// prometheus not available should result in a Degraded and Unavailable error
 		errs = append(errs, NewAvailabilityError(msg))
 	}
@@ -1031,58 +999,84 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 func (c *Client) ValidatePrometheus(ctx context.Context, promNsName types.NamespacedName) error {
 	validationErrors := []error{}
 
-	pollErr := wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+	pollErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 		stop, errs := c.validatePrometheusResource(ctx, promNsName)
 		validationErrors = errs
 		return stop, nil
 	})
 
-	if pollErr == wait.ErrWaitTimeout {
+	if pollErr != nil {
 		return apiutilerrors.NewAggregate(validationErrors)
 	}
 
 	return nil
 }
 
-func prometheusConditonForType(conditions []monv1.PrometheusCondition, t monv1.PrometheusConditionType) (monv1.PrometheusCondition, error) {
+func getMonitoringCondition(conditions []monv1.Condition, t monv1.ConditionType) (monv1.Condition, error) {
 	for _, c := range conditions {
 		if c.Type == t {
 			return c, nil
 		}
 	}
-	return monv1.PrometheusCondition{}, fmt.Errorf("prometheus: missing condition type - %s", t)
+	return monv1.Condition{}, fmt.Errorf("failed to find condition type %q", t)
+}
+
+// validateMonitoringResource returns an error if the monitoring resource
+// (Prometheus, Alertmanager, ThanosRuler) isn't fully available.
+func validateMonitoringResource(expectedReplicas, updatedReplicas, availableReplicas int32, generation int64, conditions []monv1.Condition) error {
+	if expectedReplicas != updatedReplicas {
+		return fmt.Errorf("expected %d replicas, got %d updated replicas", expectedReplicas, updatedReplicas)
+	}
+
+	if availableReplicas < expectedReplicas {
+		return fmt.Errorf("expected %d replicas, got %d available replicas", expectedReplicas, availableReplicas)
+	}
+
+	for _, ct := range []monv1.ConditionType{
+		monv1.Reconciled,
+		monv1.Available,
+	} {
+		cond, err := getMonitoringCondition(conditions, ct)
+		if err != nil {
+			return err
+		}
+
+		if generation != cond.ObservedGeneration {
+			return fmt.Errorf("condition %s: generation (%d) and observed generation (%d) mismatch", cond.Type, generation, cond.ObservedGeneration)
+		}
+
+		if cond.Status != monv1.ConditionTrue {
+			return fmt.Errorf("condition %s: status %s: reason %s: %s", cond.Type, cond.Status, cond.Reason, cond.Message)
+		}
+	}
+
+	return nil
 }
 
 func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
 	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second*10, time.Minute*5, false, func(ctx context.Context) (bool, error) {
 		a, err := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace()).Get(ctx, a.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
 			klog.V(4).ErrorS(err, "WaitForAlertmanager: failed to get AlertManager")
 			return false, nil
 		}
-		status, _, err := alertmanager.Status(ctx, c.kclient.(*kubernetes.Clientset), a)
-		if err != nil {
-			lastErr = err
-			klog.V(4).ErrorS(err, "WaitForAlertmanager: failed to get AlertManager status")
+
+		lastErr = validateMonitoringResource(
+			*a.Spec.Replicas,
+			a.Status.UpdatedReplicas,
+			a.Status.AvailableReplicas,
+			a.Generation,
+			a.Status.Conditions,
+		)
+		if lastErr != nil {
 			return false, nil
 		}
 
-		expectedReplicas := *a.Spec.Replicas
-		if expectedReplicas != status.UpdatedReplicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
-				expectedReplicas, status.UpdatedReplicas)
-			return false, nil
-		}
-		if status.AvailableReplicas < expectedReplicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
-				expectedReplicas, status.AvailableReplicas)
-			return false, nil
-		}
 		return true, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for Alertmanager %s/%s", a.GetNamespace(), a.GetName())
@@ -1092,34 +1086,28 @@ func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager)
 
 func (c *Client) WaitForThanosRuler(ctx context.Context, t *monv1.ThanosRuler) error {
 	var lastErr error
-	if err := wait.Poll(time.Second*10, time.Minute*5, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second*10, time.Minute*5, false, func(ctx context.Context) (bool, error) {
 		tr, err := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace()).Get(ctx, t.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
 			klog.V(4).ErrorS(err, "WaitForThanosRuler: failed to get ThanosRuler")
 			return false, nil
 		}
-		status, _, err := thanos.RulerStatus(ctx, c.kclient.(*kubernetes.Clientset), tr)
-		if err != nil {
-			lastErr = err
-			klog.V(4).ErrorS(err, "WaitForThanosRuler: failed to get ThanosRuler status")
+
+		lastErr = validateMonitoringResource(
+			*tr.Spec.Replicas,
+			tr.Status.UpdatedReplicas,
+			tr.Status.AvailableReplicas,
+			tr.Generation,
+			tr.Status.Conditions,
+		)
+		if lastErr != nil {
 			return false, nil
 		}
 
-		expectedReplicas := *tr.Spec.Replicas
-		if expectedReplicas != status.UpdatedReplicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
-				expectedReplicas, status.UpdatedReplicas)
-			return false, nil
-		}
-		if status.AvailableReplicas < expectedReplicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d available replicas",
-				expectedReplicas, status.AvailableReplicas)
-			return false, nil
-		}
 		return true, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for Thanos Ruler %s/%s", t.GetNamespace(), t.GetName())
@@ -1184,7 +1172,7 @@ func (c *Client) UpdateDeployment(ctx context.Context, dep *appsv1.Deployment) e
 
 func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deployment) error {
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentCreateTimeout, false, func(ctx context.Context) (bool, error) {
 		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(ctx, dep.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1209,7 +1197,7 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 		}
 		return true, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for DeploymentRollout of %s/%s", dep.GetNamespace(), dep.GetName())
@@ -1219,7 +1207,7 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 
 func (c *Client) WaitForDeploymentDeletion(ctx context.Context, dep *appsv1.Deployment) error {
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentDeleteTimeout, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentDeleteTimeout, false, func(ctx context.Context) (bool, error) {
 		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(ctx, dep.GetName(), metav1.GetOptions{})
 		if !apierrors.IsNotFound(err) {
 			if err != nil {
@@ -1233,7 +1221,7 @@ func (c *Client) WaitForDeploymentDeletion(ctx context.Context, dep *appsv1.Depl
 
 		return true, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for deletion of Deployment %s/%s", dep.GetNamespace(), dep.GetName())
@@ -1243,7 +1231,7 @@ func (c *Client) WaitForDeploymentDeletion(ctx context.Context, dep *appsv1.Depl
 
 func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.StatefulSet) error {
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentCreateTimeout, false, func(ctx context.Context) (bool, error) {
 		s, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(ctx, sts.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1267,7 +1255,7 @@ func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.Stat
 		}
 		return true, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for StatefulsetRollout of %s/%s", sts.GetNamespace(), sts.GetName())
@@ -1278,7 +1266,7 @@ func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.Stat
 func (c *Client) WaitForSecret(ctx context.Context, s *v1.Secret) (*v1.Secret, error) {
 	var result *v1.Secret
 	var lastErr error
-	if err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 		var err error
 
 		result, err = c.kclient.CoreV1().Secrets(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
@@ -1301,7 +1289,7 @@ func (c *Client) WaitForSecret(ctx context.Context, s *v1.Secret) (*v1.Secret, e
 
 		return true, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return nil, errors.Wrapf(err, "waiting for secret %s/%s", s.GetNamespace(), s.GetName())
@@ -1323,7 +1311,7 @@ func (c *Client) WaitForSecretByNsName(ctx context.Context, obj types.Namespaced
 func (c *Client) WaitForConfigMap(ctx context.Context, cm *v1.ConfigMap) (*v1.ConfigMap, error) {
 	var result *v1.ConfigMap
 	var lastErr error
-	if err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 		var err error
 
 		result, err = c.kclient.CoreV1().ConfigMaps(cm.Namespace).Get(ctx, cm.Name, metav1.GetOptions{})
@@ -1346,7 +1334,7 @@ func (c *Client) WaitForConfigMap(ctx context.Context, cm *v1.ConfigMap) (*v1.Co
 
 		return true, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return nil, errors.Wrapf(err, "waiting for ConfigMap %s/%s", cm.GetNamespace(), cm.GetName())
@@ -1369,7 +1357,7 @@ func (c *Client) WaitForConfigMapByNsName(ctx context.Context, obj types.Namespa
 func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (string, error) {
 	host := ""
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentCreateTimeout, false, func(ctx context.Context) (bool, error) {
 		newRoute, err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Get(ctx, r.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1389,7 +1377,7 @@ func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (strin
 		lastErr = errors.New("route is not yet Admitted")
 		return false, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return host, errors.Wrapf(err, "waiting for route %s/%s", r.GetNamespace(), r.GetName())
@@ -1450,7 +1438,7 @@ func (c *Client) UpdateDaemonSet(ctx context.Context, ds *appsv1.DaemonSet) erro
 
 func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonSet) error {
 	var lastErr error
-	if err := wait.Poll(time.Second, deploymentCreateTimeout, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentCreateTimeout, false, func(ctx context.Context) (bool, error) {
 		d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(ctx, ds.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1484,7 +1472,7 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 		}
 		return true, nil
 	}); err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
 		return errors.Wrapf(err, "waiting for DaemonSetRollout of %s/%s", ds.GetNamespace(), ds.GetName())
@@ -1814,7 +1802,7 @@ func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apire
 }
 
 func (c *Client) WaitForCRDReady(ctx context.Context, crd *extensionsobj.CustomResourceDefinition) error {
-	return wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 		return c.CRDReady(ctx, crd)
 	})
 }

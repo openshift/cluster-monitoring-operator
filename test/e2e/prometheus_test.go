@@ -29,6 +29,7 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
@@ -278,7 +279,10 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			if err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
 				t.Fatal(err)
 			}
-			if err := f.OperatorClient.WaitForPrometheus(ctx, prometheusReceiver); err != nil {
+			if err := f.OperatorClient.ValidatePrometheus(ctx, types.NamespacedName{
+				Name:      prometheusReceiver.Name,
+				Namespace: prometheusReceiver.Namespace,
+			}); err != nil {
 				t.Fatal(err)
 			}
 

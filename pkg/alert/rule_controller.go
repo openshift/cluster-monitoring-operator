@@ -328,15 +328,24 @@ func (rc *RuleController) promRuleName(namespace, name string, uid types.UID) st
 func (rc *RuleController) convertRuleGroups(groups []osmv1.RuleGroup) []monv1.RuleGroup {
 	monv1Groups := make([]monv1.RuleGroup, len(groups))
 
+	durationPtr := func(d osmv1.Duration) *monv1.Duration {
+		if d == "" {
+			return nil
+		}
+
+		ret := monv1.Duration(d)
+		return &ret
+	}
+
 	for i, group := range groups {
-		monv1Group := monv1.RuleGroup{Name: group.Name, Interval: monv1.Duration(group.Interval)}
+		monv1Group := monv1.RuleGroup{Name: group.Name, Interval: durationPtr(group.Interval)}
 		monv1Group.Rules = make([]monv1.Rule, len(group.Rules))
 
 		for j, rule := range group.Rules {
 			monv1Rule := monv1.Rule{
 				Alert:       rule.Alert,
 				Expr:        rule.Expr,
-				For:         monv1.Duration(rule.For),
+				For:         durationPtr(rule.For),
 				Labels:      rule.Labels,
 				Annotations: rule.Annotations,
 			}

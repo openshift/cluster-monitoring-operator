@@ -15,8 +15,7 @@ spec:
     rules:
     - alert: ThanosQueryHttpRequestQueryErrorRateHigh
       annotations:
-        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} is failing
-          to handle {{$value | humanize}}% of "query" requests.
+        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} is failing to handle {{$value | humanize}}% of "query" requests.
         summary: Thanos Query is failing to handle requests.
       expr: |
         (
@@ -29,8 +28,7 @@ spec:
         severity: warning
     - alert: ThanosQueryHttpRequestQueryRangeErrorRateHigh
       annotations:
-        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} is failing
-          to handle {{$value | humanize}}% of "query_range" requests.
+        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} is failing to handle {{$value | humanize}}% of "query_range" requests.
         summary: Thanos Query is failing to handle requests.
       expr: |
         (
@@ -43,8 +41,7 @@ spec:
         severity: warning
     - alert: ThanosQueryGrpcServerErrorRate
       annotations:
-        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} is failing
-          to handle {{$value | humanize}}% of requests.
+        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} is failing to handle {{$value | humanize}}% of requests.
         summary: Thanos Query is failing to handle requests.
       expr: |
         (
@@ -58,8 +55,7 @@ spec:
         severity: warning
     - alert: ThanosQueryGrpcClientErrorRate
       annotations:
-        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} is failing
-          to send {{$value | humanize}}% of requests.
+        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} is failing to send {{$value | humanize}}% of requests.
         summary: Thanos Query is failing to send requests.
       expr: |
         (
@@ -72,8 +68,7 @@ spec:
         severity: warning
     - alert: ThanosQueryHighDNSFailures
       annotations:
-        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} have {{$value
-          | humanize}}% of failing DNS queries for store endpoints.
+        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} have {{$value | humanize}}% of failing DNS queries for store endpoints.
         summary: Thanos Query is having high number of DNS failures.
       expr: |
         (
@@ -86,12 +81,7 @@ spec:
         severity: warning
     - alert: ThanosQueryOverload
       annotations:
-        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} has been
-          overloaded for more than 15 minutes. This may be a symptom of excessive
-          simultanous complex requests, low performance of the Prometheus API, or
-          failures within these components. Assess the health of the Thanos query
-          instances, the connnected Prometheus instances, look for potential senders
-          of these requests and then contact support.
+        description: Thanos Query {{$labels.job}} in {{$labels.namespace}} has been overloaded for more than 15 minutes. This may be a symptom of excessive simultanous complex requests, low performance of the Prometheus API, or failures within these components. Assess the health of the Thanos query instances, the connnected Prometheus instances, look for potential senders of these requests and then contact support.
         summary: Thanos query reaches its maximum capacity serving concurrent requests.
       expr: |
         (
