@@ -20,6 +20,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
 )
 
 type MonitoringPluginTask struct {
@@ -37,6 +38,22 @@ func NewMonitoringPluginTask(client *client.Client, factory *manifests.Factory, 
 }
 
 func (t *MonitoringPluginTask) Run(ctx context.Context) error {
+	// NOTE:  console capability (like other capabilities) can only go from
+	// disabled -> enabled and not the other way around, meaning that CMO
+	// doesn't have to deal with removal of the console plugin resources.
+	// Hence, skip installing console if console capability is disabled.
+	{
+		enabled, err := t.client.HasConsoleCapability(ctx)
+		if err != nil {
+			return errors.Wrap(err, "failed to determine if console capability is enabled")
+		}
+
+		if !enabled {
+			klog.V(4).Infof("Skipping installation of Console Plugin as console capability is disabled")
+			return nil
+		}
+	}
+
 	{ // plugin
 		plg, err := t.factory.MonitoringPlugin()
 		if err != nil {
