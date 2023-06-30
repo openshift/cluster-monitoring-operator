@@ -1420,7 +1420,10 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 }
 
 func TestPrometheusK8sHttpConfig(t *testing.T) {
-	c, err := NewConfigFromString("", false)
+	config :=
+		`prometheusK8s:`
+
+	c, err := NewConfigFromString(config, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1441,7 +1444,10 @@ func TestPrometheusK8sHttpConfig(t *testing.T) {
 }
 
 func TestAlertmanagerHttpConfig(t *testing.T) {
-	c, err := NewConfigFromString("", false)
+	config :=
+		`AlertmanagerMain:`
+
+	c, err := NewConfigFromString(config, false)
 	if err != nil {
 		t.Fatal(err)
 	}
