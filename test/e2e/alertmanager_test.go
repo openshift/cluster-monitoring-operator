@@ -135,6 +135,130 @@ enableUserWorkload: true`,
 	}
 }
 
+func TestAlertmanagerPolicyHeaders(t *testing.T) {
+	const (
+		config             = "alertmanagerMain:"
+		userWorkloadConfig = ""
+		amName             = "main"
+	)
+	amNamespace := f.Ns
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      framework.ClusterMonitorConfigMapName,
+			Namespace: f.Ns,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Data: map[string]string{
+			"config.yaml": config,
+		},
+	}
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, cm)
+	})
+
+	testAlertmanagerReady(t, amName, amNamespace)
+
+	// The tenancy port (9092) is only exposed in-cluster so we need to use
+	// port forwarding to access kube-rbac-proxy.
+	host, cleanUp, err := f.ForwardPort(t, amNamespace, fmt.Sprintf("alertmanager-%s", amName), 9092)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(cleanUp)
+
+	testAlertmanagerPolicyHeaders(t, host)
+}
+
+func testAlertmanagerPolicyHeaders(t *testing.T, host string) {
+	t.Helper()
+
+	ctx := context.Background()
+	const testNs = "policy-headers-e2e-test"
+
+	ns := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+	}
+	ns, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		foreground := metav1.DeletePropagationForeground
+		if err := f.KubeClient.CoreV1().Namespaces().Delete(ctx, testNs, metav1.DeleteOptions{PropagationPolicy: &foreground}); err != nil {
+			t.Logf("err deleting namespace %s: %v", testNs, err)
+		}
+	})
+
+	sa := "editor"
+	cr := "monitoring-rules-edit"
+
+	_, err = f.CreateServiceAccount(testNs, sa)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if cr != "" {
+		_, err = f.CreateRoleBindingFromClusterRole(testNs, sa, cr)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var client *framework.PrometheusClient
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		token, err := f.GetServiceAccountToken(testNs, sa)
+		if err != nil {
+			return err
+		}
+		client = framework.NewPrometheusClient(
+			host,
+			token,
+			&framework.QueryParameterInjector{
+				Name:  "namespace",
+				Value: testNs,
+			},
+		)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = framework.Poll(5*time.Second, 1*time.Minute, func() error {
+		resp, err := client.Do("GET", "/api/v2/alerts", nil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("expecting 200 status code, got %d (%q)", resp.StatusCode, resp.Body)
+		}
+
+		if resp.Header == nil {
+			return fmt.Errorf("expecting policy headers but is empty")
+		}
+
+		if resp.Header["Content-Security-Policy"][0] != "frame-ancestors 'none'" {
+			return fmt.Errorf("expecting frame-ancestors 'none' policy headers, got %q", resp.Header["Content-Security-Policy"])
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testAlertmanagerReady(t *testing.T, name, ns string, validator ...validator) *monitoringv1.Alertmanager {
 	t.Helper()
 
