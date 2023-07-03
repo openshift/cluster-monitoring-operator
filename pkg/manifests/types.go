@@ -283,6 +283,11 @@ type NodeExporterConfig struct {
 	// For nodes with a high CPU count, you can set the limit to a low number, which  saves resources by preventing Go routines from being scheduled to run on all CPUs.
 	// However, I/O performance degrades if the `maxProcs` value is set too low, and there are many metrics to collect.
 	MaxProcs uint32 `json:"maxProcs,omitempty"`
+	// A list of network devices, as regular expressions, to be excluded from the relevant collector configuration such as `netdev` and `netclass`.
+	// When not set, the Cluster Monitoring Operator uses a predefined list of devices to be excluded to minimize the impact on memory usage.
+	// When set as an empty list, no devices are excluded.
+	// If you modify this setting, monitor the `prometheus-k8s` deployment closely for excessive memory usage.
+	IgnoredNetworkDevices *[]string `json:"ignoredNetworkDevices,omitempty"`
 }
 
 // The `NodeExporterCollectorConfig` resource defines settings for individual collectors

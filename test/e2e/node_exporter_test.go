@@ -194,7 +194,7 @@ nodeExporter:
 	}
 }
 
-// This test ensures neccessary collectors stay operational after changing generic options in Node Exporter.
+// This test ensures necessary collectors stay operational after changing generic options in Node Exporter.
 func TestNodeExporterGenericOptions(t *testing.T) {
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
@@ -253,4 +253,64 @@ nodeExporter:
 		})
 	}
 
+}
+
+func TestNodeExporterNetworkDevicesExclusion(t *testing.T) {
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
+	})
+
+	tests := []struct {
+		name      string
+		config    string
+		filter    string
+		mustExist bool
+	}{
+		{
+			name:      "default devices generate metrics",
+			mustExist: true,
+		},
+		{
+			name:      "default devices include 'lo'",
+			filter:    `device="lo"`,
+			mustExist: true,
+		},
+		{
+			name: "excluding 'lo'",
+			config: `
+nodeExporter:
+  ignoredNetworkDevices:
+  - lo`,
+			filter:    `device="lo"`,
+			mustExist: false,
+		},
+		{
+			name: "excluding all",
+			config: `
+nodeExporter:
+  ignoredNetworkDevices:
+  - .*`,
+			mustExist: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run("Network Devices Exclusion: "+test.name, func(st *testing.T) {
+			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, test.config))
+			q := fmt.Sprintf(`sum(rate(node_network_receive_bytes_total{%s}[30s]))`, test.filter)
+			if test.mustExist {
+				f.PrometheusK8sClient.WaitForQueryReturn(
+					t, 5*time.Minute, q,
+					func(v float64) error {
+						if v > 0 {
+							return nil
+						}
+						return fmt.Errorf(`test %s failed, expecting query '%s' to return a positive value, got: %v.`, test.name, q, v)
+					},
+				)
+			} else {
+				f.PrometheusK8sClient.WaitForQueryReturnEmpty(t, 5*time.Minute, fmt.Sprintf(`absent(%s)`, q))
+			}
+		})
+	}
 }

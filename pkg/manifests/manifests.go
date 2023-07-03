@@ -26,6 +26,7 @@ import (
 	"net"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -836,7 +837,7 @@ func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterServiceMonitor))
 }
 
-func (f *Factory) updateNodeExporterArgs(args []string) []string {
+func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 	args = setArg(args, fmt.Sprintf("--runtime.gomaxprocs=%d", f.config.ClusterMonitoringConfiguration.NodeExporterConfig.MaxProcs), "")
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.CpuFreq.Enabled {
 		args = setArg(args, "--collector.cpufreq", "")
@@ -850,8 +851,24 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 		args = setArg(args, "--no-collector.tcpstat", "")
 	}
 
+	var excludedDevices string
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled ||
+		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {
+		devs := *f.config.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices
+		// An empty list generates a regular expression matching empty strings: `^()$`
+		// It is therefore preferable not to set the exclusion regex at all.
+		if len(devs) > 0 {
+			var err error
+			excludedDevices, err = regexListToArg(devs)
+			if err != nil {
+				return nil, fmt.Errorf("invalid regexp in config nodeExporter.ignoredNetworkDevices: %w", err)
+			}
+		}
+	}
+
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled {
 		args = setArg(args, "--collector.netdev", "")
+		args = setArg(args, "--collector.netdev.device-exclude=", excludedDevices)
 	} else {
 		args = setArg(args, "--no-collector.netdev", "")
 	}
@@ -861,6 +878,7 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 		if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.UseNetlink {
 			args = setArg(args, "--collector.netclass.netlink", "")
 		}
+		args = setArg(args, "--collector.netclass.ignored-devices=", excludedDevices)
 	} else {
 		args = setArg(args, "--no-collector.netclass", "")
 	}
@@ -883,7 +901,13 @@ func (f *Factory) updateNodeExporterArgs(args []string) []string {
 		args = setArg(args, "--no-collector.ksmd", "")
 	}
 
-	return args
+	return args, nil
+}
+
+func regexListToArg(list []string) (string, error) {
+	r := "^(" + strings.Join(list, "|") + ")$"
+	_, err := regexp.Compile(r)
+	return r, err
 }
 
 func (f *Factory) NodeExporterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -900,7 +924,10 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 		switch container.Name {
 		case "node-exporter":
 			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.NodeExporter
-			ds.Spec.Template.Spec.Containers[i].Args = f.updateNodeExporterArgs(ds.Spec.Template.Spec.Containers[i].Args)
+			ds.Spec.Template.Spec.Containers[i].Args, err = f.updateNodeExporterArgs(ds.Spec.Template.Spec.Containers[i].Args)
+			if err != nil {
+				return nil, err
+			}
 		case "kube-rbac-proxy":
 			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			ds.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)

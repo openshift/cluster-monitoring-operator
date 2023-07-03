@@ -2921,6 +2921,8 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.netclass.netlink",
 				"--no-collector.buddyinfo",
 				"--no-collector.ksmd",
+				"--collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
+				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
@@ -3019,6 +3021,34 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.ksmd"},
 			argsAbsent:  []string{"--no-collector.ksmd"},
+		},
+		{
+			name: "configure network interfaces exclusion",
+			config: `
+nodeExporter:
+  ignoredNetworkDevices: ["br-int", "lo"]
+`,
+			argsPresent: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=^(br-int|lo)$",
+				"--collector.netdev",
+				"--collector.netdev.device-exclude=^(br-int|lo)$",
+			},
+			argsAbsent: []string{"--no-collector.netclass", "--no-collector.netdev"},
+		},
+		{
+			name: "configure empty network interfaces exclusion",
+			config: `
+nodeExporter:
+  ignoredNetworkDevices: []
+`,
+			argsPresent: []string{
+				"--collector.netclass",
+				"--collector.netclass.ignored-devices=",
+				"--collector.netdev",
+				"--collector.netdev.device-exclude=",
+			},
+			argsAbsent: []string{"--no-collector.netclass", "--no-collector.netdev"},
 		},
 	}
 

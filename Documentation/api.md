@@ -343,6 +343,7 @@ The `NodeExporterConfig` resource defines settings for the `node-exporter` agent
 | -------- | ---- | ----------- |
 | collectors | [NodeExporterCollectorConfig](#nodeexportercollectorconfig) | Defines which collectors are enabled and their additional configuration parameters. |
 | maxProcs | uint32 | The target number of CPUs on which the Node Exporter's process will run. The default value here is `0`, which means that Node Exporter runs on all CPUs. If a kernel deadlock occurs or if performance degrades when reading from `sysfs` concurrently, you can change this value to `1`, which limits Node Exporter to running on one CPU. For nodes with a high CPU count, you can set the limit to a low number, which  saves resources by preventing Go routines from being scheduled to run on all CPUs. However, I/O performance degrades if the `maxProcs` value is set too low, and there are many metrics to collect. |
+| ignoredNetworkDevices | *[]string | A list of network devices, as regular expressions, to be excluded from the relevant collector configuration such as `netdev` and `netclass`. When not set, the Cluster Monitoring Operator uses a predefined list of devices to be excluded to minimize the impact on memory usage. When set as an empty list, no devices are excluded. If you modify this setting, monitor the `prometheus-k8s` deployment closely for excessive memory usage. |
 
 [Back to TOC](#table-of-contents)
 
