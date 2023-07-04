@@ -53,10 +53,11 @@ import (
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
+const E2eServiceAccount = "cluster-monitoring-operator-e2e"
+
 const (
 	namespaceName             = "openshift-monitoring"
 	userWorkloadNamespaceName = "openshift-user-workload-monitoring"
-	e2eServiceAccount         = "cluster-monitoring-operator-e2e"
 )
 
 type Framework struct {
@@ -181,7 +182,7 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 		return nil, nil, errors.Wrap(err, "failed to setup test framework")
 	}
 
-	token, err := f.GetServiceAccountToken(namespaceName, e2eServiceAccount)
+	token, err := f.GetServiceAccountToken(namespaceName, E2eServiceAccount)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -226,21 +227,21 @@ type cleanUpFunc func() error
 func (f *Framework) setup() (cleanUpFunc, error) {
 	cleanUpFuncs := []cleanUpFunc{}
 
-	cf, err := f.CreateServiceAccount(f.Ns, e2eServiceAccount)
+	cf, err := f.CreateServiceAccount(f.Ns, E2eServiceAccount)
 	if err != nil {
 		return nil, err
 	}
 
 	cleanUpFuncs = append(cleanUpFuncs, cf)
 
-	cf, err = f.CreateClusterRoleBinding(f.Ns, e2eServiceAccount, "cluster-monitoring-view")
+	cf, err = f.CreateClusterRoleBinding(f.Ns, E2eServiceAccount, "cluster-monitoring-view")
 	if err != nil {
 		return nil, err
 	}
 
 	cleanUpFuncs = append(cleanUpFuncs, cf)
 
-	cf, err = f.CreateRoleBindingFromRole(f.Ns, e2eServiceAccount, "monitoring-alertmanager-edit")
+	cf, err = f.CreateRoleBindingFromRole(f.Ns, E2eServiceAccount, "monitoring-alertmanager-edit")
 	if err != nil {
 		return nil, err
 	}

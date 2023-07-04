@@ -319,6 +319,7 @@ function(params)
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--logtostderr=true',
+              '--v=10',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [

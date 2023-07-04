@@ -429,6 +429,7 @@ function(params)
               '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--logtostderr=true',
+              '--v=10',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
