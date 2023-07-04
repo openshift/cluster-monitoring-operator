@@ -314,6 +314,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon.
 	// Disabled by default.
 	Ksmd NodeExporterCollectorKSMDConfig `json:"ksmd,omitempty"`
+	// Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system.
+	// Disabled by default.
+	Processes NodeExporterCollectorProcessesConfig `json:"processes,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -422,6 +425,28 @@ type NodeExporterCollectorMountStatsConfig struct {
 // By default, the `ksmd` collector is disabled.
 type NodeExporterCollectorKSMDConfig struct {
 	// A Boolean flag that enables or disables the `ksmd` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorProcessesConfig` resource works as an on/off switch for
+// the `processes` collector of the `node-exporter` agent.
+// If enabled, these metrics become available:
+// `node_processes_max_processes`,
+// `node_processes_pids`,
+// `node_processes_state`,
+// `node_processes_threads`,
+// `node_processes_threads_state`.
+// The metric `node_processes_state` and `node_processes_threads_state` can have up to 5 series each,
+// depending on the state of the processes and threads.
+// The possible states of a process or a thread are:
+// 'D' (UNINTERRUPTABLE_SLEEP),
+// 'R' (RUNNING & RUNNABLE),
+// 'S' (INTERRRUPTABLE_SLEEP),
+// 'T' (STOPPED),
+// 'Z' (ZOMBIE).
+// By default, the `processes` collector is disabled.
+type NodeExporterCollectorProcessesConfig struct {
+	// A Boolean flag that enables or disables the `processes` collector.
 	Enabled bool `json:"enabled,omitempty"`
 }
 

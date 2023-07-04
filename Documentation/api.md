@@ -33,6 +33,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
 * [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
+* [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig)
 * [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
 * [NodeExporterConfig](#nodeexporterconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
@@ -236,6 +237,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | buddyinfo | [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig) | Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`. Disabled by default. |
 | mountstats | [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig) | Defines the configuration of the `mountstats` collector, which collects statistics about NFS volume I/O activities. Disabled by default. |
 | ksmd | [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig) | Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon. Disabled by default. |
+| processes | [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig) | Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -312,6 +314,21 @@ The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for t
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `netdev` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorProcessesConfig
+
+#### Description
+
+The `NodeExporterCollectorProcessesConfig` resource works as an on/off switch for the `processes` collector of the `node-exporter` agent. If enabled, these metrics become available: `node_processes_max_processes`, `node_processes_pids`, `node_processes_state`, `node_processes_threads`, `node_processes_threads_state`. The metric `node_processes_state` and `node_processes_threads_state` can have up to 5 series each, depending on the state of the processes and threads. The possible states of a process or a thread are: 'D' (UNINTERRUPTABLE_SLEEP), 'R' (RUNNING & RUNNABLE), 'S' (INTERRRUPTABLE_SLEEP), 'T' (STOPPED), 'Z' (ZOMBIE). By default, the `processes` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `processes` collector. |
 
 [Back to TOC](#table-of-contents)
 
