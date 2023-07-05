@@ -270,6 +270,8 @@ type ThanosQuerierConfig struct {
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// Defines a pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 // The `NodeExporterConfig` resource defines settings for the `node-exporter` agent.
