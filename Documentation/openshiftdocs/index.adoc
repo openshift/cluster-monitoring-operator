@@ -53,6 +53,7 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/nodeexportercollectormountstatsconfig.adoc[NodeExporterCollectorMountStatsConfig]
 * link:modules/nodeexportercollectornetclassconfig.adoc[NodeExporterCollectorNetClassConfig]
 * link:modules/nodeexportercollectornetdevconfig.adoc[NodeExporterCollectorNetDevConfig]
+* link:modules/nodeexportercollectorprocessesconfig.adoc[NodeExporterCollectorProcessesConfig]
 * link:modules/nodeexportercollectortcpstatconfig.adoc[NodeExporterCollectorTcpStatConfig]
 * link:modules/nodeexporterconfig.adoc[NodeExporterConfig]
 * link:modules/openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]

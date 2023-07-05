@@ -2921,6 +2921,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.netclass.netlink",
 				"--no-collector.buddyinfo",
 				"--no-collector.ksmd",
+				"--no-collector.processes",
 				"--collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
 				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*)$",
 			},
@@ -2930,6 +2931,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--no-collector.netclass",
 				"--collector.buddyinfo",
 				"--collector.ksmd",
+				"--collector.processes",
 			},
 		},
 		{
@@ -3021,6 +3023,17 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.ksmd"},
 			argsAbsent:  []string{"--no-collector.ksmd"},
+		},
+		{
+			name: "enable processes collector",
+			config: `
+nodeExporter:
+  collectors:
+    processes:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.processes"},
+			argsAbsent:  []string{"--no-collector.processes"},
 		},
 		{
 			name: "configure network interfaces exclusion",

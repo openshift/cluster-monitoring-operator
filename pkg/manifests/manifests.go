@@ -901,6 +901,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.ksmd", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Processes.Enabled {
+		args = setArg(args, "--collector.processes", "")
+	} else {
+		args = setArg(args, "--no-collector.processes", "")
+	}
+
 	return args, nil
 }
 

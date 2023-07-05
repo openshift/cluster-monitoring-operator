@@ -32,6 +32,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |ksmd|link:nodeexportercollectorksmdconfig.adoc[NodeExporterCollectorKSMDConfig]|Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon. Disabled by default.
 
+|processes|link:nodeexportercollectorprocessesconfig.adoc[NodeExporterCollectorProcessesConfig]|Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]

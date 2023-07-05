@@ -69,6 +69,14 @@ nodeExporter:
     ksmd:
       enabled: true`,
 		},
+		{
+			nameCollector: "processes",
+			config: `
+nodeExporter:
+  collectors:
+    processes:
+      enabled: true`,
+		},
 	}
 
 	for _, test := range tests {
