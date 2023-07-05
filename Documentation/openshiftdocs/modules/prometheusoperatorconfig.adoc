@@ -25,6 +25,8 @@ link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
+|topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.
+
 |===
 
 link:../index.adoc[Back to TOC]
