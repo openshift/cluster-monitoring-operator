@@ -377,6 +377,7 @@ The `OpenShiftStateMetricsConfig` resource defines settings for the `openshift-s
 | -------- | ---- | ----------- |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core) | Defines tolerations for the pods. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 
 [Back to TOC](#table-of-contents)
 

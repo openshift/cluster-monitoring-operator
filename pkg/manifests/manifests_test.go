@@ -3230,7 +3230,18 @@ func TestKubeStateMetrics(t *testing.T) {
 }
 
 func TestOpenShiftStateMetrics(t *testing.T) {
-	c, err := NewConfigFromString(``, false)
+	config := (`
+openShiftStateMetrics:
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: type
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar`)
+
+	c, err := NewConfigFromString(config, false)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3276,6 +3287,14 @@ func TestOpenShiftStateMetrics(t *testing.T) {
 		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
 	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("openShiftStateMetrics topology spread contraints MaxSkew not configured correctly")
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("openShiftStateMetrics topology spread contraints WhenUnsatisfiable not configured correctly")
 	}
 
 	d2, err := f.OpenShiftStateMetricsDeployment()

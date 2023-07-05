@@ -231,6 +231,8 @@ type OpenShiftStateMetricsConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// Defines a pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 // `TelemeterClientConfig` defines settings for the Telemeter Client

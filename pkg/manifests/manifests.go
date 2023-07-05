@@ -812,6 +812,10 @@ func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) 
 	if len(f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Tolerations) > 0 {
 		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Tolerations
 	}
+	if len(f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.TopologySpreadConstraints) > 0 {
+		d.Spec.Template.Spec.TopologySpreadConstraints =
+			f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.TopologySpreadConstraints
+	}
 	d.Namespace = f.namespace
 
 	return d, nil
