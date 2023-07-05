@@ -584,6 +584,14 @@ data:
     # monitoring routes.
     - '{__name__="monitoring:haproxy_server_http_responses_total:sum"}'
     #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # profile:cluster_monitoring_operator_collection_profile:max contains information about the configured
+    # collection profile.
+    # Possible label values are:
+    #   profile: full|minimal (refer: cluster-monitoring-operator/pkg/manifests#SupportedCollectionProfiles)
+    - '{__name__="profile:cluster_monitoring_operator_collection_profile:max"}'
+    #
     # owners: (https://github.com/integr8ly, @david-martin)
     #
     # rhmi_status reports the status of an RHMI installation.

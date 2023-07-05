@@ -220,9 +220,19 @@ func NewConfig(content io.Reader, tp bool) (*Config, error) {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !tp {
 		return nil, errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
 	}
-	// Validate CollectionProfile field
-	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-		return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
+
+	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
+	if tp {
+		for _, profile := range SupportedCollectionProfiles {
+			var v float64
+			if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
+				v = 1
+			}
+			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
+		}
+		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
+			return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
+		}
 	}
 
 	return res, nil

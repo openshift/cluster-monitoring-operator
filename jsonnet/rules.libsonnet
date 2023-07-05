@@ -332,6 +332,10 @@ function(params) {
           // Should be used to suppress alerts during control plane upgrades or disruption.
         },
         {
+          expr: 'max by (profile) (cluster_monitoring_operator_collection_profile == 1)',
+          record: 'profile:cluster_monitoring_operator_collection_profile:max',
+        },
+        {
           expr: 'max_over_time(cluster_monitoring_operator_last_reconciliation_successful[5m]) == 0',
           alert: 'ClusterMonitoringOperatorReconciliationErrors',
           'for': '1h',
