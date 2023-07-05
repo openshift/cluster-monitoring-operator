@@ -459,8 +459,8 @@ func calculateBodySizeLimit(podCapacity int) string {
 
 // NewConfigFromString transforms a string containing configuration in the
 // openshift-monitoring/cluster-monitoring-configuration format into a data
-// struture that facilitates programmatical checks of that configuration. The
-// content of the data structure might change if TechPreview is enabeld (tp), as
+// structure that facilitates programmatical checks of that configuration. The
+// content of the data structure might change if TechPreview is enabled (tp), as
 // some features are only meant for TechPreview.
 func NewConfigFromString(content string, tp bool) (*Config, error) {
 	if content == "" {
