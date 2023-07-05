@@ -22,15 +22,15 @@ import (
 	"time"
 
 	"github.com/blang/semver/v4"
-	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
-	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
-	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 	"github.com/pkg/errors"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/component-base/metrics"
-	"k8s.io/component-base/metrics/legacyregistry"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
+	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
+	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
@@ -183,9 +183,6 @@ type Operator struct {
 
 	queue workqueue.RateLimitingInterface
 
-	reconcileAttempts *metrics.Counter
-	reconcileStatus   *metrics.Gauge
-
 	failedReconcileAttempts int
 
 	assets *manifests.Assets
@@ -254,22 +251,7 @@ func New(
 		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
 		ruleController:            ruleController,
 		relabelController:         relabelController,
-		reconcileAttempts: metrics.NewCounter(&metrics.CounterOpts{
-			Name:           "cluster_monitoring_operator_reconcile_attempts_total",
-			Help:           "Number of attempts to reconcile the operator configuration",
-			StabilityLevel: metrics.ALPHA,
-		}),
-		reconcileStatus: metrics.NewGauge(&metrics.GaugeOpts{
-			Name:           "cluster_monitoring_operator_last_reconciliation_successful",
-			Help:           "Latest reconciliation state. Set to 1 if last reconciliation succeeded, else 0.",
-			StabilityLevel: metrics.ALPHA,
-		}),
 	}
-
-	legacyregistry.MustRegister(
-		o.reconcileAttempts,
-		o.reconcileStatus,
-	)
 
 	informer := cache.NewSharedIndexInformer(
 		o.client.SecretListWatchForNamespace(namespace), &v1.Secret{}, resyncPeriod, cache.Indexers{},
@@ -650,15 +632,15 @@ func (o *Operator) processNextWorkItem(ctx context.Context) bool {
 	}
 	defer o.queue.Done(key)
 
-	o.reconcileAttempts.Inc()
+	metrics.ReconcileAttempts.Inc()
 	err := o.sync(ctx, key.(string))
 	if err == nil {
-		o.reconcileStatus.Set(1)
+		metrics.ReconcileStatus.Set(1)
 		o.queue.Forget(key)
 		return true
 	}
 
-	o.reconcileStatus.Set(0)
+	metrics.ReconcileStatus.Set(0)
 	klog.Errorf("Syncing %q failed", key)
 	utilruntime.HandleError(errors.Wrapf(err, "sync %q failed", key))
 	o.queue.AddRateLimited(key)
