@@ -586,6 +586,8 @@ type PrometheusRestrictedConfig struct {
 	RetentionSize string `json:"retentionSize,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// Defines a pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the storage class and size of a volume.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`

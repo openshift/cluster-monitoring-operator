@@ -1705,6 +1705,11 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 		p.Spec.Tolerations = f.config.UserWorkloadConfiguration.Prometheus.Tolerations
 	}
 
+	if len(f.config.UserWorkloadConfiguration.Prometheus.TopologySpreadConstraints) > 0 {
+		p.Spec.TopologySpreadConstraints =
+			f.config.UserWorkloadConfiguration.Prometheus.TopologySpreadConstraints
+	}
+
 	if f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels != nil {
 		p.Spec.ExternalLabels = f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels
 	}

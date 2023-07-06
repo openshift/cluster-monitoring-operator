@@ -451,6 +451,7 @@ The `PrometheusRestrictedConfig` resource defines the settings for the Prometheu
 | retention | string | Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`. |
 | retentionSize | string | Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, `TiB`, `PB`, `PiB`, `EB`, and `EiB`. The default value is `nil`. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core) | Defines tolerations for the pods. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 | volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.66.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Prometheus. Use this setting to configure the storage class and size of a volume. |
 
 [Back to TOC](#table-of-contents)
