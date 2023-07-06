@@ -82,7 +82,6 @@ type telemetryConfig struct {
 	Matches []string `json:"matches"`
 }
 
-//nolint:govet
 func Main() int {
 	flagset := flag.CommandLine
 	klog.InitFlags(flagset)
@@ -167,6 +166,7 @@ func Main() int {
 	config.Burst = 200
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	userWorkloadConfigMapName := "user-workload-monitoring-config"
 	o, err := cmo.New(

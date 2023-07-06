@@ -218,6 +218,8 @@ spec:
           max by (node) (kube_node_role{role="master"})
         ) == bool sum(kube_node_role{role="master"})
       record: cluster:control_plane:all_nodes_ready
+    - expr: max by (profile) (cluster_monitoring_operator_collection_profile == 1)
+      record: profile:cluster_monitoring_operator_collection_profile:max
     - alert: ClusterMonitoringOperatorReconciliationErrors
       annotations:
         description: Errors are occurring during reconciliation cycles. Inspect the cluster-monitoring-operator log for potential root causes.

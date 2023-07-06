@@ -12,7 +12,7 @@ OpenShift 4 clusters send anonymized telemetry back to Red Hat about the followi
 #
 # The only supported key in metrics.yaml is "matches" which is a list of label
 # selectors that define which metrics are going to be forwarded. Label
-# selectors can select an single metric (e.g. '{__name__="foo"}') or all
+# selectors can select a single metric (e.g. '{__name__="foo"}') or all
 # metric names matching a regexp (e.g. '{__name__=~"foo:.+"}').
 #
 # Every entry should be commented with the owners (GitHub handles preferred)
@@ -518,7 +518,7 @@ data:
     # owners: (@openshift/network-edge)
     #
     # cluster:openshift_route_info:tls_termination:sum tracks the number of routes for each tls_termination
-    # value. The possible values for tls_termination are edge, passthrough and reencrypt. 
+    # value. The possible values for tls_termination are edge, passthrough and reencrypt.
     - '{__name__="cluster:openshift_route_info:tls_termination:sum"}'
     #
     # owners: (https://github.com/openshift/insights-operator/blob/master/OWNERS)
@@ -584,6 +584,14 @@ data:
     # monitoring routes.
     - '{__name__="monitoring:haproxy_server_http_responses_total:sum"}'
     #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # profile:cluster_monitoring_operator_collection_profile:max contains information about the configured
+    # collection profile.
+    # Possible label values are:
+    #   profile: full|minimal (refer: cluster-monitoring-operator/pkg/manifests#SupportedCollectionProfiles)
+    - '{__name__="profile:cluster_monitoring_operator_collection_profile:max"}'
+    #
     # owners: (https://github.com/integr8ly, @david-martin)
     #
     # rhmi_status reports the status of an RHMI installation.
@@ -637,7 +645,7 @@ data:
     # This metric is used byt CS-SRE to monitor remaining error budget across the fleet
     #
     # consumers: (@openshift/openshift-team-cluster-manager)
-    - '{__name__="rhoam_7d_slo_remaining_error_budget:max"}'    
+    - '{__name__="rhoam_7d_slo_remaining_error_budget:max"}'
     #
     #
     # owners: (openshift/openshift-team-master, @openshift/openshift-group-b)

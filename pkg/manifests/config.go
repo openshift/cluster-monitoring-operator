@@ -31,6 +31,8 @@ import (
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/klog/v2"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 )
 
 const (
@@ -218,9 +220,19 @@ func NewConfig(content io.Reader, tp bool) (*Config, error) {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !tp {
 		return nil, errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
 	}
-	// Validate CollectionProfile field
-	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-		return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
+
+	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
+	if tp {
+		for _, profile := range SupportedCollectionProfiles {
+			var v float64
+			if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
+				v = 1
+			}
+			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
+		}
+		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
+			return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
+		}
 	}
 
 	return res, nil
@@ -459,8 +471,8 @@ func calculateBodySizeLimit(podCapacity int) string {
 
 // NewConfigFromString transforms a string containing configuration in the
 // openshift-monitoring/cluster-monitoring-configuration format into a data
-// struture that facilitates programmatical checks of that configuration. The
-// content of the data structure might change if TechPreview is enabeld (tp), as
+// structure that facilitates programmatical checks of that configuration. The
+// content of the data structure might change if TechPreview is enabled (tp), as
 // some features are only meant for TechPreview.
 func NewConfigFromString(content string, tp bool) (*Config, error) {
 	if content == "" {
