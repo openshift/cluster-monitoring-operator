@@ -65,7 +65,7 @@ func checkHeaders(t *testing.T, host string, sa string, query string) {
 		)
 		return nil
 	})
-	
+
 	if err != nil {
 		t.Fatal(err)
 	}
