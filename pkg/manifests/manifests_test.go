@@ -2822,9 +2822,22 @@ ingress:
 
 }
 
-func TestAlertManagerUserWorkloadSecretsConfiguration(t *testing.T) {
+func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
-	c.UserWorkloadConfiguration.Alertmanager.Secrets = []string{"test-secret", "slack-api-token"}
+	uwc, err := NewUserConfigFromString(`alertmanager:
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: type
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar
+  secrets:
+  - test-secret
+  - slack-api-token
+  `)
+
+	c.UserWorkloadConfiguration = uwc
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	a, err := f.AlertmanagerUserWorkload(
@@ -2841,6 +2854,14 @@ func TestAlertManagerUserWorkloadSecretsConfiguration(t *testing.T) {
 
 	if !slices.Contains(a.Spec.Secrets, "slack-api-token") {
 		t.Fatal("Alertmanager secret `slack-api-token` is not configured correctly")
+	}
+
+	if a.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("Alertmanager UWM spread contraints MaxSkew not configured correctly")
+	}
+
+	if a.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("Alertmanager UWM spread contraints WhenUnsatisfiable not configured correctly")
 	}
 }
 

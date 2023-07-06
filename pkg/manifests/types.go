@@ -500,6 +500,8 @@ type AlertmanagerUserWorkloadConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// Defines a pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Defines persistent storage for Alertmanager. Use this setting to
 	// configure the persistent volume claim, including storage class,
 	// volume size and name.

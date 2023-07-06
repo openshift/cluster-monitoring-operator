@@ -32,6 +32,8 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
+|topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.
+
 |volumeClaimTemplate|*monv1.EmbeddedPersistentVolumeClaim|Defines persistent storage for Alertmanager. Use this setting to configure the persistent volume claim, including storage class, volume size and name.
 
 |===
