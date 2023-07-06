@@ -3348,7 +3348,14 @@ func TestThanosQuerierConfiguration(t *testing.T) {
       memory: 4Mi
   logLevel: debug
   enableRequestLogging: true
-  enableCORS: true`, false)
+  enableCORS: true
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: type
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar`, false)
 
 	if err != nil {
 		t.Fatal(err)
@@ -3387,6 +3394,28 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if !reflect.DeepEqual(tc.got, tc.want) {
 				t.Errorf("want %+v, got %+v", tc.want, tc.got)
+			}
+		})
+	}
+
+	for _, tc := range []struct {
+		name      string
+		want, got interface{}
+	}{
+		{
+			name: "Topology",
+			want: []v1.TopologySpreadConstraint{
+				{
+					MaxSkew:           1,
+					WhenUnsatisfiable: "DoNotSchedule",
+				},
+			},
+			got: d.Spec.Template.Spec.TopologySpreadConstraints[0],
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if reflect.DeepEqual(tc.got, tc.want) {
+				t.Errorf("thanos-querier topology spread contraints WhenUnsatisfiable not configured correctly: want %+v, got %+v", tc.want, tc.got)
 			}
 		})
 	}

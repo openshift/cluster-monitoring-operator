@@ -2799,6 +2799,10 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 	if len(f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Tolerations) > 0 {
 		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.Tolerations
 	}
+	if len(f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.TopologySpreadConstraints) > 0 {
+		d.Spec.Template.Spec.TopologySpreadConstraints =
+			f.config.ClusterMonitoringConfiguration.ThanosQuerierConfig.TopologySpreadConstraints
+	}
 
 	return d, nil
 }
