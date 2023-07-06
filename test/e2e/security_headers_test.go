@@ -65,6 +65,10 @@ func checkHeaders(t *testing.T, host string, sa string, query string) {
 		)
 		return nil
 	})
+	
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	err = framework.Poll(5*time.Second, 1*time.Minute, func() error {
 		resp, err := client.Do("GET", query, nil)
