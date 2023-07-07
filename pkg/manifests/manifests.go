@@ -519,6 +519,11 @@ func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*mo
 		a.Spec.Tolerations = alertmanagerConfig.Tolerations
 	}
 
+	if len(alertmanagerConfig.TopologySpreadConstraints) > 0 {
+		a.Spec.TopologySpreadConstraints =
+			alertmanagerConfig.TopologySpreadConstraints
+	}
+
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
 		case "alertmanager-proxy", "tenancy-proxy", "kube-rbac-proxy-metric":
