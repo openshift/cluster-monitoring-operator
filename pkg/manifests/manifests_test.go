@@ -2564,11 +2564,19 @@ expected:
 }
 
 func TestK8sPrometheusAdapterConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`
+	config := (`
 k8sPrometheusAdapter:
   nodeSelector:
     test: value
-`, false)
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: type
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar`)
+
+	c, err := NewConfigFromString(config, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2590,6 +2598,15 @@ k8sPrometheusAdapter:
 	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-k8s-prometheus-adapter:latest" {
 		t.Fatal("k8s-prometheus-adapter image is not configured correctly")
 	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("k8s-prometheus-adapter topology spread contraints MaxSkew not configured correctly")
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("k8s-prometheus-adapter topology spread contraints WhenUnsatisfiable not configured correctly")
+	}
+
 	expected := map[string]string{"test": "value"}
 	if !reflect.DeepEqual(d.Spec.Template.Spec.NodeSelector, expected) {
 		t.Fatalf("k8s-prometheus-adapter nodeSelector is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", d.Spec.Template.Spec.NodeSelector, expected)

@@ -167,6 +167,7 @@ The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter 
 | audit | *Audit | Defines the audit configuration used by the Prometheus Adapter instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`. |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core) | Defines tolerations for the pods. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 | dedicatedServiceMonitors | *[DedicatedServiceMonitors](#dedicatedservicemonitors) | Defines dedicated service monitors. |
 
 [Back to TOC](#table-of-contents)

@@ -1914,6 +1914,11 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	if config != nil && len(config.Tolerations) > 0 {
 		spec.Tolerations = config.Tolerations
 	}
+
+	if len(f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.TopologySpreadConstraints) > 0 {
+		spec.TopologySpreadConstraints =
+			f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.TopologySpreadConstraints
+	}
 	dep.Namespace = f.namespace
 
 	r := newErrMapReader(requestheader)
