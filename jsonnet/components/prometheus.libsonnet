@@ -315,6 +315,13 @@ function(params)
             cpu: '70m',
           },
         },
+        web: {
+          httpConfig: {
+            headers: {
+              contentSecurityPolicy: "frame-ancestors 'none'",
+            },
+          },
+        },
         securityContext: {
           fsGroup: 65534,
           runAsNonRoot: true,
