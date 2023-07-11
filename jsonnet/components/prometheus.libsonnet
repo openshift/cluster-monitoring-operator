@@ -328,7 +328,6 @@ function(params)
           runAsUser: 65534,
         },
         secrets+: [
-          'kube-etcd-client-certs',  //TODO(paulfantom): move it to etcd addon
           'prometheus-k8s-tls',
           'prometheus-k8s-proxy',
           'prometheus-k8s-thanos-sidecar-tls',

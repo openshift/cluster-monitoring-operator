@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -77,45 +76,20 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		}
 	}
 
-	sms, err = t.factory.ControlPlaneEtcdServiceMonitors()
+	// NOTE: This is temporary, to clean these resources that used to be managed by CMO, now
+	// they are managed by CEO
+	// TODO: Remove this in 4.15
+	err = t.client.DeleteSecretByNamespaceAndName(ctx, t.client.Namespace(), "kube-etcd-client-certs")
 	if err != nil {
-		return errors.Wrap(err, "initializing control-plane etcd ServiceMonitors failed")
+		return errors.Wrap(err, "cleaning up the Secret failed")
 	}
-
-	if t.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		for _, sm := range sms {
-			err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-			if err != nil {
-				return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
-			}
-		}
-
-		etcdCA, err := t.client.WaitForConfigMapByNsName(ctx, types.NamespacedName{Namespace: "openshift-config", Name: "etcd-metric-serving-ca"})
-		if err != nil {
-			return errors.Wrap(err, "failed to wait for openshift-config/etcd-metric-serving-ca configmap")
-		}
-
-		etcdClientSecret, err := t.client.WaitForSecretByNsName(ctx, types.NamespacedName{Namespace: "openshift-config", Name: "etcd-metric-client"})
-		if err != nil {
-			return errors.Wrap(err, "failed to wait for openshift-config/etcd-metric-client secret")
-		}
-
-		promEtcdSecret, err := t.factory.ControlPlaneEtcdSecret(etcdClientSecret, etcdCA)
-		if err != nil {
-			return errors.Wrap(err, "initializing prometheus etcd service monitor secret failed")
-		}
-
-		err = t.client.CreateOrUpdateSecret(ctx, promEtcdSecret)
-		if err != nil {
-			return errors.Wrap(err, "reconciling prometheus etcd service monitor secret")
-		}
-	} else {
-		for _, sm := range sms {
-			err = t.client.DeleteServiceMonitor(ctx, sm)
-			if err != nil {
-				return errors.Wrapf(err, "deleting %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
-			}
-		}
+	err = t.client.DeleteServiceMonitorByNamespaceAndName(ctx, t.client.Namespace(), "etcd")
+	if err != nil {
+		return errors.Wrap(err, "cleaning up the ServiceMonitor failed")
+	}
+	err = t.client.DeleteServiceMonitorByNamespaceAndName(ctx, t.client.Namespace(), "etcd-minimal")
+	if err != nil {
+		return errors.Wrap(err, "cleaning up the ServiceMonitor failed")
 	}
 
 	return nil

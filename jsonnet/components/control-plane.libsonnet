@@ -10,64 +10,6 @@ function(params)
       _config+:: cfg.mixin._config,
     },
 
-    serviceMonitorEtcd: {
-      apiVersion: 'monitoring.coreos.com/v1',
-      kind: 'ServiceMonitor',
-      metadata: {
-        name: 'etcd',
-        namespace: cfg.namespace,
-        labels: {
-          'app.kubernetes.io/name': 'etcd',
-          'k8s-app': 'etcd',
-          'monitoring.openshift.io/collection-profile': 'full',
-        },
-      },
-      spec: {
-        jobLabel: 'k8s-app',
-        endpoints: [
-          {
-            port: 'etcd-metrics',
-            interval: '30s',
-            scheme: 'https',
-            // Prometheus Operator (and Prometheus) allow us to specify a tlsConfig. This is required as most likely your etcd metrics end points is secure.
-            tlsConfig: {
-              caFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client-ca.crt',
-              keyFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.key',
-              certFile: '/etc/prometheus/secrets/kube-etcd-client-certs/etcd-client.crt',
-            },
-          },
-        ],
-        selector: {
-          matchLabels: {
-            'k8s-app': 'etcd',
-          },
-        },
-        namespaceSelector: {
-          matchNames: ['openshift-etcd'],
-        },
-      },
-    },
-
-    minimalServiceMonitorEtcd: generateServiceMonitor.minimal(
-      self.serviceMonitorEtcd, std.join('|',
-                                        [
-                                          'etcd_disk_backend_commit_duration_seconds_bucket',
-                                          'etcd_disk_wal_fsync_duration_seconds_bucket',
-                                          'etcd_mvcc_db_total_size_in_bytes',
-                                          'etcd_mvcc_db_total_size_in_use_in_bytes',
-                                          'etcd_network_peer_round_trip_time_seconds_bucket',
-                                          'etcd_network_peer_sent_failures_total',
-                                          'etcd_server_has_leader',
-                                          'etcd_server_is_leader',
-                                          'etcd_server_proposals_failed_total',
-                                          'etcd_server_quota_backend_bytes',
-                                          'grpc_server_handled_total',
-                                          'grpc_server_handling_seconds_bucket',
-                                          'grpc_server_started_total',
-                                          'process_start_time_seconds',
-                                        ])
-    ),
-
     // This changes the kubelet's certificates to be validated when
     // scraping.
     serviceMonitorKubelet+: {

@@ -174,23 +174,6 @@ func TestTelemeterClientConfig(t *testing.T) {
 	}
 }
 
-func TestEtcdDefaultsToDisabled(t *testing.T) {
-	c, err := NewConfigFromString("", false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		t.Error("an empty configuration should have etcd disabled")
-	}
-	c, err = NewConfigFromString(`{"etcd":{}}`, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		t.Error("an empty etcd configuration should have etcd disabled")
-	}
-}
-
 func TestPromAdapterDedicatedSMsDefaultsToDisabled(t *testing.T) {
 	c, err := NewConfigFromString("", false)
 	if err != nil {

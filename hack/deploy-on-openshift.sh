@@ -24,5 +24,4 @@ oc apply -f manifests/01-namespace.yaml
 oc apply -f manifests/02-role-binding.yaml
 oc apply -f manifests/02-role.yaml
 oc apply -f manifests/03-config.yaml
-oc apply -f manifests/03-etcd-secret.yaml
 oc apply -f manifests/04-deployment.yaml

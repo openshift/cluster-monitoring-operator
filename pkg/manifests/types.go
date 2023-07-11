@@ -37,8 +37,6 @@ type ClusterMonitoringConfiguration struct {
 	// `AlertmanagerMainConfig` defines settings for the
 	// Alertmanager component in the `openshift-monitoring` namespace.
 	AlertmanagerMainConfig *AlertmanagerMainConfig `json:"alertmanagerMain,omitempty"`
-	// OmitFromDoc
-	EtcdConfig *EtcdConfig `json:"-"`
 	// `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
 	UserWorkloadEnabled *bool `json:"enableUserWorkload,omitempty"`
 	// OmitFromDoc
