@@ -626,5 +626,14 @@ function(params) {
         },
       ],
     },
+    {
+      name: 'apiserver-list-watch.rules',
+      rules: [
+        {
+          expr: 'sum by(verb) (rate(apiserver_request_total{verb=~"LIST|WATCH",code=~"2.."}[5m]))',
+          record: 'apiserver_list_watch_request_success_total:rate:sum',
+        },
+      ],
+    },
   ],
 }
