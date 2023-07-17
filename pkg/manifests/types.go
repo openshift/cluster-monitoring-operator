@@ -466,7 +466,6 @@ type NodeExporterCollectorProcessesConfig struct {
 // By default, the `systemd` collector is disabled.
 // If enabled, the following metrics become available:
 // `node_systemd_system_running`,
-// `node_systemd_timer_last_trigger_seconds`,
 // `node_systemd_units`,
 // `node_systemd_version`.
 // If the unit uses a socket, it also generates these 3 metrics:
@@ -475,6 +474,7 @@ type NodeExporterCollectorProcessesConfig struct {
 // `node_systemd_socket_refused_connections_total`.
 // You can use the `units` parameter to select the systemd units to be included by the `systemd` collector.
 // The selected units are used to generate the `node_systemd_unit_state` metric, which shows the state of each systemd unit.
+// The timer units such as `logrotate.timer` generate one more metric `node_systemd_timer_last_trigger_seconds`.
 // However, this metric's cardinality might be high (at least 5 series per unit per node).
 // If you enable this collector with a long list of selected units, closely monitor the `prometheus-k8s` deployment for excessive memory usage.
 type NodeExporterCollectorSystemdConfig struct {
