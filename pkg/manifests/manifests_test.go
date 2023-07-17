@@ -717,7 +717,13 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
   image: quay.io/test/prometheus-operator
   prometheusConfigReloaderImage: quay.io/test/prometheus-config-reloader
   configReloaderImage: quay.io/test/configmap-reload
-`, false)
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: type
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          foo: bar`, false)
 
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
@@ -742,6 +748,14 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 
 	if got := d.Spec.Template.Spec.NodeSelector["type"]; got != "master" {
 		t.Fatalf("expected node selector to be master, got %q", got)
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("k8s-prometheus-operator topology spread contraints MaxSkew not configured correctly")
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("k8s-prometheus-operator topology spread contraints WhenUnsatisfiable not configured correctly")
 	}
 
 	prometheusReloaderFound := false
