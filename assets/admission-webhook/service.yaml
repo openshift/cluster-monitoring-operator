@@ -4,6 +4,7 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: prometheus-operator-admission-webhook-tls
   labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator-admission-webhook
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.66.0

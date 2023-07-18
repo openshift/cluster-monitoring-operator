@@ -5,6 +5,7 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: kube-state-metrics-tls
   labels:
     app.kubernetes.io/component: exporter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 2.9.2

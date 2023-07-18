@@ -8,6 +8,9 @@ metadata:
     include.release.openshift.io/single-node-developer: "true"
     service.beta.openshift.io/inject-cabundle: "true"
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: cluster-version-operator
+    app.kubernetes.io/part-of: openshift-monitoring
   name: alertmanagerconfigs.monitoring.coreos.com
 spec:
   conversion:

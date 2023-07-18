@@ -7,6 +7,9 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: cluster-version-operator
+    app.kubernetes.io/part-of: openshift-monitoring
   name: probes.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com

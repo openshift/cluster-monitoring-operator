@@ -5,7 +5,9 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/component: controller
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
+    app.kubernetes.io/part-of: openshift-monitoring
   name: alertmanagerconfigs.openshift.io
 webhooks:
 - admissionReviewVersions:

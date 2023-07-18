@@ -5,7 +5,9 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
   labels:
     app: cluster-monitoring-operator
+    app.kubernetes.io/managed-by: cluster-version-operator
     app.kubernetes.io/name: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
   name: cluster-monitoring-operator
   namespace: openshift-monitoring
 spec:

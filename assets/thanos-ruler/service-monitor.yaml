@@ -4,6 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/component: rule-evaluation-engine
     app.kubernetes.io/instance: thanos-ruler
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: thanos-rule
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.30.2
