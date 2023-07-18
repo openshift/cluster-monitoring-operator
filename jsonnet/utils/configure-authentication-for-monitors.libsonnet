@@ -1,7 +1,7 @@
 {
   configureAuthenticationForMonitors(o): {
     local configureAuthentication(o) = o {
-      [if (o.kind == 'ServiceMonitor' && !std.startsWith(o.metadata.name, 'etcd')) || o.kind == 'PodMonitor' then 'spec']+: {
+      [if o.kind == 'ServiceMonitor' || o.kind == 'PodMonitor' then 'spec']+: {
         [if o.kind == 'ServiceMonitor' then 'endpoints' else 'podMetricsEndpoints']: [
           if std.objectHas(e, 'scheme') && e.scheme == 'https' then
             e {

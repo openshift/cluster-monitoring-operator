@@ -64,12 +64,6 @@ data:
       baseImage: ${INTERNAL_REGISTRY}/ose-kube-state-metrics
     auth:
       baseImage: ${INTERNAL_REGISTRY}/oauth-proxy
-    etcd:
-      enabled: true
-      targets:
-        selector:
-          openshift.io/component: etcd
-          openshift.io/control-plane: "true"
 EOF
 
 cat << EOF > manifests/cluster-monitoring-operator.yaml

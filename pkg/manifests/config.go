@@ -166,19 +166,6 @@ type Audit struct {
 	Profile auditv1.Level `json:"profile"`
 }
 
-type EtcdConfig struct {
-	Enabled *bool `json:"-"`
-}
-
-// IsEnabled returns the underlying value of the `Enabled` boolean pointer.
-// It defaults to false if the pointer is nil.
-func (e *EtcdConfig) IsEnabled() bool {
-	if e.Enabled == nil {
-		return false
-	}
-	return *e.Enabled
-}
-
 func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	if cfg == nil {
 		return false
@@ -309,10 +296,6 @@ func (c *Config) applyDefaults() {
 	}
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile == "" {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
-	}
-
-	if c.ClusterMonitoringConfiguration.EtcdConfig == nil {
-		c.ClusterMonitoringConfiguration.EtcdConfig = &EtcdConfig{}
 	}
 
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {

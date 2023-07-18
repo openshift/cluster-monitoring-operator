@@ -190,7 +190,6 @@ spec:
       openshift.io/cluster-monitoring: "true"
   ruleSelector: {}
   secrets:
-  - kube-etcd-client-certs
   - prometheus-k8s-tls
   - prometheus-k8s-proxy
   - prometheus-k8s-thanos-sidecar-tls

@@ -288,8 +288,6 @@ var (
 	ControlPlaneKubeletServiceMonitor        = "control-plane/service-monitor-kubelet.yaml"
 	ControlPlaneKubeletMinimalServiceMonitor = "control-plane/minimal-service-monitor-kubelet.yaml"
 	ControlPlaneKubeletServiceMonitorPA      = "control-plane/service-monitor-kubelet-resource-metrics.yaml"
-	ControlPlaneEtcdServiceMonitor           = "control-plane/service-monitor-etcd.yaml"
-	ControlPlaneEtcdMinimalServiceMonitor    = "control-plane/minimal-service-monitor-etcd.yaml"
 
 	MonitoringPlugin                    = "monitoring-plugin/console-plugin.yaml"
 	MonitoringPluginConfigMap           = "monitoring-plugin/config-map.yaml"
@@ -1453,17 +1451,6 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		}
 	}
 
-	if !f.config.ClusterMonitoringConfiguration.EtcdConfig.IsEnabled() {
-		secrets := []string{}
-		for _, s := range p.Spec.Secrets {
-			if s != "kube-etcd-client-certs" {
-				secrets = append(secrets, s)
-			}
-		}
-
-		p.Spec.Secrets = secrets
-	}
-
 	if f.config.Images.Thanos != "" {
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
@@ -2454,54 +2441,6 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 	}
 
 	return r, nil
-}
-
-func (f *Factory) ControlPlaneEtcdSecret(tlsClient *v1.Secret, ca *v1.ConfigMap) (*v1.Secret, error) {
-	data := make(map[string]string)
-
-	for k, v := range tlsClient.Data {
-		data[k] = string(v)
-	}
-
-	for k, v := range ca.Data {
-		data[k] = v
-	}
-
-	r := newErrMapReader(data)
-
-	var (
-		clientCA   = r.value(TrustedCABundleKey)
-		clientCert = r.value("tls.crt")
-		clientKey  = r.value("tls.key")
-	)
-
-	if r.Error() != nil {
-		return nil, errors.Wrap(r.err, "couldn't find etcd certificate data")
-	}
-
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: f.namespace,
-			Name:      "kube-etcd-client-certs",
-		},
-		StringData: map[string]string{
-			"etcd-client-ca.crt": clientCA,
-			"etcd-client.key":    clientKey,
-			"etcd-client.crt":    clientCert,
-		},
-	}, nil
-}
-
-func (f *Factory) ControlPlaneEtcdServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.TechPreview, f.ControlPlaneEtcdServiceMonitor, f.ControlPlaneEtcdMinimalServiceMonitor)
-}
-
-func (f *Factory) ControlPlaneEtcdServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdServiceMonitor))
-}
-
-func (f *Factory) ControlPlaneEtcdMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneEtcdMinimalServiceMonitor))
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
