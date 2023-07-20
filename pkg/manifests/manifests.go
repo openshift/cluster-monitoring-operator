@@ -69,7 +69,7 @@ const (
 
 	telemetryTokenSecretKey = "token"
 
-	collectionProfileLabel = "monitoring.openshift.io/collection-profile"
+	CollectionProfileLabel = "monitoring.openshift.io/collection-profile"
 )
 
 var (
@@ -1588,7 +1588,7 @@ func setupProfilesToIgnore(p *monv1.Prometheus, cp CollectionProfile) error {
 	labelSelector := &metav1.LabelSelector{
 		MatchExpressions: []metav1.LabelSelectorRequirement{
 			{
-				Key:      collectionProfileLabel,
+				Key:      CollectionProfileLabel,
 				Operator: metav1.LabelSelectorOpNotIn,
 				Values:   profiles,
 			},
