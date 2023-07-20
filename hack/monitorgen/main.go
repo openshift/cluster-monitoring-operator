@@ -66,7 +66,7 @@ func main() {
 		log.Fatalf("failed to convert to service monitor: %e", err)
 	}
 
-	// The script is only inteded to be used with resources of kind ServiceMonitor
+	// The script is only intended to be used with resources of kind ServiceMonitor
 	if m.Kind != "ServiceMonitor" {
 		return
 	}
@@ -76,8 +76,18 @@ func main() {
 		return
 	}
 
-	// Get sub set of metrics to keep for the ServiceMonitor name based on the 
-	// hard coded value in minimalProfileMetrics 
+	generateCollectionProfileMinimal(*m)
+}
+
+// generateCollectionProfileMinimal takes as input a Service Monitor and a set
+// of metrics exported by that monitor that we want to keep and generates a
+// ServiceMonitor that will only keep those metrics and has the "minimal" collection
+// profile label
+func generateCollectionProfileMinimal(m monitoringv1.ServiceMonitor) {
+	var err error
+
+	// Get subset of metrics to keep for the ServiceMonitor name based on the
+	// hard coded value in minimalProfileMetrics
 	metricsToKeep := minimalProfileMetrics[m.ObjectMeta.Name]
 
 	// Overwrite with metrics passed as argument by the user
@@ -92,14 +102,6 @@ func main() {
 		return
 	}
 
-	generateCollectionProfileMinimal(*m, metricsToKeep)
-}
-
-// generateCollectionProfileMinimal takes as input a Service Monitor and a set
-// of metrics exported by that monitor that we want to keep and generates a
-// ServiceMonitor that will only keep those metrics and has the "minimal" collection
-// profile label
-func generateCollectionProfileMinimal(m monitoringv1.ServiceMonitor, metricsToKeep []string) {
 	mMinimal := m.DeepCopy()
 	mMinimal.Name = mMinimal.Name + "-minimal"
 	mMinimal.Labels[scrapeProfileLabel] = "minimal"
@@ -115,10 +117,10 @@ func generateCollectionProfileMinimal(m monitoringv1.ServiceMonitor, metricsToKe
 
 	yamlData, err := yaml.Marshal(mMinimal)
 	if err != nil {
-		log.Fatalf("failed marshling monitor: %e", err)
+		log.Fatalf("failed marsahling monitor: %e", err)
 	}
 
-	err = os.WriteFile(builfFileName(*path), yamlData, 0644)
+	err = os.WriteFile(buildFileName(*path), yamlData, 0644)
 	if err != nil {
 		log.Fatalf("Unable to write data into the file: %e", err)
 	}
@@ -157,9 +159,9 @@ func buildRelabelConfig(metrics []string) *monitoringv1.RelabelConfig {
 	}
 }
 
-// builfFileName takes a file name like metrics.yaml and add "-minimal" between
+// buildFileName takes a file name like metrics.yaml and add "-minimal" between
 // "." and "yaml" resulting in "metrics-minimal.yaml"
-func builfFileName(fileName string) string {
+func buildFileName(fileName string) string {
 	splitedName := strings.Split(fileName, ".")
 	return fmt.Sprintf("./%s-minimal.%s", splitedName[len(splitedName)-2], splitedName[len(splitedName)-1])
 }
