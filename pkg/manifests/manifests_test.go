@@ -1691,6 +1691,46 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 	}
 }
 
+func TestPrometheusCollectionProfile(t *testing.T) {
+	for _, tc := range []struct {
+		name                  string
+		collectionProfile     CollectionProfile
+		expectedLabelSelector *metav1.LabelSelector
+	}{
+		{
+			name: "full_collection_profile",
+			expectedLabelSelector: &metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "monitoring.openshift.io/collection-profile",
+						Operator: metav1.LabelSelectorOpNotIn,
+						Values:   []string{"minimal"},
+					},
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := NewDefaultConfig()
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+			)
+			if err != nil {
+				t.Fatalf("Unexpected error but got %v", err)
+			}
+
+			if !reflect.DeepEqual(p.Spec.ServiceMonitorSelector, tc.expectedLabelSelector) {
+				t.Fatalf("Label selector for service monitor is not configured correctly, got %v, expected %v", p.Spec.ServiceMonitorSelector, tc.expectedLabelSelector)
+			}
+			if !reflect.DeepEqual(p.Spec.PodMonitorSelector, tc.expectedLabelSelector) {
+				t.Fatalf("Label selector for pod monitor is not configured correctly, got %v, expected %v", p.Spec.PodMonitorSelector, tc.expectedLabelSelector)
+			}
+		})
+	}
+}
+
 func TestPrometheusRetentionConfigs(t *testing.T) {
 	for _, tc := range []struct {
 		name                  string
