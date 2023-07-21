@@ -9,6 +9,6 @@ PATH="$(pwd)/tmp/bin:${PATH}"
 
 prefix="assets"
 
-for file in ${prefix}/**/*; do
-	go run hack/monitorgen/main.go --path $file
+for file in "{$prefix}"/**/*; do
+	go run hack/monitorgen/main.go --path "$file"
 done
