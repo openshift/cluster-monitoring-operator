@@ -29,7 +29,6 @@ import (
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
-	"github.com/openshift/cluster-monitoring-operator/pkg/rebalancer"
 	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -186,8 +185,6 @@ type Operator struct {
 
 	assets *manifests.Assets
 
-	rebalancer *rebalancer.Rebalancer
-
 	ruleController    *alert.RuleController
 	relabelController *alert.RelabelConfigController
 }
@@ -247,7 +244,6 @@ func New(
 		assets:                    a,
 		informerFactories:         make([]informers.SharedInformerFactory, 0),
 		controllersToRunFunc:      make([]func(context.Context, int), 0),
-		rebalancer:                rebalancer.NewRebalancer(ctx, c.KubernetesInterface()),
 		ruleController:            ruleController,
 		relabelController:         relabelController,
 	}
@@ -679,14 +675,6 @@ func getProxyReader(ctx context.Context, config *manifests.Config, proxyConfigSu
 }
 
 func (o *Operator) sync(ctx context.Context, key string) error {
-	// The operator may have left some nodes as unschedulable during a previous
-	// sync in an attempt to rebalance workloads.
-	// Ensure that the nodes are switched back to schedulable first.
-	err := o.rebalancer.EnsureNodesAreUncordoned()
-	if err != nil {
-		return err
-	}
-
 	config, err := o.Config(ctx, key)
 	if err != nil {
 		o.reportFailed(ctx, newRunReportForError("InvalidConfiguration", err))
@@ -777,12 +765,8 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		klog.Errorf("error occurred while setting status to done: %v", err)
 	}
 
-	operatorUpgradeable, upgradeableReason, upgradeableMessage, err := o.Upgradeable(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = o.client.StatusReporter().SetUpgradeable(ctx, operatorUpgradeable, upgradeableMessage, upgradeableReason)
+	// CMO always reports Upgradeable=True.
+	err = o.client.StatusReporter().SetUpgradeable(ctx, configv1.ConditionTrue, "", "")
 	if err != nil {
 		klog.Errorf("error occurred while setting Upgradeable status: %v", err)
 	}
@@ -971,86 +955,6 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 		}
 	}
 	return c, nil
-}
-
-// Upgradeable verifies whether the operator can be upgraded or not. It returns
-// the ConditionStatus with optional reason and message.  To set this status, it
-// will verify that in HA topology, workloads with persistent storage are
-// correctly balanced across multiple nodes. If it isn't it will try to
-// rebalance the workloads.
-func (o *Operator) Upgradeable(ctx context.Context) (configv1.ConditionStatus, string, string, error) {
-	if !o.lastKnowInfrastructureConfig.HighlyAvailableInfrastructure() {
-		return configv1.ConditionTrue, "", "", nil
-	}
-
-	var (
-		messages           []string
-		workloadRebalanced bool
-	)
-	for _, workload := range o.workloadsToRebalance() {
-		balanced, err := o.rebalancer.WorkloadCorrectlyBalanced(ctx, &workload)
-		if err != nil {
-			klog.Errorf("Couldn't figure out if workload in namespace %s, with label %q is correctly balanced, err %v.", workload.Namespace, workload.LabelSelector, err)
-			return configv1.ConditionUnknown, "", "", err
-		}
-
-		if balanced {
-			continue
-		}
-
-		workloadRebalanced, err := o.rebalancer.RebalanceWorkloads(ctx, &workload)
-		if err != nil {
-			klog.Errorf("Couldn't rebalance workload in namespace %s, with label %q, err %v.", workload.Namespace, workload.LabelSelector, err)
-			return configv1.ConditionUnknown, "", "", err
-		}
-
-		if !workloadRebalanced {
-			messages = append(messages, fmt.Sprintf("Highly-available workload in namespace %s, with label %q and persistent storage enabled has a single point of failure.", workload.Namespace, workload.LabelSelector))
-		}
-	}
-
-	if len(messages) > 0 {
-		msg := "Manual intervention is needed to upgrade to the next minor version. "
-		if workloadRebalanced {
-			msg += "The operator couldn't rebalance the pods automatically with the annotation. " +
-				"For each highly-available workload that has a single point of failure, you will need to manually delete at least one of the PersistentVolumeClaims and Pods of this workload until at least 2 of its replicas are scheduled on different nodes."
-		} else {
-			msg += fmt.Sprintf("For each highly-available workload that has a single point of failure please mark at least one of their PersistentVolumeClaim for deletion by annotating them with %q.", map[string]string{rebalancer.DropPVCAnnotation: "yes"})
-		}
-		messages = append(messages, msg)
-		return configv1.ConditionFalse, "WorkloadSinglePointOfFailure", strings.Join(messages, "\n"), nil
-	}
-
-	return configv1.ConditionTrue, "", "", nil
-}
-
-// workloadsToRebalance returns the list of workloads with persistent storage
-// that might need to be rebalanced.
-func (o *Operator) workloadsToRebalance() []rebalancer.Workload {
-	workloads := []rebalancer.Workload{
-		{
-			Namespace:     o.namespace,
-			LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
-		},
-		{
-			Namespace:     o.namespace,
-			LabelSelector: map[string]string{"app.kubernetes.io/name": "alertmanager"},
-		},
-	}
-
-	if o.userWorkloadEnabled {
-		workloads = append(workloads,
-			rebalancer.Workload{
-				Namespace:     o.namespaceUserWorkload,
-				LabelSelector: map[string]string{"app.kubernetes.io/name": "prometheus"},
-			},
-			rebalancer.Workload{
-				Namespace:     o.namespaceUserWorkload,
-				LabelSelector: map[string]string{"app.kubernetes.io/name": "thanos-ruler"},
-			},
-		)
-	}
-	return workloads
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not
