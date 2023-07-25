@@ -6,6 +6,7 @@
 - [#1910](https://github.com/openshift/cluster-monitoring-operator/pull/1910) Add new web console usage metrics
 - [#1950](https://github.com/openshift/cluster-monitoring-operator/pull/1950) Disable CORS headers on Thanos querier by default and add a flag to enable them back.
 - [#1963](https://github.com/openshift/cluster-monitoring-operator/pull/1963) Add nodeExporter settings for network devices list.
+- [#2049](https://github.com/openshift/cluster-monitoring-operator/pull/2049) Remove Kube*QuotaOvercommit alerts.
 
 ## 4.13
 
