@@ -50,6 +50,10 @@ local excludedRules = [
     rules: [
       // Removing CPUThrottlingHigh alert as per https://bugzilla.redhat.com/show_bug.cgi?id=1843346
       { alert: 'CPUThrottlingHigh' },
+      // Removing Kube*QuotaOvercommit alerts since quotas should not be defined
+      // for system namespaces. Refer OCPBUGS-10699 for more details.
+      { alert: 'KubeCPUQuotaOvercommit' },
+      { alert: 'KubeMemoryQuotaOvercommit' },
     ],
   },
   {

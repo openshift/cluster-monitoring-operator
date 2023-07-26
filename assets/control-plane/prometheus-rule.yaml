@@ -241,30 +241,6 @@ spec:
       labels:
         namespace: kube-system
         severity: warning
-    - alert: KubeCPUQuotaOvercommit
-      annotations:
-        description: Cluster has overcommitted CPU resource requests for Namespaces.
-        summary: Cluster has overcommitted CPU resource requests.
-      expr: |
-        sum(min without(resource) (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard", resource=~"(cpu|requests.cpu)"}))
-          /
-        sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})
-          > 1.5
-      for: 5m
-      labels:
-        severity: warning
-    - alert: KubeMemoryQuotaOvercommit
-      annotations:
-        description: Cluster has overcommitted memory resource requests for Namespaces.
-        summary: Cluster has overcommitted memory resource requests.
-      expr: |
-        sum(min without(resource) (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard", resource=~"(memory|requests.memory)"}))
-          /
-        sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})
-          > 1.5
-      for: 5m
-      labels:
-        severity: warning
     - alert: KubeQuotaAlmostFull
       annotations:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
