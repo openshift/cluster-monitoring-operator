@@ -44,8 +44,8 @@ import (
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
-	thanosoperator "github.com/prometheus-operator/prometheus-operator/pkg/thanos"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -63,6 +63,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
@@ -81,17 +82,20 @@ type Client struct {
 	version               string
 	namespace             string
 	userWorkloadNamespace string
-	kclient               kubernetes.Interface
-	osmclient             openshiftmonitoringclientset.Interface
-	oscclient             openshiftconfigclientset.Interface
-	ossclient             openshiftsecurityclientset.Interface
-	osrclient             openshiftrouteclientset.Interface
-	osopclient            openshiftoperatorclientset.Interface
-	osconclient           openshiftconsoleclientset.Interface
-	mclient               monitoring.Interface
-	eclient               apiextensionsclient.Interface
-	aggclient             aggregatorclient.Interface
-	eventRecorder         events.Recorder
+
+	kclient     kubernetes.Interface
+	mdataclient metadata.Interface
+	osmclient   openshiftmonitoringclientset.Interface
+	oscclient   openshiftconfigclientset.Interface
+	ossclient   openshiftsecurityclientset.Interface
+	osrclient   openshiftrouteclientset.Interface
+	osopclient  openshiftoperatorclientset.Interface
+	osconclient openshiftconsoleclientset.Interface
+	mclient     monitoring.Interface
+	eclient     apiextensionsclient.Interface
+	aggclient   aggregatorclient.Interface
+
+	eventRecorder events.Recorder
 }
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
@@ -180,6 +184,14 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 			return nil, errors.Wrap(err, "creating openshift console client")
 		}
 		client.osconclient = osconclient
+	}
+
+	if client.mdataclient == nil {
+		mdataclient, err := metadata.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating metadata clientset client")
+		}
+		client.mdataclient = mdataclient
 	}
 
 	return client, nil
@@ -300,10 +312,6 @@ func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 
 func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "secrets", ns, fields.Everything())
-}
-
-func (c *Client) PersistentVolumeClaimListWatchForNamespace(ns string) *cache.ListWatch {
-	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "persistentvolumeclaims", ns, fields.Everything())
 }
 
 func (c *Client) SecretListWatchForResource(namespace, name string) *cache.ListWatch {
@@ -664,13 +672,7 @@ func (c *Client) CreateOrUpdateAlertmanager(ctx context.Context, a *monv1.Alertm
 }
 
 func (c *Client) DeleteAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
-	aclient := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace())
-	err := aclient.Delete(ctx, a.GetName(), metav1.DeleteOptions{})
-	if apierrors.IsNotFound(err) {
-		return nil
-	}
-
-	return err
+	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("alertmanagers"), a, 10*time.Minute)
 }
 
 func (c *Client) CreateOrUpdateThanosRuler(ctx context.Context, t *monv1.ThanosRuler) error {
@@ -753,18 +755,11 @@ func (c *Client) DeleteValidatingWebhook(ctx context.Context, w *admissionv1.Val
 }
 
 func (c *Client) DeleteDeployment(ctx context.Context, d *appsv1.Deployment) error {
-	p := metav1.DeletePropagationForeground
-	err := c.kclient.AppsV1().Deployments(d.GetNamespace()).Delete(ctx, d.GetName(), metav1.DeleteOptions{PropagationPolicy: &p})
-	if apierrors.IsNotFound(err) {
-		return nil
-	}
-
-	return c.WaitForDeploymentDeletion(ctx, d)
+	return c.deleteResourceUntilGone(ctx, appsv1.SchemeGroupVersion.WithResource("deployments"), d, deploymentDeleteTimeout)
 }
 
 func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.PodDisruptionBudget) error {
-	p := metav1.DeletePropagationForeground
-	err := c.kclient.PolicyV1().PodDisruptionBudgets(pdb.GetNamespace()).Delete(ctx, pdb.GetName(), metav1.DeleteOptions{PropagationPolicy: &p})
+	err := c.kclient.PolicyV1().PodDisruptionBudgets(pdb.GetNamespace()).Delete(ctx, pdb.GetName(), deleteOptions(metav1.DeletePropagationForeground))
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -773,80 +768,15 @@ func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.Po
 }
 
 func (c *Client) DeletePrometheus(ctx context.Context, p *monv1.Prometheus) error {
-	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
-
-	err := pclient.Delete(ctx, p.GetName(), metav1.DeleteOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return errors.Wrap(err, "deleting Prometheus object failed")
-	}
-
-	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second*10, time.Minute*10, false, func(ctx context.Context) (bool, error) {
-		pods, err := c.KubernetesInterface().CoreV1().Pods(p.GetNamespace()).List(
-			ctx,
-			metav1.ListOptions{
-				LabelSelector: fields.SelectorFromSet(fields.Set(map[string]string{
-					"app.kubernetes.io/name": "prometheus",
-					"prometheus":             p.GetName(),
-				})).String(),
-			},
-		)
-		if err != nil {
-			lastErr = err
-			klog.V(4).ErrorS(err, "DeletePrometheus: failed to list Pods")
-			return false, nil
-		}
-
-		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
-		klog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
-
-		lastErr = errors.Errorf("%d pods still present", len(pods.Items))
-		return len(pods.Items) == 0, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
-		return errors.Wrapf(err, "waiting for Prometheus %s/%s deletion", p.GetNamespace(), p.GetName())
-	}
-
-	return nil
+	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("prometheuses"), p, 10*time.Minute)
 }
 
 func (c *Client) DeleteThanosRuler(ctx context.Context, tr *monv1.ThanosRuler) error {
-	trclient := c.mclient.MonitoringV1().ThanosRulers(tr.GetNamespace())
-
-	err := trclient.Delete(ctx, tr.GetName(), metav1.DeleteOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return errors.Wrap(err, "deleting Thanos Ruler object failed")
-	}
-
-	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second*10, time.Minute*10, false, func(ctx context.Context) (bool, error) {
-		pods, err := c.KubernetesInterface().CoreV1().Pods(tr.GetNamespace()).List(ctx, thanosoperator.ListOptions(tr.GetName()))
-		if err != nil {
-			lastErr = err
-			klog.V(4).ErrorS(err, "DeleteThanosRuler: failed to list Pods")
-			return false, nil
-		}
-
-		klog.V(6).Infof("waiting for %d Pods to be deleted", len(pods.Items))
-		klog.V(6).Infof("done waiting? %t", len(pods.Items) == 0)
-
-		lastErr = errors.Errorf("%d pods still present", len(pods.Items))
-		return len(pods.Items) == 0, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
-		return errors.Wrapf(err, "waiting for Thanos Ruler %s/%s deletion", tr.GetNamespace(), tr.GetName())
-	}
-
-	return nil
+	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("thanosrulers"), tr, 10*time.Minute)
 }
 
 func (c *Client) DeleteDaemonSet(ctx context.Context, d *appsv1.DaemonSet) error {
-	orphanDependents := false
-	err := c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Delete(ctx, d.GetName(), metav1.DeleteOptions{OrphanDependents: &orphanDependents})
+	err := c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Delete(ctx, d.GetName(), deleteOptions(metav1.DeletePropagationForeground))
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1217,27 +1147,36 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 	return nil
 }
 
-func (c *Client) WaitForDeploymentDeletion(ctx context.Context, dep *appsv1.Deployment) error {
+// deleteResourceUntilGone deletes the provided resource with the foreground
+// policy and will block until the resource is effectively deleted.
+func (c *Client) deleteResourceUntilGone(ctx context.Context, gvr schema.GroupVersionResource, obj metav1.Object, timeout time.Duration) error {
+	client := c.mdataclient.Resource(gvr).Namespace(obj.GetNamespace())
+	err := client.Delete(ctx, obj.GetName(), deleteOptions(metav1.DeletePropagationForeground))
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentDeleteTimeout, false, func(ctx context.Context) (bool, error) {
-		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(ctx, dep.GetName(), metav1.GetOptions{})
-		if !apierrors.IsNotFound(err) {
-			if err != nil {
-				lastErr = err
-			} else {
-				lastErr = errors.Errorf("got %d available replicas",
-					d.Status.AvailableReplicas)
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, timeout, false, func(ctx context.Context) (bool, error) {
+		_, err := client.Get(ctx, obj.GetName(), metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return true, nil
 			}
+
+			lastErr = err
 			return false, nil
 		}
 
-		return true, nil
+		lastErr = fmt.Errorf("not deleted yet")
+		return false, nil
 	}); err != nil {
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for deletion of Deployment %s/%s", dep.GetNamespace(), dep.GetName())
+		return fmt.Errorf("waiting for deletion of %s %s/%s: %w", gvr.String(), obj.GetNamespace(), obj.GetName(), err)
 	}
+
 	return nil
 }
 
@@ -1976,4 +1915,10 @@ type jsonPatch struct {
 	Op    string      `json:"op"`
 	Path  string      `json:"path"`
 	Value interface{} `json:"value,omitempty"`
+}
+
+func deleteOptions(dp metav1.DeletionPropagation) metav1.DeleteOptions {
+	return metav1.DeleteOptions{
+		PropagationPolicy: &dp,
+	}
 }
