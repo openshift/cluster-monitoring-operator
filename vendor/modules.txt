@@ -271,9 +271,6 @@ github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/metalmatze/signal v0.0.0-20210307161603-1c9aa721a97a
 ## explicit; go 1.14
 github.com/metalmatze/signal/server/signalhttp
-# github.com/mitchellh/hashstructure v1.1.0
-## explicit; go 1.14
-github.com/mitchellh/hashstructure
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
@@ -447,7 +444,6 @@ github.com/prometheus-operator/prometheus-operator/pkg/listwatch
 github.com/prometheus-operator/prometheus-operator/pkg/namespacelabeler
 github.com/prometheus-operator/prometheus-operator/pkg/operator
 github.com/prometheus-operator/prometheus-operator/pkg/server
-github.com/prometheus-operator/prometheus-operator/pkg/thanos
 # github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.66.0
 ## explicit; go 1.17
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring

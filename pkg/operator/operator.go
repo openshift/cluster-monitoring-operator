@@ -398,21 +398,6 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
-	// Setup PVC informers to sync annotation updates.
-	for _, ns := range []string{o.namespace, o.namespaceUserWorkload} {
-		informer = cache.NewSharedIndexInformer(
-			o.client.PersistentVolumeClaimListWatchForNamespace(ns),
-			&v1.PersistentVolumeClaim{}, resyncPeriod, cache.Indexers{},
-		)
-		_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
-		})
-		if err != nil {
-			return nil, err
-		}
-		o.informers = append(o.informers, informer)
-	}
-
 	kubeInformersOperatorNS := informers.NewSharedInformerFactoryWithOptions(
 		c.KubernetesInterface(),
 		resyncPeriod,
@@ -558,8 +543,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	cmoConfigMap := o.namespace + "/" + o.configMapName
 
 	switch obj.(type) {
-	case *v1.PersistentVolumeClaim,
-		*configv1.Infrastructure,
+	case *configv1.Infrastructure,
 		*configv1.APIServer,
 		*configv1.Console,
 		*configv1.ClusterOperator,
