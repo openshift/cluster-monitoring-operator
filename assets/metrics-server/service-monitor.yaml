@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: metrics-server
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: metrics-server
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: metrics-server
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: ""
+    port: https
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: metrics-server.openshift-monitoring.svc
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: metrics-server
+      app.kubernetes.io/name: metrics-server
+      app.kubernetes.io/part-of: openshift-monitoring
