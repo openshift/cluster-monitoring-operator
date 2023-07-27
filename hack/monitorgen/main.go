@@ -30,20 +30,18 @@ var (
 )
 
 func init() {
-	minimalMetricsFilePath = flag.String("minimal-metrics-file", "", "(Optional) Path to a file containing a list of metrics that will be kept in the minimal collection profile")
+	minimalMetricsFilePath = flag.String("minimal-metrics-file", "", "Path to a file containing a list of metrics that will be kept in the minimal collection profile")
 }
 
 func main() {
-	var err error
-	var metrics []string
-
 	flag.Parse()
 
-	if *minimalMetricsFilePath != "" {
-		metrics, err = readFileByLine(*minimalMetricsFilePath)
-		if err != nil {
-			log.Fatalf("failed to update metrics to keep from file: %e", err)
-		}
+	if *minimalMetricsFilePath == "" {
+		log.Fatalf("arg minimal-metrics-file cannot be unset")
+	}
+	metrics, err := readFileByLine(*minimalMetricsFilePath)
+	if err != nil {
+		log.Fatalf("failed to update metrics to keep from file: %e", err)
 	}
 
 	relabelConfig := keepMetrics(metrics)
@@ -55,7 +53,6 @@ func main() {
 
 	fmt.Println("metricRelabelings:")
 	fmt.Println(string(yamlData))
-
 }
 
 // keepMetrics goes through the metrics in the slice metrics and joins
@@ -67,7 +64,6 @@ func keepMetrics(metrics []string) []monitoringv1.RelabelConfig {
 		jointMetrics = jointMetrics + "|" + metrics[i]
 	}
 
-	
 	return []monitoringv1.RelabelConfig{
 		{
 			Action: "keep",
