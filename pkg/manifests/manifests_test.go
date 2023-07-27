@@ -2705,6 +2705,78 @@ k8sPrometheusAdapter:
 	}
 }
 
+func TestMetricsServerConfiguration(t *testing.T) {
+	config := `
+metricsServer:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+  nodeSelector:
+    node: linux
+  tolerations:
+  - effect: PreferNoSchedule
+    operator: Exists`
+
+	c, err := NewConfigFromString(config, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c.SetImages(map[string]string{
+		"kube-metrics-server": "docker.io/openshift/origin-kube-metrics-server:latest",
+	})
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	d, err := f.MetricsServerDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "metrics-server" {
+			if container.Image != "docker.io/openshift/origin-kube-metrics-server:latest" {
+				t.Fatal("metrics-server image is not configured correctly")
+			}
+
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.MetricsServerConfig.Resources) {
+				t.Fatal("metrics-server resources are not configured correctly")
+			}
+		}
+	}
+
+	for _, tc := range []struct {
+		name      string
+		want, got interface{}
+	}{
+		{
+			name: "node selector",
+			want: map[string]string{"node": "linux"},
+			got:  d.Spec.Template.Spec.NodeSelector,
+		},
+		{
+			name: "tolerations",
+			want: []v1.Toleration{
+				{
+					Effect:   "PreferNoSchedule",
+					Operator: "Exists",
+				},
+			},
+			got: d.Spec.Template.Spec.Tolerations,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if !reflect.DeepEqual(tc.got, tc.want) {
+				t.Errorf("want %+v, got %+v", tc.want, tc.got)
+			}
+		})
+	}
+}
+
 func TestAlertmanagerMainStartupProbe(t *testing.T) {
 	for _, tc := range []struct {
 		name                string

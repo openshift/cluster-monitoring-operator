@@ -395,3 +395,41 @@ func TestCollectionProfile(t *testing.T) {
 		})
 	}
 }
+
+func TestMetricsServerConfig(t *testing.T) {
+	for _, tc := range []struct {
+		name               string
+		config             string
+		techPreviewEnabled bool
+		expectedError      bool
+	}{
+		{
+			name: "metrics_server_config_nonempty_tech_preview_disabled",
+			config: `metricsServer:
+  nodeSelector:
+    kubernetes.io/os: linux
+  `,
+			techPreviewEnabled: false,
+			expectedError:      true,
+		},
+		{
+			name: "metrics_server_config_nonempty_tech_preview_enabled",
+			config: `metricsServer:
+  nodeSelector:
+    kubernetes.io/os: linux
+  `,
+			techPreviewEnabled: true,
+			expectedError:      false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewConfigFromString(tc.config, tc.techPreviewEnabled)
+			if err != nil {
+				if tc.expectedError {
+					return
+				}
+				require.NoError(t, err)
+			}
+		})
+	}
+}

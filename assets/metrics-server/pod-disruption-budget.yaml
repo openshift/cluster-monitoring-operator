@@ -12,4 +12,6 @@ spec:
   minAvailable: 1
   selector:
     matchLabels:
+      app.kubernetes.io/component: metrics-server
       app.kubernetes.io/name: metrics-server
+      app.kubernetes.io/part-of: openshift-monitoring

@@ -127,6 +127,7 @@ func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConf
 
 type Images struct {
 	K8sPrometheusAdapter               string
+	MetricsServer                      string
 	PromLabelProxy                     string
 	PrometheusOperatorAdmissionWebhook string
 	PrometheusOperator                 string
@@ -205,6 +206,10 @@ func NewConfig(content io.Reader, tp bool) (*Config, error) {
 
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !tp {
 		return nil, errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
+	}
+
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig != nil && !tp {
+		return nil, errors.Wrap(ErrConfigValidation, "Metrics Server is a TechPreview feature, to be able to deploy it please enable TechPreview")
 	}
 
 	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
@@ -347,6 +352,7 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.TelemeterClient = images["telemeter-client"]
 	c.Images.PromLabelProxy = images["prom-label-proxy"]
 	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
+	c.Images.MetricsServer = images["kube-metrics-server"]
 	c.Images.OpenShiftStateMetrics = images["openshift-state-metrics"]
 	c.Images.Thanos = images["thanos"]
 	c.Images.MonitoringPlugin = images["monitoring-plugin"]

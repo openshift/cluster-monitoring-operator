@@ -65,7 +65,7 @@ local commonConfig = {
     kubeStateMetrics: 'registry.k8s.io/kube-state-metrics/kube-state-metrics:v' + $.versions.kubeStateMetrics,
     nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions.nodeExporter,
     prometheusAdapter: 'kubernetes-sigs/prometheus-adapter:v' + $.versions.prometheusAdapter,
-    metricsServer: 'registry.k8s.io/metrics-server/metrics-server:v' + $.versions.metricsServer,
+    kubernetesMetricsServer: 'registry.k8s.io/metrics-server/metrics-server:v' + $.versions.kubernetesMetricsServer,
     prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions.prometheusOperator,
     prometheusOperatorReloader: 'quay.io/prometheus-operator/prometheus-config-reloader:v' + $.versions.prometheusOperator,
     prometheusOperatorAdmissionWebhook: 'quay.io/prometheus-operator/admission-webhook:v' + $.versions.prometheusOperator,
@@ -252,9 +252,8 @@ local inCluster =
       },
       metricsServer: {
         namespace: $.values.common.namespace,
-        // Till synced in versions after updating in openshift org
-        version: '0.6.4',
-        image: 'registry.k8s.io/metrics-server/metrics-server:v0.6.4',
+        version: $.values.common.versions.kubernetesMetricsServer,
+        image: $.values.common.images.kubernetesMetricsServer,
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
       },

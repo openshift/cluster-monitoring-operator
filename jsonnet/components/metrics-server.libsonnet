@@ -166,11 +166,13 @@ function(params) {
       namespace: cfg.namespace,
     },
     spec: {
+      minReadySeconds: 60,
       replicas: 2,
       selector: {
         matchLabels: {
           'app.kubernetes.io/name': 'metrics-server',
-        },
+          'app.kubernetes.io/component': 'metrics-server',
+        } + cfg.commonLabels,
       },
       strategy: {
         rollingUpdate: {
@@ -203,6 +205,7 @@ function(params) {
           },
           containers: [
             {
+              image: cfg.image,
               args: [
                 '--secure-port=10250',
                 '--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname',
@@ -215,7 +218,6 @@ function(params) {
                 '--tls-private-key-file=/etc/tls/private/tls.key',
                 '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               ],
-              image: 'registry.k8s.io/metrics-server/metrics-server:v0.6.3',
               imagePullPolicy: 'IfNotPresent',
               livenessProbe: {
                 failureThreshold: 3,
@@ -246,8 +248,8 @@ function(params) {
               },
               resources: {
                 requests: {
-                  cpu: '100m',
-                  memory: '200Mi',
+                  cpu: '1m',
+                  memory: '40Mi',
                 },
               },
               securityContext: {
@@ -316,7 +318,8 @@ function(params) {
       selector: {
         matchLabels: {
           'app.kubernetes.io/name': 'metrics-server',
-        },
+          'app.kubernetes.io/component': 'metrics-server',
+        } + cfg.commonLabels,
       },
     },
   },

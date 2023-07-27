@@ -9,10 +9,13 @@ metadata:
   name: metrics-server
   namespace: openshift-monitoring
 spec:
+  minReadySeconds: 60
   replicas: 2
   selector:
     matchLabels:
+      app.kubernetes.io/component: metrics-server
       app.kubernetes.io/name: metrics-server
+      app.kubernetes.io/part-of: openshift-monitoring
   strategy:
     rollingUpdate:
       maxUnavailable: 1
@@ -48,7 +51,7 @@ spec:
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-        image: registry.k8s.io/metrics-server/metrics-server:v0.6.3
+        image: registry.k8s.io/metrics-server/metrics-server:v0.6.4
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -72,8 +75,8 @@ spec:
           periodSeconds: 10
         resources:
           requests:
-            cpu: 100m
-            memory: 200Mi
+            cpu: 1m
+            memory: 40Mi
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true

@@ -196,6 +196,18 @@ var (
 	PrometheusAdapterMinimalServiceMonitor       = "prometheus-adapter/minimal-service-monitor.yaml"
 	PrometheusAdapterServiceAccount              = "prometheus-adapter/service-account.yaml"
 
+	MetricsServerAPIService                         = "metrics-server/api-service.yaml"
+	MetricsServerServiceAccount                     = "metrics-server/service-account.yaml"
+	MetricsServerClusterRole                        = "metrics-server/cluster-role.yaml"
+	MetricsServerClusterRoleBinding                 = "metrics-server/cluster-role-binding.yaml"
+	MetricsServerClusterRoleAggregatedMetricsReader = "metrics-server/cluster-role-aggregated-metrics-reader.yaml"
+	MetricsServerClusterRoleBindingAuthDelegator    = "metrics-server/cluster-role-binding-auth-delegator.yaml"
+	MetricsServerRoleBindingAuthReader              = "metrics-server/role-binding-auth-reader.yaml"
+	MetricsServerDeployment                         = "metrics-server/deployment.yaml"
+	MetricsServerService                            = "metrics-server/service.yaml"
+	MetricsServerServiceMonitor                     = "metrics-server/service-monitor.yaml"
+	MetricsServerPodDisruptionBudget                = "metrics-server/pod-disruption-budget.yaml"
+
 	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
 	AdmissionWebhookAlertmanagerConfigValidatingWebhook = "admission-webhook/alertmanager-config-validating-webhook.yaml"
 	AdmissionWebhookDeployment                          = "admission-webhook/deployment.yaml"
@@ -308,6 +320,8 @@ var (
 	PrometheusOperatorWebTLSMinTLSVersionFlag            = "--web.tls-min-version="
 	PrometheusAdapterTLSCipherSuitesFlag                 = "--tls-cipher-suites="
 	PrometheusAdapterTLSMinTLSVersionFlag                = "--tls-min-version="
+	MetricsServerTLSCipherSuitesFlag                     = "--tls-cipher-suites="
+	MetricsServerTLSMinTLSVersionFlag                    = "--tls-min-version="
 	KubeRbacProxyTLSCipherSuitesFlag                     = "--tls-cipher-suites="
 	KubeRbacProxyMinTLSVersionFlag                       = "--tls-min-version="
 
@@ -2092,6 +2106,89 @@ func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap
 
 func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1.APIService, error) {
 	return f.NewAPIService(f.assets.MustNewAssetReader(PrometheusAdapterAPIService))
+}
+
+func (f *Factory) MetricsServerServiceAccount() (*v1.ServiceAccount, error) {
+	return f.NewServiceAccount(f.assets.MustNewAssetReader(MetricsServerServiceAccount))
+}
+
+func (f *Factory) MetricsServerClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(f.assets.MustNewAssetReader(MetricsServerClusterRole))
+}
+
+func (f *Factory) MetricsServerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(MetricsServerClusterRoleBinding))
+}
+
+func (f *Factory) MetricsServerClusterRoleAggregatedMetricsReader() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(f.assets.MustNewAssetReader(MetricsServerClusterRoleAggregatedMetricsReader))
+}
+
+func (f *Factory) MetricsServerClusterRoleBindingAuthDelegator() (*rbacv1.ClusterRoleBinding, error) {
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(MetricsServerClusterRoleBindingAuthDelegator))
+}
+
+func (f *Factory) MetricsServerRoleBindingAuthReader() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetReader(MetricsServerRoleBindingAuthReader))
+}
+
+func (f *Factory) MetricsServerDeployment() (*appsv1.Deployment, error) {
+	dep, err := f.NewDeployment(f.assets.MustNewAssetReader(MetricsServerDeployment))
+	if err != nil {
+		return nil, err
+	}
+
+	podSpec := &dep.Spec.Template.Spec
+	containers := podSpec.Containers
+	idx := slices.IndexFunc(containers, containerNameEquals("metrics-server"))
+	if idx < 0 {
+		return nil, errors.Errorf(
+			"failed to find metrics-server container %q in deployment %q",
+			"metrics-server", MetricsServerDeployment)
+	}
+
+	containers[idx].Image = f.config.Images.MetricsServer
+	containers[idx].Args = f.setTLSSecurityConfiguration(podSpec.Containers[0].Args,
+		MetricsServerTLSCipherSuitesFlag, MetricsServerTLSMinTLSVersionFlag)
+
+	config := f.config.ClusterMonitoringConfiguration.MetricsServerConfig
+	if config == nil {
+		return dep, nil
+	}
+
+	if len(config.NodeSelector) > 0 {
+		podSpec.NodeSelector = config.NodeSelector
+	}
+
+	if len(config.Tolerations) > 0 {
+		podSpec.Tolerations = config.Tolerations
+	}
+
+	if config.Resources != nil {
+		containers[idx].Resources = *config.Resources
+	}
+
+	if len(config.TopologySpreadConstraints) > 0 {
+		podSpec.TopologySpreadConstraints = config.TopologySpreadConstraints
+	}
+
+	return dep, nil
+}
+
+func (f *Factory) MetricsServerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(MetricsServerPodDisruptionBudget))
+}
+
+func (f *Factory) MetricsServerService() (*v1.Service, error) {
+	return f.NewService(f.assets.MustNewAssetReader(MetricsServerService))
+}
+
+func (f *Factory) MetricsServerServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetReader(MetricsServerServiceMonitor))
+}
+
+func (f *Factory) MetricsServerAPIService() (*apiregistrationv1.APIService, error) {
+	return f.NewAPIService(f.assets.MustNewAssetReader(MetricsServerAPIService))
 }
 
 func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
