@@ -287,10 +287,11 @@ type NodeExporterConfig struct {
 	// Defines which collectors are enabled and their additional configuration parameters.
 	Collectors NodeExporterCollectorConfig `json:"collectors,omitempty"`
 	// The target number of CPUs on which the Node Exporter's process will run.
-	// The default value here is `0`, which means that Node Exporter runs on all CPUs.
+	// Use this setting to override the default value, which is set either to `4` or to the number of CPUs on the host, whichever is smaller.
+	// The default value is computed at runtime and set via the `GOMAXPROCS` environment variable before Node Exporter is launched.
 	// If a kernel deadlock occurs or if performance degrades when reading from `sysfs` concurrently,
 	// you can change this value to `1`, which limits Node Exporter to running on one CPU.
-	// For nodes with a high CPU count, you can set the limit to a low number, which  saves resources by preventing Go routines from being scheduled to run on all CPUs.
+	// For nodes with a high CPU count, setting the limit to a low number saves resources by preventing Go routines from being scheduled to run on all CPUs.
 	// However, I/O performance degrades if the `maxProcs` value is set too low, and there are many metrics to collect.
 	MaxProcs uint32 `json:"maxProcs,omitempty"`
 	// A list of network devices, as regular expressions, to be excluded from the relevant collector configuration such as `netdev` and `netclass`.
