@@ -18,11 +18,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 type caBundleSyncer struct {
@@ -83,7 +84,7 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(ctx context.Context, trustedCA *v
 		ctx,
 		trustedCA.GetNamespace(),
 		cbs.prefix,
-		string(hashedCM.Labels["monitoring.openshift.io/hash"]),
+		hashedCM.Labels["monitoring.openshift.io/hash"],
 	)
 	return hashedCM, errors.Wrap(err, "deleting old trusted CA bundle configmaps failed")
 }
