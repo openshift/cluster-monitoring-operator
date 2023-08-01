@@ -85,7 +85,7 @@ type Framework struct {
 
 // New returns a new cluster monitoring operator end-to-end test framework and
 // triggers all the setup logic.
-func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
+func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 	ctx := context.Background()
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
@@ -221,11 +221,11 @@ func New(kubeConfigPath string) (*Framework, cleanUpFunc, error) {
 	return f, cleanUp, nil
 }
 
-type cleanUpFunc func() error
+type CleanUpFunc func() error
 
 // setup creates everything necessary to use the test framework.
-func (f *Framework) setup() (cleanUpFunc, error) {
-	cleanUpFuncs := []cleanUpFunc{}
+func (f *Framework) setup() (CleanUpFunc, error) {
+	cleanUpFuncs := []CleanUpFunc{}
 
 	cf, err := f.CreateServiceAccount(f.Ns, E2eServiceAccount)
 	if err != nil {
@@ -276,7 +276,7 @@ func (f *Framework) setup() (cleanUpFunc, error) {
 	}, nil
 }
 
-func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (cleanUpFunc, error) {
+func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (CleanUpFunc, error) {
 	ctx := context.Background()
 	sa := &v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
@@ -337,7 +337,7 @@ func (f *Framework) GetLogs(namespace string, podName, containerName string) (st
 	return string(logs), err
 }
 
-func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterRole string) (cleanUpFunc, error) {
+func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterRole string) (CleanUpFunc, error) {
 	ctx := context.Background()
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -370,7 +370,87 @@ func (f *Framework) CreateClusterRoleBinding(namespace, serviceAccount, clusterR
 	}, nil
 }
 
-func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, clusterRole string) (cleanUpFunc, error) {
+func (f *Framework) CreateRoleBindingFromTypedRole(namespace, serviceAccount string, typedRole *rbacv1.Role) (CleanUpFunc, error) {
+	ctx := context.Background()
+
+	role, err := f.KubeClient.RbacV1().Roles(namespace).Create(ctx, typedRole, metav1.CreateOptions{})
+	if err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil, errors.Errorf("role %s already exists", typedRole.Name)
+		}
+		return nil, err
+	}
+
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", serviceAccount, typedRole.Name),
+			Labels: map[string]string{
+				E2eTestLabelName: E2eTestLabelValue,
+			},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      serviceAccount,
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "Role",
+			Name:     role.Name,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+
+	roleBinding, err = f.KubeClient.RbacV1().RoleBindings(namespace).Create(ctx, roleBinding, metav1.CreateOptions{})
+	if err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil, errors.Errorf("%s %s already exists", roleBinding.GroupVersionKind(), roleBinding.Name)
+		}
+		return nil, err
+	}
+
+	// Wait for the role and role binding to be ready.
+	err = Poll(10*time.Second, time.Minute, func() error {
+		_, err := f.KubeClient.RbacV1().Roles(namespace).Get(ctx, role.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		_, err = f.KubeClient.RbacV1().RoleBindings(namespace).Get(ctx, roleBinding.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return func() error {
+		err := f.KubeClient.RbacV1().Roles(namespace).Delete(ctx, role.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+		err = f.KubeClient.RbacV1().RoleBindings(namespace).Delete(ctx, roleBinding.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+
+		// Wait for the role and role binding to be deleted.
+		err = Poll(10*time.Second, time.Minute, func() error {
+			_, err := f.KubeClient.RbacV1().Roles(namespace).Get(ctx, role.Name, metav1.GetOptions{})
+			if err == nil {
+				return errors.Errorf("%s %s still exists", role.GroupVersionKind(), role.Name)
+			}
+			_, err = f.KubeClient.RbacV1().RoleBindings(namespace).Get(ctx, roleBinding.Name, metav1.GetOptions{})
+			if err == nil {
+				return errors.Errorf("%s %s still exists", roleBinding.GroupVersionKind(), roleBinding.Name)
+			}
+			return nil
+		})
+
+		return err
+	}, nil
+}
+
+func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, clusterRole string) (CleanUpFunc, error) {
 	ctx := context.Background()
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -403,7 +483,7 @@ func (f *Framework) CreateRoleBindingFromClusterRole(namespace, serviceAccount, 
 	}, nil
 }
 
-func (f *Framework) CreateRoleBindingFromRole(namespace, serviceAccount, role string) (cleanUpFunc, error) {
+func (f *Framework) CreateRoleBindingFromRole(namespace, serviceAccount, role string) (CleanUpFunc, error) {
 	ctx := context.Background()
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
