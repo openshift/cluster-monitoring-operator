@@ -19,6 +19,16 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+type CollectionProfile string
+type CollectionProfiles []CollectionProfile
+
+const (
+	FullCollectionProfile    = "full"
+	MinimalCollectionProfile = "minimal"
+)
+
+var SupportedCollectionProfiles = CollectionProfiles{FullCollectionProfile, MinimalCollectionProfile}
+
 // The `ClusterMonitoringConfiguration` resource defines settings that
 // customize the default platform monitoring stack through the
 // `cluster-monitoring-config` config map in the `openshift-monitoring`
