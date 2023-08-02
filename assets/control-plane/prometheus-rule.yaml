@@ -459,6 +459,7 @@ spec:
         ) > 0.95
       for: 15m
       labels:
+        namespace: kube-system
         severity: info
     - alert: KubeNodeReadinessFlapping
       annotations:
@@ -468,6 +469,7 @@ spec:
         sum(changes(kube_node_status_condition{job="kube-state-metrics",status="true",condition="Ready"}[15m])) by (cluster, node) > 2
       for: 15m
       labels:
+        namespace: kube-system
         severity: warning
     - alert: KubeletPlegDurationHigh
       annotations:
@@ -477,6 +479,7 @@ spec:
         node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile{quantile="0.99"} >= 10
       for: 5m
       labels:
+        namespace: kube-system
         severity: warning
     - alert: KubeletPodStartUpLatencyHigh
       annotations:
@@ -486,6 +489,7 @@ spec:
         histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le)) * on(cluster, instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"} > 60
       for: 15m
       labels:
+        namespace: kube-system
         severity: warning
     - alert: KubeletClientCertificateRenewalErrors
       annotations:

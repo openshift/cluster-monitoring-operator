@@ -243,6 +243,33 @@ local patchedRules = [
           namespace: 'kube-system',
         },
       },
+      // All OpenShift alerts should include a namespace label.
+      //
+      // See https://issues.redhat.com/browse/OCPBUGS-17191
+      {
+        alert: 'KubeletTooManyPods',
+        labels: {
+          namespace: 'kube-system',
+        },
+      },
+      {
+        alert: 'KubeletPlegDurationHigh',
+        labels: {
+          namespace: 'kube-system',
+        },
+      },
+      {
+        alert: 'KubeletPodStartUpLatencyHigh',
+        labels: {
+          namespace: 'kube-system',
+        },
+      },
+      {
+        alert: 'KubeNodeReadinessFlapping',
+        labels: {
+          namespace: 'kube-system',
+        },
+      },
     ],
   },
   {
@@ -252,12 +279,20 @@ local patchedRules = [
         alert: 'KubeStateMetricsListErrors',
         labels: {
           severity: 'warning',
+          // All OpenShift alerts should include a namespace label.
+          //
+          // See https://issues.redhat.com/browse/OCPBUGS-17191
+          namespace: 'openshift-monitoring',
         },
       },
       {
         alert: 'KubeStateMetricsWatchErrors',
         labels: {
           severity: 'warning',
+          // All OpenShift alerts should include a namespace label.
+          //
+          // See https://issues.redhat.com/browse/OCPBUGS-17191
+          namespace: 'openshift-monitoring',
         },
       },
     ],

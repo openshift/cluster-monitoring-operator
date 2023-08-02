@@ -26,6 +26,7 @@ spec:
         > 0.01
       for: 15m
       labels:
+        namespace: openshift-monitoring
         severity: warning
     - alert: KubeStateMetricsWatchErrors
       annotations:
@@ -38,4 +39,5 @@ spec:
         > 0.01
       for: 15m
       labels:
+        namespace: openshift-monitoring
         severity: warning
