@@ -96,17 +96,15 @@ func testMain(m *testing.M) error {
 		}
 
 		i, _ := f.OperatorClient.GetInfrastructure(ctx, "cluster")
+		expected := 2
 		if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
-			if v != 1 {
-				loopErr = fmt.Errorf("expected 1 Prometheus instances but got: %v", v)
-				return false, nil
-			}
-		} else {
-			if v != 2 {
-				loopErr = fmt.Errorf("expected 2 Prometheus instances but got: %v", v)
-				return false, nil
-			}
+			expected = 1
 		}
+		if v != expected {
+			loopErr = fmt.Errorf("expected %d Prometheus instances but got: %v", expected, v)
+			return false, nil
+		}
+`
 
 		return true, nil
 	})
