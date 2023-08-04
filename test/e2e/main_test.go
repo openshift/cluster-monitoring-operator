@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,8 +95,19 @@ func testMain(m *testing.M) error {
 			return false, nil
 		}
 
-		if v != 2 {
-			loopErr = fmt.Errorf("expected 2 Prometheus instances but got: %v", v)
+		i, loopErr := f.OperatorClient.GetInfrastructure(ctx, "cluster")
+		if loopErr != nil {
+			loopErr = errors.Wrapf(loopErr, "error getting cluster infrastructure")
+			return false, nil
+		}
+
+		var expected float64
+		expected = 2
+		if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
+			expected = 1
+		}
+		if v != expected {
+			loopErr = fmt.Errorf("expected %v Prometheus instances but got: %v", expected, v)
 			return false, nil
 		}
 
