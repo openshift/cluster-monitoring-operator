@@ -95,7 +95,12 @@ func testMain(m *testing.M) error {
 			return false, nil
 		}
 
-		i, _ := f.OperatorClient.GetInfrastructure(ctx, "cluster")
+		i, loopErr := f.OperatorClient.GetInfrastructure(ctx, "cluster")
+		if loopErr != nil {
+			loopErr = errors.Wrapf(loopErr, "error getting cluster infrastructure")
+			return false, nil
+		}
+
 		var expected float64
 		expected = 2
 		if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
