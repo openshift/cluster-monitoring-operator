@@ -12,8 +12,4 @@
     [k]: o[k] + if o[k].kind != 'ConfigMapList' then { metadata+: { labels+: labels { 'app.kubernetes.io/managed-by': managedBy(o[k]) } } } else {}
     for k in std.objectFields(o)
   },
-
-  labelsAsString(o)::
-    local parts = [k + '=' + o[k] for k in std.objectFields(o)];
-    std.join(',', parts),
 }
