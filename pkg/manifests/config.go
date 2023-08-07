@@ -254,6 +254,9 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.PrometheusOperatorConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
 	}
+	if c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig == nil {
+		c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig = &PrometheusOperatorAdmissionWebhookConfig{}
+	}
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}

@@ -49,6 +49,8 @@ type ClusterMonitoringConfiguration struct {
 	PrometheusK8sConfig *PrometheusK8sConfig `json:"prometheusK8s,omitempty"`
 	// `PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
 	PrometheusOperatorConfig *PrometheusOperatorConfig `json:"prometheusOperator,omitempty"`
+	// `PrometheusOperatorAdmissionWebhookConfig` defines settings for the Prometheus Operator's admission webhook component.
+	PrometheusOperatorAdmissionWebhookConfig *PrometheusOperatorAdmissionWebhookConfig `json:"prometheusOperatorAdmissionWebhook,omitempty"`
 	// `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 	OpenShiftMetricsConfig *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics,omitempty"`
 	// `TelemeterClientConfig` defines settings for the Telemeter Client
@@ -107,6 +109,8 @@ type K8sPrometheusAdapter struct {
 	Audit *Audit `json:"audit,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Defines resource requests and limits for the PrometheusAdapter container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
@@ -135,6 +139,8 @@ type DedicatedServiceMonitors struct {
 type KubeStateMetricsConfig struct {
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Defines resource requests and limits for the KubeStateMetrics container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
@@ -222,6 +228,8 @@ type PrometheusOperatorConfig struct {
 	LogLevel string `json:"logLevel,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Defines resource requests and limits for the PrometheusOperator container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
@@ -233,6 +241,8 @@ type PrometheusOperatorConfig struct {
 type OpenShiftStateMetricsConfig struct {
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Defines resource requests and limits for the OpenShiftStateMetrics container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
@@ -248,6 +258,8 @@ type TelemeterClientConfig struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector"`
+	// Defines resource requests and limits for the TelemeterClient container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// OmitFromDoc
 	TelemeterServerURL string `json:"telemeterServerURL,omitempty"`
 	// OmitFromDoc
@@ -299,6 +311,8 @@ type NodeExporterConfig struct {
 	// When set as an empty list, no devices are excluded.
 	// If you modify this setting, monitor the `prometheus-k8s` deployment closely for excessive memory usage.
 	IgnoredNetworkDevices *[]string `json:"ignoredNetworkDevices,omitempty"`
+	// Defines resource requests and limits for the NodeExporter container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // The `NodeExporterCollectorConfig` resource defines settings for individual collectors
@@ -660,6 +674,13 @@ type ThanosRulerConfig struct {
 	// Defines persistent storage for Thanos Ruler. Use this setting to
 	// configure the storage class and size of a volume.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
+}
+
+// The `PrometheusOperatorAdmissionWebhookConfig` resource defines settings for the Prometheus
+// Operator's admission webhook workload.
+type PrometheusOperatorAdmissionWebhookConfig struct {
+	// Defines resource requests and limits for the prometheus-operator-admission-webhook container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // The `MonitoringPluginConfig` resource defines settings for the

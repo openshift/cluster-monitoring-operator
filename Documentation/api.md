@@ -39,6 +39,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterConfig](#nodeexporterconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
 * [PrometheusK8sConfig](#prometheusk8sconfig)
+* [PrometheusOperatorAdmissionWebhookConfig](#prometheusoperatoradmissionwebhookconfig)
 * [PrometheusOperatorConfig](#prometheusoperatorconfig)
 * [PrometheusRestrictedConfig](#prometheusrestrictedconfig)
 * [RemoteWriteSpec](#remotewritespec)
@@ -131,6 +132,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent. |
 | prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | `PrometheusK8sConfig` defines settings for the Prometheus component. |
 | prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | `PrometheusOperatorConfig` defines settings for the Prometheus Operator component. |
+| prometheusOperatorAdmissionWebhook | *[PrometheusOperatorAdmissionWebhookConfig](#prometheusoperatoradmissionwebhookconfig) | `PrometheusOperatorAdmissionWebhookConfig` defines settings for the Prometheus Operator's admission webhook component. |
 | openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent. |
 | telemeterClient | *[TelemeterClientConfig](#telemeterclientconfig) | `TelemeterClientConfig` defines settings for the Telemeter Client component. |
 | thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
@@ -167,6 +169,7 @@ The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter 
 | -------- | ---- | ----------- |
 | audit | *Audit | Defines the audit configuration used by the Prometheus Adapter instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`. |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core) | Defines resource requests and limits for the PrometheusAdapter container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 | dedicatedServiceMonitors | *[DedicatedServiceMonitors](#dedicatedservicemonitors) | Defines dedicated service monitors. |
@@ -185,6 +188,7 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core) | Defines resource requests and limits for the KubeStateMetrics container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 
@@ -382,6 +386,7 @@ The `NodeExporterConfig` resource defines settings for the `node-exporter` agent
 | collectors | [NodeExporterCollectorConfig](#nodeexportercollectorconfig) | Defines which collectors are enabled and their additional configuration parameters. |
 | maxProcs | uint32 | The target number of CPUs on which the Node Exporter's process will run. Use this setting to override the default value, which is set either to `4` or to the number of CPUs on the host, whichever is smaller. The default value is computed at runtime and set via the `GOMAXPROCS` environment variable before Node Exporter is launched. If a kernel deadlock occurs or if performance degrades when reading from `sysfs` concurrently, you can change this value to `1`, which limits Node Exporter to running on one CPU. For nodes with a high CPU count, setting the limit to a low number saves resources by preventing Go routines from being scheduled to run on all CPUs. However, I/O performance degrades if the `maxProcs` value is set too low, and there are many metrics to collect. |
 | ignoredNetworkDevices | *[]string | A list of network devices, as regular expressions, to be excluded from the relevant collector configuration such as `netdev` and `netclass`. When not set, the Cluster Monitoring Operator uses a predefined list of devices to be excluded to minimize the impact on memory usage. When set as an empty list, no devices are excluded. If you modify this setting, monitor the `prometheus-k8s` deployment closely for excessive memory usage. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core) | Defines resource requests and limits for the NodeExporter container. |
 
 [Back to TOC](#table-of-contents)
 
@@ -397,6 +402,7 @@ The `OpenShiftStateMetricsConfig` resource defines settings for the `openshift-s
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core) | Defines resource requests and limits for the OpenShiftStateMetrics container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 
@@ -430,6 +436,21 @@ The `PrometheusK8sConfig` resource defines settings for the Prometheus component
 
 [Back to TOC](#table-of-contents)
 
+## PrometheusOperatorAdmissionWebhookConfig
+
+#### Description
+
+The `PrometheusOperatorAdmissionWebhookConfig` resource defines settings for the Prometheus Operator's admission webhook workload.
+
+
+<em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core) | Defines resource requests and limits for the prometheus-operator-admission-webhook container. |
+
+[Back to TOC](#table-of-contents)
+
 ## PrometheusOperatorConfig
 
 #### Description
@@ -443,6 +464,7 @@ The `PrometheusOperatorConfig` resource defines settings for the Prometheus Oper
 | -------- | ---- | ----------- |
 | logLevel | string | Defines the log level settings for Prometheus Operator. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`. |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core) | Defines resource requests and limits for the PrometheusOperator container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 
@@ -545,6 +567,7 @@ The `TLSConfig` resource configures the settings for TLS connections.
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
+| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core) | Defines resource requests and limits for the TelemeterClient container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 

@@ -20,6 +20,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 | Property | Type | Description 
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the OpenShiftStateMetrics container.
+
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
 |topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.

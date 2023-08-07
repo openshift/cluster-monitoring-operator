@@ -5,15 +5,12 @@
 	// CMO.
 	:_content-type: ASSEMBLY
 
-== TelemeterClientConfig
+== PrometheusOperatorAdmissionWebhookConfig
 
 === Description
 
-`TelemeterClientConfig` defines settings for the Telemeter Client component.
+The `PrometheusOperatorAdmissionWebhookConfig` resource defines settings for the Prometheus Operator's admission webhook workload.
 
-=== Required
-* `nodeSelector`
-* `tolerations`
 
 
 Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
@@ -21,13 +18,7 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
-|nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
-
-|resources|*v1.ResourceRequirements|Defines resource requests and limits for the TelemeterClient container.
-
-|tolerations|[]v1.Toleration|Defines tolerations for the pods.
-
-|topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.
+|resources|*v1.ResourceRequirements|Defines resource requests and limits for the prometheus-operator-admission-webhook container.
 
 |===
 
