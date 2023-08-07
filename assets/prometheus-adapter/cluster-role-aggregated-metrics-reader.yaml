@@ -12,7 +12,6 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: system:aggregated-metrics-reader
-  namespace: openshift-monitoring
 rules:
 - apiGroups:
   - metrics.k8s.io
