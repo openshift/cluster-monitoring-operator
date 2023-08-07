@@ -484,29 +484,30 @@ func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv
 	return errors.Wrap(err, "updating AlertRelabelConfig object failed")
 }
 
+// noopCache implements the resourceapply.ResourceCache interface without any caching.
+// It is needed to use the resourceapply.Apply*Improved() methods.
+type noopCache struct{}
+
+func (n *noopCache) UpdateCachedResourceMetadata(required runtime.Object, actual runtime.Object) {}
+
+func (n *noopCache) SafeToSkipApply(required runtime.Object, existing runtime.Object) bool {
+	return false
+}
+
+var _ = resourceapply.ResourceCache(&noopCache{})
+
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
-	admclient := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations()
-	existing, err := admclient.Get(ctx, w.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := admclient.Create(ctx, w, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ValidatingWebhookConfiguration object failed")
-	}
-	if err != nil {
-		return errors.Wrap(err, "retrieving ValidatingWebhookConfiguration object failed")
+	if _, _, err := resourceapply.ApplyValidatingWebhookConfigurationImproved(
+		ctx,
+		c.kclient.AdmissionregistrationV1(),
+		c.eventRecorder,
+		w,
+		&noopCache{},
+	); err != nil {
+		return errors.Wrap(err, "patching ValidatingWebhookConfiguration object failed")
 	}
 
-	required := w.DeepCopy()
-	required.ResourceVersion = existing.ResourceVersion
-	// retain the CABundle that service-ca-operator created if the proper annotation is found
-	if val, ok := required.Annotations["service.beta.openshift.io/inject-cabundle"]; ok && val == "true" {
-		for i := range required.Webhooks {
-			if len(existing.Webhooks[i].ClientConfig.CABundle) > 0 {
-				required.Webhooks[i].ClientConfig.CABundle = existing.Webhooks[i].ClientConfig.CABundle
-			}
-		}
-	}
-	_, err = admclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
+	return nil
 }
 
 func (c *Client) CreateOrUpdateSecurityContextConstraints(ctx context.Context, s *secv1.SecurityContextConstraints) error {
@@ -1708,6 +1709,7 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
 	_, _, err := resourceapply.ApplyServiceAccount(ctx, c.kclient.CoreV1(), c.eventRecorder, sa)
+
 	return errors.Wrap(err, "patching ServiceAccount object failed")
 }
 

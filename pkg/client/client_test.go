@@ -15,7 +15,6 @@
 package client
 
 import (
-	"bytes"
 	"context"
 	"reflect"
 	"testing"
@@ -2037,66 +2036,81 @@ func TestCreateOrUpdateAlertmanager(t *testing.T) {
 
 func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
 	ctx := context.Background()
-	testCases := []struct {
-		name               string
-		initialAnnotations map[string]string
-		initialCABundle    []byte
-		expectedCABundle   []byte
-	}{
-		{
-			name: "retain CA bundle",
-			initialAnnotations: map[string]string{
-				"service.beta.openshift.io/inject-cabundle": "true",
+	webhook := &admissionv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+			Labels: map[string]string{
+				"app.kubernetes.io/part-of": "openshift-monitoring",
 			},
-			initialCABundle:  []byte("fooCA"),
-			expectedCABundle: []byte("fooCA"),
+			Annotations: map[string]string{
+				"foo": "bar",
+			},
 		},
-		{
-			name:               "drop CA bundle of annotation is missing",
-			initialAnnotations: map[string]string{},
-			initialCABundle:    []byte("fooCA"),
-			expectedCABundle:   []byte(""),
+		Webhooks: []admissionv1.ValidatingWebhook{
+			{
+				ClientConfig: admissionv1.WebhookClientConfig{
+					CABundle: []byte("<PEM-encoded CA bundle>"),
+				},
+			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(st *testing.T) {
-			webhook := admissionv1.ValidatingWebhookConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        "test",
-					Annotations: tc.initialAnnotations,
-				},
-				Webhooks: []admissionv1.ValidatingWebhook{
-					{
-						ClientConfig: admissionv1.WebhookClientConfig{
-							CABundle: tc.initialCABundle,
-						},
-					},
-				},
-			}
+	c := Client{
+		kclient:       fake.NewSimpleClientset(webhook.DeepCopy()),
+		eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+	}
 
-			c := Client{
-				kclient: fake.NewSimpleClientset(webhook.DeepCopy()),
-			}
+	if _, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{}); err != nil {
+		t.Fatal(err)
+	}
 
-			if _, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{}); err != nil {
-				t.Fatal(err)
-			}
+	// Labels and annotations should be merged.
+	webhook.Labels = map[string]string{
+		"app.kubernetes.io/name": "prometheus-operator",
+	}
+	webhook.Annotations = map[string]string{
+		"service.beta.openshift.io/inject-cabundle": "true",
+	}
+	// CA bundle should be retained.
+	webhook.Webhooks[0].ClientConfig.CABundle = nil
+	// Failure policy should be overwritten.
+	webhook.Webhooks[0].FailurePolicy = func(fp admissionv1.FailurePolicyType) *admissionv1.FailurePolicyType { return &fp }(admissionv1.Ignore)
 
-			webhook.Webhooks[0].ClientConfig.CABundle = []byte{}
-			if err := c.CreateOrUpdateValidatingWebhookConfiguration(ctx, &webhook); err != nil {
-				t.Fatal(err)
-			}
-			newWebhook, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{})
-			after := newWebhook.Webhooks[0].ClientConfig.CABundle
-			if err != nil {
-				t.Fatal(err)
-			}
+	if err := c.CreateOrUpdateValidatingWebhookConfiguration(ctx, webhook); err != nil {
+		t.Fatal(err)
+	}
 
-			if bytes.Compare(tc.expectedCABundle, after) != 0 {
-				t.Errorf("%q: expected CABundle %q, got %q", tc.name, tc.expectedCABundle, after)
-			}
-		})
+	newWebhook, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(newWebhook.Webhooks[0].ClientConfig.CABundle) != "<PEM-encoded CA bundle>" {
+		t.Fatalf("expected CABundle %q, got %q", "<PEM-encoded CA bundle>", newWebhook.Webhooks[0].ClientConfig.CABundle)
+	}
+
+	expected := map[string]string{
+		"app.kubernetes.io/name":    "prometheus-operator",
+		"app.kubernetes.io/part-of": "openshift-monitoring",
+	}
+	if !reflect.DeepEqual(newWebhook.Labels, expected) {
+		t.Fatalf("expected labels %v, got %v", expected, newWebhook.Labels)
+	}
+
+	expected = map[string]string{
+		"foo": "bar",
+		"service.beta.openshift.io/inject-cabundle": "true",
+	}
+	if !reflect.DeepEqual(newWebhook.Annotations, expected) {
+		t.Fatalf("expected annotations %v, got %v", expected, newWebhook.Annotations)
+	}
+
+	if newWebhook.Webhooks[0].FailurePolicy == nil {
+		t.Fatal("expected non-nil failure policy")
+	}
+
+	if *newWebhook.Webhooks[0].FailurePolicy != admissionv1.Ignore {
+		t.Fatalf("expected failure policy %q, got %q", admissionv1.Ignore, *newWebhook.Webhooks[0].FailurePolicy)
 	}
 }
 
