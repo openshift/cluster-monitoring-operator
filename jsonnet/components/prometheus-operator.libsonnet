@@ -5,7 +5,6 @@ local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/
 local conversionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/conversion.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local rbac = import '../utils/rbac.libsonnet';
-local labelsAsString = (import '../utils/add-labels.libsonnet').labelsAsString;
 
 function(params)
   local po = operator(params);
@@ -75,7 +74,6 @@ function(params)
                         '--config-reloader-cpu-request=1m',
                         '--config-reloader-memory-request=10Mi',
                         '--web.listen-address=127.0.0.1:8080',
-                        '--labels=' + labelsAsString(params.commonLabels),
                       ],
                       ports: [],
                       resources: {
