@@ -912,28 +912,30 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 		}
 	}
 
-	cm, err := o.client.GetConfigmap(ctx, "openshift-config", "etcd-metric-serving-ca")
-	if err != nil {
-		klog.Warningf("Error loading etcd CA certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
-		return c, nil
-	}
+	if !o.lastKnowInfrastructureConfig.hostedControlPlane {
+		cm, err := o.client.GetConfigmap(ctx, "openshift-config", "etcd-metric-serving-ca")
+		if err != nil {
+			klog.Warningf("Error loading etcd CA certificates for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+			return c, nil
+		}
 
-	s, err := o.client.GetSecret(ctx, "openshift-config", "etcd-metric-client")
-	if err != nil {
-		klog.Warningf("Error loading etcd client secrets for Prometheus. Proceeding with etcd disabled. Error: %v", err)
-		return c, nil
-	}
+		s, err := o.client.GetSecret(ctx, "openshift-config", "etcd-metric-client")
+		if err != nil {
+			klog.Warningf("Error loading etcd client secrets for Prometheus. Proceeding with etcd disabled. Error: %v", err)
+			return c, nil
+		}
 
-	caContent, caFound := cm.Data["ca-bundle.crt"]
-	certContent, certFound := s.Data["tls.crt"]
-	keyContent, keyFound := s.Data["tls.key"]
+		caContent, caFound := cm.Data["ca-bundle.crt"]
+		certContent, certFound := s.Data["tls.crt"]
+		keyContent, keyFound := s.Data["tls.key"]
 
-	if caFound && len(caContent) > 0 &&
-		certFound && len(certContent) > 0 &&
-		keyFound && len(keyContent) > 0 {
+		if caFound && len(caContent) > 0 &&
+			certFound && len(certContent) > 0 &&
+			keyFound && len(keyContent) > 0 {
 
-		trueBool := true
-		c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &trueBool
+			trueBool := true
+			c.ClusterMonitoringConfiguration.EtcdConfig.Enabled = &trueBool
+		}
 	}
 
 	return c, nil
