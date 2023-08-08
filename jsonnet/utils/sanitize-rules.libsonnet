@@ -120,6 +120,17 @@ local excludedRules = [
       { alert: 'ThanosQueryRangeLatencyHigh' },
     ],
   },
+  {
+    name: 'node-exporter',
+    rules: [
+      // NodeCPUHighUsage, NodeMemoryHighUtilization and NodeDiskIOSaturation
+      // are removed because they are irrelevant for environments where it is
+      // fine to have over/fully utilized nodes.
+      { alert: 'NodeCPUHighUsage' },
+      { alert: 'NodeMemoryHighUtilization' },
+      { alert: 'NodeDiskIOSaturation' },
+    ],
+  },
 ];
 
 local patchedRules = [
@@ -174,12 +185,19 @@ local patchedRules = [
           severity: 'critical',
         },
       },
+      {
+        alert: 'NodeSystemdServiceFailed',
+        'for': '15m',
+      },
     ],
   },
   {
     name: 'kubernetes-apps',
     rules: [
-      // Stop-gap fix for https://bugzilla.redhat.com/show_bug.cgi?id=1943667
+      // On clusters with few nodes, the number of daemonset instances being
+      // unavailable may not change during more than 15 minutes while the
+      // rollout is making progress.
+      // See https://bugzilla.redhat.com/show_bug.cgi?id=1943667
       {
         alert: 'KubeDaemonSetRolloutStuck',
         annotations: {

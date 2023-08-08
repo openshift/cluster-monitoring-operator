@@ -8,7 +8,6 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.10.0
   name: resource-metrics-server-resources
-  namespace: openshift-monitoring
 rules:
 - apiGroups:
   - metrics.k8s.io
