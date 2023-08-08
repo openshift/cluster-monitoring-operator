@@ -8,6 +8,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-kit/log v0.2.1
+	github.com/google/go-cmp v0.5.9
 	github.com/imdario/mergo v0.3.13
 	github.com/openshift/api v0.0.0-20230417092139-1b2161d23365
 	github.com/openshift/client-go v0.0.0-20230419131419-497c7032c581
@@ -76,7 +77,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/cel-go v0.12.6 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/grafana/regexp v0.0.0-20221122212121-6b5c0a4cb7fd // indirect

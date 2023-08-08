@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
@@ -613,8 +614,10 @@ func (c *Client) GetAlertingRule(ctx context.Context, namespace, name string) (*
 }
 
 func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Prometheus) error {
-	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
-	existing, err := pclient.Get(ctx, p.GetName(), metav1.GetOptions{})
+	namespace := p.GetNamespace()
+	name := p.GetName()
+	pclient := c.mclient.MonitoringV1().Prometheuses(namespace)
+	existing, err := pclient.Get(ctx, name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pclient.Create(ctx, p, metav1.CreateOptions{})
 		return errors.Wrap(err, "creating Prometheus object failed")
@@ -624,9 +627,56 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Promethe
 	}
 
 	required := p.DeepCopy()
+	existing.TypeMeta = required.TypeMeta // not sure why, but for some reason this isn't populated by Get?
 	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+	annotations := required.ObjectMeta.Annotations
+	labels := required.ObjectMeta.Labels
+	required.ObjectMeta = existing.ObjectMeta
+	required.ObjectMeta.Annotations = annotations
+	required.ObjectMeta.Labels = labels
+	required.Status = existing.Status
 
-	required.ResourceVersion = existing.ResourceVersion
+	// localize some server-side defaults, so DeepEqual doesn't get confused and think we need to stomp them
+	if required.Spec.CommonPrometheusFields.ScrapeInterval == "" {
+		required.Spec.CommonPrometheusFields.ScrapeInterval = "30s"
+	}
+	if len(required.Spec.CommonPrometheusFields.ExternalLabels) == 0 {
+		required.Spec.CommonPrometheusFields.ExternalLabels = nil
+	}
+	if len(required.Spec.CommonPrometheusFields.EnableFeatures) == 0 {
+		required.Spec.CommonPrometheusFields.EnableFeatures = nil
+	}
+	for i, container := range required.Spec.CommonPrometheusFields.Containers {
+		for j, port := range container.Ports {
+			if port.Protocol == "" {
+				required.Spec.CommonPrometheusFields.Containers[i].Ports[j].Protocol = "TCP"
+			}
+		}
+	}
+	if required.Spec.CommonPrometheusFields.PortName == "" {
+		required.Spec.CommonPrometheusFields.PortName = "web"
+	}
+	if required.Spec.Thanos == nil {
+		required.Spec.Thanos = &monv1.ThanosSpec{}
+	}
+	if required.Spec.Thanos.BlockDuration == "" {
+		required.Spec.Thanos.BlockDuration = "2h"
+	}
+	if required.Spec.EvaluationInterval == "" {
+		required.Spec.EvaluationInterval = "30s"
+	}
+
+	if reflect.DeepEqual(existing, required) {
+		// Nothing to do, as the currently existing resource is equivalent to the one that would be applied.
+		return nil
+	}
+
+	if diff := cmp.Diff(existing, required); diff != "" {
+		klog.V(2).Infof("Updating Prometheus %s/%s to apply: %v", namespace, name, diff)
+	} else {
+		klog.V(2).Infof("Updating Prometheus %s/%s with empty diff: possible hotloop after wrong comparison", namespace, name)
+	}
+
 	_, err = pclient.Update(ctx, required, metav1.UpdateOptions{})
 	return errors.Wrap(err, "updating Prometheus object failed")
 }
