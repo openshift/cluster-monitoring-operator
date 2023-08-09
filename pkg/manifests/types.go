@@ -645,7 +645,7 @@ type ThanosRulerConfig struct {
 	LogLevel string `json:"logLevel,omitempty"`
 	// Defines the nodes on which the Pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Defines resource requests and limits for the Alertmanager container.
+	// Defines resource requests and limits for the Thanos Ruler container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines the duration for which Prometheus retains data.
 	// This definition must be specified using the following regular
