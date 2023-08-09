@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
@@ -96,6 +97,7 @@ type Client struct {
 	aggclient   aggregatorclient.Interface
 
 	eventRecorder events.Recorder
+	resourceCache resourceapply.ResourceCache
 }
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
@@ -264,6 +266,7 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 		version:               version,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
+		resourceCache:         resourceapply.NewResourceCache(),
 	}
 
 	for _, opt := range options {
@@ -497,14 +500,20 @@ func (n *noopCache) SafeToSkipApply(required runtime.Object, existing runtime.Ob
 var _ = resourceapply.ResourceCache(&noopCache{})
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
-	if _, _, err := resourceapply.ApplyValidatingWebhookConfigurationImproved(
+	nw, changed, err := resourceapply.ApplyValidatingWebhookConfigurationImproved(
 		ctx,
 		c.kclient.AdmissionregistrationV1(),
 		c.eventRecorder,
 		w,
-		&noopCache{},
-	); err != nil {
+		c.resourceCache,
+	)
+	if err != nil {
 		return errors.Wrap(err, "patching ValidatingWebhookConfiguration object failed")
+	}
+
+	if changed {
+		diff := cmp.Diff(w, nw)
+		fmt.Println("diff:\n", diff)
 	}
 
 	return nil
