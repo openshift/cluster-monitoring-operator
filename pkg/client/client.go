@@ -486,18 +486,6 @@ func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv
 	return errors.Wrap(err, "updating AlertRelabelConfig object failed")
 }
 
-// noopCache implements the resourceapply.ResourceCache interface without any caching.
-// It is needed to use the resourceapply.Apply*Improved() methods.
-type noopCache struct{}
-
-func (n *noopCache) UpdateCachedResourceMetadata(required runtime.Object, actual runtime.Object) {}
-
-func (n *noopCache) SafeToSkipApply(required runtime.Object, existing runtime.Object) bool {
-	return false
-}
-
-var _ = resourceapply.ResourceCache(&noopCache{})
-
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
 	_, _, err := resourceapply.ApplyValidatingWebhookConfigurationImproved(
 		ctx,

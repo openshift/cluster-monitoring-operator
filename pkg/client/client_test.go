@@ -21,6 +21,7 @@ import (
 
 	secv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -28,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	routev1 "github.com/openshift/api/route/v1"
 
@@ -1058,16 +1060,19 @@ func TestCreateOrUpdateServiceAccount(t *testing.T) {
 				},
 				Secrets: tc.initialSecrets,
 			}
+
 			var c Client
 			if tc.initialAnnotations == nil && tc.initialLabels == nil {
 				c = Client{
 					kclient:       fake.NewSimpleClientset(),
 					eventRecorder: eventRecorder,
+					resourceCache: resourceapply.NewResourceCache(),
 				}
 			} else {
 				c = Client{
 					kclient:       fake.NewSimpleClientset(sa.DeepCopy()),
 					eventRecorder: eventRecorder,
+					resourceCache: resourceapply.NewResourceCache(),
 				}
 				_, err := c.kclient.CoreV1().ServiceAccounts(ns).Get(ctx, sa.Name, metav1.GetOptions{})
 				if err != nil {
@@ -2058,6 +2063,7 @@ func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
 	c := Client{
 		kclient:       fake.NewSimpleClientset(webhook.DeepCopy()),
 		eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+		resourceCache: resourceapply.NewResourceCache(),
 	}
 
 	if _, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{}); err != nil {
@@ -2074,7 +2080,7 @@ func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
 	// CA bundle should be retained.
 	webhook.Webhooks[0].ClientConfig.CABundle = nil
 	// Failure policy should be overwritten.
-	webhook.Webhooks[0].FailurePolicy = func(fp admissionv1.FailurePolicyType) *admissionv1.FailurePolicyType { return &fp }(admissionv1.Ignore)
+	webhook.Webhooks[0].FailurePolicy = ptr.To(admissionv1.Ignore)
 
 	if err := c.CreateOrUpdateValidatingWebhookConfiguration(ctx, webhook); err != nil {
 		t.Fatal(err)
