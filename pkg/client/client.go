@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
@@ -500,7 +499,7 @@ func (n *noopCache) SafeToSkipApply(required runtime.Object, existing runtime.Ob
 var _ = resourceapply.ResourceCache(&noopCache{})
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
-	nw, changed, err := resourceapply.ApplyValidatingWebhookConfigurationImproved(
+	_, _, err := resourceapply.ApplyValidatingWebhookConfigurationImproved(
 		ctx,
 		c.kclient.AdmissionregistrationV1(),
 		c.eventRecorder,
@@ -508,12 +507,7 @@ func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Contex
 		c.resourceCache,
 	)
 	if err != nil {
-		return errors.Wrap(err, "patching ValidatingWebhookConfiguration object failed")
-	}
-
-	if changed {
-		diff := cmp.Diff(w, nw)
-		fmt.Println("diff:\n", diff)
+		return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
 	}
 
 	return nil
@@ -1717,9 +1711,15 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
-	_, _, err := resourceapply.ApplyServiceAccount(ctx, c.kclient.CoreV1(), c.eventRecorder, sa)
+	_, _, err := resourceapply.ApplyServiceAccountImproved(
+		ctx,
+		c.kclient.CoreV1(),
+		c.eventRecorder,
+		sa,
+		c.resourceCache,
+	)
 
-	return errors.Wrap(err, "patching ServiceAccount object failed")
+	return errors.Wrap(err, "updating ServiceAccount object failed")
 }
 
 func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.ServiceMonitor) error {
