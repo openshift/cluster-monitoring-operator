@@ -697,12 +697,6 @@ data:
     # and per volume type (filesystem/block)
     - '{__name__="cluster:kube_persistentvolume_plugin_type_counts:sum"}'
     #
-    # owners: (https://github.com/open-cluster-management, @open-cluster-management/squad-kui-admins)
-    #
-    # visual_web_terminal_sessions_total is the count of Visual Web Terminal sessions created
-    # on the hub cluster.
-    - '{__name__="visual_web_terminal_sessions_total"}'
-    #
     # owners: (https://github.com/open-cluster-management, @open-cluster-management/cluster-lifecycle-admin)
     #
     # acm_managed_cluster_info provides Subscription watch and other information for the managed clusters for an ACM Hub cluster.
