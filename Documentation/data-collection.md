@@ -991,6 +991,36 @@ data:
     #
     # apiserver_list_watch_request_success_total:rate:sum represents the rate of change for successful LIST and WATCH requests over a 5 minute period.
     - '{__name__="apiserver_list_watch_request_success_total:rate:sum", verb=~"LIST|WATCH"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_clusters provides the number of clusters secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    - '{__name__="rhacs:telemetry:rox_central_secured_clusters", branding="RHACS"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_nodes provides the number of nodes secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    - '{__name__="rhacs:telemetry:rox_central_secured_nodes", branding="RHACS"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_vcpu provides the number of vCPUs secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    - '{__name__="rhacs:telemetry:rox_central_secured_vcpu", branding="RHACS"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_sensor_secured_nodes provides the number of nodes secured by a Sensor instance of a
+    # Red Hat Advanced Cluster Security installation.
+    - '{__name__="rhacs:telemetry:rox_sensor_secured_nodes", branding="RHACS"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_sensor_secured_vcpu provides the number of vCPUs secured by a Sensor instance of a
+    # Red Hat Advanced Cluster Security installation.
+    - '{__name__="rhacs:telemetry:rox_sensor_secured_vcpu", branding="RHACS"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
