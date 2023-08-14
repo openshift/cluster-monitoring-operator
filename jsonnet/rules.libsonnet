@@ -385,21 +385,6 @@ function(params) {
           },
         },
         {
-          expr: 'sum(max by(namespace, container, pod) (increase(kube_pod_container_status_restarts_total[12m])) and max by(namespace, container, pod) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}) == 1) > 5',
-          alert: 'MultipleContainersOOMKilled',
-          'for': '15m',
-          annotations: {
-            summary: 'Containers are being killed due to OOM',
-            description: 'Multiple containers were out of memory killed within the past 15 minutes. There are many potential causes of OOM errors, however issues on a specific node or containers breaching their limits is common.',
-          },
-          labels: {
-            severity: 'info',
-            // All OpenShift alerts should have a namespace label.
-            // See: https://issues.redhat.com/browse/MON-939
-            namespace: 'kube-system',
-          },
-        },
-        {
           expr: 'avg_over_time((((count((max by (node) (up{job="kubelet",metrics_path="/metrics"} == 1) and max by (node) (kube_node_status_condition{condition="Ready",status="true"} == 1) and min by (node) (kube_node_spec_unschedulable == 0))) / scalar(count(min by (node) (kube_node_spec_unschedulable == 0))))))[5m:1s])',
           record: 'cluster:usage:kube_schedulable_node_ready_reachable:avg5m',
           // Report a 5m rolling average of the number of schedulable nodes that are ready and reachable to be scraped by metrics. This is
