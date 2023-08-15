@@ -29,7 +29,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	osmv1 "github.com/openshift/api/monitoring/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -281,8 +281,8 @@ func (rc *RuleController) sync(ctx context.Context, key string) error {
 					Kind:               rule.Kind,
 					Name:               rule.Name,
 					UID:                rule.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
 			Labels: map[string]string{

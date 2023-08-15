@@ -96,6 +96,7 @@ type Client struct {
 	aggclient   aggregatorclient.Interface
 
 	eventRecorder events.Recorder
+	resourceCache resourceapply.ResourceCache
 }
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
@@ -264,6 +265,7 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 		version:               version,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
+		resourceCache:         resourceapply.NewResourceCache(),
 	}
 
 	for _, opt := range options {
@@ -485,28 +487,18 @@ func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv
 }
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
-	admclient := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations()
-	existing, err := admclient.Get(ctx, w.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := admclient.Create(ctx, w, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ValidatingWebhookConfiguration object failed")
-	}
+	_, _, err := resourceapply.ApplyValidatingWebhookConfigurationImproved(
+		ctx,
+		c.kclient.AdmissionregistrationV1(),
+		c.eventRecorder,
+		w,
+		c.resourceCache,
+	)
 	if err != nil {
-		return errors.Wrap(err, "retrieving ValidatingWebhookConfiguration object failed")
+		return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
 	}
 
-	required := w.DeepCopy()
-	required.ResourceVersion = existing.ResourceVersion
-	// retain the CABundle that service-ca-operator created if the proper annotation is found
-	if val, ok := required.Annotations["service.beta.openshift.io/inject-cabundle"]; ok && val == "true" {
-		for i := range required.Webhooks {
-			if len(existing.Webhooks[i].ClientConfig.CABundle) > 0 {
-				required.Webhooks[i].ClientConfig.CABundle = existing.Webhooks[i].ClientConfig.CABundle
-			}
-		}
-	}
-	_, err = admclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
+	return nil
 }
 
 func (c *Client) CreateOrUpdateSecurityContextConstraints(ctx context.Context, s *secv1.SecurityContextConstraints) error {
@@ -1707,8 +1699,15 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
-	_, _, err := resourceapply.ApplyServiceAccount(ctx, c.kclient.CoreV1(), c.eventRecorder, sa)
-	return errors.Wrap(err, "patching ServiceAccount object failed")
+	_, _, err := resourceapply.ApplyServiceAccountImproved(
+		ctx,
+		c.kclient.CoreV1(),
+		c.eventRecorder,
+		sa,
+		c.resourceCache,
+	)
+
+	return errors.Wrap(err, "updating ServiceAccount object failed")
 }
 
 func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.ServiceMonitor) error {
