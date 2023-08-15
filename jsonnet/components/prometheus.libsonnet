@@ -218,6 +218,14 @@ function(params)
               path: '/federate',
               resourceRequest: false,
             },
+            {
+              user: {
+                name: 'system:serviceaccount:openshift-monitoring:telemeter-client',
+              },
+              verb: 'get',
+              path: '/federate',
+              resourceRequest: false,
+            },
           ],
         },
       },
