@@ -46,7 +46,6 @@ spec:
       - args:
         - --prometheus-auth-config=/etc/prometheus-config/prometheus-config.yaml
         - --config=/etc/adapter/config.yaml
-        - --logtostderr=true
         - --metrics-relist-interval=1m
         - --prometheus-url=https://prometheus-k8s.openshift-monitoring.svc:9091
         - --secure-port=6443
