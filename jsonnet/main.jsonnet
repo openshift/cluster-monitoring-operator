@@ -63,7 +63,7 @@ local commonConfig = {
     prometheus: 'quay.io/prometheus/prometheus:v' + $.versions.prometheus,
     kubeStateMetrics: 'registry.k8s.io/kube-state-metrics/kube-state-metrics:v' + $.versions.kubeStateMetrics,
     nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions.nodeExporter,
-    prometheusAdapter: 'directxman12/k8s-prometheus-adapter:v' + $.versions.prometheusAdapter,
+    prometheusAdapter: 'kubernetes-sigs/prometheus-adapter:v' + $.versions.prometheusAdapter,
     prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions.prometheusOperator,
     prometheusOperatorReloader: 'quay.io/prometheus-operator/prometheus-config-reloader:v' + $.versions.prometheusOperator,
     prometheusOperatorAdmissionWebhook: 'quay.io/prometheus-operator/admission-webhook:v' + $.versions.prometheusOperator,
