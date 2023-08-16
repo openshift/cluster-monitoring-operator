@@ -126,7 +126,6 @@ function(params)
                           // '--prometheus-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
                           '--prometheus-auth-config=%s/%s' % [prometheusAdapterPrometheusConfigPath, 'prometheus-config.yaml'],
                           '--config=/etc/adapter/config.yaml',
-                          '--logtostderr=true',
                           '--metrics-relist-interval=1m',
                           '--prometheus-url=' + cfg.prometheusURL,
                           '--secure-port=6443',
