@@ -27,6 +27,8 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 |prometheusOperator|*link:prometheusoperatorconfig.adoc[PrometheusOperatorConfig]|`PrometheusOperatorConfig` defines settings for the Prometheus Operator component.
 
+|prometheusOperatorAdmissionWebhook|*link:prometheusoperatoradmissionwebhookconfig.adoc[PrometheusOperatorAdmissionWebhookConfig]|`PrometheusOperatorAdmissionWebhookConfig` defines settings for the Prometheus Operator's admission webhook component.
+
 |openshiftStateMetrics|*link:openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]|`OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 
 |telemeterClient|*link:telemeterclientconfig.adoc[TelemeterClientConfig]|`TelemeterClientConfig` defines settings for the Telemeter Client component.

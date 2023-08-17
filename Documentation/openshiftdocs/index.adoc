@@ -59,6 +59,7 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/nodeexporterconfig.adoc[NodeExporterConfig]
 * link:modules/openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]
 * link:modules/prometheusk8sconfig.adoc[PrometheusK8sConfig]
+* link:modules/prometheusoperatoradmissionwebhookconfig.adoc[PrometheusOperatorAdmissionWebhookConfig]
 * link:modules/prometheusoperatorconfig.adoc[PrometheusOperatorConfig]
 * link:modules/prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]
 * link:modules/remotewritespec.adoc[RemoteWriteSpec]

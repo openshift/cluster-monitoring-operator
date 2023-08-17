@@ -750,6 +750,9 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "kube-state-metrics":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeStateMetrics
+			if f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources != nil {
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources
+			}
 		}
 	}
 
@@ -809,6 +812,9 @@ func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) 
 			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "openshift-state-metrics":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OpenShiftStateMetrics
+			if f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources != nil {
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources
+			}
 		}
 	}
 
@@ -963,6 +969,9 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 			ds.Spec.Template.Spec.Containers[i].Args, err = f.updateNodeExporterArgs(ds.Spec.Template.Spec.Containers[i].Args)
 			if err != nil {
 				return nil, err
+			}
+			if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Resources != nil {
+				ds.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Resources
 			}
 		case "kube-rbac-proxy":
 			ds.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
@@ -2004,6 +2013,10 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	spec.Containers[0].Args = f.setTLSSecurityConfiguration(spec.Containers[0].Args,
 		PrometheusAdapterTLSCipherSuitesFlag, PrometheusAdapterTLSMinTLSVersionFlag)
 
+	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Resources != nil {
+		spec.Containers[0].Resources = *f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Resources
+	}
+
 	dep.Spec.Template.Spec = spec
 
 	return dep, nil
@@ -2162,6 +2175,10 @@ func (f *Factory) PrometheusOperatorAdmissionWebhookDeployment() (*appsv1.Deploy
 		case "prometheus-operator-admission-webhook":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusOperatorAdmissionWebhook
 
+			if f.config.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig.Resources != nil {
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig.Resources
+			}
+
 			args := d.Spec.Template.Spec.Containers[i].Args
 			if f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel != "" {
 				args = append(args, fmt.Sprintf("--log-level=%s", f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel))
@@ -2213,6 +2230,10 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 		case "prometheus-operator":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusOperator
 
+			if f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources != nil {
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources
+			}
+
 			args := d.Spec.Template.Spec.Containers[i].Args
 			for i := range args {
 				if strings.HasPrefix(args[i], PrometheusConfigReloaderFlag) && f.config.Images.PrometheusConfigReloader != "" {
@@ -2260,6 +2281,10 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment
 			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "prometheus-operator":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusOperator
+
+			if f.config.UserWorkloadConfiguration.PrometheusOperator.Resources != nil {
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.UserWorkloadConfiguration.PrometheusOperator.Resources
+			}
 
 			args := d.Spec.Template.Spec.Containers[i].Args
 			for i := range args {
@@ -2883,6 +2908,10 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap, s *v1
 		switch container.Name {
 		case "telemeter-client":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.TelemeterClient
+
+			if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources != nil {
+				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources
+			}
 
 			if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID != "" {
 				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "ID", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID)

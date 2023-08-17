@@ -712,13 +712,21 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
   image: quay.io/test/prometheus-operator
   prometheusConfigReloaderImage: quay.io/test/prometheus-config-reloader
   configReloaderImage: quay.io/test/configmap-reload
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   topologySpreadConstraints:
     - maxSkew: 1
       topologyKey: type
       whenUnsatisfiable: DoNotSchedule
       labelSelector:
         matchLabels:
-          foo: bar`, false)
+          foo: bar
+`, false)
 
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
@@ -762,6 +770,10 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		case "prometheus-operator":
 			if container.Image != "docker.io/openshift/origin-prometheus-operator:latest" {
 				t.Fatalf("%s image incorrectly configured", container.Name)
+			}
+
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources) {
+				t.Fatalf("%s resources incorrectly configured", container.Name)
 			}
 
 			if getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest", container.Name) != "" {
@@ -874,6 +886,37 @@ func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
 
 	if !reflect.DeepEqual(d, d2) {
 		t.Fatal("expected PrometheusOperatorDeployment to be an idempotent function")
+	}
+}
+
+func TestPrometheusOperatorAdmissionWebhookOwnConfiguration(t *testing.T) {
+	c, err := NewConfigFromString(`
+prometheusOperatorAdmissionWebhook:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+`, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	d, err := f.PrometheusOperatorAdmissionWebhookDeployment()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		switch container.Name {
+		case "prometheus-operator-admission-webhook":
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig.Resources) {
+				t.Fatalf("%s resources incorrectly configured", container.Name)
+			}
+		}
 	}
 }
 
@@ -1449,12 +1492,12 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
       matchLabels:
         foo: bar
   resources:
-    limits:
-      cpu: 200m
-      memory: 1000Mi
     requests:
       cpu: 100m
-      memory: 750Mi
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   externalLabels:
     datacenter: eu-west
   remoteWrite:
@@ -1494,6 +1537,10 @@ ingress:
 
 	if p.Spec.EnforcedBodySizeLimit != "" {
 		t.Fatal("EnforcedBodySizeLimit is not set to empty by default")
+	}
+
+	if !reflect.DeepEqual(p.Spec.Resources, *f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources) {
+		t.Fatal("Resources are not configured correctly")
 	}
 
 	kubeRbacProxyTLSCipherSuitesArg := ""
@@ -1549,31 +1596,6 @@ ingress:
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
 	}
 
-	cpuLimit := p.Spec.Resources.Limits[v1.ResourceCPU]
-	memoryLimit := p.Spec.Resources.Limits[v1.ResourceMemory]
-	cpuRequest := p.Spec.Resources.Requests[v1.ResourceCPU]
-	memoryRequest := p.Spec.Resources.Requests[v1.ResourceMemory]
-	cpuLimitPtr := &cpuLimit
-	memoryLimitPtr := &memoryLimit
-	cpuRequestPtr := &cpuRequest
-	memoryRequestPtr := &memoryRequest
-	if cpuLimitPtr.String() != "200m" {
-		t.Fatal("Prometheus CPU limit is not configured correctly:", cpuLimitPtr.String())
-	}
-	if memoryLimitPtr.String() != "1000Mi" {
-		t.Fatal("Prometheus memory limit is not configured correctly:", memoryLimitPtr.String())
-	}
-	if cpuRequestPtr.String() != "100m" {
-		t.Fatal("Prometheus CPU request is not configured correctly:", cpuRequestPtr.String())
-	}
-	if memoryRequestPtr.String() != "750Mi" {
-		t.Fatal("Prometheus memory request is not configured correctly:", memoryRequestPtr.String())
-	}
-
-	if p.Spec.NodeSelector["type"] != "master" {
-		t.Fatal("Prometheus node selector not configured correctly")
-	}
-
 	if p.Spec.Tolerations[0].Effect != "PreferNoSchedule" {
 		t.Fatal("Prometheus toleration effect not configured correctly")
 	}
@@ -1621,6 +1643,13 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
 
 	uwc, err := NewUserConfigFromString(`prometheus:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
@@ -1648,6 +1677,10 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 
 	if p.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
 		t.Fatal("Prometheus UWM spread contraints WhenUnsatisfiable not configured correctly")
+	}
+
+	if !reflect.DeepEqual(*f.config.UserWorkloadConfiguration.Prometheus.Resources, p.Spec.Resources) {
+		t.Fatal("Prometheus UWM resources not configured correctly")
 	}
 }
 
@@ -2573,8 +2606,15 @@ expected:
 }
 
 func TestK8sPrometheusAdapterConfiguration(t *testing.T) {
-	config := (`
+	config := `
 k8sPrometheusAdapter:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   nodeSelector:
     test: value
   topologySpreadConstraints:
@@ -2583,7 +2623,7 @@ k8sPrometheusAdapter:
     whenUnsatisfiable: DoNotSchedule
     labelSelector:
       matchLabels:
-        foo: bar`)
+        foo: bar`
 
 	c, err := NewConfigFromString(config, false)
 	if err != nil {
@@ -2614,6 +2654,14 @@ k8sPrometheusAdapter:
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
 		t.Fatal("k8s-prometheus-adapter topology spread contraints WhenUnsatisfiable not configured correctly")
+	}
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "k8s-prometheus-adapter" {
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Resources) {
+				t.Fatal("k8s-prometheus-adapter resources are not configured correctly")
+			}
+		}
 	}
 
 	expected := map[string]string{"test": "value"}
@@ -2709,12 +2757,12 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
       matchLabels:
         foo: bar
   resources:
-    limits:
-      cpu: 20m
-      memory: 100Mi
     requests:
-      cpu: 10m
-      memory: 75Mi
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   secrets:
   - test-secret
   - slack-api-token
@@ -2749,25 +2797,8 @@ ingress:
 		t.Fatal("Alertmanager image is not configured correctly")
 	}
 
-	cpuLimit := a.Spec.Resources.Limits[v1.ResourceCPU]
-	memoryLimit := a.Spec.Resources.Limits[v1.ResourceMemory]
-	cpuRequest := a.Spec.Resources.Requests[v1.ResourceCPU]
-	memoryRequest := a.Spec.Resources.Requests[v1.ResourceMemory]
-	cpuLimitPtr := &cpuLimit
-	memoryLimitPtr := &memoryLimit
-	cpuRequestPtr := &cpuRequest
-	memoryRequestPtr := &memoryRequest
-	if cpuLimitPtr.String() != "20m" {
-		t.Fatal("Alertmanager CPU limit is not configured correctly:", cpuLimitPtr.String())
-	}
-	if memoryLimitPtr.String() != "100Mi" {
-		t.Fatal("Alertmanager memory limit is not configured correctly:", memoryLimitPtr.String())
-	}
-	if cpuRequestPtr.String() != "10m" {
-		t.Fatal("Alertmanager CPU request is not configured correctly:", cpuRequestPtr.String())
-	}
-	if memoryRequestPtr.String() != "75Mi" {
-		t.Fatal("Alertmanager memory request is not configured correctly:", memoryRequestPtr.String())
+	if !reflect.DeepEqual(a.Spec.Resources, *f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources) {
+		t.Fatal("Alertmanager resources are not configured correctly")
 	}
 
 	if !slices.Contains(a.Spec.Secrets, "test-secret") {
@@ -2885,6 +2916,13 @@ ingress:
 func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
 	uwc, err := NewUserConfigFromString(`alertmanager:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
@@ -2906,6 +2944,10 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(a.Spec.Resources, *f.config.UserWorkloadConfiguration.Alertmanager.Resources) {
+		t.Fatal("Alertmanager resources are not configured correctly")
 	}
 
 	if !slices.Contains(a.Spec.Secrets, "test-secret") {
@@ -2936,6 +2978,16 @@ func TestNodeExporter(t *testing.T) {
 	})
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Resources = &v1.ResourceRequirements{
+		Requests: v1.ResourceList{
+			v1.ResourceMemory: resource.MustParse("1Gi"),
+			v1.ResourceCPU:    resource.MustParse("1"),
+		},
+		Limits: v1.ResourceList{
+			v1.ResourceMemory: resource.MustParse("2Gi"),
+			v1.ResourceCPU:    resource.MustParse("2"),
+		},
+	}
 
 	ds, err := f.NodeExporterDaemonSet()
 	if err != nil {
@@ -2950,6 +3002,9 @@ func TestNodeExporter(t *testing.T) {
 		case "node-exporter":
 			if container.Image != "docker.io/openshift/origin-prometheus-node-exporter:latest" {
 				t.Fatalf("image for node-exporter daemonset is wrong: %s", container.Name)
+			}
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Resources) {
+				t.Fatalf("resources for node-exporter daemonset is wrong: %s", container.Name)
 			}
 		case "kube-rbac-proxy":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
@@ -3311,15 +3366,21 @@ nodeExporter:
 }
 
 func TestKubeStateMetrics(t *testing.T) {
-	config :=
-		(`kubeStateMetrics:
+	config := `kubeStateMetrics:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
     whenUnsatisfiable: DoNotSchedule
     labelSelector:
       matchLabels:
-        foo: bar`)
+        foo: bar`
 
 	c, err := NewConfigFromString(config, false)
 	if err != nil {
@@ -3344,6 +3405,9 @@ func TestKubeStateMetrics(t *testing.T) {
 		case "kube-state-metrics":
 			if container.Image != "docker.io/openshift/origin-kube-state-metrics:latest" {
 				t.Fatal("kube-state-metrics image incorrectly configured")
+			}
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources) {
+				t.Fatal("kube-state-metrics resources incorrectly configured")
 			}
 		case "kube-rbac-proxy-self", "kube-rbac-proxy-main":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
@@ -3388,15 +3452,21 @@ func TestKubeStateMetrics(t *testing.T) {
 }
 
 func TestOpenShiftStateMetrics(t *testing.T) {
-	config := (`
-openShiftStateMetrics:
+	config := `openShiftStateMetrics:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
     whenUnsatisfiable: DoNotSchedule
     labelSelector:
       matchLabels:
-        foo: bar`)
+        foo: bar`
 
 	c, err := NewConfigFromString(config, false)
 
@@ -3423,7 +3493,9 @@ openShiftStateMetrics:
 			if container.Image != "docker.io/openshift/origin-openshift-state-metrics:latest" {
 				t.Fatal("openshift-state-metrics image incorrectly configured")
 			}
-
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources) {
+				t.Fatal("openshift-state-metrics resources incorrectly configured")
+			}
 		case "kube-rbac-proxy-self", "kube-rbac-proxy-main":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 				t.Fatal("kube-rbac-proxy image incorrectly configured")
@@ -3517,12 +3589,12 @@ func TestThanosQuerierConfiguration(t *testing.T) {
   - effect: PreferNoSchedule
     operator: Exists
   resources:
-    limits:
-      cpu: 1m
-      memory: 2Mi
     requests:
-      cpu: 3m
-      memory: 4Mi
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   logLevel: debug
   enableRequestLogging: true
   enableCORS: true
@@ -3546,6 +3618,14 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "thanos-query" {
+			if !reflect.DeepEqual(container.Resources, *c.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources) {
+				t.Fatal("thanos-query resources not configured correctly")
+			}
+		}
 	}
 
 	for _, tc := range []struct {
@@ -3602,37 +3682,6 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 	for _, c := range d.Spec.Template.Spec.Containers {
 		switch c.Name {
 		case "thanos-query":
-			for _, tc := range []struct {
-				name, want string
-				resource   func() *resource.Quantity
-			}{
-				{
-					name:     "limits/cpu",
-					want:     "1m",
-					resource: c.Resources.Limits.Cpu,
-				},
-				{
-					name:     "limits/memory",
-					want:     "2Mi",
-					resource: c.Resources.Limits.Memory,
-				},
-				{
-					name:     "requests/cpu",
-					want:     "3m",
-					resource: c.Resources.Requests.Cpu,
-				},
-				{
-					name:     "requests/memory",
-					want:     "4Mi",
-					resource: c.Resources.Requests.Memory,
-				},
-			} {
-				t.Run(tc.name, func(t *testing.T) {
-					if got := tc.resource(); got.Cmp(resource.MustParse(tc.want)) != 0 {
-						t.Errorf("want %v, got %v", tc.want, got)
-					}
-				})
-			}
 
 			{
 				// test request logging config
@@ -3720,14 +3769,21 @@ grpc:
 }
 
 func TestTelemeterConfiguration(t *testing.T) {
-	config := (`telemeterClient:
+	config := `telemeterClient:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
     whenUnsatisfiable: DoNotSchedule
     labelSelector:
       matchLabels:
-        foo: bar`)
+        foo: bar`
 
 	c, err := NewConfigFromString(config, false)
 	if err != nil {
@@ -3750,6 +3806,9 @@ func TestTelemeterConfiguration(t *testing.T) {
 			}
 			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
 				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
+			}
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources) {
+				t.Fatal("telemeter-client resources not configured correctly")
 			}
 		case "kube-rbac-proxy":
 			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
@@ -3873,6 +3932,13 @@ func TestTelemeterClientSecret(t *testing.T) {
 func TestThanosRulerConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(``, false)
 	uwc, err := NewUserConfigFromString(`thanosRuler:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
@@ -3915,6 +3981,9 @@ func TestThanosRulerConfiguration(t *testing.T) {
 		t.Fatal("Thanos ruler topology spread contraints WhenUnsatisfiable not configured correctly")
 	}
 
+	if !reflect.DeepEqual(tr.Spec.Resources, *f.config.UserWorkloadConfiguration.ThanosRuler.Resources) {
+		t.Fatal("Thanos ruler resources not configured correctly")
+	}
 }
 
 func TestThanosRulerRetentionConfig(t *testing.T) {
@@ -4067,11 +4136,6 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 }
 
 func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
-	type spec struct {
-		replicas int32
-		affinity *v1.Affinity
-	}
-
 	tests := []struct {
 		name         string
 		getEndpoints func(f *Factory) ([]monv1.Endpoint, error)
