@@ -15,11 +15,20 @@
 package framework
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
+	"io"
+	"os"
+	"testing"
 
+	"github.com/go-kit/log"
+	promConfig "github.com/prometheus/prometheus/config"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/stretchr/testify/require"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
@@ -132,4 +141,16 @@ func (f Framework) MakePrometheusServiceRoute(svc *v1.Service) *routev1.Route {
 			},
 		},
 	}
+}
+
+func (f Framework) PrometheusConfigFromSecret(t *testing.T, namespace, secretName string) *promConfig.Config {
+	t.Helper()
+	rawConfig := f.MustGetSecret(t, secretName, namespace).Data["prometheus.yaml.gz"]
+	reader, err := gzip.NewReader(bytes.NewReader(rawConfig))
+	require.NoError(t, err)
+	unzippedData, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	prometheusConfig, err := promConfig.Load(string(unzippedData), false, log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr)))
+	require.NoError(t, err, "failed to load the config.")
+	return prometheusConfig
 }

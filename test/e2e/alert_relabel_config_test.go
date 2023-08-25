@@ -16,34 +16,37 @@ package e2e
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"testing"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	osmv1 "github.com/openshift/api/monitoring/v1"
-	"github.com/pkg/errors"
-	"github.com/prometheus/prometheus/model/relabel"
-	"gopkg.in/yaml.v2"
-
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	"github.com/pkg/errors"
+	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	relabelSecretName = "alert-relabel-configs"
-	relabelSecretKey  = "config.yaml"
+	relabelConfigName          = "test-relabel-config"
+	relabelSecretName          = "alert-relabel-configs"
+	relabelSecretKey           = "config.yaml"
+	prometheusConfigSecretName = "prometheus-k8s"
 )
 
-func TestAlertRelabelConfigTechPreview(t *testing.T) {
+func TestAlertRelabelConfig(t *testing.T) {
+	initialRelabelConfig := prometheusRelabelConfig(t)
+
+	// By default we drop prometheus_replica label + add openshift_io_alert_source = 2
+	require.Len(t, initialRelabelConfig, 2)
+
 	ctx := context.Background()
-
-	arcName := framework.E2eTestLabelValue
-
 	arc := &osmv1.AlertRelabelConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      arcName,
+			Name:      relabelConfigName,
 			Namespace: f.Ns,
 			Labels: map[string]string{
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
@@ -56,124 +59,59 @@ func TestAlertRelabelConfigTechPreview(t *testing.T) {
 					Regex:        "Watchdog;none",
 					TargetLabel:  "severity",
 					Replacement:  "critical",
-					Action:       "Replace",
+					Action:       "Wrong",
 				},
 			},
 		},
 	}
 
 	relabelConfigs := f.OpenShiftMonitoringClient.MonitoringV1().AlertRelabelConfigs(f.Ns)
-	secrets := f.KubeClient.CoreV1().Secrets(f.Ns)
 
-	// Create an AlertRelabelConfig.
+	// Try to create an invalid AlertRelabelConfig.
 	_, err := relabelConfigs.Create(ctx, arc, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(errors.Wrap(err, "failed to create AlertRelabelConfig"))
+	if !apierrors.IsInvalid(err) {
+		t.Fatal(errors.Wrap(err, "invalid AlertRelabelConfig wasn't rejected."))
 	}
 
-	// Check that it is added to the secret.
-	err = framework.Poll(time.Second, 2*time.Minute, func() error {
-		s, err := secrets.Get(ctx, relabelSecretName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
+	// Create a valid AlertRelabelConfig.
+	arc.Spec.Configs[0].Action = "Replace"
+	_, err = relabelConfigs.Create(ctx, arc, metav1.CreateOptions{})
+	require.NoError(t, err, "failed to create valid AlertRelabelConfig.")
 
-		var configsFromSecret []relabel.Config
-		err = yaml.Unmarshal([]byte(s.Data[relabelSecretKey]), &configsFromSecret)
-		if err != nil {
-			t.Fatal(errors.Wrap(err, "failed to unmarshal AlertRelabelConfig from secret"))
-		}
-
-		err = relabelConfigsEqual(arc.Spec.Configs[0], configsFromSecret[0])
-		if err != nil {
-			t.Fatal(errors.Wrap(err, "AlertRelabelConfig from secret doesn't match resource"))
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		t.Fatal(errors.Wrap(err, "failed to confirm relabel was added to secret"))
-	}
+	// Check Prometheus config is taking the AlertRelabelConfig into account.
+	validateCurrentRelabelConfig(t, append(initialRelabelConfig, &relabel.Config{
+		SourceLabels: model.LabelNames{"alertname", "severity"},
+		Regex:        relabel.MustNewRegexp("Watchdog;none"),
+		TargetLabel:  "severity",
+		Replacement:  "critical",
+		Action:       "replace",
+		Separator:    ";",
+	}))
 
 	// Delete the AlertRelabelConfig.
-	err = relabelConfigs.Delete(ctx, arcName, metav1.DeleteOptions{})
-	if err != nil {
-		t.Fatal(errors.Wrap(err, "failed to delete AlertRelabelConfig"))
-	}
+	err = relabelConfigs.Delete(ctx, arc.Name, metav1.DeleteOptions{})
+	require.NoError(t, err, "failed to delete AlertRelabelConfig")
 
-	// Check that it is removed from the secret.
-	err = framework.Poll(time.Second, 2*time.Minute, func() error {
-		s, err := secrets.Get(ctx, relabelSecretName, metav1.GetOptions{})
-		if err != nil {
-			return err
+	// Check Prometheus config forgot about the deleted AlertRelabelConfig.
+	validateCurrentRelabelConfig(t, initialRelabelConfig)
+}
+
+// prometheusRelabelConfig returns the alert relabel configuration part used by Prometheus config
+func prometheusRelabelConfig(t *testing.T) []*relabel.Config {
+	t.Helper()
+	prometheusConfig := f.PrometheusConfigFromSecret(t, f.Ns, prometheusConfigSecretName)
+	return prometheusConfig.AlertingConfig.AlertRelabelConfigs
+}
+
+// validateCurrentRelabelConfig ensures that Prometheus config is using the expected relabel config
+func validateCurrentRelabelConfig(t *testing.T, expectedRelabelConfig []*relabel.Config) {
+	err := framework.Poll(time.Second, 1*time.Minute, func() error {
+		currentRelabelConfig := prometheusRelabelConfig(t)
+		if !assert.ElementsMatch(t, expectedRelabelConfig, currentRelabelConfig) {
+			return errors.New("the expected relabel config is not applied yet.")
 		}
-
-		var configsFromSecret []relabel.Config
-		err = yaml.Unmarshal([]byte(s.Data[relabelSecretKey]), &configsFromSecret)
-		if err != nil {
-			t.Fatal(errors.Wrap(err, "failed to unmarshal AlertRelabelConfig from secret"))
-		}
-
-		// Should only have the default config.
-		if len(configsFromSecret) != 1 {
-			return fmt.Errorf("Secret contains %d relabel configs, but only 1 expected",
-				len(configsFromSecret))
-		}
-
 		return nil
 	})
 
-	if err != nil {
-		t.Fatal(errors.Wrap(err, "failed to confirm relabel was removed from secret"))
-	}
-}
-
-func relabelConfigsEqual(arc osmv1.RelabelConfig, fromSecret relabel.Config) error {
-	if len(arc.SourceLabels) != len(fromSecret.SourceLabels) {
-		return fmt.Errorf("SourceLabels have different lengths (%d != %d)",
-			len(arc.SourceLabels), len(fromSecret.SourceLabels))
-	}
-
-	for i := range arc.SourceLabels {
-		if string(arc.SourceLabels[i]) != string(fromSecret.SourceLabels[i]) {
-			return fmt.Errorf("SourceLabel %d does not match", i)
-		}
-	}
-
-	if arc.Separator == "" {
-		arc.Separator = ";"
-	}
-
-	if arc.Separator != fromSecret.Separator {
-		return fmt.Errorf("Seperator does not match (%q != %q)", arc.Separator, fromSecret.Separator)
-	}
-
-	if arc.TargetLabel != fromSecret.TargetLabel {
-		return fmt.Errorf("TargetLabel does not match (%q != %q)", arc.TargetLabel, fromSecret.TargetLabel)
-	}
-
-	arcRegex, err := relabel.NewRegexp(arc.Regex)
-	if err != nil {
-		return errors.Wrap(err, "failed to compile RegEx from AlertRelabelConfig")
-	}
-
-	if arcRegex.String() != fromSecret.Regex.String() {
-		return fmt.Errorf("Regex does not match (%q != %q)", arcRegex.String(), fromSecret.Regex.String())
-	}
-
-	if arc.Modulus != fromSecret.Modulus {
-		return fmt.Errorf("Modulus does not match (%d != %d)", arc.Modulus, fromSecret.Modulus)
-	}
-
-	if arc.Replacement != fromSecret.Replacement {
-		return fmt.Errorf("Modulus does not match (%q != %q)", arc.Replacement, fromSecret.Replacement)
-	}
-
-	if !strings.EqualFold(arc.Action, string(fromSecret.Action)) {
-		return fmt.Errorf("Action does not match (%q != %q)",
-			strings.ToLower(arc.Replacement), strings.ToLower(string(fromSecret.Replacement)))
-	}
-
-	return nil
+	require.NoError(t, err, "Failed to validate relabel config in use.")
 }
