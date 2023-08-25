@@ -245,7 +245,6 @@ function(params)
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-              '--logtostderr=true',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [

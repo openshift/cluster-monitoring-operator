@@ -435,7 +435,6 @@ function(params)
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-              '--logtostderr=true',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [

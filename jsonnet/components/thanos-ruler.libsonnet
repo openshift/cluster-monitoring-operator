@@ -483,7 +483,6 @@ function(params)
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--client-ca-file=/etc/tls/client/client-ca.crt',
-              '--logtostderr=true',
               '--allow-paths=/metrics',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
