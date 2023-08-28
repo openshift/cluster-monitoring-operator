@@ -4388,7 +4388,6 @@ func TestPodDisruptionBudget(t *testing.T) {
 func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
 	uwc, err := NewUserConfigFromString(`prometheusOperator:
-  enableUserWorkload: true
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
