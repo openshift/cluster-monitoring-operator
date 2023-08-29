@@ -17,7 +17,12 @@ PKGS=$(shell go list ./... | grep -v /test/e2e)
 GOLANG_FILES:=$(shell find . -name \*.go -print)
 # NOTE: grep -v %.yaml is needed  because "%s-policy.yaml" is used
 # in manifest.go and that isn't a valid asset.
+# NOTE: Certain paths included in the manifest.go file are not valid
+# asset paths and should be excluded from the list of assets. These
+# paths are:
+# - /etc/
 ASSETS=$(shell grep -oh '[^"]*/.*\.yaml' pkg/manifests/manifests.go \
+          | grep -v '^/etc' \
           | grep -v '%.*yaml' | sed 's/^/assets\//')
 
 BIN_DIR ?= $(shell pwd)/tmp/bin

@@ -32,6 +32,7 @@ import (
 	"github.com/openshift/library-go/pkg/operator/events"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
@@ -190,6 +191,27 @@ type Operator struct {
 
 	ruleController    *alert.RuleController
 	relabelController *alert.RelabelConfigController
+
+	// lastKnownVPACustomResourceDefinitionPresent is a boolean pointer that
+	// remembers the presence of the VPA CRD in the cluster between
+	// kube-state-metrics task reconciliations. It is used to determine
+	// whether to enable kube-state-metrics custom-resource-state-based
+	// metrics for VPA CRs, even in cases where the Kube API may emit a
+	// transient error (errors excluding `IsNotFound`) on the VPA CRD `GET`
+	// requests (to determine its presence).
+	// * `true` indicates that the VPA CRD is already present in the
+	// cluster, and the custom-resource-state-based metrics can be safely
+	// enabled.
+	// * `false` indicates that the VPA CRD is not present in the cluster,
+	// and enabling the custom-resource-state-based metrics will cause
+	// kube-state-metrics to error (affecting `KubeStateMetricsListErrors`).
+	// * `nil` indicates that the presence of the VPA CRD is unknown, and
+	// the operator will attempt to determine the presence of the VPA CRD in
+	// the current reconciliation cycle, and remember its state in the next
+	// one. In the case where the VPA CRD is added or removed between
+	// reconciliations, the variable "forgets" it, and is set to `nil`,
+	// triggering a check on the next cycle.
+	lastKnownVPACustomResourceDefinitionPresent *bool
 }
 
 func New(
@@ -408,6 +430,20 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	informer = cache.NewSharedIndexInformer(
+		o.client.VerticalPodAutoscalerCRDListWatch(ctx),
+		&apiextv1.CustomResourceDefinition{}, resyncPeriod, cache.Indexers{},
+	)
+	// Only trigger reconciliation on the addition or removal of VPA CRDs.
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    o.handleEvent,
+		DeleteFunc: o.handleEvent,
+	})
+	if err != nil {
+		return nil, err
+	}
+	o.informers = append(o.informers, informer)
+
 	kubeInformersOperatorNS := informers.NewSharedInformerFactoryWithOptions(
 		c.KubernetesInterface(),
 		resyncPeriod,
@@ -594,7 +630,10 @@ func (o *Operator) handleEvent(obj interface{}) {
 		*configv1.APIServer,
 		*configv1.Console,
 		*configv1.ClusterOperator,
-		*configv1.ClusterVersion:
+		*configv1.ClusterVersion,
+		// Currently, the CRDs that trigger reconciliation are:
+		// * verticalpodautoscalers.autoscaling.k8s.io
+		*apiextv1.CustomResourceDefinition:
 		// Log GroupKind and Name of the obj
 		rtObj := obj.(k8sruntime.Object)
 		gk := rtObj.GetObjectKind().GroupVersionKind().GroupKind()
@@ -608,11 +647,12 @@ func (o *Operator) handleEvent(obj interface{}) {
 		if objKind == "" {
 			objKind = fmt.Sprintf("%T", obj)
 		}
-		klog.Infof("Triggering an update due to a change in %s - %s", objKind, name)
+		klog.Infof("Triggering an update due to a change in %s/%s", objKind, name)
 		o.enqueue(cmoConfigMap)
 		return
 	}
 
+	// key represents the "namespace/name" of the object.
 	key, ok := o.keyFunc(obj)
 	if !ok {
 		return
@@ -738,7 +778,29 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		klog.Warningf("Fail to load ConsoleConfig, AlertManager's externalURL may be outdated")
 	}
 
-	factory := manifests.NewFactory(o.namespace, o.namespaceUserWorkload, config, o.loadInfrastructureConfig(ctx), proxyConfig, o.assets, apiServerConfig, consoleConfig)
+	// Enable kube-state-metrics' custom-resource-state-based metrics if VPA CRD is installed within the cluster.
+	isVPACRDPresent, err := o.client.VPACustomResourceDefinitionPresent(ctx, o.lastKnownVPACustomResourceDefinitionPresent)
+	if err != nil {
+		// Throw on all transient errors.
+		return fmt.Errorf("unable to guess the desired state for kube-state-metrics' custom-resource-state metrics enablement: %w", err)
+	} else {
+		// If we didn't get an error, we can safely assume that the CRD is deterministically either present or absent.
+		if *isVPACRDPresent {
+			klog.Infof("%s CRD found, enabling kube-state-metrics' custom-resource-state-based metrics", client.VerticalPodAutoscalerCRDMetadataName)
+		}
+	}
+	o.lastKnownVPACustomResourceDefinitionPresent = isVPACRDPresent
+
+	factory := manifests.NewFactory(
+		o.namespace,
+		o.namespaceUserWorkload,
+		config,
+		o.loadInfrastructureConfig(ctx),
+		proxyConfig,
+		o.assets,
+		apiServerConfig,
+		consoleConfig,
+	)
 
 	tl := tasks.NewTaskRunner(
 		o.client,
@@ -757,7 +819,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				newTaskSpec("Prometheus", tasks.NewPrometheusTask(o.client, factory, config)),
 				newTaskSpec("Alertmanager", tasks.NewAlertmanagerTask(o.client, factory, config)),
 				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
-				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
+				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory, *o.lastKnownVPACustomResourceDefinitionPresent)),
 				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
 				newTaskSpec("PrometheusAdapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, !o.metricsServerEnabled, factory, config)),
 				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, o.metricsServerEnabled, factory, config)),

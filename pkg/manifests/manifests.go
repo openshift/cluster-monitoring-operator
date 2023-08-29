@@ -111,6 +111,7 @@ var (
 	KubeStateMetricsMinimalServiceMonitor = "kube-state-metrics/minimal-service-monitor.yaml"
 	KubeStateMetricsPrometheusRule        = "kube-state-metrics/prometheus-rule.yaml"
 	KubeStateMetricsKubeRbacProxySecret   = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
+	KubeStateMetricsCRSConfig             = "kube-state-metrics/custom-resource-state-configmap.yaml"
 
 	OpenShiftStateMetricsClusterRoleBinding  = "openshift-state-metrics/cluster-role-binding.yaml"
 	OpenShiftStateMetricsClusterRole         = "openshift-state-metrics/cluster-role.yaml"
@@ -325,6 +326,9 @@ var (
 	KubeRbacProxyTLSCipherSuitesFlag                     = "--tls-cipher-suites="
 	KubeRbacProxyMinTLSVersionFlag                       = "--tls-min-version="
 
+	kubeStateMetricsCustomResourceStateConfigFileFlag = "--custom-resource-state-config-file="
+	kubeStateMetricsCustomResourceStateConfigFile     = "/etc/kube-state-metrics/custom-resource-state-configmap.yaml"
+
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
 	AuthProxyRedirectURLFlag  = "-redirect-url="
@@ -364,7 +368,15 @@ type ProxyReader interface {
 	NoProxy() string
 }
 
-func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructure InfrastructureReader, proxy ProxyReader, a *Assets, apiServerConfig *APIServerConfig, consoleConfig *configv1.Console) *Factory {
+func NewFactory(
+	namespace, namespaceUserWorkload string,
+	c *Config,
+	infrastructure InfrastructureReader,
+	proxy ProxyReader,
+	a *Assets,
+	apiServerConfig *APIServerConfig,
+	consoleConfig *configv1.Console,
+) *Factory {
 	return &Factory{
 		namespace:             namespace,
 		namespaceUserWorkload: namespaceUserWorkload,
@@ -726,7 +738,8 @@ func (f *Factory) KubeStateMetricsMinimalServiceMonitor() (*monv1.ServiceMonitor
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(KubeStateMetricsMinimalServiceMonitor))
 }
 
-func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) KubeStateMetricsDeployment(enableCRSMetrics bool) (*appsv1.Deployment, error) {
+	flagCRSConfigFile := kubeStateMetricsCustomResourceStateConfigFileFlag + kubeStateMetricsCustomResourceStateConfigFile
 	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(KubeStateMetricsDeployment))
 	if err != nil {
 		return nil, err
@@ -740,6 +753,9 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeStateMetrics
 			if f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources != nil {
 				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources
+			}
+			if enableCRSMetrics {
+				d.Spec.Template.Spec.Containers[i].Args = append(container.Args, flagCRSConfigFile)
 			}
 		}
 	}
@@ -773,6 +789,10 @@ func (f *Factory) KubeStateMetricsRBACProxySecret() (*v1.Secret, error) {
 
 func (f *Factory) KubeStateMetricsPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(KubeStateMetricsPrometheusRule))
+}
+
+func (f *Factory) KubeStateMetricsCRSConfigMap() (*v1.ConfigMap, error) {
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(KubeStateMetricsCRSConfig))
 }
 
 func (f *Factory) OpenShiftStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
