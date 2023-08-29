@@ -18,6 +18,7 @@ GOLANG_FILES:=$(shell find . -name \*.go -print)
 # NOTE: grep -v %.yaml is needed  because "%s-policy.yaml" is used
 # in manifest.go and that isn't a valid asset.
 ASSETS=$(shell grep -oh '[^"]*/.*\.yaml' pkg/manifests/manifests.go \
+          | grep -v '^/etc' \
           | grep -v '%.*yaml' | sed 's/^/assets\//')
 
 BIN_DIR ?= $(shell pwd)/tmp/bin
