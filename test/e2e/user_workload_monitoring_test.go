@@ -683,6 +683,65 @@ func assertTenancyForMetrics(t *testing.T) {
 	}
 }
 
+// assertUWMAlertsAccess ensures that a user can't access all alerts from the UWM alertmanager via the api.
+func assertUWMAlertsAccess(t *testing.T) {
+	const testAccount = "test-alerts"
+
+	_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Grant enough permissions to the account so it can read rules.
+	_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "monitoring-rules-view")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var token string
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The uwm alerts port (9095) is only exposed in-cluster so we need to use
+	// port forwarding to access kube-rbac-proxy.
+	host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9095)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanUp()
+
+	client := framework.NewPrometheusClient(host, token)
+
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		resp, err := client.Do("GET", "/api/v2/rules", nil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("failed to query rules from Thanos querier: %v", err)
+	}
+}
+
 // assertTenancyForRules ensures that a tenant can access rules from her namespace (and only from this one).
 func assertTenancyForRules(t *testing.T) {
 	const testAccount = "test-rules"
