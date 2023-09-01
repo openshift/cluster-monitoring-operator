@@ -988,31 +988,25 @@ data:
     #
     # rhacs:telemetry:rox_central_secured_clusters provides the number of clusters secured by a Central instance of a
     # Red Hat Advanced Cluster Security installation.
-    - '{__name__="rhacs:telemetry:rox_central_secured_clusters", branding="RHACS"}'
+    - '{__name__="rhacs:telemetry:rox_central_secured_clusters"}'
     #
     # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
     #
     # rhacs:telemetry:rox_central_secured_nodes provides the number of nodes secured by a Central instance of a
     # Red Hat Advanced Cluster Security installation.
-    - '{__name__="rhacs:telemetry:rox_central_secured_nodes", branding="RHACS"}'
+    - '{__name__="rhacs:telemetry:rox_central_secured_nodes"}'
     #
     # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
     #
     # rhacs:telemetry:rox_central_secured_vcpu provides the number of vCPUs secured by a Central instance of a
     # Red Hat Advanced Cluster Security installation.
-    - '{__name__="rhacs:telemetry:rox_central_secured_vcpu", branding="RHACS"}'
+    - '{__name__="rhacs:telemetry:rox_central_secured_vcpu"}'
     #
     # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
     #
-    # rhacs:telemetry:rox_sensor_secured_nodes provides the number of nodes secured by a Sensor instance of a
-    # Red Hat Advanced Cluster Security installation.
-    - '{__name__="rhacs:telemetry:rox_sensor_secured_nodes", branding="RHACS"}'
-    #
-    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
-    #
-    # rhacs:telemetry:rox_sensor_secured_vcpu provides the number of vCPUs secured by a Sensor instance of a
-    # Red Hat Advanced Cluster Security installation.
-    - '{__name__="rhacs:telemetry:rox_sensor_secured_vcpu", branding="RHACS"}'
+    # rhacs:telemetry:rox_sensor_info provides information about a Sensor instance of a Red Hat Advanced
+    # Cluster Security installation.
+    - '{__name__="rhacs:telemetry:rox_sensor_info"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
