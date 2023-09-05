@@ -194,9 +194,9 @@ spec:
           )
         )
       record: cluster:kubelet_volume_stats_used_bytes:provisioner:sum
-    - expr: sum by (instance) (apiserver_storage_objects)
+    - expr: sum by (instance) (apiserver_storage_objects != -1)
       record: instance:etcd_object_counts:sum
-    - expr: topk(500, max by(resource) (apiserver_storage_objects))
+    - expr: topk(500, max by(resource) (apiserver_storage_objects != -1))
       record: cluster:usage:resources:sum
     - expr: count(count (kube_pod_restart_policy{type!="Always",namespace!~"openshift-.+"}) by (namespace,pod))
       record: cluster:usage:pods:terminal:workload:sum
