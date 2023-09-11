@@ -899,6 +899,13 @@ prometheusOperatorAdmissionWebhook:
     limits:
       cpu: 200m
       memory: 200Mi
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: type
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          foo: bar
 `, false)
 	if err != nil {
 		t.Fatal(err)
@@ -908,6 +915,14 @@ prometheusOperatorAdmissionWebhook:
 	d, err := f.PrometheusOperatorAdmissionWebhookDeployment()
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("prometheus-operator-admission-webhook topology spread constraints MaxSkew not configured correctly")
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("prometheus-operator-admission-webhook topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	for _, container := range d.Spec.Template.Spec.Containers {
