@@ -681,6 +681,8 @@ type ThanosRulerConfig struct {
 type PrometheusOperatorAdmissionWebhookConfig struct {
 	// Defines resource requests and limits for the prometheus-operator-admission-webhook container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+	// Defines a pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 // The `MonitoringPluginConfig` resource defines settings for the
