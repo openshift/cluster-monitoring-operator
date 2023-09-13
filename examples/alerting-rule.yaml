@@ -1,5 +1,5 @@
 ---
-apiVersion: monitoring.openshift.io/v1alpha1
+apiVersion: monitoring.openshift.io/v1
 kind: AlertingRule
 metadata:
   name: example

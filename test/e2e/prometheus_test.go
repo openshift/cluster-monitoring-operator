@@ -15,17 +15,11 @@
 package e2e
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
-	"io"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/go-kit/log" // logger is required for promConfig.Load
-	promConfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -334,10 +328,7 @@ func TestBodySizeLimit(t *testing.T) {
 
 	defer restoreConfig()
 
-	prometheusConfig, err := getPrometheusConfig(t, prometheusConfigSecretName)
-	if err != nil {
-		t.Fatal(err)
-	}
+	prometheusConfig := f.PrometheusConfigFromSecret(t, f.Ns, prometheusConfigSecretName)
 
 	for _, scrapeConfig := range prometheusConfig.ScrapeConfigs {
 		if scrapeConfig.BodySizeLimit != 0 {
@@ -351,11 +342,8 @@ func TestBodySizeLimit(t *testing.T) {
 `, bodySizeLimitSmall)
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
-	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		prometheusConfig, err := getPrometheusConfig(t, prometheusConfigSecretName)
-		if err != nil {
-			return err
-		}
+	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		prometheusConfig := f.PrometheusConfigFromSecret(t, f.Ns, prometheusConfigSecretName)
 		for _, scrapeConfig := range prometheusConfig.ScrapeConfigs {
 			if scrapeConfig.BodySizeLimit != bodySizeLimitSmallNumber {
 				return fmt.Errorf("expected scrapeConfig.BodySizeLimit to be %v but got %v after changing config", bodySizeLimitSmallNumber, scrapeConfig.BodySizeLimit)
@@ -368,23 +356,4 @@ func TestBodySizeLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-func getPrometheusConfig(t *testing.T, prometheusConfigSecretName string) (*promConfig.Config, error) {
-	secretPrometheusConfig := f.MustGetSecret(t, prometheusConfigSecretName, f.Ns)
-	zippedData := secretPrometheusConfig.Data["prometheus.yaml.gz"]
-	reader, err := gzip.NewReader(bytes.NewReader(zippedData))
-	if err != nil {
-		return nil, err
-	}
-	unzippedData, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-	mockLogger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
-	prometheusConfig, err := promConfig.Load(string(unzippedData), false, mockLogger)
-	if err != nil {
-		return nil, err
-	}
-	return prometheusConfig, nil
 }
