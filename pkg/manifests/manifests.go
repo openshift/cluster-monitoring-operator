@@ -15,7 +15,6 @@
 package manifests
 
 import (
-	"crypto/md5"
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/base64"
@@ -3205,7 +3204,7 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 	if alertmanagerConfig == nil {
 		return
 	}
-	digestBytes := md5.Sum([]byte(alertmanagerConfig.StringData["alertmanagers.yaml"]))
+	digestBytes := sha256.Sum224([]byte(alertmanagerConfig.StringData["alertmanagers.yaml"]))
 	digest := fmt.Sprintf("%x", digestBytes)
 	for i := range t.Spec.Containers {
 		containerName := t.Spec.Containers[i].Name
