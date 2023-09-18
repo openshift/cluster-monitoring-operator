@@ -2170,6 +2170,11 @@ func (f *Factory) PrometheusOperatorAdmissionWebhookDeployment() (*appsv1.Deploy
 		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Tolerations
 	}
 
+	if len(f.config.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig.TopologySpreadConstraints) > 0 {
+		d.Spec.Template.Spec.TopologySpreadConstraints =
+			f.config.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig.TopologySpreadConstraints
+	}
+
 	for i, container := range d.Spec.Template.Spec.Containers {
 		switch container.Name {
 		case "prometheus-operator-admission-webhook":

@@ -448,6 +448,7 @@ The `PrometheusOperatorAdmissionWebhookConfig` resource defines settings for the
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core) | Defines resource requests and limits for the prometheus-operator-admission-webhook container. |
+| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 
 [Back to TOC](#table-of-contents)
 
