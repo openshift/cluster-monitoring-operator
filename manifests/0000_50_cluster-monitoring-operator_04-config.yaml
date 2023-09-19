@@ -987,7 +987,7 @@ data:
     # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
     #
     # rhacs:telemetry:rox_central_info provides information about a Central instance of a Red Hat Advanced
-    # Red Hat Advanced Cluster Security installation.
+    # Cluster Security installation.
     # Expected labels:
     # - build: "release" or "internal".
     # - central_id: unique ID identifying the Central instance.
