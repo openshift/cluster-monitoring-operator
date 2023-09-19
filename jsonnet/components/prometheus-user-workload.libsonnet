@@ -446,7 +446,6 @@ function(params)
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--allow-paths=/metrics',
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
-              '--logtostderr=true',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [

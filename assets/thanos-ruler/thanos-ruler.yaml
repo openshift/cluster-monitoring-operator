@@ -85,7 +85,6 @@ spec:
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
-    - --logtostderr=true
     - --allow-paths=/metrics
     image: quay.io/openshift/origin-kube-rbac-proxy:latest
     name: kube-rbac-proxy-metrics

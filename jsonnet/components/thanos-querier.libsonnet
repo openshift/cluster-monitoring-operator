@@ -471,7 +471,6 @@ function(params)
                   '--tls-cert-file=/etc/tls/private/tls.crt',
                   '--tls-private-key-file=/etc/tls/private/tls.key',
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-                  '--logtostderr=true',
                   '--allow-paths=' + std.join(',', [
                     '/api/v1/query',
                     '/api/v1/query_range',
@@ -544,7 +543,6 @@ function(params)
                   '--tls-cert-file=/etc/tls/private/tls.crt',
                   '--tls-private-key-file=/etc/tls/private/tls.key',
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-                  '--logtostderr=true',
                   '--allow-paths=/api/v1/rules',
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -590,7 +588,6 @@ function(params)
                   '--tls-private-key-file=/etc/tls/private/tls.key',
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                   '--client-ca-file=/etc/tls/client/client-ca.crt',
-                  '--logtostderr=true',
                   '--allow-paths=/metrics',
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',

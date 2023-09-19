@@ -91,7 +91,6 @@ function(params)
                     // upstream supports name verification).
                     c {
                       args: [
-                        '--logtostderr',
                         '--secure-listen-address=:8443',
                         '--tls-cipher-suites=' + params.tlsCipherSuites,
                         '--upstream=http://localhost:8080/',
