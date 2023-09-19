@@ -23,6 +23,7 @@ function(params)
       keepalive_timeout  65;
       server {
         listen              %(nginxPort)d ssl;
+        listen              [::]:%(nginxPort)d ssl;
         ssl_certificate     %(tlsPath)s/tls.crt;
         ssl_certificate_key %(tlsPath)s/tls.key;
         root                /usr/share/nginx/html;
