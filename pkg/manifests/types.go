@@ -736,6 +736,8 @@ type RemoteWriteSpec struct {
 	// However, because you cannot mount secrets in a pod, in practice
 	// you can only reference the token of the service account.
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
+	// Defines the bearer token for the remote write endpoint.
+	BearerToken string `json:"bearerToken,omitempty"`
 	// Specifies the custom HTTP headers to be sent along with each remote write request.
 	// Headers set by Prometheus cannot be overwritten.
 	Headers map[string]string `json:"headers,omitempty"`

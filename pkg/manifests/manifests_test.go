@@ -1393,6 +1393,21 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "bearerToken authentication configuration",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: "https://bearerTokenFile.remotewrite.com/api/write"
+    bearerToken: "password"
+`,
+			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
+				func(t *testing.T, target monv1.RemoteWriteSpec) {
+					if target.BearerToken != "password" {
+						t.Fatalf("BearerToken field not correct in section RemoteWriteSpec expected 'password', got %s", target.BearerToken)
+					}
+				},
+			},
+		},
+		{
 			name: "authorization authentication configuration",
 			config: `prometheusK8s:
   remoteWrite:
