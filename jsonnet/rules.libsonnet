@@ -284,11 +284,18 @@ function(params) {
           // This recording rule was based on the now deprecated
           // etcd_object_counts metric which explains the name.
           // TODO: rename the recording rule and add it to the telemetry allow-list.
-          expr: 'sum by (instance) (apiserver_storage_objects)',
+          //
+          // This recording rule doesn't expose objects count of -1 as it
+          // indicates issues between the kube-apiserver and etcd and pollutes
+          // the data in telemetry.
+          expr: 'sum by (instance) (apiserver_storage_objects != -1)',
           record: 'instance:etcd_object_counts:sum',
         },
         {
-          expr: 'topk(500, max by(resource) (apiserver_storage_objects))',
+          // This recording rule doesn't expose objects count of -1 as it
+          // indicates issues between the kube-apiserver and etcd and pollutes
+          // the data in telemetry.
+          expr: 'topk(500, max by(resource) (apiserver_storage_objects != -1))',
           record: 'cluster:usage:resources:sum',
         },
         {
