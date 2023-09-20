@@ -16,7 +16,7 @@ package alert
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -315,7 +315,7 @@ func (rc *RuleController) sync(ctx context.Context, key string) error {
 // AlertingRule namespace, name, and UID.
 func (rc *RuleController) promRuleName(namespace, name string, uid types.UID) string {
 	data := fmt.Sprintf("%s-%s-%s", namespace, name, uid)
-	hash := md5.Sum([]byte(data))
+	hash := sha256.Sum224([]byte(data))
 	hexString := hex.EncodeToString(hash[:])
 
 	return fmt.Sprintf("%s-%s", name, hexString[:6])
