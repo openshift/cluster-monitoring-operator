@@ -14,13 +14,13 @@ repos:
   prometheusOperator: openshift/prometheus-operator
   thanos: openshift/thanos
 versions:
-  alertmanager: 0.25.1
+  alertmanager: 0.26.0
   kubeRbacProxy: 0.14.2
   kubeStateMetrics: 2.9.2
   monitoringPlugin: 1.0.0
   nodeExporter: 1.6.1
   promLabelProxy: 0.7.0
-  prometheus: 2.46.0
-  prometheusAdapter: 0.10.0
-  prometheusOperator: 0.67.1
-  thanos: 0.30.2
+  prometheus: 2.47.0
+  prometheusAdapter: 0.11.1
+  prometheusOperator: 0.68.0
+  thanos: 0.32.2
