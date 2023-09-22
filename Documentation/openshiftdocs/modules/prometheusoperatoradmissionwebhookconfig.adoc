@@ -20,6 +20,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 | Property | Type | Description 
 |resources|*v1.ResourceRequirements|Defines resource requests and limits for the prometheus-operator-admission-webhook container.
 
+|topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.
+
 |===
 
 link:../index.adoc[Back to TOC]
