@@ -161,6 +161,12 @@ local patchedRules = [
           severity: 'warning',
         },
       },
+      {
+        alert: 'AlertmanagerMultipleOperatorsAccesingPrometheusCRD',
+        labels: {
+          severity: 'warning',
+        },
+      },
     ],
   },
   {

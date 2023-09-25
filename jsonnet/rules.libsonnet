@@ -424,6 +424,18 @@ function(params) {
             severity: 'warning',
           },
         },
+        {
+          expr: 'sum(max by(namespace, container, pod) (increase(kube_pod_container_status_restarts_total[10m]))) > 5',
+          'for': '10m',
+          alert: 'MultipleOperatorsAccesingPrometheusCRD',
+          annotations: {
+            description: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} restarted more than 5 times in last 10m',
+            summary: 'Detect multiple operators accessing to the prometheus CRD.',
+          },
+          labels: {
+            severity: 'warning',
+          },
+        },
       ],
     },
     {
