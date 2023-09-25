@@ -987,11 +987,6 @@ data:
     # cluster:vsphere_csi_migration:max shows if CSI migration for vSphere was enabled or not.
     - '{__name__="cluster:vsphere_csi_migration:max"}'
     #
-    # owners: (https://github.com/openshift/vmware-vsphere-csi-driver-operator, @openshift/storage)
-    #
-    # cluster:vsphere_csi_migration:max shows if CSI migration for vSphere was enabled or not.
-    - '{__name__="cluster:vsphere_csi_migration:max"}'
-    #
     # owners: (https://github.com/maistra/istio-operator, OpenShift Service Mesh team)
     #
     # cluster:servicemesh_members:sum represents the Service Mesh Control Plane Namespaces counter sum of the cluster
