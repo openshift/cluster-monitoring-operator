@@ -351,6 +351,7 @@ function(params)
             ],
         },
         ruleNamespaceSelector: cfg.namespaceSelector,
+        version: cfg.version,
         volumes: [
           generateCertInjection.SCOCaBundleVolume('serving-certs-ca-bundle'),
           {
