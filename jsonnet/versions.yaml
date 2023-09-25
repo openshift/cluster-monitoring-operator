@@ -23,4 +23,4 @@ versions:
   prometheus: 2.47.0
   prometheusAdapter: 0.11.1
   prometheusOperator: 0.68.0
-  thanos: 0.32.2
+  thanos: 0.32.3
