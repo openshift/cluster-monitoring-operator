@@ -3,12 +3,11 @@ package tasks
 import (
 	"context"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 type PrometheusAdapterTask struct {

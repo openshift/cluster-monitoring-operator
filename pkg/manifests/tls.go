@@ -21,13 +21,12 @@ import (
 	"math/big"
 	"time"
 
-	"k8s.io/klog/v2"
-
 	"github.com/openshift/library-go/pkg/crypto"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/authentication/user"
+	"k8s.io/klog/v2"
 )
 
 const certificateLifetime = time.Duration(crypto.DefaultCertificateLifetimeInDays) * 24 * time.Hour

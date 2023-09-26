@@ -25,14 +25,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
+	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
-	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 )
 
 type images map[string]string

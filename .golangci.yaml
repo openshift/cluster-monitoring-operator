@@ -5,6 +5,7 @@ run:
     - vendor
     - test
   modules-download-mode: vendor
+
 linters:
   disable-all: true
   enable:
@@ -24,3 +25,10 @@ linters:
     - unused
     - wastedassign
     - whitespace
+    - gci
+
+linter-settings:
+  gci:
+    - standard
+    - default
+    - prefix(github.com/openshift/cluster-monitoring-operator)

@@ -17,10 +17,9 @@ package tasks
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/pkg/errors"
 )
 
 type ControlPlaneTask struct {

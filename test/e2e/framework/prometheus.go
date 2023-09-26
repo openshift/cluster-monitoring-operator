@@ -23,16 +23,13 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
+	routev1 "github.com/openshift/api/route/v1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promConfig "github.com/prometheus/prometheus/config"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/stretchr/testify/require"
-
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-
-	routev1 "github.com/openshift/api/route/v1"
 )
 
 func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName string) *monitoringv1.Prometheus {

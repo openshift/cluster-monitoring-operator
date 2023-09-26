@@ -17,12 +17,11 @@ package tasks
 import (
 	"context"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 type PrometheusUserWorkloadTask struct {
