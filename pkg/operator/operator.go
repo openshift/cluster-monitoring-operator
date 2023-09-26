@@ -736,6 +736,9 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	} else if config.HasInconsistentAlertmanagerConfigurations() {
 		degradedConditionMessage = client.UserAlermanagerConfigMisconfiguredMessage
 		degradedConditionReason = client.UserAlermanagerConfigMisconfiguredReason
+	} else if config.HasPrometheusReservedExternalLabelsConfigured() {
+		degradedConditionMessage = client.CannotUseReservedExternalLabelsMessage
+		degradedConditionReason = client.CannotUseReservedExternalLabelsReason
 	}
 
 	klog.Info("Updating ClusterOperator status to done.")

@@ -48,6 +48,8 @@ const (
 	automaticBodySizeLimit = "automatic"
 )
 
+var DefaultReservedPrometheusExternalLabels = []string{"prometheus", "promtheus_replica"}
+
 type Config struct {
 	Images      *Images `json:"-"`
 	RemoteWrite bool    `json:"-"`
@@ -83,6 +85,29 @@ func (c Config) HasInconsistentAlertmanagerConfigurations() bool {
 	}
 
 	return amConfig.EnableUserAlertManagerConfig && uwmConfig.Enabled
+}
+
+func (c Config) HasPrometheusReservedExternalLabelsConfigured() bool {
+	if c.ClusterMonitoringConfiguration == nil {
+		return false
+	}
+
+	prometheusK8sConfig := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
+	if prometheusK8sConfig == nil {
+		return false
+	}
+
+	if prometheusK8sConfig.ExternalLabels == nil {
+		return false
+	}
+
+	for _, reservedLabel := range DefaultReservedPrometheusExternalLabels {
+		if _, found := prometheusK8sConfig.ExternalLabels[reservedLabel]; found {
+			return true
+		}
+	}
+
+	return false
 }
 
 // AdditionalAlertmanagerConfigsForPrometheusUserWorkload returns the alertmanager configurations for

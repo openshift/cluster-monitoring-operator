@@ -33,6 +33,8 @@ const (
 	StorageNotConfiguredReason                       = "PrometheusDataPersistenceNotConfigured"
 	UserAlermanagerConfigMisconfiguredMessage        = "Misconfigured Alertmanager:  Alertmanager for user-defined alerting is enabled in the openshift-monitoring/cluster-monitoring-config configmap by setting 'enableUserAlertmanagerConfig: true' field. This conflicts with a dedicated Alertmanager instance enabled in  openshift-user-workload-monitoring/user-workload-monitoring-config. Alertmanager enabled in openshift-user-workload-monitoring takes precedence over the one in openshift-monitoring, so please remove the 'enableUserAlertmanagerConfig' field in openshift-monitoring/cluster-monitoring-config."
 	UserAlermanagerConfigMisconfiguredReason         = "UserAlertmanagerMisconfigured"
+	CannotUseReservedExternalLabelsMessage           = "Reserved Labels cannot be as External Labels. `externalLabels` specified under `prometheusK8s` field in the `openshift-monitoring/cluster-monitoring-config` uses reserved labels `prometheus` or `prometheus_replica` which is not allowed, please remove these from externalLabels"
+	CannotUseReservedExternalLabelsReason            = "ReservedExternalLabelsConfigured"
 )
 
 // Status represents if the state being reported is known to be True, False, or Unknown.
