@@ -19,11 +19,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 )
 
 type ConfigSharingTask struct {

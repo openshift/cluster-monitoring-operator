@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 	"github.com/pkg/errors"
 	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	"golang.org/x/exp/slices"
@@ -31,8 +32,6 @@ import (
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/klog/v2"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 )
 
 const (

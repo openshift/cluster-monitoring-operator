@@ -18,10 +18,9 @@ import (
 	"context"
 	"reflect"
 
-	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
-
 	v1 "github.com/openshift/api/config/v1"
 	clientv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
+	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"

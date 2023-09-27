@@ -15,10 +15,11 @@
 package strings
 
 import (
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"regexp"
 	stdlib_strings "strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (

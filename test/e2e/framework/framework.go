@@ -25,20 +25,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/imdario/mergo"
 	configv1 "github.com/openshift/api/config/v1"
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-
+	"github.com/pkg/errors"
 	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 	monClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	monBetaClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1beta1"
-
-	"github.com/imdario/mergo"
-	"github.com/pkg/errors"
-
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

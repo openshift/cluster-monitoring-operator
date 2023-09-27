@@ -22,15 +22,19 @@ import (
 	"time"
 
 	"github.com/blang/semver/v4"
+	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
+	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
+	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
+	"github.com/openshift/library-go/pkg/operator/csr"
+	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/pkg/errors"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
-	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
-	cmostr "github.com/openshift/cluster-monitoring-operator/pkg/strings"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -41,14 +45,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-
-	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/library-go/pkg/operator/csr"
-	"github.com/openshift/library-go/pkg/operator/events"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
 )
 
 // InfrastructureConfig stores information about the cluster infrastructure
