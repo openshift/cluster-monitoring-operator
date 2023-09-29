@@ -2279,6 +2279,10 @@ func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment
 		d.Spec.Template.Spec.Tolerations = f.config.UserWorkloadConfiguration.PrometheusOperator.Tolerations
 	}
 
+	if len(f.config.UserWorkloadConfiguration.PrometheusOperator.TopologySpreadConstraints) > 0 {
+		d.Spec.Template.Spec.TopologySpreadConstraints = f.config.UserWorkloadConfiguration.PrometheusOperator.TopologySpreadConstraints
+	}
+
 	for i, container := range d.Spec.Template.Spec.Containers {
 		switch container.Name {
 		case "kube-rbac-proxy":

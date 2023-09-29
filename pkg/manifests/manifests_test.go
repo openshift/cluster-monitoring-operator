@@ -4401,9 +4401,18 @@ func TestPodDisruptionBudget(t *testing.T) {
 }
 
 func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`
-enableUserWorkload: true
-`, false)
+	c := NewDefaultConfig()
+	uwc, err := NewUserConfigFromString(`prometheusOperator:
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: type
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar
+  `)
+
+	c.UserWorkloadConfiguration = uwc
 
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
@@ -4477,6 +4486,14 @@ enableUserWorkload: true
 
 	if !reflect.DeepEqual(d, d2) {
 		t.Fatal("expected PrometheusOperatorUserWorkloadDeployment to be an idempotent function")
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
+		t.Fatal("prometheus-operator UWM spread contraints MaxSkew not configured correctly")
+	}
+
+	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
+		t.Fatal("prometheus-operator UWM spread contraints WhenUnsatisfiable not configured correctly")
 	}
 }
 
