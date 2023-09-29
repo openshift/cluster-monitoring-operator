@@ -93,6 +93,7 @@ var (
 	AlertmanagerUserWorkloadServiceAccount         = "alertmanager-user-workload/service-account.yaml"
 	AlertmanagerUserWorkloadClusterRoleBinding     = "alertmanager-user-workload/cluster-role-binding.yaml"
 	AlertmanagerUserWorkloadClusterRole            = "alertmanager-user-workload/cluster-role.yaml"
+	AlertmanagerUserWorkloadRBACProxySecret        = "alertmanager-user-workload/kube-rbac-proxy-secret.yaml"
 	AlertmanagerUserWorkloadRBACProxyTenancySecret = "alertmanager-user-workload/kube-rbac-proxy-tenancy-secret.yaml"
 	AlertmanagerUserWorkloadRBACProxyMetricSecret  = "alertmanager-user-workload/kube-rbac-proxy-metric-secret.yaml"
 	AlertmanagerUserWorkloadTrustedCABundle        = "alertmanager-user-workload/trusted-ca-bundle.yaml"
@@ -156,25 +157,26 @@ var (
 	PrometheusK8sPodDisruptionBudget              = "prometheus-k8s/pod-disruption-budget.yaml"
 	PrometheusK8sTelemetry                        = "prometheus-k8s/telemetry-secret.yaml"
 
-	PrometheusUserWorkloadServingCertsCABundle        = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
-	PrometheusUserWorkloadTrustedCABundle             = "prometheus-user-workload/trusted-ca-bundle.yaml"
-	PrometheusUserWorkloadServiceAccount              = "prometheus-user-workload/service-account.yaml"
-	PrometheusUserWorkloadClusterRole                 = "prometheus-user-workload/cluster-role.yaml"
-	PrometheusUserWorkloadClusterRoleBinding          = "prometheus-user-workload/cluster-role-binding.yaml"
-	PrometheusUserWorkloadRoleConfig                  = "prometheus-user-workload/role-config.yaml"
-	PrometheusUserWorkloadRoleList                    = "prometheus-user-workload/role-specific-namespaces.yaml"
-	PrometheusUserWorkloadRoleBindingList             = "prometheus-user-workload/role-binding-specific-namespaces.yaml"
-	PrometheusUserWorkloadRoleBindingConfig           = "prometheus-user-workload/role-binding-config.yaml"
-	PrometheusUserWorkloadService                     = "prometheus-user-workload/service.yaml"
-	PrometheusUserWorkloadServiceThanosSidecar        = "prometheus-user-workload/service-thanos-sidecar.yaml"
-	PrometheusUserWorkload                            = "prometheus-user-workload/prometheus.yaml"
-	PrometheusUserWorkloadPrometheusServiceMonitor    = "prometheus-user-workload/service-monitor.yaml"
-	PrometheusUserWorkloadGrpcTLSSecret               = "prometheus-user-workload/grpc-tls-secret.yaml"
-	PrometheusUserWorkloadThanosSidecarServiceMonitor = "prometheus-user-workload/service-monitor-thanos-sidecar.yaml"
-	PrometheusUserWorkloadAlertmanagerRoleBinding     = "prometheus-user-workload/alertmanager-role-binding.yaml"
-	PrometheusUserWorkloadPodDisruptionBudget         = "prometheus-user-workload/pod-disruption-budget.yaml"
-	PrometheusUserWorkloadConfigMap                   = "prometheus-user-workload/config-map.yaml"
-	PrometheusUserWorkloadFederateRoute               = "prometheus-user-workload/federate-route.yaml"
+	PrometheusUserWorkloadServingCertsCABundle                = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
+	PrometheusUserWorkloadTrustedCABundle                     = "prometheus-user-workload/trusted-ca-bundle.yaml"
+	PrometheusUserWorkloadServiceAccount                      = "prometheus-user-workload/service-account.yaml"
+	PrometheusUserWorkloadClusterRole                         = "prometheus-user-workload/cluster-role.yaml"
+	PrometheusUserWorkloadClusterRoleBinding                  = "prometheus-user-workload/cluster-role-binding.yaml"
+	PrometheusUserWorkloadAlertmanagerUserWorkloadRoleBinding = "prometheus-user-workload/alertmanager-user-workload-role-binding.yaml"
+	PrometheusUserWorkloadRoleConfig                          = "prometheus-user-workload/role-config.yaml"
+	PrometheusUserWorkloadRoleList                            = "prometheus-user-workload/role-specific-namespaces.yaml"
+	PrometheusUserWorkloadRoleBindingList                     = "prometheus-user-workload/role-binding-specific-namespaces.yaml"
+	PrometheusUserWorkloadRoleBindingConfig                   = "prometheus-user-workload/role-binding-config.yaml"
+	PrometheusUserWorkloadService                             = "prometheus-user-workload/service.yaml"
+	PrometheusUserWorkloadServiceThanosSidecar                = "prometheus-user-workload/service-thanos-sidecar.yaml"
+	PrometheusUserWorkload                                    = "prometheus-user-workload/prometheus.yaml"
+	PrometheusUserWorkloadPrometheusServiceMonitor            = "prometheus-user-workload/service-monitor.yaml"
+	PrometheusUserWorkloadGrpcTLSSecret                       = "prometheus-user-workload/grpc-tls-secret.yaml"
+	PrometheusUserWorkloadThanosSidecarServiceMonitor         = "prometheus-user-workload/service-monitor-thanos-sidecar.yaml"
+	PrometheusUserWorkloadAlertmanagerRoleBinding             = "prometheus-user-workload/alertmanager-role-binding.yaml"
+	PrometheusUserWorkloadPodDisruptionBudget                 = "prometheus-user-workload/pod-disruption-budget.yaml"
+	PrometheusUserWorkloadConfigMap                           = "prometheus-user-workload/config-map.yaml"
+	PrometheusUserWorkloadFederateRoute                       = "prometheus-user-workload/federate-route.yaml"
 
 	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
 	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
@@ -220,19 +222,21 @@ var (
 	PrometheusOperatorUserWorkloadServiceMonitor      = "prometheus-operator-user-workload/service-monitor.yaml"
 	PrometheusOperatorUserWorkloadKubeRbacProxySecret = "prometheus-operator-user-workload/kube-rbac-proxy-secret.yaml"
 
-	ClusterMonitoringOperatorServiceMonitor     = "cluster-monitoring-operator/service-monitor.yaml"
-	ClusterMonitoringClusterRoleView            = "cluster-monitoring-operator/cluster-role-view.yaml"
-	ClusterMonitoringAlertmanagerEditRole       = "cluster-monitoring-operator/monitoring-alertmanager-edit-role.yaml"
-	ClusterMonitoringRulesEditClusterRole       = "cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
-	ClusterMonitoringRulesViewClusterRole       = "cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
-	ClusterMonitoringEditClusterRole            = "cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
-	ClusterMonitoringEditAlertingClusterRole    = "cluster-monitoring-operator/alerting-edit-cluster-role.yaml"
-	ClusterMonitoringEditUserWorkloadConfigRole = "cluster-monitoring-operator/user-workload-config-edit-role.yaml"
-	ClusterMonitoringGrpcTLSSecret              = "cluster-monitoring-operator/grpc-tls-secret.yaml"
-	ClusterMonitoringOperatorPrometheusRule     = "cluster-monitoring-operator/prometheus-rule.yaml"
-	ClusterMonitoringMetricsClientCertsSecret   = "cluster-monitoring-operator/metrics-client-certs.yaml"
-	ClusterMonitoringFederateClientCertsSecret  = "cluster-monitoring-operator/federate-client-certs.yaml"
-	ClusterMonitoringMetricsClientCACM          = "cluster-monitoring-operator/metrics-client-ca.yaml"
+	ClusterMonitoringOperatorServiceMonitor                = "cluster-monitoring-operator/service-monitor.yaml"
+	ClusterMonitoringClusterRoleView                       = "cluster-monitoring-operator/cluster-role-view.yaml"
+	ClusterMonitoringAlertmanagerEditRole                  = "cluster-monitoring-operator/monitoring-alertmanager-edit-role.yaml"
+	ClusterMonitoringRulesEditClusterRole                  = "cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
+	ClusterMonitoringRulesViewClusterRole                  = "cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
+	ClusterMonitoringEditClusterRole                       = "cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
+	ClusterMonitoringEditAlertingClusterRole               = "cluster-monitoring-operator/alerting-edit-cluster-role.yaml"
+	ClusterMonitoringEditUserWorkloadConfigRole            = "cluster-monitoring-operator/user-workload-config-edit-role.yaml"
+	ClusterMonitoringEditUserWorkloadAlertmanagerApiReader = "cluster-monitoring-operator/user-workload-alertmanager-api-reader.yaml"
+	ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter = "cluster-monitoring-operator/user-workload-alertmanager-api-writer.yaml"
+	ClusterMonitoringGrpcTLSSecret                         = "cluster-monitoring-operator/grpc-tls-secret.yaml"
+	ClusterMonitoringOperatorPrometheusRule                = "cluster-monitoring-operator/prometheus-rule.yaml"
+	ClusterMonitoringMetricsClientCertsSecret              = "cluster-monitoring-operator/metrics-client-certs.yaml"
+	ClusterMonitoringFederateClientCertsSecret             = "cluster-monitoring-operator/federate-client-certs.yaml"
+	ClusterMonitoringMetricsClientCACM                     = "cluster-monitoring-operator/metrics-client-ca.yaml"
 
 	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
 	TelemeterClientClusterRoleBinding     = "telemeter-client/cluster-role-binding.yaml"
@@ -262,23 +266,24 @@ var (
 	ThanosQuerierGrpcTLSSecret          = "thanos-querier/grpc-tls-secret.yaml"
 	ThanosQuerierTrustedCABundle        = "thanos-querier/trusted-ca-bundle.yaml"
 
-	ThanosRulerCustomResource               = "thanos-ruler/thanos-ruler.yaml"
-	ThanosRulerService                      = "thanos-ruler/service.yaml"
-	ThanosRulerRoute                        = "thanos-ruler/route.yaml"
-	ThanosRulerOauthCookieSecret            = "thanos-ruler/oauth-cookie-secret.yaml"
-	ThanosRulerQueryConfigSecret            = "thanos-ruler/query-config-secret.yaml"
-	ThanosRulerAlertmanagerConfigSecret     = "thanos-ruler/alertmanagers-config-secret.yaml"
-	ThanosRulerRBACProxyMetricsSecret       = "thanos-ruler/kube-rbac-proxy-metrics-secret.yaml"
-	ThanosRulerServiceAccount               = "thanos-ruler/service-account.yaml"
-	ThanosRulerClusterRole                  = "thanos-ruler/cluster-role.yaml"
-	ThanosRulerClusterRoleBinding           = "thanos-ruler/cluster-role-binding.yaml"
-	ThanosRulerMonitoringClusterRoleBinding = "thanos-ruler/cluster-role-binding-monitoring.yaml"
-	ThanosRulerGrpcTLSSecret                = "thanos-ruler/grpc-tls-secret.yaml"
-	ThanosRulerTrustedCABundle              = "thanos-ruler/trusted-ca-bundle.yaml"
-	ThanosRulerServiceMonitor               = "thanos-ruler/service-monitor.yaml"
-	ThanosRulerPrometheusRule               = "thanos-ruler/thanos-ruler-prometheus-rule.yaml"
-	ThanosRulerAlertmanagerRoleBinding      = "thanos-ruler/alertmanager-role-binding.yaml"
-	ThanosRulerPodDisruptionBudget          = "thanos-ruler/pod-disruption-budget.yaml"
+	ThanosRulerCustomResource                                = "thanos-ruler/thanos-ruler.yaml"
+	ThanosRulerService                                       = "thanos-ruler/service.yaml"
+	ThanosRulerRoute                                         = "thanos-ruler/route.yaml"
+	ThanosRulerOauthCookieSecret                             = "thanos-ruler/oauth-cookie-secret.yaml"
+	ThanosRulerQueryConfigSecret                             = "thanos-ruler/query-config-secret.yaml"
+	ThanosRulerAlertmanagerConfigSecret                      = "thanos-ruler/alertmanagers-config-secret.yaml"
+	ThanosRulerRBACProxyMetricsSecret                        = "thanos-ruler/kube-rbac-proxy-metrics-secret.yaml"
+	ThanosRulerServiceAccount                                = "thanos-ruler/service-account.yaml"
+	ThanosRulerClusterRole                                   = "thanos-ruler/cluster-role.yaml"
+	ThanosRulerClusterRoleBinding                            = "thanos-ruler/cluster-role-binding.yaml"
+	ThanosRulerMonitoringClusterRoleBinding                  = "thanos-ruler/cluster-role-binding-monitoring.yaml"
+	ThanosRulerMonitoringAlertmanagerUserWorkloadRoleBinding = "thanos-ruler/alertmanager-user-workload-role-binding.yaml"
+	ThanosRulerGrpcTLSSecret                                 = "thanos-ruler/grpc-tls-secret.yaml"
+	ThanosRulerTrustedCABundle                               = "thanos-ruler/trusted-ca-bundle.yaml"
+	ThanosRulerServiceMonitor                                = "thanos-ruler/service-monitor.yaml"
+	ThanosRulerPrometheusRule                                = "thanos-ruler/thanos-ruler-prometheus-rule.yaml"
+	ThanosRulerAlertmanagerRoleBinding                       = "thanos-ruler/alertmanager-role-binding.yaml"
+	ThanosRulerPodDisruptionBudget                           = "thanos-ruler/pod-disruption-budget.yaml"
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
@@ -688,6 +693,10 @@ func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxySecret))
 }
 
+func (f *Factory) AlertmanagerUserWorkloadRBACProxySecret() (*v1.Secret, error) {
+	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxySecret))
+}
+
 func (f *Factory) AlertmanagerUserWorkloadRBACProxyTenancySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxyTenancySecret))
 }
@@ -1029,6 +1038,10 @@ func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding,
 
 func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadClusterRoleBinding))
+}
+
+func (f *Factory) PrometheusUserWorkloadAlertmanagerUserWorkloadRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadAlertmanagerUserWorkloadRoleBinding))
 }
 
 func (f *Factory) PrometheusK8sClusterRole() (*rbacv1.ClusterRole, error) {
@@ -2437,6 +2450,14 @@ func (f *Factory) ClusterMonitoringEditUserWorkloadConfigRole() (*rbacv1.Role, e
 	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringEditUserWorkloadConfigRole))
 }
 
+func (f *Factory) ClusterMonitoringEditUserWorkloadAlertmanagerApiReader() (*rbacv1.Role, error) {
+	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringEditUserWorkloadAlertmanagerApiReader))
+}
+
+func (f *Factory) ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter() (*rbacv1.Role, error) {
+	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter))
+}
+
 func (f *Factory) ClusterMonitoringAlertManagerEditRole() (*rbacv1.Role, error) {
 	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringAlertmanagerEditRole))
 }
@@ -3023,6 +3044,10 @@ func (f *Factory) ThanosRulerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, e
 
 func (f *Factory) ThanosRulerMonitoringClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(ThanosRulerMonitoringClusterRoleBinding))
+}
+
+func (f *Factory) ThanosRulerMonitoringAlertmanagerUserWorkloadRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetReader(ThanosRulerMonitoringAlertmanagerUserWorkloadRoleBinding))
 }
 
 func (f *Factory) ThanosRulerClusterRole() (*rbacv1.ClusterRole, error) {

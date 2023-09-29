@@ -283,6 +283,12 @@ function(params) {
         resources: ['events'],
         verbs: ['create', 'patch', 'update'],
       },
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resourceNames: ['user-workload'],
+        resources: ['alertmanagers/api'],
+        verbs: ['*'],
+      },
     ],
   },
 
@@ -316,6 +322,8 @@ function(params) {
     ],
   },
 
+  // This cluster role enables access to the Observe page in the admin console
+  // and the different API services.
   clusterRoleView: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
@@ -329,7 +337,7 @@ function(params) {
     }],
   },
 
-  // This role enables access to the Alertmanager APIs and UIs through OAuth proxy.
+  // This role enables read/write access to the platform Alertmanager API through OAuth proxy.
   monitoringAlertmanagerEditRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
@@ -342,6 +350,43 @@ function(params) {
       resources: ['alertmanagers'],
       verbs: ['patch'],
       resourceNames: ['non-existant'],
+    }],
+  },
+
+  // This role provides read access to the user-workload Alertmanager API.
+  // We use a fake subresource 'api' to map to the /api/* endpoints of the
+  // Alertmanager API.
+  // Using "nonResourceURLs" doesn't work because authenticated users and
+  // service accounts are allowed to get /api/* by default.
+  userWorkloadAlertmanagerApiReader: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'monitoring-alertmanager-api-reader',
+      namespace: cfg.namespaceUserWorkload,
+    },
+    rules: [{
+      apiGroups: ['monitoring.coreos.com'],
+      resources: ['alertmanagers/api'],
+      resourceNames: ['user-workload'],
+      verbs: ['get', 'list'],
+    }],
+  },
+
+  // This role provides read/write access to the user-workload Alertmanager API.
+  // See the 'monitoring-alertmanager-api-reader' role for details.
+  userWorkloadAlertmanagerApiWriter: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'monitoring-alertmanager-api-writer',
+      namespace: cfg.namespaceUserWorkload,
+    },
+    rules: [{
+      apiGroups: ['monitoring.coreos.com'],
+      resources: ['alertmanagers/api'],
+      resourceNames: ['user-workload'],
+      verbs: ['*'],
     }],
   },
 
@@ -358,6 +403,7 @@ function(params) {
     }],
   },
 
+  // This cluster role can be referenced in a RoleBinding object to provide read access to alerting and recording rules for a project.
   monitoringRulesViewClusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
@@ -371,6 +417,7 @@ function(params) {
     }],
   },
 
+  // This cluster role can be referenced in a RoleBinding object to provide read/write access to alerting and recording rules for a project.
   monitoringRulesEditClusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
@@ -384,6 +431,7 @@ function(params) {
     }],
   },
 
+  // This role provides read/write access to the user-workload monitoring configuration.
   userWorkloadConfigEditRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
@@ -399,6 +447,7 @@ function(params) {
     }],
   },
 
+  // This cluster role can be referenced in a RoleBinding object to provide read/write access to Alertmanager configurations for a project.
   alertingEditClusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',

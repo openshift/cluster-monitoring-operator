@@ -129,6 +129,30 @@ function(params)
       }],
     },
 
+    kubeRbacProxySecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'alertmanager-kube-rbac-proxy',
+        namespace: cfg.namespace,
+        labels: { 'app.kubernetes.io/name': 'alertmanager-' + cfg.name },
+      },
+      type: 'Opaque',
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            resourceAttributes: {
+              apiGroup: 'monitoring.coreos.com',
+              resource: 'alertmanagers',
+              subresource: 'api',
+              name: cfg.name,
+              namespace: cfg.namespace,
+            },
+          },
+        }),
+      },
+    },
+
     kubeRbacProxyTenancySecret: {
       apiVersion: 'v1',
       kind: 'Secret',
@@ -175,6 +199,7 @@ function(params)
         priorityClassName: 'system-cluster-critical',
         secrets: [
           'alertmanager-user-workload-tls',
+          $.kubeRbacProxySecret.metadata.name,
           $.kubeRbacProxyTenancySecret.metadata.name,
           $.kubeRbacProxyMetricSecret.metadata.name,
         ],
@@ -207,6 +232,7 @@ function(params)
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--logtostderr=true',
             ],
             terminationMessagePolicy: 'FallbackToLogsOnError',
@@ -214,6 +240,12 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-alertmanager-user-workload-tls',
+                readOnly: true,
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+                readOnly: true,
               },
             ],
             securityContext: {

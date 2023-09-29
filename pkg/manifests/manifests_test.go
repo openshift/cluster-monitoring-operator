@@ -186,6 +186,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.ThanosRulerMonitoringClusterRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.ThanosRulerPrometheusRule()
 	if err != nil {
 		t.Fatal(err)
@@ -481,6 +486,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = f.PrometheusUserWorkloadAlertmanagerUserWorkloadRoleBinding()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = f.PrometheusUserWorkloadRoleConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -614,6 +624,16 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.ClusterMonitoringEditUserWorkloadConfigRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ClusterMonitoringEditUserWorkloadAlertmanagerApiReader()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter()
 	if err != nil {
 		t.Fatal(err)
 	}

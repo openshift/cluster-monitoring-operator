@@ -72,6 +72,26 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit Role failed")
 	}
 
+	uwar, err := t.factory.ClusterMonitoringEditUserWorkloadAlertmanagerApiReader()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkloadAlertmanagerApiReader Role failed")
+	}
+
+	err = t.client.CreateOrUpdateRole(ctx, uwar)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkloadAlertmanagerApiReader Role failed")
+	}
+
+	uwaw, err := t.factory.ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkloadAlertmanagerApiWriter Role failed")
+	}
+
+	err = t.client.CreateOrUpdateRole(ctx, uwaw)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkloadAlertmanagerApiWriter Role failed")
+	}
+
 	amwr, err := t.factory.ClusterMonitoringAlertManagerEditRole()
 	if err != nil {
 		return errors.Wrap(err, "initializing AlertmanagerWrite Role failed")

@@ -109,6 +109,16 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling Thanos Ruler monitoring ClusterRoleBinding failed")
 	}
 
+	monauwrl, err := t.factory.ThanosRulerMonitoringAlertmanagerUserWorkloadRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Ruler monitoring Alertmanager User Workload Role Binding failed")
+	}
+
+	err = t.client.CreateOrUpdateRoleBinding(ctx, monauwrl)
+	if err != nil {
+		return errors.Wrap(err, "reconciling Thanos Ruler Alertmanager User Workload Role Binding failed")
+	}
+
 	sa, err := t.factory.ThanosRulerServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Ruler ServiceAccount failed")

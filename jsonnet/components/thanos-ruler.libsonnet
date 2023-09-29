@@ -81,10 +81,6 @@ function(params)
           resources: ['securitycontextconstraints'],
           verbs: ['use'],
         },
-        {
-          nonResourceURLs: ['/api/v2/alerts'],
-          verbs: ['create'],
-        },
       ],
     },
 
@@ -124,6 +120,7 @@ function(params)
       }],
     },
 
+    // RoleBinding to send alerts to the platform Alertmanager.
     alertmanagerRoleBinding: {
       apiVersion: 'rbac.authorization.k8s.io/v1',
       kind: 'RoleBinding',
@@ -135,6 +132,26 @@ function(params)
         apiGroup: 'rbac.authorization.k8s.io',
         kind: 'Role',
         name: 'monitoring-alertmanager-edit',
+      },
+      subjects: [{
+        kind: 'ServiceAccount',
+        name: tr.config.name,
+        namespace: tr.config.namespace,
+      }],
+    },
+
+    // RoleBinding to send alerts to the user-workload Alertmanager.
+    alertmanagerUserWorkloadRoleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'RoleBinding',
+      metadata: {
+        name: 'user-workload-alertmanager-thanos-ruler',
+        namespace: tr.config.namespace,
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'Role',
+        name: 'monitoring-alertmanager-api-writer',
       },
       subjects: [{
         kind: 'ServiceAccount',

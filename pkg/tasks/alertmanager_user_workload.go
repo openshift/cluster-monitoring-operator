@@ -72,6 +72,16 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 		}
 	}
 
+	s, err = t.factory.AlertmanagerUserWorkloadRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager User Workload RBAC proxy Secret failed")
+	}
+
+	err = t.client.CreateIfNotExistSecret(ctx, s)
+	if err != nil {
+		return errors.Wrap(err, "creating Alertmanager User Workload RBAC proxy Secret failed")
+	}
+
 	s, err = t.factory.AlertmanagerUserWorkloadRBACProxyTenancySecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Alertmanager User Workload RBAC proxy tenancy Secret failed")
@@ -194,6 +204,16 @@ func (t *AlertmanagerUserWorkloadTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "deleting Alertmanager User Workload configuration Secret failed")
+	}
+
+	s, err = t.factory.AlertmanagerUserWorkloadRBACProxySecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Alertmanager User Workload RBAC proxy  Secret failed")
+	}
+
+	err = t.client.DeleteSecret(ctx, s)
+	if err != nil {
+		return errors.Wrap(err, "deleting Alertmanager User Workload RBAC proxy Secret failed")
 	}
 
 	s, err = t.factory.AlertmanagerUserWorkloadRBACProxyTenancySecret()
