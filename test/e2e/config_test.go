@@ -170,6 +170,34 @@ prometheusK8s:
 				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, "")
 			},
 		},
+		{
+			name: "default config with reserved external labels used",
+			config: `
+prometheusK8s:
+  externalLabels:
+    prometheus: "some-value"
+`,
+			assertion: func(t *testing.T) {
+				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReason(configv1.OperatorDegraded, client.CannotUseReservedExternalLabelsReason)
+				f.AssertOperatorConditionMessageContains(configv1.OperatorDegraded, client.CannotUseReservedExternalLabelsMessage)
+			},
+		},
+		{
+			name: "default config with no reserved external labels used",
+			config: `
+prometheusK8s:
+  externalLabels:
+    dc: "us-east-1"
+`,
+			assertion: func(t *testing.T) {
+				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReason(configv1.OperatorDegraded, "")
+				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, "")
+			},
+		},
 	} {
 		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, tc.config))
 
