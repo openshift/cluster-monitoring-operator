@@ -28,7 +28,13 @@ if [ "$PULL_BASE_REF" != "$MAIN_BRANCH" ]; then
 fi
 
 version_from_remote() {
-	curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/${MAIN_BRANCH}/VERSION"
+  # since kubernetes-metrics-server repo doesn't have a VERSION file
+  if [ "$1" == "openshift/kubernetes-metrics-server" ]; then
+    curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/${MAIN_BRANCH}/manifests/release/kustomization.yaml" | \
+      gojsontoyaml -yamltojson | jq '.images[0].newTag' | sed 's/"//g'
+  else
+    curl --retry 5 --silent --fail "https://raw.githubusercontent.com/${1}/${MAIN_BRANCH}/VERSION"
+  fi
 }
 
 CONTENT="$(gojsontoyaml -yamltojson <"${VERSION_FILE}")"
