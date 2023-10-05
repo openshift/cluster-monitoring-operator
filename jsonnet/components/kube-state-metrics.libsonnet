@@ -201,9 +201,9 @@ function(params)
                         |||
                           --metric-denylist=
                           ^kube_secret_labels$,
-                          ^kube_.+_annotations$
                         |||,
                         '--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*],poddisruptionbudgets=[*]',
+                        '--metric-annotations-allowlist=pods=[kubernetes.io/config.source]',
                       ],
                       securityContext: {},
                       resources: {
