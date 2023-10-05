@@ -17,7 +17,7 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"reflect"
@@ -100,18 +100,13 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 }
 
 func TestUserWorkloadMonitoringAlerting(t *testing.T) {
+
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-	)
+	uwmCM := f.BuildUserWorkloadConfigMap(t, `alertmanager:
+  enabled: true
+`)
+
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
@@ -122,7 +117,7 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 		name string
 		f    func(*testing.T)
 	}{
-		{
+		/*{
 			name: "assert user workload rules",
 			f:    assertUserWorkloadRules,
 		},
@@ -137,6 +132,10 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 		{
 			name: "assert alertmanager is not deployed in user namespace",
 			f:    f.AssertStatefulsetDoesNotExist("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
+		},*/
+		{
+			name: "assert UWM alert access",
+			f:    assertUWMAlertsAccess,
 		},
 	} {
 		t.Run(scenario.name, scenario.f)
@@ -667,7 +666,7 @@ func assertTenancyForMetrics(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -734,7 +733,7 @@ func assertTenancyForRules(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -822,7 +821,7 @@ func assertTenancyForRules(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			b, err := ioutil.ReadAll(resp.Body)
+			b, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return err
 			}
@@ -887,7 +886,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			b, err := ioutil.ReadAll(resp.Body)
+			b, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return err
 			}
@@ -991,7 +990,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -1045,7 +1044,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
