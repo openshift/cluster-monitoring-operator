@@ -17,7 +17,7 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"reflect"
@@ -667,7 +667,7 @@ func assertTenancyForMetrics(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -734,7 +734,7 @@ func assertTenancyForRules(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -822,7 +822,7 @@ func assertTenancyForRules(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			b, err := ioutil.ReadAll(resp.Body)
+			b, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return err
 			}
@@ -887,7 +887,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			b, err := ioutil.ReadAll(resp.Body)
+			b, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return err
 			}
@@ -991,7 +991,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -1045,7 +1045,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
