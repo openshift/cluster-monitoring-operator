@@ -358,6 +358,7 @@ function(params) {
   // Alertmanager API.
   // Using "nonResourceURLs" doesn't work because authenticated users and
   // service accounts are allowed to get /api/* by default.
+  // See https://issues.redhat.com/browse/OCPBUGS-17850.
   userWorkloadAlertmanagerApiReader: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
@@ -403,7 +404,7 @@ function(params) {
     }],
   },
 
-  // This cluster role can be referenced in a RoleBinding object to provide read access to alerting and recording rules for a project.
+  // This cluster role can be referenced in a RoleBinding object to provide read access to PrometheusRule objects for a project.
   monitoringRulesViewClusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
@@ -417,7 +418,7 @@ function(params) {
     }],
   },
 
-  // This cluster role can be referenced in a RoleBinding object to provide read/write access to alerting and recording rules for a project.
+  // This cluster role can be referenced in a RoleBinding object to provide read/write access to PrometheusRule objects for a project.
   monitoringRulesEditClusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
@@ -447,7 +448,7 @@ function(params) {
     }],
   },
 
-  // This cluster role can be referenced in a RoleBinding object to provide read/write access to Alertmanager configurations for a project.
+  // This cluster role can be referenced in a RoleBinding object to provide read/write access to AlertmanagerConfiguration objects for a project.
   alertingEditClusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
