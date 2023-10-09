@@ -108,7 +108,7 @@ spec:
     - mountPath: /etc/kube-rbac-proxy
       name: secret-kube-rbac-proxy
   - args:
-    - --secure-listen-address=[$(POD_IP)]:10902
+    - --secure-listen-address=[$(POD_IP)]:10903
     - --upstream=http://127.0.0.1:10902
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
@@ -125,7 +125,7 @@ spec:
     image: quay.io/brancz/kube-rbac-proxy:v0.14.2
     name: kube-rbac-proxy-thanos
     ports:
-    - containerPort: 10902
+    - containerPort: 10903
       name: thanos-proxy
     resources:
       requests:
