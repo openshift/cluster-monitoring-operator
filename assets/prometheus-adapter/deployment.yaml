@@ -22,6 +22,7 @@ spec:
   template:
     metadata:
       annotations:
+        checksum.config/md5: f4e13b570c6a6bd90981fd20841716e2
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: metrics-adapter
