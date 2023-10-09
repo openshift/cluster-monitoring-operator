@@ -23,6 +23,7 @@ spec:
         namespaces:
         - openshift-monitoring
         topologyKey: kubernetes.io/hostname
+  automountServiceAccountToken: true
   containers:
   - args:
     - -provider=openshift
