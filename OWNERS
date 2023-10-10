@@ -5,7 +5,6 @@ reviewers:
 - jan--f
 - raptorsun
 - slashpai
-- sthaha
 - danielmellado
 - marioferh
 - rexagod
@@ -16,7 +15,6 @@ approvers:
 - jan--f
 - raptorsun
 - slashpai
-- sthaha
 - danielmellado
 - marioferh
 - rexagod
@@ -38,3 +36,4 @@ emeritus_approvers:
 - arajkumar
 - juanrh
 - JoaoBraveCoding
+- sthaha
