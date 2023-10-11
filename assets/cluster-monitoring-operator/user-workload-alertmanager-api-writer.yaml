@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: monitoring-alertmanager-api-writer
+  namespace: openshift-user-workload-monitoring
+rules:
+- apiGroups:
+  - monitoring.coreos.com
+  resourceNames:
+  - user-workload
+  resources:
+  - alertmanagers/api
+  verbs:
+  - '*'

@@ -63,3 +63,11 @@ rules:
   - create
   - patch
   - update
+- apiGroups:
+  - monitoring.coreos.com
+  resourceNames:
+  - user-workload
+  resources:
+  - alertmanagers/api
+  verbs:
+  - '*'
