@@ -75,21 +75,5 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		}
 	}
 
-	// NOTE: This is temporary, to clean these resources that used to be managed by CMO, now
-	// they are managed by CEO
-	// TODO: Remove this in 4.15
-	err = t.client.DeleteSecretByNamespaceAndName(ctx, t.client.Namespace(), "kube-etcd-client-certs")
-	if err != nil {
-		return errors.Wrap(err, "cleaning up the Secret failed")
-	}
-	err = t.client.DeleteServiceMonitorByNamespaceAndName(ctx, t.client.Namespace(), "etcd")
-	if err != nil {
-		return errors.Wrap(err, "cleaning up the ServiceMonitor failed")
-	}
-	err = t.client.DeleteServiceMonitorByNamespaceAndName(ctx, t.client.Namespace(), "etcd-minimal")
-	if err != nil {
-		return errors.Wrap(err, "cleaning up the ServiceMonitor failed")
-	}
-
 	return nil
 }
