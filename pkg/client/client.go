@@ -857,18 +857,6 @@ func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
 	return err
 }
 
-// NOTE: this is only used during 4.13->4.14 upgrade, will be removed after.
-// TODO: remove this
-func (c *Client) DeleteSecretByNamespaceAndName(ctx context.Context, namespace, name string) error {
-	err := c.kclient.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
-	// if the object does not exist then everything is good here
-	if err != nil && !apierrors.IsNotFound(err) {
-		return errors.Wrap(err, "deleting Secret object failed")
-	}
-
-	return nil
-}
-
 // validatePrometheusResource is a helper method for ValidatePrometheus.
 // NOTE: this function is refactored out of wait.Poll for testing
 func (c Client) validatePrometheusResource(ctx context.Context, prom types.NamespacedName) (bool, []error) {
