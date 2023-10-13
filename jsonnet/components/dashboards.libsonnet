@@ -157,9 +157,6 @@ function(params)
               } + if std.count(odcDashboards, d.metadata.name) > 0 then {
                 'console.openshift.io/odc-dashboard': 'true',
               } else {},
-              annotations+: {
-                'capability.openshift.io/name': 'Console',
-              },
             },
           },
         // Openshift Console cannot show chart with both stacked and unstacked metrics,
