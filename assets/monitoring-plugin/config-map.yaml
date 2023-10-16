@@ -8,8 +8,7 @@ data:
       default_type       application/octet-stream;
       keepalive_timeout  65;
       server {
-        listen              9443 ssl;
-        listen              [::]:9443 ssl;
+        listen              [::]:9443 ipv6only=off ssl;
         ssl_certificate     /var/cert/tls.crt;
         ssl_certificate_key /var/cert/tls.key;
         root                /usr/share/nginx/html;
