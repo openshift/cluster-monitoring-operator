@@ -16,12 +16,16 @@ package operator
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
+	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 func TestNewInfrastructureConfig(t *testing.T) {
@@ -279,5 +283,277 @@ func TestRunReport(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func TestGenerateRunReportFromTaskErrors(t *testing.T) {
+	tt := []struct {
+		name            string
+		taskGroupErrors tasks.TaskGroupErrors
+		expectedReport  runReport
+	}{
+		{
+			name:            "No errors returned",
+			taskGroupErrors: tasks.TaskGroupErrors{},
+			expectedReport: runReport{
+				degraded:  asExpected(client.FalseStatus),
+				available: asExpected(client.TrueStatus),
+			},
+		},
+		{
+			name: "one failing UWM task with a generic error",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  fmt.Errorf("Foo failed"),
+					Name: "UpdatingUserWorkloadFoo",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "UpdatingUserWorkloadFooFailed",
+					status:   "True",
+					messages: []string{"UpdatingUserWorkloadFoo: Foo failed"},
+				},
+				available: &stateInfo{
+					reason:   "UpdatingUserWorkloadFooFailed",
+					status:   "False",
+					messages: []string{"UpdatingUserWorkloadFoo: Foo failed"},
+				},
+			},
+		},
+		{
+			name: "one failing Platform task with a generic error",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  fmt.Errorf("Foo failed"),
+					Name: "UpdatingFoo",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "UpdatingFooFailed",
+					status:   "True",
+					messages: []string{"UpdatingFoo: Foo failed"},
+				},
+				available: &stateInfo{
+					reason:   "UpdatingFooFailed",
+					status:   "False",
+					messages: []string{"UpdatingFoo: Foo failed"},
+				},
+			},
+		},
+		{
+			name: "one failing UWM task with an unknown Degraded StateError",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  client.NewUnknownDegradedError("Foo failed"),
+					Name: "UpdatingUserWorkloadFoo",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "UpdatingUserWorkloadFooFailed",
+					status:   "Unknown",
+					messages: []string{"UpdatingUserWorkloadFoo: Foo failed"},
+				},
+				available: asExpected(client.TrueStatus),
+			},
+		},
+		{
+			name: "one failing Platform task with an Unavailable StateError",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  client.NewAvailabilityError("Foo failed"),
+					Name: "UpdatingFoo",
+				},
+			},
+			expectedReport: runReport{
+				degraded: asExpected(client.FalseStatus),
+				available: &stateInfo{
+					reason:   "UpdatingFooFailed",
+					status:   "False",
+					messages: []string{"UpdatingFoo: Foo failed"},
+				},
+			},
+		},
+		{
+			name: "one failing Platform task with an Aggregate error",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err: apiutilerrors.NewAggregate(
+						[]error{
+							client.NewDegradedError("Foo failed bar"),
+							client.NewAvailabilityError("Foo failed baz"),
+						},
+					),
+					Name: "UpdatingFoo",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "UpdatingFooFailed",
+					status:   "True",
+					messages: []string{"UpdatingFoo: Foo failed bar"},
+				},
+				available: &stateInfo{
+					reason:   "UpdatingFooFailed",
+					status:   "False",
+					messages: []string{"UpdatingFoo: Foo failed baz"},
+				},
+			},
+		},
+		{
+			name: "multiple failing UWM tasks with generic errors",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  fmt.Errorf("Foo failed"),
+					Name: "UpdatingUserWorkloadFoo",
+				},
+				tasks.TaskErr{
+					Err:  fmt.Errorf("Bar failed"),
+					Name: "UpdatingUserWorkloadBar",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "UserWorkloadTasksFailed",
+					status:   "True",
+					messages: []string{"UpdatingUserWorkloadFoo: Foo failed", "UpdatingUserWorkloadBar: Bar failed"},
+				},
+				available: &stateInfo{
+					reason:   "UserWorkloadTasksFailed",
+					status:   "False",
+					messages: []string{"UpdatingUserWorkloadFoo: Foo failed", "UpdatingUserWorkloadBar: Bar failed"},
+				},
+			},
+		},
+		{
+			name: "multiple failing Platform tasks with generic errors",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  fmt.Errorf("Foo failed"),
+					Name: "UpdatingFoo",
+				},
+				tasks.TaskErr{
+					Err:  fmt.Errorf("Bar failed"),
+					Name: "UpdatingBar",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "PlatformTasksFailed",
+					status:   "True",
+					messages: []string{"UpdatingFoo: Foo failed", "UpdatingBar: Bar failed"},
+				},
+				available: &stateInfo{
+					reason:   "PlatformTasksFailed",
+					status:   "False",
+					messages: []string{"UpdatingFoo: Foo failed", "UpdatingBar: Bar failed"},
+				},
+			},
+		},
+		{
+			name: "multiple failing tasks with generic errors",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  fmt.Errorf("Foo failed"),
+					Name: "UpdatingFoo",
+				},
+				tasks.TaskErr{Err: fmt.Errorf("Bar failed"), Name: "UpdatingUserWorkloadBar"},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "MultipleTasksFailed",
+					status:   "True",
+					messages: []string{"UpdatingFoo: Foo failed", "UpdatingUserWorkloadBar: Bar failed"},
+				},
+				available: &stateInfo{
+					reason:   "MultipleTasksFailed",
+					status:   "False",
+					messages: []string{"UpdatingFoo: Foo failed", "UpdatingUserWorkloadBar: Bar failed"},
+				},
+			},
+		},
+		{
+			name: "multiple failing tasks with Degraded StateError",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  client.NewDegradedError("Foo failed"),
+					Name: "UpdatingFoo",
+				},
+				tasks.TaskErr{
+					Err:  client.NewDegradedError("Bar failed"),
+					Name: "UpdatingUserWorkloadBar",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "MultipleTasksFailed",
+					status:   "True",
+					messages: []string{"UpdatingFoo: Foo failed", "UpdatingUserWorkloadBar: Bar failed"},
+				},
+				available: asExpected(client.TrueStatus),
+			},
+		},
+		{
+			name: "multiple failing tasks with UWM Degraded StateError and Platform Unavailable StateError",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  client.NewDegradedError("Bar failed"),
+					Name: "UpdatingUserWorkloadBar",
+				},
+				tasks.TaskErr{
+					Err:  client.NewAvailabilityError("Foo failed"),
+					Name: "UpdatingFoo",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "UserWorkloadTasksFailed",
+					status:   "True",
+					messages: []string{"UpdatingUserWorkloadBar: Bar failed"},
+				},
+				available: &stateInfo{
+					reason:   "PlatformTasksFailed",
+					status:   "False",
+					messages: []string{"UpdatingFoo: Foo failed"},
+				},
+			},
+		},
+		{
+			name: "multiple failing tasks with UWM Unavailable StateError and Platform Degraded StateError",
+			taskGroupErrors: tasks.TaskGroupErrors{
+				tasks.TaskErr{
+					Err:  client.NewDegradedError("Bar failed"),
+					Name: "UpdatingBar",
+				},
+				tasks.TaskErr{
+					Err:  client.NewAvailabilityError("Foo failed"),
+					Name: "UpdatingUserWorkloadFoo",
+				},
+				tasks.TaskErr{
+					Err:  client.NewUnknownAvailabiltyError("Baz failed"),
+					Name: "UpdatingUserWorkloadBaz",
+				},
+			},
+			expectedReport: runReport{
+				degraded: &stateInfo{
+					reason:   "PlatformTasksFailed",
+					status:   "True",
+					messages: []string{"UpdatingBar: Bar failed"},
+				},
+				available: &stateInfo{
+					reason:   "UserWorkloadTasksFailed",
+					status:   "False",
+					messages: []string{"UpdatingUserWorkloadFoo: Foo failed", "UpdatingUserWorkloadBaz: Baz failed"},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.expectedReport, generateRunReportFromTaskErrors(tc.taskGroupErrors))
+		})
 	}
 }
