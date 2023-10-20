@@ -89,7 +89,7 @@ func assertUWMAlertsAccess(t *testing.T) {
 	client := framework.NewPrometheusClient(host, token)
 
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
-		resp, err := client.Do("GET", "/api/v2/rules", nil)
+		resp, err := client.Do("GET", "/api/v2/alerts", nil)
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func assertUWMAlertsAccess(t *testing.T) {
 			return err
 		}
 
-		if resp.StatusCode == http.StatusOK {
+		if resp.StatusCode != http.StatusForbidden {
 			return fmt.Errorf("unexpected status code response, want different of %d, (%s)", http.StatusOK, framework.ClampMax(b))
 		}
 		return nil

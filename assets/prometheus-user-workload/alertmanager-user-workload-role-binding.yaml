@@ -12,5 +12,5 @@ roleRef:
   name: monitoring-alertmanager-api-writer
 subjects:
 - kind: ServiceAccount
-  name: prometheus-user-workload 
+  name: prometheus-user-workload
   namespace: openshift-user-workload-monitoring

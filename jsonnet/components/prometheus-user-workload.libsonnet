@@ -189,7 +189,7 @@ function(params)
       },
       subjects: [{
         kind: 'ServiceAccount',
-        name: cfg.name,
+        name: 'prometheus-' + cfg.name,
         namespace: cfg.namespace,
       }],
     },
