@@ -7,7 +7,7 @@ data:
         "containerQuery": |
           sum by (<<.GroupBy>>) (
             irate (
-                container_cpu_usage_seconds_total{<<.LabelMatchers>>,container!="",pod!=""}[4m]
+                container_cpu_usage_seconds_total{<<.LabelMatchers>>,container!="",pod!="",job="kubelet"}[4m]
             )
           )
         "nodeQuery": |
@@ -36,7 +36,7 @@ data:
         "containerLabel": "container"
         "containerQuery": |
           sum by (<<.GroupBy>>) (
-            container_memory_working_set_bytes{<<.LabelMatchers>>,container!="",pod!=""}
+            container_memory_working_set_bytes{<<.LabelMatchers>>,container!="",pod!="",job="kubelet"}
           )
         "nodeQuery": |
           sum by (<<.GroupBy>>) (
