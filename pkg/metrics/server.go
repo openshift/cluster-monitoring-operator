@@ -78,6 +78,11 @@ func (s *Server) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// Mitigate CVE-2023-44487 by disabling HTTP2 until the Go standard library
+	// and golang.org/x/net are fully fixed.
+	// Since the web server is only used to expose the metrics endpoint,
+	// downgrading to HTTP/1.1 doesn't bring any performance penalty.
+	serverConfig.SecureServing.DisableHTTP2 = true
 
 	serverConfig.Authorization.Authorizer = union.New(
 		// prefix the authorizer with the permissions for metrics scraping which are well known.
