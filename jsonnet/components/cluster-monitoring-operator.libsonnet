@@ -337,17 +337,46 @@ function(params) {
 
   // This cluster role enables access to the Observe page in the admin console
   // and the different API services.
+  // In previous version, anyone with a "get" access on "namespace" resource
+  // can access the web endpoint. But KubeRBACProxy takes "get" verb as HTTP GET
+  // method, while the console access the web endpoint using HTTP POST method.
+  // A dedicated resource will be used to implementing this security setting.
   clusterRoleView: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
     metadata: {
       name: 'cluster-monitoring-view',
     },
-    rules: [{
-      apiGroups: [''],
-      resources: ['namespaces'],
-      verbs: ['get'],
-    }],
+    rules: [
+      {
+        apiGroups: [''],
+        resources: ['namespaces'],
+        verbs: ['get'],
+      },
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['prometheuses/api'],
+        resourceNames: ['k8s'],
+        verbs: ['get', 'create', 'update'],
+      },
+    ],
+  },
+
+  clusterMonitoringApiRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'cluster-monitoring-metrics-api',
+      namespace: cfg.namespace,
+    },
+    rules: [
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['prometheuses/api'],
+        resourceNames: ['k8s'],
+        verbs: ['get', 'create', 'update'],
+      },
+    ],
   },
 
   // This role enables read/write access to the platform Alertmanager API through OAuth proxy.

@@ -104,20 +104,6 @@ function(params)
       data: {},
     },
 
-    // holds the secret which is used encrypt/decrypt cookies
-    // issued by the oauth proxy.
-    oauthCookieSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'thanos-querier-oauth-cookie',
-        namespace: cfg.namespace,
-        labels: tq.config.commonLabels,
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
     // holds the kube-rbac-proxy configuration as a secret.
     // It configures to template the request in flight
     // to extract a "namespace" query parameter
@@ -148,6 +134,31 @@ function(params)
               apiGroup: 'metrics.k8s.io',
               resource: 'pods',
               namespace: '{{ .Value }}',
+            },
+          },
+        }),
+      },
+    },
+
+    // This is the KubeRBACProxy configuration for the web endpoint.
+    kubeRbacProxyWebSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'thanos-querier-kube-rbac-proxy-web',
+        namespace: cfg.namespace,
+        labels: { 'app.kubernetes.io/name': 'thanos-query' },
+      },
+      type: 'Opaque',
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            resourceAttributes: {
+              apiGroup: 'monitoring.coreos.com',
+              resource: 'prometheuses',
+              subresource: 'api',
+              namespace: 'openshift-monitoring',
+              name: 'k8s',
             },
           },
         }),
@@ -300,15 +311,15 @@ function(params)
                 },
               },
               {
-                name: 'secret-thanos-querier-oauth-cookie',
-                secret: {
-                  secretName: 'thanos-querier-oauth-cookie',
-                },
-              },
-              {
                 name: 'secret-thanos-querier-kube-rbac-proxy',
                 secret: {
                   secretName: 'thanos-querier-kube-rbac-proxy',
+                },
+              },
+              {
+                name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
+                secret: {
+                  secretName: $.kubeRbacProxyWebSecret.metadata.name,
                 },
               },
               {
@@ -378,23 +389,51 @@ function(params)
                 ],
               },
               {
-                name: 'oauth-proxy',
-                image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
+                name: 'kube-rbac-proxy-web',
+                image: cfg.kubeRbacProxyImage,
                 resources: {
                   requests: {
-                    memory: '20Mi',
+                    memory: '15Mi',
                     cpu: '1m',
                   },
                 },
-                ports: [{
-                  containerPort: 9091,
-                  name: 'web',
-                }],
-                env: [
-                  { name: 'HTTP_PROXY', value: '' },
-                  { name: 'HTTPS_PROXY', value: '' },
-                  { name: 'NO_PROXY', value: '' },
+                ports: [
+                  {
+                    containerPort: 9091,
+                    name: 'web',
+                  },
                 ],
+                args: [
+                  '--secure-listen-address=0.0.0.0:9091',
+                  '--upstream=http://127.0.0.1:9090',
+                  '--config-file=/etc/kube-rbac-proxy/config.yaml',
+                  '--tls-cert-file=/etc/tls/private/tls.crt',
+                  '--tls-private-key-file=/etc/tls/private/tls.key',
+                  '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                  // The healthy and ready endpoints do not require authentication.
+                  // This allow kubelet probes querying them without presenting credentials.
+                  '--ignore-paths=' + std.join(',', [
+                    '/-/healthy',
+                    '/-/ready',
+                  ]),
+                ],
+                terminationMessagePolicy: 'FallbackToLogsOnError',
+                volumeMounts: [
+                  {
+                    mountPath: '/etc/tls/private',
+                    name: 'secret-thanos-querier-tls',
+                  },
+                  {
+                    mountPath: '/etc/kube-rbac-proxy',
+                    name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
+                  },
+                ],
+                securityContext: {
+                  allowPrivilegeEscalation: false,
+                  capabilities: {
+                    drop: ['ALL'],
+                  },
+                },
                 livenessProbe: {
                   httpGet: {
                     path: '/-/healthy',
@@ -414,40 +453,6 @@ function(params)
                   initialDelaySeconds: 5,
                   periodSeconds: 5,
                   failureThreshold: 20,
-                },
-                args: [
-                  '-provider=openshift',
-                  '-https-address=:9091',
-                  '-http-address=',
-                  '-email-domain=*',
-                  '-upstream=http://localhost:9090',
-                  '-openshift-service-account=thanos-querier',
-                  '-openshift-sar={"resource": "namespaces", "verb": "get"}',
-                  '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
-                  '-tls-cert=/etc/tls/private/tls.crt',
-                  '-tls-key=/etc/tls/private/tls.key',
-                  '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
-                  '-cookie-secret-file=/etc/proxy/secrets/session_secret',
-                  '-openshift-ca=/etc/pki/tls/cert.pem',
-                  '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-                  '-bypass-auth-for=^/-/(healthy|ready)$',
-                ],
-                terminationMessagePolicy: 'FallbackToLogsOnError',
-                volumeMounts: [
-                  {
-                    mountPath: '/etc/tls/private',
-                    name: 'secret-thanos-querier-tls',
-                  },
-                  {
-                    mountPath: '/etc/proxy/secrets',
-                    name: 'secret-thanos-querier-oauth-cookie',
-                  },
-                ],
-                securityContext: {
-                  allowPrivilegeEscalation: false,
-                  capabilities: {
-                    drop: ['ALL'],
-                  },
                 },
               },
               {
@@ -636,4 +641,5 @@ function(params)
 
       },
     },
+
   }

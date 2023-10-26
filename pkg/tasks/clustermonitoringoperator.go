@@ -108,6 +108,16 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 		}
 	}
 
+	clarr, err := t.factory.ClusterMonitoringApiReaderRole()
+	if err != nil {
+		return errors.Wrap(err, "initializing ClusterMonitoringApiReader Role failed")
+	}
+
+	err = t.client.CreateOrUpdateRole(ctx, clarr)
+	if err != nil {
+		return errors.Wrap(err, "reconciling ClusterMonitoringApiReader Role failed")
+	}
+
 	pr, err := t.factory.ClusterMonitoringOperatorPrometheusRule()
 	if err != nil {
 		return errors.Wrap(err, "initializing cluster-monitoring-operator rules PrometheusRule failed")

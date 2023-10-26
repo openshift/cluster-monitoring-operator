@@ -235,6 +235,7 @@ var (
 	ClusterMonitoringClusterRoleView                       = "cluster-monitoring-operator/cluster-role-view.yaml"
 	ClusterMonitoringClusterRoleAggregatedMetricsReader    = "cluster-monitoring-operator/cluster-role-aggregated-metrics-reader.yaml"
 	ClusterMonitoringAlertmanagerEditRole                  = "cluster-monitoring-operator/monitoring-alertmanager-edit-role.yaml"
+	ClusterMonitoringApiReaderRole                         = "cluster-monitoring-operator/cluster-monitoring-api-role.yaml"
 	ClusterMonitoringRulesEditClusterRole                  = "cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
 	ClusterMonitoringRulesViewClusterRole                  = "cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
 	ClusterMonitoringEditClusterRole                       = "cluster-monitoring-operator/monitoring-edit-cluster-role.yaml"
@@ -266,10 +267,10 @@ var (
 	ThanosQuerierServiceMonitor         = "thanos-querier/service-monitor.yaml"
 	ThanosQuerierPrometheusRule         = "thanos-querier/prometheus-rule.yaml"
 	ThanosQuerierRoute                  = "thanos-querier/route.yaml"
-	ThanosQuerierOauthCookieSecret      = "thanos-querier/oauth-cookie-secret.yaml"
 	ThanosQuerierRBACProxySecret        = "thanos-querier/kube-rbac-proxy-secret.yaml"
 	ThanosQuerierRBACProxyRulesSecret   = "thanos-querier/kube-rbac-proxy-rules-secret.yaml"
 	ThanosQuerierRBACProxyMetricsSecret = "thanos-querier/kube-rbac-proxy-metric-secret.yaml"
+	ThanosQuerierRBACProxyWebSecret     = "thanos-querier/kube-rbac-proxy-web-secret.yaml"
 	ThanosQuerierServiceAccount         = "thanos-querier/service-account.yaml"
 	ThanosQuerierClusterRole            = "thanos-querier/cluster-role.yaml"
 	ThanosQuerierClusterRoleBinding     = "thanos-querier/cluster-role-binding.yaml"
@@ -1151,22 +1152,6 @@ func (f *Factory) ThanosQuerierGrpcTLSSecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierGrpcTLSSecret))
 }
 
-func (f *Factory) ThanosQuerierOauthCookieSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierOauthCookieSecret))
-	if err != nil {
-		return nil, err
-	}
-
-	p, err := GeneratePassword(43)
-	if err != nil {
-		return nil, err
-	}
-	s.Data["session_secret"] = []byte(p)
-	s.Namespace = f.namespace
-
-	return s, nil
-}
-
 func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {
 	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerQueryConfigSecret))
 	if err != nil {
@@ -1243,6 +1228,10 @@ func (f *Factory) ThanosQuerierRBACProxyRulesSecret() (*v1.Secret, error) {
 
 func (f *Factory) ThanosQuerierRBACProxyMetricsSecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyMetricsSecret))
+}
+
+func (f *Factory) ThanosQuerierRBACProxyWebSecret() (*v1.Secret, error) {
+	return f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyWebSecret))
 }
 
 func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
@@ -2549,6 +2538,10 @@ func (f *Factory) ClusterMonitoringAlertManagerEditRole() (*rbacv1.Role, error) 
 	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringAlertmanagerEditRole))
 }
 
+func (f *Factory) ClusterMonitoringApiReaderRole() (*rbacv1.Role, error) {
+	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringApiReaderRole))
+}
+
 func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ClusterMonitoringOperatorServiceMonitor))
 }
@@ -2844,26 +2837,6 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 
 	for i, c := range d.Spec.Template.Spec.Containers {
 		switch c.Name {
-		case "oauth-proxy":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.OauthProxy
-
-			f.injectProxyVariables(&d.Spec.Template.Spec.Containers[i])
-
-			if trustedCA != nil {
-				volumeName := "thanos-querier-trusted-ca-bundle"
-				d.Spec.Template.Spec.Containers[i].VolumeMounts = append(
-					d.Spec.Template.Spec.Containers[i].VolumeMounts,
-					trustedCABundleVolumeMount(volumeName),
-				)
-
-				volume := trustedCABundleVolume(trustedCA.Name, volumeName)
-				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-					Key:  TrustedCABundleKey,
-					Path: "tls-ca-bundle.pem",
-				})
-				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
-			}
-
 		case "thanos-query":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.Thanos
 
@@ -2903,7 +2876,7 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 		case "prom-label-proxy":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 
-		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics":
+		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics", "kube-rbac-proxy-web":
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}

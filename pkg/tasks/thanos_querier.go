@@ -20,6 +20,8 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ThanosQuerierTask struct {
@@ -68,16 +70,6 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		}
 	}
 
-	s, err := t.factory.ThanosQuerierOauthCookieSecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Thanos Querier OAuth Cookie Secret failed")
-	}
-
-	err = t.client.CreateIfNotExistSecret(ctx, s)
-	if err != nil {
-		return errors.Wrap(err, "creating Thanos Querier OAuth Cookie Secret failed")
-	}
-
 	rs, err := t.factory.ThanosQuerierRBACProxySecret()
 	if err != nil {
 		return errors.Wrap(err, "initializing Thanos Querier RBAC proxy Secret failed")
@@ -106,6 +98,16 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 	err = t.client.CreateIfNotExistSecret(ctx, rs)
 	if err != nil {
 		return errors.Wrap(err, "creating Thanos Querier RBAC proxy metrics Secret failed")
+	}
+
+	rs, err = t.factory.ThanosQuerierRBACProxyWebSecret()
+	if err != nil {
+		return errors.Wrap(err, "initializing Thanos Querier RBAC proxy web Secret failed")
+	}
+
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
+	if err != nil {
+		return errors.Wrap(err, "creating Thanos Querier kube-rbac-proxy web Secret failed")
 	}
 
 	sa, err := t.factory.ThanosQuerierServiceAccount()
@@ -148,7 +150,7 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return errors.Wrap(err, "waiting for Thanos Querier GRPC secret failed")
 	}
 
-	s, err = t.factory.ThanosQuerierGrpcTLSSecret()
+	s, err := t.factory.ThanosQuerierGrpcTLSSecret()
 	if err != nil {
 		return errors.Wrap(err, "error initializing Thanos Querier Client GRPC TLS secret")
 	}
@@ -241,6 +243,17 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, tqpr)
 	if err != nil {
 		return errors.Wrap(err, "reconciling Thanos Querier PrometheusRule failed")
+	}
+
+	// TODO: remove this deletion in the next OCP release after this is published.
+	err = t.client.DeleteSecret(ctx, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "thanos-querier-oauth-cookie",
+			Namespace: "openshift-monitoring",
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "deleting Thanos Querier OAuth cookie secret failed")
 	}
 
 	return nil

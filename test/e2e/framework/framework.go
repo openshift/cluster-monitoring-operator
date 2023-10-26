@@ -238,6 +238,13 @@ func (f *Framework) setup() (CleanUpFunc, error) {
 
 	cleanUpFuncs = append(cleanUpFuncs, cf)
 
+	cf, err = f.CreateRoleBindingFromRole(f.Ns, E2eServiceAccount, "cluster-monitoring-metrics-api")
+	if err != nil {
+		return nil, err
+	}
+
+	cleanUpFuncs = append(cleanUpFuncs, cf)
+
 	cf, err = f.CreateRoleBindingFromRole(f.Ns, E2eServiceAccount, "monitoring-alertmanager-edit")
 	if err != nil {
 		return nil, err
@@ -513,6 +520,39 @@ func (f *Framework) CreateRoleBindingFromRole(namespace, serviceAccount, role st
 	}, nil
 }
 
+func (f *Framework) CreateRoleBindingFromRoleOtherNamespace(saNamespace, serviceAccount, role, roleNamespace string) (CleanUpFunc, error) {
+	ctx := context.Background()
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", serviceAccount, role),
+			Labels: map[string]string{
+				E2eTestLabelName: E2eTestLabelValue,
+			},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      serviceAccount,
+				Namespace: saNamespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "Role",
+			Name:     role,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+
+	roleBinding, err := f.KubeClient.RbacV1().RoleBindings(roleNamespace).Create(ctx, roleBinding, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return func() error {
+		return f.KubeClient.RbacV1().RoleBindings(roleNamespace).Delete(ctx, roleBinding.Name, metav1.DeleteOptions{})
+	}, nil
+}
+
 func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string, func(), error) {
 	t.Helper()
 
@@ -585,7 +625,7 @@ func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string,
 func Poll(interval, timeout time.Duration, f func() error) error {
 	var lastErr error
 
-	err := wait.Poll(interval, timeout, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, false, func(context.Context) (bool, error) {
 		lastErr = f()
 		if lastErr != nil {
 			return false, nil
@@ -594,7 +634,7 @@ func Poll(interval, timeout time.Duration, f func() error) error {
 	})
 
 	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
+		if wait.Interrupted(err) && lastErr != nil {
 			err = fmt.Errorf("%v: %v", err, lastErr)
 		}
 	}
@@ -657,4 +697,25 @@ func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {
 
 	mergo.Merge(&required.Annotations, existing.Annotations)
 	mergo.Merge(&required.Labels, existing.Labels)
+}
+
+func (f *Framework) CreateNamespace(namespace string) (CleanUpFunc, error) {
+	ctx := context.Background()
+	ns := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+			Labels: map[string]string{
+				E2eTestLabelName: E2eTestLabelValue,
+			},
+		},
+	}
+
+	ns, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return func() error {
+		return f.KubeClient.CoreV1().Namespaces().Delete(ctx, ns.Name, metav1.DeleteOptions{})
+	}, nil
 }
