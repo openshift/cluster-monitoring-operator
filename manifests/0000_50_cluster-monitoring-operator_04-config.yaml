@@ -755,6 +755,55 @@ data:
     #
     # platform:hypershift_nodepools:max is the total number of nodepools managed by the hypershift operator by cluster platform
     - '{__name__="platform:hypershift_nodepools:max"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_info provides information about a Central instance of a Red Hat Advanced
+    # Cluster Security installation.
+    # Expected labels:
+    # - build: "release" or "internal".
+    # - central_id: unique ID identifying the Central instance.
+    # - central_version: the product's full version.
+    # - hosting: "cloud-service" or "self-managed".
+    # - install_method: "operator", "manifest" or "helm".
+    - '{__name__="rhacs:telemetry:rox_central_info"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_clusters provides the number of clusters secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    # Expected labels:
+    # - central_id: unique ID identifying the Central instance.
+    - '{__name__="rhacs:telemetry:rox_central_secured_clusters"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_nodes provides the number of nodes secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    # Expected labels:
+    # - central_id: unique ID identifying the Central instance.
+    - '{__name__="rhacs:telemetry:rox_central_secured_nodes"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_vcpus provides the number of vCPUs secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    # Expected labels:
+    # - central_id: unique ID identifying the Central instance.
+    - '{__name__="rhacs:telemetry:rox_central_secured_vcpus"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_sensor_info provides information about a Sensor instance of a Red Hat Advanced
+    # Cluster Security installation.
+    # Expected labels:
+    # - build: "release" or "internal".
+    # - central_id: unique ID identifying the Central instance.
+    # - hosting: "cloud-service" or "self-managed".
+    # - install_method: "operator", "manifest" or "helm".
+    # - sensor_id: unique ID identifying the Sensor instance.
+    # - sensor_version: the product's full version.
+    - '{__name__="rhacs:telemetry:rox_sensor_info"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
