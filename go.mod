@@ -16,8 +16,8 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.57.0
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/prometheus v1.8.2-0.20220315145411-881111fec433 // v1.8.2 is misleading as Prometheus does not have v2 module. This is pointing to v2.34.0, the same as in prometheus-operator v0.57.0
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/crypto v0.14.0
+	golang.org/x/sync v0.1.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.24.1
 	k8s.io/apiextensions-apiserver v0.24.1
@@ -126,11 +126,11 @@ require (
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/sys v0.0.0-20220222172238-00053529121e // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/term v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220222154240-daf995802d7b // indirect
