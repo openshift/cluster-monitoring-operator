@@ -3,7 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -120,7 +120,7 @@ func verifyAlertmanagerAlertReceived(t *testing.T) {
 			return err
 		}
 
-		payload, err := ioutil.ReadAll(resp.Body)
+		payload, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}

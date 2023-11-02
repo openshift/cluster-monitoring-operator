@@ -47,9 +47,10 @@ function(params)
           'serviceaccounts.openshift.io/oauth-redirectreference.alertmanager-main': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"alertmanager-main"}}',
         },
       },
-      // automountServiceAccountToken is set to true as kube-rbac-proxy sidecar
-      // requires connection to kubernetes API
-      automountServiceAccountToken: true,
+      // Alertmanager can mount the token into the pod since
+      // https://github.com/prometheus-operator/prometheus-operator/pull/5474
+      // and v0.66.0
+      automountServiceAccountToken: false,
     },
 
     // Adding the serving certs annotation causes the serving certs controller
@@ -238,6 +239,7 @@ function(params)
             memory: '40Mi',
           },
         },
+        automountServiceAccountToken: true,
         containers: [
           {
             name: 'alertmanager-proxy',

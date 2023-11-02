@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -250,7 +250,7 @@ func testAlertmanagerTenancyAPI(t *testing.T, host string) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatalf("user[%s]: fail to read response body: %v", user, err)
 		}
@@ -407,7 +407,7 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "fail to read response body")
 		}

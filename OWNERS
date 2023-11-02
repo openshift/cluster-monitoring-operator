@@ -5,21 +5,20 @@ reviewers:
 - jan--f
 - raptorsun
 - slashpai
-- sthaha
-- JoaoBraveCoding
 - danielmellado
 - marioferh
+- rexagod
+- machine424
 
 approvers:
-- bparees
 - simonpasquier
 - jan--f
 - raptorsun
 - slashpai
-- sthaha
-- JoaoBraveCoding
 - danielmellado
 - marioferh
+- rexagod
+- machine424
 
 emeritus_approvers:
 - brancz
@@ -36,3 +35,5 @@ emeritus_approvers:
 - prashbnair
 - arajkumar
 - juanrh
+- JoaoBraveCoding
+- sthaha

@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.47.0
+    app.kubernetes.io/version: 2.47.2
   name: k8s
   namespace: openshift-monitoring
 spec:
@@ -89,7 +89,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: kube-rbac-proxy
     ports:
     - containerPort: 9092
@@ -108,7 +108,7 @@ spec:
     - mountPath: /etc/kube-rbac-proxy
       name: secret-kube-rbac-proxy
   - args:
-    - --secure-listen-address=[$(POD_IP)]:10902
+    - --secure-listen-address=[$(POD_IP)]:10903
     - --upstream=http://127.0.0.1:10902
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
@@ -122,10 +122,10 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: kube-rbac-proxy-thanos
     ports:
-    - containerPort: 10902
+    - containerPort: 10903
       name: thanos-proxy
     resources:
       requests:
@@ -157,7 +157,7 @@ spec:
   enableFeatures: []
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
-  image: quay.io/prometheus/prometheus:v2.47.0
+  image: quay.io/prometheus/prometheus:v2.47.2
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -169,7 +169,7 @@ spec:
       app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.47.0
+      app.kubernetes.io/version: 2.47.2
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
@@ -204,13 +204,13 @@ spec:
       openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/thanos/thanos:v0.32.3
+    image: quay.io/thanos/thanos:v0.32.5
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: 0.32.3
-  version: 2.47.0
+    version: 0.32.5
+  version: 2.47.2
   web:
     httpConfig:
       headers:

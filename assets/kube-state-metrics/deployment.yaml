@@ -65,7 +65,6 @@ spec:
           name: volume-directive-shadow
           readOnly: false
       - args:
-        - --logtostderr
         - --secure-listen-address=:8443
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --upstream=http://127.0.0.1:8081/
@@ -73,7 +72,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --config-file=/etc/kube-rbac-policy/config.yaml
-        image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+        image: quay.io/brancz/kube-rbac-proxy:v0.15.0
         name: kube-rbac-proxy-main
         ports:
         - containerPort: 8443
@@ -95,7 +94,6 @@ spec:
           name: kube-state-metrics-kube-rbac-proxy-config
           readOnly: true
       - args:
-        - --logtostderr
         - --secure-listen-address=:9443
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --upstream=http://127.0.0.1:8082/
@@ -103,7 +101,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --config-file=/etc/kube-rbac-policy/config.yaml
-        image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+        image: quay.io/brancz/kube-rbac-proxy:v0.15.0
         name: kube-rbac-proxy-self
         ports:
         - containerPort: 9443

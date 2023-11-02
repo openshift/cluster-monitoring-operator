@@ -670,6 +670,12 @@ rules:
   - list
   - watch
 - apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -725,7 +731,3 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
-- nonResourceURLs:
-  - /api/v2/alerts
-  verbs:
-  - create

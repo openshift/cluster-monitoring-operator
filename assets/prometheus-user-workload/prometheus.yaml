@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.47.0
+    app.kubernetes.io/version: 2.47.2
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
@@ -49,7 +49,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: kube-rbac-proxy-federate
     ports:
     - containerPort: 9092
@@ -81,7 +81,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: kube-rbac-proxy-metrics
     ports:
     - containerPort: 9091
@@ -118,7 +118,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: kube-rbac-proxy-thanos
     ports:
     - containerPort: 10902
@@ -167,7 +167,7 @@ spec:
   enforcedNamespaceLabel: namespace
   externalLabels: {}
   ignoreNamespaceSelectors: true
-  image: quay.io/prometheus/prometheus:v2.47.0
+  image: quay.io/prometheus/prometheus:v2.47.2
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -181,7 +181,7 @@ spec:
       app.kubernetes.io/instance: user-workload
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.47.0
+      app.kubernetes.io/version: 2.47.2
   podMonitorNamespaceSelector:
     matchExpressions:
     - key: openshift.io/cluster-monitoring
@@ -247,10 +247,10 @@ spec:
       - "false"
   serviceMonitorSelector: {}
   thanos:
-    image: quay.io/thanos/thanos:v0.32.3
+    image: quay.io/thanos/thanos:v0.32.5
     resources:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: 0.32.3
-  version: 2.47.0
+    version: 0.32.5
+  version: 2.47.2

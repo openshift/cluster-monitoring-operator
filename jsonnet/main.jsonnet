@@ -246,6 +246,7 @@ local inCluster =
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         prometheusAdapterMetricPrefix: $.values.common.prometheusAdapterMetricPrefix,
+        containerQuerySelector: 'job="kubelet"',
       },
       admissionWebhook: {
         name: 'prometheus-operator-admission-webhook',

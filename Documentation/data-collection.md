@@ -705,7 +705,7 @@ data:
     # owners: (https://github.com/orgs/stolostron/teams/search-admin, @acm-observability-search)
     #
     # acm_console_page_count:sum counts the total number of visits for each page in ACM console.
-    - '{__name__="acm_console_page_count:sum"}'
+    - '{__name__="acm_console_page_count:sum", page=~"overview-classic|overview-fleet|search|search-details|clusters|application|governance"}'
     #
     # owners: (@openshift/storage)
     #
@@ -996,14 +996,63 @@ data:
     #
     # apiserver_list_watch_request_success_total:rate:sum represents the rate of change for successful LIST and WATCH requests over a 5 minute period.
     - '{__name__="apiserver_list_watch_request_success_total:rate:sum", verb=~"LIST|WATCH"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_info provides information about a Central instance of a Red Hat Advanced
+    # Cluster Security installation.
+    # Expected labels:
+    # - build: "release" or "internal".
+    # - central_id: unique ID identifying the Central instance.
+    # - central_version: the product's full version.
+    # - hosting: "cloud-service" or "self-managed".
+    # - install_method: "operator", "manifest" or "helm".
+    - '{__name__="rhacs:telemetry:rox_central_info"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_clusters provides the number of clusters secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    # Expected labels:
+    # - central_id: unique ID identifying the Central instance.
+    - '{__name__="rhacs:telemetry:rox_central_secured_clusters"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_nodes provides the number of nodes secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    # Expected labels:
+    # - central_id: unique ID identifying the Central instance.
+    - '{__name__="rhacs:telemetry:rox_central_secured_nodes"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_central_secured_vcpus provides the number of vCPUs secured by a Central instance of a
+    # Red Hat Advanced Cluster Security installation.
+    # Expected labels:
+    # - central_id: unique ID identifying the Central instance.
+    - '{__name__="rhacs:telemetry:rox_central_secured_vcpus"}'
+    #
+    # owners: (https://github.com/stackrox/stackrox, @stackrox/eng)
+    #
+    # rhacs:telemetry:rox_sensor_info provides information about a Sensor instance of a Red Hat Advanced
+    # Cluster Security installation.
+    # Expected labels:
+    # - build: "release" or "internal".
+    # - central_id: unique ID identifying the Central instance.
+    # - hosting: "cloud-service" or "self-managed".
+    # - install_method: "operator", "manifest" or "helm".
+    # - sensor_id: unique ID identifying the Sensor instance.
+    # - sensor_version: the product's full version.
+    - '{__name__="rhacs:telemetry:rox_sensor_info"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
   namespace: openshift-monitoring
   annotations:
-    include.release.openshift.io/ibm-cloud-managed: "true"
-    include.release.openshift.io/self-managed-high-availability: "true"
-    include.release.openshift.io/single-node-developer: "true"
+    include.release.openshift.io/ibm-cloud-managed: 'true'
+    include.release.openshift.io/self-managed-high-availability: 'true'
+    include.release.openshift.io/single-node-developer: 'true'
 ```
 
 These attributes provide a snapshot of the health, usage, and size of a cluster. From this we can determine the functionality of the framework components. This information helps Red Hat to identify correlations between issues experienced across many OpenShift 4 clusters that have similar environmental characteristics. This enables Red Hat to rapidly develop changes in OpenShift 4 to improve software resilience and customer experience.

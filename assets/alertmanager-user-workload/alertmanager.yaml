@@ -30,8 +30,9 @@ spec:
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
     - --logtostderr=true
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: alertmanager-proxy
     ports:
     - containerPort: 9095
@@ -49,6 +50,10 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-alertmanager-user-workload-tls
+      readOnly: true
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-alertmanager-kube-rbac-proxy
+      readOnly: true
   - args:
     - --secure-listen-address=0.0.0.0:9092
     - --upstream=http://127.0.0.1:9096
@@ -56,7 +61,7 @@ spec:
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: tenancy-proxy
     ports:
     - containerPort: 9092
@@ -86,7 +91,7 @@ spec:
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --logtostderr=true
     - --allow-paths=/metrics
-    image: quay.io/brancz/kube-rbac-proxy:v0.14.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: kube-rbac-proxy-metric
     ports:
     - containerPort: 9097
@@ -149,6 +154,7 @@ spec:
       memory: 40Mi
   secrets:
   - alertmanager-user-workload-tls
+  - alertmanager-kube-rbac-proxy
   - alertmanager-kube-rbac-proxy-tenancy
   - alertmanager-kube-rbac-proxy-metric
   securityContext:

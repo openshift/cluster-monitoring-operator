@@ -150,13 +150,10 @@ function(params)
           resourceNames: ['nonroot-v2'],
           verbs: ['use'],
         },
-        {
-          nonResourceURLs: ['/api/v2/alerts'],
-          verbs: ['create'],
-        },
       ],
     },
 
+    // RoleBinding to send alerts to the platform Alertmanager.
     alertmanagerRoleBinding: {
       apiVersion: 'rbac.authorization.k8s.io/v1',
       kind: 'RoleBinding',
@@ -169,6 +166,26 @@ function(params)
         apiGroup: 'rbac.authorization.k8s.io',
         kind: 'Role',
         name: 'monitoring-alertmanager-edit',
+      },
+      subjects: [{
+        kind: 'ServiceAccount',
+        name: 'prometheus-' + cfg.name,
+        namespace: cfg.namespace,
+      }],
+    },
+
+    // RoleBinding to send alerts to the user-workload Alertmanager.
+    alertmanagerUserWorkloadRoleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'RoleBinding',
+      metadata: {
+        name: 'alertmanager-user-workload-prometheus' + cfg.name,
+        namespace: cfg.namespace,
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'Role',
+        name: 'monitoring-alertmanager-api-writer',
       },
       subjects: [{
         kind: 'ServiceAccount',

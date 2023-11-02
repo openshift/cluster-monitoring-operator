@@ -87,6 +87,16 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling UserWorkload Prometheus ClusterRoleBinding failed")
 	}
 
+	arl, err := t.factory.PrometheusUserWorkloadAlertmanagerUserWorkloadRoleBinding()
+	if err != nil {
+		return errors.Wrap(err, "initializing UserWorkload Prometheus Alertmanager User Workload Role Binding failed")
+	}
+
+	err = t.client.CreateOrUpdateRoleBinding(ctx, arl)
+	if err != nil {
+		return errors.Wrap(err, "reconciling UserWorkload Prometheus Alertmanager User Workload Role Binding failed")
+	}
+
 	rc, err := t.factory.PrometheusUserWorkloadRoleConfig()
 	if err != nil {
 		return errors.Wrap(err, "initializing UserWorkload Prometheus Role config failed")
