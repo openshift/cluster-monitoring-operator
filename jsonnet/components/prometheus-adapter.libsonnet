@@ -130,6 +130,7 @@ function(params)
                           '--prometheus-url=' + cfg.prometheusURL,
                           '--secure-port=6443',
                           '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                          '--disable-http2',
                         ],
                         terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [
