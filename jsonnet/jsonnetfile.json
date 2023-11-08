@@ -8,7 +8,7 @@
           "subdir": "contrib/mixin"
         }
       },
-      "version": "main"
+      "version": "25315dd1f2271025e8f1c6a1e7167ee4fde50688"
     },
     {
       "source": {
@@ -17,7 +17,7 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "main"
+      "version": "d3889807798d1697ea0691f10caf1b6a1997a8bd"
     },
     {
       "source": {
@@ -26,7 +26,7 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "main"
+      "version": "9cc6a9dbde4b7c1e8a24df651f36e81a99c342ab"
     },
     {
       "source": {
@@ -35,7 +35,7 @@
           "subdir": "jsonnet"
         }
       },
-      "version": "master",
+      "version": "b9211ed8fa4eb7edfc3d96c6b4843eea6b3337cd",
       "name": "openshift-state-metrics"
     },
     {
@@ -45,7 +45,7 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "master",
+      "version": "fa1d2b544a54d5c67af8c32d5f7eb2a993b82a32",
       "name": "telemeter-client"
     },
     {
@@ -55,7 +55,7 @@
           "subdir": "jsonnet/kube-thanos"
         }
       },
-      "version": "main"
+      "version": "ac261330bb819523d2caba81b4e82add166436c7"
     },
     {
       "source": {
@@ -64,7 +64,7 @@
           "subdir": "mixin"
         }
       },
-      "version": "main"
+      "version": "ffc42df3f7c9cf4207b79c524e844ae7b5d3b454"
     }
   ],
   "legacyImports": true
