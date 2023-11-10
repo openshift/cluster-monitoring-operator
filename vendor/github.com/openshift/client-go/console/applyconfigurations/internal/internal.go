@@ -420,6 +420,129 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: ""
+- name: com.github.openshift.api.console.v1.ConsoleSample
+  map:
+    fields:
+    - name: apiVersion
+      type:
+        scalar: string
+    - name: kind
+      type:
+        scalar: string
+    - name: metadata
+      type:
+        namedType: io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta
+      default: {}
+    - name: spec
+      type:
+        namedType: com.github.openshift.api.console.v1.ConsoleSampleSpec
+      default: {}
+- name: com.github.openshift.api.console.v1.ConsoleSampleContainerImportSource
+  map:
+    fields:
+    - name: image
+      type:
+        scalar: string
+      default: ""
+    - name: service
+      type:
+        namedType: com.github.openshift.api.console.v1.ConsoleSampleContainerImportSourceService
+      default: {}
+- name: com.github.openshift.api.console.v1.ConsoleSampleContainerImportSourceService
+  map:
+    fields:
+    - name: targetPort
+      type:
+        scalar: numeric
+- name: com.github.openshift.api.console.v1.ConsoleSampleGitImportSource
+  map:
+    fields:
+    - name: repository
+      type:
+        namedType: com.github.openshift.api.console.v1.ConsoleSampleGitImportSourceRepository
+      default: {}
+    - name: service
+      type:
+        namedType: com.github.openshift.api.console.v1.ConsoleSampleGitImportSourceService
+      default: {}
+- name: com.github.openshift.api.console.v1.ConsoleSampleGitImportSourceRepository
+  map:
+    fields:
+    - name: contextDir
+      type:
+        scalar: string
+      default: ""
+    - name: revision
+      type:
+        scalar: string
+      default: ""
+    - name: url
+      type:
+        scalar: string
+      default: ""
+- name: com.github.openshift.api.console.v1.ConsoleSampleGitImportSourceService
+  map:
+    fields:
+    - name: targetPort
+      type:
+        scalar: numeric
+- name: com.github.openshift.api.console.v1.ConsoleSampleSource
+  map:
+    fields:
+    - name: containerImport
+      type:
+        namedType: com.github.openshift.api.console.v1.ConsoleSampleContainerImportSource
+    - name: gitImport
+      type:
+        namedType: com.github.openshift.api.console.v1.ConsoleSampleGitImportSource
+    - name: type
+      type:
+        scalar: string
+      default: ""
+    unions:
+    - discriminator: type
+      fields:
+      - fieldName: containerImport
+        discriminatorValue: ContainerImport
+      - fieldName: gitImport
+        discriminatorValue: GitImport
+- name: com.github.openshift.api.console.v1.ConsoleSampleSpec
+  map:
+    fields:
+    - name: abstract
+      type:
+        scalar: string
+      default: ""
+    - name: description
+      type:
+        scalar: string
+      default: ""
+    - name: icon
+      type:
+        scalar: string
+      default: ""
+    - name: provider
+      type:
+        scalar: string
+      default: ""
+    - name: source
+      type:
+        namedType: com.github.openshift.api.console.v1.ConsoleSampleSource
+      default: {}
+    - name: tags
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: associative
+    - name: title
+      type:
+        scalar: string
+      default: ""
+    - name: type
+      type:
+        scalar: string
+      default: ""
 - name: com.github.openshift.api.console.v1.ConsoleYAMLSample
   map:
     fields:

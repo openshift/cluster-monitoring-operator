@@ -14,4 +14,6 @@ type ConsolePluginExpansion interface{}
 
 type ConsoleQuickStartExpansion interface{}
 
+type ConsoleSampleExpansion interface{}
+
 type ConsoleYAMLSampleExpansion interface{}
