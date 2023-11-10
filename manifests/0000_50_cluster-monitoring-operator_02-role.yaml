@@ -132,6 +132,8 @@ rules:
   - featuregates
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - certificates.k8s.io
   resources:
