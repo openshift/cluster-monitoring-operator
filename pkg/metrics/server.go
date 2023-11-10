@@ -73,7 +73,8 @@ func (s *Server) Run(ctx context.Context) error {
 		operatorv1alpha1.DelegatedAuthorization{},
 		s.kubeConfig,
 		s.kubeClient,
-		nil, // disable leader election
+		nil,   // disable leader election
+		false, // disable http2
 	)
 	if err != nil {
 		return err
