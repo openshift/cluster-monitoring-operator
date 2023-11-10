@@ -140,6 +140,7 @@ function(params)
       seLinuxContext: {
         type: 'RunAsAny',
       },
+      seccompProfiles: ['runtime/default'],
       users: [],
     },
 

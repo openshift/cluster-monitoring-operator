@@ -6,6 +6,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
+    operator.prometheus.io/version: 0.69.1
   creationTimestamp: null
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
@@ -2798,7 +2799,7 @@ spec:
                 description: If set to true all actions on the underlying managed objects are not goint to be performed, except for delete actions.
                 type: boolean
               podMetadata:
-                description: PodMetadata configures Labels and Annotations which are propagated to the alertmanager pods.
+                description: "PodMetadata configures labels and annotations which are propagated to the Alertmanager pods. \n The following items are reserved and cannot be overridden: * \"alertmanager\" label, set to the name of the Alertmanager instance. * \"app.kubernetes.io/instance\" label, set to the name of the Alertmanager instance. * \"app.kubernetes.io/managed-by\" label, set to \"prometheus-operator\". * \"app.kubernetes.io/name\" label, set to \"alertmanager\". * \"app.kubernetes.io/version\" label, set to the Alertmanager version. * \"kubectl.kubernetes.io/default-container\" annotation, set to \"alertmanager\"."
                 properties:
                   annotations:
                     additionalProperties:

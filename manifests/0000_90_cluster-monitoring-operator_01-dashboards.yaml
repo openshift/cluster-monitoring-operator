@@ -4576,7 +4576,7 @@ data:
 
                                 ],
                                 "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                                "decimals": -1,
+                                "decimals": 3,
                                 "link": false,
                                 "linkTargetBlank": false,
                                 "linkTooltip": "Drill down",
@@ -4586,7 +4586,7 @@ data:
 
                                 ],
                                 "type": "number",
-                                "unit": "short"
+                                "unit": "iops"
                             },
                             {
                                 "alias": "IOPS(Writes)",
@@ -4595,7 +4595,7 @@ data:
 
                                 ],
                                 "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                                "decimals": -1,
+                                "decimals": 3,
                                 "link": false,
                                 "linkTargetBlank": false,
                                 "linkTooltip": "Drill down",
@@ -4605,7 +4605,7 @@ data:
 
                                 ],
                                 "type": "number",
-                                "unit": "short"
+                                "unit": "iops"
                             },
                             {
                                 "alias": "IOPS(Reads + Writes)",
@@ -4614,7 +4614,7 @@ data:
 
                                 ],
                                 "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                                "decimals": -1,
+                                "decimals": 3,
                                 "link": false,
                                 "linkTargetBlank": false,
                                 "linkTooltip": "Drill down",
@@ -4624,7 +4624,7 @@ data:
 
                                 ],
                                 "type": "number",
-                                "unit": "short"
+                                "unit": "iops"
                             },
                             {
                                 "alias": "Throughput(Read)",
@@ -7299,7 +7299,7 @@ data:
 
                                 ],
                                 "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                                "decimals": -1,
+                                "decimals": 3,
                                 "link": false,
                                 "linkTargetBlank": false,
                                 "linkTooltip": "Drill down",
@@ -7309,7 +7309,7 @@ data:
 
                                 ],
                                 "type": "number",
-                                "unit": "short"
+                                "unit": "iops"
                             },
                             {
                                 "alias": "IOPS(Writes)",
@@ -7318,7 +7318,7 @@ data:
 
                                 ],
                                 "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                                "decimals": -1,
+                                "decimals": 3,
                                 "link": false,
                                 "linkTargetBlank": false,
                                 "linkTooltip": "Drill down",
@@ -7328,7 +7328,7 @@ data:
 
                                 ],
                                 "type": "number",
-                                "unit": "short"
+                                "unit": "iops"
                             },
                             {
                                 "alias": "IOPS(Reads + Writes)",
@@ -7337,7 +7337,7 @@ data:
 
                                 ],
                                 "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                                "decimals": -1,
+                                "decimals": 3,
                                 "link": false,
                                 "linkTargetBlank": false,
                                 "linkTooltip": "Drill down",
@@ -7347,7 +7347,7 @@ data:
 
                                 ],
                                 "type": "number",
-                                "unit": "short"
+                                "unit": "iops"
                             },
                             {
                                 "alias": "Throughput(Read)",

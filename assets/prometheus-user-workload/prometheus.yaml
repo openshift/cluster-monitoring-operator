@@ -223,6 +223,8 @@ spec:
   ruleSelector:
     matchLabels:
       openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
+  scrapeConfigNamespaceSelector: null
+  scrapeConfigSelector: null
   secrets:
   - prometheus-user-workload-tls
   - prometheus-user-workload-thanos-sidecar-tls
