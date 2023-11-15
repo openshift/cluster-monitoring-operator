@@ -11,25 +11,27 @@ import (
 )
 
 type PrometheusAdapterTask struct {
-	client    *client.Client
-	ctx       context.Context
-	factory   *manifests.Factory
-	config    *manifests.Config
-	namespace string
+	client               *client.Client
+	metricsServerEnabled bool
+	ctx                  context.Context
+	factory              *manifests.Factory
+	config               *manifests.Config
+	namespace            string
 }
 
-func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *client.Client, factory *manifests.Factory, config *manifests.Config) *PrometheusAdapterTask {
+func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *client.Client, metricsServerEnabled bool, factory *manifests.Factory, config *manifests.Config) *PrometheusAdapterTask {
 	return &PrometheusAdapterTask{
-		client:    client,
-		factory:   factory,
-		config:    config,
-		namespace: namespace,
-		ctx:       ctx,
+		client:               client,
+		metricsServerEnabled: metricsServerEnabled,
+		factory:              factory,
+		config:               config,
+		namespace:            namespace,
+		ctx:                  ctx,
 	}
 }
 
 func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
-	if t.config.TechPreview {
+	if t.metricsServerEnabled {
 		return nil
 	}
 
