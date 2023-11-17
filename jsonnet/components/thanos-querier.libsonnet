@@ -144,7 +144,8 @@ function(params)
               },
             },
             resourceAttributes: {
-              apiVersion: 'metrics.k8s.io/v1beta1',
+              apiVersion: 'v1beta1',
+              apiGroup: 'metrics.k8s.io',
               resource: 'pods',
               namespace: '{{ .Value }}',
             },
