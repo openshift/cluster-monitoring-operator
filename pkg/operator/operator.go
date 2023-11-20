@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/x509/pkix"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -220,7 +219,7 @@ func New(
 		return nil, err
 	}
 
-	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload, client.KubernetesClient(kclient), client.EventRecorder(eventRecorder))
+	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload, client.KubernetesClient(kclient), client.OpenshiftConfigClient(configClient), client.EventRecorder(eventRecorder))
 	if err != nil {
 		return nil, err
 	}
@@ -414,14 +413,12 @@ func New(
 
 	configInformers := configv1informers.NewSharedInformerFactory(configClient, 10*time.Minute)
 	missingVersion := "0.0.1-snapshot"
-	desiredVersion := missingVersion
-	if envVersion, exists := os.LookupEnv("RELEASE_VERSION"); exists {
-		desiredVersion = envVersion
-	}
 
-	// By default, this will exit(0) if the featuregates change
+	// By default when the enabled/disabled list of featuregates changes,
+	// os.Exit is called which will trigger a restart of the container and
+	// the new container will get the updated value.
 	featureGateAccessor := featuregates.NewFeatureGateAccess(
-		desiredVersion, missingVersion,
+		version, missingVersion,
 		configInformers.Config().V1().ClusterVersions(),
 		configInformers.Config().V1().FeatureGates(),
 		eventRecorder,
@@ -431,19 +428,18 @@ func New(
 
 	select {
 	case <-featureGateAccessor.InitialFeatureGatesObserved():
-		featureGates, _ := featureGateAccessor.CurrentFeatureGates()
-		klog.Infof("FeatureGates initialized: %v", featureGates.KnownFeatures())
+		featureGates, err := featureGateAccessor.CurrentFeatureGates()
+		if err != nil {
+			return nil, err
+		}
+		o.metricsServerEnabled = featureGates.Enabled(configv1.FeatureGateMetricsServer)
 	case <-time.After(1 * time.Minute):
-		klog.Errorf("timed out waiting for FeatureGate detection")
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
 	}
 
-	featureGates, err := featureGateAccessor.CurrentFeatureGates()
-	if err != nil {
-		return nil, err
+	if o.metricsServerEnabled {
+		klog.Info("Metrics Server enabled")
 	}
-	// read featuregate read and usage to set a variable to pass to a controller
-	o.metricsServerEnabled = featureGates.Enabled(configv1.FeatureGateMetricsServer)
 
 	// csrController runs a controller that requests a client TLS certificate
 	// for Prometheus k8s. This certificate is used to authenticate against the
