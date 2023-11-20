@@ -1045,6 +1045,24 @@ data:
     # - sensor_id: unique ID identifying the Sensor instance.
     # - sensor_version: the product's full version.
     - '{__name__="rhacs:telemetry:rox_sensor_info"}'
+    #
+    # owners: (https://github.com/konveyor)
+    #
+    # konveyor_applications_inventoried represents the number of applications that have been added to the Konveyor
+    # inventory as candidates for analysis and migration.
+    - '{__name__="konveyor_applications_inventoried"}'
+    #
+    # owners: (https://github.com/konveyor)
+    #
+    # konveyor_assessments_initiated_total represents the total number of times that the migration assessment process
+    # has been started for applications in the Konveyor inventory.
+    - '{__name__="konveyor_assessments_initiated_total"}'
+    #
+    # owners: (https://github.com/konveyor)
+    #
+    # konveyor_tasks_initiated_total represents the total number of code analysis tasks that have been started
+    # for applications in the Konveyor inventory.
+    - '{__name__="konveyor_tasks_initiated_total"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
