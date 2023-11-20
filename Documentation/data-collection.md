@@ -1045,6 +1045,26 @@ data:
     # - sensor_id: unique ID identifying the Sensor instance.
     # - sensor_version: the product's full version.
     - '{__name__="rhacs:telemetry:rox_sensor_info"}'
+    #
+    # owners: (https://github.com/openshift/cluster-storage-operator, @openshift/storage)
+    #
+    # cluster:volume_manager_selinux_pod_context_mismatch_total shows how many Pods have two or more containers that have each a different SELinux context. These containers will not be able to start when SELinuxMountReadWriteOncePod feature is extended to all volumes.
+    - '{__name__="cluster:volume_manager_selinux_pod_context_mismatch_total"}'
+    #
+    # owners: (https://github.com/openshift/cluster-storage-operator, @openshift/storage)
+    #
+    # cluster:volume_manager_selinux_volume_context_mismatch_warnings_total shows how many Pods would not be able to start when SELinuxMountReadWriteOncePod feature is extended to all volumes, because they use a single volume and have a different SELinux contexts each.
+    - '{__name__="cluster:volume_manager_selinux_volume_context_mismatch_warnings_total"}'
+    #
+    # owners: (https://github.com/openshift/cluster-storage-operator, @openshift/storage)
+    #
+    # cluster:volume_manager_selinux_volume_context_mismatch_errors_total shows how many Pods did not start because they use a single ReadWriteOncePod volume and have a different SELinux context.
+    - '{__name__="cluster:volume_manager_selinux_volume_context_mismatch_errors_total"}'
+    #
+    # owners: (https://github.com/openshift/cluster-storage-operator, @openshift/storage)
+    #
+    # cluster:volume_manager_selinux_volumes_admitted_total shows how many Pods had set SELinux context and successfuly started.
+    - '{__name__="cluster:volume_manager_selinux_volumes_admitted_total"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
