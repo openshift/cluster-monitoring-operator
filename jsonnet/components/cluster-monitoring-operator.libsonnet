@@ -213,7 +213,7 @@ function(params) {
       {
         apiGroups: ['config.openshift.io'],
         resources: ['featuregates'],
-        verbs: ['get'],
+        verbs: ['get', 'list', 'watch'],
       },
       {
         apiGroups: ['certificates.k8s.io'],

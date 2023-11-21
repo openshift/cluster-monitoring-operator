@@ -18,6 +18,7 @@ type ConsoleV1Interface interface {
 	ConsoleNotificationsGetter
 	ConsolePluginsGetter
 	ConsoleQuickStartsGetter
+	ConsoleSamplesGetter
 	ConsoleYAMLSamplesGetter
 }
 
@@ -48,6 +49,10 @@ func (c *ConsoleV1Client) ConsolePlugins() ConsolePluginInterface {
 
 func (c *ConsoleV1Client) ConsoleQuickStarts() ConsoleQuickStartInterface {
 	return newConsoleQuickStarts(c)
+}
+
+func (c *ConsoleV1Client) ConsoleSamples() ConsoleSampleInterface {
+	return newConsoleSamples(c)
 }
 
 func (c *ConsoleV1Client) ConsoleYAMLSamples() ConsoleYAMLSampleInterface {
