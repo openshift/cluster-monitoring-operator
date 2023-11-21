@@ -140,36 +140,10 @@ function(params)
       },
     },
 
-    // This is the KubeRBACProxy configuration for the web endpoint.
-    kubeRbacProxyWebSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'thanos-querier-kube-rbac-proxy-web',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'thanos-query' },
-      },
-      type: 'Opaque',
-      stringData: {
-        'config.yaml': std.manifestYamlDoc({
-          authorization: {
-            resourceAttributes: {
-              apiGroup: 'monitoring.coreos.com',
-              resource: 'prometheuses',
-              subresource: 'api',
-              namespace: 'openshift-monitoring',
-              name: 'k8s',
-            },
-          },
-        }),
-      },
-    },
+    // This is the kube-rbac-proxy configuration for the web endpoint.
+    kubeRbacProxyWebSecret: generateSecret.kubeRBACSecretForMonitoringAPI('thanos-querier-kube-rbac-proxy-web', tq.config.commonLabels),
 
-    kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'thanos-querier-kube-rbac-proxy-metrics') + {
-      metadata+: {
-        labels: { 'app.kubernetes.io/name': 'thanos-query' },
-      },
-    },
+    kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, tq.config.commonLabels, 'thanos-querier-kube-rbac-proxy-metrics'),
 
     // Same as kubeRbacProxySecret but performs a SubjectAccessReview
     // asserting if the request bearer token in flight has permissions

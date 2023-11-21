@@ -58,7 +58,6 @@ const (
 	configManagedNamespace = "openshift-config-managed"
 	sharedConfigMap        = "monitoring-shared-config"
 
-	htpasswdArg = "-htpasswd-file=/etc/proxy/htpasswd/auth"
 	clientCAArg = "--client-ca-file=/etc/tls/client/client-ca.crt"
 
 	tmpClusterIDLabelName = "__tmp_openshift_cluster_id__"
@@ -147,7 +146,7 @@ var (
 	PrometheusK8sPrometheusServiceMonitor         = "prometheus-k8s/service-monitor.yaml"
 	PrometheusK8sService                          = "prometheus-k8s/service.yaml"
 	PrometheusK8sServiceThanosSidecar             = "prometheus-k8s/service-thanos-sidecar.yaml"
-	PrometheusK8sProxySecret                      = "prometheus-k8s/proxy-secret.yaml"
+	PrometheusK8sRBACProxyWebSecret               = "prometheus-k8s/kube-rbac-proxy-web-secret.yaml"
 	PrometheusRBACProxySecret                     = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
 	PrometheusUserWorkloadRBACProxyMetricsSecret  = "prometheus-user-workload/kube-rbac-proxy-metrics-secret.yaml"
 	PrometheusUserWorkloadRBACProxyFederateSecret = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
@@ -1124,21 +1123,6 @@ func (f *Factory) PrometheusUserWorkloadServiceAccount() (*v1.ServiceAccount, er
 	return f.NewServiceAccount(f.assets.MustNewAssetSlice(PrometheusUserWorkloadServiceAccount))
 }
 
-func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetSlice(PrometheusK8sProxySecret))
-	if err != nil {
-		return nil, err
-	}
-
-	p, err := GeneratePassword(43)
-	if err != nil {
-		return nil, err
-	}
-	s.Data["session_secret"] = []byte(p)
-
-	return s, nil
-}
-
 func (f *Factory) PrometheusK8sGrpcTLSSecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusK8sGrpcTLSSecret))
 }
@@ -1488,7 +1472,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 
 			f.injectProxyVariables(&p.Spec.Containers[i])
 
-		case "kube-rbac-proxy":
+		case "kube-rbac-proxy", "kube-rbac-proxy-web":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "kube-rbac-proxy-thanos":
@@ -2488,6 +2472,10 @@ func (f *Factory) PrometheusOperatorUserWorkloadService() (*v1.Service, error) {
 
 func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
 	return f.NewService(f.assets.MustNewAssetSlice(PrometheusK8sService))
+}
+
+func (f *Factory) PrometheusK8sRBACProxyWebSecret() (*v1.Secret, error) {
+	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusK8sRBACProxyWebSecret))
 }
 
 func (f *Factory) PrometheusK8sServiceThanosSidecar() (*v1.Service, error) {

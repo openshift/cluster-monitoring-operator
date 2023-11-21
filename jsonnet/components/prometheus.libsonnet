@@ -6,6 +6,8 @@ local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonne
 
 function(params)
   local cfg = params;
+  local prometheusTLSSecret = 'prometheus-k8s-tls';
+  local thanosSidecarTLSSecret = 'prometheus-k8s-thanos-sidecar-tls';
 
   prometheus(cfg) + {
     trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'prometheus-trusted-ca-bundle'),
@@ -70,17 +72,7 @@ function(params)
       },
     },
 
-
-    // The ServiceAccount needs this annotation, to signify the identity
-    // provider, that when a users it doing the oauth flow through the
-    // oauth proxy, that it should redirect to the prometheus-k8s route on
-    // successful authentication.
     serviceAccount+: {
-      metadata+: {
-        annotations+: {
-          'serviceaccounts.openshift.io/oauth-redirectreference.prometheus-k8s': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"prometheus-k8s"}}',
-        },
-      },
       // service account token is managed by the operator.
       automountServiceAccountToken: false,
     },
@@ -93,12 +85,12 @@ function(params)
     // cluster-monitoring-operator, that when reconciling this service the
     // cluster IP needs to be retained.
     //
-    // The ports are overridden, as due to the port binding of the oauth proxy
+    // The ports are overridden, as due to the port binding of the kube-rbac-proxy
     // the serving port is 9091 instead of the 9090 default.
     service+: {
       metadata+: {
         annotations: {
-          'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-tls',
+          'service.beta.openshift.io/serving-cert-secret-name': prometheusTLSSecret,
         },
       },
       spec+: {
@@ -205,19 +197,6 @@ function(params)
       }],
     },
 
-    // The proxy secret is there to encrypt session created by the oauth proxy.
-    proxySecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'prometheus-k8s-proxy',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'prometheus-k8s' },
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
     kubeRbacProxySecret: generateSecret.staticAuthSecret(
       cfg.namespace,
       cfg.commonLabels,
@@ -245,6 +224,8 @@ function(params)
         },
       },
     ),
+
+    kubeRbacProxyWebSecret: generateSecret.kubeRBACSecretForMonitoringAPI('prometheus-k8s-kube-rbac-proxy-web', cfg.commonLabels),
 
     // Secret holding the token to authenticate against the Telemetry server when using native remote-write.
     telemetrySecret: {
@@ -282,7 +263,7 @@ function(params)
     serviceThanosSidecar+: {
       metadata+: {
         annotations+: {
-          'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-k8s-thanos-sidecar-tls',
+          'service.beta.openshift.io/serving-cert-secret-name': thanosSidecarTLSSecret,
         },
       },
       spec+: {
@@ -312,7 +293,7 @@ function(params)
       },
     },
 
-    // These patches inject the oauth proxy as a sidecar and configures it with
+    // These patches inject the kube-rbac-proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and
     // authZ it requires some additonal configuration.
     prometheus+: {
@@ -351,10 +332,10 @@ function(params)
           runAsUser: 65534,
         },
         secrets+: [
-          'prometheus-k8s-tls',
-          'prometheus-k8s-proxy',
-          'prometheus-k8s-thanos-sidecar-tls',
-          'kube-rbac-proxy',
+          prometheusTLSSecret,
+          thanosSidecarTLSSecret,
+          $.kubeRbacProxySecret.metadata.name,
+          $.kubeRbacProxyWebSecret.metadata.name,
           'metrics-client-certs',
         ],
         externalURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
@@ -388,11 +369,11 @@ function(params)
         maximumStartupDurationSeconds: 3600,
         containers: [
           {
-            name: 'prometheus-proxy',
-            image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
+            name: 'kube-rbac-proxy-web',
+            image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
-                memory: '20Mi',
+                memory: '15Mi',
                 cpu: '1m',
               },
             },
@@ -402,46 +383,38 @@ function(params)
                 name: 'web',
               },
             ],
-            env: [
-              {
-                name: 'HTTP_PROXY',
-                value: '',
-              },
-              {
-                name: 'HTTPS_PROXY',
-                value: '',
-              },
-              {
-                name: 'NO_PROXY',
-                value: '',
-              },
-            ],
             args: [
-              '-provider=openshift',
-              '-https-address=:9091',
-              '-http-address=',
-              '-email-domain=*',
-              '-upstream=http://localhost:9090',
-              '-openshift-service-account=prometheus-k8s',
-              '-openshift-sar={"resource": "namespaces", "verb": "get"}',
-              '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
-              '-tls-cert=/etc/tls/private/tls.crt',
-              '-tls-key=/etc/tls/private/tls.key',
-              '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
-              '-cookie-secret-file=/etc/proxy/secrets/session_secret',
-              '-openshift-ca=/etc/pki/tls/cert.pem',
-              '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+              '--secure-listen-address=0.0.0.0:9091',
+              '--upstream=http://127.0.0.1:9090',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
+              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+              // Liveness and readiness endpoints are always allowed.
+              '--ignore-paths=' + std.join(',', ['/-/healthy', '/-/ready']),
             ],
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
-                name: 'secret-prometheus-k8s-tls',
+                name: 'secret-' + prometheusTLSSecret,
               },
               {
-                mountPath: '/etc/proxy/secrets',
-                name: 'secret-prometheus-k8s-proxy',
+                mountPath: '/etc/tls/client',
+                name: 'configmap-metrics-client-ca',
+                readOnly: true,
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
               },
             ],
+            securityContext: {
+              allowPrivilegeEscalation: false,
+              capabilities: {
+                drop: ['ALL'],
+              },
+            },
           },
           {
             name: 'kube-rbac-proxy',
@@ -471,7 +444,7 @@ function(params)
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
-                name: 'secret-prometheus-k8s-tls',
+                name: 'secret-' + prometheusTLSSecret,
               },
               {
                 mountPath: '/etc/tls/client',
@@ -521,7 +494,7 @@ function(params)
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
-                name: 'secret-prometheus-k8s-thanos-sidecar-tls',
+                name: 'secret-' + thanosSidecarTLSSecret,
               },
               {
                 mountPath: '/etc/kube-rbac-proxy',
