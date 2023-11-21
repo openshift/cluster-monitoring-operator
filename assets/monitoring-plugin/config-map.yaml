@@ -13,6 +13,20 @@ data:
         ssl_certificate     /var/cert/tls.crt;
         ssl_certificate_key /var/cert/tls.key;
         root                /usr/share/nginx/html;
+
+        # Prevent caching for plugin-manifest.json
+        location = /plugin-manifest.json {
+          add_header Cache-Control 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0';
+          add_header Pragma 'no-cache';
+          add_header Expires '0';
+        }
+        
+        # Prevent caching for plugin-entry.js
+        location = /plugin-entry.js {
+          add_header Cache-Control 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0';
+          add_header Pragma 'no-cache';
+          add_header Expires '0';
+        }
       }
     }
 kind: ConfigMap
