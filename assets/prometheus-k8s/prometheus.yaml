@@ -47,42 +47,56 @@ spec:
   - metrics-client-ca
   containers:
   - args:
-    - -provider=openshift
-    - -https-address=:9091
-    - -http-address=
-    - -email-domain=*
-    - -upstream=http://localhost:9090
-    - -openshift-service-account=prometheus-k8s
-    - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
-    - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
-    - -tls-cert=/etc/tls/private/tls.crt
-    - -tls-key=/etc/tls/private/tls.key
-    - -client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token
-    - -cookie-secret-file=/etc/proxy/secrets/session_secret
-    - -openshift-ca=/etc/pki/tls/cert.pem
-    - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    env:
-    - name: HTTP_PROXY
-      value: ""
-    - name: HTTPS_PROXY
-      value: ""
-    - name: NO_PROXY
-      value: ""
-    image: quay.io/openshift/oauth-proxy:latest
-    name: prometheus-proxy
+    - --secure-listen-address=0.0.0.0:9091
+    - --upstream=http://127.0.0.1:9090
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --client-ca-file=/etc/tls/client/client-ca.crt
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - --ignore-paths=/-/healthy,/-/ready
+    - -v=10
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
+    livenessProbe:
+      failureThreshold: 6
+      httpGet:
+        path: /-/healthy
+        port: 9091
+        scheme: HTTPS
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
+    name: kube-rbac-proxy-web
     ports:
     - containerPort: 9091
       name: web
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /-/ready
+        port: 9091
+        scheme: HTTPS
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
     resources:
       requests:
         cpu: 1m
-        memory: 20Mi
+        memory: 15Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-k8s-tls
-    - mountPath: /etc/proxy/secrets
-      name: secret-prometheus-k8s-proxy
+    - mountPath: /etc/tls/client
+      name: configmap-metrics-client-ca
+      readOnly: true
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-prometheus-k8s-kube-rbac-proxy-web
   - args:
     - --secure-listen-address=0.0.0.0:9092
     - --upstream=http://127.0.0.1:9090
@@ -195,9 +209,9 @@ spec:
   scrapeConfigSelector: null
   secrets:
   - prometheus-k8s-tls
-  - prometheus-k8s-proxy
   - prometheus-k8s-thanos-sidecar-tls
   - kube-rbac-proxy
+  - prometheus-k8s-kube-rbac-proxy-web
   - metrics-client-certs
   securityContext:
     fsGroup: 65534
