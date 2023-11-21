@@ -22,8 +22,7 @@ function(params)
       default_type       application/octet-stream;
       keepalive_timeout  65;
       server {
-        listen              %(nginxPort)d ssl;
-        listen              [::]:%(nginxPort)d ssl;
+        listen              LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME ssl;
         ssl_certificate     %(tlsPath)s/tls.crt;
         ssl_certificate_key %(tlsPath)s/tls.key;
         root                /usr/share/nginx/html;
@@ -212,8 +211,29 @@ function(params)
                   $.volumeMount(tlsVolumeName, tlsMountPath),
                   $.volumeMount(nginxCMVolName, nginxConfMountPath, 'nginx.conf'),
                 ],
-
-
+                env: [
+                  {
+                    name: 'POD_IP',
+                    valueFrom: {
+                      fieldRef: {
+                        fieldPath: 'status.podIP',
+                      },
+                    },
+                  },
+                ],
+                command: [
+                  '/bin/sh',
+                  '-c',
+                  |||
+                    if echo "$POD_IP" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                      LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="9943"
+                    else
+                      LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="[::]:9443"
+                    fi
+                    sed "s/LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/$LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/g" /etc/nginx/nginx.conf > /tmp/nginx.conf
+                    exec nginx -c /tmp/nginx.conf -g 'daemon off;'
+                  |||,
+                ],
               },  // monitoring-plugin container
             ],  // containers
 
