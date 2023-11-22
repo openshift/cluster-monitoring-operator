@@ -45,11 +45,12 @@ func NewClusterMonitoringOperatorTask(
 
 func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
-		"cluster-monitoring-view": t.factory.ClusterMonitoringClusterRoleView,
-		"monitoring-rules-edit":   t.factory.ClusterMonitoringRulesEditClusterRole,
-		"monitoring-rules-view":   t.factory.ClusterMonitoringRulesViewClusterRole,
-		"monitoring-edit":         t.factory.ClusterMonitoringEditClusterRole,
-		"alert-routing-edit":      t.factory.ClusterMonitoringAlertingEditClusterRole,
+		"cluster-monitoring-view":          t.factory.ClusterMonitoringClusterRoleView,
+		"system:aggregated-metrics-reader": t.factory.ClusterMonitoringClusterRoleAggregatedMetricsReader,
+		"monitoring-rules-edit":            t.factory.ClusterMonitoringRulesEditClusterRole,
+		"monitoring-rules-view":            t.factory.ClusterMonitoringRulesViewClusterRole,
+		"monitoring-edit":                  t.factory.ClusterMonitoringEditClusterRole,
+		"alert-routing-edit":               t.factory.ClusterMonitoringAlertingEditClusterRole,
 	} {
 		cr, err := crf()
 		if err != nil {

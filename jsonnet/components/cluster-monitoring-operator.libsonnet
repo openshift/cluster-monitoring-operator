@@ -2,6 +2,7 @@ local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics
 
 local cmoRules = import './../rules.libsonnet';
 local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
+local metricsAdapter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet';
 
 local defaults = {
   local defaults = self,
@@ -20,8 +21,20 @@ function(params) {
   local cmo = self,
   local cfg = defaults + params,
 
+  local clusterRoleAggregatedMetricsReader = metricsAdapter(cfg).clusterRoleAggregatedMetricsReader,
+
   '0alertingrulesCustomResourceDefinition': import './../crds/alertingrules-custom-resource-definition.json',
   '0alertrelabelconfigsCustomResourceDefinition': import './../crds/alertrelabelconfigs-custom-resource-definition.json',
+
+  clusterRoleAggregatedMetricsReader: clusterRoleAggregatedMetricsReader {
+    metadata+: {
+      labels+: {
+        'app.kubernetes.io/name': cfg.name,
+        'app.kubernetes.io/component': 'metrics-adapter',
+        'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
+      },
+    },
+  },
 
   prometheusRule: {
     apiVersion: 'monitoring.coreos.com/v1',

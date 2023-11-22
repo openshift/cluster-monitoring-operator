@@ -178,24 +178,23 @@ var (
 	PrometheusUserWorkloadConfigMap                           = "prometheus-user-workload/config-map.yaml"
 	PrometheusUserWorkloadFederateRoute                       = "prometheus-user-workload/federate-route.yaml"
 
-	PrometheusAdapterAPIService                         = "prometheus-adapter/api-service.yaml"
-	PrometheusAdapterClusterRole                        = "prometheus-adapter/cluster-role.yaml"
-	PrometheusAdapterClusterRoleBinding                 = "prometheus-adapter/cluster-role-binding.yaml"
-	PrometheusAdapterClusterRoleBindingDelegator        = "prometheus-adapter/cluster-role-binding-delegator.yaml"
-	PrometheusAdapterClusterRoleBindingView             = "prometheus-adapter/cluster-role-binding-view.yaml"
-	PrometheusAdapterClusterRoleServerResources         = "prometheus-adapter/cluster-role-server-resources.yaml"
-	PrometheusAdapterClusterRoleAggregatedMetricsReader = "prometheus-adapter/cluster-role-aggregated-metrics-reader.yaml"
-	PrometheusAdapterConfigMap                          = "prometheus-adapter/config-map.yaml"
-	PrometheusAdapterConfigMapDedicatedSM               = "prometheus-adapter/config-map-dedicated-service-monitors.yaml"
-	PrometheusAdapterConfigMapPrometheus                = "prometheus-adapter/configmap-prometheus.yaml"
-	PrometheusAdapterConfigMapAuditPolicy               = "prometheus-adapter/configmap-audit-profiles.yaml"
-	PrometheusAdapterDeployment                         = "prometheus-adapter/deployment.yaml"
-	PrometheusAdapterPodDisruptionBudget                = "prometheus-adapter/pod-disruption-budget.yaml"
-	PrometheusAdapterRoleBindingAuthReader              = "prometheus-adapter/role-binding-auth-reader.yaml"
-	PrometheusAdapterService                            = "prometheus-adapter/service.yaml"
-	PrometheusAdapterServiceMonitor                     = "prometheus-adapter/service-monitor.yaml"
-	PrometheusAdapterMinimalServiceMonitor              = "prometheus-adapter/minimal-service-monitor.yaml"
-	PrometheusAdapterServiceAccount                     = "prometheus-adapter/service-account.yaml"
+	PrometheusAdapterAPIService                  = "prometheus-adapter/api-service.yaml"
+	PrometheusAdapterClusterRole                 = "prometheus-adapter/cluster-role.yaml"
+	PrometheusAdapterClusterRoleBinding          = "prometheus-adapter/cluster-role-binding.yaml"
+	PrometheusAdapterClusterRoleBindingDelegator = "prometheus-adapter/cluster-role-binding-delegator.yaml"
+	PrometheusAdapterClusterRoleBindingView      = "prometheus-adapter/cluster-role-binding-view.yaml"
+	PrometheusAdapterClusterRoleServerResources  = "prometheus-adapter/cluster-role-server-resources.yaml"
+	PrometheusAdapterConfigMap                   = "prometheus-adapter/config-map.yaml"
+	PrometheusAdapterConfigMapDedicatedSM        = "prometheus-adapter/config-map-dedicated-service-monitors.yaml"
+	PrometheusAdapterConfigMapPrometheus         = "prometheus-adapter/configmap-prometheus.yaml"
+	PrometheusAdapterConfigMapAuditPolicy        = "prometheus-adapter/configmap-audit-profiles.yaml"
+	PrometheusAdapterDeployment                  = "prometheus-adapter/deployment.yaml"
+	PrometheusAdapterPodDisruptionBudget         = "prometheus-adapter/pod-disruption-budget.yaml"
+	PrometheusAdapterRoleBindingAuthReader       = "prometheus-adapter/role-binding-auth-reader.yaml"
+	PrometheusAdapterService                     = "prometheus-adapter/service.yaml"
+	PrometheusAdapterServiceMonitor              = "prometheus-adapter/service-monitor.yaml"
+	PrometheusAdapterMinimalServiceMonitor       = "prometheus-adapter/minimal-service-monitor.yaml"
+	PrometheusAdapterServiceAccount              = "prometheus-adapter/service-account.yaml"
 
 	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
 	AdmissionWebhookAlertmanagerConfigValidatingWebhook = "admission-webhook/alertmanager-config-validating-webhook.yaml"
@@ -223,6 +222,7 @@ var (
 
 	ClusterMonitoringOperatorServiceMonitor                = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView                       = "cluster-monitoring-operator/cluster-role-view.yaml"
+	ClusterMonitoringClusterRoleAggregatedMetricsReader    = "cluster-monitoring-operator/cluster-role-aggregated-metrics-reader.yaml"
 	ClusterMonitoringAlertmanagerEditRole                  = "cluster-monitoring-operator/monitoring-alertmanager-edit-role.yaml"
 	ClusterMonitoringRulesEditClusterRole                  = "cluster-monitoring-operator/monitoring-rules-edit-cluster-role.yaml"
 	ClusterMonitoringRulesViewClusterRole                  = "cluster-monitoring-operator/monitoring-rules-view-cluster-role.yaml"
@@ -1869,10 +1869,6 @@ func (f *Factory) PrometheusAdapterClusterRoleServerResources() (*rbacv1.Cluster
 	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleServerResources))
 }
 
-func (f *Factory) PrometheusAdapterClusterRoleAggregatedMetricsReader() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleAggregatedMetricsReader))
-}
-
 func (f *Factory) PrometheusAdapterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleBinding))
 }
@@ -2423,6 +2419,10 @@ func (f *Factory) PrometheusUserWorkloadServiceThanosSidecar() (*v1.Service, err
 
 func (f *Factory) ClusterMonitoringClusterRoleView() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringClusterRoleView))
+}
+
+func (f *Factory) ClusterMonitoringClusterRoleAggregatedMetricsReader() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringClusterRoleAggregatedMetricsReader))
 }
 
 func (f *Factory) ClusterMonitoringRulesEditClusterRole() (*rbacv1.ClusterRole, error) {

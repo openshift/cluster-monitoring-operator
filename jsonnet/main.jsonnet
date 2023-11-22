@@ -354,11 +354,11 @@ local inCluster =
         rules+: inCluster.alertmanager.clusterRole.rules +
                 inCluster.clusterMonitoringOperator.clusterRoleView.rules +
                 inCluster.clusterMonitoringOperator.userWorkloadConfigEditRole.rules +
+                inCluster.clusterMonitoringOperator.clusterRoleAggregatedMetricsReader.rules +
                 inCluster.kubeStateMetrics.clusterRole.rules +
                 inCluster.nodeExporter.clusterRole.rules +
                 inCluster.openshiftStateMetrics.clusterRole.rules +
                 inCluster.prometheusAdapter.clusterRole.rules +
-                inCluster.prometheusAdapter.clusterRoleAggregatedMetricsReader.rules +
                 inCluster.prometheusAdapter.clusterRoleServerResources.rules +
                 inCluster.prometheus.clusterRole.rules +
                 std.flatMap(function(role) role.rules,
