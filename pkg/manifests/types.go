@@ -753,6 +753,11 @@ type RemoteWriteSpec struct {
 	QueueConfig *monv1.QueueConfig `json:"queueConfig,omitempty"`
 	// Defines the timeout value for requests to the remote write endpoint.
 	RemoteTimeout string `json:"remoteTimeout,omitempty"`
+	// Enables sending of exemplars over remote write. Note that the experimental
+	// "exemplar-storage" feature must be enabled using the `spec.enableFeature`
+	// option for exemplars to be scraped in the first place. Only supported for
+	// UWM configurations.
+	SendExemplars *bool `json:"sendExemplars,omitempty"`
 	// Defines AWS Signature Version 4 authentication settings.
 	Sigv4 *monv1.Sigv4 `json:"sigv4,omitempty"`
 	// Defines TLS authentication settings for the remote write endpoint.

@@ -525,6 +525,7 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 | proxyUrl | string | Defines an optional proxy URL. |
 | queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.66.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
 | remoteTimeout | string | Defines the timeout value for requests to the remote write endpoint. |
+| sendExemplars | *bool | Enables sending of exemplars over remote write. Note that the experimental \"exemplar-storage\" feature must be enabled using the `spec.enableFeature` option for exemplars to be scraped in the first place. Only supported for UWM configurations. |
 | sigv4 | *monv1.Sigv4 | Defines AWS Signature Version 4 authentication settings. |
 | tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.66.0/Documentation/api.md#safetlsconfig) | Defines TLS authentication settings for the remote write endpoint. |
 | url | string | Defines the URL of the remote write endpoint to which samples will be sent. |

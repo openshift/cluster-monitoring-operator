@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.15
+
+- [#2161](https://github.com/openshift/cluster-monitoring-operator/pull/2161) Add `PrometheusRestrictedConfig.RemoteWrite[].SendExemplars`.
+
 ## 4.14
 
 - [#1937](https://github.com/openshift/cluster-monitoring-operator/pull/1937) Disables btrfs collector
