@@ -2708,7 +2708,6 @@ k8sPrometheusAdapter:
 func TestMetricsServerConfiguration(t *testing.T) {
 	config := `
 metricsServer:
-  enabled: true
   resources:
     requests:
       cpu: 100m

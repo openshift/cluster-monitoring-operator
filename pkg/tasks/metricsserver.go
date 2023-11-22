@@ -166,17 +166,56 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 }
 
 func (t *MetricsServerTask) removePrometheusAdapterResources(ctx context.Context) error {
+	pa := NewPrometheusAdapterTask(ctx, t.namespace, t.client, t.enabled, t.factory, t.config)
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "prometheus-adapter",
 			Namespace: t.namespace,
 		},
 	}
-	err := t.client.DeleteDeployment(ctx, d)
-	if err != nil {
-		return errors.Wrap(err, "deleting PrometheusAdapter Deployment failed")
+
+	{
+		pdb, err := pa.factory.PrometheusAdapterPodDisruptionBudget()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter PodDisruptionBudget failed")
+		}
+
+		if pdb != nil {
+			err = pa.client.DeletePodDisruptionBudget(ctx, pdb)
+			if err != nil {
+				return errors.Wrap(err, "deleting PrometheusAdapter PodDisruptionBudget failed")
+			}
+		}
+	}
+	{
+		sm, err := pa.factory.PrometheusAdapterServiceMonitor()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter ServiceMonitors failed")
+		}
+
+		err = pa.client.DeleteServiceMonitor(ctx, sm)
+		if err != nil {
+			return errors.Wrapf(err, "deleting %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+		}
+	}
+	{
+		s, err := pa.factory.PrometheusAdapterService()
+		if err != nil {
+			return errors.Wrap(err, "initializing PrometheusAdapter Service failed")
+		}
+
+		err = pa.client.DeleteService(ctx, s)
+		if err != nil {
+			return errors.Wrap(err, "deleting PrometheusAdapter Service failed")
+		}
+	}
+	{
+		err := pa.client.DeleteDeployment(ctx, d)
+		if err != nil {
+			return errors.Wrap(err, "deleting PrometheusAdapter Deployment failed")
+		}
 	}
 
-	// TODO Add steps to remove other resources
+	// TODO(slashpai): Add steps to remove other resources
 	return nil
 }
