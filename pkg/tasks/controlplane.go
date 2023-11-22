@@ -20,6 +20,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
 )
 
 type ControlPlaneTask struct {
@@ -58,21 +59,18 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		}
 	}
 
+	// TODO consider removing this in 4.16?
 	smkpa, err := t.factory.ControlPlaneKubeletServiceMonitorPA()
 	if err != nil {
 		return errors.Wrap(err, "initializing prometheus-adapter dedicated kubelet ServiceMonitor failed")
 	}
 
 	if t.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, smkpa)
-		if err != nil {
-			return errors.Wrap(err, "reconciling prometheus-adapter dedicated kubelet ServiceMonitor failed")
-		}
-	} else {
-		err = t.client.DeleteServiceMonitor(ctx, smkpa)
-		if err != nil {
-			return errors.Wrap(err, "deleting prometheus-adapter dedicated kubelet ServiceMonitor failed")
-		}
+		klog.V(4).Info("Dedicated ServiceMonitors are deprecated, this setting has no effect in this version and will be removed in a future release")
+	}
+	err = t.client.DeleteServiceMonitor(ctx, smkpa)
+	if err != nil {
+		return errors.Wrap(err, "deleting prometheus-adapter dedicated kubelet ServiceMonitor failed")
 	}
 
 	return nil

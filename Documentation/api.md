@@ -147,7 +147,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 #### Description
 
-You can use the `DedicatedServiceMonitors` resource to configure dedicated Service Monitors for the Prometheus Adapter
+This setting is DEPRECATED and will be removed in a future version. In this version this setting has no effect.
 
 
 <em>appears in: [K8sPrometheusAdapter](#k8sprometheusadapter)</em>
