@@ -39,6 +39,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+    trackTimestampsStaleness: true
   jobLabel: k8s-app
   namespaceSelector:
     matchNames:

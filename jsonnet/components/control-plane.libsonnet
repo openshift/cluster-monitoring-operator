@@ -42,6 +42,8 @@ function(params)
               if 'path' in e && e.path == '/metrics/cadvisor' then
                 // Drop cAdvisor metrics with excessive cardinality.
                 {
+                  honorTimestamps: true,
+                  trackTimestampsStaleness: true,
                   metricRelabelings+: [
                     {
                       sourceLabels: ['__name__'],
