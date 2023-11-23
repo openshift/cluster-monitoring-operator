@@ -39,14 +39,9 @@ function(params)
       },
     },
 
-    clusterRoleAggregatedMetricsReader+:
-      {
-        metadata+: {
-          labels+: {
-            'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
-          },
-        },
-      },
+    // This role is moved to cluster-monitoring-operator.libsonnet
+    // Hence hiding it in prometheus-adapter.
+    clusterRoleAggregatedMetricsReader:: null,
 
     apiService+:
       {

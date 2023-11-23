@@ -4,9 +4,8 @@ metadata:
   labels:
     app.kubernetes.io/component: metrics-adapter
     app.kubernetes.io/managed-by: cluster-monitoring-operator
-    app.kubernetes.io/name: prometheus-adapter
+    app.kubernetes.io/name: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.11.2
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
     rbac.authorization.k8s.io/aggregate-to-cluster-reader: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"

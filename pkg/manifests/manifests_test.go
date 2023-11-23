@@ -406,11 +406,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusAdapterClusterRoleAggregatedMetricsReader()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusAdapterClusterRoleBinding()
 	if err != nil {
 		t.Fatal(err)
@@ -599,6 +594,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.ClusterMonitoringClusterRoleView()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ClusterMonitoringClusterRoleAggregatedMetricsReader()
 	if err != nil {
 		t.Fatal(err)
 	}

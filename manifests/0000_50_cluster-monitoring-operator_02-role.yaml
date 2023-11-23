@@ -214,6 +214,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - metrics.k8s.io
+  resources:
+  - pods
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -407,15 +416,6 @@ rules:
   - namespaces
   - pods
   - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - metrics.k8s.io
-  resources:
-  - pods
-  - nodes
   verbs:
   - get
   - list
