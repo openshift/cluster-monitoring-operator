@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 1.6.1
+    app.kubernetes.io/version: 1.7.0
   name: node-exporter
   namespace: openshift-monitoring
 spec:
@@ -25,7 +25,7 @@ spec:
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: node-exporter
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 1.6.1
+        app.kubernetes.io/version: 1.7.0
     spec:
       automountServiceAccountToken: true
       containers:
@@ -57,7 +57,7 @@ spec:
         env:
         - name: DBUS_SYSTEM_BUS_ADDRESS
           value: unix:path=/host/root/var/run/dbus/system_bus_socket
-        image: quay.io/prometheus/node-exporter:v1.6.1
+        image: quay.io/prometheus/node-exporter:v1.7.0
         name: node-exporter
         resources:
           requests:
@@ -133,7 +133,7 @@ spec:
         env:
         - name: TMPDIR
           value: /tmp
-        image: quay.io/prometheus/node-exporter:v1.6.1
+        image: quay.io/prometheus/node-exporter:v1.7.0
         name: init-textfile
         resources:
           requests:
