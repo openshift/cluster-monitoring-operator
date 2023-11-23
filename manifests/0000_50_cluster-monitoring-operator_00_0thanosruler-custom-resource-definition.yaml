@@ -6,6 +6,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
+    operator.prometheus.io/version: 0.69.1
   creationTimestamp: null
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
@@ -2494,7 +2495,7 @@ spec:
                 description: When a ThanosRuler deployment is paused, no actions except for deletion will be performed on the underlying objects.
                 type: boolean
               podMetadata:
-                description: PodMetadata contains Labels and Annotations gets propagated to the thanos ruler pods.
+                description: "PodMetadata configures labels and annotations which are propagated to the ThanosRuler pods. \n The following items are reserved and cannot be overridden: * \"app.kubernetes.io/name\" label, set to \"thanos-ruler\". * \"app.kubernetes.io/managed-by\" label, set to \"prometheus-operator\". * \"app.kubernetes.io/instance\" label, set to the name of the ThanosRuler instance. * \"thanos-ruler\" label, set to the name of the ThanosRuler instance. * \"kubectl.kubernetes.io/default-container\" annotation, set to \"thanos-ruler\"."
                 properties:
                   annotations:
                     additionalProperties:

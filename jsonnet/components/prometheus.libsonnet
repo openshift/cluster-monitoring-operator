@@ -350,6 +350,8 @@ function(params)
         serviceMonitorNamespaceSelector: cfg.namespaceSelector,
         ruleSelector: {},
         ruleNamespaceSelector: cfg.namespaceSelector,
+        scrapeConfigSelector: null,
+        scrapeConfigNamespaceSelector: null,
         listenLocal: true,
         priorityClassName: 'system-cluster-critical',
         additionalAlertRelabelConfigs: cfg.additionalRelabelConfigs,

@@ -278,11 +278,6 @@ function(params)
         overrideHonorLabels: true,
         ignoreNamespaceSelectors: true,
         enforcedNamespaceLabel: 'namespace',
-        ruleSelector: {
-          matchLabels: {
-            'openshift.io/prometheus-rule-evaluation-scope': 'leaf-prometheus',
-          },
-        },
         arbitraryFSAccessThroughSMs+: {
           deny: true,
         },
@@ -327,11 +322,20 @@ function(params)
           $.kubeRbacProxyFederateSecret.metadata.name,
         ],
         configMaps: ['serving-certs-ca-bundle', 'metrics-client-ca'],
+        probeSelector: {},
         probeNamespaceSelector: cfg.namespaceSelector,
+        podMonitorSelector: {},
         podMonitorNamespaceSelector: cfg.namespaceSelector,
         serviceMonitorSelector: {},
         serviceMonitorNamespaceSelector: cfg.namespaceSelector,
+        ruleSelector: {
+          matchLabels: {
+            'openshift.io/prometheus-rule-evaluation-scope': 'leaf-prometheus',
+          },
+        },
         ruleNamespaceSelector: cfg.namespaceSelector,
+        scrapeConfigSelector: null,
+        scrapeConfigNamespaceSelector: null,
         listenLocal: true,
         priorityClassName: 'openshift-user-critical',
         containers: [

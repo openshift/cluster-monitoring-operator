@@ -310,6 +310,17 @@ local inCluster =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
         commonLabels+: $.values.common.commonLabels,
+        securityContext: {
+          runAsNonRoot: true,
+          seccompProfile: { type: 'RuntimeDefault' },
+        },
+        securityContextContainer: {
+          runAsNonRoot: true,
+          seccompProfile: { type: 'RuntimeDefault' },
+          allowPrivilegeEscalation: false,
+          readOnlyRootFilesystem: true,
+          capabilities: { drop: ['ALL'] },
+        },
       },
       telemeterClient: {
         namespace: $.values.common.namespace,

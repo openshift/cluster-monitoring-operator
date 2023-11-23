@@ -17,4 +17,6 @@ runAsUser:
   type: RunAsAny
 seLinuxContext:
   type: RunAsAny
+seccompProfiles:
+- runtime/default
 users: []

@@ -188,6 +188,8 @@ spec:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
   ruleSelector: {}
+  scrapeConfigNamespaceSelector: null
+  scrapeConfigSelector: null
   secrets:
   - prometheus-k8s-tls
   - prometheus-k8s-proxy
