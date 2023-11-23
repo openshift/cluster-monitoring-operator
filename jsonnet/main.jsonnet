@@ -208,7 +208,6 @@ local inCluster =
         name: 'k8s',
         alertmanagerName: $.values.alertmanager.name,
         namespaces+: [
-          'openshift-etcd',
           $.values.common.namespaceUserWorkload,
         ],
         namespaceSelector: $.values.common.clusterMonitoringNamespaceSelector,
