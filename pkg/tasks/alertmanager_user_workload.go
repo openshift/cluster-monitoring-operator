@@ -92,14 +92,9 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 		return errors.Wrap(err, "creating Alertmanager User Workload RBAC proxy tenancy Secret failed")
 	}
 
-	rsm, err := t.factory.AlertmanagerUserWorkloadRBACProxyMetricSecret()
+	err = t.client.DeleteSecretByNamespaceAndName(ctx, "openshift-user-workload-monitoring", "alertmanager-kube-rbac-proxy-metric")
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager User Workload RBAC proxy metric Secret failed")
-	}
-
-	err = t.client.CreateIfNotExistSecret(ctx, rsm)
-	if err != nil {
-		return errors.Wrap(err, "creating Alertmanager User Workload RBAC proxy metric Secret failed")
+		return errors.Wrap(err, "deleting Alertmanager User Workload RBAC proxy metric Secret failed")
 	}
 
 	if t.config.UserWorkloadConfiguration.Alertmanager.Secrets != nil {
@@ -224,16 +219,6 @@ func (t *AlertmanagerUserWorkloadTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteSecret(ctx, s)
 	if err != nil {
 		return errors.Wrap(err, "deleting Alertmanager User Workload RBAC proxy tenancy Secret failed")
-	}
-
-	rsm, err := t.factory.AlertmanagerUserWorkloadRBACProxyMetricSecret()
-	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager User Workload RBAC proxy metric Secret failed")
-	}
-
-	err = t.client.DeleteSecret(ctx, rsm)
-	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager User Workload RBAC proxy metric Secret failed")
 	}
 
 	cr, err := t.factory.AlertmanagerUserWorkloadClusterRole()

@@ -849,12 +849,16 @@ func (c *Client) DeletePrometheusRuleByNamespaceAndName(ctx context.Context, nam
 }
 
 func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
-	err := c.kclient.CoreV1().Secrets(s.Namespace).Delete(ctx, s.GetName(), metav1.DeleteOptions{})
-	if apierrors.IsNotFound(err) {
-		return nil
+	return c.DeleteSecretByNamespaceAndName(ctx, s.GetNamespace(), s.GetName())
+}
+
+func (c *Client) DeleteSecretByNamespaceAndName(ctx context.Context, namespace, name string) error {
+	err := c.kclient.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("deleting Secret object failed: %w", err)
 	}
 
-	return err
+	return nil
 }
 
 // validatePrometheusResource is a helper method for ValidatePrometheus.

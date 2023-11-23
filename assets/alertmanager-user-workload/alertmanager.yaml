@@ -29,6 +29,7 @@ spec:
     - --upstream=http://127.0.0.1:9093
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
+    - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --config-file=/etc/kube-rbac-proxy/config.yaml
     - --logtostderr=true
@@ -53,6 +54,9 @@ spec:
       readOnly: true
     - mountPath: /etc/kube-rbac-proxy
       name: secret-alertmanager-kube-rbac-proxy
+      readOnly: true
+    - mountPath: /etc/tls/client
+      name: metrics-client-ca
       readOnly: true
   - args:
     - --secure-listen-address=0.0.0.0:9092
@@ -81,41 +85,6 @@ spec:
       name: secret-alertmanager-kube-rbac-proxy-tenancy
     - mountPath: /etc/tls/private
       name: secret-alertmanager-user-workload-tls
-  - args:
-    - --secure-listen-address=0.0.0.0:9097
-    - --upstream=http://127.0.0.1:9093
-    - --config-file=/etc/kube-rbac-proxy/config.yaml
-    - --tls-cert-file=/etc/tls/private/tls.crt
-    - --tls-private-key-file=/etc/tls/private/tls.key
-    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    - --client-ca-file=/etc/tls/client/client-ca.crt
-    - --logtostderr=true
-    - --allow-paths=/metrics
-    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
-    name: kube-rbac-proxy-metric
-    ports:
-    - containerPort: 9097
-      name: metrics
-    resources:
-      requests:
-        cpu: 1m
-        memory: 15Mi
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-        - ALL
-    terminationMessagePolicy: FallbackToLogsOnError
-    volumeMounts:
-    - mountPath: /etc/kube-rbac-proxy
-      name: secret-alertmanager-kube-rbac-proxy-metric
-      readOnly: true
-    - mountPath: /etc/tls/private
-      name: secret-alertmanager-user-workload-tls
-      readOnly: true
-    - mountPath: /etc/tls/client
-      name: metrics-client-ca
-      readOnly: true
   - args:
     - --insecure-listen-address=127.0.0.1:9096
     - --upstream=http://127.0.0.1:9093
@@ -156,7 +125,6 @@ spec:
   - alertmanager-user-workload-tls
   - alertmanager-kube-rbac-proxy
   - alertmanager-kube-rbac-proxy-tenancy
-  - alertmanager-kube-rbac-proxy-metric
   securityContext:
     fsGroup: 65534
     runAsNonRoot: true

@@ -20,9 +20,6 @@ spec:
   - name: tenancy
     port: 9092
     targetPort: tenancy
-  - name: metrics
-    port: 9097
-    targetPort: metrics
   selector:
     app.kubernetes.io/component: alert-router
     app.kubernetes.io/instance: user-workload

@@ -95,7 +95,6 @@ var (
 	AlertmanagerUserWorkloadClusterRole            = "alertmanager-user-workload/cluster-role.yaml"
 	AlertmanagerUserWorkloadRBACProxySecret        = "alertmanager-user-workload/kube-rbac-proxy-secret.yaml"
 	AlertmanagerUserWorkloadRBACProxyTenancySecret = "alertmanager-user-workload/kube-rbac-proxy-tenancy-secret.yaml"
-	AlertmanagerUserWorkloadRBACProxyMetricSecret  = "alertmanager-user-workload/kube-rbac-proxy-metric-secret.yaml"
 	AlertmanagerUserWorkloadTrustedCABundle        = "alertmanager-user-workload/trusted-ca-bundle.yaml"
 	AlertmanagerUserWorkloadPodDisruptionBudget    = "alertmanager-user-workload/pod-disruption-budget.yaml"
 	AlertmanagerUserWorkloadServiceMonitor         = "alertmanager-user-workload/service-monitor.yaml"
@@ -715,10 +714,6 @@ func (f *Factory) AlertmanagerUserWorkloadRBACProxyTenancySecret() (*v1.Secret, 
 
 func (f *Factory) AlertmanagerRBACProxyMetricSecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxyMetricSecret))
-}
-
-func (f *Factory) AlertmanagerUserWorkloadRBACProxyMetricSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxyMetricSecret))
 }
 
 func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {

@@ -47,11 +47,6 @@ function(params)
             port: 9092,
             targetPort: 'tenancy',
           },
-          {
-            name: 'metrics',
-            port: 9097,
-            targetPort: 'metrics',
-          },
         ],
         type: 'ClusterIP',
       },
@@ -63,7 +58,7 @@ function(params)
       spec+: {
         endpoints: [
           {
-            port: 'metrics',
+            port: 'web',
             interval: '30s',
             scheme: 'https',
             tlsConfig: {
@@ -80,7 +75,6 @@ function(params)
     // In order for kube-rbac-proxy to perform a TokenReview and
     // SubjectAccessReview for authN and authZ the alertmanager ServiceAccount
     // requires the `create` action on both of these.
-
     clusterRole: {
       apiVersion: 'rbac.authorization.k8s.io/v1',
       kind: 'ClusterRole',
@@ -180,12 +174,6 @@ function(params)
       },
     },
 
-    kubeRbacProxyMetricSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'alertmanager-kube-rbac-proxy-metric') + {
-      metadata+: {
-        labels: { 'app.kubernetes.io/name': 'alertmanager-' + cfg.name },
-      },
-    },
-
     alertmanager+: {
       spec+: {
         securityContext: {
@@ -201,7 +189,6 @@ function(params)
           'alertmanager-user-workload-tls',
           $.kubeRbacProxySecret.metadata.name,
           $.kubeRbacProxyTenancySecret.metadata.name,
-          $.kubeRbacProxyMetricSecret.metadata.name,
         ],
         listenLocal: true,
         resources: {
@@ -231,6 +218,7 @@ function(params)
               '--upstream=http://127.0.0.1:9093',
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--logtostderr=true',
@@ -245,6 +233,11 @@ function(params)
               {
                 mountPath: '/etc/kube-rbac-proxy',
                 name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+                readOnly: true,
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'metrics-client-ca',
                 readOnly: true,
               },
             ],
@@ -287,59 +280,6 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-alertmanager-user-workload-tls',
-              },
-            ],
-            securityContext: {
-              allowPrivilegeEscalation: false,
-              capabilities: {
-                drop: ['ALL'],
-              },
-            },
-          },
-          {
-            // TODO: merge this metric proxy with tenancy proxy when the issue below is fixed:
-            // https://github.com/brancz/kube-rbac-proxy/issues/146
-            name: 'kube-rbac-proxy-metric',
-            image: cfg.kubeRbacProxyImage,
-            resources: {
-              requests: {
-                cpu: '1m',
-                memory: '15Mi',
-              },
-            },
-            ports: [
-              {
-                containerPort: 9097,
-                name: 'metrics',
-              },
-            ],
-            args: [
-              '--secure-listen-address=0.0.0.0:9097',
-              '--upstream=http://127.0.0.1:9093',
-              '--config-file=/etc/kube-rbac-proxy/config.yaml',
-              '--tls-cert-file=/etc/tls/private/tls.crt',
-              '--tls-private-key-file=/etc/tls/private/tls.key',
-              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-              '--client-ca-file=/etc/tls/client/client-ca.crt',
-              '--logtostderr=true',
-              '--allow-paths=/metrics',
-            ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
-            volumeMounts: [
-              {
-                mountPath: '/etc/kube-rbac-proxy',
-                name: 'secret-' + $.kubeRbacProxyMetricSecret.metadata.name,
-                readOnly: true,
-              },
-              {
-                mountPath: '/etc/tls/private',
-                name: 'secret-alertmanager-user-workload-tls',
-                readOnly: true,
-              },
-              {
-                mountPath: '/etc/tls/client',
-                name: 'metrics-client-ca',
-                readOnly: true,
               },
             ],
             securityContext: {
