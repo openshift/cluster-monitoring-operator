@@ -454,12 +454,12 @@ function(params)
             }],
             ports: [
               {
-                containerPort: 10902,
+                containerPort: 10903,
                 name: 'thanos-proxy',
               },
             ],
             args: [
-              '--secure-listen-address=[$(POD_IP)]:10902',
+              '--secure-listen-address=[$(POD_IP)]:10903',
               '--upstream=http://127.0.0.1:10902',
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
