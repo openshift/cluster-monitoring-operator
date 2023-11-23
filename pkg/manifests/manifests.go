@@ -196,17 +196,16 @@ var (
 	PrometheusAdapterMinimalServiceMonitor       = "prometheus-adapter/minimal-service-monitor.yaml"
 	PrometheusAdapterServiceAccount              = "prometheus-adapter/service-account.yaml"
 
-	MetricsServerAPIService                         = "metrics-server/api-service.yaml"
-	MetricsServerServiceAccount                     = "metrics-server/service-account.yaml"
-	MetricsServerClusterRole                        = "metrics-server/cluster-role.yaml"
-	MetricsServerClusterRoleBinding                 = "metrics-server/cluster-role-binding.yaml"
-	MetricsServerClusterRoleAggregatedMetricsReader = "metrics-server/cluster-role-aggregated-metrics-reader.yaml"
-	MetricsServerClusterRoleBindingAuthDelegator    = "metrics-server/cluster-role-binding-auth-delegator.yaml"
-	MetricsServerRoleBindingAuthReader              = "metrics-server/role-binding-auth-reader.yaml"
-	MetricsServerDeployment                         = "metrics-server/deployment.yaml"
-	MetricsServerService                            = "metrics-server/service.yaml"
-	MetricsServerServiceMonitor                     = "metrics-server/service-monitor.yaml"
-	MetricsServerPodDisruptionBudget                = "metrics-server/pod-disruption-budget.yaml"
+	MetricsServerAPIService                      = "metrics-server/api-service.yaml"
+	MetricsServerServiceAccount                  = "metrics-server/service-account.yaml"
+	MetricsServerClusterRole                     = "metrics-server/cluster-role.yaml"
+	MetricsServerClusterRoleBinding              = "metrics-server/cluster-role-binding.yaml"
+	MetricsServerClusterRoleBindingAuthDelegator = "metrics-server/cluster-role-binding-auth-delegator.yaml"
+	MetricsServerRoleBindingAuthReader           = "metrics-server/role-binding-auth-reader.yaml"
+	MetricsServerDeployment                      = "metrics-server/deployment.yaml"
+	MetricsServerService                         = "metrics-server/service.yaml"
+	MetricsServerServiceMonitor                  = "metrics-server/service-monitor.yaml"
+	MetricsServerPodDisruptionBudget             = "metrics-server/pod-disruption-budget.yaml"
 
 	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
 	AdmissionWebhookAlertmanagerConfigValidatingWebhook = "admission-webhook/alertmanager-config-validating-webhook.yaml"
@@ -2118,10 +2117,6 @@ func (f *Factory) MetricsServerClusterRole() (*rbacv1.ClusterRole, error) {
 
 func (f *Factory) MetricsServerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(MetricsServerClusterRoleBinding))
-}
-
-func (f *Factory) MetricsServerClusterRoleAggregatedMetricsReader() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(MetricsServerClusterRoleAggregatedMetricsReader))
 }
 
 func (f *Factory) MetricsServerClusterRoleBindingAuthDelegator() (*rbacv1.ClusterRoleBinding, error) {

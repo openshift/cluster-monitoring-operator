@@ -208,10 +208,6 @@ func NewConfig(content io.Reader, tp bool) (*Config, error) {
 		return nil, errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
 	}
 
-	if c.ClusterMonitoringConfiguration.MetricsServerConfig != nil && !tp {
-		return nil, errors.Wrap(ErrConfigValidation, "Metrics Server is a TechPreview feature, to be able to deploy it please enable TechPreview")
-	}
-
 	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
 	if tp {
 		for _, profile := range SupportedCollectionProfiles {

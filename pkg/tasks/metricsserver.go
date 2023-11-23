@@ -72,17 +72,6 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 		}
 	}
 	{
-		cr, err := t.factory.MetricsServerClusterRoleAggregatedMetricsReader()
-		if err != nil {
-			return errors.Wrap(err, "initializing system:aggregated-metrics-reader ClusterRolefailed")
-		}
-
-		err = t.client.CreateOrUpdateClusterRole(ctx, cr)
-		if err != nil {
-			return errors.Wrap(err, "reconciling system:aggregated-metrics-reader ClusterRole failed")
-		}
-	}
-	{
 		crb, err := t.factory.MetricsServerClusterRoleBindingAuthDelegator()
 		if err != nil {
 			return errors.Wrap(err, "initializing metrics-server:system:auth-delegator ClusterRoleBinding failed")
@@ -166,7 +155,7 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 }
 
 func (t *MetricsServerTask) removePrometheusAdapterResources(ctx context.Context) error {
-	pa := NewPrometheusAdapterTask(ctx, t.namespace, t.client, t.enabled, t.factory, t.config)
+	pa := NewPrometheusAdapterTask(ctx, t.namespace, t.client, false, t.factory, t.config)
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "prometheus-adapter",
@@ -216,6 +205,6 @@ func (t *MetricsServerTask) removePrometheusAdapterResources(ctx context.Context
 		}
 	}
 
-	// TODO(slashpai): Add steps to remove other resources
+	// TODO(slashpai): Add steps to remove other resources if any
 	return nil
 }

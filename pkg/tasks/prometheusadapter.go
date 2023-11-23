@@ -11,31 +11,30 @@ import (
 )
 
 type PrometheusAdapterTask struct {
-	client               *client.Client
-	metricsServerEnabled bool
-	ctx                  context.Context
-	factory              *manifests.Factory
-	config               *manifests.Config
-	namespace            string
+	client    *client.Client
+	enabled   bool
+	ctx       context.Context
+	factory   *manifests.Factory
+	config    *manifests.Config
+	namespace string
 }
 
-func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *client.Client, metricsServerEnabled bool, factory *manifests.Factory, config *manifests.Config) *PrometheusAdapterTask {
+func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *client.Client, enabled bool, factory *manifests.Factory, config *manifests.Config) *PrometheusAdapterTask {
 	return &PrometheusAdapterTask{
-		client:               client,
-		metricsServerEnabled: metricsServerEnabled,
-		factory:              factory,
-		config:               config,
-		namespace:            namespace,
-		ctx:                  ctx,
+		client:    client,
+		enabled:   enabled,
+		factory:   factory,
+		config:    config,
+		namespace: namespace,
+		ctx:       ctx,
 	}
 }
 
 func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
-	if t.metricsServerEnabled {
-		return nil
+	if t.enabled {
+		return t.create(ctx)
 	}
-
-	return t.create(ctx)
+	return nil
 }
 
 func (t *PrometheusAdapterTask) create(ctx context.Context) error {

@@ -9,7 +9,6 @@ metadata:
   name: metrics-server
   namespace: openshift-monitoring
 spec:
-  minReadySeconds: 60
   replicas: 2
   selector:
     matchLabels:

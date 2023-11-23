@@ -442,15 +442,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - metrics.k8s.io
-  resources:
-  - pods
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - nodes/metrics

@@ -381,7 +381,6 @@ local inCluster =
                 inCluster.prometheusAdapter.clusterRole.rules +
                 inCluster.prometheusAdapter.clusterRoleServerResources.rules +
                 inCluster.metricsServer.clusterRole.rules +
-                inCluster.metricsServer.clusterRoleAggregatedMetricsReader.rules +
                 inCluster.prometheus.clusterRole.rules +
                 std.flatMap(function(role) role.rules,
                             inCluster.prometheus.roleSpecificNamespaces.items) +

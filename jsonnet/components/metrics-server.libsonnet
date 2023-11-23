@@ -13,27 +13,6 @@ function(params) {
       namespace: cfg.namespace,
     },
   },
-  clusterRoleAggregatedMetricsReader: {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'ClusterRole',
-    metadata: {
-      labels: {
-        'app.kubernetes.io/name': 'aggregated-metrics-reader',
-        'app.kubernetes.io/component': 'metrics-server',
-        'rbac.authorization.k8s.io/aggregate-to-admin': 'true',
-        'rbac.authorization.k8s.io/aggregate-to-edit': 'true',
-        'rbac.authorization.k8s.io/aggregate-to-view': 'true',
-      } + cfg.commonLabels,
-      name: 'system:aggregated-metrics-reader',
-    },
-    rules: [
-      {
-        apiGroups: ['metrics.k8s.io'],
-        resources: ['pods', 'nodes'],
-        verbs: ['get', 'list', 'watch'],
-      },
-    ],
-  },
   clusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
@@ -166,7 +145,6 @@ function(params) {
       namespace: cfg.namespace,
     },
     spec: {
-      minReadySeconds: 60,
       replicas: 2,
       selector: {
         matchLabels: {
@@ -236,6 +214,9 @@ function(params) {
                   protocol: 'TCP',
                 },
               ],
+              // metrics-server waits for 2 scrapes to report ready.
+              // The first one happens during boostrap and the second one after 15s (kubelet scrape interval)
+              // kubelet scrape interval is specified in metrics-server flag `--metric-resolution=15s`
               readinessProbe: {
                 failureThreshold: 3,
                 httpGet: {

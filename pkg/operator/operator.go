@@ -749,7 +749,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
 				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
 				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				newTaskSpec("PrometheusAdapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, o.metricsServerEnabled, factory, config)),
+				newTaskSpec("PrometheusAdapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, !o.metricsServerEnabled, factory, config)),
 				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, o.metricsServerEnabled, factory, config)),
 				newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),
