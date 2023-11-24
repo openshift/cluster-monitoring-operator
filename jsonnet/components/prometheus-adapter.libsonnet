@@ -131,6 +131,7 @@ function(params)
                           '--prometheus-url=' + cfg.prometheusURL,
                           '--secure-port=6443',
                           '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                          '--disable-http2',
                         ],
                         // OCPBUGS-10895: configure a startup probe to prevent
                         // the container from being killed by kubelet in case
