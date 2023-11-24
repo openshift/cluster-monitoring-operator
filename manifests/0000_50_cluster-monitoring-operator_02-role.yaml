@@ -432,6 +432,21 @@ rules:
   - nodes/metrics
   verbs:
   - get
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/metrics
+  verbs:
+  - get
 - nonResourceURLs:
   - /metrics
   verbs:

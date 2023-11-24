@@ -43,6 +43,8 @@ type ClusterMonitoringConfiguration struct {
 	HTTPConfig *HTTPConfig `json:"http,omitempty"`
 	// `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 	K8sPrometheusAdapter *K8sPrometheusAdapter `json:"k8sPrometheusAdapter,omitempty"`
+	// `MetricsServer` defines settings for the MetricsServer component.
+	MetricsServerConfig *MetricsServerConfig `json:"metricsServer,omitempty"`
 	// `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
 	KubeStateMetricsConfig *KubeStateMetricsConfig `json:"kubeStateMetrics,omitempty"`
 	// `PrometheusK8sConfig` defines settings for the Prometheus component.
@@ -117,6 +119,18 @@ type K8sPrometheusAdapter struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Defines dedicated service monitors.
 	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
+}
+
+// The `MetricsServerConfig` resource defines settings for the MetricsServer component.
+type MetricsServerConfig struct {
+	// Defines the nodes on which the pods are scheduled.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Defines tolerations for the pods.
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// Defines resource requests and limits for the Metrics Server container.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+	// Defines a pod's topology spread constraints.
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 // You can use the `DedicatedServiceMonitors` resource to configure dedicated

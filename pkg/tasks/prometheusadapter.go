@@ -12,15 +12,17 @@ import (
 
 type PrometheusAdapterTask struct {
 	client    *client.Client
+	enabled   bool
 	ctx       context.Context
 	factory   *manifests.Factory
 	config    *manifests.Config
 	namespace string
 }
 
-func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *client.Client, factory *manifests.Factory, config *manifests.Config) *PrometheusAdapterTask {
+func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *client.Client, enabled bool, factory *manifests.Factory, config *manifests.Config) *PrometheusAdapterTask {
 	return &PrometheusAdapterTask{
 		client:    client,
+		enabled:   enabled,
 		factory:   factory,
 		config:    config,
 		namespace: namespace,
@@ -29,6 +31,13 @@ func NewPrometheusAdapterTask(ctx context.Context, namespace string, client *cli
 }
 
 func (t *PrometheusAdapterTask) Run(ctx context.Context) error {
+	if t.enabled {
+		return t.create(ctx)
+	}
+	return nil
+}
+
+func (t *PrometheusAdapterTask) create(ctx context.Context) error {
 	{
 		cr, err := t.factory.PrometheusAdapterClusterRole()
 		if err != nil {
