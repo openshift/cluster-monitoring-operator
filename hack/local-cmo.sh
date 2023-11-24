@@ -201,6 +201,9 @@ main() {
 	local operator_config=manifests/0000_50_cluster-monitoring-operator_04-config.yaml
 	local telemetry_conf=/tmp/telemetry-config.yaml
 
+	local desired_version
+	desired_version=$(kubectl get clusterversion version -o jsonpath='{ .status.desired.version }')
+
 	gojsontoyaml -yamltojson <$operator_config |
 		jq -r '.data["metrics.yaml"]' >$telemetry_conf
 
@@ -218,6 +221,7 @@ main() {
 
 	run go run ./cmd/operator/... "${images[@]}" \
 		-assets assets/ \
+		-release-version="$desired_version" \
 		-telemetry-config $telemetry_conf \
 		-kubeconfig="$kubeconfig" \
 		-namespace=openshift-monitoring \
