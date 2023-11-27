@@ -49,8 +49,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
-	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -1459,14 +1459,6 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 
 	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite) > 0 {
 		p.Spec.RemoteWrite = addRemoteWriteConfigs(clusterID, p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
-
-		// Explicitly warn that we are ignoring the `SendExemplars` configuration for in-cluster scenarios.
-		for _, rws := range f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite {
-			if rws.SendExemplars != nil && *rws.SendExemplars {
-				klog.Warningln("Enabling `SendExemplars` in the in-cluster Prometheus configuration has no affect, as it is only supported for UWM configurations.")
-				break
-			}
-		}
 	}
 
 	for _, rw := range p.Spec.RemoteWrite {
@@ -1775,7 +1767,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 		// Since `SendExemplars` is experimental currently, we need to enable "exemplar-storage" explicitly to make sure
 		// CMO turns this on automatically in Prometheus if any *UWM* RemoteWrite[] enables this.
 		for _, rws := range f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite {
-			if *rws.SendExemplars {
+			if ptr.Deref(rws.SendExemplars, false) {
 				p.Spec.EnableFeatures = append(p.Spec.EnableFeatures, EnableFeatureExemplarStorageString)
 				break
 			}
