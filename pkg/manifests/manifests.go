@@ -50,6 +50,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -69,6 +70,9 @@ const (
 	telemetryTokenSecretKey = "token"
 
 	collectionProfileLabel = "monitoring.openshift.io/collection-profile"
+
+	// --enable-feature=exemplar-storage: https://prometheus.io/docs/prometheus/latest/feature_flags/#exemplars-storage
+	EnableFeatureExemplarStorageString = "exemplar-storage"
 )
 
 var (
@@ -1772,6 +1776,15 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 			f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
 			p.Spec.RemoteWrite,
 			f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite...)
+
+		// Since `SendExemplars` is experimental currently, we need to enable "exemplar-storage" explicitly to make sure
+		// CMO turns this on automatically in Prometheus if any *UWM* RemoteWrite[] enables this.
+		for _, rws := range f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite {
+			if ptr.Deref(rws.SendExemplars, false) {
+				p.Spec.EnableFeatures = append(p.Spec.EnableFeatures, EnableFeatureExemplarStorageString)
+				break
+			}
+		}
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit != nil {
@@ -3714,6 +3727,7 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 			ProxyURL:            target.ProxyURL,
 			MetadataConfig:      target.MetadataConfig,
 			OAuth2:              target.OAuth2,
+			SendExemplars:       target.SendExemplars,
 		}
 		if target.TLSConfig != nil {
 			rwConf.TLSConfig = &monv1.TLSConfig{
