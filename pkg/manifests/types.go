@@ -753,10 +753,10 @@ type RemoteWriteSpec struct {
 	QueueConfig *monv1.QueueConfig `json:"queueConfig,omitempty"`
 	// Defines the timeout value for requests to the remote write endpoint.
 	RemoteTimeout string `json:"remoteTimeout,omitempty"`
-	// Enables sending of exemplars over remote write. Note when enabled, Prometheus is
-	// configured to store exemplars in memory with a maximum number of 100,000 exemplars.
-	// The setting is only effective for user-defined monitoring and has no effect for
-	// cluster monitoring.
+	// Enables sending exemplars via remote write. When enabled, Prometheus is
+	// configured to store a maximum of 100,000 exemplars in memory.
+	// Note that this setting only applies to user-defined monitoring. It is not applicable
+	// to default in-cluster monitoring.
 	SendExemplars *bool `json:"sendExemplars,omitempty"`
 	// Defines AWS Signature Version 4 authentication settings.
 	Sigv4 *monv1.Sigv4 `json:"sigv4,omitempty"`

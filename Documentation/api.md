@@ -525,7 +525,7 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 | proxyUrl | string | Defines an optional proxy URL. |
 | queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.66.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
 | remoteTimeout | string | Defines the timeout value for requests to the remote write endpoint. |
-| sendExemplars | *bool | Enables sending of exemplars over remote write. Note when enabled, Prometheus is configured to store exemplars in memory with a maximum number of 100,000 exemplars. The setting is only effective for user-defined monitoring and has no effect for cluster monitoring. |
+| sendExemplars | *bool | Enables sending exemplars via remote write. When enabled, Prometheus is configured to store a maximum of 100,000 exemplars in memory. Note that this setting only applies to user-defined monitoring. It is not applicable to default in-cluster monitoring. |
 | sigv4 | *monv1.Sigv4 | Defines AWS Signature Version 4 authentication settings. |
 | tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.66.0/Documentation/api.md#safetlsconfig) | Defines TLS authentication settings for the remote write endpoint. |
 | url | string | Defines the URL of the remote write endpoint to which samples will be sent. |
