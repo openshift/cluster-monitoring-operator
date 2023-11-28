@@ -427,6 +427,8 @@ function(params)
                     '/-/healthy',
                     '/-/ready',
                   ]),
+                  // remove this before merge.
+                  '-v=10',
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
