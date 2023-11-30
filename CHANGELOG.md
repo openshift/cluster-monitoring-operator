@@ -2,6 +2,7 @@
 
 ## 4.15
 
+- [#2022](https://github.com/openshift/cluster-monitoring-operator/pull/2022) Add support to switch to metrics server from prometheus-adapter when the `MetricsServer` feature gate is enabled.
 - [#2161](https://github.com/openshift/cluster-monitoring-operator/pull/2161) Add `PrometheusRestrictedConfig.RemoteWrite[].SendExemplars`.
 
 ## 4.14
