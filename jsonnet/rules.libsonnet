@@ -323,7 +323,7 @@ function(params) {
           record: 'cluster:alertmanager_integrations:max',
         },
         {
-          expr: 'sum by(plugin_name, volume_mode)(pv_collector_total_pv_count)',
+          expr: 'sum by(plugin_name, volume_mode)(pv_collector_total_pv_count{volume_plugin!~".*-e2e-.*"})',
           record: 'cluster:kube_persistentvolume_plugin_type_counts:sum',
         },
         {
