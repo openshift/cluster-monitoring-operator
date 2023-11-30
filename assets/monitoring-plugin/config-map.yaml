@@ -8,7 +8,8 @@ data:
       default_type       application/octet-stream;
       keepalive_timeout  65;
       server {
-        listen              LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME ssl;
+        listen              9443 ssl;
+        listen              [::]:9443 ssl;
         ssl_certificate     /var/cert/tls.crt;
         ssl_certificate_key /var/cert/tls.key;
         root                /usr/share/nginx/html;
