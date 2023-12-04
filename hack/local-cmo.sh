@@ -80,7 +80,7 @@ disable_managed_cmo() {
 			    {
 			      "spec": {
 			        "overrides": [
-			          [ .spec | .? | .overrides[] | .? | select(.name != "cluster-monitoring-operator")] +
+			          [ .spec? | .overrides[]? | select(.name != "cluster-monitoring-operator")] +
 			          [{
 			            "group": "apps",
 			            "kind": "Deployment",
