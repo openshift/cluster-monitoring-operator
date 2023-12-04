@@ -340,6 +340,17 @@ function(params)
             },
             containers: [
               super.containers[0] {
+                // The upstream kube-thanos jsonnet provides a hardened
+                // security context which sets "readOnlyRootFilesystem: true"
+                // for the thanos-querier container but a gathering script
+                // running running as a post-step in the CI jobs needs to write
+                // files to /tmp. As a temporary workaround, we patch the
+                // security context here.
+                // See https://issues.redhat.com/browse/OCPBUGS-24340.
+                securityContext+: {
+                  readOnlyRootFilesystem: false,
+                },
+
                 livenessProbe:: {},
                 readinessProbe:: {},
                 args: std.map(
