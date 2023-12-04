@@ -41,6 +41,9 @@ spec:
         - --config-reloader-cpu-request=1m
         - --config-reloader-memory-request=10Mi
         - --web.listen-address=127.0.0.1:8080
+        env:
+        - name: GOGC
+          value: "30"
         image: quay.io/prometheus-operator/prometheus-operator:v0.69.1
         name: prometheus-operator
         ports: []
