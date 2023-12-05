@@ -1,0 +1,109 @@
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # When the PTP operator isn't installed, NodeClockSkewDetected should
+  # become active when the conditions are met.
+  - interval: 1m
+    input_series:
+      # node with a positive clock drift.
+      - series: 'node_timex_offset_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-0",service="node-exporter"}'
+        values: 0+0.001x9 0.051+0.001x19 0x10
+      # node with a negative clock drift.
+      - series: 'node_timex_offset_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-1",service="node-exporter"}'
+        values: 0-0.001x9 -0.051-0.001x19 0x10
+      # node with an acceptable clock offset and no drift.
+      - series: 'node_timex_offset_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-2",service="node-exporter"}'
+        values: 0.001x40
+      # node with an excessive clock offset and no drift.
+      - series: 'node_timex_offset_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-3",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-3",service="node-exporter"}'
+        values: 0.06x30 0x10
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: NodeClockSkewDetected
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: openshift-monitoring
+            container: kube-rbac-proxy
+            endpoint: https
+            instance: ocp-master-3
+            job: node-exporter
+            pod: node-exporter-master-3
+            service: node-exporter
+          exp_annotations:
+            description: "Clock at ocp-master-3 is out of sync by more than 0.05s. Ensure NTP is configured correctly on this host."
+            summary: "Clock skew detected."
+      - eval_time: 21m
+        alertname: NodeClockSkewDetected
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: openshift-monitoring
+            container: kube-rbac-proxy
+            endpoint: https
+            instance: ocp-master-0
+            job: node-exporter
+            pod: node-exporter-master-0
+            service: node-exporter
+          exp_annotations:
+            description: "Clock at ocp-master-0 is out of sync by more than 0.05s. Ensure NTP is configured correctly on this host."
+            summary: "Clock skew detected."
+        - exp_labels:
+            severity: warning
+            namespace: openshift-monitoring
+            container: kube-rbac-proxy
+            endpoint: https
+            instance: ocp-master-1
+            job: node-exporter
+            pod: node-exporter-master-1
+            service: node-exporter
+          exp_annotations:
+            description: "Clock at ocp-master-1 is out of sync by more than 0.05s. Ensure NTP is configured correctly on this host."
+            summary: "Clock skew detected."
+        - exp_labels:
+            severity: warning
+            namespace: openshift-monitoring
+            container: kube-rbac-proxy
+            endpoint: https
+            instance: ocp-master-3
+            job: node-exporter
+            pod: node-exporter-master-3
+            service: node-exporter
+          exp_annotations:
+            description: "Clock at ocp-master-3 is out of sync by more than 0.05s. Ensure NTP is configured correctly on this host."
+            summary: "Clock skew detected."
+      - eval_time: 31m
+        alertname: NodeClockSkewDetected
+        exp_alerts:
+
+  # When the PTP operator is installed, NodeClockSkewDetected should
+  # never become active, even when the conditions are met.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="ptp-monitor-service"}'
+        values: 1x40
+      # node with a positive clock drift.
+      - series: 'node_timex_offset_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-0",service="node-exporter"}'
+        values: 0+0.001x9 0.051+0.001x19 0x10
+      # node with a negative clock drift.
+      - series: 'node_timex_offset_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-1",service="node-exporter"}'
+        values: 0-0.001x9 -0.051-0.001x19 0x10
+      # node with an acceptable clock offset and no drift.
+      - series: 'node_timex_offset_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-2",service="node-exporter"}'
+        values: 0.001x40
+      # node with an excessive clock offset and no drift.
+      - series: 'node_timex_offset_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-3",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-3",service="node-exporter"}'
+        values: 0.06x30 0x10
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: NodeClockSkewDetected
+        exp_alerts:
+      - eval_time: 21m
+        alertname: NodeClockSkewDetected
+        exp_alerts:
+      - eval_time: 31m
+        alertname: NodeClockSkewDetected
+        exp_alerts:

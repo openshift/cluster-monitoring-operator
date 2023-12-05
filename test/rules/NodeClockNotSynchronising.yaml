@@ -1,0 +1,80 @@
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # When the PTP operator isn't installed, NodeClockNotSynchronising should
+  # become active when the conditions are met.
+  - interval: 1m
+    input_series:
+      # node with a zero sync status and maxerrors above threshold.
+      - series: 'node_timex_sync_status{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-0",service="node-exporter"}'
+        values: 0x20 0
+      - series: 'node_timex_maxerror_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-0",service="node-exporter"}'
+        values: 16x20 0
+      # node with a zero sync status but acceptable maxerrors.
+      - series: 'node_timex_sync_status{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-1",service="node-exporter"}'
+        values: 0x20
+      - series: 'node_timex_maxerror_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-1",service="node-exporter"}'
+        values: 15x20
+      # node with a non-zero sync status and increasing maxerrors.
+      - series: 'node_timex_sync_status{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-2",service="node-exporter"}'
+        values: 1x20
+      - series: 'node_timex_maxerror_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-2",service="node-exporter"}'
+        values: 0+1x20
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: NodeClockNotSynchronising
+        exp_alerts:
+      - eval_time: 10m
+        alertname: NodeClockNotSynchronising
+        exp_alerts:
+        - exp_labels:
+            severity: critical
+            namespace: openshift-monitoring
+            container: kube-rbac-proxy
+            endpoint: https
+            instance: ocp-master-0
+            job: node-exporter
+            pod: node-exporter-master-0
+            service: node-exporter
+          exp_annotations:
+            description: "Clock at ocp-master-0 is not synchronising. Ensure NTP is configured on this host."
+            runbook_url: "https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeClockNotSynchronising.md"
+            summary: "Clock not synchronising."
+      - eval_time: 21m
+        alertname: NodeClockNotSynchronising
+        exp_alerts:
+
+  # When the PTP operator is installed, NodeClockNotSynchronising should
+  # never become active, even when the conditions are met.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="ptp-monitor-service"}'
+        values: 1x40
+      # node with a zero sync status and maxerrors above threshold.
+      - series: 'node_timex_sync_status{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-0",service="node-exporter"}'
+        values: 0x20 0
+      - series: 'node_timex_maxerror_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-0",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-0",service="node-exporter"}'
+        values: 16x20 0
+      # node with a zero sync status but acceptable maxerrors.
+      - series: 'node_timex_sync_status{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-1",service="node-exporter"}'
+        values: 0x20
+      - series: 'node_timex_maxerror_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-1",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-1",service="node-exporter"}'
+        values: 15x20
+      # node with a non-zero sync status and increasing maxerrors.
+      - series: 'node_timex_sync_status{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-2",service="node-exporter"}'
+        values: 1x20
+      - series: 'node_timex_maxerror_seconds{container="kube-rbac-proxy",endpoint="https",instance="ocp-master-2",job="node-exporter",namespace="openshift-monitoring",pod="node-exporter-master-2",service="node-exporter"}'
+        values: 0+1x20
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: NodeClockNotSynchronising
+        exp_alerts:
+      - eval_time: 10m
+        alertname: NodeClockNotSynchronising
+        exp_alerts:
+      - eval_time: 21m
+        alertname: NodeClockNotSynchronising
+        exp_alerts:

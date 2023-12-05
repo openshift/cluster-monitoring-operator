@@ -1,5 +1,6 @@
 local k8sMixinUtils = import 'github.com/kubernetes-monitoring/kubernetes-mixin/lib/utils.libsonnet';
 
+// List of rule groups which are dropped from the final manifests.
 local excludedRuleGroups = [
   'kube-apiserver-availability.rules',
   // rules managed by openshift/cluster-kube-controller-manager-operator.
@@ -16,18 +17,23 @@ local excludedRuleGroups = [
   'kubernetes-system-kube-proxy',
 ];
 
+// List of rules which are dropped from the final manifests.
 local excludedRules = [
   {
     name: 'alertmanager.rules',
     rules: [
+      // Already covered by the KubePodCrashLooping alerting rules.
       { alert: 'AlertmanagerClusterCrashlooping' },
+      //
       { alert: 'AlertmanagerClusterFailedToSendAlerts', severity: 'warning' },
     ],
   },
   {
     name: 'general.rules',
     rules: [
+      // CMO ships a modified TargetDown alerting rule which is less noisy than upstream.
       { alert: 'TargetDown' },
+      // We decided not to ship the InfoInhibitor alerting rule for now.
       { alert: 'InfoInhibitor' },
     ],
   },
@@ -74,6 +80,7 @@ local excludedRules = [
       // In addition we have alerts to detect that a Kubelet
       // can't renew its certificates which makes it redundant
       // to alert on certificates being almost expired.
+      //
       // See https://coreos.slack.com/archives/CB48XQ4KZ/p1603712568136500.
       { alert: 'KubeletClientCertificateExpiration' },
       { alert: 'KubeletServerCertificateExpiration' },
@@ -82,16 +89,25 @@ local excludedRules = [
   {
     name: 'kubernetes-apps',
     rules: [
+      // We ship a modified KubeDeploymentReplicasMismatch alerting rule which
+      // takes into account the availability of the control plane nodes.
       { alert: 'KubeDeploymentReplicasMismatch' },
     ],
   },
   {
     name: 'prometheus',
     rules: [
+      // PrometheusErrorSendingAlertsToAnyAlertmanager has a critical severity but it
+      // can be noisy and we prefer to rely on the Watchdog alerting rule to detect
+      // broken communication between Prometheus and Alertmanager.  We keep the
+      // PrometheusErrorSendingAlertsToSomeAlertmanagers alerting rule with the
+      // warning severity to help with root cause.
+      //
+      // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
       { alert: 'PrometheusErrorSendingAlertsToAnyAlertmanager' },
     ],
   },
-  // The following rules are removed due to lack of usefulness
+  // The following recording rules are removed due to lack of usefulness
   // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1996785 for details.
   {
     name: 'kube-prometheus-node-recording.rules',
@@ -116,6 +132,7 @@ local excludedRules = [
   {
     name: 'thanos-query',
     rules: [
+      // We have no SLO on the Thanos querier API service.
       { alert: 'ThanosQueryInstantLatencyHigh' },
       { alert: 'ThanosQueryRangeLatencyHigh' },
     ],
@@ -180,12 +197,26 @@ local patchedRules = [
     name: 'node-exporter',
     rules: [
       {
+        // When the PTP operator is installed, it provides a more reliable and accurate
+        // alerting rule to detect unsynchronized clocks. The NodeClockNotSynchronising
+        // alerting rule is patched to never become active in this case.
+        // See https://issues.redhat.com/browse/MON-3544
         alert: 'NodeClockNotSynchronising',
+        expr: function(o)
+          std.format('(\n%(expr)s) and on() absent(up{job="ptp-monitor-service"})', o)
+        ,
         labels: {
           severity: 'critical',
         },
       },
       {
+        // See previous item.
+        alert: 'NodeClockSkewDetected',
+        expr: function(o)
+          std.format('(\n%(expr)s) and on() absent(up{job="ptp-monitor-service"})', o),
+      },
+      {
+        // Extend the upstream for duration to reduce alert noise.
         alert: 'NodeSystemdServiceFailed',
         'for': '15m',
       },
@@ -320,6 +351,7 @@ local patchedRules = [
     local kubernetesStorageConfig = { prefixedNamespaceSelector: 'namespace=~"(openshift-.*|kube-.*|default)",', kubeletSelector: 'job="kubelet", metrics_path="/metrics"' },
     rules: [
       {
+        // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
         alert: 'KubePersistentVolumeErrors',
         labels: {
           severity: 'warning',
@@ -348,12 +380,14 @@ local patchedRules = [
         'for': '1h',
       },
       {
+        // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
         alert: 'PrometheusBadConfig',
         labels: {
           severity: 'warning',
         },
       },
       {
+        // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
         alert: 'PrometheusRemoteStorageFailures',
         labels: {
           severity: 'warning',
@@ -361,12 +395,14 @@ local patchedRules = [
 
       },
       {
+        // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
         alert: 'PrometheusRuleFailures',
         labels: {
           severity: 'warning',
         },
       },
       {
+        // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
         alert: 'PrometheusRemoteWriteBehind',
         labels: {
           severity: 'info',
@@ -378,18 +414,21 @@ local patchedRules = [
     name: 'thanos-rule',
     rules: [
       {
+        // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
         alert: 'ThanosNoRuleEvaluations',
         labels: {
           severity: 'warning',
         },
       },
       {
+        // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
         alert: 'ThanosRuleHighRuleEvaluationFailures',
         labels: {
           severity: 'warning',
         },
       },
       {
+        // Refer to https://bugzilla.redhat.com/show_bug.cgi?id=1986981 for details.
         alert: 'ThanosRuleSenderIsFailingAlerts',
         labels: {
           severity: 'warning',
@@ -472,19 +511,26 @@ local patchOrExcludeRule(rule, ruleSet, operation) =
   if std.length(ruleSet) == 0 then
     [rule]
   else if ('severity' in ruleSet[0] && !std.startsWith(rule.labels.severity, ruleSet[0].severity)) then
+    // If the 'severity' field is set then it means "drop any alerting rule
+    // matching this name + severity label".
     [] + patchOrExcludeRule(rule, ruleSet[1:], operation)
   else if (('alert' in rule && 'alert' in ruleSet[0]) && std.startsWith(rule.alert, ruleSet[0].alert)) ||
           (('record' in rule && 'record' in ruleSet[0]) && std.startsWith(rule.record, ruleSet[0].record)) then
     if operation == 'patch' then
       local patch = {
-        [k]: ruleSet[0][k]
+        [k]: if (std.isFunction(ruleSet[0][k])) then
+          ruleSet[0][k](rule[k])
+        else
+          ruleSet[0][k]
         for k in std.objectFields(ruleSet[0])
         if k != 'alert' && k != 'record'
       };
       [std.mergePatch(rule, patch)]
     else
+      // action is 'exclude'.
       []
   else
+    // Evaluate the next override.
     [] + patchOrExcludeRule(rule, ruleSet[1:], operation);
 
 local patchOrExcludeRuleGroup(group, groupSet, operation) =
