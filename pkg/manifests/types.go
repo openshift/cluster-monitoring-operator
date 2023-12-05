@@ -121,7 +121,8 @@ type K8sPrometheusAdapter struct {
 	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
 }
 
-// The `MetricsServerConfig` resource defines settings for the MetricsServer component.
+// The `MetricsServerConfig` resource defines settings for the Metrics Server component.
+// Note that this setting only applies when the MetricsServer feature gate is enabled.
 type MetricsServerConfig struct {
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`

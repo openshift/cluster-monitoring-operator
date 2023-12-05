@@ -200,7 +200,7 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 
 #### Description
 
-The `MetricsServerConfig` resource defines settings for the MetricsServer component.
+The `MetricsServerConfig` resource defines settings for the Metrics Server component. Note that this setting only applies when the MetricsServer feature gate is enabled.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
