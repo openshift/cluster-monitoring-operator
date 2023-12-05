@@ -449,6 +449,7 @@ func New(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
 			SecretName:      "metrics-client-certs",
+			JiraComponent:   "Monitoring",
 		},
 		csrOption,
 		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
@@ -470,6 +471,7 @@ func New(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
 			SecretName:      "federate-client-certs",
+			JiraComponent:   "Monitoring",
 		},
 		csrOption,
 		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),

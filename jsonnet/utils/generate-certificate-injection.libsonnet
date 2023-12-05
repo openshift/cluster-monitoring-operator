@@ -6,6 +6,9 @@
     metadata: {
       name: cfgName,
       namespace: cfgNamespace,
+      annotations: {
+        'openshift.io/owning-component': 'Monitoring',
+      },
       labels: {
         'config.openshift.io/inject-trusted-cabundle': 'true',
       },
