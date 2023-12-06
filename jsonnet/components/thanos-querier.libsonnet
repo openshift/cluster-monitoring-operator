@@ -555,7 +555,10 @@ function(params)
                   '--tls-cert-file=/etc/tls/private/tls.crt',
                   '--tls-private-key-file=/etc/tls/private/tls.key',
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
-                  '--allow-paths=/api/v1/rules',
+                  '--allow-paths=' + std.join(',', [
+                    '/api/v1/rules',
+                    '/api/v1/alerts',
+                  ]),
                 ],
                 terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
