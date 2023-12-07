@@ -173,7 +173,8 @@ spec:
       annotations:
         description: Clock at {{ $labels.instance }} is out of sync by more than 0.05s. Ensure NTP is configured correctly on this host.
         summary: Clock skew detected.
-      expr: |
+      expr: |-
+        (
         (
           node_timex_offset_seconds{job="node-exporter"} > 0.05
         and
@@ -185,6 +186,7 @@ spec:
         and
           deriv(node_timex_offset_seconds{job="node-exporter"}[5m]) <= 0
         )
+        ) and on() absent(up{job="ptp-monitor-service"})
       for: 10m
       labels:
         severity: warning
@@ -193,10 +195,12 @@ spec:
         description: Clock at {{ $labels.instance }} is not synchronising. Ensure NTP is configured on this host.
         runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeClockNotSynchronising.md
         summary: Clock not synchronising.
-      expr: |
+      expr: |-
+        (
         min_over_time(node_timex_sync_status{job="node-exporter"}[5m]) == 0
         and
         node_timex_maxerror_seconds{job="node-exporter"} >= 16
+        ) and on() absent(up{job="ptp-monitor-service"})
       for: 10m
       labels:
         severity: critical
