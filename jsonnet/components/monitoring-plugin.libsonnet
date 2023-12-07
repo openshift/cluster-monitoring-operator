@@ -27,6 +27,20 @@ function(params)
         ssl_certificate     %(tlsPath)s/tls.crt;
         ssl_certificate_key %(tlsPath)s/tls.key;
         root                /usr/share/nginx/html;
+
+        # Prevent caching for plugin-manifest.json
+        location = /plugin-manifest.json {
+          add_header Cache-Control 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0';
+          add_header Pragma 'no-cache';
+          add_header Expires '0';
+        }
+
+        # Prevent caching for plugin-entry.js
+        location = /plugin-entry.js {
+          add_header Cache-Control 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0';
+          add_header Pragma 'no-cache';
+          add_header Expires '0';
+        }
       }
     }
   ||| % { tlsPath: tlsMountPath, nginxPort: nginxPort };
