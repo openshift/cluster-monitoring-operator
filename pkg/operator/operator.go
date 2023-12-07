@@ -139,7 +139,6 @@ func (pc *ProxyConfig) NoProxy() string {
 const (
 	resyncPeriod         = 15 * time.Minute
 	reconciliationPeriod = 5 * time.Minute
-	maxFailCount         = 2
 
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
@@ -807,11 +806,16 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 func (o *Operator) reportFailed(ctx context.Context, report runReport) {
 	o.failedReconcileAttempts++
-	klog.Infof("ClusterOperator reportFailed (attempt %d).", o.failedReconcileAttempts)
 
-	if o.failedReconcileAttempts < maxFailCount {
-		klog.Infof("ClusterOperator reconciliation %d - skipping update", o.failedReconcileAttempts)
+	// Rate limit to avoid unnecessary status updates for temporary or transient errors that may resolve themselves within a few attempts.
+	// Ensure you have thoroughly considered all implications before adjusting the threshold.
+	// See: https://issues.redhat.com/browse/OCPBUGS-23745
+	maxAttempts := 3
+	if o.failedReconcileAttempts < maxAttempts {
+		klog.Infof("%d reconciliation(s) failed, %d more attempt(s) will be made before reporting failures.", o.failedReconcileAttempts, maxAttempts-o.failedReconcileAttempts)
 		return
+	} else {
+		klog.Infof("%d reconciliations failed in a row, the threshold of %d attempts has been reached, failures will be reported.", o.failedReconcileAttempts, maxAttempts)
 	}
 
 	if err := o.client.StatusReporter().ReportState(ctx, report); err != nil {
