@@ -221,12 +221,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ThanosQuerierOauthCookieSecret()
+	_, err = f.ThanosQuerierRBACProxySecret()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.ThanosQuerierRBACProxySecret()
+	_, err = f.ThanosQuerierRBACProxyWebSecret()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -624,6 +624,11 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.ClusterMonitoringEditUserWorkloadConfigRole()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.ClusterMonitoringAlertManagerEditRole()
 	if err != nil {
 		t.Fatal(err)
 	}

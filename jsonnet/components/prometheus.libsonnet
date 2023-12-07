@@ -135,8 +135,10 @@ function(params)
       data: {},
     },
 
-    // As Prometheus is protected by the oauth proxy it requires the
-    // ability to create TokenReview and SubjectAccessReview requests.
+    // As Prometheus and Thanos are protected by the kube-rbac-proxy,
+    // it requires the ability to create TokenReview and SubjectAccessReview requests.
+    // The subresource prometheuses/api is used by the Thanos querier and Prometheus to
+    // check a user's privilege to query the Prometheus API.
     // Additionally in order to authenticate with the Alertmanager it
     // requires `get` method on all `namespaces`, which is the
     // SubjectAccessReview required by the Alertmanager instances.
@@ -166,6 +168,16 @@ function(params)
           resources: ['securitycontextconstraints'],
           resourceNames: ['nonroot'],
           verbs: ['use'],
+        },
+        {
+          // Access to the Prometheus / Thanos HTTP API through kube-rbac-proxy.
+          // openshift/origin test using the service account "prometheus-k8s" to execute prometheus API calls.
+          // This is required for the "prometheus-k8s" service account to be able to query the web port of
+          // the thanos-querier service web port.
+          apiGroups: ['monitoring.coreos.com'],
+          resources: ['prometheuses/api'],
+          resourceNames: ['k8s'],
+          verbs: ['get', 'create', 'update'],
         },
       ],
     },

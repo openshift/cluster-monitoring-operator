@@ -46,3 +46,13 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
+- apiGroups:
+  - monitoring.coreos.com
+  resourceNames:
+  - k8s
+  resources:
+  - prometheuses/api
+  verbs:
+  - get
+  - create
+  - update
