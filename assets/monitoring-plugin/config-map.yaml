@@ -19,7 +19,7 @@ data:
           add_header Pragma 'no-cache';
           add_header Expires '0';
         }
-        
+
         # Prevent caching for plugin-entry.js
         location = /plugin-entry.js {
           add_header Cache-Control 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0';
