@@ -42,7 +42,15 @@ function(params)
               if 'path' in e && e.path == '/metrics/cadvisor' then
                 // Drop cAdvisor metrics with excessive cardinality.
                 {
+                  // cAdvisor doesn't scrape metrics at scrape time but rather
+                  // exposes timestamps. We want to honor these timestamps, i.e.
+                  // ingest them instead of using the normal prometheus scrape
+                  // timestamps
                   honorTimestamps: true,
+                  // Since prometheus 2.48.0 prometheus can apply the low
+                  // latency staleness handling to metrics with exposed
+                  // timestamps. This setting was added in prometheus-operator
+                  // 0.70.0 to enable this behavior on a per-scrape job basis.
                   trackTimestampsStaleness: true,
                   metricRelabelings+: [
                     {
