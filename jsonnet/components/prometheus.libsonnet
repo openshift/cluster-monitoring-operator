@@ -131,6 +131,9 @@ function(params)
       metadata+: {
         name: 'kubelet-serving-ca-bundle',
         namespace: cfg.namespace,
+        annotations: {
+          'openshift.io/owning-component': 'Monitoring',
+        },
       },
       data: {},
     },

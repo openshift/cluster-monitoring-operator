@@ -11,7 +11,7 @@ require (
 	github.com/imdario/mergo v0.3.13
 	github.com/openshift/api v0.0.0-20231109185848-6cd72e415ddb
 	github.com/openshift/client-go v0.0.0-20230926161409-848405da69e1
-	github.com/openshift/library-go v0.0.0-20231102154438-cfcf2b4fbc87
+	github.com/openshift/library-go v0.0.0-20231128230659-785a9313da6c
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator v0.66.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.66.0
