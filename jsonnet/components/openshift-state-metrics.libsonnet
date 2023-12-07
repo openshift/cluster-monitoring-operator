@@ -1,4 +1,6 @@
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+
 function(params) {
   local cfg = params,
   local osm = (import 'github.com/openshift/openshift-state-metrics/jsonnet/openshift-state-metrics.libsonnet') + {
@@ -79,7 +81,17 @@ function(params) {
   },
   kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'openshift-state-metrics-kube-rbac-proxy-config'),
   serviceAccount: osm.openshiftStateMetrics.serviceAccount,
-  service: osm.openshiftStateMetrics.service,
+  service: osm.openshiftStateMetrics.service {
+    metadata+: {
+      annotations+: withDescription(
+        |||
+          Expose openshift-state-metrics `/metrics` endpoints within the cluster on the following ports:
+          * Port %d provides access to the OpenShift resource metrics. This port is for internal use, and no other usage is guaranteed.
+          * Port %d provides access to the internal `openshift-state-metrics` metrics. This port is for internal use, and no other usage is guaranteed.
+        ||| % [$.service.spec.ports[0].port, $.service.spec.ports[1].port],
+      ),
+    },
+  },
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
 
 }

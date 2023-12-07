@@ -7,6 +7,7 @@ local wtmpVolumeName = 'node-exporter-wtmp';
 local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params)
   local cfg = params;
@@ -20,7 +21,7 @@ function(params)
       metadata+: {
         annotations+: {
           'service.beta.openshift.io/serving-cert-secret-name': 'node-exporter-tls',
-        },
+        } + withDescription('Expose the `/metrics` endpoint on port %d. This port is for internal use, and no other usage is guaranteed.' % $.service.spec.ports[0].port),
       },
     },
 

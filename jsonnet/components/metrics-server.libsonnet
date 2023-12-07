@@ -1,3 +1,5 @@
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+
 function(params) {
   local cfg = params,
 
@@ -105,6 +107,7 @@ function(params) {
       },
     ],
   },
+
   service: {
     apiVersion: 'v1',
     kind: 'Service',
@@ -115,7 +118,7 @@ function(params) {
       } + cfg.commonLabels,
       annotations: {
         'service.beta.openshift.io/serving-cert-secret-name': 'metrics-server-tls',
-      },
+      } + withDescription('Expose the metrics-server web server on port %d. This port is for internal use, and no other usage is guaranteed.' % $.service.spec.ports[0].port),
       name: 'metrics-server',
       namespace: cfg.namespace,
     },
@@ -133,6 +136,7 @@ function(params) {
       } + cfg.commonLabels,
     },
   },
+
   deployment: {
     apiVersion: 'apps/v1',
     kind: 'Deployment',

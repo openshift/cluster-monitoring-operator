@@ -1,6 +1,8 @@
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local ruler = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-rule.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 
 local defaults = {
   volumeClaimTemplate: {},
@@ -39,10 +41,12 @@ function(params)
       metadata: {
         name: tr.config.name,
         namespace: tr.config.namespace,
+        annotations: withDescription(
+          'Expose the `/api` endpoints of the `%s` service via a router.' % $.route.spec.to.name,
+        ),
       },
       spec: {
         // restrict to Thanos Rule API endpoint only
-        // ref: https://github.com/thanos-io/thanos/blob/v0.24.0/cmd/thanos/rule.go#L657
         path: '/api',
         to: {
           kind: 'Service',
@@ -263,7 +267,20 @@ function(params)
       metadata+: {
         annotations: {
           'service.beta.openshift.io/serving-cert-secret-name': 'thanos-ruler-tls',
-        },
+        } + withDescription(
+          |||
+            Expose the Thanos Ruler web server within the cluster on the following ports:
+            * Port %d provides access to all Thanos Ruler endpoints. %s
+            * Port %d provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
+
+            This also exposes the gRPC endpoints on port %d. This port is for internal use, and no other usage is guaranteed.
+          ||| % [
+            $.service.spec.ports[0].port,
+            requiredClusterRoles(['cluster-monitoring-view'], true),
+            $.service.spec.ports[1].port,
+            $.service.spec.ports[2].port,
+          ],
+        ),
       },
       spec+: {
         ports: [{

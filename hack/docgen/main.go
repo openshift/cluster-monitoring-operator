@@ -22,12 +22,37 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/hack/docgen/format/markdown"
 )
 
+const (
+	markDownFormat  = "markdown"
+	asciiDocsFormat = "asciidocs"
+)
+
 func main() {
-	if os.Args[1] == "markdown" {
-		markdown.PrintAPIDocs(os.Args[2:])
-	} else if os.Args[1] == "asciidocs" {
-		asciidocs.PrintAPIDocs(os.Args[2:])
-	} else {
-		fmt.Println("No format for output was passed as the first argument, supported formats are: markdown or asciidocs")
+	var (
+		cmd    = os.Args[1]
+		format = os.Args[2]
+	)
+
+	if format != markDownFormat && format != asciiDocsFormat {
+		fmt.Fprintf(os.Stderr, "Unsupported format %q, supported formats are: %q or %q\n", os.Args[2], markDownFormat, asciiDocsFormat)
+		os.Exit(1)
+	}
+
+	switch cmd {
+	case "api":
+		switch format {
+		case markDownFormat:
+			markdown.PrintAPIDocs(os.Args[3:])
+		case asciiDocsFormat:
+			asciidocs.PrintAPIDocs(os.Args[3:])
+		}
+	case "resources":
+		if err := PrintManagedResources(format); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to print managed resources: %s\n", err)
+			os.Exit(1)
+		}
+	default:
+		fmt.Fprintf(os.Stderr, "Unsupported command %q, supported commands are: api or resources\n", cmd)
+		os.Exit(1)
 	}
 }

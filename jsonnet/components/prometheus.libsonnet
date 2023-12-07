@@ -3,6 +3,8 @@ local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 
 function(params)
   local cfg = params;
@@ -31,6 +33,9 @@ function(params)
       metadata: {
         name: 'prometheus-k8s',
         namespace: cfg.namespace,
+        annotations: withDescription(
+          'Expose the `/api` endpoints of the `prometheus-k8s` service via a router.',
+        ),
       },
       spec: {
         to: {
@@ -55,6 +60,9 @@ function(params)
       metadata: {
         name: 'prometheus-k8s-federate',
         namespace: cfg.namespace,
+        annotations: withDescription(
+          'Expose the `/federate` endpoint of the `prometheus-k8s` service via a router.',
+        ),
       },
       spec: {
         to: {
@@ -91,7 +99,15 @@ function(params)
       metadata+: {
         annotations: {
           'service.beta.openshift.io/serving-cert-secret-name': prometheusTLSSecret,
-        },
+        } + withDescription(
+          |||
+            Expose the Prometheus web server within the cluster on the following ports:
+            * Port %d provides access to all the Prometheus endpoints. %s
+          ||| % [
+            $.service.spec.ports[0].port,
+            requiredClusterRoles(['cluster-monitoring-view'], true),
+          ],
+        ),
       },
       spec+: {
         ports: [

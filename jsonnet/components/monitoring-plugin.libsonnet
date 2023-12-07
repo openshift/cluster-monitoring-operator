@@ -1,3 +1,5 @@
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+
 function(params)
   local cfg = params;
 
@@ -159,7 +161,7 @@ function(params)
       metadata: $.metadata() + {
         annotations: {
           'service.beta.openshift.io/serving-cert-secret-name': tlsSecret,
-        },
+        } + withDescription('Expose the monitoring plugin service on port %d. This port is for internal use, and no other usage is guaranteed.' % $.service.spec.ports[0].port),
       },
       spec: {
         ports: [$.servicePort('https', 9443, 'https')],

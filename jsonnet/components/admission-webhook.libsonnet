@@ -1,6 +1,7 @@
 local tlsVolumeName = 'prometheus-operator-admission-webhook-tls';
 local admissionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/admission-webhook.libsonnet';
 local antiAffinity = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params)
   local aw = admissionWebhook(params);
@@ -73,7 +74,7 @@ function(params)
       metadata+: {
         annotations+: {
           'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-admission-webhook-tls',
-        },
+        } + withDescription('Expose the admission webhook service which validates `PrometheusRules` and `AlertmanagerConfig` custom resources on port ' + $.service.spec.ports[0].port + '.'),
       },
     },
 
