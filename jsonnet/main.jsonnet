@@ -82,7 +82,6 @@ local commonConfig = {
   },
   // TLS Cipher suite applied to every component serving HTTPS traffic
   tlsCipherSuites: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
-  prometheusAdapterMetricPrefix: 'pa_',
   // Set label used in dashboards to identify the cluster explicitly so we can
   // use that value in jsonnet/components/dashboard.libsonnet for our role
   // template instead of relying on the upstream default never changing.
@@ -246,7 +245,6 @@ local inCluster =
         prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
         commonLabels+: $.values.common.commonLabels,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
-        prometheusAdapterMetricPrefix: $.values.common.prometheusAdapterMetricPrefix,
         containerQuerySelector: 'job="kubelet"',
       },
       metricsServer: {
@@ -360,7 +358,6 @@ local inCluster =
             clusterLabel: $.values.common.dashboardClusterLabel,
           },
         },
-        prometheusAdapterMetricPrefix: $.values.common.prometheusAdapterMetricPrefix,
       },
     },
 

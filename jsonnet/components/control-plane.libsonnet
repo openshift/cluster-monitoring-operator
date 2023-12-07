@@ -42,6 +42,16 @@ function(params)
               if 'path' in e && e.path == '/metrics/cadvisor' then
                 // Drop cAdvisor metrics with excessive cardinality.
                 {
+                  // cAdvisor doesn't scrape metrics at scrape time but rather
+                  // exposes timestamps. We want to honor these timestamps, i.e.
+                  // ingest them instead of using the normal prometheus scrape
+                  // timestamps
+                  honorTimestamps: true,
+                  // Since prometheus 2.48.0 prometheus can apply the low
+                  // latency staleness handling to metrics with exposed
+                  // timestamps. This setting was added in prometheus-operator
+                  // 0.70.0 to enable this behavior on a per-scrape job basis.
+                  trackTimestampsStaleness: true,
                   metricRelabelings+: [
                     {
                       sourceLabels: ['__name__'],
@@ -144,46 +154,6 @@ function(params)
                                              'storage_operation_duration_seconds_count',
                                            ])
     ),
-
-    // This adds a kubelet ServiceMonitor for special use with
-    // prometheus-adapter if enabled by the configuration of the cluster monitoring operator.
-    serviceMonitorKubeletResourceMetrics: self.serviceMonitorKubelet {
-      metadata+: {
-        name: 'kubelet-resource-metrics',
-      },
-      spec+: {
-        endpoints:
-          std.filterMap(
-            function(e)
-              'path' in e && e.path == '/metrics/cadvisor'
-            ,
-            function(e)
-              e {
-                path: '/metrics/resource',
-                honorTimestamps: true,
-                metricRelabelings: [
-                  // Keep only container_cpu_usage_seconds_total and container_memory_working_set_bytes metrics.
-                  // This is all that the Prometheus adapter needs. Node metrics are provided by node_exporter (Linux) or Windows exporter.
-                  // scrape_errors will be useful for troubleshooting.
-                  {
-                    sourceLabels: ['__name__'],
-                    action: 'keep',
-                    regex: 'container_cpu_usage_seconds_total|container_memory_working_set_bytes|scrape_error',
-                  },
-                  // To avoid clashes with the cAdvisor metrics, the resource metrics are prefixed with a distinct identifier.
-                  {
-                    sourceLabels: ['__name__'],
-                    targetLabel: '__name__',
-                    replacement: std.format('%s$1', cfg.prometheusAdapterMetricPrefix),
-                    action: 'replace',
-                  },
-                ],
-              }
-            ,
-            super.endpoints,
-          ),
-      },
-    },
 
     // This avoids creating service monitors which are already managed by the respective operators.
     serviceMonitorApiserver:: {},

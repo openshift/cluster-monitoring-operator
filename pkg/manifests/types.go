@@ -134,8 +134,8 @@ type MetricsServerConfig struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
-// You can use the `DedicatedServiceMonitors` resource to configure dedicated
-// Service Monitors for the Prometheus Adapter
+// This setting is DEPRECATED and will be removed in a future version. In this
+// version this setting has no effect.
 type DedicatedServiceMonitors struct {
 	// When `enabled` is set to `true`, the Cluster Monitoring Operator (CMO)
 	// deploys a dedicated Service Monitor that exposes the kubelet

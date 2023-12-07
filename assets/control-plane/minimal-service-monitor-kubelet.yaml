@@ -34,7 +34,7 @@ spec:
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   - bearerTokenFile: ""
     honorLabels: true
-    honorTimestamps: false
+    honorTimestamps: true
     interval: 30s
     metricRelabelings:
     - action: labeldrop
@@ -57,6 +57,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+    trackTimestampsStaleness: true
   - bearerTokenFile: ""
     honorLabels: true
     interval: 30s
