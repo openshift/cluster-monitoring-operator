@@ -149,10 +149,6 @@ func (t *PrometheusAdapterTask) create(ctx context.Context) error {
 		}
 	}
 	{
-		cmD, err := t.factory.PrometheusAdapterConfigMapDedicated()
-		if err != nil {
-			return errors.Wrap(err, "initializing PrometheusAdapter ConfigMap for dedicated ServiceMonitors failed")
-		}
 		cm, err := t.factory.PrometheusAdapterConfigMap()
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter ConfigMap failed")
@@ -160,10 +156,6 @@ func (t *PrometheusAdapterTask) create(ctx context.Context) error {
 		err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter ConfigMap failed")
-		}
-		err = t.client.DeleteConfigMap(ctx, cmD)
-		if err != nil {
-			return errors.Wrap(err, "deleting PrometheusAdapter ConfigMap for dedicated ServiceMonitors failed")
 		}
 
 		tlsSecret, err := t.client.WaitForSecretByNsName(ctx, types.NamespacedName{Namespace: t.namespace, Name: "prometheus-adapter-tls"})
@@ -191,7 +183,7 @@ func (t *PrometheusAdapterTask) create(ctx context.Context) error {
 			return errors.Wrap(err, "reconciling PrometheusAdapter Secret failed")
 		}
 
-		dep, err := t.factory.PrometheusAdapterDeployment(secret.Name, apiAuthConfigmap.Data, cm.Name)
+		dep, err := t.factory.PrometheusAdapterDeployment(secret.Name, apiAuthConfigmap.Data)
 		if err != nil {
 			return errors.Wrap(err, "initializing PrometheusAdapter Deployment failed")
 		}
@@ -236,6 +228,14 @@ func (t *PrometheusAdapterTask) create(ctx context.Context) error {
 		err = t.client.CreateOrUpdateAPIService(ctx, api)
 		if err != nil {
 			return errors.Wrap(err, "reconciling PrometheusAdapter APIService failed")
+		}
+	}
+
+	{
+		// TODO: Remove this in 4.16
+		err := t.client.DeleteConfigMapByNamespaceAndName(ctx, t.client.Namespace(), "adapter-config-dedicated-sm")
+		if err != nil {
+			return errors.Wrap(err, "deleting PrometheusAdapter ConfigMap for dedicated ServiceMonitors failed")
 		}
 	}
 
