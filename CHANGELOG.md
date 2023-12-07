@@ -4,6 +4,7 @@
 
 - [#2022](https://github.com/openshift/cluster-monitoring-operator/pull/2022) Add support to switch to metrics server from prometheus-adapter when the `MetricsServer` feature gate is enabled.
 - [#2161](https://github.com/openshift/cluster-monitoring-operator/pull/2161) Add `PrometheusRestrictedConfig.RemoteWrite[].SendExemplars`.
+- [#2184](https://github.com/openshift/cluster-monitoring-operator/issues/2184) Allow to query alerts of application namespaces as an application user from command line.
 
 ## 4.14
 

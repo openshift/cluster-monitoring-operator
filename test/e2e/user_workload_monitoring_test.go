@@ -129,8 +129,8 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 			f:    assertUserWorkloadRules,
 		},
 		{
-			name: "assert tenancy model is enforced for rules",
-			f:    assertTenancyForRules,
+			name: "assert tenancy model is enforced for rules and alerts",
+			f:    assertTenancyForRulesAndAlerts,
 		},
 		{
 			name: "assert prometheus is not deployed in user namespace",
@@ -664,44 +664,46 @@ func assertTenancyForMetrics(t *testing.T) {
 		})
 	}
 
-	// Check that the account doesn't have to access the rules endpoint.
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
-		// The tenancy port (9092) is only exposed in-cluster so we need to use
-		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+	// Check that the account doesn't have to access the rules and alerts endpoint.
+	for _, path := range []string{"/api/v1/rules", "/api/v1/alerts"} {
+		err = framework.Poll(5*time.Second, time.Minute, func() error {
+			// The tenancy port (9092) is only exposed in-cluster so we need to use
+			// port forwarding to access kube-rbac-proxy.
+			host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer cleanUp()
+
+			client := framework.NewPrometheusClient(
+				host,
+				token,
+				&framework.QueryParameterInjector{
+					Name:  "namespace",
+					Value: userWorkloadTestNs,
+				},
+			)
+
+			resp, err := client.Do("GET", path, nil)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+
+			if resp.StatusCode/100 == 2 {
+				return fmt.Errorf("expected request to be rejected, but got status code %d (%s)", resp.StatusCode, framework.ClampMax(b))
+			}
+
+			return nil
+		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("the account has access to the %q endpoint of Thanos querier: %v", path, err)
 		}
-		defer cleanUp()
-
-		client := framework.NewPrometheusClient(
-			host,
-			token,
-			&framework.QueryParameterInjector{
-				Name:  "namespace",
-				Value: userWorkloadTestNs,
-			},
-		)
-
-		resp, err := client.Do("GET", "/api/v1/rules", nil)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-
-		if resp.StatusCode/100 == 2 {
-			return fmt.Errorf("expected request to be rejected, but got status code %d (%s)", resp.StatusCode, framework.ClampMax(b))
-		}
-
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("the account has access to the rules endpoint of Thanos querier: %v", err)
 	}
 
 	for _, tc := range []struct {
@@ -821,8 +823,8 @@ func assertTenancyForMetrics(t *testing.T) {
 	}
 }
 
-// assertTenancyForRules ensures that a tenant can access rules from her namespace (and only from this one).
-func assertTenancyForRules(t *testing.T) {
+// assertTenancyForRulesAndAlerts ensures that a tenant can access rules and alerts from her namespace (and only from this one).
+func assertTenancyForRulesAndAlerts(t *testing.T) {
 	const testAccount = "test-rules"
 
 	_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
@@ -949,6 +951,27 @@ func assertTenancyForRules(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("failed to query rules from Thanos querier: %v", err)
+	}
+
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		resp, err := client.Do("GET", "/api/v1/alerts", nil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("failed to query alerts from Thanos querier: %v", err)
 	}
 
 	// Check that the account doesn't have to access the query endpoints.
