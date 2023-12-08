@@ -15,6 +15,9 @@ spec:
     key: config.yaml
     name: alert-relabel-configs
     optional: true
+  additionalArgs:
+  - name: scrape.timestamp-tolerance
+    value: 15ms
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -153,9 +156,7 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
-  - additionalArgs:
-    - --scrape.timestamp-tolerance=15ms
-    name: prometheus
+  - name: prometheus
   enableFeatures: []
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
