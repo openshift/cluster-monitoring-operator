@@ -15,14 +15,15 @@
 package namespacelabeler
 
 import (
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus-community/prom-label-proxy/injectproxy"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql/parser"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 )
 
 // Labeler enables to enforce adding namespace labels to PrometheusRules and to metrics used in them
@@ -115,7 +116,7 @@ func (l *Labeler) EnforceNamespaceLabel(rule *monitoringv1.PrometheusRule) error
 			expr := r.Expr.String()
 			parsedExpr, err := parser.ParseExpr(expr)
 			if err != nil {
-				return errors.Wrap(err, "failed to parse promql expression")
+				return fmt.Errorf("failed to parse promql expression: %w", err)
 			}
 			enforcer := injectproxy.NewEnforcer(false, &labels.Matcher{
 				Name:  l.enforcedNsLabel,
@@ -124,7 +125,7 @@ func (l *Labeler) EnforceNamespaceLabel(rule *monitoringv1.PrometheusRule) error
 			})
 			err = enforcer.EnforceNode(parsedExpr)
 			if err != nil {
-				return errors.Wrap(err, "failed to inject labels to expression")
+				return fmt.Errorf("failed to inject labels to expression: %w", err)
 			}
 
 			rule.Spec.Groups[gi].Rules[ri].Expr = intstr.FromString(parsedExpr.String())

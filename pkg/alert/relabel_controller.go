@@ -223,7 +223,7 @@ func (c *RelabelConfigController) handleAlertRelabelConfigDelete(obj interface{}
 func (c *RelabelConfigController) handleAlertRelabelConfigUpdate(oldObj, newObj interface{}) {
 	// If the ResourceVersion hasn't changed, there's nothing to do.
 	if oldObj.(*osmv1.AlertRelabelConfig).ResourceVersion == newObj.(*osmv1.AlertRelabelConfig).ResourceVersion {
-		klog.V(4).Info("Skipping AlertRelabelConfig update due to identical ResourceVersion (%s)",
+		klog.V(4).Infof("Skipping AlertRelabelConfig update due to identical ResourceVersion (%s)",
 			newObj.(*osmv1.AlertRelabelConfig).ResourceVersion)
 		return
 	}

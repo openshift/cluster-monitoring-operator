@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/pkg/errors"
-	"github.com/prometheus-operator/prometheus-operator/pkg/k8sutil"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+
+	"github.com/prometheus-operator/prometheus-operator/pkg/k8sutil"
 )
 
 // MaxSecretDataSizeBytes is the maximum data size that a single secret shard
@@ -69,7 +69,7 @@ func (s *ShardedSecret) StoreSecrets(ctx context.Context, sClient corev1.SecretI
 	for _, secret := range secrets {
 		err := k8sutil.CreateOrUpdateSecret(ctx, sClient, secret)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create secret shard %q", secret.Name)
+			return fmt.Errorf("failed to create secret shard %q: %w", secret.Name, err)
 		}
 	}
 	return s.cleanupExcessSecretShards(ctx, sClient, len(secrets)-1, s.namePrefix)
@@ -129,7 +129,7 @@ func (s *ShardedSecret) cleanupExcessSecretShards(ctx context.Context, sClient c
 			break
 		}
 		if err != nil {
-			return errors.Wrapf(err, "failed to delete excess secret shard %q", secretName)
+			return fmt.Errorf("failed to delete excess secret shard %q: %w", secretName, err)
 		}
 	}
 
