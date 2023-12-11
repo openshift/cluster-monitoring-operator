@@ -47,10 +47,10 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 const (
@@ -3306,9 +3306,17 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 	}
 }
 
+func decodeYAML(manifest io.Reader, out interface{}) error {
+	in, err := io.ReadAll(manifest)
+	if err != nil {
+		return err
+	}
+	return k8syaml.UnmarshalStrict(in, out)
+}
+
 func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
 	ds := appsv1.DaemonSet{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&ds)
+	err := decodeYAML(manifest, &ds)
 	if err != nil {
 		return nil, err
 	}
@@ -3318,7 +3326,7 @@ func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
 
 func NewPodDisruptionBudget(manifest io.Reader) (*policyv1.PodDisruptionBudget, error) {
 	pdb := policyv1.PodDisruptionBudget{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&pdb)
+	err := decodeYAML(manifest, &pdb)
 	if err != nil {
 		return nil, err
 	}
@@ -3328,7 +3336,7 @@ func NewPodDisruptionBudget(manifest io.Reader) (*policyv1.PodDisruptionBudget, 
 
 func NewService(manifest io.Reader) (*v1.Service, error) {
 	s := v1.Service{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
+	err := decodeYAML(manifest, &s)
 	if err != nil {
 		return nil, err
 	}
@@ -3338,7 +3346,7 @@ func NewService(manifest io.Reader) (*v1.Service, error) {
 
 func NewEndpoints(manifest io.Reader) (*v1.Endpoints, error) {
 	e := v1.Endpoints{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&e)
+	err := decodeYAML(manifest, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -3348,7 +3356,7 @@ func NewEndpoints(manifest io.Reader) (*v1.Endpoints, error) {
 
 func NewRoute(manifest io.Reader) (*routev1.Route, error) {
 	r := routev1.Route{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&r)
+	err := decodeYAML(manifest, &r)
 	if err != nil {
 		return nil, err
 	}
@@ -3358,7 +3366,7 @@ func NewRoute(manifest io.Reader) (*routev1.Route, error) {
 
 func NewSecret(manifest io.Reader) (*v1.Secret, error) {
 	s := v1.Secret{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
+	err := decodeYAML(manifest, &s)
 	if err != nil {
 		return nil, err
 	}
@@ -3367,7 +3375,7 @@ func NewSecret(manifest io.Reader) (*v1.Secret, error) {
 
 func NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRoleBinding, error) {
 	crb := rbacv1.ClusterRoleBinding{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&crb)
+	err := decodeYAML(manifest, &crb)
 	if err != nil {
 		return nil, err
 	}
@@ -3377,7 +3385,7 @@ func NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRoleBinding, erro
 
 func NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
 	cr := rbacv1.ClusterRole{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cr)
+	err := decodeYAML(manifest, &cr)
 	if err != nil {
 		return nil, err
 	}
@@ -3387,7 +3395,7 @@ func NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
 
 func NewRoleBinding(manifest io.Reader) (*rbacv1.RoleBinding, error) {
 	rb := rbacv1.RoleBinding{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&rb)
+	err := decodeYAML(manifest, &rb)
 	if err != nil {
 		return nil, err
 	}
@@ -3397,7 +3405,7 @@ func NewRoleBinding(manifest io.Reader) (*rbacv1.RoleBinding, error) {
 
 func NewRole(manifest io.Reader) (*rbacv1.Role, error) {
 	r := rbacv1.Role{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&r)
+	err := decodeYAML(manifest, &r)
 	if err != nil {
 		return nil, err
 	}
@@ -3407,7 +3415,7 @@ func NewRole(manifest io.Reader) (*rbacv1.Role, error) {
 
 func NewRoleBindingList(manifest io.Reader) (*rbacv1.RoleBindingList, error) {
 	rbl := rbacv1.RoleBindingList{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&rbl)
+	err := decodeYAML(manifest, &rbl)
 	if err != nil {
 		return nil, err
 	}
@@ -3417,7 +3425,7 @@ func NewRoleBindingList(manifest io.Reader) (*rbacv1.RoleBindingList, error) {
 
 func NewRoleList(manifest io.Reader) (*rbacv1.RoleList, error) {
 	rl := rbacv1.RoleList{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&rl)
+	err := decodeYAML(manifest, &rl)
 	if err != nil {
 		return nil, err
 	}
@@ -3427,7 +3435,7 @@ func NewRoleList(manifest io.Reader) (*rbacv1.RoleList, error) {
 
 func NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
 	cm := v1.ConfigMap{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cm)
+	err := decodeYAML(manifest, &cm)
 	if err != nil {
 		return nil, err
 	}
@@ -3437,7 +3445,7 @@ func NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
 
 func NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
 	cml := v1.ConfigMapList{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cml)
+	err := decodeYAML(manifest, &cml)
 	if err != nil {
 		return nil, err
 	}
@@ -3447,7 +3455,7 @@ func NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
 
 func NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
 	sa := v1.ServiceAccount{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&sa)
+	err := decodeYAML(manifest, &sa)
 	if err != nil {
 		return nil, err
 	}
@@ -3457,7 +3465,7 @@ func NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
 
 func NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 	p := monv1.Prometheus{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&p)
+	err := decodeYAML(manifest, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -3467,7 +3475,7 @@ func NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 
 func NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, error) {
 	p := monv1.PrometheusRule{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&p)
+	err := decodeYAML(manifest, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -3477,7 +3485,7 @@ func NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, error) {
 
 func NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
 	a := monv1.Alertmanager{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&a)
+	err := decodeYAML(manifest, &a)
 	if err != nil {
 		return nil, err
 	}
@@ -3487,7 +3495,7 @@ func NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
 
 func NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error) {
 	t := monv1.ThanosRuler{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&t)
+	err := decodeYAML(manifest, &t)
 	if err != nil {
 		return nil, err
 	}
@@ -3497,7 +3505,7 @@ func NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error) {
 
 func NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, error) {
 	sm := monv1.ServiceMonitor{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&sm)
+	err := decodeYAML(manifest, &sm)
 	if err != nil {
 		return nil, err
 	}
@@ -3507,7 +3515,7 @@ func NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, error) {
 
 func NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) {
 	d := appsv1.Deployment{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&d)
+	err := decodeYAML(manifest, &d)
 	if err != nil {
 		return nil, err
 	}
@@ -3517,7 +3525,7 @@ func NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) {
 
 func NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
 	s := apiregistrationv1.APIService{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
+	err := decodeYAML(manifest, &s)
 	if err != nil {
 		return nil, err
 	}
@@ -3527,7 +3535,7 @@ func NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
 
 func NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityContextConstraints, error) {
 	s := securityv1.SecurityContextConstraints{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
+	err := decodeYAML(manifest, &s)
 	if err != nil {
 		return nil, err
 	}
@@ -3537,7 +3545,7 @@ func NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityCont
 
 func NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookConfiguration, error) {
 	v := admissionv1.ValidatingWebhookConfiguration{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&v)
+	err := decodeYAML(manifest, &v)
 	if err != nil {
 		return nil, err
 	}
@@ -3547,7 +3555,7 @@ func NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookCon
 
 func NewConsolePlugin(manifest io.Reader) (*consolev1.ConsolePlugin, error) {
 	cp := consolev1.ConsolePlugin{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cp)
+	err := decodeYAML(manifest, &cp)
 	if err != nil {
 		return nil, err
 	}

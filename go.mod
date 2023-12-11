@@ -35,6 +35,7 @@ require (
 	k8s.io/kube-aggregator v0.28.2
 	k8s.io/metrics v0.26.1
 	k8s.io/utils v0.0.0-20231127182322-b307cd553661
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -154,7 +155,6 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20230928195430-ce36a0c3bb67
