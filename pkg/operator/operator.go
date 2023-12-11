@@ -839,7 +839,7 @@ func (o *Operator) loadInfrastructureConfig(ctx context.Context) *Infrastructure
 
 		klog.Info("Using last known infrastructure configuration")
 	} else {
-		klog.V(5).Infof("Cluster infrastructure: plaform=%s controlPlaneTopology=%s infrastructureTopology=%s", infrastructure.Status.PlatformStatus, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
+		klog.V(5).Infof("Cluster infrastructure: plaform=%v controlPlaneTopology=%v infrastructureTopology=%v", infrastructure.Status.PlatformStatus, infrastructure.Status.ControlPlaneTopology, infrastructure.Status.InfrastructureTopology)
 
 		infrastructureConfig = NewInfrastructureConfig(infrastructure)
 		o.lastKnowInfrastructureConfig = infrastructureConfig
@@ -1008,13 +1008,13 @@ func (o Operator) storageNotConfiguredMessage() string {
 	// latest documentation
 	cv, err := o.client.GetClusterVersion(context.Background(), "version")
 	if err != nil {
-		klog.Warning("failed to find the cluster version: %s", err)
+		klog.Warningf("failed to find the cluster version: %s", err)
 		return latestDocMsg
 	}
 
 	v, err := semver.Make(cv.Status.Desired.Version)
 	if err != nil {
-		klog.Warning("failed to parse  cluster version: %s", err)
+		klog.Warningf("failed to parse  cluster version: %s", err)
 		return latestDocMsg
 	}
 
