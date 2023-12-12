@@ -2596,63 +2596,144 @@ func IsMissingPortInAddressError(err error) bool {
 }
 
 func (f *Factory) NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
-	return NewDaemonSet(manifest)
+	ds := appsv1.DaemonSet{}
+	err := decodeYAML(manifest, &ds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ds, nil
 }
 
 func (f *Factory) NewPodDisruptionBudget(manifest io.Reader) (*policyv1.PodDisruptionBudget, error) {
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		return nil, nil
 	}
+	pdb := policyv1.PodDisruptionBudget{}
+	err := decodeYAML(manifest, &pdb)
+	if err != nil {
+		return nil, err
+	}
 
-	return NewPodDisruptionBudget(manifest)
+	return &pdb, nil
 }
 
 func (f *Factory) NewService(manifest io.Reader) (*v1.Service, error) {
-	return NewService(manifest)
+	s := v1.Service{}
+	err := decodeYAML(manifest, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
 func (f *Factory) NewEndpoints(manifest io.Reader) (*v1.Endpoints, error) {
-	return NewEndpoints(manifest)
+	e := v1.Endpoints{}
+	err := decodeYAML(manifest, &e)
+	if err != nil {
+		return nil, err
+	}
+
+	return &e, nil
 }
 
 func (f *Factory) NewRoute(manifest io.Reader) (*routev1.Route, error) {
-	return NewRoute(manifest)
+	r := routev1.Route{}
+	err := decodeYAML(manifest, &r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &r, nil
 }
 
 func (f *Factory) NewSecret(manifest io.Reader) (*v1.Secret, error) {
-	return NewSecret(manifest)
+	s := v1.Secret{}
+	err := decodeYAML(manifest, &s)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
 func (f *Factory) NewRoleBinding(manifest io.Reader) (*rbacv1.RoleBinding, error) {
-	return NewRoleBinding(manifest)
+	rb := rbacv1.RoleBinding{}
+	err := decodeYAML(manifest, &rb)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rb, nil
 }
 
 func (f *Factory) NewRoleList(manifest io.Reader) (*rbacv1.RoleList, error) {
-	return NewRoleList(manifest)
+	rl := rbacv1.RoleList{}
+	err := decodeYAML(manifest, &rl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rl, nil
 }
 
 func (f *Factory) NewRoleBindingList(manifest io.Reader) (*rbacv1.RoleBindingList, error) {
-	return NewRoleBindingList(manifest)
+	rbl := rbacv1.RoleBindingList{}
+	err := decodeYAML(manifest, &rbl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rbl, nil
 }
 
 func (f *Factory) NewRole(manifest io.Reader) (*rbacv1.Role, error) {
-	return NewRole(manifest)
+	r := rbacv1.Role{}
+	err := decodeYAML(manifest, &r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &r, nil
 }
 
 func (f *Factory) NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
-	return NewConfigMap(manifest)
+	cm := v1.ConfigMap{}
+	err := decodeYAML(manifest, &cm)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cm, nil
 }
 
 func (f *Factory) NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
-	return NewConfigMapList(manifest)
+	cml := v1.ConfigMapList{}
+	err := decodeYAML(manifest, &cml)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cml, nil
 }
 
 func (f *Factory) NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
-	return NewServiceAccount(manifest)
+	sa := v1.ServiceAccount{}
+	err := decodeYAML(manifest, &sa)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sa, nil
 }
 
 func (f *Factory) NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
-	p, err := NewPrometheus(manifest)
+	p := monv1.Prometheus{}
+	err := decodeYAML(manifest, &p)
+	if err != nil {
+		return nil, err
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -2662,15 +2743,22 @@ func (f *Factory) NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 		p.Spec.Affinity = nil
 	}
 
-	return p, nil
+	return &p, nil
 }
 
 func (f *Factory) NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, error) {
-	return NewPrometheusRule(manifest)
+	p := monv1.PrometheusRule{}
+	err := decodeYAML(manifest, &p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
 }
 
 func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
-	a, err := NewAlertmanager(manifest)
+	a := monv1.Alertmanager{}
+	err := decodeYAML(manifest, &a)
 	if err != nil {
 		return nil, err
 	}
@@ -2680,11 +2768,12 @@ func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, erro
 		a.Spec.Affinity = nil
 	}
 
-	return a, nil
+	return &a, nil
 }
 
 func (f *Factory) NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error) {
-	t, err := NewThanosRuler(manifest)
+	t := monv1.ThanosRuler{}
+	err := decodeYAML(manifest, &t)
 	if err != nil {
 		return nil, err
 	}
@@ -2694,26 +2783,28 @@ func (f *Factory) NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error)
 		t.Spec.Affinity = nil
 	}
 
-	return t, nil
+	return &t, nil
 }
 
 func (f *Factory) NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, error) {
-	sm, err := NewServiceMonitor(manifest)
+	sm := monv1.ServiceMonitor{}
+	err := decodeYAML(manifest, &sm)
 	if err != nil {
 		return nil, err
 	}
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
-		err := doubleServiceMonitorInterval(sm)
+		err := doubleServiceMonitorInterval(&sm)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return sm, nil
+	return &sm, nil
 }
 
 func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) {
-	d, err := NewDeployment(manifest)
+	d := appsv1.Deployment{}
+	err := decodeYAML(manifest, &d)
 	if err != nil {
 		return nil, err
 	}
@@ -2727,31 +2818,66 @@ func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) 
 		d.Spec.Template.Spec.Affinity = nil
 	}
 
-	return d, nil
+	return &d, nil
 }
 
 func (f *Factory) NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
-	return NewAPIService(manifest)
+	s := apiregistrationv1.APIService{}
+	err := decodeYAML(manifest, &s)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
 func (f *Factory) NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityContextConstraints, error) {
-	return NewSecurityContextConstraints(manifest)
+	s := securityv1.SecurityContextConstraints{}
+	err := decodeYAML(manifest, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
 func (f *Factory) NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRoleBinding, error) {
-	return NewClusterRoleBinding(manifest)
+	crb := rbacv1.ClusterRoleBinding{}
+	err := decodeYAML(manifest, &crb)
+	if err != nil {
+		return nil, err
+	}
+
+	return &crb, nil
 }
 
 func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
-	return NewClusterRole(manifest)
+	cr := rbacv1.ClusterRole{}
+	err := decodeYAML(manifest, &cr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cr, nil
 }
 
 func (f *Factory) NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookConfiguration, error) {
-	return NewValidatingWebhook(manifest)
+	v := admissionv1.ValidatingWebhookConfiguration{}
+	err := decodeYAML(manifest, &v)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v, nil
 }
 
 func (f *Factory) NewConsolePlugin(manifest io.Reader) (*consolev1.ConsolePlugin, error) {
-	return NewConsolePlugin(manifest)
+	cp := consolev1.ConsolePlugin{}
+	err := decodeYAML(manifest, &cp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cp, nil
 }
 
 func (f *Factory) MonitoringPlugin() (*consolev1.ConsolePlugin, error) {
@@ -3312,255 +3438,6 @@ func decodeYAML(manifest io.Reader, out interface{}) error {
 		return err
 	}
 	return k8syaml.UnmarshalStrict(in, out)
-}
-
-func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
-	ds := appsv1.DaemonSet{}
-	err := decodeYAML(manifest, &ds)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ds, nil
-}
-
-func NewPodDisruptionBudget(manifest io.Reader) (*policyv1.PodDisruptionBudget, error) {
-	pdb := policyv1.PodDisruptionBudget{}
-	err := decodeYAML(manifest, &pdb)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pdb, nil
-}
-
-func NewService(manifest io.Reader) (*v1.Service, error) {
-	s := v1.Service{}
-	err := decodeYAML(manifest, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s, nil
-}
-
-func NewEndpoints(manifest io.Reader) (*v1.Endpoints, error) {
-	e := v1.Endpoints{}
-	err := decodeYAML(manifest, &e)
-	if err != nil {
-		return nil, err
-	}
-
-	return &e, nil
-}
-
-func NewRoute(manifest io.Reader) (*routev1.Route, error) {
-	r := routev1.Route{}
-	err := decodeYAML(manifest, &r)
-	if err != nil {
-		return nil, err
-	}
-
-	return &r, nil
-}
-
-func NewSecret(manifest io.Reader) (*v1.Secret, error) {
-	s := v1.Secret{}
-	err := decodeYAML(manifest, &s)
-	if err != nil {
-		return nil, err
-	}
-	return &s, nil
-}
-
-func NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRoleBinding, error) {
-	crb := rbacv1.ClusterRoleBinding{}
-	err := decodeYAML(manifest, &crb)
-	if err != nil {
-		return nil, err
-	}
-
-	return &crb, nil
-}
-
-func NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
-	cr := rbacv1.ClusterRole{}
-	err := decodeYAML(manifest, &cr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cr, nil
-}
-
-func NewRoleBinding(manifest io.Reader) (*rbacv1.RoleBinding, error) {
-	rb := rbacv1.RoleBinding{}
-	err := decodeYAML(manifest, &rb)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rb, nil
-}
-
-func NewRole(manifest io.Reader) (*rbacv1.Role, error) {
-	r := rbacv1.Role{}
-	err := decodeYAML(manifest, &r)
-	if err != nil {
-		return nil, err
-	}
-
-	return &r, nil
-}
-
-func NewRoleBindingList(manifest io.Reader) (*rbacv1.RoleBindingList, error) {
-	rbl := rbacv1.RoleBindingList{}
-	err := decodeYAML(manifest, &rbl)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rbl, nil
-}
-
-func NewRoleList(manifest io.Reader) (*rbacv1.RoleList, error) {
-	rl := rbacv1.RoleList{}
-	err := decodeYAML(manifest, &rl)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rl, nil
-}
-
-func NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
-	cm := v1.ConfigMap{}
-	err := decodeYAML(manifest, &cm)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cm, nil
-}
-
-func NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
-	cml := v1.ConfigMapList{}
-	err := decodeYAML(manifest, &cml)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cml, nil
-}
-
-func NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
-	sa := v1.ServiceAccount{}
-	err := decodeYAML(manifest, &sa)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sa, nil
-}
-
-func NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
-	p := monv1.Prometheus{}
-	err := decodeYAML(manifest, &p)
-	if err != nil {
-		return nil, err
-	}
-
-	return &p, nil
-}
-
-func NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, error) {
-	p := monv1.PrometheusRule{}
-	err := decodeYAML(manifest, &p)
-	if err != nil {
-		return nil, err
-	}
-
-	return &p, nil
-}
-
-func NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
-	a := monv1.Alertmanager{}
-	err := decodeYAML(manifest, &a)
-	if err != nil {
-		return nil, err
-	}
-
-	return &a, nil
-}
-
-func NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error) {
-	t := monv1.ThanosRuler{}
-	err := decodeYAML(manifest, &t)
-	if err != nil {
-		return nil, err
-	}
-
-	return &t, nil
-}
-
-func NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, error) {
-	sm := monv1.ServiceMonitor{}
-	err := decodeYAML(manifest, &sm)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sm, nil
-}
-
-func NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) {
-	d := appsv1.Deployment{}
-	err := decodeYAML(manifest, &d)
-	if err != nil {
-		return nil, err
-	}
-
-	return &d, nil
-}
-
-func NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
-	s := apiregistrationv1.APIService{}
-	err := decodeYAML(manifest, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s, nil
-}
-
-func NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityContextConstraints, error) {
-	s := securityv1.SecurityContextConstraints{}
-	err := decodeYAML(manifest, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s, nil
-}
-
-func NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookConfiguration, error) {
-	v := admissionv1.ValidatingWebhookConfiguration{}
-	err := decodeYAML(manifest, &v)
-	if err != nil {
-		return nil, err
-	}
-
-	return &v, nil
-}
-
-func NewConsolePlugin(manifest io.Reader) (*consolev1.ConsolePlugin, error) {
-	cp := consolev1.ConsolePlugin{}
-	err := decodeYAML(manifest, &cp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cp, nil
 }
 
 // HashTrustedCA synthesizes a configmap just by copying "ca-bundle.crt" from the given configmap
