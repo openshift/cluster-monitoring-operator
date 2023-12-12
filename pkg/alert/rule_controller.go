@@ -192,7 +192,7 @@ func (rc *RuleController) handleAlertingRuleUpdate(oldObj, newObj interface{}) {
 
 	// If the ResourceVersion hasn't changed, there's nothing to do.
 	if oldAR.ResourceVersion == newAR.ResourceVersion {
-		klog.V(4).Info("Ignoring AlertingRule update due to identical ResourceVersion (%s)",
+		klog.V(4).Infof("Ignoring AlertingRule update due to identical ResourceVersion (%s)",
 			newAR.ResourceVersion)
 		return
 	}
@@ -377,7 +377,7 @@ func (rc *RuleController) handlePrometheusRuleUpdate(oldObj, newObj interface{})
 
 	// If the ResourceVersion hasn't changed, there's nothing to do.
 	if oldPR.ResourceVersion == newPR.ResourceVersion {
-		klog.V(4).Info("Ignoring PrometheusRule update due to identical ResourceVersion (%s)",
+		klog.V(4).Infof("Ignoring PrometheusRule update due to identical ResourceVersion (%s)",
 			newPR.ResourceVersion)
 		return
 	}
@@ -392,7 +392,8 @@ func (rc *RuleController) handlePrometheusRuleUpdate(oldObj, newObj interface{})
 	owner := firstAlertingRuleOwner(newPR.GetOwnerReferences())
 
 	if owner == "" {
-		klog.V(4).Infof("Ignoring PrometheusRule %q update with no AlertingRule owner")
+		klog.V(4).Infof("Ignoring PrometheusRule %q update with no AlertingRule owner",
+			newPR.Name)
 		return
 	}
 
@@ -423,7 +424,8 @@ func (rc *RuleController) handlePrometheusRuleDelete(obj interface{}) {
 	owner := firstAlertingRuleOwner(pr.GetOwnerReferences())
 
 	if owner == "" {
-		klog.V(4).Infof("Ignoring PrometheusRule %q deletion with no AlertingRule owner")
+		klog.V(4).Infof("Ignoring PrometheusRule %q deletion with no AlertingRule owner",
+			pr.Name)
 		return
 	}
 

@@ -21,11 +21,14 @@ package v1beta1
 type PushoverConfigApplyConfiguration struct {
 	SendResolved *bool                                `json:"sendResolved,omitempty"`
 	UserKey      *SecretKeySelectorApplyConfiguration `json:"userKey,omitempty"`
+	UserKeyFile  *string                              `json:"userKeyFile,omitempty"`
 	Token        *SecretKeySelectorApplyConfiguration `json:"token,omitempty"`
+	TokenFile    *string                              `json:"tokenFile,omitempty"`
 	Title        *string                              `json:"title,omitempty"`
 	Message      *string                              `json:"message,omitempty"`
 	URL          *string                              `json:"url,omitempty"`
 	URLTitle     *string                              `json:"urlTitle,omitempty"`
+	Device       *string                              `json:"device,omitempty"`
 	Sound        *string                              `json:"sound,omitempty"`
 	Priority     *string                              `json:"priority,omitempty"`
 	Retry        *string                              `json:"retry,omitempty"`
@@ -56,11 +59,27 @@ func (b *PushoverConfigApplyConfiguration) WithUserKey(value *SecretKeySelectorA
 	return b
 }
 
+// WithUserKeyFile sets the UserKeyFile field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UserKeyFile field is set to the value of the last call.
+func (b *PushoverConfigApplyConfiguration) WithUserKeyFile(value string) *PushoverConfigApplyConfiguration {
+	b.UserKeyFile = &value
+	return b
+}
+
 // WithToken sets the Token field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Token field is set to the value of the last call.
 func (b *PushoverConfigApplyConfiguration) WithToken(value *SecretKeySelectorApplyConfiguration) *PushoverConfigApplyConfiguration {
 	b.Token = value
+	return b
+}
+
+// WithTokenFile sets the TokenFile field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TokenFile field is set to the value of the last call.
+func (b *PushoverConfigApplyConfiguration) WithTokenFile(value string) *PushoverConfigApplyConfiguration {
+	b.TokenFile = &value
 	return b
 }
 
@@ -93,6 +112,14 @@ func (b *PushoverConfigApplyConfiguration) WithURL(value string) *PushoverConfig
 // If called multiple times, the URLTitle field is set to the value of the last call.
 func (b *PushoverConfigApplyConfiguration) WithURLTitle(value string) *PushoverConfigApplyConfiguration {
 	b.URLTitle = &value
+	return b
+}
+
+// WithDevice sets the Device field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Device field is set to the value of the last call.
+func (b *PushoverConfigApplyConfiguration) WithDevice(value string) *PushoverConfigApplyConfiguration {
+	b.Device = &value
 	return b
 }
 
