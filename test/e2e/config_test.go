@@ -266,6 +266,9 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
+					// Set by default.
+					expectContainerArg("--scrape.timestamp-tolerance=15ms", containerName),
+					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
 					expectContainerArg("--storage.tsdb.retention.size=15GB", containerName),
@@ -650,6 +653,9 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
+					// Set by default.
+					expectContainerArg("--enable-feature=exemplar-storage", containerName),
+					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
 					expectContainerArg("--storage.tsdb.retention.size=15GB", containerName),
@@ -687,10 +693,6 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert query log file value is set and correct",
 			assertion: assertQueryLogValueEquals(f.UserWorkloadMonitoringNs, crName, "/tmp/test.log"),
-		},
-		{
-			name:      "assert exemplars are enabled",
-			assertion: assertExemplarsEnabled(f.UserWorkloadMonitoringNs),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -1078,27 +1080,6 @@ func assertQueryLogValueEquals(namespace, crName, value string) func(t *testing.
 				)
 			}
 			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
-func assertExemplarsEnabled(namespace string) func(t *testing.T) {
-	return func(t *testing.T) {
-		err := framework.Poll(time.Second, time.Minute*5, func() error {
-			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(context.Background(), "user-workload", metav1.GetOptions{})
-			if err != nil {
-				t.Fatal("failed to get required prometheus cr", err)
-			}
-			exemplarStorageFeatureFlag := "exemplar-storage"
-			for _, enabledFeature := range prom.Spec.EnableFeatures {
-				if enabledFeature == "exemplar-storage" {
-					return nil
-				}
-			}
-			return fmt.Errorf("expected %s feature to be enabled", exemplarStorageFeatureFlag)
 		})
 		if err != nil {
 			t.Fatal(err)
