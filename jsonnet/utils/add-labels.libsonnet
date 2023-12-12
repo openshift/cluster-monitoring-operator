@@ -8,8 +8,8 @@
       'cluster-monitoring-operator',
 
   addLabels(labels, o): {
-    // TODO: ignore ConfigMapList as this breaks some conversions in hack/build-jsonnet.sh
-    [k]: o[k] + if o[k].kind != 'ConfigMapList' then { metadata+: { labels+: labels { 'app.kubernetes.io/managed-by': managedBy(o[k]) } } } else {}
+    // ignore *List types. metav1.ListMeta does not include metadata.
+    [k]: o[k] + if !std.endsWith(o[k].kind, 'List') then { metadata+: { labels+: labels { 'app.kubernetes.io/managed-by': managedBy(o[k]) } } } else {}
     for k in std.objectFields(o)
   },
 }
