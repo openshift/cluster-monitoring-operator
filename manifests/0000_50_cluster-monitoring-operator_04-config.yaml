@@ -694,6 +694,11 @@ data:
     # acm_managed_cluster_info provides Subscription watch and other information for the managed clusters for an ACM Hub cluster.
     - '{__name__="acm_managed_cluster_info"}'
     #
+    # owners: (https://github.com/orgs/stolostron/teams/search-admin, @acm-observability-search)
+    #
+    # acm_console_page_count:sum counts the total number of visits for each page in ACM console.
+    - '{__name__="acm_console_page_count:sum", page=~"overview-classic|overview-fleet|search|search-details|clusters|application|governance"}'
+    #
     # owners: (@openshift/storage)
     #
     # VMWare vCenter info: version of the vCenter where cluster runs
