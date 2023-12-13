@@ -15,8 +15,6 @@
 package manifests
 
 import (
-	"bytes"
-	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -62,10 +60,10 @@ func (a *Assets) GetAsset(name string) ([]byte, error) {
 	return f, nil
 }
 
-func (a *Assets) MustNewAssetReader(name string) io.Reader {
+func (a *Assets) MustNewAssetSlice(name string) []byte {
 	f, err := a.GetAsset(name)
 	if err != nil {
 		panic(err)
 	}
-	return bytes.NewReader(f)
+	return f
 }

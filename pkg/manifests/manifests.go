@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
-	"io"
 	"net"
 	"net/url"
 	"path/filepath"
@@ -47,10 +46,10 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 const (
@@ -380,15 +379,15 @@ func NewFactory(namespace, namespaceUserWorkload string, c *Config, infrastructu
 }
 
 func (f *Factory) AlertmanagerConfig() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerConfig))
+	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerConfig))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadSecret))
 }
 
 func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerProxySecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -403,51 +402,51 @@ func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) AlertmanagerService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(AlertmanagerService))
+	return f.NewService(f.assets.MustNewAssetSlice(AlertmanagerService))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadService))
+	return f.NewService(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadService))
 }
 
 func (f *Factory) AlertmanagerServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(AlertmanagerServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(AlertmanagerServiceAccount))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadServiceAccount))
 }
 
 func (f *Factory) AlertmanagerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(AlertmanagerClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(AlertmanagerClusterRoleBinding))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadClusterRoleBinding))
 }
 
 func (f *Factory) AlertmanagerClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(AlertmanagerClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(AlertmanagerClusterRole))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadClusterRole))
 }
 
 func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(AlertmanagerServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(AlertmanagerServiceMonitor))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadServiceMonitor))
 }
 
 func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(AlertmanagerTrustedCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(AlertmanagerTrustedCABundle))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadTrustedCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadTrustedCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadTrustedCABundle))
 }
 
 func setContainerEnvironmentVariable(container *v1.Container, name, value string) {
@@ -472,7 +471,7 @@ func (f *Factory) injectProxyVariables(container *v1.Container) {
 }
 
 func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
-	a, err := f.NewAlertmanager(f.assets.MustNewAssetReader(AlertmanagerUserWorkload))
+	a, err := f.NewAlertmanager(f.assets.MustNewAssetSlice(AlertmanagerUserWorkload))
 	if err != nil {
 		return nil, err
 	}
@@ -605,7 +604,7 @@ func setupStartupProbe(a *monv1.Alertmanager) {
 }
 
 func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
-	a, err := f.NewAlertmanager(f.assets.MustNewAssetReader(AlertmanagerMain))
+	a, err := f.NewAlertmanager(f.assets.MustNewAssetSlice(AlertmanagerMain))
 	if err != nil {
 		return nil, err
 	}
@@ -705,47 +704,47 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 }
 
 func (f *Factory) AlertmanagerRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerRBACProxySecret))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadRBACProxySecret))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadRBACProxyTenancySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxyTenancySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadRBACProxyTenancySecret))
 }
 
 func (f *Factory) AlertmanagerRBACProxyMetricSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerRBACProxyMetricSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerRBACProxyMetricSecret))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadRBACProxyMetricSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadRBACProxyMetricSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadRBACProxyMetricSecret))
 }
 
 func (f *Factory) AlertmanagerRoute() (*routev1.Route, error) {
-	return f.NewRoute(f.assets.MustNewAssetReader(AlertmanagerRoute))
+	return f.NewRoute(f.assets.MustNewAssetSlice(AlertmanagerRoute))
 }
 
 func (f *Factory) AlertmanagerPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(AlertmanagerPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(AlertmanagerPrometheusRule))
 }
 
 func (f *Factory) KubeStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(KubeStateMetricsClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(KubeStateMetricsClusterRoleBinding))
 }
 
 func (f *Factory) AlertmanagerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AlertmanagerPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(AlertmanagerPodDisruptionBudget))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AlertmanagerUserWorkloadPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadPodDisruptionBudget))
 }
 
 func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(KubeStateMetricsClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(KubeStateMetricsClusterRole))
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
@@ -753,15 +752,15 @@ func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, er
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(KubeStateMetricsServiceMonitor))
 }
 
 func (f *Factory) KubeStateMetricsMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(KubeStateMetricsMinimalServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(KubeStateMetricsMinimalServiceMonitor))
 }
 
 func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(KubeStateMetricsDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(KubeStateMetricsDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -794,35 +793,35 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 }
 
 func (f *Factory) KubeStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(KubeStateMetricsServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(KubeStateMetricsServiceAccount))
 }
 
 func (f *Factory) KubeStateMetricsService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(KubeStateMetricsService))
+	return f.NewService(f.assets.MustNewAssetSlice(KubeStateMetricsService))
 }
 
 func (f *Factory) KubeStateMetricsRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(KubeStateMetricsKubeRbacProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(KubeStateMetricsKubeRbacProxySecret))
 }
 
 func (f *Factory) KubeStateMetricsPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(KubeStateMetricsPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(KubeStateMetricsPrometheusRule))
 }
 
 func (f *Factory) OpenShiftStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(OpenShiftStateMetricsClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(OpenShiftStateMetricsClusterRoleBinding))
 }
 
 func (f *Factory) OpenShiftStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(OpenShiftStateMetricsClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(OpenShiftStateMetricsClusterRole))
 }
 
 func (f *Factory) OpenShiftStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(OpenShiftStateMetricsServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(OpenShiftStateMetricsServiceMonitor))
 }
 
 func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(OpenShiftStateMetricsDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(OpenShiftStateMetricsDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -857,15 +856,15 @@ func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) 
 }
 
 func (f *Factory) OpenShiftStateMetricsServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(OpenShiftStateMetricsServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(OpenShiftStateMetricsServiceAccount))
 }
 
 func (f *Factory) OpenShiftStateMetricsService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(OpenShiftStateMetricsService))
+	return f.NewService(f.assets.MustNewAssetSlice(OpenShiftStateMetricsService))
 }
 
 func (f *Factory) OpenShiftStateMetricsRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(OpenShiftStateMetricsKubeRbacProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(OpenShiftStateMetricsKubeRbacProxySecret))
 }
 
 func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
@@ -873,7 +872,7 @@ func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error)
 }
 
 func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(NodeExporterServiceMonitor))
 }
 
 func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
@@ -975,11 +974,11 @@ func regexListToArg(list []string) (string, error) {
 }
 
 func (f *Factory) NodeExporterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(NodeExporterMinimalServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(NodeExporterMinimalServiceMonitor))
 }
 
 func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
-	ds, err := f.NewDaemonSet(f.assets.MustNewAssetReader(NodeExporterDaemonSet))
+	ds, err := f.NewDaemonSet(f.assets.MustNewAssetSlice(NodeExporterDaemonSet))
 	if err != nil {
 		return nil, err
 	}
@@ -1012,119 +1011,119 @@ func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
 }
 
 func (f *Factory) NodeExporterService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(NodeExporterService))
+	return f.NewService(f.assets.MustNewAssetSlice(NodeExporterService))
 }
 
 func (f *Factory) NodeExporterSecurityContextConstraints() (*securityv1.SecurityContextConstraints, error) {
-	return f.NewSecurityContextConstraints(f.assets.MustNewAssetReader(NodeExporterSecurityContextConstraints))
+	return f.NewSecurityContextConstraints(f.assets.MustNewAssetSlice(NodeExporterSecurityContextConstraints))
 }
 
 func (f *Factory) NodeExporterServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(NodeExporterServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(NodeExporterServiceAccount))
 }
 
 func (f *Factory) NodeExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(NodeExporterClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(NodeExporterClusterRoleBinding))
 }
 
 func (f *Factory) NodeExporterClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(NodeExporterClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(NodeExporterClusterRole))
 }
 
 func (f *Factory) NodeExporterPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(NodeExporterPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(NodeExporterPrometheusRule))
 }
 
 func (f *Factory) NodeExporterRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(NodeExporterKubeRbacProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(NodeExporterKubeRbacProxySecret))
 }
 
 func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusK8sClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusK8sClusterRoleBinding))
 }
 
 func (f *Factory) PrometheusK8sAlertmanagerRoleBinding() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusK8sTAlertmanagerRoleBinding))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusK8sTAlertmanagerRoleBinding))
 }
 
 func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(ThanosQuerierClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(ThanosQuerierClusterRoleBinding))
 }
 
 func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusUserWorkloadClusterRoleBinding))
 }
 
 func (f *Factory) PrometheusUserWorkloadAlertmanagerUserWorkloadRoleBinding() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadAlertmanagerUserWorkloadRoleBinding))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusUserWorkloadAlertmanagerUserWorkloadRoleBinding))
 }
 
 func (f *Factory) PrometheusK8sClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusK8sClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusK8sClusterRole))
 }
 
 func (f *Factory) ThanosQuerierClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(ThanosQuerierClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ThanosQuerierClusterRole))
 }
 
 func (f *Factory) PrometheusUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusUserWorkloadClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusUserWorkloadClusterRole))
 }
 
 func (f *Factory) PrometheusK8sRoleConfig() (*rbacv1.Role, error) {
-	return f.NewRole(f.assets.MustNewAssetReader(PrometheusK8sRoleConfig))
+	return f.NewRole(f.assets.MustNewAssetSlice(PrometheusK8sRoleConfig))
 }
 
 func (f *Factory) PrometheusUserWorkloadRoleConfig() (*rbacv1.Role, error) {
-	return f.NewRole(f.assets.MustNewAssetReader(PrometheusUserWorkloadRoleConfig))
+	return f.NewRole(f.assets.MustNewAssetSlice(PrometheusUserWorkloadRoleConfig))
 }
 
 func (f *Factory) PrometheusK8sRoleBindingList() (*rbacv1.RoleBindingList, error) {
-	return f.NewRoleBindingList(f.assets.MustNewAssetReader(PrometheusK8sRoleBindingList))
+	return f.NewRoleBindingList(f.assets.MustNewAssetSlice(PrometheusK8sRoleBindingList))
 }
 
 func (f *Factory) PrometheusUserWorkloadRoleBindingList() (*rbacv1.RoleBindingList, error) {
-	return f.NewRoleBindingList(f.assets.MustNewAssetReader(PrometheusUserWorkloadRoleBindingList))
+	return f.NewRoleBindingList(f.assets.MustNewAssetSlice(PrometheusUserWorkloadRoleBindingList))
 }
 
 func (f *Factory) PrometheusK8sRoleBindingConfig() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusK8sRoleBindingConfig))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusK8sRoleBindingConfig))
 }
 
 func (f *Factory) PrometheusUserWorkloadRoleBindingConfig() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadRoleBindingConfig))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusUserWorkloadRoleBindingConfig))
 }
 
 func (f *Factory) PrometheusK8sRoleList() (*rbacv1.RoleList, error) {
-	return f.NewRoleList(f.assets.MustNewAssetReader(PrometheusK8sRoleList))
+	return f.NewRoleList(f.assets.MustNewAssetSlice(PrometheusK8sRoleList))
 }
 
 func (f *Factory) PrometheusUserWorkloadRoleList() (*rbacv1.RoleList, error) {
-	return f.NewRoleList(f.assets.MustNewAssetReader(PrometheusUserWorkloadRoleList))
+	return f.NewRoleList(f.assets.MustNewAssetSlice(PrometheusUserWorkloadRoleList))
 }
 
 func (f *Factory) PrometheusUserWorkloadFederateRoute() (*routev1.Route, error) {
-	return f.NewRoute(f.assets.MustNewAssetReader(PrometheusUserWorkloadFederateRoute))
+	return f.NewRoute(f.assets.MustNewAssetSlice(PrometheusUserWorkloadFederateRoute))
 }
 
 func (f *Factory) PrometheusK8sPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusK8sPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(PrometheusK8sPrometheusRule))
 }
 
 func (f *Factory) PrometheusK8sServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusK8sServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(PrometheusK8sServiceAccount))
 }
 
 func (f *Factory) ThanosQuerierServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(ThanosQuerierServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(ThanosQuerierServiceAccount))
 }
 
 func (f *Factory) PrometheusUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusUserWorkloadServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(PrometheusUserWorkloadServiceAccount))
 }
 
 func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sProxySecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(PrometheusK8sProxySecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1139,23 +1138,23 @@ func (f *Factory) PrometheusK8sProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) PrometheusK8sGrpcTLSSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sGrpcTLSSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusK8sGrpcTLSSecret))
 }
 
 func (f *Factory) PrometheusK8sThanosSidecarPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusK8sThanosSidecarPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(PrometheusK8sThanosSidecarPrometheusRule))
 }
 
 func (f *Factory) PrometheusUserWorkloadGrpcTLSSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadGrpcTLSSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusUserWorkloadGrpcTLSSecret))
 }
 
 func (f *Factory) ThanosQuerierGrpcTLSSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierGrpcTLSSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(ThanosQuerierGrpcTLSSecret))
 }
 
 func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerQueryConfigSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(ThanosRulerQueryConfigSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1165,7 +1164,7 @@ func (f *Factory) ThanosRulerQueryConfigSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerAlertmanagerConfigSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(ThanosRulerAlertmanagerConfigSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -1210,46 +1209,46 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) PrometheusRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(PrometheusRBACProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusRBACProxySecret))
 }
 
 func (f *Factory) PrometheusUserWorkloadRBACProxyMetricsSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadRBACProxyMetricsSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusUserWorkloadRBACProxyMetricsSecret))
 }
 
 func (f *Factory) PrometheusUserWorkloadRBACProxyFederateSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(PrometheusUserWorkloadRBACProxyFederateSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusUserWorkloadRBACProxyFederateSecret))
 }
 
 func (f *Factory) ThanosQuerierRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(ThanosQuerierRBACProxySecret))
 }
 func (f *Factory) ThanosQuerierRBACProxyRulesSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyRulesSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(ThanosQuerierRBACProxyRulesSecret))
 }
 
 func (f *Factory) ThanosQuerierRBACProxyMetricsSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyMetricsSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(ThanosQuerierRBACProxyMetricsSecret))
 }
 
 func (f *Factory) ThanosQuerierRBACProxyWebSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(ThanosQuerierRBACProxyWebSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(ThanosQuerierRBACProxyWebSecret))
 }
 
 func (f *Factory) PrometheusK8sServingCertsCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusK8sServingCertsCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusK8sServingCertsCABundle))
 }
 
 func (f *Factory) PrometheusUserWorkloadConfigMap() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusUserWorkloadConfigMap))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusUserWorkloadConfigMap))
 }
 
 func (f *Factory) PrometheusUserWorkloadServingCertsCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusUserWorkloadServingCertsCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusUserWorkloadServingCertsCABundle))
 }
 
 func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*v1.ConfigMap, error) {
-	c, err := f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusK8sKubeletServingCABundle))
+	c, err := f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusK8sKubeletServingCABundle))
 	if err != nil {
 		return nil, err
 	}
@@ -1259,19 +1258,19 @@ func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*
 }
 
 func (f *Factory) PrometheusK8sThanosSidecarServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sThanosSidecarServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusK8sThanosSidecarServiceMonitor))
 }
 
 func (f *Factory) PrometheusK8sAPIRoute() (*routev1.Route, error) {
-	return f.NewRoute(f.assets.MustNewAssetReader(PrometheusK8sAPIRoute))
+	return f.NewRoute(f.assets.MustNewAssetSlice(PrometheusK8sAPIRoute))
 }
 
 func (f *Factory) PrometheusK8sFederateRoute() (*routev1.Route, error) {
-	return f.NewRoute(f.assets.MustNewAssetReader(PrometheusK8sFederateRoute))
+	return f.NewRoute(f.assets.MustNewAssetSlice(PrometheusK8sFederateRoute))
 }
 
 func (f *Factory) ThanosQuerierRoute() (*routev1.Route, error) {
-	return f.NewRoute(f.assets.MustNewAssetReader(ThanosQuerierRoute))
+	return f.NewRoute(f.assets.MustNewAssetSlice(ThanosQuerierRoute))
 }
 
 func (f *Factory) SharingConfig(
@@ -1306,19 +1305,19 @@ func (f *Factory) SharingConfig(
 }
 
 func (f *Factory) PrometheusK8sTrustedCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusK8sTrustedCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusK8sTrustedCABundle))
 }
 
 func (f *Factory) PrometheusUserWorkloadTrustedCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusUserWorkloadTrustedCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusUserWorkloadTrustedCABundle))
 }
 
 func (f *Factory) NewPrometheusK8s() (*monv1.Prometheus, error) {
-	return f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusK8s))
+	return f.NewPrometheus(f.assets.MustNewAssetSlice(PrometheusK8s))
 }
 
 func (f *Factory) PrometheusK8sTelemetrySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(PrometheusK8sTelemetry))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(PrometheusK8sTelemetry))
 	if err != nil {
 		return nil, err
 	}
@@ -1713,7 +1712,7 @@ func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*
 }
 
 func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
-	p, err := f.NewPrometheus(f.assets.MustNewAssetReader(PrometheusUserWorkload))
+	p, err := f.NewPrometheus(f.assets.MustNewAssetSlice(PrometheusUserWorkload))
 	if err != nil {
 		return nil, err
 	}
@@ -1867,51 +1866,51 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 }
 
 func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusK8sPrometheusServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusK8sPrometheusServiceMonitor))
 }
 
 func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusUserWorkloadPrometheusServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusUserWorkloadPrometheusServiceMonitor))
 }
 
 func (f *Factory) PrometheusAdapterClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusAdapterClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRole))
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleServerResources() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleServerResources))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRoleServerResources))
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRoleBinding))
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleBindingDelegator() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleBindingDelegator))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRoleBindingDelegator))
 }
 
 func (f *Factory) PrometheusAdapterClusterRoleBindingView() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterClusterRoleBindingView))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRoleBindingView))
 }
 
 func (f *Factory) PrometheusAdapterRoleBindingAuthReader() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusAdapterRoleBindingAuthReader))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusAdapterRoleBindingAuthReader))
 }
 
 func (f *Factory) PrometheusAdapterServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusAdapterServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(PrometheusAdapterServiceAccount))
 }
 
 func (f *Factory) PrometheusAdapterConfigMap() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMap))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusAdapterConfigMap))
 }
 
 func (f *Factory) PrometheusAdapterConfigMapAuditPolicy() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMapAuditPolicy))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusAdapterConfigMapAuditPolicy))
 }
 
 func (f *Factory) PrometheusAdapterConfigMapPrometheus() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusAdapterConfigMapPrometheus))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusAdapterConfigMapPrometheus))
 }
 
 func validateAuditProfile(profile auditv1.Level) error {
@@ -1931,7 +1930,7 @@ func validateAuditProfile(profile auditv1.Level) error {
 }
 
 func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string) (*appsv1.Deployment, error) {
-	dep, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusAdapterDeployment))
+	dep, err := f.NewDeployment(f.assets.MustNewAssetSlice(PrometheusAdapterDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2024,11 +2023,11 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 }
 
 func (f *Factory) PrometheusAdapterPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusAdapterPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(PrometheusAdapterPodDisruptionBudget))
 }
 
 func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(PrometheusAdapterService))
+	return f.NewService(f.assets.MustNewAssetSlice(PrometheusAdapterService))
 }
 
 func (f *Factory) PrometheusAdapterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
@@ -2036,11 +2035,11 @@ func (f *Factory) PrometheusAdapterServiceMonitors() ([]*monv1.ServiceMonitor, e
 }
 
 func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusAdapterServiceMonitor))
 }
 
 func (f *Factory) PrometheusAdapterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusAdapterMinimalServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusAdapterMinimalServiceMonitor))
 }
 
 func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1.ConfigMap) (*v1.Secret, error) {
@@ -2090,31 +2089,31 @@ func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap
 }
 
 func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1.APIService, error) {
-	return f.NewAPIService(f.assets.MustNewAssetReader(PrometheusAdapterAPIService))
+	return f.NewAPIService(f.assets.MustNewAssetSlice(PrometheusAdapterAPIService))
 }
 
 func (f *Factory) MetricsServerServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(MetricsServerServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(MetricsServerServiceAccount))
 }
 
 func (f *Factory) MetricsServerClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(MetricsServerClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(MetricsServerClusterRole))
 }
 
 func (f *Factory) MetricsServerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(MetricsServerClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(MetricsServerClusterRoleBinding))
 }
 
 func (f *Factory) MetricsServerClusterRoleBindingAuthDelegator() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(MetricsServerClusterRoleBindingAuthDelegator))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(MetricsServerClusterRoleBindingAuthDelegator))
 }
 
 func (f *Factory) MetricsServerRoleBindingAuthReader() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(MetricsServerRoleBindingAuthReader))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(MetricsServerRoleBindingAuthReader))
 }
 
 func (f *Factory) MetricsServerDeployment() (*appsv1.Deployment, error) {
-	dep, err := f.NewDeployment(f.assets.MustNewAssetReader(MetricsServerDeployment))
+	dep, err := f.NewDeployment(f.assets.MustNewAssetSlice(MetricsServerDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2157,87 +2156,87 @@ func (f *Factory) MetricsServerDeployment() (*appsv1.Deployment, error) {
 }
 
 func (f *Factory) MetricsServerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(MetricsServerPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(MetricsServerPodDisruptionBudget))
 }
 
 func (f *Factory) MetricsServerService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(MetricsServerService))
+	return f.NewService(f.assets.MustNewAssetSlice(MetricsServerService))
 }
 
 func (f *Factory) MetricsServerServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(MetricsServerServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(MetricsServerServiceMonitor))
 }
 
 func (f *Factory) MetricsServerAPIService() (*apiregistrationv1.APIService, error) {
-	return f.NewAPIService(f.assets.MustNewAssetReader(MetricsServerAPIService))
+	return f.NewAPIService(f.assets.MustNewAssetSlice(MetricsServerAPIService))
 }
 
 func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusOperatorServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusOperatorServiceMonitor))
 }
 
 func (f *Factory) PrometheusOperatorPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(PrometheusOperatorPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(PrometheusOperatorPrometheusRule))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadServiceMonitor))
 }
 
 func (f *Factory) PrometheusUserWorkloadThanosSidecarServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(PrometheusUserWorkloadThanosSidecarServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusUserWorkloadThanosSidecarServiceMonitor))
 }
 
 func (f *Factory) PrometheusUserWorkloadAlertManagerRoleBinding() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(PrometheusUserWorkloadAlertmanagerRoleBinding))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusUserWorkloadAlertmanagerRoleBinding))
 }
 
 func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusOperatorClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusOperatorClusterRoleBinding))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadClusterRoleBinding))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadCRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadKubeRbacProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadKubeRbacProxySecret))
 }
 
 func (f *Factory) PrometheusOperatorClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusOperatorClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusOperatorClusterRole))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadClusterRole))
 }
 
 func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusOperatorServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(PrometheusOperatorServiceAccount))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadServiceAccount))
 }
 
 func (f *Factory) PrometheusOperatorRBACProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(PrometheusOperatorKubeRbacProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusOperatorKubeRbacProxySecret))
 }
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(AdmissionWebhookServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(AdmissionWebhookServiceAccount))
 }
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(AdmissionWebhookService))
+	return f.NewService(f.assets.MustNewAssetSlice(AdmissionWebhookService))
 }
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(AdmissionWebhookPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(AdmissionWebhookPodDisruptionBudget))
 }
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookDeployment() (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(AdmissionWebhookDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(AdmissionWebhookDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2289,7 +2288,7 @@ func (f *Factory) PrometheusOperatorAdmissionWebhookDeployment() (*appsv1.Deploy
 }
 
 func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(PrometheusOperatorDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2346,7 +2345,7 @@ func (f *Factory) PrometheusOperatorDeployment() (*appsv1.Deployment, error) {
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadDeployment() (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2452,103 +2451,103 @@ func setArg(args []string, argName string, argValue string) []string {
 }
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
-	return f.NewValidatingWebhook(f.assets.MustNewAssetReader(AdmissionWebhookRuleValidatingWebhook))
+	return f.NewValidatingWebhook(f.assets.MustNewAssetSlice(AdmissionWebhookRuleValidatingWebhook))
 }
 
 func (f *Factory) AlertManagerConfigValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
-	return f.NewValidatingWebhook(f.assets.MustNewAssetReader(AdmissionWebhookAlertmanagerConfigValidatingWebhook))
+	return f.NewValidatingWebhook(f.assets.MustNewAssetSlice(AdmissionWebhookAlertmanagerConfigValidatingWebhook))
 }
 
 func (f *Factory) PrometheusOperatorService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(PrometheusOperatorService))
+	return f.NewService(f.assets.MustNewAssetSlice(PrometheusOperatorService))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(PrometheusOperatorUserWorkloadService))
+	return f.NewService(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadService))
 }
 
 func (f *Factory) PrometheusK8sService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(PrometheusK8sService))
+	return f.NewService(f.assets.MustNewAssetSlice(PrometheusK8sService))
 }
 
 func (f *Factory) PrometheusK8sServiceThanosSidecar() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(PrometheusK8sServiceThanosSidecar))
+	return f.NewService(f.assets.MustNewAssetSlice(PrometheusK8sServiceThanosSidecar))
 }
 
 func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusK8sPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(PrometheusK8sPodDisruptionBudget))
 }
 
 func (f *Factory) PrometheusUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(PrometheusUserWorkloadPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(PrometheusUserWorkloadPodDisruptionBudget))
 }
 
 func (f *Factory) ThanosRulerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(ThanosRulerPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(ThanosRulerPodDisruptionBudget))
 }
 
 func (f *Factory) PrometheusUserWorkloadService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(PrometheusUserWorkloadService))
+	return f.NewService(f.assets.MustNewAssetSlice(PrometheusUserWorkloadService))
 }
 
 func (f *Factory) PrometheusUserWorkloadServiceThanosSidecar() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(PrometheusUserWorkloadServiceThanosSidecar))
+	return f.NewService(f.assets.MustNewAssetSlice(PrometheusUserWorkloadServiceThanosSidecar))
 }
 
 func (f *Factory) ClusterMonitoringClusterRoleView() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringClusterRoleView))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ClusterMonitoringClusterRoleView))
 }
 
 func (f *Factory) ClusterMonitoringClusterRoleAggregatedMetricsReader() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringClusterRoleAggregatedMetricsReader))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ClusterMonitoringClusterRoleAggregatedMetricsReader))
 }
 
 func (f *Factory) ClusterMonitoringRulesEditClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringRulesEditClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ClusterMonitoringRulesEditClusterRole))
 }
 
 func (f *Factory) ClusterMonitoringRulesViewClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringRulesViewClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ClusterMonitoringRulesViewClusterRole))
 }
 
 func (f *Factory) ClusterMonitoringEditClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringEditClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ClusterMonitoringEditClusterRole))
 }
 
 func (f *Factory) ClusterMonitoringAlertingEditClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(ClusterMonitoringEditAlertingClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ClusterMonitoringEditAlertingClusterRole))
 }
 
 func (f *Factory) ClusterMonitoringEditUserWorkloadConfigRole() (*rbacv1.Role, error) {
-	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringEditUserWorkloadConfigRole))
+	return f.NewRole(f.assets.MustNewAssetSlice(ClusterMonitoringEditUserWorkloadConfigRole))
 }
 
 func (f *Factory) ClusterMonitoringEditUserWorkloadAlertmanagerApiReader() (*rbacv1.Role, error) {
-	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringEditUserWorkloadAlertmanagerApiReader))
+	return f.NewRole(f.assets.MustNewAssetSlice(ClusterMonitoringEditUserWorkloadAlertmanagerApiReader))
 }
 
 func (f *Factory) ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter() (*rbacv1.Role, error) {
-	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter))
+	return f.NewRole(f.assets.MustNewAssetSlice(ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter))
 }
 
 func (f *Factory) ClusterMonitoringAlertManagerEditRole() (*rbacv1.Role, error) {
-	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringAlertmanagerEditRole))
+	return f.NewRole(f.assets.MustNewAssetSlice(ClusterMonitoringAlertmanagerEditRole))
 }
 
 func (f *Factory) ClusterMonitoringApiReaderRole() (*rbacv1.Role, error) {
-	return f.NewRole(f.assets.MustNewAssetReader(ClusterMonitoringApiReaderRole))
+	return f.NewRole(f.assets.MustNewAssetSlice(ClusterMonitoringApiReaderRole))
 }
 
 func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ClusterMonitoringOperatorServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ClusterMonitoringOperatorServiceMonitor))
 }
 
 func (f *Factory) ClusterMonitoringOperatorPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(ClusterMonitoringOperatorPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(ClusterMonitoringOperatorPrometheusRule))
 }
 
 func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
-	r, err := f.NewPrometheusRule(f.assets.MustNewAssetReader(ControlPlanePrometheusRule))
+	r, err := f.NewPrometheusRule(f.assets.MustNewAssetSlice(ControlPlanePrometheusRule))
 	if err != nil {
 		return nil, err
 	}
@@ -2578,11 +2577,11 @@ func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor,
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ControlPlaneKubeletServiceMonitor))
 }
 
 func (f *Factory) ControlPlaneKubeletMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ControlPlaneKubeletMinimalServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ControlPlaneKubeletMinimalServiceMonitor))
 }
 
 func IsMissingPortInAddressError(err error) bool {
@@ -2595,64 +2594,145 @@ func IsMissingPortInAddressError(err error) bool {
 	return false
 }
 
-func (f *Factory) NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
-	return NewDaemonSet(manifest)
+func (f *Factory) NewDaemonSet(manifest []byte) (*appsv1.DaemonSet, error) {
+	ds := appsv1.DaemonSet{}
+	err := decodeYAML(manifest, &ds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ds, nil
 }
 
-func (f *Factory) NewPodDisruptionBudget(manifest io.Reader) (*policyv1.PodDisruptionBudget, error) {
+func (f *Factory) NewPodDisruptionBudget(manifest []byte) (*policyv1.PodDisruptionBudget, error) {
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
 		return nil, nil
 	}
+	pdb := policyv1.PodDisruptionBudget{}
+	err := decodeYAML(manifest, &pdb)
+	if err != nil {
+		return nil, err
+	}
 
-	return NewPodDisruptionBudget(manifest)
+	return &pdb, nil
 }
 
-func (f *Factory) NewService(manifest io.Reader) (*v1.Service, error) {
-	return NewService(manifest)
+func (f *Factory) NewService(manifest []byte) (*v1.Service, error) {
+	s := v1.Service{}
+	err := decodeYAML(manifest, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
-func (f *Factory) NewEndpoints(manifest io.Reader) (*v1.Endpoints, error) {
-	return NewEndpoints(manifest)
+func (f *Factory) NewEndpoints(manifest []byte) (*v1.Endpoints, error) {
+	e := v1.Endpoints{}
+	err := decodeYAML(manifest, &e)
+	if err != nil {
+		return nil, err
+	}
+
+	return &e, nil
 }
 
-func (f *Factory) NewRoute(manifest io.Reader) (*routev1.Route, error) {
-	return NewRoute(manifest)
+func (f *Factory) NewRoute(manifest []byte) (*routev1.Route, error) {
+	r := routev1.Route{}
+	err := decodeYAML(manifest, &r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &r, nil
 }
 
-func (f *Factory) NewSecret(manifest io.Reader) (*v1.Secret, error) {
-	return NewSecret(manifest)
+func (f *Factory) NewSecret(manifest []byte) (*v1.Secret, error) {
+	s := v1.Secret{}
+	err := decodeYAML(manifest, &s)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
-func (f *Factory) NewRoleBinding(manifest io.Reader) (*rbacv1.RoleBinding, error) {
-	return NewRoleBinding(manifest)
+func (f *Factory) NewRoleBinding(manifest []byte) (*rbacv1.RoleBinding, error) {
+	rb := rbacv1.RoleBinding{}
+	err := decodeYAML(manifest, &rb)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rb, nil
 }
 
-func (f *Factory) NewRoleList(manifest io.Reader) (*rbacv1.RoleList, error) {
-	return NewRoleList(manifest)
+func (f *Factory) NewRoleList(manifest []byte) (*rbacv1.RoleList, error) {
+	rl := rbacv1.RoleList{}
+	err := decodeYAML(manifest, &rl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rl, nil
 }
 
-func (f *Factory) NewRoleBindingList(manifest io.Reader) (*rbacv1.RoleBindingList, error) {
-	return NewRoleBindingList(manifest)
+func (f *Factory) NewRoleBindingList(manifest []byte) (*rbacv1.RoleBindingList, error) {
+	rbl := rbacv1.RoleBindingList{}
+	err := decodeYAML(manifest, &rbl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rbl, nil
 }
 
-func (f *Factory) NewRole(manifest io.Reader) (*rbacv1.Role, error) {
-	return NewRole(manifest)
+func (f *Factory) NewRole(manifest []byte) (*rbacv1.Role, error) {
+	r := rbacv1.Role{}
+	err := decodeYAML(manifest, &r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &r, nil
 }
 
-func (f *Factory) NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
-	return NewConfigMap(manifest)
+func (f *Factory) NewConfigMap(manifest []byte) (*v1.ConfigMap, error) {
+	cm := v1.ConfigMap{}
+	err := decodeYAML(manifest, &cm)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cm, nil
 }
 
-func (f *Factory) NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
-	return NewConfigMapList(manifest)
+func (f *Factory) NewConfigMapList(manifest []byte) (*v1.ConfigMapList, error) {
+	cml := v1.ConfigMapList{}
+	err := decodeYAML(manifest, &cml)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cml, nil
 }
 
-func (f *Factory) NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
-	return NewServiceAccount(manifest)
+func (f *Factory) NewServiceAccount(manifest []byte) (*v1.ServiceAccount, error) {
+	sa := v1.ServiceAccount{}
+	err := decodeYAML(manifest, &sa)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sa, nil
 }
 
-func (f *Factory) NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
-	p, err := NewPrometheus(manifest)
+func (f *Factory) NewPrometheus(manifest []byte) (*monv1.Prometheus, error) {
+	p := monv1.Prometheus{}
+	err := decodeYAML(manifest, &p)
+	if err != nil {
+		return nil, err
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -2662,15 +2742,22 @@ func (f *Factory) NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
 		p.Spec.Affinity = nil
 	}
 
-	return p, nil
+	return &p, nil
 }
 
-func (f *Factory) NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, error) {
-	return NewPrometheusRule(manifest)
+func (f *Factory) NewPrometheusRule(manifest []byte) (*monv1.PrometheusRule, error) {
+	p := monv1.PrometheusRule{}
+	err := decodeYAML(manifest, &p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
 }
 
-func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
-	a, err := NewAlertmanager(manifest)
+func (f *Factory) NewAlertmanager(manifest []byte) (*monv1.Alertmanager, error) {
+	a := monv1.Alertmanager{}
+	err := decodeYAML(manifest, &a)
 	if err != nil {
 		return nil, err
 	}
@@ -2680,11 +2767,12 @@ func (f *Factory) NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, erro
 		a.Spec.Affinity = nil
 	}
 
-	return a, nil
+	return &a, nil
 }
 
-func (f *Factory) NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error) {
-	t, err := NewThanosRuler(manifest)
+func (f *Factory) NewThanosRuler(manifest []byte) (*monv1.ThanosRuler, error) {
+	t := monv1.ThanosRuler{}
+	err := decodeYAML(manifest, &t)
 	if err != nil {
 		return nil, err
 	}
@@ -2694,26 +2782,28 @@ func (f *Factory) NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error)
 		t.Spec.Affinity = nil
 	}
 
-	return t, nil
+	return &t, nil
 }
 
-func (f *Factory) NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, error) {
-	sm, err := NewServiceMonitor(manifest)
+func (f *Factory) NewServiceMonitor(manifest []byte) (*monv1.ServiceMonitor, error) {
+	sm := monv1.ServiceMonitor{}
+	err := decodeYAML(manifest, &sm)
 	if err != nil {
 		return nil, err
 	}
 	if !f.infrastructure.HighlyAvailableInfrastructure() {
-		err := doubleServiceMonitorInterval(sm)
+		err := doubleServiceMonitorInterval(&sm)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return sm, nil
+	return &sm, nil
 }
 
-func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) {
-	d, err := NewDeployment(manifest)
+func (f *Factory) NewDeployment(manifest []byte) (*appsv1.Deployment, error) {
+	d := appsv1.Deployment{}
+	err := decodeYAML(manifest, &d)
 	if err != nil {
 		return nil, err
 	}
@@ -2727,39 +2817,74 @@ func (f *Factory) NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) 
 		d.Spec.Template.Spec.Affinity = nil
 	}
 
-	return d, nil
+	return &d, nil
 }
 
-func (f *Factory) NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
-	return NewAPIService(manifest)
+func (f *Factory) NewAPIService(manifest []byte) (*apiregistrationv1.APIService, error) {
+	s := apiregistrationv1.APIService{}
+	err := decodeYAML(manifest, &s)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
-func (f *Factory) NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityContextConstraints, error) {
-	return NewSecurityContextConstraints(manifest)
+func (f *Factory) NewSecurityContextConstraints(manifest []byte) (*securityv1.SecurityContextConstraints, error) {
+	s := securityv1.SecurityContextConstraints{}
+	err := decodeYAML(manifest, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
-func (f *Factory) NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRoleBinding, error) {
-	return NewClusterRoleBinding(manifest)
+func (f *Factory) NewClusterRoleBinding(manifest []byte) (*rbacv1.ClusterRoleBinding, error) {
+	crb := rbacv1.ClusterRoleBinding{}
+	err := decodeYAML(manifest, &crb)
+	if err != nil {
+		return nil, err
+	}
+
+	return &crb, nil
 }
 
-func (f *Factory) NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
-	return NewClusterRole(manifest)
+func (f *Factory) NewClusterRole(manifest []byte) (*rbacv1.ClusterRole, error) {
+	cr := rbacv1.ClusterRole{}
+	err := decodeYAML(manifest, &cr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cr, nil
 }
 
-func (f *Factory) NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookConfiguration, error) {
-	return NewValidatingWebhook(manifest)
+func (f *Factory) NewValidatingWebhook(manifest []byte) (*admissionv1.ValidatingWebhookConfiguration, error) {
+	v := admissionv1.ValidatingWebhookConfiguration{}
+	err := decodeYAML(manifest, &v)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v, nil
 }
 
-func (f *Factory) NewConsolePlugin(manifest io.Reader) (*consolev1.ConsolePlugin, error) {
-	return NewConsolePlugin(manifest)
+func (f *Factory) NewConsolePlugin(manifest []byte) (*consolev1.ConsolePlugin, error) {
+	cp := consolev1.ConsolePlugin{}
+	err := decodeYAML(manifest, &cp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cp, nil
 }
 
 func (f *Factory) MonitoringPlugin() (*consolev1.ConsolePlugin, error) {
-	return f.NewConsolePlugin(f.assets.MustNewAssetReader(MonitoringPlugin))
+	return f.NewConsolePlugin(f.assets.MustNewAssetSlice(MonitoringPlugin))
 }
 
 func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(MonitoringPluginDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(MonitoringPluginDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2803,27 +2928,27 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 }
 
 func (f *Factory) MonitoringPluginPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(MonitoringPluginPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(MonitoringPluginPodDisruptionBudget))
 }
 
 func (f *Factory) MonitoringPluginServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(MonitoringPluginServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(MonitoringPluginServiceAccount))
 }
 
 func (f *Factory) MonitoringPluginService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(MonitoringPluginService))
+	return f.NewService(f.assets.MustNewAssetSlice(MonitoringPluginService))
 }
 
 func (f *Factory) MonitoringPluginConfigMap() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(MonitoringPluginConfigMap))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(MonitoringPluginConfigMap))
 }
 
 func (f *Factory) ThanosQuerierPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetReader(ThanosQuerierPodDisruptionBudget))
+	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(ThanosQuerierPodDisruptionBudget))
 }
 
 func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool, trustedCA *v1.ConfigMap) (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(ThanosQuerierDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(ThanosQuerierDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -2900,19 +3025,19 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 }
 
 func (f *Factory) ThanosQuerierTrustedCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(ThanosQuerierTrustedCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(ThanosQuerierTrustedCABundle))
 }
 
 func (f *Factory) ThanosQuerierService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(ThanosQuerierService))
+	return f.NewService(f.assets.MustNewAssetSlice(ThanosQuerierService))
 }
 
 func (f *Factory) ThanosQuerierPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(ThanosQuerierPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(ThanosQuerierPrometheusRule))
 }
 
 func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
-	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetReader(ThanosQuerierServiceMonitor))
+	sm, err := f.NewServiceMonitor(f.assets.MustNewAssetSlice(ThanosQuerierServiceMonitor))
 	if err != nil {
 		return nil, err
 	}
@@ -2933,48 +3058,48 @@ func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
 }
 
 func (f *Factory) TelemeterTrustedCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(TelemeterTrustedCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(TelemeterTrustedCABundle))
 }
 
 // TelemeterClientServingCertsCABundle generates a new servinc certs CA bundle ConfigMap for TelemeterClient.
 func (f *Factory) TelemeterClientServingCertsCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(TelemeterClientServingCertsCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(TelemeterClientServingCertsCABundle))
 }
 
 // TelemeterClientClusterRole generates a new ClusterRole for Telemeter client.
 func (f *Factory) TelemeterClientClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(TelemeterClientClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(TelemeterClientClusterRole))
 }
 
 // TelemeterClientClusterRoleBinding generates a new ClusterRoleBinding for Telemeter client.
 func (f *Factory) TelemeterClientClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(TelemeterClientClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(TelemeterClientClusterRoleBinding))
 }
 
 // TelemeterClientClusterRoleBindingView generates a new ClusterRoleBinding for Telemeter client
 // for the cluster monitoring view ClusterRole.
 func (f *Factory) TelemeterClientClusterRoleBindingView() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(TelemeterClientClusterRoleBindingView))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(TelemeterClientClusterRoleBindingView))
 }
 
 // TelemeterClientServiceMonitor generates a new ServiceMonitor for Telemeter client.
 func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(TelemeterClientServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(TelemeterClientServiceMonitor))
 }
 
 func (f *Factory) TelemeterClientKubeRbacProxySecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(TelemeterClientKubeRbacProxySecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(TelemeterClientKubeRbacProxySecret))
 }
 
 func (f *Factory) TelemeterClientPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(TelemeterClientPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(TelemeterClientPrometheusRule))
 }
 
 // TelemeterClientDeployment generates a new Deployment for Telemeter client.
 // If the passed ConfigMap is not empty it mounts the Trusted CA Bundle as a VolumeMount to
 // /etc/pki/ca-trust/extracted/pem/ location.
 func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap, s *v1.Secret) (*appsv1.Deployment, error) {
-	d, err := f.NewDeployment(f.assets.MustNewAssetReader(TelemeterClientDeployment))
+	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(TelemeterClientDeployment))
 	if err != nil {
 		return nil, err
 	}
@@ -3054,16 +3179,16 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap, s *v1
 
 // TelemeterClientService generates a new Service for Telemeter client.
 func (f *Factory) TelemeterClientService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(TelemeterClientService))
+	return f.NewService(f.assets.MustNewAssetSlice(TelemeterClientService))
 }
 
 // TelemeterClientServiceAccount generates a new ServiceAccount for Telemeter client.
 func (f *Factory) TelemeterClientServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(TelemeterClientServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(TelemeterClientServiceAccount))
 }
 
 func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(TelemeterClientSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(TelemeterClientSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -3084,55 +3209,55 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosRulerService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetReader(ThanosRulerService))
+	return f.NewService(f.assets.MustNewAssetSlice(ThanosRulerService))
 }
 
 func (f *Factory) ThanosRulerServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetReader(ThanosRulerServiceAccount))
+	return f.NewServiceAccount(f.assets.MustNewAssetSlice(ThanosRulerServiceAccount))
 }
 
 func (f *Factory) ThanosRulerClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(ThanosRulerClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(ThanosRulerClusterRoleBinding))
 }
 
 func (f *Factory) ThanosRulerMonitoringClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetReader(ThanosRulerMonitoringClusterRoleBinding))
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(ThanosRulerMonitoringClusterRoleBinding))
 }
 
 func (f *Factory) ThanosRulerMonitoringAlertmanagerUserWorkloadRoleBinding() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(ThanosRulerMonitoringAlertmanagerUserWorkloadRoleBinding))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(ThanosRulerMonitoringAlertmanagerUserWorkloadRoleBinding))
 }
 
 func (f *Factory) ThanosRulerClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetReader(ThanosRulerClusterRole))
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ThanosRulerClusterRole))
 }
 
 func (f *Factory) ThanosRulerPrometheusRule() (*monv1.PrometheusRule, error) {
-	return f.NewPrometheusRule(f.assets.MustNewAssetReader(ThanosRulerPrometheusRule))
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(ThanosRulerPrometheusRule))
 }
 
 func (f *Factory) ThanosRulerAlertManagerRoleBinding() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetReader(ThanosRulerAlertmanagerRoleBinding))
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(ThanosRulerAlertmanagerRoleBinding))
 }
 
 func (f *Factory) ThanosRulerServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetReader(ThanosRulerServiceMonitor))
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ThanosRulerServiceMonitor))
 }
 
 func (f *Factory) ThanosRulerRoute() (*routev1.Route, error) {
-	return f.NewRoute(f.assets.MustNewAssetReader(ThanosRulerRoute))
+	return f.NewRoute(f.assets.MustNewAssetSlice(ThanosRulerRoute))
 }
 
 func (f *Factory) ThanosRulerTrustedCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(ThanosRulerTrustedCABundle))
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(ThanosRulerTrustedCABundle))
 }
 
 func (f *Factory) ThanosRulerGrpcTLSSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerGrpcTLSSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(ThanosRulerGrpcTLSSecret))
 }
 
 func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerOauthCookieSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(ThanosRulerOauthCookieSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -3148,7 +3273,7 @@ func (f *Factory) ThanosRulerOauthCookieSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosRulerRBACProxyMetricsSecret() (*v1.Secret, error) {
-	return f.NewSecret(f.assets.MustNewAssetReader(ThanosRulerRBACProxyMetricsSecret))
+	return f.NewSecret(f.assets.MustNewAssetSlice(ThanosRulerRBACProxyMetricsSecret))
 }
 
 func (f *Factory) ThanosRulerCustomResource(
@@ -3157,7 +3282,7 @@ func (f *Factory) ThanosRulerCustomResource(
 	grpcTLS *v1.Secret,
 	alertmanagerConfig *v1.Secret,
 ) (*monv1.ThanosRuler, error) {
-	t, err := f.NewThanosRuler(f.assets.MustNewAssetReader(ThanosRulerCustomResource))
+	t, err := f.NewThanosRuler(f.assets.MustNewAssetSlice(ThanosRulerCustomResource))
 	if err != nil {
 		return nil, err
 	}
@@ -3306,253 +3431,10 @@ func (f *Factory) injectThanosRulerAlertmanagerDigest(t *monv1.ThanosRuler, aler
 	}
 }
 
-func NewDaemonSet(manifest io.Reader) (*appsv1.DaemonSet, error) {
-	ds := appsv1.DaemonSet{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&ds)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ds, nil
-}
-
-func NewPodDisruptionBudget(manifest io.Reader) (*policyv1.PodDisruptionBudget, error) {
-	pdb := policyv1.PodDisruptionBudget{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&pdb)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pdb, nil
-}
-
-func NewService(manifest io.Reader) (*v1.Service, error) {
-	s := v1.Service{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s, nil
-}
-
-func NewEndpoints(manifest io.Reader) (*v1.Endpoints, error) {
-	e := v1.Endpoints{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&e)
-	if err != nil {
-		return nil, err
-	}
-
-	return &e, nil
-}
-
-func NewRoute(manifest io.Reader) (*routev1.Route, error) {
-	r := routev1.Route{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&r)
-	if err != nil {
-		return nil, err
-	}
-
-	return &r, nil
-}
-
-func NewSecret(manifest io.Reader) (*v1.Secret, error) {
-	s := v1.Secret{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
-	if err != nil {
-		return nil, err
-	}
-	return &s, nil
-}
-
-func NewClusterRoleBinding(manifest io.Reader) (*rbacv1.ClusterRoleBinding, error) {
-	crb := rbacv1.ClusterRoleBinding{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&crb)
-	if err != nil {
-		return nil, err
-	}
-
-	return &crb, nil
-}
-
-func NewClusterRole(manifest io.Reader) (*rbacv1.ClusterRole, error) {
-	cr := rbacv1.ClusterRole{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cr, nil
-}
-
-func NewRoleBinding(manifest io.Reader) (*rbacv1.RoleBinding, error) {
-	rb := rbacv1.RoleBinding{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&rb)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rb, nil
-}
-
-func NewRole(manifest io.Reader) (*rbacv1.Role, error) {
-	r := rbacv1.Role{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&r)
-	if err != nil {
-		return nil, err
-	}
-
-	return &r, nil
-}
-
-func NewRoleBindingList(manifest io.Reader) (*rbacv1.RoleBindingList, error) {
-	rbl := rbacv1.RoleBindingList{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&rbl)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rbl, nil
-}
-
-func NewRoleList(manifest io.Reader) (*rbacv1.RoleList, error) {
-	rl := rbacv1.RoleList{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&rl)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rl, nil
-}
-
-func NewConfigMap(manifest io.Reader) (*v1.ConfigMap, error) {
-	cm := v1.ConfigMap{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cm)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cm, nil
-}
-
-func NewConfigMapList(manifest io.Reader) (*v1.ConfigMapList, error) {
-	cml := v1.ConfigMapList{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cml)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cml, nil
-}
-
-func NewServiceAccount(manifest io.Reader) (*v1.ServiceAccount, error) {
-	sa := v1.ServiceAccount{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&sa)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sa, nil
-}
-
-func NewPrometheus(manifest io.Reader) (*monv1.Prometheus, error) {
-	p := monv1.Prometheus{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&p)
-	if err != nil {
-		return nil, err
-	}
-
-	return &p, nil
-}
-
-func NewPrometheusRule(manifest io.Reader) (*monv1.PrometheusRule, error) {
-	p := monv1.PrometheusRule{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&p)
-	if err != nil {
-		return nil, err
-	}
-
-	return &p, nil
-}
-
-func NewAlertmanager(manifest io.Reader) (*monv1.Alertmanager, error) {
-	a := monv1.Alertmanager{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&a)
-	if err != nil {
-		return nil, err
-	}
-
-	return &a, nil
-}
-
-func NewThanosRuler(manifest io.Reader) (*monv1.ThanosRuler, error) {
-	t := monv1.ThanosRuler{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&t)
-	if err != nil {
-		return nil, err
-	}
-
-	return &t, nil
-}
-
-func NewServiceMonitor(manifest io.Reader) (*monv1.ServiceMonitor, error) {
-	sm := monv1.ServiceMonitor{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&sm)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sm, nil
-}
-
-func NewDeployment(manifest io.Reader) (*appsv1.Deployment, error) {
-	d := appsv1.Deployment{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&d)
-	if err != nil {
-		return nil, err
-	}
-
-	return &d, nil
-}
-
-func NewAPIService(manifest io.Reader) (*apiregistrationv1.APIService, error) {
-	s := apiregistrationv1.APIService{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s, nil
-}
-
-func NewSecurityContextConstraints(manifest io.Reader) (*securityv1.SecurityContextConstraints, error) {
-	s := securityv1.SecurityContextConstraints{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&s)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s, nil
-}
-
-func NewValidatingWebhook(manifest io.Reader) (*admissionv1.ValidatingWebhookConfiguration, error) {
-	v := admissionv1.ValidatingWebhookConfiguration{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-
-	return &v, nil
-}
-
-func NewConsolePlugin(manifest io.Reader) (*consolev1.ConsolePlugin, error) {
-	cp := consolev1.ConsolePlugin{}
-	err := yaml.NewYAMLOrJSONDecoder(manifest, 100).Decode(&cp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cp, nil
+// decodeYAML is just a wrapper around an Unmarshaling function to make it
+// easier to change the implementation
+func decodeYAML(manifest []byte, out interface{}) error {
+	return k8syaml.UnmarshalStrict(manifest, out)
 }
 
 // HashTrustedCA synthesizes a configmap just by copying "ca-bundle.crt" from the given configmap

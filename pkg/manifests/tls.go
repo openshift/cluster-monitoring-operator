@@ -41,7 +41,7 @@ func needsNewCert(notBefore, notAfter time.Time, now func() time.Time) bool {
 }
 
 func (f *Factory) GRPCSecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ClusterMonitoringGrpcTLSSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(ClusterMonitoringGrpcTLSSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (f *Factory) GRPCSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) MetricsClientCerts() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ClusterMonitoringMetricsClientCertsSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(ClusterMonitoringMetricsClientCertsSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (f *Factory) MetricsClientCerts() (*v1.Secret, error) {
 }
 
 func (f *Factory) FederateClientCerts() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetReader(ClusterMonitoringFederateClientCertsSecret))
+	s, err := f.NewSecret(f.assets.MustNewAssetSlice(ClusterMonitoringFederateClientCertsSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (f *Factory) FederateClientCerts() (*v1.Secret, error) {
 }
 
 func (f *Factory) MetricsClientCACM(apiAuthConfigmap *v1.ConfigMap) (*v1.ConfigMap, error) {
-	cm, err := f.NewConfigMap(f.assets.MustNewAssetReader(ClusterMonitoringMetricsClientCACM))
+	cm, err := f.NewConfigMap(f.assets.MustNewAssetSlice(ClusterMonitoringMetricsClientCACM))
 	if err != nil {
 		return nil, err
 	}
