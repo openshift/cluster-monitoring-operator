@@ -1,6 +1,6 @@
 module github.com/openshift/cluster-monitoring-operator
 
-go 1.21
+go 1.20
 
 require (
 	github.com/Jeffail/gabs v1.4.0
@@ -158,3 +158,5 @@ require (
 )
 
 replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20230928195430-ce36a0c3bb67
+
+replace github.com/prometheus-operator/prometheus-operator v0.70.0 => github.com/openshift/prometheus-operator v0.20.1-0.20231211152750-5bf04f3ca997
