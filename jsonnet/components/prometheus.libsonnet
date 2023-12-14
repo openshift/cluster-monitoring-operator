@@ -370,6 +370,18 @@ function(params)
         listenLocal: true,
         priorityClassName: 'system-cluster-critical',
         additionalAlertRelabelConfigs: cfg.additionalRelabelConfigs,
+        additionalArgs: [
+          // This aligns any scrape timestamps <= 15ms to the a multiple of
+          // the scrape interval. This optmizes tsdb compression.
+          // 15ms was chosen for being a conservative value given our default
+          // scrape interval of 30s. Even for half the default value we onlt
+          // move scrape interval timestamps by <= 1% of their absolute
+          // length.
+          {
+            name: 'scrape.timestamp-tolerance',
+            value: '15ms',
+          },
+        ],
         containers: [
           {
             name: 'prometheus-proxy',
@@ -542,15 +554,6 @@ function(params)
           },
           {
             name: 'prometheus',
-            additionalArgs: [
-              // This aligns any scrape timestamps <= 15ms to the a multiple of
-              // the scrape interval. This optmizes tsdb compression.
-              // 15ms was chosen for being a conservative value given our default
-              // scrape interval of 30s. Even for half the default value we onlt
-              // move scrape interval timestamps by <= 1% of their absolute
-              // length.
-              '--scrape.timestamp-tolerance=15ms',
-            ],
           },
         ],
       },
