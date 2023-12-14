@@ -524,7 +524,7 @@ github.com/pmezard/go-difflib/difflib
 # github.com/prometheus-community/prom-label-proxy v0.7.0
 ## explicit; go 1.19
 github.com/prometheus-community/prom-label-proxy/injectproxy
-# github.com/prometheus-operator/prometheus-operator v0.70.0
+# github.com/prometheus-operator/prometheus-operator v0.70.0 => github.com/openshift/prometheus-operator v0.20.1-0.20231211152750-5bf04f3ca997
 ## explicit; go 1.21
 github.com/prometheus-operator/prometheus-operator/pkg/informers
 github.com/prometheus-operator/prometheus-operator/pkg/k8sutil

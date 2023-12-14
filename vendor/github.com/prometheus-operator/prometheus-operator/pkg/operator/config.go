@@ -16,11 +16,11 @@ package operator
 
 import (
 	"fmt"
-	"slices"
 	"sort"
 	"strings"
 
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
