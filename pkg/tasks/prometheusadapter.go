@@ -219,18 +219,19 @@ func (t *PrometheusAdapterTask) create(ctx context.Context) error {
 			}
 		}
 	}
-	{
-		api, err := t.factory.PrometheusAdapterAPIService()
-		if err != nil {
-			return errors.Wrap(err, "initializing PrometheusAdapter APIService failed")
-		}
+	/*
+		{
+			api, err := t.factory.PrometheusAdapterAPIService()
+			if err != nil {
+				return errors.Wrap(err, "initializing PrometheusAdapter APIService failed")
+			}
 
-		err = t.client.CreateOrUpdateAPIService(ctx, api)
-		if err != nil {
-			return errors.Wrap(err, "reconciling PrometheusAdapter APIService failed")
+			err = t.client.CreateOrUpdateAPIService(ctx, api)
+			if err != nil {
+				return errors.Wrap(err, "reconciling PrometheusAdapter APIService failed")
+			}
 		}
-	}
-
+	*/
 	{
 		// TODO: Remove this in 4.16
 		err := t.client.DeleteConfigMapByNamespaceAndName(ctx, t.client.Namespace(), "adapter-config-dedicated-sm")
