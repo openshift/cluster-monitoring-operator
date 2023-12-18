@@ -691,15 +691,6 @@ func (c *Client) DeleteConfigMap(ctx context.Context, cm *v1.ConfigMap) error {
 	return err
 }
 
-func (c *Client) DeleteConfigMapByNamespaceAndName(ctx context.Context, namespace, name string) error {
-	err := c.kclient.CoreV1().ConfigMaps(namespace).Delete(ctx, name, metav1.DeleteOptions{})
-	if apierrors.IsNotFound(err) {
-		return nil
-	}
-
-	return err
-}
-
 // DeleteHashedConfigMap deletes all configmaps in the given namespace which have
 // the specified prefix, and DO NOT have the given hash.
 func (c *Client) DeleteHashedConfigMap(ctx context.Context, namespace, prefix, newHash string) error {

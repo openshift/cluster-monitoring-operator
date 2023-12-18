@@ -231,14 +231,6 @@ func (t *PrometheusAdapterTask) create(ctx context.Context) error {
 		}
 	}
 
-	{
-		// TODO: Remove this in 4.16
-		err := t.client.DeleteConfigMapByNamespaceAndName(ctx, t.client.Namespace(), "adapter-config-dedicated-sm")
-		if err != nil {
-			return errors.Wrap(err, "deleting PrometheusAdapter ConfigMap for dedicated ServiceMonitors failed")
-		}
-	}
-
 	return nil
 }
 

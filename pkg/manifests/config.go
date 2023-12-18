@@ -191,38 +191,17 @@ func (cps CollectionProfiles) String() string {
 }
 
 func NewConfig(content io.Reader, tp bool) (*Config, error) {
-	c := Config{}
+	c := Config{TechPreview: tp}
 	cmc := defaultClusterMonitoringConfiguration()
 	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(&cmc)
 	if err != nil {
 		return nil, err
 	}
 	c.ClusterMonitoringConfiguration = &cmc
-	res := &c
-	res.applyDefaults()
+	c.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
-	// The operator should only create some manifests if techPreview is enabled
-	c.TechPreview = tp
 
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !tp {
-		return nil, errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
-	}
-
-	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
-	if tp {
-		for _, profile := range SupportedCollectionProfiles {
-			var v float64
-			if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
-				v = 1
-			}
-			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
-		}
-		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-			return nil, errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
-		}
-	}
-
-	return res, nil
+	return &c, nil
 }
 
 func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
@@ -290,9 +269,6 @@ func (c *Config) applyDefaults() {
 
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors = &DedicatedServiceMonitors{}
 	}
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}
@@ -444,6 +420,35 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	}
 
 	return poperator.ValidateSizeField(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
+}
+
+func (c *Config) Precheck() error {
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.TechPreview {
+		return errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
+	}
+
+	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
+	if c.TechPreview {
+		for _, profile := range SupportedCollectionProfiles {
+			var v float64
+			if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
+				v = 1
+			}
+			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
+		}
+		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
+			return errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
+		}
+	}
+
+	// Highlight deprecated config fields.
+	var d float64
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors != nil {
+		d = 1
+	}
+	// Deprecated in https://github.com/openshift/cluster-monitoring-operator/pull/2160
+	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter.dedicatedServiceMonitors", "4.15").Set(d)
+	return nil
 }
 
 func calculateBodySizeLimit(podCapacity int) string {

@@ -19,6 +19,7 @@ import (
 	"go/doc"
 	"go/parser"
 	"go/token"
+	"strings"
 )
 
 // Load parses a go file and returns a TypeSet.
@@ -31,7 +32,7 @@ func Load(path string) (TypeSet, error) {
 
 	for _, t := range types.Types {
 		structType, ok := t.Decl.Specs[0].(*ast.TypeSpec).Type.(*ast.StructType)
-		if !ok {
+		if !ok || hideFromDoc(t.Doc) {
 			continue
 		}
 
@@ -48,6 +49,9 @@ func Load(path string) (TypeSet, error) {
 	for _, currentStruct := range structs {
 		for _, field := range currentStruct.rawFields {
 			field := Field(*field)
+			if hideFromDoc(field.Doc.Text()) {
+				continue
+			}
 			if field.IsInlined() {
 				if field.HasInternalType() {
 					mergeFields(currentStruct, structs[field.Name()], structs)
@@ -77,6 +81,11 @@ func Load(path string) (TypeSet, error) {
 	}
 
 	return structs, nil
+}
+
+// hideFromDoc helps filetring out elements that are not intended to be shown in docs.
+func hideFromDoc(doc string) bool {
+	return strings.HasPrefix(doc, "HideFromDoc: ")
 }
 
 func mergeFields(to *StructType, from *StructType, structs TypeSet) {

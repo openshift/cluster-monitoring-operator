@@ -28,10 +28,17 @@ var CollectionProfile = metrics.NewGaugeVec(&metrics.GaugeOpts{
 	StabilityLevel: metrics.ALPHA,
 }, []string{"profile"})
 
+var DeprecatedConfig = metrics.NewGaugeVec(&metrics.GaugeOpts{
+	Name:           "cluster_monitoring_operator_deprecated_config_in_use",
+	Help:           "Set to 1 for deprecated configuration fields that are still in use, else 0.",
+	StabilityLevel: metrics.ALPHA,
+}, []string{"configmap", "field", "deprecation_version"})
+
 func init() {
 	// The API (metrics) server is instrumented to work with component-base.
 	// Refer: https://github.com/kubernetes/kubernetes/blob/ec87834bae787ab6687921d65c3bcfde8a6e01b9/staging/src/k8s.io/apiserver/pkg/server/routes/metrics.go#L44.
 	legacyregistry.MustRegister(ReconcileAttempts)
 	legacyregistry.MustRegister(ReconcileStatus)
 	legacyregistry.MustRegister(CollectionProfile)
+	legacyregistry.MustRegister(DeprecatedConfig)
 }

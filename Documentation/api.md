@@ -22,7 +22,6 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [AlertmanagerMainConfig](#alertmanagermainconfig)
 * [AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig)
 * [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)
-* [DedicatedServiceMonitors](#dedicatedservicemonitors)
 * [K8sPrometheusAdapter](#k8sprometheusadapter)
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
 * [MetricsServerConfig](#metricsserverconfig)
@@ -143,21 +142,6 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 [Back to TOC](#table-of-contents)
 
-## DedicatedServiceMonitors
-
-#### Description
-
-This setting is DEPRECATED and will be removed in a future version. In this version this setting has no effect.
-
-
-<em>appears in: [K8sPrometheusAdapter](#k8sprometheusadapter)</em>
-
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| enabled | bool | When `enabled` is set to `true`, the Cluster Monitoring Operator (CMO) deploys a dedicated Service Monitor that exposes the kubelet `/metrics/resource` endpoint. This Service Monitor sets `honorTimestamps: true` and only keeps metrics that are relevant for the pod resource queries of Prometheus Adapter. Additionally, Prometheus Adapter is configured to use these dedicated metrics. Overall, this feature improves the consistency of Prometheus Adapter-based CPU usage measurements used by, for example, the `oc adm top pod` command or the Horizontal Pod Autoscaler. |
-
-[Back to TOC](#table-of-contents)
-
 ## K8sPrometheusAdapter
 
 #### Description
@@ -174,7 +158,6 @@ The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter 
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core) | Defines resource requests and limits for the PrometheusAdapter container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
-| dedicatedServiceMonitors | *[DedicatedServiceMonitors](#dedicatedservicemonitors) | Defines dedicated service monitors. |
 
 [Back to TOC](#table-of-contents)
 

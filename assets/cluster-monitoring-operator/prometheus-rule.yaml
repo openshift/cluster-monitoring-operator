@@ -229,6 +229,14 @@ spec:
       for: 1h
       labels:
         severity: warning
+    - alert: ClusterMonitoringOperatorDeprecatedConfig
+      annotations:
+        description: The configuration field {{ $labels.field }} in {{ $labels.configmap }} was deprecated in {{ $labels.deprecation_version }} and has no effect, you can remove it.
+        summary: Cluster Monitoring Operator is being used with deprecated configuration.
+      expr: max by (configmap, field, deprecation_version) (cluster_monitoring_operator_deprecated_config_in_use) == 1
+      for: 1h
+      labels:
+        severity: info
     - alert: AlertmanagerReceiversNotConfigured
       annotations:
         description: Alerts are not configured to be sent to a notification system, meaning that you may not be notified in a timely fashion when important failures occur. Check the OpenShift documentation to learn how to configure notifications with Alertmanager.
