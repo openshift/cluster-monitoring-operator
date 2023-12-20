@@ -17,6 +17,7 @@ package v1
 import (
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,6 +61,16 @@ func (l *Prometheus) GetStatus() PrometheusStatus {
 // +k8s:deepcopy-gen=true
 type CommonPrometheusFields struct {
 	// PodMetadata configures labels and annotations which are propagated to the Prometheus pods.
+	//
+	// The following items are reserved and cannot be overridden:
+	// * "prometheus" label, set to the name of the Prometheus object.
+	// * "app.kubernetes.io/instance" label, set to the name of the Prometheus object.
+	// * "app.kubernetes.io/managed-by" label, set to "prometheus-operator".
+	// * "app.kubernetes.io/name" label, set to "prometheus".
+	// * "app.kubernetes.io/version" label, set to the Prometheus version.
+	// * "operator.prometheus.io/name" label, set to the name of the Prometheus object.
+	// * "operator.prometheus.io/shard" label, set to the shard number of the Prometheus object.
+	// * "kubectl.kubernetes.io/default-container" annotation, set to "prometheus".
 	PodMetadata *EmbeddedObjectMetadata `json:"podMetadata,omitempty"`
 
 	// ServiceMonitors to be selected for target discovery. An empty label
@@ -205,10 +216,10 @@ type CommonPrometheusFields struct {
 	PrometheusExternalLabelName *string `json:"prometheusExternalLabelName,omitempty"`
 
 	// Log level for Prometheus and the config-reloader sidecar.
-	//+kubebuilder:validation:Enum="";debug;info;warn;error
+	// +kubebuilder:validation:Enum="";debug;info;warn;error
 	LogLevel string `json:"logLevel,omitempty"`
 	// Log format for Log level for Prometheus and the config-reloader sidecar.
-	//+kubebuilder:validation:Enum="";logfmt;json
+	// +kubebuilder:validation:Enum="";logfmt;json
 	LogFormat string `json:"logFormat,omitempty"`
 
 	// Interval between consecutive scrapes.
@@ -271,6 +282,14 @@ type CommonPrometheusFields struct {
 	// container, that are generated as a result of StorageSpec objects.
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 
+	// The field controls if and how PVCs are deleted during the lifecycle of a StatefulSet.
+	// The default behavior is all PVCs are retained.
+	// This is an alpha field from kubernetes 1.23 until 1.26 and a beta field from 1.26.
+	// It requires enabling the StatefulSetAutoDeletePVC feature gate.
+	//
+	// +optional
+	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+
 	// Defines the configuration of the Prometheus web server.
 	Web *PrometheusWebSpec `json:"web,omitempty"`
 
@@ -302,7 +321,7 @@ type CommonPrometheusFields struct {
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines the pod's topology spread constraints if specified.
-	//+optional
+	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
 	// Defines the list of remote write configurations.
@@ -407,7 +426,7 @@ type CommonPrometheusFields struct {
 	// When true, `spec.namespaceSelector` from all PodMonitor, ServiceMonitor
 	// and Probe objects will be ignored. They will only discover targets
 	// within the namespace of the PodMonitor, ServiceMonitor and Probe
-	// objec.
+	// object.
 	IgnoreNamespaceSelectors bool `json:"ignoreNamespaceSelectors,omitempty"`
 
 	// When not empty, a label will be added to
@@ -472,6 +491,16 @@ type CommonPrometheusFields struct {
 	//
 	// +optional
 	EnforcedLabelValueLengthLimit *uint64 `json:"enforcedLabelValueLengthLimit,omitempty"`
+	// When defined, enforcedKeepDroppedTargets specifies a global limit on the number of targets
+	// dropped by relabeling that will be kept in memory. The value overrides
+	// any `spec.keepDroppedTargets` set by
+	// ServiceMonitor, PodMonitor, Probe objects unless `spec.keepDroppedTargets` is
+	// greater than zero and less than `spec.enforcedKeepDroppedTargets`.
+	//
+	// It requires Prometheus >= v2.47.0.
+	//
+	// +optional
+	EnforcedKeepDroppedTargets *uint64 `json:"enforcedKeepDroppedTargets,omitempty"`
 	// When defined, enforcedBodySizeLimit specifies a global limit on the size
 	// of uncompressed response body that will be accepted by Prometheus.
 	// Targets responding with a body larger than this many bytes will cause
@@ -550,6 +579,75 @@ type CommonPrometheusFields struct {
 	//
 	// +optional
 	TracingConfig *PrometheusTracingConfig `json:"tracingConfig,omitempty"`
+	// BodySizeLimit defines per-scrape on response body size.
+	// Only valid in Prometheus versions 2.45.0 and newer.
+	//
+	// +optional
+	BodySizeLimit *ByteSize `json:"bodySizeLimit,omitempty"`
+	// SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+	// Only valid in Prometheus versions 2.45.0 and newer.
+	//
+	// +optional
+	SampleLimit *uint64 `json:"sampleLimit,omitempty"`
+	// TargetLimit defines a limit on the number of scraped targets that will be accepted.
+	// Only valid in Prometheus versions 2.45.0 and newer.
+	//
+	// +optional
+	TargetLimit *uint64 `json:"targetLimit,omitempty"`
+	// Per-scrape limit on number of labels that will be accepted for a sample.
+	// Only valid in Prometheus versions 2.45.0 and newer.
+	//
+	// +optional
+	LabelLimit *uint64 `json:"labelLimit,omitempty"`
+	// Per-scrape limit on length of labels name that will be accepted for a sample.
+	// Only valid in Prometheus versions 2.45.0 and newer.
+	//
+	// +optional
+	LabelNameLengthLimit *uint64 `json:"labelNameLengthLimit,omitempty"`
+	// Per-scrape limit on length of labels value that will be accepted for a sample.
+	// Only valid in Prometheus versions 2.45.0 and newer.
+	//
+	// +optional
+	LabelValueLengthLimit *uint64 `json:"labelValueLengthLimit,omitempty"`
+	// Per-scrape limit on the number of targets dropped by relabeling
+	// that will be kept in memory. 0 means no limit.
+	//
+	// It requires Prometheus >= v2.47.0.
+	//
+	// +optional
+	KeepDroppedTargets *uint64 `json:"keepDroppedTargets,omitempty"`
+
+	// Defines the strategy used to reload the Prometheus configuration.
+	// If not specified, the configuration is reloaded using the /-/reload HTTP endpoint.
+	// +optional
+	ReloadStrategy *ReloadStrategyType `json:"reloadStrategy,omitempty"`
+}
+
+// +kubebuilder:validation:Enum=HTTP;ProcessSignal
+type ReloadStrategyType string
+
+const (
+	// HTTPReloadStrategyType reloads the configuration using the /-/reload HTTP endpoint.
+	HTTPReloadStrategyType ReloadStrategyType = "HTTP"
+
+	// ProcessSignalReloadStrategyType reloads the configuration by sending a SIGHUP signal to the process.
+	ProcessSignalReloadStrategyType ReloadStrategyType = "ProcessSignal"
+)
+
+func (cpf *CommonPrometheusFields) PrometheusURIScheme() string {
+	if cpf.Web != nil && cpf.Web.TLSConfig != nil {
+		return "https"
+	}
+
+	return "http"
+}
+
+func (cpf *CommonPrometheusFields) WebRoutePrefix() string {
+	if cpf.RoutePrefix != "" {
+		return cpf.RoutePrefix
+	}
+
+	return "/"
 }
 
 // +genclient
@@ -740,7 +838,7 @@ type PrometheusSpec struct {
 
 type PrometheusTracingConfig struct {
 	// Client used to export the traces. Supported values are `http` or `grpc`.
-	//+kubebuilder:validation:Enum=http;grpc
+	// +kubebuilder:validation:Enum=http;grpc
 	// +optional
 	ClientType *string `json:"clientType"`
 
@@ -762,7 +860,7 @@ type PrometheusTracingConfig struct {
 	Headers map[string]string `json:"headers"`
 
 	// Compression key for supported compression types. The only supported value is `gzip`.
-	//+kubebuilder:validation:Enum=gzip
+	// +kubebuilder:validation:Enum=gzip
 	// +optional
 	Compression *string `json:"compression"`
 
@@ -976,10 +1074,10 @@ type ThanosSpec struct {
 	GRPCServerTLSConfig *TLSConfig `json:"grpcServerTlsConfig,omitempty"`
 
 	// Log level for the Thanos sidecar.
-	//+kubebuilder:validation:Enum="";debug;info;warn;error
+	// +kubebuilder:validation:Enum="";debug;info;warn;error
 	LogLevel string `json:"logLevel,omitempty"`
 	// Log format for the Thanos sidecar.
-	//+kubebuilder:validation:Enum="";logfmt;json
+	// +kubebuilder:validation:Enum="";logfmt;json
 	LogFormat string `json:"logFormat,omitempty"`
 
 	// Defines the start of time range limit served by the Thanos sidecar's StoreAPI.
@@ -1074,12 +1172,12 @@ type RemoteWriteSpec struct {
 	//
 	// It requires Prometheus >= v2.27.0.
 	//
-	// Cannot be set at the same time as `sigv4`, `authorization`, or `basicAuth`.
+	// Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.
 	// +optional
 	OAuth2 *OAuth2 `json:"oauth2,omitempty"`
 	// BasicAuth configuration for the URL.
 	//
-	// Cannot be set at the same time as `sigv4`, `authorization`, or `oauth2`.
+	// Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.
 	//
 	// +optional
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
@@ -1091,7 +1189,7 @@ type RemoteWriteSpec struct {
 	//
 	// It requires Prometheus >= v2.26.0.
 	//
-	// Cannot be set at the same time as `sigv4`, `basicAuth`, or `oauth2`.
+	// Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.
 	//
 	// +optional
 	Authorization *Authorization `json:"authorization,omitempty"`
@@ -1099,13 +1197,22 @@ type RemoteWriteSpec struct {
 	//
 	// It requires Prometheus >= v2.26.0.
 	//
-	// Cannot be set at the same time as `authorization`, `basicAuth`, or `oauth2`.
+	// Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.
 	//
 	// +optional
 	Sigv4 *Sigv4 `json:"sigv4,omitempty"`
 
-	// *Warning: this field shouldn't used because the token value appears in
-	// clear-text. Prefer using `authorization`.*
+	// AzureAD for the URL.
+	//
+	// It requires Prometheus >= v2.45.0.
+	//
+	// Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.
+	//
+	// +optional
+	AzureAD *AzureAD `json:"azureAd,omitempty"`
+
+	// *Warning: this field shouldn't be used because the token value appears
+	// in clear-text. Prefer using `authorization`.*
 	//
 	// *Deprecated: this will be removed in a future release.*
 	BearerToken string `json:"bearerToken,omitempty"`
@@ -1172,6 +1279,51 @@ type Sigv4 struct {
 	RoleArn string `json:"roleArn,omitempty"`
 }
 
+// AzureAD defines the configuration for remote write's azuread parameters.
+// +k8s:openapi-gen=true
+type AzureAD struct {
+	// The Azure Cloud. Options are 'AzurePublic', 'AzureChina', or 'AzureGovernment'.
+	// +kubebuilder:validation:Enum=AzureChina;AzureGovernment;AzurePublic
+	// +optional
+	Cloud *string `json:"cloud,omitempty"`
+	// ManagedIdentity defines the Azure User-assigned Managed identity.
+	// Cannot be set at the same time as `oauth`.
+	// +optional
+	ManagedIdentity *ManagedIdentity `json:"managedIdentity,omitempty"`
+	// OAuth defines the oauth config that is being used to authenticate.
+	// Cannot be set at the same time as `managedIdentity`.
+	//
+	// It requires Prometheus >= v2.48.0.
+	//
+	// +optional
+	OAuth *AzureOAuth `json:"oauth,omitempty"`
+}
+
+// AzureOAuth defines the Azure OAuth settings.
+// +k8s:openapi-gen=true
+type AzureOAuth struct {
+	// `clientID` is the clientId of the Azure Active Directory application that is being used to authenticate.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	ClientID string `json:"clientId"`
+	// `clientSecret` specifies a key of a Secret containing the client secret of the Azure Active Directory application that is being used to authenticate.
+	// +required
+	ClientSecret v1.SecretKeySelector `json:"clientSecret"`
+	// `tenantID` is the tenant ID of the Azure Active Directory application that is being used to authenticate.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern:=^[0-9a-zA-Z-.]+$
+	TenantID string `json:"tenantId"`
+}
+
+// ManagedIdentity defines the Azure User-assigned Managed identity.
+// +k8s:openapi-gen=true
+type ManagedIdentity struct {
+	// The client id
+	// +required
+	ClientID string `json:"clientId"`
+}
+
 // RemoteReadSpec defines the configuration for Prometheus to read back samples
 // from a remote endpoint.
 // +k8s:openapi-gen=true
@@ -1219,7 +1371,7 @@ type RemoteReadSpec struct {
 	//
 	// +optional
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
-	// File from which to read bearer token for the URL.
+	// File from which to read the bearer token for the URL.
 	//
 	// *Deprecated: this will be removed in a future release. Prefer using `authorization`.*
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
@@ -1232,8 +1384,8 @@ type RemoteReadSpec struct {
 	// +optional
 	Authorization *Authorization `json:"authorization,omitempty"`
 
-	// *Warning: this field shouldn't used because the token value appears in
-	// clear-text. Prefer using `authorization`.*
+	// *Warning: this field shouldn't be used because the token value appears
+	// in clear-text. Prefer using `authorization`.*
 	//
 	// *Deprecated: this will be removed in a future release.*
 	BearerToken string `json:"bearerToken,omitempty"`
@@ -1260,109 +1412,203 @@ type RemoteReadSpec struct {
 	FilterExternalLabels *bool `json:"filterExternalLabels,omitempty"`
 }
 
-// RelabelConfig allows dynamic rewriting of the label set, being applied to samples before ingestion.
-// It defines `<metric_relabel_configs>`-section of Prometheus configuration.
-// More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs
+// RelabelConfig allows dynamic rewriting of the label set for targets, alerts,
+// scraped samples and remote write samples.
+//
+// More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+//
 // +k8s:openapi-gen=true
 type RelabelConfig struct {
-	// The source labels select values from existing labels. Their content is concatenated
-	// using the configured separator and matched against the configured regular expression
-	// for the replace, keep, and drop actions.
+	// The source labels select values from existing labels. Their content is
+	// concatenated using the configured Separator and matched against the
+	// configured regular expression.
+	//
+	// +optional
 	SourceLabels []LabelName `json:"sourceLabels,omitempty"`
-	// Separator placed between concatenated source label values. default is ';'.
+
+	// Separator is the string between concatenated SourceLabels.
 	Separator string `json:"separator,omitempty"`
-	// Label to which the resulting value is written in a replace action.
-	// It is mandatory for replace actions. Regex capture groups are available.
+
+	// Label to which the resulting string is written in a replacement.
+	//
+	// It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
+	// `KeepEqual` and `DropEqual` actions.
+	//
+	// Regex capture groups are available.
 	TargetLabel string `json:"targetLabel,omitempty"`
-	// Regular expression against which the extracted value is matched. Default is '(.*)'
+
+	// Regular expression against which the extracted value is matched.
 	Regex string `json:"regex,omitempty"`
+
 	// Modulus to take of the hash of the source label values.
+	//
+	// Only applicable when the action is `HashMod`.
 	Modulus uint64 `json:"modulus,omitempty"`
-	// Replacement value against which a regex replace is performed if the
-	// regular expression matches. Regex capture groups are available. Default is '$1'
+
+	// Replacement value against which a Replace action is performed if the
+	// regular expression matches.
+	//
+	// Regex capture groups are available.
 	Replacement string `json:"replacement,omitempty"`
-	//Action to perform based on regex matching. Default is 'replace'.
-	//uppercase and lowercase actions require Prometheus >= 2.36.
-	//+kubebuilder:validation:Enum=replace;Replace;keep;Keep;drop;Drop;hashmod;HashMod;labelmap;LabelMap;labeldrop;LabelDrop;labelkeep;LabelKeep;lowercase;Lowercase;uppercase;Uppercase;keepequal;KeepEqual;dropequal;DropEqual
-	//+kubebuilder:default=replace
+
+	// Action to perform based on the regex matching.
+	//
+	// `Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
+	// `DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
+	//
+	// Default: "Replace"
+	//
+	// +kubebuilder:validation:Enum=replace;Replace;keep;Keep;drop;Drop;hashmod;HashMod;labelmap;LabelMap;labeldrop;LabelDrop;labelkeep;LabelKeep;lowercase;Lowercase;uppercase;Uppercase;keepequal;KeepEqual;dropequal;DropEqual
+	// +kubebuilder:default=replace
 	Action string `json:"action,omitempty"`
 }
 
-// APIServerConfig defines a host and auth methods to access apiserver.
+// APIServerConfig defines how the Prometheus server connects to the Kubernetes API server.
+//
 // More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config
+//
 // +k8s:openapi-gen=true
 type APIServerConfig struct {
-	// Host of apiserver.
-	// A valid string consisting of a hostname or IP followed by an optional port number
+	// Kubernetes API address consisting of a hostname or IP address followed
+	// by an optional port number.
 	Host string `json:"host"`
-	// BasicAuth allow an endpoint to authenticate over basic authentication
+
+	// BasicAuth configuration for the API server.
+	//
+	// Cannot be set at the same time as `authorization`, `bearerToken`, or
+	// `bearerTokenFile`.
+	//
+	// +optional
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
-	// Bearer token for accessing apiserver.
-	BearerToken string `json:"bearerToken,omitempty"`
+
 	// File to read bearer token for accessing apiserver.
+	//
+	// Cannot be set at the same time as `basicAuth`, `authorization`, or `bearerToken`.
+	//
+	// *Deprecated: this will be removed in a future release. Prefer using `authorization`.*
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
-	// TLS Config to use for accessing apiserver.
+
+	// TLS Config to use for the API server.
+	//
+	// +optional
 	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
-	// Authorization section for accessing apiserver
+
+	// Authorization section for the API server.
+	//
+	// Cannot be set at the same time as `basicAuth`, `bearerToken`, or
+	// `bearerTokenFile`.
+	//
+	// +optional
 	Authorization *Authorization `json:"authorization,omitempty"`
+
+	// *Warning: this field shouldn't be used because the token value appears
+	// in clear-text. Prefer using `authorization`.*
+	//
+	// *Deprecated: this will be removed in a future release.*
+	BearerToken string `json:"bearerToken,omitempty"`
 }
 
 // AlertmanagerEndpoints defines a selection of a single Endpoints object
-// containing alertmanager IPs to fire alerts against.
+// containing Alertmanager IPs to fire alerts against.
 // +k8s:openapi-gen=true
 type AlertmanagerEndpoints struct {
-	// Namespace of Endpoints object.
+	// Namespace of the Endpoints object.
 	Namespace string `json:"namespace"`
-	// Name of Endpoints object in Namespace.
+	// Name of the Endpoints object in the namespace.
 	Name string `json:"name"`
-	// Port the Alertmanager API is exposed on.
+
+	// Port on which the Alertmanager API is exposed.
 	Port intstr.IntOrString `json:"port"`
+
 	// Scheme to use when firing alerts.
 	Scheme string `json:"scheme,omitempty"`
+
 	// Prefix for the HTTP path alerts are pushed to.
 	PathPrefix string `json:"pathPrefix,omitempty"`
-	// TLS Config to use for alertmanager connection.
+
+	// TLS Config to use for Alertmanager.
+	//
+	// +optional
 	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
-	// BasicAuth allow an endpoint to authenticate over basic authentication
+
+	// BasicAuth configuration for Alertmanager.
+	//
+	// Cannot be set at the same time as `bearerTokenFile`, `authorization` or `sigv4`.
+	//
+	// +optional
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
-	// BearerTokenFile to read from filesystem to use when authenticating to
-	// Alertmanager.
+
+	// File to read bearer token for Alertmanager.
+	//
+	// Cannot be set at the same time as `basicAuth`, `authorization`, or `sigv4`.
+	//
+	// *Deprecated: this will be removed in a future release. Prefer using `authorization`.*
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
-	// Authorization section for this alertmanager endpoint
+
+	// Authorization section for Alertmanager.
+	//
+	// Cannot be set at the same time as `basicAuth`, `bearerTokenFile` or `sigv4`.
+	//
+	// +optional
 	Authorization *SafeAuthorization `json:"authorization,omitempty"`
-	// Version of the Alertmanager API that Prometheus uses to send alerts. It
-	// can be "v1" or "v2".
+
+	// Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
+	//
+	// It requires Prometheus >= v2.48.0.
+	//
+	// Cannot be set at the same time as `basicAuth`, `bearerTokenFile` or `authorization`.
+	//
+	// +optional
+	Sigv4 *Sigv4 `json:"sigv4,omitempty"`
+
+	// Version of the Alertmanager API that Prometheus uses to send alerts.
+	// It can be "v1" or "v2".
 	APIVersion string `json:"apiVersion,omitempty"`
+
 	// Timeout is a per-target Alertmanager timeout when pushing alerts.
+	//
+	// +optional
 	Timeout *Duration `json:"timeout,omitempty"`
+
 	// Whether to enable HTTP2.
+	//
+	// +optional
 	EnableHttp2 *bool `json:"enableHttp2,omitempty"`
 }
 
-// /--rules.*/ command-line arguments
 // +k8s:openapi-gen=true
 type Rules struct {
+	// Defines the parameters of the Prometheus rules' engine.
+	//
+	// Any update to these parameters trigger a restart of the pods.
 	Alert RulesAlert `json:"alert,omitempty"`
 }
 
-// /--rules.alert.*/ command-line arguments
 // +k8s:openapi-gen=true
 type RulesAlert struct {
-	// Max time to tolerate prometheus outage for restoring 'for' state of alert.
+	// Max time to tolerate prometheus outage for restoring 'for' state of
+	// alert.
 	ForOutageTolerance string `json:"forOutageTolerance,omitempty"`
+
 	// Minimum duration between alert and restored 'for' state.
-	// This is maintained only for alerts with configured 'for' time greater than grace period.
+	//
+	// This is maintained only for alerts with a configured 'for' time greater
+	// than the grace period.
 	ForGracePeriod string `json:"forGracePeriod,omitempty"`
-	// Minimum amount of time to wait before resending an alert to Alertmanager.
+
+	// Minimum amount of time to wait before resending an alert to
+	// Alertmanager.
 	ResendDelay string `json:"resendDelay,omitempty"`
 }
 
 // MetadataConfig configures the sending of series metadata to the remote storage.
+//
 // +k8s:openapi-gen=true
 type MetadataConfig struct {
-	// Whether metric metadata is sent to the remote storage or not.
+	// Defines whether metric metadata is sent to the remote storage or not.
 	Send bool `json:"send,omitempty"`
-	// How frequently metric metadata is sent to the remote storage.
+
+	// Defines how frequently metric metadata is sent to the remote storage.
 	SendInterval Duration `json:"sendInterval,omitempty"`
 }
 
@@ -1383,30 +1629,45 @@ type ShardStatus struct {
 }
 
 type TSDBSpec struct {
-	// Configures how old an out-of-order/out-of-bounds sample can be w.r.t.
-	// the TSDB max time.
+	// Configures how old an out-of-order/out-of-bounds sample can be with
+	// respect to the TSDB max time.
+	//
 	// An out-of-order/out-of-bounds sample is ingested into the TSDB as long as
 	// the timestamp of the sample is >= (TSDB.MaxTime - outOfOrderTimeWindow).
-	// Out of order ingestion is an experimental feature and requires
-	// Prometheus >= v2.39.0.
+	//
+	// Out of order ingestion is an experimental feature.
+	//
+	// It requires Prometheus >= v2.39.0.
 	OutOfOrderTimeWindow Duration `json:"outOfOrderTimeWindow,omitempty"`
 }
 
 type Exemplars struct {
 	// Maximum number of exemplars stored in memory for all series.
-	// If not set, Prometheus uses its default value.
-	// A value of zero or less than zero disables the storage.
+	//
+	// exemplar-storage itself must be enabled using the `spec.enableFeature`
+	// option for exemplars to be scraped in the first place.
+	//
+	// If not set, Prometheus uses its default value. A value of zero or less
+	// than zero disables the storage.
+	//
+	// +optional
 	MaxSize *int64 `json:"maxSize,omitempty"`
 }
 
 // SafeAuthorization specifies a subset of the Authorization struct, that is
-// safe for use in Endpoints (no CredentialsFile field)
+// safe for use because it doesn't provide access to the Prometheus container's
+// filesystem.
+//
 // +k8s:openapi-gen=true
 type SafeAuthorization struct {
-	// Set the authentication type. Defaults to Bearer, Basic will cause an
-	// error
+	// Defines the authentication type. The value is case-insensitive.
+	//
+	// "Basic" is not a supported value.
+	//
+	// Default: "Bearer"
 	Type string `json:"type,omitempty"`
-	// The secret's key that contains the credentials of the request
+
+	// Selects a key of a Secret in the namespace that contains the credentials for authentication.
 	Credentials *v1.SecretKeySelector `json:"credentials,omitempty"`
 }
 
@@ -1425,11 +1686,10 @@ func (c *SafeAuthorization) Validate() error {
 	return nil
 }
 
-// Authorization contains optional `Authorization` header configuration.
-// This section is only understood by versions of Prometheus >= 2.26.0.
 type Authorization struct {
 	SafeAuthorization `json:",inline"`
-	// File to read a secret from, mutually exclusive with Credentials (from SafeAuthorization)
+
+	// File to read a secret from, mutually exclusive with `credentials`.
 	CredentialsFile string `json:"credentialsFile,omitempty"`
 }
 

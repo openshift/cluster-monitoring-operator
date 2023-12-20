@@ -25,7 +25,7 @@ BIN_DIR ?= $(shell pwd)/tmp/bin
 # Docgen related variables
 TYPES_TARGET=pkg/manifests/types.go
 K8S_VERSION=$(shell echo -n v1. &&  cat go.mod | grep -w "k8s.io/api" | awk '{ print $$2 }' | cut -d "." -f 2)
-PO_VERSION=$(shell cat go.mod | grep -w "github.com/prometheus-operator/prometheus-operator" | awk '{ print $$2 }' | sort -u)
+PO_VERSION=$(shell cat go.mod | grep "github.com/prometheus-operator/prometheus-operator[^=>]\+$$" | awk '{ print $$2 }' | sort -u)
 
 EMBEDMD_BIN=$(BIN_DIR)/embedmd
 JB_BIN=$(BIN_DIR)/jb
@@ -33,7 +33,7 @@ GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
 JSONNET_BIN=$(BIN_DIR)/jsonnet
 JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
 GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION=v1.52.2
+GOLANGCI_LINT_VERSION=v1.55.2
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
 MISSPELL_BIN=$(BIN_DIR)/misspell
