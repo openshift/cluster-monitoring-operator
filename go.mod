@@ -1,6 +1,6 @@
 module github.com/openshift/cluster-monitoring-operator
 
-go 1.20
+go 1.21
 
 require (
 	github.com/Jeffail/gabs v1.4.0
@@ -156,5 +156,3 @@ require (
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
-
-replace github.com/prometheus-operator/prometheus-operator v0.70.0 => github.com/openshift/prometheus-operator v0.20.1-0.20231211152750-5bf04f3ca997
