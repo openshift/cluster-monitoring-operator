@@ -33,6 +33,7 @@ require (
 	k8s.io/component-base v0.29.0
 	k8s.io/klog/v2 v2.110.1
 	k8s.io/kube-aggregator v0.29.0
+	k8s.io/kubernetes/test/e2e/framework/network v1.28.5
 	k8s.io/metrics v0.26.1
 	k8s.io/utils v0.0.0-20231127182322-b307cd553661
 	sigs.k8s.io/yaml v1.4.0
