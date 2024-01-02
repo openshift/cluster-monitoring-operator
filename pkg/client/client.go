@@ -1825,23 +1825,47 @@ func (c *Client) HasConsoleCapability(ctx context.Context) (bool, error) {
 	return c.HasClusterCapability(ctx, configv1.ClusterVersionCapabilityConsole)
 }
 
+// CreateOrUpdateConsolePlugin function uses retries because API requests related to the ConsolePlugin resource
+// may depend on the availability of a conversion container. This container is part of the console-operator Pod, which is not duplicated.
+// If this pod is down (due to restarts for upgrades or other reasons), transient failures will be reported.
+// This is a temporary mitigation. The availability of the conversion container will be improved in the future.
+// For more information, see: https://issues.redhat.com/browse/OCPBUGS-25803
 func (c *Client) CreateOrUpdateConsolePlugin(ctx context.Context, plg *consolev1.ConsolePlugin) error {
 	conClient := c.osconclient.ConsoleV1().ConsolePlugins()
-	existing, err := conClient.Get(ctx, plg.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := conClient.Create(ctx, plg, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ConsolePlugin object failed")
-	}
-	if err != nil {
-		return errors.Wrap(err, "retrieving ConsolePlugin object failed")
-	}
 
-	required := plg.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-	required.ResourceVersion = existing.ResourceVersion
+	var lastErr error
+	if err := wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, false, func(context.Context) (bool, error) {
+		existing, err := conClient.Get(ctx, plg.GetName(), metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			_, err = conClient.Create(ctx, plg, metav1.CreateOptions{})
+			if err != nil {
+				lastErr = fmt.Errorf("creating ConsolePlugin object failed: %w", err)
+				return false, nil
+			}
+			return true, nil
+		}
+		if err != nil {
+			lastErr = fmt.Errorf("retrieving ConsolePlugin object failed: %w", err)
+			return false, nil
+		}
 
-	_, err = conClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating ConsolePlugin object failed")
+		required := plg.DeepCopy()
+		mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
+		required.ResourceVersion = existing.ResourceVersion
+
+		_, err = conClient.Update(ctx, required, metav1.UpdateOptions{})
+		if err != nil {
+			lastErr = fmt.Errorf("updating ConsolePlugin object failed: %w", err)
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		if lastErr != nil {
+			err = fmt.Errorf("%w: lastError: %w", err, lastErr)
+		}
+		return fmt.Errorf("waiting for ConsolePlugin failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
