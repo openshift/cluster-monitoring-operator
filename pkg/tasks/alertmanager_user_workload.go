@@ -168,7 +168,7 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 		}
 		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
 		if err != nil {
-			return errors.Wrap(err, "syncing Thanos Querier trusted CA bundle ConfigMap failed")
+			return errors.Wrap(err, "syncing Alertmanager User Workload trusted CA bundle ConfigMap failed")
 		}
 
 		a, err := t.factory.AlertmanagerUserWorkload(trustedCA)
