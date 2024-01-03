@@ -34,6 +34,9 @@ function(params)
         },
         spec+: {
           insecureSkipTLSVerify: false,
+          service+: {
+            port: 443,
+          },
         },
       },
 
