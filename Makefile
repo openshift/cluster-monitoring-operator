@@ -163,8 +163,8 @@ jsonnet/crds/alertrelabelconfigs-custom-resource-definition.json: vendor/github.
 	$(GOJSONTOYAML_BIN) -yamltojson < $< > $@
 
 .PHONY: versions
-versions: $(GOJSONTOYAML_BIN)
-	./hack/generate-versions.sh
+versions:
+	@cd ./hack/go && go mod tidy && go mod download && go run -mod=mod generate_versions.go
 
 .PHONY: check-versions
 check-versions: VERSION_FILE=jsonnet/versions.yaml
