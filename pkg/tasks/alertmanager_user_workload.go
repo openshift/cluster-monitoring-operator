@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type AlertmanagerUserWorkloadTask struct {

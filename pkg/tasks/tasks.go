@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/klog/v2"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 )
 
 // TaskRunner manages lists of task groups. Through the RunAll method task groups are

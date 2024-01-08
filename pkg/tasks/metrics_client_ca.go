@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-
-	v1 "k8s.io/api/core/v1"
 )
 
 type MetricsClientCATask struct {

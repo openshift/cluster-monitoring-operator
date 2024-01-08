@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type TelemeterClientTask struct {

@@ -307,7 +307,7 @@ func GetFirstValueFromPromQuery(body []byte) (float64, error) {
 
 	v, err := strconv.ParseFloat(value.Data().(string), 64)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse query value: %v", err)
+		return 0, fmt.Errorf("failed to parse query value: %w", err)
 	}
 
 	return v, nil

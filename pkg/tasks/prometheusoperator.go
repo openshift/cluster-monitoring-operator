@@ -120,7 +120,10 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smpo)
-	return fmt.Errorf("reconciling Prometheus Operator ServiceMonitor failed: %w", err)
+	if err != nil {
+		return fmt.Errorf("reconciling Prometheus Operator ServiceMonitor failed: %w", err)
+	}
+	return nil
 }
 
 func (t *PrometheusOperatorTask) runAdmissionWebhook(ctx context.Context) error {

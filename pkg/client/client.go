@@ -38,7 +38,6 @@ import (
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
-
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"golang.org/x/exp/slices"
@@ -1102,8 +1101,8 @@ func (c *Client) CreateOrUpdateDeployment(ctx context.Context, dep *appsv1.Deplo
 
 	err = c.UpdateDeployment(ctx, required)
 	if err != nil {
-		uErr, ok := err.(*apierrors.StatusError)
-		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
+		var statusErr *apierrors.StatusError
+		if errors.As(err, &statusErr) && statusErr.ErrStatus.Code == 422 && statusErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
 			// try to delete Deployment
 			err = c.DeleteDeployment(ctx, existing)
 			if err != nil {
@@ -1379,8 +1378,8 @@ func (c *Client) CreateOrUpdateDaemonSet(ctx context.Context, ds *appsv1.DaemonS
 
 	err = c.UpdateDaemonSet(ctx, required)
 	if err != nil {
-		uErr, ok := err.(*apierrors.StatusError)
-		if ok && uErr.ErrStatus.Code == 422 && uErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
+		var statusErr *apierrors.StatusError
+		if errors.As(err, &statusErr) && statusErr.ErrStatus.Code == 422 && statusErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
 			// try to delete DaemonSet
 			err = c.DeleteDaemonSet(ctx, existing)
 			if err != nil {
@@ -1441,7 +1440,7 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 		maxUnavailable, intstrErr := intstr.GetScaledValueFromIntOrPercent(&maxUnavailableIntStr, int(want), true)
 
 		if intstrErr != nil {
-			lastErr = fmt.Errorf("The daemonset has an invalid MaxUnavailable value: %v", intstrErr)
+			lastErr = fmt.Errorf("The daemonset has an invalid MaxUnavailable value: %w", intstrErr)
 			return false, nil
 		}
 
@@ -1491,7 +1490,10 @@ func (c *Client) CreateOrUpdateSecret(ctx context.Context, s *v1.Secret) error {
 		}
 	}
 	_, err = sClient.Update(ctx, required, metav1.UpdateOptions{})
-	return fmt.Errorf("updating Secret object failed: %w", err)
+	if err != nil {
+		return fmt.Errorf("updating Secret object failed: %w", err)
+	}
+	return nil
 }
 
 // maybeHasServiceCAData checks if the passed Secret s has at least one owner reference that
@@ -1523,7 +1525,10 @@ func (c *Client) CreateIfNotExistSecret(ctx context.Context, s *v1.Secret) error
 		}
 		return nil
 	}
-	return fmt.Errorf("retrieving Secret object failed: %w", err)
+	if err != nil {
+		return fmt.Errorf("retrieving Secret object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateConfigMapList(ctx context.Context, cml *v1.ConfigMapList) error {

@@ -636,7 +636,7 @@ func Poll(interval, timeout time.Duration, f func() error) error {
 
 	if err != nil {
 		if wait.Interrupted(err) && lastErr != nil {
-			err = fmt.Errorf("%v: %v", err, lastErr)
+			err = fmt.Errorf("%w: %w", err, lastErr)
 		}
 	}
 

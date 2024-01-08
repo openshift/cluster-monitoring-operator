@@ -137,7 +137,6 @@ func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("waiting for Prometheus Operator CRs to become available failed: %w", err)
 	}
 
-
 	smpo, err := t.factory.PrometheusOperatorUserWorkloadServiceMonitor()
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload Prometheus Operator ServiceMonitor failed: %w", err)

@@ -21,12 +21,12 @@ import (
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/stretchr/testify/require"
+	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
-
-	"github.com/stretchr/testify/require"
-	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 func TestNewInfrastructureConfig(t *testing.T) {

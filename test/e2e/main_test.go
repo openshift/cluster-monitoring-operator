@@ -115,7 +115,7 @@ func testMain(m *testing.M) error {
 		return true, nil
 	})
 	if err != nil {
-		return fmt.Errorf("wait for prometheus-k8s: %v: %w", loopErr, err)
+		return fmt.Errorf("wait for prometheus-k8s: %w: %w", loopErr, err)
 	}
 
 	if m.Run() != 0 {

@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 type caBundleSyncer struct {
@@ -66,7 +66,7 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(ctx context.Context, trustedCA *v
 	})
 	if err != nil {
 		if ctx.Err() != nil && lastErr != nil {
-			err = fmt.Errorf("%v: %v", err, lastErr)
+			err = fmt.Errorf("%w: %w", err, lastErr)
 		}
 		return nil, fmt.Errorf("waiting for config map key %q in %s/%s ConfigMap object failed: %w", manifests.TrustedCABundleKey, trustedCA.GetNamespace(), trustedCA.GetName(), err)
 	}

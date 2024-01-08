@@ -21,11 +21,10 @@ import (
 	"sort"
 	"testing"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	v1 "github.com/openshift/api/config/v1"
 	configv1 "github.com/openshift/client-go/config/applyconfigurations/config/v1"
 	clientv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"

@@ -19,9 +19,14 @@ import (
 	"reflect"
 	"testing"
 
+	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
+	osrfake "github.com/openshift/client-go/route/clientset/versioned/fake"
+	ossfake "github.com/openshift/client-go/security/clientset/versioned/fake"
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -29,17 +34,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
-
-	routev1 "github.com/openshift/api/route/v1"
-
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
-
-	osrfake "github.com/openshift/client-go/route/clientset/versioned/fake"
-	ossfake "github.com/openshift/client-go/security/clientset/versioned/fake"
-	monfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
+	"k8s.io/utils/ptr"
 )
 
 const (

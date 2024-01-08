@@ -9,7 +9,9 @@ run:
 linters:
   disable-all: true
   enable:
+    - depguard
     - errcheck
+    - errorlint
     - bodyclose
     - exportloopref
     - gosimple
@@ -27,8 +29,16 @@ linters:
     - whitespace
     - gci
 
-linter-settings:
+linters-settings:
+  depguard:
+    rules:
+      # Name of a rule.
+      main:
+        deny:
+          - pkg: "github.com/pkg/errors"
+            desc: "Use 'errors' or 'fmt' instead of github.com/pkg/errors"
   gci:
-    - standard
-    - default
-    - prefix(github.com/openshift/cluster-monitoring-operator)
+    sections:
+      - standard
+      - default
+      - prefix(github.com/openshift/cluster-monitoring-operator)

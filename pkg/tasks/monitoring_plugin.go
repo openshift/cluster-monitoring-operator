@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/klog/v2"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-
-	"k8s.io/klog/v2"
 )
 
 type MonitoringPluginTask struct {

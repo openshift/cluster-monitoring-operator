@@ -123,8 +123,8 @@ func TestPodMetricsPresence(t *testing.T) {
 	ctx := context.Background()
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
 		pods, err := f.KubeClient.CoreV1().Pods("").List(ctx, metav1.ListOptions{FieldSelector: "status.phase=Running"})
-		lastErr = fmt.Errorf("getting pods list failed: %w", err)
 		if err != nil {
+			lastErr = fmt.Errorf("getting pods list failed: %w", err)
 			return false, nil
 		}
 		podMetrics, err := f.MetricsClient.MetricsV1beta1().PodMetricses("").List(ctx, metav1.ListOptions{})

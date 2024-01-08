@@ -1348,7 +1348,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		s, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(ctx, "grpc-tls", metav1.GetOptions{})
 		if err != nil {
-			return fmt.Errorf("error loading grpc-tls secret: %v", err)
+			return fmt.Errorf("error loading grpc-tls secret: %w", err)
 		}
 
 		if _, ok := s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"]; ok {

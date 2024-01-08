@@ -34,9 +34,7 @@ import (
 	consolev1 "github.com/openshift/api/console/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/openshift/library-go/pkg/crypto"
-
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"golang.org/x/exp/slices"
 	yaml2 "gopkg.in/yaml.v2"
@@ -51,6 +49,8 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
 	k8syaml "sigs.k8s.io/yaml"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 )
 
 const (
@@ -951,7 +951,7 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 
 		pattern, err := regexListToArg(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Systemd.Units)
 		if err != nil {
-			return nil, fmt.Errorf("systemd unit pattern valiation error: %s", err)
+			return nil, fmt.Errorf("systemd unit pattern valiation error: %w", err)
 		}
 		args = setArg(args, "--collector.systemd.unit-include=", pattern)
 	} else {
@@ -2585,11 +2585,9 @@ func (f *Factory) ControlPlaneKubeletMinimalServiceMonitor() (*monv1.ServiceMoni
 }
 
 func IsMissingPortInAddressError(err error) bool {
-	switch e := err.(type) {
-	case *net.AddrError:
-		if e.Err == "missing port in address" {
-			return true
-		}
+	var addrErr *net.AddrError
+	if errors.As(err, &addrErr) {
+		return addrErr.Err == "missing port in address"
 	}
 	return false
 }
@@ -3194,7 +3192,7 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 
 	salt, err := GeneratePassword(32)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate Telemeter client salt: %v", err)
+		return nil, fmt.Errorf("failed to generate Telemeter client salt: %w", err)
 	}
 	s.Data["salt"] = []byte(salt)
 

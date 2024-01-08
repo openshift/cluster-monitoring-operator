@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/openshift/library-go/pkg/crypto"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -239,11 +238,11 @@ func RotateGRPCSecret(s *v1.Secret) error {
 func createCertificate(template, parent *x509.Certificate, pub, priv interface{}) (*x509.Certificate, error) {
 	rawCert, err := x509.CreateCertificate(rand.Reader, template, parent, pub, priv)
 	if err != nil {
-		return nil, fmt.Errorf("error creating certificate: %v", err)
+		return nil, fmt.Errorf("error creating certificate: %w", err)
 	}
 	parsedCerts, err := x509.ParseCertificates(rawCert)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing certificate: %v", err)
+		return nil, fmt.Errorf("error parsing certificate: %w", err)
 	}
 	return parsedCerts[0], nil
 }
