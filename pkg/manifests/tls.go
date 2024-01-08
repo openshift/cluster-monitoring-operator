@@ -144,9 +144,13 @@ func RotateGRPCSecret(s *v1.Secret) error {
 		}
 	}
 
+	// This is not documented and only used in tests.
 	if _, ok := s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate"]; ok {
 		rotate = true
+		// Remove the annotation from the manifest and request its removal on the API.
+		// Ideally, this should be handled by the function's caller. However, for simplicity, the function itself manages this task.
 		delete(s.Annotations, "monitoring.openshift.io/grpc-tls-forced-rotate")
+		s.Annotations["monitoring.openshift.io/grpc-tls-forced-rotate-"] = ""
 	}
 
 	if !rotate {
