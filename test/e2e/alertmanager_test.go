@@ -17,6 +17,7 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,7 +32,7 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	statusv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	"github.com/pkg/errors"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -47,7 +48,7 @@ func TestAlertmanagerTrustedCA(t *testing.T) {
 	cm := f.MustGetConfigMap(t, "alertmanager-trusted-ca-bundle", f.Ns)
 	newCM, err := f.ManifestsFactory.HashTrustedCA(cm, "alertmanager")
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "no trusted CA bundle data available"))
+		t.Fatal(fmt.Errorf("no trusted CA bundle data available: %w", err))
 	}
 
 	// Wait for the new hashed trusted CA bundle ConfigMap to be created
@@ -409,7 +410,7 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return errors.Wrap(err, "fail to read response body")
+			return fmt.Errorf("fail to read response body: %w", err)
 		}
 
 		if resp.StatusCode != http.StatusOK {
@@ -458,16 +459,16 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 			"filter", fmt.Sprintf(`%s="%s"`, silenceLabelName, silenceLabelValue),
 		)
 		if err != nil {
-			return errors.Wrap(err, "error getting silences from Alertmanager")
+			return fmt.Errorf("error getting silences from Alertmanager: %w", err)
 		}
 		res, err := gabs.ParseJSON(body)
 		if err != nil {
-			return errors.Wrapf(err, "error parsing Alertmanager response: %s", string(body))
+			return fmt.Errorf("error parsing Alertmanager response: %s: %w", string(body), err)
 		}
 
 		count, err := res.ArrayCount()
 		if err != nil {
-			return errors.Wrap(err, "error getting count of items")
+			return fmt.Errorf("error getting count of items: %w", err)
 		}
 
 		if count == 1 {
@@ -489,17 +490,17 @@ func TestAlertmanagerOAuthProxy(t *testing.T) {
 			"active", "true",
 		)
 		if err != nil {
-			return errors.Wrap(err, "error getting alerts from Alertmanager")
+			return fmt.Errorf("error getting alerts from Alertmanager: %w", err)
 		}
 
 		res, err := gabs.ParseJSON(body)
 		if err != nil {
-			return errors.Wrapf(err, "error parsing Alertmanager response: %s", string(body))
+			return fmt.Errorf("error parsing Alertmanager response: %s: %w", string(body), err)
 		}
 
 		count, err := res.ArrayCount()
 		if err != nil {
-			return errors.Wrap(err, "error getting count of items")
+			return fmt.Errorf("error getting count of items: %w", err)
 		}
 
 		if count == 1 {

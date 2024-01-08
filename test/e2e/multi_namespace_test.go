@@ -16,12 +16,13 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	"github.com/pkg/errors"
+
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,8 +83,8 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 	// wait for proxies bootstrap
 	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
 		_, err := f.ThanosQuerierClient.Do("GET", "/-/ready", nil)
-		lastErr = errors.Wrap(err, "establishing connection to thanos proxy failed")
 		if err != nil {
+			lastErr = fmt.Errorf("establishing connection to thanos proxy failed: %w", err)
 			return false, nil
 		}
 		return true, nil

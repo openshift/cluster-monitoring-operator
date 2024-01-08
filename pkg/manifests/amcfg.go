@@ -3,7 +3,6 @@ package manifests
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -19,7 +18,7 @@ func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAML() (interface{}, err
 
 		y, err := promAmCfg.MarshalYAML()
 		if err != nil {
-			return nil, errors.Wrapf(err, "additional Alertmanager configuration[%d]", i)
+			return nil, fmt.Errorf("additional Alertmanager configuration[%d]: %w", i, err)
 		}
 
 		result[i] = y
@@ -205,11 +204,11 @@ func validateSecret(s *v1.SecretKeySelector) error {
 	}
 
 	if s.Name == "" {
-		return errors.Errorf("secret %q not found", s.Name)
+		return fmt.Errorf("secret %q not found", s.Name)
 	}
 
 	if s.Key == "" {
-		return errors.Errorf("key %q for secret %q not found", s.Key, s.Name)
+		return fmt.Errorf("key %q for secret %q not found", s.Key, s.Name)
 	}
 
 	return nil

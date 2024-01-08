@@ -22,7 +22,7 @@ import (
 
 	osmv1 "github.com/openshift/api/monitoring/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/pkg/errors"
+
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v3"
@@ -182,8 +182,7 @@ func (c *RelabelConfigController) processNextWorkItem(ctx context.Context) bool 
 	defer c.queue.Done(key)
 
 	if err := c.sync(ctx, key.(string)); err != nil {
-		utilruntime.HandleError(errors.Wrap(err,
-			fmt.Sprintf("Error syncing AlertRelabelConfig (%s)", key.(string))))
+		utilruntime.HandleError(fmt.Errorf("Error syncing AlertRelabelConfig (%s): %w", key.(string), err))
 
 		// Re-queue failed sync.
 		c.queue.AddRateLimited(key)

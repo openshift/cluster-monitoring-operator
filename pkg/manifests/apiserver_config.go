@@ -14,7 +14,9 @@
 
 package manifests
 
-import configv1 "github.com/openshift/api/config/v1"
+import (
+	configv1 "github.com/openshift/api/config/v1"
+)
 
 var (
 	// APIServerDefaultTLSCiphers are the default TLS ciphers for API servers

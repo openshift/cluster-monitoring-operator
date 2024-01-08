@@ -15,13 +15,13 @@
 package e2e
 
 import (
+	"errors"
 	"regexp"
 	"testing"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	"github.com/pkg/errors"
 )
 
 func TestKSMMetricsSuppression(t *testing.T) {

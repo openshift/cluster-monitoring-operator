@@ -25,7 +25,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
-	"github.com/pkg/errors"
+
 	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"

@@ -15,10 +15,10 @@
 package promqlgen
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus/prometheus/model/labels"
 	promql "github.com/prometheus/prometheus/promql/parser"
@@ -27,7 +27,7 @@ import (
 func LabelSelectorsToRelabelConfig(matches []string) (*monv1.RelabelConfig, error) {
 	labelSets, err := parseMetricSelectorFromArray(matches)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse metric selectors from matches array")
+		return nil, fmt.Errorf("could not parse metric selectors from matches array: %w", err)
 	}
 
 	labelPositions := map[string]int{}
@@ -66,7 +66,7 @@ func LabelSelectorsToRelabelConfig(matches []string) (*monv1.RelabelConfig, erro
 func GroupLabelSelectors(matches []string) (string, error) {
 	labelSets, err := parseMetricSelectorFromArray(matches)
 	if err != nil {
-		return "", errors.Wrap(err, "could not parse metric selectors from matches array")
+		return "", fmt.Errorf("could not parse metric selectors from matches array: %w", err)
 	}
 	newLabelSet := map[string][]string{}
 	for _, ls := range labelSets {

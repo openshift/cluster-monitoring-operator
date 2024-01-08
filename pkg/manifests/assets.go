@@ -15,11 +15,11 @@
 package manifests
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
-	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
 )
 
@@ -53,7 +53,7 @@ func (a *Assets) GetAsset(name string) ([]byte, error) {
 
 	f, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read asset %v", name)
+		return nil, fmt.Errorf("failed to read asset %v: %w", name, err)
 	}
 
 	a.data[filePath] = f

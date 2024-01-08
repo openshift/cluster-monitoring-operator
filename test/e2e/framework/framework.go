@@ -17,6 +17,7 @@ package framework
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -32,7 +33,7 @@ import (
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
+
 	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 	monClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	monBetaClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1beta1"
@@ -91,59 +92,59 @@ func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating kubeClient failed")
+		return nil, nil, fmt.Errorf("creating kubeClient failed: %w", err)
 	}
 
 	// Necessary to test the operator status.
 	openshiftConfigClient, err := openshiftconfigclientset.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating openshiftConfigClient failed")
+		return nil, nil, fmt.Errorf("creating openshiftConfigClient failed: %w", err)
 	}
 
 	// So far only necessary for prometheusK8sClient.
 	openshiftRouteClient, err := routev1.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating openshiftRouteClient failed")
+		return nil, nil, fmt.Errorf("creating openshiftRouteClient failed: %w", err)
 	}
 
 	mClient, err := monClient.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating monitoring client failed")
+		return nil, nil, fmt.Errorf("creating monitoring client failed: %w", err)
 	}
 
 	mBetaClient, err := monBetaClient.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating monitoring beta client failed")
+		return nil, nil, fmt.Errorf("creating monitoring beta client failed: %w", err)
 	}
 
 	operatorClient, err := client.NewForConfig(config, "", namespaceName, userWorkloadNamespaceName)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating operator client failed")
+		return nil, nil, fmt.Errorf("creating operator client failed: %w", err)
 	}
 
 	apiServicesClient, err := apiservicesclient.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating API services client failed")
+		return nil, nil, fmt.Errorf("creating API services client failed: %w", err)
 	}
 
 	admissionClient, err := admissionclient.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating admission registration client failed")
+		return nil, nil, fmt.Errorf("creating admission registration client failed: %w", err)
 	}
 
 	metricsClient, err := metricsclient.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating metrics client failed")
+		return nil, nil, fmt.Errorf("creating metrics client failed: %w", err)
 	}
 
 	schedulingClient, err := schedulingv1client.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating scheduling v1 client failed")
+		return nil, nil, fmt.Errorf("creating scheduling v1 client failed: %w", err)
 	}
 
 	osmclient, err := openshiftmonitoringclientset.NewForConfig(config)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating openshift monitoring client")
+		return nil, nil, fmt.Errorf("creating openshift monitoring client: %w", err)
 	}
 
 	f := &Framework{
@@ -176,7 +177,7 @@ func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 
 	cleanUp, err := f.setup()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to setup test framework")
+		return nil, nil, fmt.Errorf("failed to setup test framework: %w", err)
 	}
 
 	token, err := f.GetServiceAccountToken(namespaceName, E2eServiceAccount)
@@ -192,7 +193,7 @@ func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 		token,
 	)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating ThanosQuerierClient failed")
+		return nil, nil, fmt.Errorf("creating ThanosQuerierClient failed: %w", err)
 	}
 
 	f.PrometheusK8sClient, err = NewPrometheusClientFromRoute(
@@ -202,7 +203,7 @@ func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 		token,
 	)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating PrometheusK8sClient failed")
+		return nil, nil, fmt.Errorf("creating PrometheusK8sClient failed: %w", err)
 	}
 
 	f.AlertmanagerClient, err = NewPrometheusClientFromRoute(
@@ -212,7 +213,7 @@ func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 		token,
 	)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating AlertmanagerClient failed")
+		return nil, nil, fmt.Errorf("creating AlertmanagerClient failed: %w", err)
 	}
 
 	return f, cleanUp, nil
@@ -273,7 +274,7 @@ func (f *Framework) setup() (CleanUpFunc, error) {
 			for _, err := range errs {
 				combined = append(combined, err.Error())
 			}
-			return errors.Errorf("failed to run clean up functions of clean up function: %v", strings.Join(combined, ","))
+			return fmt.Errorf("failed to run clean up functions of clean up function: %v", strings.Join(combined, ","))
 		}
 
 		return nil
@@ -321,7 +322,7 @@ func (f *Framework) GetServiceAccountToken(namespace, name string) (string, erro
 				return nil
 			}
 		}
-		return errors.Errorf("cannot find token for %s/%s service account", namespace, name)
+		return fmt.Errorf("cannot find token for %s/%s service account", namespace, name)
 	})
 	return token, err
 }
@@ -380,7 +381,7 @@ func (f *Framework) CreateRoleBindingFromTypedRole(namespace, serviceAccount str
 	role, err := f.KubeClient.RbacV1().Roles(namespace).Create(ctx, typedRole, metav1.CreateOptions{})
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			return nil, errors.Errorf("role %s already exists", typedRole.Name)
+			return nil, fmt.Errorf("role %s already exists", typedRole.Name)
 		}
 		return nil, err
 	}
@@ -409,7 +410,7 @@ func (f *Framework) CreateRoleBindingFromTypedRole(namespace, serviceAccount str
 	roleBinding, err = f.KubeClient.RbacV1().RoleBindings(namespace).Create(ctx, roleBinding, metav1.CreateOptions{})
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			return nil, errors.Errorf("%s %s already exists", roleBinding.GroupVersionKind(), roleBinding.Name)
+			return nil, fmt.Errorf("%s %s already exists", roleBinding.GroupVersionKind(), roleBinding.Name)
 		}
 		return nil, err
 	}
@@ -441,11 +442,11 @@ func (f *Framework) CreateRoleBindingFromTypedRole(namespace, serviceAccount str
 		err = Poll(10*time.Second, time.Minute, func() error {
 			_, err := f.KubeClient.RbacV1().Roles(namespace).Get(ctx, role.Name, metav1.GetOptions{})
 			if err == nil {
-				return errors.Errorf("%s %s still exists", role.GroupVersionKind(), role.Name)
+				return fmt.Errorf("%s %s still exists", role.GroupVersionKind(), role.Name)
 			}
 			_, err = f.KubeClient.RbacV1().RoleBindings(namespace).Get(ctx, roleBinding.Name, metav1.GetOptions{})
 			if err == nil {
-				return errors.Errorf("%s %s still exists", roleBinding.GroupVersionKind(), roleBinding.Name)
+				return fmt.Errorf("%s %s still exists", roleBinding.GroupVersionKind(), roleBinding.Name)
 			}
 			return nil
 		})
@@ -568,13 +569,13 @@ func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string,
 	stdOut, err := cmd.StdoutPipe()
 	if err != nil {
 		cleanUp()
-		return "", nil, errors.Wrap(err, "fail to open stdout")
+		return "", nil, fmt.Errorf("fail to open stdout: %w", err)
 	}
 
 	stdErr, err := cmd.StderrPipe()
 	if err != nil {
 		cleanUp()
-		return "", nil, errors.Wrap(err, "fail to open stderr")
+		return "", nil, fmt.Errorf("fail to open stderr: %w", err)
 	}
 	go func() {
 		scanner := bufio.NewScanner(stdErr)
@@ -589,7 +590,7 @@ func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string,
 	err = cmd.Start()
 	if err != nil {
 		cleanUp()
-		return "", nil, errors.Wrap(err, "fail to run command")
+		return "", nil, fmt.Errorf("fail to run command: %w", err)
 	}
 
 	scanner := bufio.NewScanner(stdOut)
@@ -599,7 +600,7 @@ func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string,
 			err = errors.New("got EOF")
 		}
 		cleanUp()
-		return "", nil, errors.Wrap(err, "fail to read stdout")
+		return "", nil, fmt.Errorf("fail to read stdout: %w", err)
 	}
 	output := scanner.Text()
 
@@ -607,12 +608,12 @@ func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string,
 	matches := re.FindStringSubmatch(output)
 	if len(matches) != 2 {
 		cleanUp()
-		return "", nil, errors.Wrapf(err, "fail to parse port's value: %q", output)
+		return "", nil, fmt.Errorf("fail to parse port's value: %q: %w", output, err)
 	}
 	_, err = strconv.Atoi(matches[1])
 	if err != nil {
 		cleanUp()
-		return "", nil, errors.Wrapf(err, "fail to convert port's value: %q", output)
+		return "", nil, fmt.Errorf("fail to convert port's value: %q: %w", output, err)
 	}
 
 	return fmt.Sprintf("127.0.0.1:%s", matches[1]), cleanUp, nil
@@ -647,10 +648,13 @@ func (f *Framework) CreateOrUpdateAlertmanagerConfig(ctx context.Context, a *v1b
 	existing, err := client.Get(ctx, a.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := client.Create(ctx, a, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating AlertmanagerConfig object failed")
+		if err != nil {
+			return fmt.Errorf("creating AlertmanagerConfig object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving AlertmanagerConfig object failed")
+		return fmt.Errorf("retrieving AlertmanagerConfig object failed: %w", err)
 	}
 
 	required := a.DeepCopy()
@@ -659,7 +663,10 @@ func (f *Framework) CreateOrUpdateAlertmanagerConfig(ctx context.Context, a *v1b
 	required.ResourceVersion = existing.ResourceVersion
 
 	_, err = client.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating AlertmanagerConfig object failed")
+	if err != nil {
+		return fmt.Errorf("updating AlertmanagerConfig object failed: %w", err)
+	}
+	return nil
 }
 
 func (f *Framework) DeleteAlertManagerConfigByNamespaceAndName(ctx context.Context, namespace, name string) error {
@@ -668,7 +675,7 @@ func (f *Framework) DeleteAlertManagerConfigByNamespaceAndName(ctx context.Conte
 	err := client.Delete(ctx, name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
-		return errors.Wrap(err, "deleting AlertManagerConfig object failed")
+		return fmt.Errorf("deleting AlertManagerConfig object failed: %w", err)
 	}
 
 	return nil

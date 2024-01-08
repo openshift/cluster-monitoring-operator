@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	"github.com/pkg/errors"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -37,14 +37,14 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 	// Wait for the new ConfigMap to be created
 	err := wait.PollUntilContextTimeout(context.Background(), time.Second, 5*time.Minute, true, func(context.Context) (bool, error) {
 		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, "thanos-querier-trusted-ca-bundle", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting new trusted CA ConfigMap failed")
 		if err != nil {
+			lastErr = fmt.Errorf("getting new trusted CA ConfigMap failed: %w", err)
 			return false, nil
 		}
 
 		newCM, err = f.ManifestsFactory.HashTrustedCA(cm, "thanos-querier")
-		lastErr = errors.Wrap(err, "no trusted CA bundle data available")
 		if err != nil {
+			lastErr = fmt.Errorf("no trusted CA bundle data available: %w", err)
 			return false, nil
 		}
 

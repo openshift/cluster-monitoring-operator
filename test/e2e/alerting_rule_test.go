@@ -29,8 +29,6 @@ import (
 	osmv1 "github.com/openshift/api/monitoring/v1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
-	"github.com/pkg/errors"
-
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -103,7 +101,7 @@ func TestAlertingRule(t *testing.T) {
 	// Update the valid AlertingRule.
 	ar, err := alertingRules.Get(ctx, validArName, metav1.GetOptions{})
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "failed to get the AlertingRule"))
+		t.Fatal(fmt.Errorf("failed to get the AlertingRule: %w", err))
 	}
 	ar.Spec.Groups[0].Interval = "20s"
 	ar.Spec.Groups[0].Rules = append(ar.Spec.Groups[0].Rules, osmv1.Rule{
@@ -123,7 +121,7 @@ func TestAlertingRule(t *testing.T) {
 	// Delete the valid AlertingRule.
 	pr, err := generatedPrometheusRule(ar)
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "failed to get the generated PrometheusRule"))
+		t.Fatal(fmt.Errorf("failed to get the generated PrometheusRule: %w", err))
 	}
 	deleteAlertingRule(t, validArName)
 	// Make sure the corresponding PrometheusRule was deleted.
@@ -141,21 +139,21 @@ func TestAlertingRule(t *testing.T) {
 func createAlertingRule(t *testing.T, ar *osmv1.AlertingRule) {
 	_, err := f.OpenShiftMonitoringClient.MonitoringV1().AlertingRules(f.Ns).Create(ctx, ar, metav1.CreateOptions{})
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "Failed to create the AlertingRule"))
+		t.Fatal(fmt.Errorf("Failed to create the AlertingRule: %w", err))
 	}
 }
 
 func updateAlertingRule(t *testing.T, ar *osmv1.AlertingRule) {
 	_, err := f.OpenShiftMonitoringClient.MonitoringV1().AlertingRules(f.Ns).Update(ctx, ar, metav1.UpdateOptions{})
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "Failed to update the AlertingRule"))
+		t.Fatal(fmt.Errorf("Failed to update the AlertingRule: %w", err))
 	}
 }
 
 func deleteAlertingRule(t *testing.T, arName string) {
 	err := f.OpenShiftMonitoringClient.MonitoringV1().AlertingRules(f.Ns).Delete(ctx, arName, metav1.DeleteOptions{})
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "Failed to delete the AlertingRule"))
+		t.Fatal(fmt.Errorf("Failed to delete the AlertingRule: %w", err))
 	}
 }
 
@@ -163,7 +161,7 @@ func deleteAlertingRule(t *testing.T, arName string) {
 func prometheusRuleCount(t *testing.T) int {
 	pr, err := f.MonitoringClient.PrometheusRules(f.Ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "Failed to list PrometheusRule"))
+		t.Fatal(fmt.Errorf("Failed to list PrometheusRule: %w", err))
 	}
 	return len(pr.Items)
 }
@@ -260,6 +258,6 @@ func validatePrometheusRule(t *testing.T, arName string) {
 	})
 
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "Failed to validate the generated PrometheusRule"))
+		t.Fatal(fmt.Errorf("Failed to validate the generated PrometheusRule: %w", err))
 	}
 }

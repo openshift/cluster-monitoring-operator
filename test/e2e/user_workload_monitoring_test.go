@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -26,7 +27,7 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs"
-	"github.com/pkg/errors"
+
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -438,17 +439,17 @@ func assertUserWorkloadMetrics(t *testing.T) {
 			"active", "true",
 		)
 		if err != nil {
-			return errors.Wrap(err, "error getting alerts from Alertmanager")
+			return fmt.Errorf("error getting alerts from Alertmanager: %w", err)
 		}
 
 		res, err := gabs.ParseJSON(body)
 		if err != nil {
-			return errors.Wrapf(err, "error parsing Alertmanager response: %s", string(body))
+			return fmt.Errorf("error parsing Alertmanager response: %s: %w", string(body), err)
 		}
 
 		count, err := res.ArrayCount()
 		if err != nil {
-			return errors.Wrap(err, "error getting count of items")
+			return fmt.Errorf("error getting count of items: %w", err)
 		}
 
 		if count == 1 {
@@ -644,7 +645,7 @@ func assertTenancyForMetrics(t *testing.T) {
 
 				ns := labels["namespace"].Data().(string)
 				if ns != userWorkloadTestNs {
-					return errors.Errorf("expecting 'namespace' label to be %q, got %q", userWorkloadTestNs, ns)
+					return fmt.Errorf("expecting 'namespace' label to be %q, got %q", userWorkloadTestNs, ns)
 				}
 
 				value, err := timeseries.ArrayElementP(1, "value")
@@ -653,7 +654,7 @@ func assertTenancyForMetrics(t *testing.T) {
 				}
 
 				if value.Data().(string) != "1" {
-					return errors.Errorf("expecting value '1', got %q", value.Data().(string))
+					return fmt.Errorf("expecting value '1', got %q", value.Data().(string))
 				}
 
 				return nil
@@ -894,7 +895,7 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		}
 
 		if len(groups) != 2 {
-			return errors.Errorf("expecting 2 rules group, got %d", len(groups))
+			return fmt.Errorf("expecting 2 rules group, got %d", len(groups))
 		}
 
 		type testData struct {
@@ -944,7 +945,7 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(expected, got) {
-			return errors.Errorf("expected rules %v, got %v", expected, got)
+			return fmt.Errorf("expected rules %v, got %v", expected, got)
 		}
 
 		return nil
@@ -1172,7 +1173,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 		}
 
 		if len(labels) == 0 {
-			return errors.Errorf("expecting a label list with at least one item, got zero")
+			return fmt.Errorf("expecting a label list with at least one item, got zero")
 		}
 
 		return nil
@@ -1226,7 +1227,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 		}
 
 		if len(series) != 1 {
-			return errors.Errorf("expecting a series list with one item, got %d (%s)", len(series), framework.ClampMax(b))
+			return fmt.Errorf("expecting a series list with one item, got %d (%s)", len(series), framework.ClampMax(b))
 		}
 
 		return nil
@@ -1270,11 +1271,11 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 		}
 
 		if len(values) != 1 {
-			return errors.Errorf("expecting only 1 value for the 'namespace' label but got %d", len(values))
+			return fmt.Errorf("expecting only 1 value for the 'namespace' label but got %d", len(values))
 		}
 
 		if values[0].Data().(string) != userWorkloadTestNs {
-			return errors.Errorf("expecting 'namespace' label value to be %q but got %q .", userWorkloadTestNs, values[0].Data().(string))
+			return fmt.Errorf("expecting 'namespace' label value to be %q but got %q .", userWorkloadTestNs, values[0].Data().(string))
 		}
 
 		return nil
@@ -1356,7 +1357,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 
 		got := countGRPCSecrets(f.Ns) + countGRPCSecrets(f.UserWorkloadMonitoringNs)
 		if expectedGRPCSecretCount != got {
-			return errors.Errorf("expecting %d gRPC secrets, got %d", expectedGRPCSecretCount, got)
+			return fmt.Errorf("expecting %d gRPC secrets, got %d", expectedGRPCSecretCount, got)
 		}
 
 		return nil

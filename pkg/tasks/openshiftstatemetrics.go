@@ -16,10 +16,10 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
 )
 
 type OpenShiftStateMetricsTask struct {
@@ -37,69 +37,72 @@ func NewOpenShiftStateMetricsTask(client *client.Client, factory *manifests.Fact
 func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) error {
 	sa, err := t.factory.OpenShiftStateMetricsServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing openshift-state-metrics Service failed")
+		return fmt.Errorf("initializing openshift-state-metrics Service failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
-		return errors.Wrap(err, "reconciling openshift-state-metrics ServiceAccount failed")
+		return fmt.Errorf("reconciling openshift-state-metrics ServiceAccount failed: %w", err)
 	}
 
 	cr, err := t.factory.OpenShiftStateMetricsClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing openshift-state-metrics ClusterRole failed")
+		return fmt.Errorf("initializing openshift-state-metrics ClusterRole failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling openshift-state-metrics ClusterRole failed")
+		return fmt.Errorf("reconciling openshift-state-metrics ClusterRole failed: %w", err)
 	}
 
 	crb, err := t.factory.OpenShiftStateMetricsClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing openshift-state-metrics ClusterRoleBinding failed")
+		return fmt.Errorf("initializing openshift-state-metrics ClusterRoleBinding failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
-		return errors.Wrap(err, "reconciling openshift-state-metrics ClusterRoleBinding failed")
+		return fmt.Errorf("reconciling openshift-state-metrics ClusterRoleBinding failed: %w", err)
 	}
 
 	svc, err := t.factory.OpenShiftStateMetricsService()
 	if err != nil {
-		return errors.Wrap(err, "initializing openshift-state-metrics Service failed")
+		return fmt.Errorf("initializing openshift-state-metrics Service failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling openshift-state-metrics Service failed")
+		return fmt.Errorf("reconciling openshift-state-metrics Service failed: %w", err)
 	}
 
 	rs, err := t.factory.OpenShiftStateMetricsRBACProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing openshift-state-metrics RBAC proxy Secret failed")
+		return fmt.Errorf("initializing openshift-state-metrics RBAC proxy Secret failed: %w", err)
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, rs)
 	if err != nil {
-		return errors.Wrap(err, "creating openshift-state-metrics RBAC proxy Secret failed")
+		return fmt.Errorf("creating openshift-state-metrics RBAC proxy Secret failed: %w", err)
 	}
 
 	dep, err := t.factory.OpenShiftStateMetricsDeployment()
 	if err != nil {
-		return errors.Wrap(err, "initializing openshift-state-metrics Deployment failed")
+		return fmt.Errorf("initializing openshift-state-metrics Deployment failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateDeployment(ctx, dep)
 	if err != nil {
-		return errors.Wrap(err, "reconciling openshift-state-metrics Deployment failed")
+		return fmt.Errorf("reconciling openshift-state-metrics Deployment failed: %w", err)
 	}
 
 	sm, err := t.factory.OpenShiftStateMetricsServiceMonitor()
 	if err != nil {
-		return errors.Wrap(err, "initializing openshift-state-metrics ServiceMonitor failed")
+		return fmt.Errorf("initializing openshift-state-metrics ServiceMonitor failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-	return errors.Wrap(err, "reconciling openshift-state-metrics ServiceMonitor failed")
+	if err != nil {
+		return fmt.Errorf("reconciling openshift-state-metrics ServiceMonitor failed: %w", err)
+	}
+	return nil
 }

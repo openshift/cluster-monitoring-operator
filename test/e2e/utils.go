@@ -20,7 +20,7 @@ import (
 
 	"github.com/Jeffail/gabs"
 	"github.com/openshift/library-go/pkg/crypto"
-	"github.com/pkg/errors"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -86,7 +86,7 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 		crypto.DefaultCertificateLifetimeInDays,
 	)
 	if err != nil {
-		return errors.Wrap(err, "error generating self signed CA")
+		return fmt.Errorf("error generating self signed CA: %w", err)
 	}
 
 	newCA := &crypto.CA{
@@ -96,7 +96,7 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 
 	newCABytes, newCAKeyBytes, err := newCA.Config.GetPEMBytes()
 	if err != nil {
-		return errors.Wrap(err, "error getting PEM bytes from CA")
+		return fmt.Errorf("error getting PEM bytes from CA: %w", err)
 	}
 
 	s.Data["ca.crt"] = newCABytes
@@ -108,12 +108,12 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 			crypto.DefaultCertificateLifetimeInDays,
 		)
 		if err != nil {
-			return errors.Wrap(err, "error making server certificate")
+			return fmt.Errorf("error making server certificate: %w", err)
 		}
 
 		crt, key, err := cfg.GetPEMBytes()
 		if err != nil {
-			return errors.Wrap(err, "error getting PEM bytes for server certificate")
+			return fmt.Errorf("error getting PEM bytes for server certificate: %w", err)
 		}
 		s.Data["server.crt"] = crt
 		s.Data["server.key"] = key
@@ -128,12 +128,12 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 			time.Duration(crypto.DefaultCertificateLifetimeInDays)*24*time.Hour,
 		)
 		if err != nil {
-			return errors.Wrap(err, "error making client certificate")
+			return fmt.Errorf("error making client certificate: %w", err)
 		}
 
 		crt, key, err := cfg.GetPEMBytes()
 		if err != nil {
-			return errors.Wrap(err, "error getting PEM bytes for client certificate")
+			return fmt.Errorf("error getting PEM bytes for client certificate: %w", err)
 		}
 		s.Data["client.crt"] = crt
 		s.Data["client.key"] = key

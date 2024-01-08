@@ -16,10 +16,11 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
@@ -54,92 +55,92 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 	} {
 		cr, err := crf()
 		if err != nil {
-			return errors.Wrapf(err, "initializing %s ClusterRole failed", name)
+			return fmt.Errorf("initializing %s ClusterRole failed: %w", name, err)
 		}
 
 		err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 		if err != nil {
-			return errors.Wrapf(err, "reconciling %s ClusterRole failed", name)
+			return fmt.Errorf("reconciling %s ClusterRole failed: %w", name, err)
 		}
 	}
 
 	uwcr, err := t.factory.ClusterMonitoringEditUserWorkloadConfigRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkloadConfigEdit Role failed")
+		return fmt.Errorf("initializing UserWorkloadConfigEdit Role failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateRole(ctx, uwcr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkloadConfigEdit Role failed")
+		return fmt.Errorf("reconciling UserWorkloadConfigEdit Role failed: %w", err)
 	}
 
 	uwar, err := t.factory.ClusterMonitoringEditUserWorkloadAlertmanagerApiReader()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkloadAlertmanagerApiReader Role failed")
+		return fmt.Errorf("initializing UserWorkloadAlertmanagerApiReader Role failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateRole(ctx, uwar)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkloadAlertmanagerApiReader Role failed")
+		return fmt.Errorf("reconciling UserWorkloadAlertmanagerApiReader Role failed: %w", err)
 	}
 
 	uwaw, err := t.factory.ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkloadAlertmanagerApiWriter Role failed")
+		return fmt.Errorf("initializing UserWorkloadAlertmanagerApiWriter Role failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateRole(ctx, uwaw)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkloadAlertmanagerApiWriter Role failed")
+		return fmt.Errorf("reconciling UserWorkloadAlertmanagerApiWriter Role failed: %w", err)
 	}
 
 	amwr, err := t.factory.ClusterMonitoringAlertManagerEditRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing AlertmanagerWrite Role failed")
+		return fmt.Errorf("initializing AlertmanagerWrite Role failed: %w", err)
 	}
 
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
 		if err = t.client.CreateOrUpdateRole(ctx, amwr); err != nil {
-			return errors.Wrap(err, "reconciling Alertmanager Role failed")
+			return fmt.Errorf("reconciling Alertmanager Role failed: %w", err)
 		}
 	} else {
 		if err = t.client.DeleteRole(ctx, amwr); err != nil {
-			return errors.Wrap(err, "deleting Alertmanager Role failed")
+			return fmt.Errorf("deleting Alertmanager Role failed: %w", err)
 		}
 	}
 
 	clarr, err := t.factory.ClusterMonitoringApiReaderRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing ClusterMonitoringApiReader Role failed")
+		return fmt.Errorf("initializing ClusterMonitoringApiReader Role failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateRole(ctx, clarr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling ClusterMonitoringApiReader Role failed")
+		return fmt.Errorf("reconciling ClusterMonitoringApiReader Role failed: %w", err)
 	}
 
 	pr, err := t.factory.ClusterMonitoringOperatorPrometheusRule()
 	if err != nil {
-		return errors.Wrap(err, "initializing cluster-monitoring-operator rules PrometheusRule failed")
+		return fmt.Errorf("initializing cluster-monitoring-operator rules PrometheusRule failed: %w", err)
 	}
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling cluster-monitoring-operator rules PrometheusRule failed")
+		return fmt.Errorf("reconciling cluster-monitoring-operator rules PrometheusRule failed: %w", err)
 	}
 
 	smcmo, err := t.factory.ClusterMonitoringOperatorServiceMonitor()
 	if err != nil {
-		return errors.Wrap(err, "initializing Cluster Monitoring Operator ServiceMonitor failed")
+		return fmt.Errorf("initializing Cluster Monitoring Operator ServiceMonitor failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smcmo)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Cluster Monitoring Operator ServiceMonitor failed")
+		return fmt.Errorf("reconciling Cluster Monitoring Operator ServiceMonitor failed: %w", err)
 	}
 
 	s, err := t.factory.GRPCSecret()
 	if err != nil {
-		return errors.Wrap(err, "error initializing Cluster Monitoring Operator GRPC TLS secret")
+		return fmt.Errorf("error initializing Cluster Monitoring Operator GRPC TLS secret: %w", err)
 	}
 
 	loaded, err := t.client.GetSecret(ctx, s.Namespace, s.Name)
@@ -152,17 +153,17 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 		s = loaded
 		klog.V(5).Info("found existing Cluster Monitoring Operator GRPC TLS secret")
 	default:
-		return errors.Wrap(err, "error reading Cluster Monitoring Operator GRPC TLS secret")
+		return fmt.Errorf("error reading Cluster Monitoring Operator GRPC TLS secret: %w", err)
 	}
 
 	err = manifests.RotateGRPCSecret(s)
 	if err != nil {
-		return errors.Wrap(err, "error rotating Cluster Monitoring Operator GRPC TLS secret")
+		return fmt.Errorf("error rotating Cluster Monitoring Operator GRPC TLS secret: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
-		return errors.Wrap(err, "error creating Cluster Monitoring Operator GRPC TLS secret")
+		return fmt.Errorf("error creating Cluster Monitoring Operator GRPC TLS secret: %w", err)
 	}
 
 	return nil

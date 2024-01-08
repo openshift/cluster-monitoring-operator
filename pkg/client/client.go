@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -37,7 +38,7 @@ import (
 	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
-	"github.com/pkg/errors"
+
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"golang.org/x/exp/slices"
@@ -101,7 +102,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.kclient == nil {
 		kclient, err := kubernetes.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating kubernetes clientset client")
+			return nil, fmt.Errorf("creating kubernetes clientset client: %w", err)
 		}
 		client.kclient = kclient
 	}
@@ -109,7 +110,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.eclient == nil {
 		eclient, err := apiextensionsclient.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating apiextensions client")
+			return nil, fmt.Errorf("creating apiextensions client: %w", err)
 		}
 		client.eclient = eclient
 	}
@@ -125,7 +126,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.osmclient == nil {
 		osmclient, err := openshiftmonitoringclientset.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating openshift monitoring client")
+			return nil, fmt.Errorf("creating openshift monitoring client: %w", err)
 		}
 		client.osmclient = osmclient
 	}
@@ -133,7 +134,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.oscclient == nil {
 		oscclient, err := openshiftconfigclientset.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating openshift config client")
+			return nil, fmt.Errorf("creating openshift config client: %w", err)
 		}
 		client.oscclient = oscclient
 	}
@@ -146,7 +147,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 
 		ossclient, err := openshiftsecurityclientset.NewForConfig(jsonClientConfig)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating openshift security client")
+			return nil, fmt.Errorf("creating openshift security client: %w", err)
 		}
 		client.ossclient = ossclient
 	}
@@ -154,7 +155,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.osrclient == nil {
 		osrclient, err := openshiftrouteclientset.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating openshift route client")
+			return nil, fmt.Errorf("creating openshift route client: %w", err)
 		}
 		client.osrclient = osrclient
 	}
@@ -162,7 +163,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.aggclient == nil {
 		aggclient, err := aggregatorclient.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating kubernetes aggregator")
+			return nil, fmt.Errorf("creating kubernetes aggregator: %w", err)
 		}
 		client.aggclient = aggclient
 	}
@@ -170,7 +171,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.osopclient == nil {
 		osopclient, err := openshiftoperatorclientset.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating openshift operator client")
+			return nil, fmt.Errorf("creating openshift operator client: %w", err)
 		}
 		client.osopclient = osopclient
 	}
@@ -178,7 +179,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.osconclient == nil {
 		osconclient, err := openshiftconsoleclientset.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating openshift console client")
+			return nil, fmt.Errorf("creating openshift console client: %w", err)
 		}
 		client.osconclient = osconclient
 	}
@@ -186,7 +187,7 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	if client.mdataclient == nil {
 		mdataclient, err := metadata.NewForConfig(cfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating metadata clientset client")
+			return nil, fmt.Errorf("creating metadata clientset client: %w", err)
 		}
 		client.mdataclient = mdataclient
 	}
@@ -428,7 +429,10 @@ func (c *Client) HasRouteCapability(ctx context.Context) (bool, error) {
 
 func (c *Client) EnsurePrometheusUserWorkloadConfigMapExists(ctx context.Context, cm *v1.ConfigMap) error {
 	_, err := c.CreateIfNotExistConfigMap(ctx, cm)
-	return errors.Wrapf(err, "creating empty  ConfigMap object fauled")
+	if err != nil {
+		return fmt.Errorf("creating empty ConfigMap object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
@@ -467,10 +471,13 @@ func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv
 	existing, err := arcClient.Get(ctx, arc.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := arcClient.Create(ctx, arc, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating AlertRelabelConfig object failed")
+		if err != nil {
+			return fmt.Errorf("creating AlertRelabelConfig object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving AlertRelabelConfig object failed")
+		return fmt.Errorf("retrieving AlertRelabelConfig object failed: %w", err)
 	}
 
 	required := arc.DeepCopy()
@@ -479,7 +486,10 @@ func (c *Client) CreateOrUpdateAlertRelabelConfig(ctx context.Context, arc *osmv
 	required.ResourceVersion = existing.ResourceVersion
 
 	_, err = arcClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating AlertRelabelConfig object failed")
+	if err != nil {
+		return fmt.Errorf("updating AlertRelabelConfig object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
@@ -491,7 +501,7 @@ func (c *Client) CreateOrUpdateValidatingWebhookConfiguration(ctx context.Contex
 		c.resourceCache,
 	)
 	if err != nil {
-		return errors.Wrap(err, "updating ValidatingWebhookConfiguration object failed")
+		return fmt.Errorf("updating ValidatingWebhookConfiguration object failed: %w", err)
 	}
 
 	return nil
@@ -502,10 +512,13 @@ func (c *Client) CreateOrUpdateSecurityContextConstraints(ctx context.Context, s
 	existing, err := sccclient.Get(ctx, s.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := sccclient.Create(ctx, s, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating SecurityContextConstraints object failed")
+		if err != nil {
+			return fmt.Errorf("creating SecurityContextConstraints object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving SecurityContextConstraints object failed")
+		return fmt.Errorf("retrieving SecurityContextConstraints object failed: %w", err)
 	}
 
 	// the CRD version of SCC appears to require this.  We can try to chase why later.
@@ -514,7 +527,10 @@ func (c *Client) CreateOrUpdateSecurityContextConstraints(ctx context.Context, s
 	required.ResourceVersion = existing.ResourceVersion
 
 	_, err = sccclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating SecurityContextConstraints object failed")
+	if err != nil {
+		return fmt.Errorf("updating SecurityContextConstraints object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateRoute(ctx context.Context, r *routev1.Route) error {
@@ -522,10 +538,13 @@ func (c *Client) CreateOrUpdateRoute(ctx context.Context, r *routev1.Route) erro
 	existing, err := rclient.Get(ctx, r.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := rclient.Create(ctx, r, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Route object failed")
+		if err != nil {
+			return fmt.Errorf("creating Route object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Route object failed")
+		return fmt.Errorf("retrieving Route object failed: %w", err)
 	}
 
 	required := r.DeepCopy()
@@ -533,14 +552,17 @@ func (c *Client) CreateOrUpdateRoute(ctx context.Context, r *routev1.Route) erro
 	required.ResourceVersion = existing.ResourceVersion
 
 	_, err = rclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Route object failed")
+	if err != nil {
+		return fmt.Errorf("updating Route object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) GetRouteURL(ctx context.Context, r *routev1.Route) (*url.URL, error) {
 	rclient := c.osrclient.RouteV1().Routes(r.GetNamespace())
 	newRoute, err := rclient.Get(ctx, r.GetName(), metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "getting Route object failed")
+		return nil, fmt.Errorf("getting Route object failed: %w", err)
 	}
 	u := &url.URL{
 		Scheme: "http",
@@ -605,10 +627,13 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Promethe
 	existing, err := pclient.Get(ctx, p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pclient.Create(ctx, p, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Prometheus object failed")
+		if err != nil {
+			return fmt.Errorf("creating Prometheus object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Prometheus object failed")
+		return fmt.Errorf("retrieving Prometheus object failed: %w", err)
 	}
 
 	required := p.DeepCopy()
@@ -616,7 +641,10 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Promethe
 
 	required.ResourceVersion = existing.ResourceVersion
 	_, err = pclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Prometheus object failed")
+	if err != nil {
+		return fmt.Errorf("updating Prometheus object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdatePrometheusRule(ctx context.Context, p *monv1.PrometheusRule) error {
@@ -624,10 +652,13 @@ func (c *Client) CreateOrUpdatePrometheusRule(ctx context.Context, p *monv1.Prom
 	existing, err := pclient.Get(ctx, p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pclient.Create(ctx, p, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating PrometheusRule object failed")
+		if err != nil {
+			return fmt.Errorf("creating PrometheusRule object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving PrometheusRule object failed")
+		return fmt.Errorf("retrieving PrometheusRule object failed: %w", err)
 	}
 
 	required := p.DeepCopy()
@@ -636,7 +667,10 @@ func (c *Client) CreateOrUpdatePrometheusRule(ctx context.Context, p *monv1.Prom
 	required.ResourceVersion = existing.ResourceVersion
 
 	_, err = pclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating PrometheusRule object failed")
+	if err != nil {
+		return fmt.Errorf("updating PrometheusRule object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
@@ -644,10 +678,13 @@ func (c *Client) CreateOrUpdateAlertmanager(ctx context.Context, a *monv1.Alertm
 	existing, err := aclient.Get(ctx, a.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := aclient.Create(ctx, a, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Alertmanager object failed")
+		if err != nil {
+			return fmt.Errorf("creating Alertmanager object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Alertmanager object failed")
+		return fmt.Errorf("retrieving Alertmanager object failed: %w", err)
 	}
 
 	required := a.DeepCopy()
@@ -656,7 +693,10 @@ func (c *Client) CreateOrUpdateAlertmanager(ctx context.Context, a *monv1.Alertm
 	required.ResourceVersion = existing.ResourceVersion
 
 	_, err = aclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Alertmanager object failed")
+	if err != nil {
+		return fmt.Errorf("updating Alertmanager object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) DeleteAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
@@ -668,10 +708,13 @@ func (c *Client) CreateOrUpdateThanosRuler(ctx context.Context, t *monv1.ThanosR
 	existing, err := trclient.Get(ctx, t.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := trclient.Create(ctx, t, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Thanos Ruler object failed")
+		if err != nil {
+			return fmt.Errorf("creating Thanos Ruler object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Thanos Ruler object failed")
+		return fmt.Errorf("retrieving Thanos Ruler object failed: %w", err)
 	}
 
 	required := t.DeepCopy()
@@ -679,7 +722,10 @@ func (c *Client) CreateOrUpdateThanosRuler(ctx context.Context, t *monv1.ThanosR
 	required.ResourceVersion = existing.ResourceVersion
 
 	_, err = trclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Thanos Ruler object failed")
+	if err != nil {
+		return fmt.Errorf("retrieving Thanos Ruler object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) DeleteConfigMap(ctx context.Context, cm *v1.ConfigMap) error {
@@ -699,13 +745,13 @@ func (c *Client) DeleteHashedConfigMap(ctx context.Context, namespace, prefix, n
 		LabelSelector: ls,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "error listing configmaps in namespace %s with label selector %s", namespace, ls)
+		return fmt.Errorf("error listing configmaps in namespace %s with label selector %s: %w", namespace, ls, err)
 	}
 
 	for _, cm := range configMaps.Items {
 		err := c.KubernetesInterface().CoreV1().ConfigMaps(namespace).Delete(ctx, cm.Name, metav1.DeleteOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "error deleting configmap: %s/%s", namespace, cm.Name)
+			return fmt.Errorf("error deleting configmap: %s/%s: %w", namespace, cm.Name, err)
 		}
 	}
 
@@ -720,13 +766,13 @@ func (c *Client) DeleteHashedSecret(ctx context.Context, namespace, prefix, newH
 		LabelSelector: ls,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "error listing secrets in namespace %s with label selector %s", namespace, ls)
+		return fmt.Errorf("error listing secrets in namespace %s with label selector %s: %w", namespace, ls, err)
 	}
 
 	for _, s := range secrets.Items {
 		err := c.KubernetesInterface().CoreV1().Secrets(namespace).Delete(ctx, s.Name, metav1.DeleteOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "error deleting secret: %s/%s", namespace, s.Name)
+			return fmt.Errorf("error deleting secret: %s/%s: %w", namespace, s.Name, err)
 		}
 	}
 
@@ -782,7 +828,7 @@ func (c *Client) DeleteServiceMonitorByNamespaceAndName(ctx context.Context, nam
 	err := sclient.Delete(ctx, name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
-		return errors.Wrap(err, "deleting ServiceMonitor object failed")
+		return fmt.Errorf("deleting ServiceMonitor object failed: %w", err)
 	}
 
 	return nil
@@ -842,7 +888,7 @@ func (c *Client) DeletePrometheusRuleByNamespaceAndName(ctx context.Context, nam
 	err := sclient.Delete(ctx, name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
-		return errors.Wrap(err, "deleting PrometheusRule object failed")
+		return fmt.Errorf("deleting PrometheusRule object failed: %w", err)
 	}
 
 	return nil
@@ -997,7 +1043,7 @@ func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager)
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for Alertmanager %s/%s", a.GetNamespace(), a.GetName())
+		return fmt.Errorf("waiting for Alertmanager %s/%s: %w", a.GetNamespace(), a.GetName(), err)
 	}
 	return nil
 }
@@ -1028,7 +1074,7 @@ func (c *Client) WaitForThanosRuler(ctx context.Context, t *monv1.ThanosRuler) e
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for Thanos Ruler %s/%s", t.GetNamespace(), t.GetName())
+		return fmt.Errorf("waiting for Thanos Ruler %s/%s: %w", t.GetNamespace(), t.GetName(), err)
 	}
 	return nil
 }
@@ -1038,10 +1084,13 @@ func (c *Client) CreateOrUpdateDeployment(ctx context.Context, dep *appsv1.Deplo
 
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDeployment(ctx, dep)
-		return errors.Wrap(err, "creating Deployment object failed")
+		if err != nil {
+			return fmt.Errorf("creating Deployment object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Deployment object failed")
+		return fmt.Errorf("retrieving Deployment object failed: %w", err)
 	}
 	if reflect.DeepEqual(dep.Spec, existing.Spec) {
 		// Nothing to do, as the currently existing deployment is equivalent to the one that would be applied.
@@ -1058,14 +1107,14 @@ func (c *Client) CreateOrUpdateDeployment(ctx context.Context, dep *appsv1.Deplo
 			// try to delete Deployment
 			err = c.DeleteDeployment(ctx, existing)
 			if err != nil {
-				return errors.Wrap(err, "deleting Deployment object failed")
+				return fmt.Errorf("deleting Deployment object failed: %w", err)
 			}
 			err = c.CreateDeployment(ctx, required)
 			if err != nil {
-				return errors.Wrap(err, "creating Deployment object failed after update failed")
+				return fmt.Errorf("creating Deployment object failed after update failed: %w", err)
 			}
 		}
-		return errors.Wrap(err, "updating Deployment object failed")
+		return fmt.Errorf("updating Deployment object failed: %w", err)
 	}
 	return nil
 }
@@ -1098,18 +1147,18 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 			return false, nil
 		}
 		if d.Generation > d.Status.ObservedGeneration {
-			lastErr = errors.Errorf("current generation %d, observed generation %d",
+			lastErr = fmt.Errorf("current generation %d, observed generation %d",
 				d.Generation, d.Status.ObservedGeneration)
 			return false, nil
 		}
 		if d.Status.UpdatedReplicas != d.Status.Replicas {
-			lastErr = errors.Errorf("the number of pods targeted by the deployment (%d pods) is different "+
+			lastErr = fmt.Errorf("the number of pods targeted by the deployment (%d pods) is different "+
 				"from the number of pods targeted by the deployment that have the desired template spec (%d pods)",
 				d.Status.Replicas, d.Status.UpdatedReplicas)
 			return false, nil
 		}
 		if d.Status.UnavailableReplicas != 0 {
-			lastErr = errors.Errorf("got %d unavailable replicas",
+			lastErr = fmt.Errorf("got %d unavailable replicas",
 				d.Status.UnavailableReplicas)
 			return false, nil
 		}
@@ -1118,7 +1167,7 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for DeploymentRollout of %s/%s", dep.GetNamespace(), dep.GetName())
+		return fmt.Errorf("waiting for DeploymentRollout of %s/%s: %w", dep.GetNamespace(), dep.GetName(), err)
 	}
 	return nil
 }
@@ -1166,17 +1215,17 @@ func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.Stat
 			return false, nil
 		}
 		if s.Generation > s.Status.ObservedGeneration {
-			lastErr = errors.Errorf("expected generation %d, observed generation: %d",
+			lastErr = fmt.Errorf("expected generation %d, observed generation: %d",
 				s.Generation, s.Status.ObservedGeneration)
 			return false, nil
 		}
 		if s.Status.UpdatedReplicas != s.Status.Replicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d updated replicas",
+			lastErr = fmt.Errorf("expected %d replicas, got %d updated replicas",
 				s.Status.Replicas, s.Status.UpdatedReplicas)
 			return false, nil
 		}
 		if s.Status.ReadyReplicas != s.Status.Replicas {
-			lastErr = errors.Errorf("expected %d replicas, got %d ready replicas",
+			lastErr = fmt.Errorf("expected %d replicas, got %d ready replicas",
 				s.Status.Replicas, s.Status.ReadyReplicas)
 			return false, nil
 		}
@@ -1185,7 +1234,7 @@ func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.Stat
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for StatefulsetRollout of %s/%s", sts.GetNamespace(), sts.GetName())
+		return fmt.Errorf("waiting for StatefulsetRollout of %s/%s: %w", sts.GetNamespace(), sts.GetName(), err)
 	}
 	return nil
 }
@@ -1219,7 +1268,7 @@ func (c *Client) WaitForSecret(ctx context.Context, s *v1.Secret) (*v1.Secret, e
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return nil, errors.Wrapf(err, "waiting for secret %s/%s", s.GetNamespace(), s.GetName())
+		return nil, fmt.Errorf("waiting for secret %s/%s: %w", s.GetNamespace(), s.GetName(), err)
 	}
 
 	return result, nil
@@ -1264,7 +1313,7 @@ func (c *Client) WaitForConfigMap(ctx context.Context, cm *v1.ConfigMap) (*v1.Co
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return nil, errors.Wrapf(err, "waiting for ConfigMap %s/%s", cm.GetNamespace(), cm.GetName())
+		return nil, fmt.Errorf("waiting for ConfigMap %s/%s: %w", cm.GetNamespace(), cm.GetName(), err)
 	}
 
 	return result, nil
@@ -1307,7 +1356,7 @@ func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (strin
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return host, errors.Wrapf(err, "waiting for route %s/%s", r.GetNamespace(), r.GetName())
+		return host, fmt.Errorf("waiting for route %s/%s: %w", r.GetNamespace(), r.GetName(), err)
 	}
 	return host, nil
 }
@@ -1316,10 +1365,13 @@ func (c *Client) CreateOrUpdateDaemonSet(ctx context.Context, ds *appsv1.DaemonS
 	existing, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(ctx, ds.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		err = c.CreateDaemonSet(ctx, ds)
-		return errors.Wrap(err, "creating DaemonSet object failed")
+		if err != nil {
+			return fmt.Errorf("creating DaemonSet object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving DaemonSet object failed")
+		return fmt.Errorf("retrieving DaemonSet object failed: %w", err)
 	}
 
 	required := ds.DeepCopy()
@@ -1332,15 +1384,15 @@ func (c *Client) CreateOrUpdateDaemonSet(ctx context.Context, ds *appsv1.DaemonS
 			// try to delete DaemonSet
 			err = c.DeleteDaemonSet(ctx, existing)
 			if err != nil {
-				return errors.Wrap(err, "deleting DaemonSet object failed")
+				return fmt.Errorf("deleting DaemonSet object failed: %w", err)
 			}
 
 			err = c.CreateDaemonSet(ctx, required)
 			if err != nil {
-				return errors.Wrap(err, "creating DaemonSet object failed after update failed")
+				return fmt.Errorf("creating DaemonSet object failed after update failed: %w", err)
 			}
 		}
-		return errors.Wrap(err, "updating DaemonSet object failed")
+		return fmt.Errorf("updating DaemonSet object failed: %w", err)
 	}
 	return nil
 }
@@ -1378,7 +1430,7 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 		maxUnavailableIntStr := intstr.FromInt(1)
 
 		if d.Generation > d.Status.ObservedGeneration {
-			lastErr = errors.Errorf("current generation %d, observed generation: %d",
+			lastErr = fmt.Errorf("current generation %d, observed generation: %d",
 				d.Generation, d.Status.ObservedGeneration)
 			return false, nil
 		}
@@ -1389,12 +1441,12 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 		maxUnavailable, intstrErr := intstr.GetScaledValueFromIntOrPercent(&maxUnavailableIntStr, int(want), true)
 
 		if intstrErr != nil {
-			lastErr = errors.Errorf("The daemonset has an invalid MaxUnavailable value: %v", intstrErr)
+			lastErr = fmt.Errorf("The daemonset has an invalid MaxUnavailable value: %v", intstrErr)
 			return false, nil
 		}
 
 		if int(numberUnavailable) > maxUnavailable {
-			lastErr = errors.Errorf("Too many daemonset pods are unavailable (%d > %d max unavailable).", numberUnavailable, maxUnavailable)
+			lastErr = fmt.Errorf("Too many daemonset pods are unavailable (%d > %d max unavailable).", numberUnavailable, maxUnavailable)
 			return false, nil
 		}
 		return true, nil
@@ -1402,7 +1454,7 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 		if ctx.Err() != nil && lastErr != nil {
 			err = lastErr
 		}
-		return errors.Wrapf(err, "waiting for DaemonSetRollout of %s/%s", ds.GetNamespace(), ds.GetName())
+		return fmt.Errorf("waiting for DaemonSetRollout of %s/%s: %w", ds.GetNamespace(), ds.GetName(), err)
 	}
 	return nil
 }
@@ -1412,10 +1464,13 @@ func (c *Client) CreateOrUpdateSecret(ctx context.Context, s *v1.Secret) error {
 	existing, err := sClient.Get(ctx, s.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := sClient.Create(ctx, s, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Secret object failed")
+		if err != nil {
+			return fmt.Errorf("creating Secret object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Secret object failed")
+		return fmt.Errorf("retrieving Secret object failed: %w", err)
 	}
 
 	required := s.DeepCopy()
@@ -1436,7 +1491,7 @@ func (c *Client) CreateOrUpdateSecret(ctx context.Context, s *v1.Secret) error {
 		}
 	}
 	_, err = sClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Secret object failed")
+	return fmt.Errorf("updating Secret object failed: %w", err)
 }
 
 // maybeHasServiceCAData checks if the passed Secret s has at least one owner reference that
@@ -1463,10 +1518,12 @@ func (c *Client) CreateIfNotExistSecret(ctx context.Context, s *v1.Secret) error
 	_, err := sClient.Get(ctx, s.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := sClient.Create(ctx, s, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Secret object failed")
+		if err != nil {
+			return fmt.Errorf("creating Secret object failed: %w", err)
+		}
+		return nil
 	}
-
-	return errors.Wrap(err, "retrieving Secret object failed")
+	return fmt.Errorf("retrieving Secret object failed: %w", err)
 }
 
 func (c *Client) CreateOrUpdateConfigMapList(ctx context.Context, cml *v1.ConfigMapList) error {
@@ -1494,10 +1551,13 @@ func (c *Client) CreateOrUpdateConfigMap(ctx context.Context, cm *v1.ConfigMap) 
 	existing, err := cmClient.Get(ctx, cm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := cmClient.Create(ctx, cm, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ConfigMap object failed")
+		if err != nil {
+			return fmt.Errorf("creating ConfigMap object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving ConfigMap object failed")
+		return fmt.Errorf("retrieving ConfigMap object failed: %w", err)
 	}
 
 	required := cm.DeepCopy()
@@ -1510,7 +1570,10 @@ func (c *Client) CreateOrUpdateConfigMap(ctx context.Context, cm *v1.ConfigMap) 
 	}
 
 	_, err = cmClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating ConfigMap object failed")
+	if err != nil {
+		return fmt.Errorf("updating ConfigMap object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) DeleteIfExists(ctx context.Context, nsName string) error {
@@ -1520,12 +1583,16 @@ func (c *Client) DeleteIfExists(ctx context.Context, nsName string) error {
 		// Namespace already deleted
 		return nil
 	}
+
 	if err != nil {
-		return errors.Wrap(err, "retrieving Namespace object failed")
+		return fmt.Errorf("retrieving Namespace object failed: %w", err)
 	}
 
 	err = nClient.Delete(ctx, nsName, metav1.DeleteOptions{})
-	return errors.Wrap(err, "deleting ConfigMap object failed")
+	if err != nil {
+		return fmt.Errorf("deleting ConfigMap object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateIfNotExistConfigMap(ctx context.Context, cm *v1.ConfigMap) (*v1.ConfigMap, error) {
@@ -1534,12 +1601,12 @@ func (c *Client) CreateIfNotExistConfigMap(ctx context.Context, cm *v1.ConfigMap
 	if apierrors.IsNotFound(err) {
 		res, err := cClient.Create(ctx, cm, metav1.CreateOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "creating ConfigMap object failed")
+			return nil, fmt.Errorf("creating ConfigMap object failed: %w", err)
 		}
 		return res, nil
 	}
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving ConfigMap object failed")
+		return nil, fmt.Errorf("retrieving ConfigMap object failed: %w", err)
 	}
 	return res, nil
 }
@@ -1549,10 +1616,13 @@ func (c *Client) CreateOrUpdatePodDisruptionBudget(ctx context.Context, pdb *pol
 	existing, err := pdbClient.Get(ctx, pdb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := pdbClient.Create(ctx, pdb, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating PodDisruptionBudget object failed")
+		if err != nil {
+			return fmt.Errorf("creating PodDisruptionBudget object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving PodDisruptionBudget object failed")
+		return fmt.Errorf("retrieving PodDisruptionBudget object failed: %w", err)
 	}
 
 	required := pdb.DeepCopy()
@@ -1565,7 +1635,10 @@ func (c *Client) CreateOrUpdatePodDisruptionBudget(ctx context.Context, pdb *pol
 	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
 	_, err = pdbClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating PodDisruptionBudget object failed")
+	if err != nil {
+		return fmt.Errorf("updating PodDisruptionBudget object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateService(ctx context.Context, svc *v1.Service) error {
@@ -1573,10 +1646,13 @@ func (c *Client) CreateOrUpdateService(ctx context.Context, svc *v1.Service) err
 	existing, err := sclient.Get(ctx, svc.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err = sclient.Create(ctx, svc, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Service object failed")
+		if err != nil {
+			return fmt.Errorf("creating Service object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Service object failed")
+		return fmt.Errorf("retrieving Service object failed: %w", err)
 	}
 
 	required := svc.DeepCopy()
@@ -1592,7 +1668,10 @@ func (c *Client) CreateOrUpdateService(ctx context.Context, svc *v1.Service) err
 	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
 	_, err = sclient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Service object failed")
+	if err != nil {
+		return fmt.Errorf("updating Service object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateRoleBinding(ctx context.Context, rb *rbacv1.RoleBinding) error {
@@ -1600,10 +1679,13 @@ func (c *Client) CreateOrUpdateRoleBinding(ctx context.Context, rb *rbacv1.RoleB
 	existing, err := rbClient.Get(ctx, rb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := rbClient.Create(ctx, rb, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating RoleBinding object failed")
+		if err != nil {
+			return fmt.Errorf("creating RoleBinding object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving RoleBinding object failed")
+		return fmt.Errorf("retrieving RoleBinding object failed: %w", err)
 	}
 
 	if reflect.DeepEqual(rb.RoleRef, existing.RoleRef) &&
@@ -1615,7 +1697,10 @@ func (c *Client) CreateOrUpdateRoleBinding(ctx context.Context, rb *rbacv1.RoleB
 	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
 	_, err = rbClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating RoleBinding object failed")
+	if err != nil {
+		return fmt.Errorf("updating RoleBinding object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateRole(ctx context.Context, r *rbacv1.Role) error {
@@ -1623,17 +1708,23 @@ func (c *Client) CreateOrUpdateRole(ctx context.Context, r *rbacv1.Role) error {
 	existing, err := rClient.Get(ctx, r.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := rClient.Create(ctx, r, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating Role object failed")
+		if err != nil {
+			return fmt.Errorf("creating Role object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving Role object failed")
+		return fmt.Errorf("retrieving Role object failed: %w", err)
 	}
 
 	required := r.DeepCopy()
 	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
 	_, err = rClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating Role object failed")
+	if err != nil {
+		return fmt.Errorf("updating Role object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateClusterRole(ctx context.Context, cr *rbacv1.ClusterRole) error {
@@ -1641,17 +1732,23 @@ func (c *Client) CreateOrUpdateClusterRole(ctx context.Context, cr *rbacv1.Clust
 	existing, err := crClient.Get(ctx, cr.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := crClient.Create(ctx, cr, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ClusterRole object failed")
+		if err != nil {
+			return fmt.Errorf("creating ClusterRole object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving ClusterRole object failed")
+		return fmt.Errorf("retrieving ClusterRole object failed: %w", err)
 	}
 
 	required := cr.DeepCopy()
 	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
 
 	_, err = crClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating ClusterRole object failed")
+	if err != nil {
+		return fmt.Errorf("updating ClusterRole object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbacv1.ClusterRoleBinding) error {
@@ -1659,10 +1756,13 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 	existing, err := crbClient.Get(ctx, crb.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := crbClient.Create(ctx, crb, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ClusterRoleBinding object failed")
+		if err != nil {
+			return fmt.Errorf("creating ClusterRoleBinding object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving ClusterRoleBinding object failed")
+		return fmt.Errorf("retrieving ClusterRoleBinding object failed: %w", err)
 	}
 
 	if reflect.DeepEqual(crb.RoleRef, existing.RoleRef) &&
@@ -1675,11 +1775,14 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 
 	err = crbClient.Delete(ctx, crb.Name, metav1.DeleteOptions{})
 	if err != nil {
-		return errors.Wrap(err, "deleting ClusterRoleBinding object failed")
+		return fmt.Errorf("deleting ClusterRoleBinding object failed: %w", err)
 	}
 
 	_, err = crbClient.Create(ctx, required, metav1.CreateOptions{})
-	return errors.Wrap(err, "updating ClusterRoleBinding object failed")
+	if err != nil {
+		return fmt.Errorf("updating ClusterRoleBinding object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
@@ -1691,7 +1794,10 @@ func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.Servic
 		c.resourceCache,
 	)
 
-	return errors.Wrap(err, "updating ServiceAccount object failed")
+	if err != nil {
+		return fmt.Errorf("updating ServiceAccount object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.ServiceMonitor) error {
@@ -1699,10 +1805,13 @@ func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.Ser
 	existing, err := smClient.Get(ctx, sm.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err := smClient.Create(ctx, sm, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating ServiceMonitor object failed")
+		if err != nil {
+			return fmt.Errorf("creating ServiceMonitor object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving ServiceMonitor object failed")
+		return fmt.Errorf("retrieving ServiceMonitor object failed: %w", err)
 	}
 
 	required := sm.DeepCopy()
@@ -1710,7 +1819,10 @@ func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.Ser
 
 	required.ResourceVersion = existing.ResourceVersion
 	_, err = smClient.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating ServiceMonitor object failed")
+	if err != nil {
+		return fmt.Errorf("updating ServiceMonitor object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apiregistrationv1.APIService) error {
@@ -1718,10 +1830,13 @@ func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apire
 	existing, err := apsc.Get(ctx, apiService.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		_, err = apsc.Create(ctx, apiService, metav1.CreateOptions{})
-		return errors.Wrap(err, "creating APIService object failed")
+		if err != nil {
+			return fmt.Errorf("creating APIService object failed: %w", err)
+		}
+		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "retrieving APIService object failed")
+		return fmt.Errorf("retrieving APIService object failed: %w", err)
 	}
 
 	required := apiService.DeepCopy()
@@ -1732,7 +1847,10 @@ func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apire
 		}
 	}
 	_, err = apsc.Update(ctx, required, metav1.UpdateOptions{})
-	return errors.Wrap(err, "updating APIService object failed")
+	if err != nil {
+		return fmt.Errorf("updating APIService object failed: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) WaitForCRDReady(ctx context.Context, crd *extensionsobj.CustomResourceDefinition) error {
@@ -1756,7 +1874,7 @@ func (c *Client) CRDReady(ctx context.Context, crd *extensionsobj.CustomResource
 			}
 		case extensionsobj.NamesAccepted:
 			if cond.Status == extensionsobj.ConditionFalse {
-				return false, errors.Errorf("CRD naming conflict (%s): %v", crd.ObjectMeta.Name, cond.Reason)
+				return false, fmt.Errorf("CRD naming conflict (%s): %v", crd.ObjectMeta.Name, cond.Reason)
 			}
 		}
 	}
@@ -1864,7 +1982,7 @@ func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
 
 	console, err := consoleClient.Get(ctx, clusterConsole, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "retrieving console %q failed", clusterConsole)
+		return fmt.Errorf("retrieving console %q failed: %w", clusterConsole, err)
 	}
 
 	if slices.Contains(console.Spec.Plugins, name) {
@@ -1894,7 +2012,10 @@ func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
 	}
 
 	_, err = consoleClient.Patch(ctx, clusterConsole, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
-	return errors.Wrapf(err, "registering console-plugin %q with console %q failed", name, clusterConsole)
+	if err != nil {
+		return fmt.Errorf("registering console-plugin %q with console %q failed: %w", name, clusterConsole, err)
+	}
+	return nil
 }
 
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
