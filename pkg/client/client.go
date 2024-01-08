@@ -78,6 +78,7 @@ type Client struct {
 	version               string
 	namespace             string
 	userWorkloadNamespace string
+	lastGenerationNumber  int
 
 	kclient     kubernetes.Interface
 	mdataclient metadata.Interface
@@ -601,6 +602,9 @@ func (c *Client) GetAlertingRule(ctx context.Context, namespace, name string) (*
 }
 
 func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Prometheus) error {
+	s, _ := c.kclient.AppsV1().StatefulSets(p.GetNamespace()).Get(ctx, "prometheus-k8s", metav1.GetOptions{})
+	c.lastGenerationNumber = int(s.Status.ObservedGeneration)
+
 	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
 	existing, err := pclient.Get(ctx, p.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
@@ -931,6 +935,12 @@ func (c *Client) ValidatePrometheus(ctx context.Context, promNsName types.Namesp
 		validationErrors = errs
 		return stop, nil
 	})
+
+	s, _ := c.kclient.AppsV1().StatefulSets("openshift-monitoring").Get(ctx, "prometheus-k8s", metav1.GetOptions{})
+	if c.lastGenerationNumber+10 < int(s.Status.ObservedGeneration) && s.Status.ReadyReplicas != s.Status.Replicas {
+		err := fmt.Errorf("multiple operators trying to manage the same prometheus")
+		return errors.Wrap(err, "creating or updating Prometheus object failed")
+	}
 
 	if pollErr != nil {
 		return apiutilerrors.NewAggregate(validationErrors)
