@@ -937,8 +937,9 @@ func (c *Client) ValidatePrometheus(ctx context.Context, promNsName types.Namesp
 	})
 
 	s, _ := c.kclient.AppsV1().StatefulSets("openshift-monitoring").Get(ctx, "prometheus-k8s", metav1.GetOptions{})
-	if c.lastGenerationNumber+10 < int(s.Status.ObservedGeneration) && s.Status.ReadyReplicas != s.Status.Replicas {
-		err := fmt.Errorf("multiple operators trying to manage the same prometheus")
+	generationAttemps := int(s.Status.ObservedGeneration) - c.lastGenerationNumber
+	if generationAttemps > 10 && s.Status.ReadyReplicas != s.Status.Replicas {
+		err := fmt.Errorf("multiple operators trying to manage the same prometheus, resource has attempted to be created %v", generationAttemps)
 		return errors.Wrap(err, "creating or updating Prometheus object failed")
 	}
 
