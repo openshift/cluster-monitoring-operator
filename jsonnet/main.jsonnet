@@ -123,6 +123,33 @@ local inCluster =
         },
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
+        config: {
+          inhibit_rules: [{
+            source_matchers: ['severity = critical'],
+            target_matchers: ['severity =~ warning|info'],
+            equal: ['namespace', 'alertname'],
+          }, {
+            source_matchers: ['severity = warning'],
+            target_matchers: ['severity = info'],
+            equal: ['namespace', 'alertname'],
+          }],
+          route: {
+            group_by: ['namespace'],
+            group_wait: '30s',
+            group_interval: '5m',
+            repeat_interval: '12h',
+            receiver: 'Default',
+            routes: [
+              { receiver: 'Watchdog', matchers: ['alertname = Watchdog'] },
+              { receiver: 'Critical', matchers: ['severity = critical'] },
+            ],
+          },
+          receivers: [
+            { name: 'Default' },
+            { name: 'Watchdog' },
+            { name: 'Critical' },
+          ],
+        },
       },
       dashboards: {
         namespace: $.values.common.namespace,
