@@ -129,12 +129,13 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-  - interval: 30s
+  - bearerTokenFile: ""
+    interval: 30s
     port: https-metrics
     relabelings:
     - action: replace
       regex: (.+)(?::\d+)
-      replacement: $1:9537
+      replacement: $1:9637
       sourceLabels:
       - __address__
       targetLabel: __address__
@@ -146,6 +147,11 @@ spec:
     - action: replace
       replacement: crio
       targetLabel: job
+    scheme: https
+    tlsConfig:
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   jobLabel: k8s-app
   namespaceSelector:
     matchNames:
