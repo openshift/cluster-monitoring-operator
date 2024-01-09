@@ -43,6 +43,7 @@ spec:
           requests:
             cpu: 1m
             memory: 20Mi
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
           name: openshift-state-metrics-tls
@@ -71,6 +72,7 @@ spec:
           requests:
             cpu: 1m
             memory: 20Mi
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
           name: openshift-state-metrics-tls
@@ -92,6 +94,7 @@ spec:
           requests:
             cpu: 1m
             memory: 32Mi
+        terminationMessagePolicy: FallbackToLogsOnError
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical

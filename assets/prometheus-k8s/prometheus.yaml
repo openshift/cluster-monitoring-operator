@@ -153,10 +153,12 @@ spec:
       requests:
         cpu: 1m
         memory: 25Mi
+    terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
   - name: prometheus
+    terminationMessagePolicy: FallbackToLogsOnError
   enableFeatures: []
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091

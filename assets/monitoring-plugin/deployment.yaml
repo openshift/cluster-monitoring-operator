@@ -75,6 +75,7 @@ spec:
           capabilities:
             drop:
             - ALL
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /var/cert
           name: monitoring-plugin-cert
