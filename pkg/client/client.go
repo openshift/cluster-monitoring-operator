@@ -1024,6 +1024,9 @@ func validateMonitoringResource(expectedReplicas, updatedReplicas, availableRepl
 }
 
 func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
+	s, _ := c.kclient.AppsV1().StatefulSets(a.GetNamespace()).Get(ctx, "alertmanager-main", metav1.GetOptions{})
+	lastGeneration := s.Status.ObservedGeneration
+
 	var lastErr error
 	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		a, err := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace()).Get(ctx, a.GetName(), metav1.GetOptions{})
@@ -1046,6 +1049,11 @@ func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager)
 
 		return true, nil
 	}, WithPollInterval(10*time.Second), WithLastError(&lastErr)); err != nil {
+		s, _ := c.kclient.AppsV1().StatefulSets(a.GetNamespace()).Get(ctx, "alertmanager-main", metav1.GetOptions{})
+		generationAttemps := s.Status.ObservedGeneration - lastGeneration
+		if generationAttemps > 5 && s.Status.ReadyReplicas != s.Status.Replicas {
+			return fmt.Errorf("waiting for Alertmanager: Multiple operators trying to manage the same alertmanager, resource has attempted to be created %v, %w", generationAttemps, err)
+		}
 		return fmt.Errorf("waiting for Alertmanager %s/%s: %w", a.GetNamespace(), a.GetName(), err)
 	}
 	return nil
