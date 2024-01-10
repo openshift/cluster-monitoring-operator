@@ -17,10 +17,11 @@ package manifests
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
+	prom_testutil "github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,7 +41,7 @@ func TestConfigParsing(t *testing.T) {
 }
 
 func TestNewUserConfigFromStringParsing(t *testing.T) {
-	c, err := ioutil.ReadFile("../../examples/user-workload/configmap.yaml")
+	c, err := os.ReadFile("../../examples/user-workload/configmap.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,30 +175,6 @@ func TestTelemeterClientConfig(t *testing.T) {
 	}
 }
 
-func TestPromAdapterDedicatedSMsDefaultsToDisabled(t *testing.T) {
-	c, err := NewConfigFromString("", false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
-		t.Error("an empty configuration should have prometheus-adapter dedicated ServiceMonitors dislabled")
-	}
-	c, err = NewConfigFromString(`{"k8sPrometheusAdapter":{}}`, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
-		t.Error("an empty k8sPrometheusAdapter configuration should have prometheus-adapter dedicated ServiceMonitors dislabled")
-	}
-	c, err = NewConfigFromString(`{"k8sPrometheusAdapter":{"dedicatedServiceMonitors":{}}}`, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors.Enabled {
-		t.Error("an empty dedicatedSericeMonitors configuration should have prometheus-adapter dedicated ServiceMonitors dislabled")
-	}
-}
-
 func TestHttpProxyConfig(t *testing.T) {
 	conf := `http:
   httpProxy: http://test.com
@@ -255,7 +232,6 @@ func (fpc *fakePodCapacity) PodCapacity(context.Context) (int, error) {
 }
 
 func TestLoadEnforcedBodySizeLimit(t *testing.T) {
-
 	mc_10 := fakePodCapacity{capacity: 10, err: nil}
 	mc_1000 := fakePodCapacity{capacity: 1000, err: nil}
 	mc_err := fakePodCapacity{capacity: 1000, err: errors.New("error")}
@@ -342,17 +318,17 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 	}
 }
 
-func TestCollectionProfile(t *testing.T) {
+func TestCollectionProfilePreCheck(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		config        string
-		expectedsp    CollectionProfile
+		expected      CollectionProfile
 		expectedError bool
 	}{
 		{
 			name:          "default",
 			config:        "",
-			expectedsp:    CollectionProfile("full"),
+			expected:      CollectionProfile("full"),
 			expectedError: false,
 		},
 		{
@@ -360,7 +336,7 @@ func TestCollectionProfile(t *testing.T) {
 			config: `prometheusk8s:
   collectionProfile: full
   `,
-			expectedsp:    CollectionProfile("full"),
+			expected:      CollectionProfile("full"),
 			expectedError: false,
 		},
 		{
@@ -368,7 +344,7 @@ func TestCollectionProfile(t *testing.T) {
 			config: `prometheusk8s:
   collectionProfile: minimal
   `,
-			expectedsp:    CollectionProfile("minimal"),
+			expected:      CollectionProfile("minimal"),
 			expectedError: false,
 		},
 		{
@@ -376,22 +352,70 @@ func TestCollectionProfile(t *testing.T) {
 			config: `prometheusk8s:
   collectionProfile: foo
   `,
-			expectedsp:    "",
+			expected:      "",
 			expectedError: true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.config, true)
-			if err != nil {
-				if tc.expectedError {
-					return
-				}
-				require.NoError(t, err)
+			require.NoError(t, err)
+			err = c.Precheck()
+			if err != nil && tc.expectedError {
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile)
+		})
+	}
+}
 
-			if tc.expectedsp != c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
-				t.Fatalf("incorrect collection profile set, expected %s got %s", tc.expectedsp, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile)
-			}
+func TestDeprecatedConfig(t *testing.T) {
+	for _, tc := range []struct {
+		name                string
+		config              string
+		expectedMetricValue float64
+	}{
+		{
+			name: "enabled",
+			config: `k8sPrometheusAdapter:
+  dedicatedServiceMonitors:
+    enabled: true
+  `,
+			expectedMetricValue: 1,
+		},
+		{
+			name: "default",
+			config: `k8sPrometheusAdapter:
+  dedicatedServiceMonitors:
+  `,
+			expectedMetricValue: 0,
+		},
+		{
+			name: "default",
+			config: `k8sPrometheusAdapter:
+  dedicatedServiceMonitors:
+    enabled: false
+  `,
+			expectedMetricValue: 1,
+		},
+		{
+			name: "default",
+			config: `k8sPrometheusAdapter:
+  `,
+			expectedMetricValue: 0,
+		},
+		{
+			name:                "default",
+			config:              "",
+			expectedMetricValue: 0,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config, true)
+			require.NoError(t, err)
+			err = c.Precheck()
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
 		})
 	}
 }

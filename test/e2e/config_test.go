@@ -802,6 +802,38 @@ monitoringPlugin:
 	}
 }
 
+func TestClusterMonitoringDeprecatedConfig(t *testing.T) {
+	metricName := "cluster_monitoring_operator_deprecated_config_in_use"
+	checkMetricValue := func(value float64) {
+		t.Helper()
+		f.PrometheusK8sClient.WaitForQueryReturn(
+			t, 5*time.Minute, fmt.Sprintf(`%s{configmap="openshift-monitoring/cluster-monitoring-config", field="k8sPrometheusAdapter.dedicatedServiceMonitors", deprecation_version="4.15"}`, metricName),
+			func(v float64) error {
+				if v != value {
+					return fmt.Errorf("expected %s to be of value %f.", metricName, value)
+				}
+				return nil
+			},
+		)
+	}
+	// No deprecated config should have been used.
+	checkMetricValue(0)
+
+	// Use deprecated config.
+	data := `
+k8sPrometheusAdapter:
+  dedicatedServiceMonitors:
+    enabled: true`
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
+	checkMetricValue(1)
+
+	// The metric should be reset to 0.
+	data = `
+k8sPrometheusAdapter:`
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
+	checkMetricValue(0)
+}
+
 // checks that the toleration is present
 // this toleration will match all so will not affect rolling out workloads
 func expectTolerationsEqual(exp int) framework.PodAssertion {

@@ -355,6 +355,18 @@ function(params) {
           },
         },
         {
+          expr: 'max by (configmap, field, deprecation_version) (cluster_monitoring_operator_deprecated_config_in_use) == 1',
+          alert: 'ClusterMonitoringOperatorDeprecatedConfig',
+          'for': '1h',
+          annotations: {
+            summary: 'Cluster Monitoring Operator is being used with deprecated configuration.',
+            description: 'The configuration field {{ $labels.field }} in {{ $labels.configmap }} was deprecated in {{ $labels.deprecation_version }} and has no effect, you can remove it.',
+          },
+          labels: {
+            severity: 'info',
+          },
+        },
+        {
           expr: 'cluster:alertmanager_integrations:max == 0',
           alert: 'AlertmanagerReceiversNotConfigured',
           'for': '10m',

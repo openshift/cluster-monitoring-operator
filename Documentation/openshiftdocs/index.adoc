@@ -42,7 +42,6 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/alertmanagermainconfig.adoc[AlertmanagerMainConfig]
 * link:modules/alertmanageruserworkloadconfig.adoc[AlertmanagerUserWorkloadConfig]
 * link:modules/clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
-* link:modules/dedicatedservicemonitors.adoc[DedicatedServiceMonitors]
 * link:modules/k8sprometheusadapter.adoc[K8sPrometheusAdapter]
 * link:modules/kubestatemetricsconfig.adoc[KubeStateMetricsConfig]
 * link:modules/metricsserverconfig.adoc[MetricsServerConfig]

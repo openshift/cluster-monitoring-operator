@@ -57,12 +57,5 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 			return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
 		}
 	}
-
-	// TODO: Remove this in 4.16
-	err = t.client.DeleteServiceMonitorByNamespaceAndName(ctx, t.client.Namespace(), "kubelet-resource-metrics")
-	if err != nil {
-		return errors.Wrap(err, "deleting prometheus-adapter dedicated kubelet ServiceMonitor failed")
-	}
-
 	return nil
 }

@@ -117,7 +117,7 @@ type K8sPrometheusAdapter struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	// Defines dedicated service monitors.
+	// HideFromDoc: Defines dedicated service monitors.
 	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
 }
 
@@ -134,18 +134,8 @@ type MetricsServerConfig struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
-// This setting is DEPRECATED and will be removed in a future version. In this
-// version this setting has no effect.
+// HideFromDoc: This is deprecated and will be removed in a future version, setting it has no effect.
 type DedicatedServiceMonitors struct {
-	// When `enabled` is set to `true`, the Cluster Monitoring Operator (CMO)
-	// deploys a dedicated Service Monitor that exposes the kubelet
-	// `/metrics/resource` endpoint. This Service Monitor sets
-	// `honorTimestamps: true` and only keeps metrics that are
-	// relevant for the pod resource queries of Prometheus Adapter.
-	// Additionally, Prometheus Adapter is configured to use these dedicated
-	// metrics. Overall, this feature improves the consistency of Prometheus
-	// Adapter-based CPU usage measurements used by, for example, the `oc adm top
-	// pod` command or the Horizontal Pod Autoscaler.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
