@@ -169,7 +169,6 @@ function(params)
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
                         '--config-file=/etc/kube-rbac-policy/config.yaml',
                       ],
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
                         {
                           mountPath: '/etc/tls/private',

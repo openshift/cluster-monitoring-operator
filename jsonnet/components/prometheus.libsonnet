@@ -428,7 +428,6 @@ function(params)
               '-openshift-ca=/etc/pki/tls/cert.pem',
               '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
@@ -465,7 +464,6 @@ function(params)
               '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
@@ -516,7 +514,6 @@ function(params)
               '--allow-paths=/metrics',
               '--logtostderr=true',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',

@@ -8,17 +8,29 @@
               c {
                 terminationMessagePolicy: 'FallbackToLogsOnError',
               }
-              for c in super.containers
+              for c in o.spec.template.spec.containers
+            ],
+            [if 'initContainers' in o.spec.template.spec then 'initContainers']: [
+              c {
+                terminationMessagePolicy: 'FallbackToLogsOnError',
+              }
+              for c in o.spec.template.spec.initContainers
             ],
           },
         },
       },
-      [if std.setMember(o.kind, ['Prometheus', 'Alertmanager', 'ThanosRuler']) then 'spec']+: {
+      [if std.setMember(o.kind, ['Alertmanager', 'Prometheus', 'ThanosRuler']) then 'spec']+: {
         containers: [
           c {
             terminationMessagePolicy: 'FallbackToLogsOnError',
           }
-          for c in super.containers
+          for c in o.spec.containers
+        ],
+        [if 'initContainers' in o.spec then 'initContainers']: [
+          c {
+            terminationMessagePolicy: 'FallbackToLogsOnError',
+          }
+          for c in o.spec.initContainers
         ],
       },
     },

@@ -186,7 +186,6 @@ function(params)
                   privileged: true,
                   runAsUser: 0,
                 },
-                terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts+: [
                   {
                     mountPath: textfileDir,
@@ -213,7 +212,6 @@ function(params)
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
                         '--config-file=/etc/kube-rbac-policy/config.yaml',
                       ],
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
                         {
                           mountPath: '/etc/tls/private',
@@ -266,7 +264,6 @@ function(params)
                           exec /bin/node_exporter "$0" "$@"
                         |||,
                       ],
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts+: [{
                         mountPath: textfileDir,
                         name: textfileVolumeName,

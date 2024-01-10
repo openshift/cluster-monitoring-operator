@@ -280,7 +280,6 @@ function(params)
               '-openshift-ca=/etc/pki/tls/cert.pem',
               '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             resources: {
               requests: {
                 cpu: '1m',
@@ -321,7 +320,6 @@ function(params)
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/kube-rbac-proxy',
@@ -361,7 +359,6 @@ function(params)
               '--logtostderr=true',
               '--allow-paths=/metrics',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/kube-rbac-proxy',
@@ -395,7 +392,6 @@ function(params)
                 memory: '20Mi',
               },
             },
-            terminationMessagePolicy: 'FallbackToLogsOnError',
           },
         ],
         volumes+: [

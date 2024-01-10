@@ -403,7 +403,6 @@ function(params)
             // Note: this is performing strategic-merge-patch for thanos-ruler container.
             // Remainder of the container configuration is managed by prometheus-operator based on $.thanosRuler.spec
             name: tr.config.name,
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
@@ -453,7 +452,6 @@ function(params)
               '-openshift-ca=/etc/pki/tls/cert.pem',
               '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             resources: {
               requests: {
                 cpu: '1m',
@@ -503,7 +501,6 @@ function(params)
               '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--allow-paths=/metrics',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',

@@ -428,7 +428,6 @@ function(params)
                     '/-/ready',
                   ]),
                 ],
-                terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
                   {
                     mountPath: '/etc/tls/private',
@@ -496,7 +495,6 @@ function(params)
                     '/api/v1/series',
                   ]),
                 ],
-                terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
                   {
                     mountPath: '/etc/tls/private',
@@ -536,7 +534,6 @@ function(params)
                     drop: ['ALL'],
                   },
                 },
-                terminationMessagePolicy: 'FallbackToLogsOnError',
               },
               {
                 name: 'kube-rbac-proxy-rules',
@@ -565,7 +562,6 @@ function(params)
                     '/api/v1/alerts',
                   ]),
                 ],
-                terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
                   {
                     mountPath: '/etc/tls/private',
@@ -610,7 +606,6 @@ function(params)
                   '--client-ca-file=/etc/tls/client/client-ca.crt',
                   '--allow-paths=/metrics',
                 ],
-                terminationMessagePolicy: 'FallbackToLogsOnError',
                 volumeMounts: [
                   {
                     mountPath: '/etc/tls/private',
