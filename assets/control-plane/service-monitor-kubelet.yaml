@@ -129,7 +129,7 @@ spec:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-  - bearerTokenFile: ""
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     interval: 30s
     port: https-metrics
     relabelings:
@@ -150,7 +150,7 @@ spec:
     scheme: https
     tlsConfig:
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
-      insecureSkipVerify: false
+      insecureSkipVerify: true
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   jobLabel: k8s-app
   namespaceSelector:
