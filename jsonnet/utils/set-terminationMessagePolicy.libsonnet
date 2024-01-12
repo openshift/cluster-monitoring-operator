@@ -1,7 +1,7 @@
 {
   setTerminationMessagePolicy(o): o {
     local addTerminationMessagePolicy(o) = o {
-      [if std.setMember(o.kind, ['DaemonSet', 'Deployment', 'ReplicaSet']) then 'spec']+: {
+      [if std.setMember(o.kind, std.set(['DaemonSet', 'Deployment'])) then 'spec']+: {
         template+: {
           spec+: {
             containers: [
@@ -19,7 +19,7 @@
           },
         },
       },
-      [if std.setMember(o.kind, ['Alertmanager', 'Prometheus', 'ThanosRuler']) then 'spec']+: {
+      [if std.setMember(o.kind, std.set(['Alertmanager', 'Prometheus', 'ThanosRuler'])) then 'spec']+: {
         containers: [
           c {
             terminationMessagePolicy: 'FallbackToLogsOnError',

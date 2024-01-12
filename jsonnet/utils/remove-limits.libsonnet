@@ -1,7 +1,7 @@
 {
   removeLimits(o): {
     local removeLimit(o) = o {
-      [if std.setMember(o.kind, ['DaemonSet', 'Deployment', 'ReplicaSet']) then 'spec']+: {
+      [if std.setMember(o.kind, std.set(['DaemonSet', 'Deployment'])) then 'spec']+: {
         template+: {
           spec+: {
             containers: [
