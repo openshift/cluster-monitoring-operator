@@ -21,7 +21,6 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -43,7 +42,7 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(ctx context.Context, trustedCA *v
 		lastErr error
 		lastCM  *v1.ConfigMap
 	)
-	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+	err = client.Poll(ctx, func(ctx context.Context) (bool, error) {
 		var err error
 		lastCM, err = cbs.client.GetConfigmap(ctx, trustedCA.GetNamespace(), trustedCA.GetName())
 
@@ -63,11 +62,8 @@ func (cbs *caBundleSyncer) syncTrustedCABundle(ctx context.Context, trustedCA *v
 		}
 
 		return true, nil
-	})
+	}, client.WithPollInterval(5*time.Second), client.WithLastError(&lastErr))
 	if err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = fmt.Errorf("%w: %w", err, lastErr)
-		}
 		return nil, fmt.Errorf("waiting for config map key %q in %s/%s ConfigMap object failed: %w", manifests.TrustedCABundleKey, trustedCA.GetNamespace(), trustedCA.GetName(), err)
 	}
 
