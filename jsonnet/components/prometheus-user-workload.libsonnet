@@ -364,7 +364,6 @@ function(params)
               '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
@@ -412,7 +411,6 @@ function(params)
               '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
@@ -468,7 +466,6 @@ function(params)
               '--allow-paths=/metrics',
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',

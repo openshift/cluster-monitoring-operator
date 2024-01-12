@@ -104,7 +104,6 @@ function(params)
                           cpu: '1m',
                         },
                       },
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
                     }
                   else if c.name == 'kube-rbac-proxy' then
                     c {
@@ -114,7 +113,6 @@ function(params)
                         '--config-file=/etc/kube-rbac-policy/config.yaml',
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
                       ],
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
                         {
                           mountPath: '/etc/tls/private',

@@ -60,6 +60,7 @@ spec:
             cpu: 2m
             memory: 80Mi
         securityContext: {}
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp
           name: volume-directive-shadow

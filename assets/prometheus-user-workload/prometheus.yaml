@@ -159,10 +159,12 @@ spec:
       capabilities:
         drop:
         - ALL
+    terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/grpc
       name: secret-grpc-tls
   - name: prometheus
+    terminationMessagePolicy: FallbackToLogsOnError
   enableFeatures: []
   enforcedNamespaceLabel: namespace
   externalLabels: {}

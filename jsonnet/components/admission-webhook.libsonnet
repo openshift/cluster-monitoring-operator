@@ -54,7 +54,6 @@ function(params)
                         },
                       },
                       securityContext: {},
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
                     }
                   else
                     c,

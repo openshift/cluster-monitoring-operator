@@ -82,7 +82,6 @@ function(params)
                           cpu: '5m',
                         },
                       },
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
                     }
                   else if c.name == 'kube-rbac-proxy' then
                     // TODO(simonpasquier): remove kube-rbac-proxy and
@@ -99,7 +98,6 @@ function(params)
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
                         '--config-file=/etc/kube-rbac-policy/config.yaml',
                       ],
-                      terminationMessagePolicy: 'FallbackToLogsOnError',
                       volumeMounts: [
                         {
                           mountPath: '/etc/tls/private',

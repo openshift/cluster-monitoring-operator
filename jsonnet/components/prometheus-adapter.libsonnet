@@ -109,7 +109,6 @@ function(params)
                           '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                           '--disable-http2',
                         ],
-                        terminationMessagePolicy: 'FallbackToLogsOnError',
                         volumeMounts: [
                           {
                             mountPath: '/tmp',

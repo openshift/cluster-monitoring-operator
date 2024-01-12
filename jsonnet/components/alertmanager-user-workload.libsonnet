@@ -235,7 +235,6 @@ function(params)
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--logtostderr=true',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/tls/private',
@@ -278,7 +277,6 @@ function(params)
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/kube-rbac-proxy',
@@ -324,7 +322,6 @@ function(params)
               '--logtostderr=true',
               '--allow-paths=/metrics',
             ],
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             volumeMounts: [
               {
                 mountPath: '/etc/kube-rbac-proxy',
@@ -364,7 +361,6 @@ function(params)
                 memory: '20Mi',
               },
             },
-            terminationMessagePolicy: 'FallbackToLogsOnError',
             securityContext: {
               allowPrivilegeEscalation: false,
               capabilities: {

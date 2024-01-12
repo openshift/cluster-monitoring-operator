@@ -80,6 +80,7 @@ spec:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
           name: secret-metrics-server-tls
