@@ -140,7 +140,7 @@ local inCluster =
           $.controlPlane.mixin.grafanaDashboards +
           $.controlPlane.etcdMixin.grafanaDashboards,
         // Allow-listing dashboards that are going into the product. List needs to be sorted for std.setMember to work
-        local includeDashboards = [
+        local includeDashboards = std.set([
           'cluster-total.json',
           'etcd.json',
           'k8s-resources-cluster.json',
@@ -154,7 +154,7 @@ local inCluster =
           'node-rsrc-use.json',
           'pod-total.json',
           'prometheus.json',
-        ],
+        ]),
         // This step is to delete row with titles 'Storage IO - Distribution(Containers)'
         // and 'Storage IO - Distribution' from 'k8s-resources-pod.json' dashboard since
         // Prometheus doesn't collect the per-container fs metrics
@@ -163,7 +163,7 @@ local inCluster =
         },
         local filterDashboard(dashboard, excludedRowTitles) = dashboard { rows: std.filter(function(row) !std.member(excludedRowTitles, row.title), dashboard.rows) },
         dashboards: {
-          [k]: filterDashboard(allDashboards[k], if std.setMember(k, std.objectFields(filteredDashboards)) then filteredDashboards[k] else [])
+          [k]: filterDashboard(allDashboards[k], if std.setMember(k, std.set(std.objectFields(filteredDashboards))) then filteredDashboards[k] else [])
           for k in std.objectFields(allDashboards)
           if std.setMember(k, includeDashboards)
         },

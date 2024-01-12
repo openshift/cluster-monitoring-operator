@@ -29,14 +29,14 @@
       'target.workload.openshift.io/management': '{"effect": "PreferredDuringScheduling"}',
     },
     local addAnnotation(o) = o {
-      [if std.setMember(o.kind, ['DaemonSet', 'Deployment', 'ReplicaSet']) then 'spec']+: {
+      [if std.setMember(o.kind, std.set(['DaemonSet', 'Deployment'])) then 'spec']+: {
         template+: {
           metadata+: {
             annotations+: annotation,
           },
         },
       },
-      [if std.setMember(o.kind, ['Alertmanager', 'Prometheus', 'ThanosRuler']) then 'spec']+:
+      [if std.setMember(o.kind, std.set(['Alertmanager', 'Prometheus', 'ThanosRuler'])) then 'spec']+:
         {
           podMetadata+: {
             annotations+: annotation,
