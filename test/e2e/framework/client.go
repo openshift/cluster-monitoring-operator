@@ -28,7 +28,7 @@ import (
 
 	"github.com/Jeffail/gabs"
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
-	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -307,7 +307,7 @@ func GetFirstValueFromPromQuery(body []byte) (float64, error) {
 
 	v, err := strconv.ParseFloat(value.Data().(string), 64)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse query value: %v", err)
+		return 0, fmt.Errorf("failed to parse query value: %w", err)
 	}
 
 	return v, nil
@@ -363,16 +363,16 @@ func (c *PrometheusClient) WaitForQueryReturn(t *testing.T, timeout time.Duratio
 	err := Poll(5*time.Second, timeout, func() error {
 		body, err := c.PrometheusQuery(query)
 		if err != nil {
-			return errors.Wrapf(err, "error getting response for query %q", query)
+			return fmt.Errorf("error getting response for query %q: %w", query, err)
 		}
 
 		v, err := GetFirstValueFromPromQuery(body)
 		if err != nil {
-			return errors.Wrapf(err, "error getting first value from response body %q for query %q", string(body), query)
+			return fmt.Errorf("error getting first value from response body %q for query %q: %w", string(body), query, err)
 		}
 
 		if err := validate(v); err != nil {
-			return errors.Wrapf(err, "error validating response body %q for query %q", string(body), query)
+			return fmt.Errorf("error validating response body %q for query %q: %w", string(body), query, err)
 		}
 
 		return nil
@@ -390,12 +390,12 @@ func (c *PrometheusClient) WaitForQueryReturnEmpty(t *testing.T, timeout time.Du
 	err := Poll(5*time.Second, timeout, func() error {
 		body, err := c.PrometheusQuery(query)
 		if err != nil {
-			return errors.Wrapf(err, "error getting response for query %q", query)
+			return fmt.Errorf("error getting response for query %q: %w", query, err)
 		}
 
 		size, err := GetResultSizeFromPromQuery(body)
 		if err != nil {
-			return errors.Wrapf(err, "error getting body size from body %q for query %q", string(body), query)
+			return fmt.Errorf("error getting body size from body %q for query %q: %w", string(body), query, err)
 		}
 
 		if size > 0 {
@@ -418,11 +418,11 @@ func (c *PrometheusClient) WaitForRulesReturn(t *testing.T, timeout time.Duratio
 	err := Poll(5*time.Second, timeout, func() error {
 		body, err := c.PrometheusRules()
 		if err != nil {
-			return errors.Wrap(err, "error getting rules")
+			return fmt.Errorf("error getting rules: %w", err)
 		}
 
 		if err := validate(body); err != nil {
-			return errors.Wrapf(err, "error validating response body %q", string(body))
+			return fmt.Errorf("error validating response body %q: %w", string(body), err)
 		}
 
 		return nil
@@ -441,11 +441,11 @@ func (c *PrometheusClient) WaitForTargetsReturn(t *testing.T, timeout time.Durat
 	err := Poll(5*time.Second, timeout, func() error {
 		body, err := c.PrometheusTargets()
 		if err != nil {
-			return errors.Wrap(err, "error getting targets")
+			return fmt.Errorf("error getting targets: %w", err)
 		}
 
 		if err := validate(body); err != nil {
-			return errors.Wrapf(err, "error validating response body %q", string(body))
+			return fmt.Errorf("error validating response body %q: %w", string(body), err)
 		}
 
 		return nil

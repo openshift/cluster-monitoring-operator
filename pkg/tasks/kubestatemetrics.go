@@ -16,10 +16,10 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
 )
 
 type KubeStateMetricsTask struct {
@@ -37,81 +37,81 @@ func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) 
 func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 	sa, err := t.factory.KubeStateMetricsServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics Service failed")
+		return fmt.Errorf("initializing kube-state-metrics Service failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics ServiceAccount failed")
+		return fmt.Errorf("reconciling kube-state-metrics ServiceAccount failed: %w", err)
 	}
 
 	cr, err := t.factory.KubeStateMetricsClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics ClusterRole failed")
+		return fmt.Errorf("initializing kube-state-metrics ClusterRole failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics ClusterRole failed")
+		return fmt.Errorf("reconciling kube-state-metrics ClusterRole failed: %w", err)
 	}
 
 	crb, err := t.factory.KubeStateMetricsClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics ClusterRoleBinding failed")
+		return fmt.Errorf("initializing kube-state-metrics ClusterRoleBinding failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics ClusterRoleBinding failed")
+		return fmt.Errorf("reconciling kube-state-metrics ClusterRoleBinding failed: %w", err)
 	}
 
 	rs, err := t.factory.KubeStateMetricsRBACProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics RBAC proxy Secret failed")
+		return fmt.Errorf("initializing kube-state-metrics RBAC proxy Secret failed: %w", err)
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, rs)
 	if err != nil {
-		return errors.Wrap(err, "creating kube-state-metrics RBAC proxy Secret failed")
+		return fmt.Errorf("creating kube-state-metrics RBAC proxy Secret failed: %w", err)
 	}
 
 	svc, err := t.factory.KubeStateMetricsService()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics Service failed")
+		return fmt.Errorf("initializing kube-state-metrics Service failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics Service failed")
+		return fmt.Errorf("reconciling kube-state-metrics Service failed: %w", err)
 	}
 
 	dep, err := t.factory.KubeStateMetricsDeployment()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics Deployment failed")
+		return fmt.Errorf("initializing kube-state-metrics Deployment failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateDeployment(ctx, dep)
 	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics Deployment failed")
+		return fmt.Errorf("reconciling kube-state-metrics Deployment failed: %w", err)
 	}
 
 	pr, err := t.factory.KubeStateMetricsPrometheusRule()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics rules PrometheusRule failed")
+		return fmt.Errorf("initializing kube-state-metrics rules PrometheusRule failed: %w", err)
 	}
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling kube-state-metrics rules PrometheusRule failed")
+		return fmt.Errorf("reconciling kube-state-metrics rules PrometheusRule failed: %w", err)
 	}
 
 	sms, err := t.factory.KubeStateMetricsServiceMonitors()
 	if err != nil {
-		return errors.Wrap(err, "initializing kube-state-metrics ServiceMonitors failed")
+		return fmt.Errorf("initializing kube-state-metrics ServiceMonitors failed: %w", err)
 	}
 	for _, sm := range sms {
 		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 		if err != nil {
-			return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+			return fmt.Errorf("reconciling %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
 		}
 	}
 

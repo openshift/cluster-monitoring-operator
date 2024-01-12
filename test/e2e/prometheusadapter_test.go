@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"testing"
@@ -23,7 +24,6 @@ import (
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -62,8 +62,8 @@ func TestMetricsAPIAvailability(t *testing.T) {
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
 		metricsService, err := f.APIServicesClient.ApiregistrationV1().APIServices().Get(ctx, "v1beta1.metrics.k8s.io", metav1.GetOptions{})
-		lastErr = errors.Wrap(err, "getting metrics APIService failed")
 		if err != nil {
+			lastErr = fmt.Errorf("getting metrics APIService failed: %w", err)
 			return false, nil
 		}
 		if !isAPIServiceAvailable(metricsService.Status.Conditions) {
@@ -85,13 +85,13 @@ func TestNodeMetricsPresence(t *testing.T) {
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
 		nodes, err := f.KubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-		lastErr = errors.Wrap(err, "getting nodes list failed")
 		if err != nil {
+			lastErr = fmt.Errorf("getting nodes list failed: %w", err)
 			return false, nil
 		}
 		nodeMetrics, err := f.MetricsClient.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{})
-		lastErr = errors.Wrap(err, "getting metrics list failed")
 		if err != nil {
+			lastErr = fmt.Errorf("getting metrics list failed: %w", err)
 			return false, nil
 		}
 		if len(nodes.Items) != len(nodeMetrics.Items) {
@@ -123,13 +123,13 @@ func TestPodMetricsPresence(t *testing.T) {
 	ctx := context.Background()
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
 		pods, err := f.KubeClient.CoreV1().Pods("").List(ctx, metav1.ListOptions{FieldSelector: "status.phase=Running"})
-		lastErr = errors.Wrap(err, "getting pods list failed")
 		if err != nil {
+			lastErr = fmt.Errorf("getting pods list failed: %w", err)
 			return false, nil
 		}
 		podMetrics, err := f.MetricsClient.MetricsV1beta1().PodMetricses("").List(ctx, metav1.ListOptions{})
-		lastErr = errors.Wrap(err, "getting metrics list failed")
 		if err != nil {
+			lastErr = fmt.Errorf("getting metrics list failed: %w", err)
 			return false, nil
 		}
 		if len(pods.Items) != len(podMetrics.Items) {
@@ -174,7 +174,7 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 			return framework.Poll(time.Second, 5*time.Minute, func() error {
 				viewRole, err := f.KubeClient.RbacV1().ClusterRoles().Get(ctx, clusterRole, metav1.GetOptions{})
 				if err != nil {
-					return errors.Wrapf(err, "getting %s cluster role failed", clusterRole)
+					return fmt.Errorf("getting %s cluster role failed: %w", clusterRole, err)
 				}
 
 				for _, rule := range viewRole.Rules {
@@ -268,7 +268,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		})
 
 		if err != nil {
-			return errors.Wrap(err, "error listing prometheus adapter secrets")
+			return fmt.Errorf("error listing prometheus adapter secrets: %w", err)
 		}
 
 		if len(secrets.Items) == 0 {
@@ -290,7 +290,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-adapter", metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrap(err, "getting prometheus-adapter deployment failed")
+			return fmt.Errorf("getting prometheus-adapter deployment failed: %w", err)
 		}
 
 		for _, v := range d.Spec.Template.Spec.Volumes {

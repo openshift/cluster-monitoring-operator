@@ -17,6 +17,7 @@ package operator
 import (
 	"context"
 	"crypto/x509/pkix"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -25,15 +26,9 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	configv1client "github.com/openshift/client-go/config/clientset/versioned"
 	configv1informers "github.com/openshift/client-go/config/informers/externalversions"
-	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
-	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	"github.com/openshift/library-go/pkg/operator/csr"
 	"github.com/openshift/library-go/pkg/operator/events"
-	"github.com/pkg/errors"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,6 +42,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
+	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
 )
 
 // InfrastructureConfig stores information about the cluster infrastructure
@@ -200,7 +201,7 @@ func New(
 ) (*Operator, error) {
 	kclient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating kubernetes clientset client")
+		return nil, fmt.Errorf("creating kubernetes clientset client: %w", err)
 	}
 	controllerRef, err := events.GetControllerReferenceForCurrentPod(context.TODO(), kclient, namespace, nil)
 	if err != nil {
@@ -460,7 +461,7 @@ func New(
 	)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create client certificate controller")
+		return nil, fmt.Errorf("failed to create client certificate controller: %w", err)
 	}
 
 	// csrFederateController runs a controller that requests a client TLS
@@ -482,7 +483,7 @@ func New(
 	)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create federate certificate controller")
+		return nil, fmt.Errorf("failed to create federate certificate controller: %w", err)
 	}
 
 	o.controllersToRunFunc = append(o.controllersToRunFunc, csrFederateController.Run, csrController.Run)
@@ -501,7 +502,7 @@ func (o *Operator) Run(ctx context.Context) error {
 	go func() {
 		v, err := o.client.KubernetesInterface().Discovery().ServerVersion()
 		if err != nil {
-			errChan <- errors.Wrap(err, "communicating with server failed")
+			errChan <- fmt.Errorf("communicating with server failed: %w", err)
 			return
 		}
 		klog.V(4).Infof("Connection established (cluster-version: %s)", v)
@@ -658,7 +659,7 @@ func (o *Operator) processNextWorkItem(ctx context.Context) bool {
 
 	metrics.ReconcileStatus.Set(0)
 	klog.Errorf("Syncing %q failed", key)
-	utilruntime.HandleError(errors.Wrapf(err, "sync %q failed", key))
+	utilruntime.HandleError(fmt.Errorf("sync %q failed: %w", key, err))
 	o.queue.AddRateLimited(key)
 
 	return true
@@ -778,7 +779,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	if taskErrors := tl.RunAll(ctx); len(taskErrors) > 0 {
 		report := generateRunReportFromTaskErrors(taskErrors)
 		o.reportFailed(ctx, report)
-		return errors.Errorf("cluster monitoring update failed (reason: %s)", report.available.Reason())
+		return fmt.Errorf("cluster monitoring update failed (reason: %s)", report.available.Reason())
 	}
 
 	var degradedConditionMessage, degradedConditionReason string
@@ -856,7 +857,7 @@ func (o *Operator) loadProxyConfig(ctx context.Context) (*ProxyConfig, error) {
 		klog.Warningf("Error getting cluster proxy configuration: %v", err)
 
 		if o.lastKnowProxyConfig == nil {
-			return nil, errors.Errorf("no last known cluster proxy configuration")
+			return nil, fmt.Errorf("no last known cluster proxy configuration")
 		}
 
 		klog.Info("Using last known proxy configuration")
@@ -874,7 +875,7 @@ func (o *Operator) loadApiServerConfig(ctx context.Context) (*manifests.APIServe
 		klog.Warningf("failed to get api server config: %v", err)
 
 		if o.lastKnownApiServerConfig == nil {
-			return nil, errors.Errorf("no last known api server configuration")
+			return nil, fmt.Errorf("no last known api server configuration")
 		}
 	} else {
 		o.lastKnownApiServerConfig = manifests.NewAPIServerConfig(config)
@@ -900,7 +901,7 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
 		}
 		klog.Warningf("Error loading User Workload Monitoring %q ConfigMap. Error: %v", cmKey, err)
-		return nil, errors.Wrapf(err, "the User Workload Monitoring %q ConfigMap could not be loaded", cmKey)
+		return nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cmKey, err)
 	}
 
 	const configKey = "config.yaml"
@@ -913,7 +914,7 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 	uwc, err := manifests.NewUserConfigFromString(configContent)
 	if err != nil {
 		klog.Warningf("Error creating User Workload Configuration from %q key in the %q ConfigMap. Error: %v", configKey, cmKey, err)
-		return nil, errors.Wrapf(err, "the User Workload Configuration from %q key in the %q ConfigMap could not be parsed", configKey, cmKey)
+		return nil, fmt.Errorf("the User Workload Configuration from %q key in the %q ConfigMap could not be parsed: %w", configKey, cmKey, err)
 	}
 	return uwc, nil
 }
@@ -921,7 +922,7 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 func (o *Operator) loadConfig(key string, tp bool) (*manifests.Config, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
-		return nil, errors.Wrap(err, "an error occurred when retrieving the Cluster Monitoring ConfigMap")
+		return nil, fmt.Errorf("an error occurred when retrieving the Cluster Monitoring ConfigMap: %w", err)
 	}
 
 	if !found {
@@ -938,7 +939,7 @@ func (o *Operator) loadConfig(key string, tp bool) (*manifests.Config, error) {
 
 	cParsed, err := manifests.NewConfigFromString(configContent, tp)
 	if err != nil {
-		return nil, errors.Wrap(err, "the Cluster Monitoring ConfigMap could not be parsed")
+		return nil, fmt.Errorf("the Cluster Monitoring ConfigMap could not be parsed: %w", err)
 	}
 
 	return cParsed, nil

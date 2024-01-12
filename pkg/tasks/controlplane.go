@@ -16,10 +16,10 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
 )
 
 type ControlPlaneTask struct {
@@ -39,23 +39,24 @@ func NewControlPlaneTask(client *client.Client, factory *manifests.Factory, conf
 func (t *ControlPlaneTask) Run(ctx context.Context) error {
 	pr, err := t.factory.ControlPlanePrometheusRule()
 	if err != nil {
-		return errors.Wrap(err, "initializing kubernetes mixin rules PrometheusRule failed")
+		return fmt.Errorf("initializing kubernetes mixin rules PrometheusRule failed: %w", err)
 	}
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling kubernetes mixin rules PrometheusRule failed")
+		return fmt.Errorf("reconciling kubernetes mixin rules PrometheusRule failed: %w", err)
 	}
 
 	sms, err := t.factory.ControlPlaneKubeletServiceMonitors()
 	if err != nil {
-		return errors.Wrap(err, "initializing control-plane kubelet ServiceMonitors failed")
+		return fmt.Errorf("initializing control-plane kubelet ServiceMonitors failed: %w", err)
 	}
 
 	for _, sm := range sms {
 		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 		if err != nil {
-			return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+			return fmt.Errorf("reconciling %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
 		}
 	}
+
 	return nil
 }

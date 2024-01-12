@@ -19,6 +19,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"net"
@@ -33,9 +34,7 @@ import (
 	consolev1 "github.com/openshift/api/console/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 	"github.com/openshift/library-go/pkg/crypto"
-	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"golang.org/x/exp/slices"
 	yaml2 "gopkg.in/yaml.v2"
@@ -50,6 +49,8 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
 	k8syaml "sigs.k8s.io/yaml"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/promqlgen"
 )
 
 const (
@@ -950,7 +951,7 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 
 		pattern, err := regexListToArg(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Systemd.Units)
 		if err != nil {
-			return nil, fmt.Errorf("systemd unit pattern valiation error: %s", err)
+			return nil, fmt.Errorf("systemd unit pattern valiation error: %w", err)
 		}
 		args = setArg(args, "--collector.systemd.unit-include=", pattern)
 	} else {
@@ -1404,7 +1405,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && f.config.RemoteWrite {
 		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
 		if err != nil {
-			return nil, errors.Wrap(err, "generate label selector relabel config")
+			return nil, fmt.Errorf("generate label selector relabel config: %w", err)
 		}
 
 		p.Spec.Secrets = append(p.Spec.Secrets, telemetrySecret.GetName())
@@ -1594,10 +1595,10 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 	dirPath := filepath.Dir(queryLogFile)
 	// queryLogFile is not an absolute path nor a simple filename
 	if !filepath.IsAbs(queryLogFile) && dirPath != "." {
-		return errors.Wrap(ErrConfigValidation, `relative paths to query log file are not supported`)
+		return fmt.Errorf(`relative paths to query log file are not supported: %w`, ErrConfigValidation)
 	}
 	if dirPath == "/" {
-		return errors.Wrap(ErrConfigValidation, `query log file can't be stored on the root directory`)
+		return fmt.Errorf(`query log file can't be stored on the root directory: %w`, ErrConfigValidation)
 	}
 
 	// /prometheus is where Prometheus will store the TSDB so it is
@@ -1614,7 +1615,7 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 	if dirPath == "/dev" {
 		base := filepath.Base(p.Spec.QueryLogFile)
 		if base != "stdout" && base != "stderr" && base != "null" {
-			return errors.Wrap(ErrConfigValidation, `query log file can't be stored on a new file on the dev directory`)
+			return fmt.Errorf(`query log file can't be stored on a new file on the dev directory: %w`, ErrConfigValidation)
 		}
 		return nil
 	}
@@ -1964,7 +1965,7 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 	)
 
 	if r.Error() != nil {
-		return nil, errors.Wrap(r.err, "value not found in extension api server authentication configmap")
+		return nil, fmt.Errorf("value not found in extension api server authentication configmap: %w", r.err)
 	}
 
 	spec.Containers[0].Args = append(spec.Containers[0].Args,
@@ -2063,7 +2064,7 @@ func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap
 	)
 
 	if r.Error() != nil {
-		return nil, errors.Wrap(r.err, "value not found in extension api server authentication configmap")
+		return nil, fmt.Errorf("value not found in extension api server authentication configmap: %w", r.err)
 	}
 
 	h := fnv.New64()
@@ -2122,8 +2123,7 @@ func (f *Factory) MetricsServerDeployment() (*appsv1.Deployment, error) {
 	containers := podSpec.Containers
 	idx := slices.IndexFunc(containers, containerNameEquals("metrics-server"))
 	if idx < 0 {
-		return nil, errors.Errorf(
-			"failed to find metrics-server container %q in deployment %q",
+		return nil, fmt.Errorf("failed to find metrics-server container %q in deployment %q",
 			"metrics-server", MetricsServerDeployment)
 	}
 
@@ -2585,11 +2585,9 @@ func (f *Factory) ControlPlaneKubeletMinimalServiceMonitor() (*monv1.ServiceMoni
 }
 
 func IsMissingPortInAddressError(err error) bool {
-	switch e := err.(type) {
-	case *net.AddrError:
-		if e.Err == "missing port in address" {
-			return true
-		}
+	var addrErr *net.AddrError
+	if errors.As(err, &addrErr) {
+		return addrErr.Err == "missing port in address"
 	}
 	return false
 }
@@ -2896,8 +2894,7 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 	containers := podSpec.Containers
 	idx := slices.IndexFunc(containers, containerNameEquals(MonitoringPluginDeploymentContainer))
 	if idx < 0 {
-		return nil, errors.Errorf(
-			"failed to find console-plugin container %q in deployment %q",
+		return nil, fmt.Errorf("failed to find console-plugin container %q in deployment %q",
 			MonitoringPluginDeploymentContainer, MonitoringPluginDeployment)
 	}
 
@@ -3051,7 +3048,7 @@ func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
 		}
 	}
 	if !found {
-		return nil, errors.Errorf("failed to find endpoint port %q", endpointPort)
+		return nil, fmt.Errorf("failed to find endpoint port %q", endpointPort)
 	}
 
 	return sm, nil
@@ -3195,7 +3192,7 @@ func (f *Factory) TelemeterClientSecret() (*v1.Secret, error) {
 
 	salt, err := GeneratePassword(32)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate Telemeter client salt: %v", err)
+		return nil, fmt.Errorf("failed to generate Telemeter client salt: %w", err)
 	}
 	s.Data["salt"] = []byte(salt)
 
@@ -3447,10 +3444,10 @@ func decodeYAML(manifest []byte, out interface{}) error {
 func (f *Factory) HashTrustedCA(caBundleCM *v1.ConfigMap, prefix string) (*v1.ConfigMap, error) {
 	caBundle, ok := caBundleCM.Data[TrustedCABundleKey]
 	if !ok {
-		return nil, errors.Errorf("CA bundle key %q missing", TrustedCABundleKey)
+		return nil, fmt.Errorf("CA bundle key %q missing", TrustedCABundleKey)
 	}
 	if caBundle == "" {
-		return nil, errors.Errorf("CA bundle key %q empty", TrustedCABundleKey)
+		return nil, fmt.Errorf("CA bundle key %q empty", TrustedCABundleKey)
 	}
 
 	h := fnv.New64()
@@ -3499,7 +3496,7 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 		m[k] = v
 	}
 	if err != nil {
-		return nil, errors.Wrap(err, "error hashing tls data")
+		return nil, fmt.Errorf("error hashing tls data: %w", err)
 	}
 	hash := strconv.FormatUint(h.Sum64(), 32)
 

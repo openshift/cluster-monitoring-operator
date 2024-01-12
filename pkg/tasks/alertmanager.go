@@ -16,11 +16,12 @@ package tasks
 
 import (
 	"context"
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type AlertmanagerTask struct {
@@ -52,65 +53,65 @@ func (t *AlertmanagerTask) Run(ctx context.Context) error {
 func (t *AlertmanagerTask) create(ctx context.Context) error {
 	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
-		return errors.Wrap(err, "checking for Route capability failed")
+		return fmt.Errorf("checking for Route capability failed: %w", err)
 	}
 	if hasRoutes {
 		r, err := t.factory.AlertmanagerRoute()
 		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager Route failed")
+			return fmt.Errorf("initializing Alertmanager Route failed: %w", err)
 		}
 
 		err = t.client.CreateOrUpdateRoute(ctx, r)
 		if err != nil {
-			return errors.Wrap(err, "reconciling Alertmanager Route failed")
+			return fmt.Errorf("reconciling Alertmanager Route failed: %w", err)
 		}
 
 		_, err = t.client.WaitForRouteReady(ctx, r)
 		if err != nil {
-			return errors.Wrap(err, "waiting for Alertmanager Route to become ready failed")
+			return fmt.Errorf("waiting for Alertmanager Route to become ready failed: %w", err)
 		}
 	}
 
 	s, err := t.factory.AlertmanagerConfig()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager configuration Secret failed")
+		return fmt.Errorf("initializing Alertmanager configuration Secret failed: %w", err)
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, s)
 	if err != nil {
-		return errors.Wrap(err, "creating Alertmanager configuration Secret failed")
+		return fmt.Errorf("creating Alertmanager configuration Secret failed: %w", err)
 	}
 
 	pdb, err := t.factory.AlertmanagerPodDisruptionBudget()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager PodDisruptionBudget object failed")
+		return fmt.Errorf("initializing Alertmanager PodDisruptionBudget object failed: %w", err)
 	}
 
 	if pdb != nil {
 		err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb)
 		if err != nil {
-			return errors.Wrap(err, "reconciling Alertmanager PodDisruptionBudget object failed")
+			return fmt.Errorf("reconciling Alertmanager PodDisruptionBudget object failed: %w", err)
 		}
 	}
 
 	rs, err := t.factory.AlertmanagerRBACProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager RBAC proxy Secret failed")
+		return fmt.Errorf("initializing Alertmanager RBAC proxy Secret failed: %w", err)
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, rs)
 	if err != nil {
-		return errors.Wrap(err, "creating Alertmanager RBAC proxy Secret failed")
+		return fmt.Errorf("creating Alertmanager RBAC proxy Secret failed: %w", err)
 	}
 
 	rsm, err := t.factory.AlertmanagerRBACProxyMetricSecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager RBAC proxy metric Secret failed")
+		return fmt.Errorf("initializing Alertmanager RBAC proxy metric Secret failed: %w", err)
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, rsm)
 	if err != nil {
-		return errors.Wrap(err, "creating Alertmanager RBAC proxy metric Secret failed")
+		return fmt.Errorf("creating Alertmanager RBAC proxy metric Secret failed: %w", err)
 	}
 
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets != nil {
@@ -120,66 +121,66 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 				Namespace: t.client.Namespace(),
 			}
 			if _, err = t.client.WaitForSecretByNsName(ctx, obj); err != nil {
-				return errors.Wrapf(err, "failed to find Alertmanager secret %q", secret)
+				return fmt.Errorf("failed to find Alertmanager secret %q: %w", secret, err)
 			}
 		}
 	}
 
 	cr, err := t.factory.AlertmanagerClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager ClusterRole failed")
+		return fmt.Errorf("initializing Alertmanager ClusterRole failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Alertmanager ClusterRole failed")
+		return fmt.Errorf("reconciling Alertmanager ClusterRole failed: %w", err)
 	}
 
 	crb, err := t.factory.AlertmanagerClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager ClusterRoleBinding failed")
+		return fmt.Errorf("initializing Alertmanager ClusterRoleBinding failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Alertmanager ClusterRoleBinding failed")
+		return fmt.Errorf("reconciling Alertmanager ClusterRoleBinding failed: %w", err)
 	}
 
 	sa, err := t.factory.AlertmanagerServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager ServiceAccount failed")
+		return fmt.Errorf("initializing Alertmanager ServiceAccount failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Alertmanager ServiceAccount failed")
+		return fmt.Errorf("reconciling Alertmanager ServiceAccount failed: %w", err)
 	}
 
 	ps, err := t.factory.AlertmanagerProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager proxy Secret failed")
+		return fmt.Errorf("initializing Alertmanager proxy Secret failed: %w", err)
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, ps)
 	if err != nil {
-		return errors.Wrap(err, "creating Alertmanager proxy Secret failed")
+		return fmt.Errorf("creating Alertmanager proxy Secret failed: %w", err)
 	}
 
 	svc, err := t.factory.AlertmanagerService()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager Service failed")
+		return fmt.Errorf("initializing Alertmanager Service failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling Alertmanager Service failed")
+		return fmt.Errorf("reconciling Alertmanager Service failed: %w", err)
 	}
 
 	{
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
 		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager CA bundle ConfigMap failed")
+			return fmt.Errorf("initializing Alertmanager CA bundle ConfigMap failed: %w", err)
 		}
 
 		cbs := &caBundleSyncer{
@@ -189,141 +190,144 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		}
 		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
 		if err != nil {
-			return errors.Wrap(err, "syncing Alertmanager trusted CA bundle ConfigMap failed")
+			return fmt.Errorf("syncing Alertmanager trusted CA bundle ConfigMap failed: %w", err)
 		}
 
 		a, err := t.factory.AlertmanagerMain(trustedCA)
 		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager object failed")
+			return fmt.Errorf("initializing Alertmanager object failed: %w", err)
 		}
 
 		err = t.client.CreateOrUpdateAlertmanager(ctx, a)
 		if err != nil {
-			return errors.Wrap(err, "reconciling Alertmanager object failed")
+			return fmt.Errorf("reconciling Alertmanager object failed: %w", err)
 		}
 		err = t.client.WaitForAlertmanager(ctx, a)
 		if err != nil {
-			return errors.Wrap(err, "waiting for Alertmanager object changes failed")
+			return fmt.Errorf("waiting for Alertmanager object changes failed: %w", err)
 		}
 	}
 	pr, err := t.factory.AlertmanagerPrometheusRule()
 	if err != nil {
-		return errors.Wrap(err, "initializing alertmanager rules PrometheusRule failed")
+		return fmt.Errorf("initializing alertmanager rules PrometheusRule failed: %w", err)
 	}
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling alertmanager rules PrometheusRule failed")
+		return fmt.Errorf("reconciling alertmanager rules PrometheusRule failed: %w", err)
 	}
 
 	smam, err := t.factory.AlertmanagerServiceMonitor()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")
+		return fmt.Errorf("initializing Alertmanager ServiceMonitor failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
-	return errors.Wrap(err, "reconciling Alertmanager ServiceMonitor failed")
+	if err != nil {
+		return fmt.Errorf("reconciling Alertmanager ServiceMonitor failed: %w", err)
+	}
+	return nil
 }
 
 func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 	r, err := t.factory.AlertmanagerRoute()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager Route failed")
+		return fmt.Errorf("initializing Alertmanager Route failed: %w", err)
 	}
 
 	err = t.client.DeleteRoute(ctx, r)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager Route failed")
+		return fmt.Errorf("deleting Alertmanager Route failed: %w", err)
 	}
 
 	s, err := t.factory.AlertmanagerConfig()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager configuration Secret failed")
+		return fmt.Errorf("initializing Alertmanager configuration Secret failed: %w", err)
 	}
 
 	err = t.client.DeleteSecret(ctx, s)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager configuration Secret failed")
+		return fmt.Errorf("deleting Alertmanager configuration Secret failed: %w", err)
 	}
 
 	rs, err := t.factory.AlertmanagerRBACProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager RBAC proxy Secret failed")
+		return fmt.Errorf("initializing Alertmanager RBAC proxy Secret failed: %w", err)
 	}
 
 	err = t.client.DeleteSecret(ctx, rs)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager RBAC proxy Secret failed")
+		return fmt.Errorf("deleting Alertmanager RBAC proxy Secret failed: %w", err)
 	}
 
 	rsm, err := t.factory.AlertmanagerRBACProxyMetricSecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager RBAC proxy metric Secret failed")
+		return fmt.Errorf("initializing Alertmanager RBAC proxy metric Secret failed: %w", err)
 	}
 
 	err = t.client.DeleteSecret(ctx, rsm)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager RBAC proxy metric Secret failed")
+		return fmt.Errorf("deleting Alertmanager RBAC proxy metric Secret failed: %w", err)
 	}
 
 	cr, err := t.factory.AlertmanagerClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager ClusterRole failed")
+		return fmt.Errorf("initializing Alertmanager ClusterRole failed: %w", err)
 	}
 
 	err = t.client.DeleteClusterRole(ctx, cr)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager ClusterRole failed")
+		return fmt.Errorf("deleting Alertmanager ClusterRole failed: %w", err)
 	}
 
 	crb, err := t.factory.AlertmanagerClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager ClusterRoleBinding failed")
+		return fmt.Errorf("initializing Alertmanager ClusterRoleBinding failed: %w", err)
 	}
 
 	err = t.client.DeleteClusterRoleBinding(ctx, crb)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager ClusterRoleBinding failed")
+		return fmt.Errorf("deleting Alertmanager ClusterRoleBinding failed: %w", err)
 	}
 
 	sa, err := t.factory.AlertmanagerServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager ServiceAccount failed")
+		return fmt.Errorf("initializing Alertmanager ServiceAccount failed: %w", err)
 	}
 
 	err = t.client.DeleteServiceAccount(ctx, sa)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager ServiceAccount failed")
+		return fmt.Errorf("deleting Alertmanager ServiceAccount failed: %w", err)
 	}
 
 	ps, err := t.factory.AlertmanagerProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager proxy Secret failed")
+		return fmt.Errorf("initializing Alertmanager proxy Secret failed: %w", err)
 	}
 
 	err = t.client.DeleteSecret(ctx, ps)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager proxy Secret failed")
+		return fmt.Errorf("deleting Alertmanager proxy Secret failed: %w", err)
 	}
 
 	svc, err := t.factory.AlertmanagerService()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager Service failed")
+		return fmt.Errorf("initializing Alertmanager Service failed: %w", err)
 	}
 
 	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "deleting Alertmanager Service failed")
+		return fmt.Errorf("deleting Alertmanager Service failed: %w", err)
 	}
 
 	pdb, err := t.factory.AlertmanagerPodDisruptionBudget()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager PodDisruptionBudget object failed")
+		return fmt.Errorf("initializing Alertmanager PodDisruptionBudget object failed: %w", err)
 	}
 
 	if pdb != nil {
 		err = t.client.DeletePodDisruptionBudget(ctx, pdb)
 		if err != nil {
-			return errors.Wrap(err, "deleting Alertmanager PodDisruptionBudget object failed")
+			return fmt.Errorf("deleting Alertmanager PodDisruptionBudget object failed: %w", err)
 		}
 	}
 
@@ -331,21 +335,21 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
 		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager CA bundle ConfigMap failed")
+			return fmt.Errorf("initializing Alertmanager CA bundle ConfigMap failed: %w", err)
 		}
 
 		if err := t.client.DeleteConfigMap(ctx, trustedCA); err != nil {
-			return errors.Wrap(err, "deleting Alertmanager trusted CA bundle failed")
+			return fmt.Errorf("deleting Alertmanager trusted CA bundle failed: %w", err)
 		}
 
 		a, err := t.factory.AlertmanagerMain(trustedCA)
 		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager object failed")
+			return fmt.Errorf("initializing Alertmanager object failed: %w", err)
 		}
 
 		err = t.client.DeleteAlertmanager(ctx, a)
 		if err != nil {
-			return errors.Wrap(err, "deleting Alertmanager object failed")
+			return fmt.Errorf("deleting Alertmanager object failed: %w", err)
 		}
 	}
 
@@ -353,19 +357,22 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 	if !t.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		pr, err := t.factory.AlertmanagerPrometheusRule()
 		if err != nil {
-			return errors.Wrap(err, "initializing alertmanager rules PrometheusRule failed")
+			return fmt.Errorf("initializing alertmanager rules PrometheusRule failed: %w", err)
 		}
 		err = t.client.DeletePrometheusRule(ctx, pr)
 		if err != nil {
-			return errors.Wrap(err, "deleting alertmanager rules PrometheusRule failed")
+			return fmt.Errorf("deleting alertmanager rules PrometheusRule failed: %w", err)
 		}
 	}
 
 	smam, err := t.factory.AlertmanagerServiceMonitor()
 	if err != nil {
-		return errors.Wrap(err, "initializing Alertmanager ServiceMonitor failed")
+		return fmt.Errorf("initializing Alertmanager ServiceMonitor failed: %w", err)
 	}
 
 	err = t.client.DeleteServiceMonitor(ctx, smam)
-	return errors.Wrap(err, "deleting Alertmanager ServiceMonitor failed")
+	if err != nil {
+		return fmt.Errorf("deleting Alertmanager ServiceMonitor failed: %w", err)
+	}
+	return nil
 }

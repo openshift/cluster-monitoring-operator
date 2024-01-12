@@ -15,11 +15,13 @@
 package manifests_test
 
 import (
-	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"reflect"
 	"strings"
 	"testing"
+
+	configv1 "github.com/openshift/api/config/v1"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 func TestGetTLSCiphers(t *testing.T) {

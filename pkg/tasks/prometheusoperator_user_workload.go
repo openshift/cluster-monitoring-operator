@@ -16,10 +16,10 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
 )
 
 type PrometheusOperatorUserWorkloadTask struct {
@@ -47,181 +47,187 @@ func (t *PrometheusOperatorUserWorkloadTask) Run(ctx context.Context) error {
 func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 	sa, err := t.factory.PrometheusOperatorUserWorkloadServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceAccount failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator ServiceAccount failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator ServiceAccount failed")
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator ServiceAccount failed: %w", err)
 	}
 
 	cr, err := t.factory.PrometheusOperatorUserWorkloadClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ClusterRole failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator ClusterRole failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator ClusterRole failed")
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator ClusterRole failed: %w", err)
 	}
 
 	crb, err := t.factory.PrometheusOperatorUserWorkloadClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ClusterRoleBinding failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator ClusterRoleBinding failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator ClusterRoleBinding failed")
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator ClusterRoleBinding failed: %w", err)
 	}
 
 	svc, err := t.factory.PrometheusOperatorUserWorkloadService()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Service failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator Service failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator Service failed")
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator Service failed: %w", err)
 	}
 
 	rpc, err := t.factory.PrometheusOperatorUserWorkloadCRBACProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator RBAC proxy secret failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator RBAC proxy secret failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateSecret(ctx, rpc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator RBAC proxy secret failed")
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator RBAC proxy secret failed: %w", err)
 	}
 
 	d, err := t.factory.PrometheusOperatorUserWorkloadDeployment()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Deployment failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator Deployment failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateDeployment(ctx, d)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator Deployment failed")
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator Deployment failed: %w", err)
 	}
 
 	arb, err := t.factory.PrometheusUserWorkloadAlertManagerRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Alertmanager Role Binding failed")
+		return fmt.Errorf("initializing UserWorkload Alertmanager Role Binding failed: %w", err)
 	}
 
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
 		if err = t.client.CreateOrUpdateRoleBinding(ctx, arb); err != nil {
-			return errors.Wrap(err, "reconciling UserWorkload Alertmanager Role Binding failed")
+			return fmt.Errorf("reconciling UserWorkload Alertmanager Role Binding failed: %w", err)
 		}
 	} else {
 		if err = t.client.DeleteRoleBinding(ctx, arb); err != nil {
-			return errors.Wrap(err, "deleting UserWorkload Alertmanager Role Binding failed")
+			return fmt.Errorf("deleting UserWorkload Alertmanager Role Binding failed: %w", err)
 		}
 	}
 
 	userCM, err := t.factory.PrometheusUserWorkloadConfigMap()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload ConfigMap failed")
+		return fmt.Errorf("initializing UserWorkload ConfigMap failed: %w", err)
 	}
 
 	_, err = t.client.CreateIfNotExistConfigMap(ctx, userCM)
 	if err != nil {
-		return errors.Wrap(err, "reconciling UserWorkload ConfigMap failed")
+		return fmt.Errorf("reconciling UserWorkload ConfigMap failed: %w", err)
 	}
 
 	// The CRs will be created externally,
 	// but we still have to wait for them here.
 	err = t.client.AssurePrometheusOperatorCRsExist(ctx)
 	if err != nil {
-		return errors.Wrap(err, "waiting for Prometheus Operator CRs to become available failed")
+		return fmt.Errorf("waiting for Prometheus Operator CRs to become available failed: %w", err)
 	}
 
 	smpo, err := t.factory.PrometheusOperatorUserWorkloadServiceMonitor()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceMonitor failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator ServiceMonitor failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smpo)
-	return errors.Wrap(err, "reconciling UserWorkload Prometheus Operator ServiceMonitor failed")
+	if err != nil {
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator ServiceMonitor failed: %w", err)
+	}
+	return nil
 }
 
 func (t *PrometheusOperatorUserWorkloadTask) destroy(ctx context.Context) error {
 	dep, err := t.factory.PrometheusOperatorUserWorkloadDeployment()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Deployment failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator Deployment failed: %w", err)
 	}
 
 	err = t.client.DeleteDeployment(ctx, dep)
 	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator Deployment failed")
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator Deployment failed: %w", err)
 	}
 
 	sm, err := t.factory.PrometheusOperatorUserWorkloadServiceMonitor()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceMonitor failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator ServiceMonitor failed: %w", err)
 	}
 
 	err = t.client.DeleteServiceMonitor(ctx, sm)
 	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator ServiceMonitor failed")
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator ServiceMonitor failed: %w", err)
 	}
 
 	svc, err := t.factory.PrometheusOperatorUserWorkloadService()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator Service failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator Service failed: %w", err)
 	}
 
 	err = t.client.DeleteService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator Service failed")
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator Service failed: %w", err)
 	}
 
 	crb, err := t.factory.PrometheusOperatorUserWorkloadClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ClusterRoleBinding failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator ClusterRoleBinding failed: %w", err)
 	}
 
 	err = t.client.DeleteClusterRoleBinding(ctx, crb)
 	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator ClusterRoleBinding failed")
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator ClusterRoleBinding failed: %w", err)
 	}
 
 	arb, err := t.factory.PrometheusUserWorkloadAlertManagerRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Alertmanager Role Binding failed")
+		return fmt.Errorf("initializing UserWorkload Alertmanager Role Binding failed: %w", err)
 	}
 
 	err = t.client.DeleteRoleBinding(ctx, arb)
 	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Alertmanager Role Binding failed")
+		return fmt.Errorf("deleting UserWorkload Alertmanager Role Binding failed: %w", err)
 	}
 
 	rpc, err := t.factory.PrometheusOperatorUserWorkloadCRBACProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator RBAC proxy secret failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator RBAC proxy secret failed: %w", err)
 	}
 
 	err = t.client.DeleteSecret(ctx, rpc)
 	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator RBAC proxy secret failed")
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator RBAC proxy secret failed: %w", err)
 	}
 
 	cr, err := t.factory.PrometheusOperatorUserWorkloadClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ClusterRole failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator ClusterRole failed: %w", err)
 	}
 
 	err = t.client.DeleteClusterRole(ctx, cr)
 	if err != nil {
-		return errors.Wrap(err, "deleting UserWorkload Prometheus Operator ClusterRoleBinding failed")
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator ClusterRoleBinding failed: %w", err)
 	}
 
 	sa, err := t.factory.PrometheusOperatorUserWorkloadServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing UserWorkload Prometheus Operator ServiceAccount failed")
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator ServiceAccount failed: %w", err)
 	}
 
 	err = t.client.DeleteServiceAccount(ctx, sa)
-	return errors.Wrap(err, "deleting Telemeter client ServiceAccount failed")
+	if err != nil {
+		return fmt.Errorf("deleting Telemeter client ServiceAccount failed: %w", err)
+	}
+	return nil
 }

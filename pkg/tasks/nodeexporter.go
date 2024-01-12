@@ -16,10 +16,10 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
 )
 
 type NodeExporterTask struct {
@@ -37,91 +37,91 @@ func NewNodeExporterTask(client *client.Client, factory *manifests.Factory) *Nod
 func (t *NodeExporterTask) Run(ctx context.Context) error {
 	scc, err := t.factory.NodeExporterSecurityContextConstraints()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter SecurityContextConstraints failed")
+		return fmt.Errorf("initializing node-exporter SecurityContextConstraints failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateSecurityContextConstraints(ctx, scc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter SecurityContextConstraints failed")
+		return fmt.Errorf("reconciling node-exporter SecurityContextConstraints failed: %w", err)
 	}
 
 	sa, err := t.factory.NodeExporterServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ServiceAccount failed")
+		return fmt.Errorf("initializing node-exporter ServiceAccount failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ServiceAccount failed")
+		return fmt.Errorf("reconciling node-exporter ServiceAccount failed: %w", err)
 	}
 
 	cr, err := t.factory.NodeExporterClusterRole()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ClusterRole failed")
+		return fmt.Errorf("initializing node-exporter ClusterRole failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRole(ctx, cr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ClusterRole failed")
+		return fmt.Errorf("reconciling node-exporter ClusterRole failed: %w", err)
 	}
 
 	crb, err := t.factory.NodeExporterClusterRoleBinding()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ClusterRoleBinding failed")
+		return fmt.Errorf("initializing node-exporter ClusterRoleBinding failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
 	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter ClusterRoleBinding failed")
+		return fmt.Errorf("reconciling node-exporter ClusterRoleBinding failed: %w", err)
 	}
 
 	nes, err := t.factory.NodeExporterRBACProxySecret()
 	if err != nil {
-		return errors.Wrap(err, "intializing node-exporter rbac proxy secret failed")
+		return fmt.Errorf("intializing node-exporter rbac proxy secret failed: %w", err)
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, nes)
 	if err != nil {
-		return errors.Wrap(err, "creating node-exporter rbac proxy secret failed")
+		return fmt.Errorf("creating node-exporter rbac proxy secret failed: %w", err)
 	}
 	svc, err := t.factory.NodeExporterService()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter Service failed")
+		return fmt.Errorf("initializing node-exporter Service failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateService(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter Service failed")
+		return fmt.Errorf("reconciling node-exporter Service failed: %w", err)
 	}
 
 	ds, err := t.factory.NodeExporterDaemonSet()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter DaemonSet failed")
+		return fmt.Errorf("initializing node-exporter DaemonSet failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateDaemonSet(ctx, ds)
 	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter DaemonSet failed")
+		return fmt.Errorf("reconciling node-exporter DaemonSet failed: %w", err)
 	}
 
 	pr, err := t.factory.NodeExporterPrometheusRule()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter rules PrometheusRule failed")
+		return fmt.Errorf("initializing node-exporter rules PrometheusRule failed: %w", err)
 	}
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
 	if err != nil {
-		return errors.Wrap(err, "reconciling node-exporter rules PrometheusRule failed")
+		return fmt.Errorf("reconciling node-exporter rules PrometheusRule failed: %w", err)
 	}
 
 	sms, err := t.factory.NodeExporterServiceMonitors()
 	if err != nil {
-		return errors.Wrap(err, "initializing node-exporter ServiceMonitors failed")
+		return fmt.Errorf("initializing node-exporter ServiceMonitors failed: %w", err)
 	}
 
 	for _, sm := range sms {
 		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 		if err != nil {
-			return errors.Wrapf(err, "reconciling %s/%s ServiceMonitor failed", sm.Namespace, sm.Name)
+			return fmt.Errorf("reconciling %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
 		}
 	}
 

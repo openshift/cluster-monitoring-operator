@@ -22,8 +22,6 @@ import (
 	"time"
 
 	osmv1 "github.com/openshift/api/monitoring/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/pkg/errors"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +31,8 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 )
 
 const (
@@ -229,8 +229,7 @@ func (rc *RuleController) processNextWorkItem(ctx context.Context) bool {
 	defer rc.queue.Done(key)
 
 	if err := rc.sync(ctx, key.(string)); err != nil {
-		utilruntime.HandleError(errors.Wrap(err,
-			fmt.Sprintf("Error syncing AlertingRule (%s)", key.(string))))
+		utilruntime.HandleError(fmt.Errorf("Error syncing AlertingRule (%s): %w", key.(string), err))
 
 		// Re-queue failed sync.
 		rc.queue.AddRateLimited(key)

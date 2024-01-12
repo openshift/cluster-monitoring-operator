@@ -16,11 +16,12 @@ package tasks
 
 import (
 	"context"
+	"fmt"
+
+	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
-	"k8s.io/klog/v2"
 )
 
 type MonitoringPluginTask struct {
@@ -45,7 +46,7 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 	{
 		enabled, err := t.client.HasConsoleCapability(ctx)
 		if err != nil {
-			return errors.Wrap(err, "failed to determine if console capability is enabled")
+			return fmt.Errorf("failed to determine if console capability is enabled: %w", err)
 		}
 
 		if !enabled {
@@ -57,72 +58,72 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 	{ // plugin
 		plg, err := t.factory.MonitoringPlugin()
 		if err != nil {
-			return errors.Wrap(err, "initializing Console Plugin failed")
+			return fmt.Errorf("initializing Console Plugin failed: %w", err)
 		}
 
 		if err := t.client.CreateOrUpdateConsolePlugin(ctx, plg); err != nil {
-			return errors.Wrap(err, "reconciling Console Plugin failed")
+			return fmt.Errorf("reconciling Console Plugin failed: %w", err)
 		}
 
 		if err = t.client.RegisterConsolePlugin(ctx, plg.Name); err != nil {
-			return errors.Wrap(err, "registering Console Plugin failed")
+			return fmt.Errorf("registering Console Plugin failed: %w", err)
 		}
 	}
 
 	{ // config map
 		cm, err := t.factory.MonitoringPluginConfigMap()
 		if err != nil {
-			return errors.Wrap(err, "initializing Console Plugin ConfigMap failed")
+			return fmt.Errorf("initializing Console Plugin ConfigMap failed: %w", err)
 		}
 
 		if err = t.client.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-			return errors.Wrap(err, "reconciling Console Plugin ConfigMap failed")
+			return fmt.Errorf("reconciling Console Plugin ConfigMap failed: %w", err)
 		}
 	}
 
 	{ // service acccount
 		sa, err := t.factory.MonitoringPluginServiceAccount()
 		if err != nil {
-			return errors.Wrap(err, "initializing Console Plugin ServiceAccount failed")
+			return fmt.Errorf("initializing Console Plugin ServiceAccount failed: %w", err)
 		}
 
 		err = t.client.CreateOrUpdateServiceAccount(ctx, sa)
 		if err != nil {
-			return errors.Wrap(err, "reconciling Console Plugin ServiceAccount failed")
+			return fmt.Errorf("reconciling Console Plugin ServiceAccount failed: %w", err)
 		}
 	}
 
 	{ // service
 		svc, err := t.factory.MonitoringPluginService()
 		if err != nil {
-			return errors.Wrap(err, "initializing Console Plugin Service failed")
+			return fmt.Errorf("initializing Console Plugin Service failed: %w", err)
 		}
 
 		if err = t.client.CreateOrUpdateService(ctx, svc); err != nil {
-			return errors.Wrap(err, "reconciling Console Plugin Service failed")
+			return fmt.Errorf("reconciling Console Plugin Service failed: %w", err)
 		}
 	}
 
 	{ // deployment
 		d, err := t.factory.MonitoringPluginDeployment()
 		if err != nil {
-			return errors.Wrap(err, "initializing Console Plugin Deployment failed")
+			return fmt.Errorf("initializing Console Plugin Deployment failed: %w", err)
 		}
 
 		if err = t.client.CreateOrUpdateDeployment(ctx, d); err != nil {
-			return errors.Wrap(err, "reconciling Console Plugin Deployment failed")
+			return fmt.Errorf("reconciling Console Plugin Deployment failed: %w", err)
 		}
 	}
 
 	{ // pod disruption budget
 		pdb, err := t.factory.MonitoringPluginPodDisruptionBudget()
 		if err != nil {
-			return errors.Wrap(err, "initializing Console Plugin PDB failed")
+			return fmt.Errorf("initializing Console Plugin PDB failed: %w", err)
 		}
 
 		if pdb != nil {
 			if err = t.client.CreateOrUpdatePodDisruptionBudget(ctx, pdb); err != nil {
-				return errors.Wrap(err, "reconciling Console Plugin PDB failed")
+				return fmt.Errorf("reconciling Console Plugin PDB failed: %w", err)
 			}
 		}
 	}

@@ -16,16 +16,17 @@ package operator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/stretchr/testify/require"
+	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
-	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 func TestNewInfrastructureConfig(t *testing.T) {
@@ -93,7 +94,7 @@ func TestNewProxyConfig(t *testing.T) {
 	hasHTTPProxy := func(expected string) proxyConfigCheckFunc {
 		return proxyConfigCheckFunc(func(c *ProxyConfig) error {
 			if got := c.HTTPProxy(); got != expected {
-				return errors.Errorf("want http proxy %v, got %v", expected, got)
+				return fmt.Errorf("want http proxy %v, got %v", expected, got)
 			}
 			return nil
 		})
@@ -102,7 +103,7 @@ func TestNewProxyConfig(t *testing.T) {
 	hasHTTPSProxy := func(expected string) proxyConfigCheckFunc {
 		return proxyConfigCheckFunc(func(c *ProxyConfig) error {
 			if got := c.HTTPSProxy(); got != expected {
-				return errors.Errorf("want https proxy %v, got %v", expected, got)
+				return fmt.Errorf("want https proxy %v, got %v", expected, got)
 			}
 			return nil
 		})
@@ -111,7 +112,7 @@ func TestNewProxyConfig(t *testing.T) {
 	hasNoProxy := func(expected string) proxyConfigCheckFunc {
 		return proxyConfigCheckFunc(func(c *ProxyConfig) error {
 			if got := c.NoProxy(); got != expected {
-				return errors.Errorf("want noproxy %v, got %v", expected, got)
+				return fmt.Errorf("want noproxy %v, got %v", expected, got)
 			}
 			return nil
 		})

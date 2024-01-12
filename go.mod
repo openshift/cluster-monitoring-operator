@@ -12,7 +12,6 @@ require (
 	github.com/openshift/api v0.0.0-20231109185848-6cd72e415ddb
 	github.com/openshift/client-go v0.0.0-20230926161409-848405da69e1
 	github.com/openshift/library-go v0.0.0-20231128230659-785a9313da6c
-	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator v0.70.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.70.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.70.0
@@ -107,6 +106,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus-community/prom-label-proxy v0.7.0 // indirect
 	github.com/prometheus/alertmanager v0.26.0 // indirect

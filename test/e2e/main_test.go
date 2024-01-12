@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -24,7 +25,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
@@ -85,19 +86,19 @@ func testMain(m *testing.M) error {
 		)
 		body, loopErr = f.ThanosQuerierClient.PrometheusQuery("count(last_over_time(up{job=\"prometheus-k8s\"}[2m]))")
 		if loopErr != nil {
-			loopErr = errors.Wrap(loopErr, "error executing prometheus query")
+			loopErr = fmt.Errorf("error executing prometheus query: %w", loopErr)
 			return false, nil
 		}
 
 		v, loopErr = framework.GetFirstValueFromPromQuery(body)
 		if loopErr != nil {
-			loopErr = errors.Wrapf(loopErr, "error getting first value from prometheus response %q", string(body))
+			loopErr = fmt.Errorf("error getting first value from prometheus response %q: %w", string(body), loopErr)
 			return false, nil
 		}
 
 		i, loopErr := f.OperatorClient.GetInfrastructure(ctx, "cluster")
 		if loopErr != nil {
-			loopErr = errors.Wrapf(loopErr, "error getting cluster infrastructure")
+			loopErr = fmt.Errorf("error getting cluster infrastructure: %w", loopErr)
 			return false, nil
 		}
 
@@ -114,7 +115,7 @@ func testMain(m *testing.M) error {
 		return true, nil
 	})
 	if err != nil {
-		return errors.Wrapf(err, "wait for prometheus-k8s: %v", loopErr)
+		return fmt.Errorf("wait for prometheus-k8s: %w: %w", loopErr, err)
 	}
 
 	if m.Run() != 0 {

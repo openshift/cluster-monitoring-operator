@@ -16,13 +16,14 @@ package tasks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
 )
 
 type ConfigSharingTask struct {
@@ -43,39 +44,39 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 	var amURL, promURL, thanosURL *url.URL
 	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
-		return errors.Wrap(err, "checking for Route capability failed")
+		return fmt.Errorf("checking for Route capability failed: %w", err)
 	}
 	if hasRoutes {
 		promRoute, err := t.factory.PrometheusK8sAPIRoute()
 		if err != nil {
-			return errors.Wrap(err, "initializing Prometheus Route failed")
+			return fmt.Errorf("initializing Prometheus Route failed: %w", err)
 		}
 
 		promURL, err = t.client.GetRouteURL(ctx, promRoute)
 		if err != nil {
-			return errors.Wrap(err, "failed to retrieve Prometheus host")
+			return fmt.Errorf("failed to retrieve Prometheus host: %w", err)
 		}
 
 		if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
 			amRoute, err := t.factory.AlertmanagerRoute()
 			if err != nil {
-				return errors.Wrap(err, "initializing Alertmanager Route failed")
+				return fmt.Errorf("initializing Alertmanager Route failed: %w", err)
 			}
 
 			amURL, err = t.client.GetRouteURL(ctx, amRoute)
 			if err != nil {
-				return errors.Wrap(err, "failed to retrieve Alertmanager host")
+				return fmt.Errorf("failed to retrieve Alertmanager host: %w", err)
 			}
 		}
 
 		thanosRoute, err := t.factory.ThanosQuerierRoute()
 		if err != nil {
-			return errors.Wrap(err, "initializing Thanos Querier Route failed")
+			return fmt.Errorf("initializing Thanos Querier Route failed: %w", err)
 		}
 
 		thanosURL, err = t.client.GetRouteURL(ctx, thanosRoute)
 		if err != nil {
-			return errors.Wrap(err, "failed to retrieve Thanos Querier host")
+			return fmt.Errorf("failed to retrieve Thanos Querier host: %w", err)
 		}
 	}
 
@@ -87,13 +88,13 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 		// User-defined alerts are routed to the UWM Alertmanager.
 		svc, err = t.factory.AlertmanagerUserWorkloadService()
 		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager User Workload Service failed")
+			return fmt.Errorf("initializing Alertmanager User Workload Service failed: %w", err)
 		}
 	} else {
 		// User-defined alerts are routed to the platform Alertmanager.
 		svc, err = t.factory.AlertmanagerService()
 		if err != nil {
-			return errors.Wrap(err, "initializing Alertmanager Service failed")
+			return fmt.Errorf("initializing Alertmanager Service failed: %w", err)
 		}
 	}
 
@@ -124,7 +125,7 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 
 	err = t.client.CreateOrUpdateConfigMap(ctx, cm)
 	if err != nil {
-		return errors.Wrapf(err, "reconciling %s/%s Config ConfigMap failed", cm.Namespace, cm.Name)
+		return fmt.Errorf("reconciling %s/%s Config ConfigMap failed: %w", cm.Namespace, cm.Name, err)
 	}
 
 	return nil

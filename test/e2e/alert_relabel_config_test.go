@@ -16,12 +16,14 @@ package e2e
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	osmv1 "github.com/openshift/api/monitoring/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	"github.com/pkg/errors"
+
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
@@ -70,7 +72,7 @@ func TestAlertRelabelConfig(t *testing.T) {
 	// Try to create an invalid AlertRelabelConfig.
 	_, err := relabelConfigs.Create(ctx, arc, metav1.CreateOptions{})
 	if !apierrors.IsInvalid(err) {
-		t.Fatal(errors.Wrap(err, "invalid AlertRelabelConfig wasn't rejected."))
+		t.Fatal(fmt.Errorf("invalid AlertRelabelConfig wasn't rejected.: %w", err))
 	}
 
 	// Create a valid AlertRelabelConfig.

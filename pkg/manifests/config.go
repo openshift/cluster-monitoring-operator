@@ -24,14 +24,14 @@ import (
 	"strings"
 
 	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
-	"github.com/pkg/errors"
 	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/klog/v2"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 )
 
 const (
@@ -348,7 +348,7 @@ func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) er
 
 	cv, err := load()
 	if err != nil {
-		return fmt.Errorf("error loading cluster version: %v", err)
+		return fmt.Errorf("error loading cluster version: %w", err)
 	}
 
 	c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
@@ -362,7 +362,7 @@ func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 
 	secret, err := load()
 	if err != nil {
-		return fmt.Errorf("error loading secret: %v", err)
+		return fmt.Errorf("error loading secret: %w", err)
 	}
 
 	if secret.Type != v1.SecretTypeDockerConfigJson {
@@ -378,7 +378,7 @@ func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 	}{}
 
 	if err := json.Unmarshal(secret.Data[v1.DockerConfigJsonKey], &ps); err != nil {
-		return fmt.Errorf("unmarshaling pull secret failed: %v", err)
+		return fmt.Errorf("unmarshaling pull secret failed: %w", err)
 	}
 
 	c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = ps.Auths.COC.Auth
@@ -413,7 +413,7 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit == automaticBodySizeLimit {
 		podCapacity, err := pcr.PodCapacity(ctx)
 		if err != nil {
-			return fmt.Errorf("error fetching pod capacity: %v", err)
+			return fmt.Errorf("error fetching pod capacity: %w", err)
 		}
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit = calculateBodySizeLimit(podCapacity)
 		return nil
@@ -424,7 +424,7 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 
 func (c *Config) Precheck() error {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.TechPreview {
-		return errors.Wrap(ErrConfigValidation, "collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview")
+		return fmt.Errorf("collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview: %w", ErrConfigValidation)
 	}
 
 	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
@@ -437,7 +437,7 @@ func (c *Config) Precheck() error {
 			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
 		}
 		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-			return errors.Wrap(ErrConfigValidation, fmt.Sprintf(`%q is not supported, supported collection profiles are: %q`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String()))
+			return fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
 		}
 	}
 
