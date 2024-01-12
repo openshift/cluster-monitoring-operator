@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.70.0
+    app.kubernetes.io/version: 0.71.0
   name: prometheus-user-workload-operator
 rules:
 - apiGroups:
@@ -74,6 +74,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - patch
+  - create
 - apiGroups:
   - networking.k8s.io
   resources:

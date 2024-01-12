@@ -23,8 +23,8 @@ import (
 	"math"
 	"strings"
 
+	"github.com/alecthomas/units"
 	configv1 "github.com/openshift/api/config/v1"
-	poperator "github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -419,7 +419,12 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 		return nil
 	}
 
-	return poperator.ValidateSizeField(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
+	// To validate if given value is parsable for the acceptable size values
+	if _, err := units.ParseBase2Bytes(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Config) Precheck() error {
