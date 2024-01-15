@@ -45,6 +45,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
@@ -2881,7 +2882,7 @@ func (f *Factory) MonitoringPlugin() (*consolev1.ConsolePlugin, error) {
 	return f.NewConsolePlugin(f.assets.MustNewAssetSlice(MonitoringPlugin))
 }
 
-func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) MonitoringPluginDeployment(tlsSecret *v1.Secret) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(MonitoringPluginDeployment))
 	if err != nil {
 		return nil, err
@@ -2899,6 +2900,11 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 	}
 
 	containers[idx].Image = f.config.Images.MonitoringPlugin
+
+	// Hash the TLS secret and propagate it as an annotation to the
+	// deployment's pods to trigger a new rollout when the TLS certificate/key
+	// are rotated.
+	d.Spec.Template.Annotations["monitoring.openshift.io/hash"] = hashSecretData(tlsSecret)
 
 	cfg := f.config.ClusterMonitoringConfiguration.MonitoringPluginConfig
 	if cfg == nil {
@@ -3693,4 +3699,16 @@ func containerNameEquals(name string) func(corev1.Container) bool {
 	return func(c corev1.Container) bool {
 		return c.Name == name
 	}
+}
+
+// hashSecretData hashes the secret's data and returns the hash value as a string.
+func hashSecretData(s *v1.Secret) string {
+	h := fnv.New64()
+	// The data's keys need to be sorted in a predictable order to always
+	// produce the same hash.
+	for _, k := range sets.StringKeySet[[]byte](s.Data).List() {
+		h.Write(s.Data[k])
+	}
+
+	return strconv.FormatUint(h.Sum64(), 32)
 }
