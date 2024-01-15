@@ -1831,31 +1831,8 @@ func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.Ser
 }
 
 func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apiregistrationv1.APIService) error {
-	apsc := c.aggclient.ApiregistrationV1().APIServices()
-	existing, err := apsc.Get(ctx, apiService.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err = apsc.Create(ctx, apiService, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating APIService object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving APIService object failed: %w", err)
-	}
-
-	required := apiService.DeepCopy()
-	required.ResourceVersion = existing.ResourceVersion
-	if val, ok := required.Annotations["service.beta.openshift.io/inject-cabundle"]; ok && val == "true" {
-		if len(existing.Spec.CABundle) > 0 {
-			required.Spec.CABundle = existing.Spec.CABundle
-		}
-	}
-	_, err = apsc.Update(ctx, required, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating APIService object failed: %w", err)
-	}
-	return nil
+	_, _, err := resourceapply.ApplyAPIService(ctx, c.aggclient.ApiregistrationV1(), c.eventRecorder, apiService)
+	return err
 }
 
 func (c *Client) WaitForCRDReady(ctx context.Context, crd *extensionsobj.CustomResourceDefinition) error {
