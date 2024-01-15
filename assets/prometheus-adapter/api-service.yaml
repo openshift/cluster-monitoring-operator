@@ -17,5 +17,6 @@ spec:
   service:
     name: prometheus-adapter
     namespace: openshift-monitoring
+    port: 443
   version: v1beta1
   versionPriority: 100

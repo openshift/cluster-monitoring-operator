@@ -321,6 +321,7 @@ function(params) {
       service: {
         name: $.service.metadata.name,
         namespace: cfg.namespace,
+        port: 443,
       },
       group: 'metrics.k8s.io',
       version: 'v1beta1',

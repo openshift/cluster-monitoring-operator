@@ -16,5 +16,6 @@ spec:
   service:
     name: metrics-server
     namespace: openshift-monitoring
+    port: 443
   version: v1beta1
   versionPriority: 100
