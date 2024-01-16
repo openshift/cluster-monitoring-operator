@@ -36,21 +36,6 @@ Cluster Monitoring is also configurable, learn how to [configure Cluster Monitor
 
 > Note that in order to be able to deliver updates with guaranteed compatibility, configurability of the Cluster Monitoring stack is limited to the explicitly available options. Read more on [update and compatibility guarantees][update-and-compatibility-guarantees].
 
-## Application Monitoring
-
-Create additional Prometheus instances managed by the Prometheus Operator to monitor individual applications.
-
-## Accessing Prometheus and Alertmanager
-
-Cluster Monitoring ships with a Prometheus instance for cluster monitoring and a central Alertmanager cluster. In addition to Prometheus and Alertmanager, Cluster Monitoring also includes pre-built dashboards for cluster monitoring troubleshooting.
-
-By default, all web UIs are exposed through Kubernetes Ingress, and accessible at the following names:
-
-- Prometheus: https://$CLUSTER-DNS/prometheus
-- Alertmanager: https://$CLUSTER-DNS/alertmanager
-
-Authentication is performed against the OpenShift identity system, and uses the same credentials or means of authentication as is used elsewhere in OpenShift.
-
 [alertmanager]: https://prometheus.io/docs/alerting/alertmanager/
 [configure-monitoring]: user-guides/configuring-cluster-monitoring.md
 [node-exporter]: https://github.com/prometheus/node_exporter
