@@ -398,9 +398,12 @@ func (b *PrometheusSpecApplyConfiguration) WithTolerations(values ...corev1.Tole
 // WithTopologySpreadConstraints adds the given value to the TopologySpreadConstraints field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the TopologySpreadConstraints field.
-func (b *PrometheusSpecApplyConfiguration) WithTopologySpreadConstraints(values ...corev1.TopologySpreadConstraint) *PrometheusSpecApplyConfiguration {
+func (b *PrometheusSpecApplyConfiguration) WithTopologySpreadConstraints(values ...*TopologySpreadConstraintApplyConfiguration) *PrometheusSpecApplyConfiguration {
 	for i := range values {
-		b.TopologySpreadConstraints = append(b.TopologySpreadConstraints, values[i])
+		if values[i] == nil {
+			panic("nil value passed to WithTopologySpreadConstraints")
+		}
+		b.TopologySpreadConstraints = append(b.TopologySpreadConstraints, *values[i])
 	}
 	return b
 }
@@ -724,6 +727,14 @@ func (b *PrometheusSpecApplyConfiguration) WithKeepDroppedTargets(value uint64) 
 // If called multiple times, the ReloadStrategy field is set to the value of the last call.
 func (b *PrometheusSpecApplyConfiguration) WithReloadStrategy(value monitoringv1.ReloadStrategyType) *PrometheusSpecApplyConfiguration {
 	b.ReloadStrategy = &value
+	return b
+}
+
+// WithMaximumStartupDurationSeconds sets the MaximumStartupDurationSeconds field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MaximumStartupDurationSeconds field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithMaximumStartupDurationSeconds(value int32) *PrometheusSpecApplyConfiguration {
+	b.MaximumStartupDurationSeconds = &value
 	return b
 }
 

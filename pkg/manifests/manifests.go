@@ -1378,9 +1378,13 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		p.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Tolerations
 	}
 
-	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TopologySpreadConstraints) > 0 {
-		p.Spec.TopologySpreadConstraints =
-			f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TopologySpreadConstraints
+	for _, tsc := range f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TopologySpreadConstraints {
+		p.Spec.TopologySpreadConstraints = append(
+			p.Spec.TopologySpreadConstraints,
+			monv1.TopologySpreadConstraint{
+				CoreV1TopologySpreadConstraint: monv1.CoreV1TopologySpreadConstraint(tsc),
+			},
+		)
 	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels != nil {
@@ -1743,9 +1747,13 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 		p.Spec.Tolerations = f.config.UserWorkloadConfiguration.Prometheus.Tolerations
 	}
 
-	if len(f.config.UserWorkloadConfiguration.Prometheus.TopologySpreadConstraints) > 0 {
-		p.Spec.TopologySpreadConstraints =
-			f.config.UserWorkloadConfiguration.Prometheus.TopologySpreadConstraints
+	for _, tsc := range f.config.UserWorkloadConfiguration.Prometheus.TopologySpreadConstraints {
+		p.Spec.TopologySpreadConstraints = append(
+			p.Spec.TopologySpreadConstraints,
+			monv1.TopologySpreadConstraint{
+				CoreV1TopologySpreadConstraint: monv1.CoreV1TopologySpreadConstraint(tsc),
+			},
+		)
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.ExternalLabels != nil {

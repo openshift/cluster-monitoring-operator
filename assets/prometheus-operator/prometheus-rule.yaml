@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.70.0
+    app.kubernetes.io/version: 0.71.0
     prometheus: k8s
     role: alert-rules
   name: prometheus-operator-rules
@@ -45,9 +45,18 @@ spec:
     - alert: PrometheusOperatorReconcileErrors
       annotations:
         description: '{{ $value | humanizePercentage }} of reconciling operations failed for {{ $labels.controller }} controller in {{ $labels.namespace }} namespace.'
-        summary: Errors while reconciling controller.
+        summary: Errors while reconciling objects.
       expr: |
         (sum by (cluster,controller,namespace) (rate(prometheus_operator_reconcile_errors_total{job="prometheus-operator", namespace=~"openshift-monitoring|openshift-user-workload-monitoring"}[5m]))) / (sum by (cluster,controller,namespace) (rate(prometheus_operator_reconcile_operations_total{job="prometheus-operator", namespace=~"openshift-monitoring|openshift-user-workload-monitoring"}[5m]))) > 0.1
+      for: 10m
+      labels:
+        severity: warning
+    - alert: PrometheusOperatorStatusUpdateErrors
+      annotations:
+        description: '{{ $value | humanizePercentage }} of status update operations failed for {{ $labels.controller }} controller in {{ $labels.namespace }} namespace.'
+        summary: Errors while updating objects status.
+      expr: |
+        (sum by (cluster,controller,namespace) (rate(prometheus_operator_status_update_errors_total{job="prometheus-operator", namespace=~"openshift-monitoring|openshift-user-workload-monitoring"}[5m]))) / (sum by (cluster,controller,namespace) (rate(prometheus_operator_status_update_operations_total{job="prometheus-operator", namespace=~"openshift-monitoring|openshift-user-workload-monitoring"}[5m]))) > 0.1
       for: 10m
       labels:
         severity: warning

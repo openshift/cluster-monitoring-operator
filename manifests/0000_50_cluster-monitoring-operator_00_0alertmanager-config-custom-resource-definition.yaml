@@ -6,7 +6,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    operator.prometheus.io/version: 0.70.0
+    operator.prometheus.io/version: 0.71.0
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
@@ -81,7 +81,7 @@ spec:
                             minLength: 1
                             type: string
                           regex:
-                            description: Whether to match on equality (false) or regular-expression (true). Deprecated as of AlertManager >= v0.22.0 where a user should use MatchType instead.
+                            description: 'Whether to match on equality (false) or regular-expression (true). Deprecated: for AlertManager >= v0.22.0, `matchType` should be used instead.'
                             type: boolean
                           value:
                             description: Label value to match.
@@ -108,7 +108,7 @@ spec:
                             minLength: 1
                             type: string
                           regex:
-                            description: Whether to match on equality (false) or regular-expression (true). Deprecated as of AlertManager >= v0.22.0 where a user should use MatchType instead.
+                            description: 'Whether to match on equality (false) or regular-expression (true). Deprecated: for AlertManager >= v0.22.0, `matchType` should be used instead.'
                             type: boolean
                           value:
                             description: Label value to match.
@@ -4281,7 +4281,7 @@ spec:
                           minLength: 1
                           type: string
                         regex:
-                          description: Whether to match on equality (false) or regular-expression (true). Deprecated as of AlertManager >= v0.22.0 where a user should use MatchType instead.
+                          description: 'Whether to match on equality (false) or regular-expression (true). Deprecated: for AlertManager >= v0.22.0, `matchType` should be used instead.'
                           type: boolean
                         value:
                           description: Label value to match.
