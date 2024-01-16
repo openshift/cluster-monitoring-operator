@@ -29,6 +29,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/library-go/pkg/crypto"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -4716,4 +4717,19 @@ func volumeMountsConfigured(volumeMounts []v1.VolumeMount, volumeName string) bo
 		}
 	}
 	return false
+}
+
+func TestHashSecretData(t *testing.T) {
+	s := v1.Secret{
+		Data: map[string][]byte{
+			"key1": []byte("value1"),
+			"key2": []byte("value2"),
+			"key3": []byte("value3"),
+		},
+	}
+
+	h := hashSecretData(&s)
+	for i := 0; i < 100; i++ {
+		require.Equal(t, h, hashSecretData(&s), "hashing not stable")
+	}
 }
