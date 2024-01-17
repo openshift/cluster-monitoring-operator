@@ -34,6 +34,7 @@ tests:
             service: service
           exp_annotations:
             description: "50% of the /service targets in ns namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support."
+            runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/TargetDown.md
             summary: "Some targets were not reachable from the monitoring server for an extended period of time."
       - eval_time: 32m
         alertname: TargetDown
@@ -77,6 +78,7 @@ tests:
             service: service
           exp_annotations:
             description: "50% of the /service targets in ns namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support."
+            runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/TargetDown.md
             summary: "Some targets were not reachable from the monitoring server for an extended period of time."
       - eval_time: 32m
         alertname: TargetDown
@@ -140,6 +142,7 @@ tests:
             service: service
           exp_annotations:
             description: "50% of the /service targets in ns namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support."
+            runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/TargetDown.md
             summary: "Some targets were not reachable from the monitoring server for an extended period of time."
       - eval_time: 32m
         alertname: TargetDown
@@ -170,6 +173,7 @@ tests:
             service: service
           exp_annotations:
             description: "50% of the /service targets in ns namespace have been unreachable for more than 15 minutes. This may be a symptom of network connectivity issues, down nodes, or failures within these components. Assess the health of the infrastructure and nodes running these targets and then contact support."
+            runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/TargetDown.md
             summary: "Some targets were not reachable from the monitoring server for an extended period of time."
       - eval_time: 32m
         alertname: TargetDown
