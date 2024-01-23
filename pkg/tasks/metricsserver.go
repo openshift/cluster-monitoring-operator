@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type MetricsServerTask struct {
@@ -103,9 +104,45 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "reconciling MetricsServer Service failed")
 		}
-	}
-	{
-		dep, err := t.factory.MetricsServerDeployment()
+
+		cacm, err := t.factory.PrometheusK8sKubeletServingCABundle(map[string]string{})
+		if err != nil {
+			return errors.Wrap(err, "initializing kubelet serving CA Bundle ConfigMap failed")
+		}
+
+		cacm, err = t.client.WaitForConfigMap(
+			ctx,
+			cacm,
+		)
+		if err != nil {
+			return err
+		}
+
+		scas, err := t.client.WaitForSecretByNsName(
+			ctx,
+			types.NamespacedName{
+				Namespace: s.Namespace,
+				Name:      s.Annotations["service.beta.openshift.io/serving-cert-secret-name"],
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		mcs, err := t.factory.MetricsClientCerts()
+		if err != nil {
+			return errors.Wrap(err, "initializing metrics-client-cert failed")
+		}
+
+		mcs, err = t.client.WaitForSecret(
+			ctx,
+			mcs,
+		)
+		if err != nil {
+			return err
+		}
+
+		dep, err := t.factory.MetricsServerDeployment(cacm, scas, mcs)
 		if err != nil {
 			return errors.Wrap(err, "initializing MetricsServer Deployment failed")
 		}

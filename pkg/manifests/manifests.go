@@ -47,6 +47,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -2113,7 +2114,7 @@ func (f *Factory) MetricsServerRoleBindingAuthReader() (*rbacv1.RoleBinding, err
 	return f.NewRoleBinding(f.assets.MustNewAssetReader(MetricsServerRoleBindingAuthReader))
 }
 
-func (f *Factory) MetricsServerDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecret, metricsClientCert *v1.Secret) (*appsv1.Deployment, error) {
 	dep, err := f.NewDeployment(f.assets.MustNewAssetReader(MetricsServerDeployment))
 	if err != nil {
 		return nil, err
@@ -2123,14 +2124,27 @@ func (f *Factory) MetricsServerDeployment() (*appsv1.Deployment, error) {
 	containers := podSpec.Containers
 	idx := slices.IndexFunc(containers, containerNameEquals("metrics-server"))
 	if idx < 0 {
-		return nil, errors.Errorf(
-			"failed to find metrics-server container %q in deployment %q",
+		return nil, fmt.Errorf("failed to find metrics-server container %q in deployment %q",
 			"metrics-server", MetricsServerDeployment)
 	}
 
 	containers[idx].Image = f.config.Images.MetricsServer
 	containers[idx].Args = f.setTLSSecurityConfiguration(podSpec.Containers[0].Args,
 		MetricsServerTLSCipherSuitesFlag, MetricsServerTLSMinTLSVersionFlag)
+
+	// Hash the Kubelet Serving CA Bundle configmap value and propagate it as a annotation to the
+	// deployment's pods to trigger a new rollout when the CA is rotated.
+	dep.Spec.Template.Annotations["monitoring.openshift.io/kubelet-serving-ca-bundle-hash"] = hashStringMap(kubeletCABundle.Data)
+
+	// Hash the TLS secret and propagate it as a annotation to the
+	// deployment's pods to trigger a new rollout when the TLS certificate/key
+	// are rotated.
+	dep.Spec.Template.Annotations["monitoring.openshift.io/serving-ca-secret-hash"] = hashByteMap(tlsSecret.Data)
+
+	// Hash the metrics client cert and propagate it as a annotation to the
+	// deployment's pods to trigger a new rollout when the metrics client cert
+	// is rotated.
+	dep.Spec.Template.Annotations["monitoring.openshift.io/metrics-client-cert-hash"] = hashByteMap(metricsClientCert.Data)
 
 	config := f.config.ClusterMonitoringConfiguration.MetricsServerConfig
 	if config == nil {
@@ -3814,4 +3828,23 @@ func containerNameEquals(name string) func(corev1.Container) bool {
 	return func(c corev1.Container) bool {
 		return c.Name == name
 	}
+}
+
+func hashByteMap(s map[string][]byte) string {
+	h := fnv.New64()
+	// The data's keys need to be sorted in a predictable order to always
+	// produce the same hash.
+	for _, k := range sets.StringKeySet[[]byte](s).List() {
+		h.Write(s[k])
+	}
+
+	return strconv.FormatUint(h.Sum64(), 32)
+}
+
+func hashStringMap(m map[string]string) string {
+	byteMap := make(map[string][]byte, len(m))
+	for k, v := range m {
+		byteMap[k] = []byte(v)
+	}
+	return hashByteMap(byteMap)
 }

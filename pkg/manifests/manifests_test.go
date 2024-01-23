@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/openshift/library-go/pkg/crypto"
+	"github.com/stretchr/testify/require"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
@@ -2735,7 +2736,36 @@ metricsServer:
 	})
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.MetricsServerDeployment()
+	kubeletCABundle := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubelet-serving-ca-bundle",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": "ca-certificate",
+		},
+	}
+	servingCASecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-server-tls",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("foo"),
+			"tls.key": []byte("bar"),
+		},
+	}
+	metricsClientSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-client-cert",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("bar"),
+			"tls.key": []byte("foo"),
+		},
+	}
+	d, err := f.MetricsServerDeployment(kubeletCABundle, servingCASecret, metricsClientSecret)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2778,6 +2808,10 @@ metricsServer:
 			}
 		})
 	}
+	podAnnotations := d.Spec.Template.Annotations
+	require.Equal(t, "eplue2a9srfkb", podAnnotations["monitoring.openshift.io/kubelet-serving-ca-bundle-hash"])
+	require.Equal(t, "arprfan3mk728", podAnnotations["monitoring.openshift.io/metrics-client-cert-hash"])
+	require.Equal(t, "383c7cmidrae2", podAnnotations["monitoring.openshift.io/serving-ca-secret-hash"])
 }
 
 func TestAlertmanagerMainStartupProbe(t *testing.T) {
@@ -4718,4 +4752,34 @@ func volumeMountsConfigured(volumeMounts []v1.VolumeMount, volumeName string) bo
 		}
 	}
 	return false
+}
+
+func TestHashByteMapData(t *testing.T) {
+	s := v1.Secret{
+		Data: map[string][]byte{
+			"key1": []byte("value1"),
+			"key2": []byte("value2"),
+			"key3": []byte("value3"),
+		},
+	}
+
+	h := hashByteMap(s.Data)
+	for i := 0; i < 100; i++ {
+		require.Equal(t, h, hashByteMap(s.Data), "hashing not stable")
+	}
+}
+
+func TestHashStringMapData(t *testing.T) {
+	cm := v1.ConfigMap{
+		Data: map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+			"key3": "value3",
+		},
+	}
+
+	h := hashStringMap(cm.Data)
+	for i := 0; i < 100; i++ {
+		require.Equal(t, h, hashStringMap(cm.Data), "hashing not stable")
+	}
 }
