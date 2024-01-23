@@ -987,11 +987,6 @@ data:
     # cluster:vsphere_infrastructure_failure_domains:max shows how many vSphere failure domains, vCenters, datacenters and datastores are configured in a cluster.
     - '{__name__="cluster:vsphere_infrastructure_failure_domains:max"}'
     #
-    # owners: (https://github.com/openshift/vmware-vsphere-csi-driver-operator, @openshift/storage)
-    #
-    # cluster:vsphere_csi_migration:max shows if CSI migration for vSphere was enabled or not.
-    - '{__name__="cluster:vsphere_csi_migration:max"}'
-    #
     # owners: (@openshift/openshift-team-api, @polynomial)
     #
     # apiserver_list_watch_request_success_total:rate:sum represents the rate of change for successful LIST and WATCH requests over a 5 minute period.
