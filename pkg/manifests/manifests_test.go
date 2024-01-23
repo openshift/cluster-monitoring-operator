@@ -2734,7 +2734,36 @@ metricsServer:
 	})
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.MetricsServerDeployment()
+	kubeletCABundle := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubelet-serving-ca-bundle",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": "ca-certificate",
+		},
+	}
+	servingCASecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-server-tls",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("foo"),
+			"tls.key": []byte("bar"),
+		},
+	}
+	metricsClientSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-client-cert",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("foo"),
+			"tls.key": []byte("bar"),
+		},
+	}
+	d, err := f.MetricsServerDeployment(kubeletCABundle, servingCASecret, metricsClientSecret)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -4719,7 +4748,7 @@ func volumeMountsConfigured(volumeMounts []v1.VolumeMount, volumeName string) bo
 	return false
 }
 
-func TestHashSecretData(t *testing.T) {
+func TestHashByteMapData(t *testing.T) {
 	s := v1.Secret{
 		Data: map[string][]byte{
 			"key1": []byte("value1"),
@@ -4728,8 +4757,23 @@ func TestHashSecretData(t *testing.T) {
 		},
 	}
 
-	h := hashSecretData(&s)
+	h := hashByteMap(s.Data)
 	for i := 0; i < 100; i++ {
-		require.Equal(t, h, hashSecretData(&s), "hashing not stable")
+		require.Equal(t, h, hashByteMap(s.Data), "hashing not stable")
+	}
+}
+
+func TestHashStringMapData(t *testing.T) {
+	cm := v1.ConfigMap{
+		Data: map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+			"key3": "value3",
+		},
+	}
+
+	h := hashStringMap(cm.Data)
+	for i := 0; i < 100; i++ {
+		require.Equal(t, h, hashStringMap(cm.Data), "hashing not stable")
 	}
 }
