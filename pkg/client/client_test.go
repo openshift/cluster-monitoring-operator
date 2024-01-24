@@ -16,8 +16,10 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
@@ -27,6 +29,7 @@ import (
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
+	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -35,6 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/ptr"
 )
@@ -2303,4 +2307,73 @@ func assertErrorsMatch(t *testing.T, want, got []error) {
 			got : %q`, i+1, len(want), w, g)
 		}
 	}
+}
+
+func TestPollUntil(t *testing.T) {
+	testPoll := func(ctx context.Context, condition wait.ConditionWithContextFunc, err *error) error {
+		return Poll(ctx, condition, WithPollInterval(100*time.Millisecond), WithPollTimeout(150*time.Millisecond), WithLastError(err))
+	}
+
+	// condition is met.
+	var lastErr1 error
+	err := testPoll(context.Background(), func(ctx context.Context) (bool, error) {
+		return true, nil
+	}, &lastErr1)
+	require.NoError(t, err)
+
+	// condition is met, lastErr isn't used.
+	err = testPoll(context.Background(), func(ctx context.Context) (bool, error) {
+		return true, nil
+	}, nil)
+	require.NoError(t, err)
+
+	// condition is eventually met.
+	var lastErr2 error
+	err = testPoll(context.Background(), func(ctx context.Context) (bool, error) {
+		lastErr2 = fmt.Errorf("INSIDE ERROR")
+		return true, nil
+	}, &lastErr2)
+	require.NoError(t, err)
+
+	// condition returns an error before timeout.
+	// lastError not added as not relevant.
+	var lastErr3 error
+	err = testPoll(context.Background(), func(ctx context.Context) (bool, error) {
+		insideError := fmt.Errorf("INSIDE ERROR")
+		lastErr3 = insideError
+		return false, insideError
+	}, &lastErr3)
+	require.ErrorContains(t, err, "INSIDE ERROR")
+
+	// the poll times out.
+	var lastErr4 error
+	err = testPoll(context.Background(), func(ctx context.Context) (bool, error) {
+		lastErr4 = fmt.Errorf("INSIDE ERROR")
+		return false, nil
+	}, &lastErr4)
+	require.ErrorContains(t, err, "context deadline exceeded: INSIDE ERROR")
+
+	// the poll times out.
+	// lastError not added as not relevant.
+	var lastErr5 error
+	err = testPoll(context.Background(), func(ctx context.Context) (bool, error) {
+		lastErr5 = context.DeadlineExceeded
+		return false, nil
+	}, &lastErr5)
+	require.ErrorContains(t, err, "context deadline exceeded")
+
+	// the poll times out.
+	err = testPoll(context.Background(), func(ctx context.Context) (bool, error) {
+		return false, nil
+	}, nil)
+	require.ErrorContains(t, err, "context deadline exceeded")
+
+	// the parent context times out.
+	var lastErr6 error
+	parentCtx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	err = testPoll(parentCtx, func(ctx context.Context) (bool, error) {
+		return false, nil
+	}, &lastErr6)
+	require.Error(t, parentCtx.Err())
+	require.ErrorContains(t, err, "context deadline exceeded")
 }

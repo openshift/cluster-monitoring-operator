@@ -68,10 +68,9 @@ import (
 )
 
 const (
-	deploymentCreateTimeout = 5 * time.Minute
-	deploymentDeleteTimeout = 5 * time.Minute
-	metadataPrefix          = "monitoring.openshift.io/"
-	clusterConsole          = "cluster"
+	deleteTimeout  = 10 * time.Minute
+	metadataPrefix = "monitoring.openshift.io/"
+	clusterConsole = "cluster"
 )
 
 type Client struct {
@@ -435,7 +434,7 @@ func (c *Client) EnsurePrometheusUserWorkloadConfigMapExists(ctx context.Context
 }
 
 func (c *Client) AssurePrometheusOperatorCRsExist(ctx context.Context) error {
-	return wait.PollUntilContextTimeout(ctx, time.Second, time.Minute*5, false, func(ctx context.Context) (bool, error) {
+	return Poll(ctx, func(ctx context.Context) (bool, error) {
 		_, err := c.mclient.MonitoringV1().Prometheuses(c.namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			klog.V(4).ErrorS(err, "AssurePrometheusOperatorCRsExist: failed to list Prometheuses")
@@ -699,7 +698,7 @@ func (c *Client) CreateOrUpdateAlertmanager(ctx context.Context, a *monv1.Alertm
 }
 
 func (c *Client) DeleteAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
-	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("alertmanagers"), a, 10*time.Minute)
+	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("alertmanagers"), a, deleteTimeout)
 }
 
 func (c *Client) CreateOrUpdateThanosRuler(ctx context.Context, t *monv1.ThanosRuler) error {
@@ -788,7 +787,7 @@ func (c *Client) DeleteValidatingWebhook(ctx context.Context, w *admissionv1.Val
 }
 
 func (c *Client) DeleteDeployment(ctx context.Context, d *appsv1.Deployment) error {
-	return c.deleteResourceUntilGone(ctx, appsv1.SchemeGroupVersion.WithResource("deployments"), d, deploymentDeleteTimeout)
+	return c.deleteResourceUntilGone(ctx, appsv1.SchemeGroupVersion.WithResource("deployments"), d, 5*time.Minute)
 }
 
 func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.PodDisruptionBudget) error {
@@ -801,11 +800,11 @@ func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.Po
 }
 
 func (c *Client) DeletePrometheus(ctx context.Context, p *monv1.Prometheus) error {
-	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("prometheuses"), p, 10*time.Minute)
+	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("prometheuses"), p, deleteTimeout)
 }
 
 func (c *Client) DeleteThanosRuler(ctx context.Context, tr *monv1.ThanosRuler) error {
-	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("thanosrulers"), tr, 10*time.Minute)
+	return c.deleteResourceUntilGone(ctx, monv1.SchemeGroupVersion.WithResource("thanosrulers"), tr, deleteTimeout)
 }
 
 func (c *Client) DeleteDaemonSet(ctx context.Context, d *appsv1.DaemonSet) error {
@@ -962,11 +961,11 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 func (c *Client) ValidatePrometheus(ctx context.Context, promNsName types.NamespacedName) error {
 	validationErrors := []error{}
 
-	pollErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
+	pollErr := Poll(ctx, func(ctx context.Context) (bool, error) {
 		stop, errs := c.validatePrometheusResource(ctx, promNsName)
 		validationErrors = errs
 		return stop, nil
-	})
+	}, WithPollInterval(10*time.Second))
 
 	if pollErr != nil {
 		return apiutilerrors.NewAggregate(validationErrors)
@@ -1018,7 +1017,7 @@ func validateMonitoringResource(expectedReplicas, updatedReplicas, availableRepl
 
 func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager) error {
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second*10, time.Minute*5, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		a, err := c.mclient.MonitoringV1().Alertmanagers(a.GetNamespace()).Get(ctx, a.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1038,10 +1037,7 @@ func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager)
 		}
 
 		return true, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithPollInterval(10*time.Second), WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for Alertmanager %s/%s: %w", a.GetNamespace(), a.GetName(), err)
 	}
 	return nil
@@ -1049,7 +1045,7 @@ func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager)
 
 func (c *Client) WaitForThanosRuler(ctx context.Context, t *monv1.ThanosRuler) error {
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second*10, time.Minute*5, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		tr, err := c.mclient.MonitoringV1().ThanosRulers(t.GetNamespace()).Get(ctx, t.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1069,10 +1065,7 @@ func (c *Client) WaitForThanosRuler(ctx context.Context, t *monv1.ThanosRuler) e
 		}
 
 		return true, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithPollInterval(10*time.Second), WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for Thanos Ruler %s/%s: %w", t.GetNamespace(), t.GetName(), err)
 	}
 	return nil
@@ -1138,7 +1131,7 @@ func (c *Client) UpdateDeployment(ctx context.Context, dep *appsv1.Deployment) e
 
 func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deployment) error {
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentCreateTimeout, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		d, err := c.kclient.AppsV1().Deployments(dep.GetNamespace()).Get(ctx, dep.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1162,10 +1155,7 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 			return false, nil
 		}
 		return true, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for DeploymentRollout of %s/%s: %w", dep.GetNamespace(), dep.GetName(), err)
 	}
 	return nil
@@ -1181,7 +1171,7 @@ func (c *Client) deleteResourceUntilGone(ctx context.Context, gvr schema.GroupVe
 	}
 
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second, timeout, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		_, err := client.Get(ctx, obj.GetName(), metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
@@ -1194,10 +1184,7 @@ func (c *Client) deleteResourceUntilGone(ctx context.Context, gvr schema.GroupVe
 
 		lastErr = fmt.Errorf("not deleted yet")
 		return false, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithPollTimeout(timeout), WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for deletion of %s %s/%s: %w", gvr.String(), obj.GetNamespace(), obj.GetName(), err)
 	}
 
@@ -1206,7 +1193,7 @@ func (c *Client) deleteResourceUntilGone(ctx context.Context, gvr schema.GroupVe
 
 func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.StatefulSet) error {
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentCreateTimeout, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		s, err := c.kclient.AppsV1().StatefulSets(sts.GetNamespace()).Get(ctx, sts.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1229,10 +1216,7 @@ func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.Stat
 			return false, nil
 		}
 		return true, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for StatefulsetRollout of %s/%s: %w", sts.GetNamespace(), sts.GetName(), err)
 	}
 	return nil
@@ -1241,7 +1225,7 @@ func (c *Client) WaitForStatefulsetRollout(ctx context.Context, sts *appsv1.Stat
 func (c *Client) WaitForSecret(ctx context.Context, s *v1.Secret) (*v1.Secret, error) {
 	var result *v1.Secret
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		var err error
 
 		result, err = c.kclient.CoreV1().Secrets(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
@@ -1263,10 +1247,7 @@ func (c *Client) WaitForSecret(ctx context.Context, s *v1.Secret) (*v1.Secret, e
 		}
 
 		return true, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithLastError(&lastErr)); err != nil {
 		return nil, fmt.Errorf("waiting for secret %s/%s: %w", s.GetNamespace(), s.GetName(), err)
 	}
 
@@ -1286,7 +1267,7 @@ func (c *Client) WaitForSecretByNsName(ctx context.Context, obj types.Namespaced
 func (c *Client) WaitForConfigMap(ctx context.Context, cm *v1.ConfigMap) (*v1.ConfigMap, error) {
 	var result *v1.ConfigMap
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		var err error
 
 		result, err = c.kclient.CoreV1().ConfigMaps(cm.Namespace).Get(ctx, cm.Name, metav1.GetOptions{})
@@ -1308,10 +1289,7 @@ func (c *Client) WaitForConfigMap(ctx context.Context, cm *v1.ConfigMap) (*v1.Co
 		}
 
 		return true, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithLastError(&lastErr)); err != nil {
 		return nil, fmt.Errorf("waiting for ConfigMap %s/%s: %w", cm.GetNamespace(), cm.GetName(), err)
 	}
 
@@ -1332,7 +1310,7 @@ func (c *Client) WaitForConfigMapByNsName(ctx context.Context, obj types.Namespa
 func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (string, error) {
 	host := ""
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentCreateTimeout, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		newRoute, err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Get(ctx, r.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1351,10 +1329,7 @@ func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (strin
 		}
 		lastErr = errors.New("route is not yet Admitted")
 		return false, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithLastError(&lastErr)); err != nil {
 		return host, fmt.Errorf("waiting for route %s/%s: %w", r.GetNamespace(), r.GetName(), err)
 	}
 	return host, nil
@@ -1416,7 +1391,7 @@ func (c *Client) UpdateDaemonSet(ctx context.Context, ds *appsv1.DaemonSet) erro
 
 func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonSet) error {
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, time.Second, deploymentCreateTimeout, false, func(ctx context.Context) (bool, error) {
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
 		d, err := c.kclient.AppsV1().DaemonSets(ds.GetNamespace()).Get(ctx, ds.GetName(), metav1.GetOptions{})
 		if err != nil {
 			lastErr = err
@@ -1449,10 +1424,7 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 			return false, nil
 		}
 		return true, nil
-	}); err != nil {
-		if ctx.Err() != nil && lastErr != nil {
-			err = lastErr
-		}
+	}, WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for DaemonSetRollout of %s/%s: %w", ds.GetNamespace(), ds.GetName(), err)
 	}
 	return nil
@@ -1836,9 +1808,9 @@ func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apire
 }
 
 func (c *Client) WaitForCRDReady(ctx context.Context, crd *extensionsobj.CustomResourceDefinition) error {
-	return wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
+	return Poll(ctx, func(ctx context.Context) (bool, error) {
 		return c.CRDReady(ctx, crd)
-	})
+	}, WithPollInterval(5*time.Second))
 }
 
 func (c *Client) CRDReady(ctx context.Context, crd *extensionsobj.CustomResourceDefinition) (bool, error) {
@@ -1925,7 +1897,7 @@ func (c *Client) CreateOrUpdateConsolePlugin(ctx context.Context, plg *consolev1
 	conClient := c.osconclient.ConsoleV1().ConsolePlugins()
 
 	var lastErr error
-	if err := wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, false, func(context.Context) (bool, error) {
+	if err := Poll(ctx, func(context.Context) (bool, error) {
 		existing, err := conClient.Get(ctx, plg.GetName(), metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			_, err = conClient.Create(ctx, plg, metav1.CreateOptions{})
@@ -1950,10 +1922,7 @@ func (c *Client) CreateOrUpdateConsolePlugin(ctx context.Context, plg *consolev1
 			return false, nil
 		}
 		return true, nil
-	}); err != nil {
-		if lastErr != nil {
-			err = fmt.Errorf("%w: lastError: %w", err, lastErr)
-		}
+	}, WithPollInterval(5*time.Second), WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for ConsolePlugin failed: %w", err)
 	}
 	return nil
@@ -2031,4 +2000,46 @@ func deleteOptions(dp metav1.DeletionPropagation) metav1.DeleteOptions {
 	return metav1.DeleteOptions{
 		PropagationPolicy: &dp,
 	}
+}
+
+type pollOptions struct {
+	timeout   time.Duration
+	interval  time.Duration
+	lastError *error
+}
+
+func WithPollTimeout(d time.Duration) func(o *pollOptions) {
+	return func(o *pollOptions) {
+		o.timeout = d
+	}
+}
+
+func WithPollInterval(d time.Duration) func(o *pollOptions) {
+	return func(o *pollOptions) {
+		o.interval = d
+	}
+}
+
+func WithLastError(e *error) func(o *pollOptions) {
+	return func(o *pollOptions) {
+		o.lastError = e
+	}
+}
+
+// Poll is a wrapper around wait.PollUntilContextTimeout that allows adding the passed lastError into
+// the final error if if set by the condition, this would add more context to the "context deadline exceeded" error e.g..
+func Poll(ctx context.Context, condition wait.ConditionWithContextFunc, options ...func(o *pollOptions)) error {
+	opts := pollOptions{timeout: 5 * time.Minute, interval: time.Second}
+	for _, o := range options {
+		o(&opts)
+	}
+
+	if err := wait.PollUntilContextTimeout(ctx, opts.interval, opts.timeout, false, condition); err != nil {
+		// Add the last error when available and relevant.
+		if opts.lastError != nil && *opts.lastError != nil && !errors.Is(*opts.lastError, err) {
+			err = fmt.Errorf("%w: %w", err, *opts.lastError)
+		}
+		return err
+	}
+	return nil
 }
