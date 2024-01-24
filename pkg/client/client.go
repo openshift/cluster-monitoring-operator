@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -40,7 +41,6 @@ import (
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
-	"golang.org/x/exp/slices"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"

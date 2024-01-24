@@ -36,7 +36,9 @@ linters-settings:
       main:
         deny:
           - pkg: "github.com/pkg/errors"
-            desc: "Use 'errors' or 'fmt' instead of github.com/pkg/errors"
+            desc: "Use 'errors' or 'fmt' instead"
+          - pkg: "golang.org/x/exp/slices"
+            desc: "Use 'slices' instead"
   gci:
     sections:
       - standard

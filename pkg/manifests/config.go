@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strings"
 
 	"github.com/alecthomas/units"
 	configv1 "github.com/openshift/api/config/v1"
-	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
