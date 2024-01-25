@@ -111,12 +111,9 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 			return fmt.Errorf("initializing kubelet serving CA Bundle ConfigMap failed: %w", err)
 		}
 
-		kscm, err := t.client.WaitForConfigMapByNsName(
+		cacm, err = t.client.WaitForConfigMap(
 			ctx,
-			types.NamespacedName{
-				Namespace: s.Namespace,
-				Name:      cacm.Name,
-			},
+			cacm,
 		)
 		if err != nil {
 			return err
@@ -133,23 +130,20 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 			return err
 		}
 
-		metricsClientSecret, err := t.factory.MetricsClientCerts()
+		mcs, err := t.factory.MetricsClientCerts()
 		if err != nil {
 			return fmt.Errorf("initializing metrics-client-cert failed: %w", err)
 		}
 
-		mcs, err := t.client.WaitForSecretByNsName(
+		mcs, err = t.client.WaitForSecret(
 			ctx,
-			types.NamespacedName{
-				Namespace: s.Namespace,
-				Name:      metricsClientSecret.Name,
-			},
+			mcs,
 		)
 		if err != nil {
 			return err
 		}
 
-		dep, err := t.factory.MetricsServerDeployment(kscm, scas, mcs)
+		dep, err := t.factory.MetricsServerDeployment(cacm, scas, mcs)
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer Deployment failed: %w", err)
 		}
