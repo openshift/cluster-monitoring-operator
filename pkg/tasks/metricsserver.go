@@ -6,6 +6,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -104,9 +105,51 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("reconciling MetricsServer Service failed: %w", err)
 		}
-	}
-	{
-		dep, err := t.factory.MetricsServerDeployment()
+
+		cacm, err := t.factory.PrometheusK8sKubeletServingCABundle(map[string]string{})
+		if err != nil {
+			return fmt.Errorf("initializing kubelet serving CA Bundle ConfigMap failed: %w", err)
+		}
+
+		kscm, err := t.client.WaitForConfigMapByNsName(
+			ctx,
+			types.NamespacedName{
+				Namespace: s.Namespace,
+				Name:      cacm.Name,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		scas, err := t.client.WaitForSecretByNsName(
+			ctx,
+			types.NamespacedName{
+				Namespace: s.Namespace,
+				Name:      s.Annotations["service.beta.openshift.io/serving-cert-secret-name"],
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		metricsClientSecret, err := t.factory.MetricsClientCerts()
+		if err != nil {
+			return fmt.Errorf("initializing metrics-client-cert failed: %w", err)
+		}
+
+		mcs, err := t.client.WaitForSecretByNsName(
+			ctx,
+			types.NamespacedName{
+				Namespace: s.Namespace,
+				Name:      metricsClientSecret.Name,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		dep, err := t.factory.MetricsServerDeployment(kscm, scas, mcs)
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer Deployment failed: %w", err)
 		}

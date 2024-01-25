@@ -2122,7 +2122,7 @@ func (f *Factory) MetricsServerRoleBindingAuthReader() (*rbacv1.RoleBinding, err
 	return f.NewRoleBinding(f.assets.MustNewAssetSlice(MetricsServerRoleBindingAuthReader))
 }
 
-func (f *Factory) MetricsServerDeployment() (*appsv1.Deployment, error) {
+func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecret, metricsClientCert *v1.Secret) (*appsv1.Deployment, error) {
 	dep, err := f.NewDeployment(f.assets.MustNewAssetSlice(MetricsServerDeployment))
 	if err != nil {
 		return nil, err
@@ -2139,6 +2139,20 @@ func (f *Factory) MetricsServerDeployment() (*appsv1.Deployment, error) {
 	containers[idx].Image = f.config.Images.MetricsServer
 	containers[idx].Args = f.setTLSSecurityConfiguration(podSpec.Containers[0].Args,
 		MetricsServerTLSCipherSuitesFlag, MetricsServerTLSMinTLSVersionFlag)
+
+	// Hash the Kubelet Serving CA Bundle configmap value and propagate it as a annotation to the
+	// deployment's pods to trigger a new rollout when the CA is rotated.
+	dep.Spec.Template.Annotations["monitoring.openshift.io/kubelet-serving-ca-bundle-hash"] = hashStringMap(kubeletCABundle.Data)
+
+	// Hash the TLS secret and propagate it as a annotation to the
+	// deployment's pods to trigger a new rollout when the TLS certificate/key
+	// are rotated.
+	dep.Spec.Template.Annotations["monitoring.openshift.io/serving-ca-secret-hash"] = hashByteMap(tlsSecret.Data)
+
+	// Hash the metrics client cert and propagate it as a annotation to the
+	// deployment's pods to trigger a new rollout when the metrics client cert
+	// is rotated.
+	dep.Spec.Template.Annotations["monitoring.openshift.io/metrics-client-cert-hash"] = hashByteMap(metricsClientCert.Data)
 
 	config := f.config.ClusterMonitoringConfiguration.MetricsServerConfig
 	if config == nil {
@@ -2912,7 +2926,7 @@ func (f *Factory) MonitoringPluginDeployment(tlsSecret *v1.Secret) (*appsv1.Depl
 	// Hash the TLS secret and propagate it as an annotation to the
 	// deployment's pods to trigger a new rollout when the TLS certificate/key
 	// are rotated.
-	d.Spec.Template.Annotations["monitoring.openshift.io/hash"] = hashSecretData(tlsSecret)
+	d.Spec.Template.Annotations["monitoring.openshift.io/hash"] = hashByteMap(tlsSecret.Data)
 
 	cfg := f.config.ClusterMonitoringConfiguration.MonitoringPluginConfig
 	if cfg == nil {
@@ -3709,14 +3723,21 @@ func containerNameEquals(name string) func(corev1.Container) bool {
 	}
 }
 
-// hashSecretData hashes the secret's data and returns the hash value as a string.
-func hashSecretData(s *v1.Secret) string {
+func hashByteMap(s map[string][]byte) string {
 	h := fnv.New64()
 	// The data's keys need to be sorted in a predictable order to always
 	// produce the same hash.
-	for _, k := range sets.StringKeySet[[]byte](s.Data).List() {
-		h.Write(s.Data[k])
+	for _, k := range sets.StringKeySet[[]byte](s).List() {
+		h.Write(s[k])
 	}
 
 	return strconv.FormatUint(h.Sum64(), 32)
+}
+
+func hashStringMap(m map[string]string) string {
+	byteMap := make(map[string][]byte, len(m))
+	for k, v := range m {
+		byteMap[k] = []byte(v)
+	}
+	return hashByteMap(byteMap)
 }
