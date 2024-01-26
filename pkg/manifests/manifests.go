@@ -2926,7 +2926,7 @@ func (f *Factory) MonitoringPluginDeployment(tlsSecret *v1.Secret) (*appsv1.Depl
 	// Hash the TLS secret and propagate it as an annotation to the
 	// deployment's pods to trigger a new rollout when the TLS certificate/key
 	// are rotated.
-	d.Spec.Template.Annotations["monitoring.openshift.io/hash"] = hashByteMap(tlsSecret.Data)
+	d.Spec.Template.Annotations["monitoring.openshift.io/cert-hash"] = hashByteMap(tlsSecret.Data)
 
 	cfg := f.config.ClusterMonitoringConfiguration.MonitoringPluginConfig
 	if cfg == nil {

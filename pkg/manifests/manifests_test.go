@@ -2759,8 +2759,8 @@ metricsServer:
 			Namespace: "openshift-monitoring",
 		},
 		Data: map[string][]byte{
-			"tls.crt": []byte("foo"),
-			"tls.key": []byte("bar"),
+			"tls.crt": []byte("bar"),
+			"tls.key": []byte("foo"),
 		},
 	}
 	d, err := f.MetricsServerDeployment(kubeletCABundle, servingCASecret, metricsClientSecret)
@@ -2806,6 +2806,11 @@ metricsServer:
 			}
 		})
 	}
+
+	podAnnotations := d.Spec.Template.Annotations
+	require.Equal(t, "eplue2a9srfkb", podAnnotations["monitoring.openshift.io/kubelet-serving-ca-bundle-hash"])
+	require.Equal(t, "arprfan3mk728", podAnnotations["monitoring.openshift.io/metrics-client-cert-hash"])
+	require.Equal(t, "383c7cmidrae2", podAnnotations["monitoring.openshift.io/serving-ca-secret-hash"])
 }
 
 func TestAlertmanagerMainStartupProbe(t *testing.T) {
