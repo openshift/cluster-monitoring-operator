@@ -1732,6 +1732,13 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 
 	p.Spec.Image = &f.config.Images.Prometheus
 
+	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
+		p.Spec.ExternalURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if f.config.UserWorkloadConfiguration.Prometheus.Resources != nil {
 		p.Spec.Resources = *f.config.UserWorkloadConfiguration.Prometheus.Resources
 	}
