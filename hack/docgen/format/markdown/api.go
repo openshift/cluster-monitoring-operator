@@ -104,9 +104,6 @@ func PrintAPIDocs(args []string) {
 			fmt.Println("| Property | Type | Description |")
 			fmt.Println("| -------- | ---- | ----------- |")
 			for _, f := range t.Fields {
-				if strings.HasPrefix(fmt.Sprint(f.Description()), "OmitFromDoc") {
-					continue
-				}
 				fmt.Println("|", f.Name(), "|", f.TypeLink(typeSetUnion), "|", f.Description(), "|")
 			}
 			fmt.Println("")

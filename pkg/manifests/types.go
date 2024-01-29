@@ -117,7 +117,7 @@ type K8sPrometheusAdapter struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	// HideFromDoc: Defines dedicated service monitors.
+	// OmitFromDoc: Defines dedicated service monitors.
 	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
 }
 
@@ -134,7 +134,7 @@ type MetricsServerConfig struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
-// HideFromDoc: This is deprecated and will be removed in a future version, setting it has no effect.
+// OmitFromDoc: This is deprecated and will be removed in a future version, setting it has no effect.
 type DedicatedServiceMonitors struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
