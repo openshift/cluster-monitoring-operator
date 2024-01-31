@@ -1437,12 +1437,6 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 				monv1.RelabelConfig{
 					TargetLabel: "prom_replica",
 					Replacement: "$(POD_NAME)",
-				},
-				monv1.RelabelConfig{
-					SourceLabels: []monv1.LabelName{"__name__"},
-					TargetLabel:  "__name__",
-					Regex:        "ALERTS",
-					Replacement:  "alerts",
 				})
 				telemetryRemoteWriteConfigs[i].MetadataConfig = &monv1.MetadataConfig{
 					Send: false,
