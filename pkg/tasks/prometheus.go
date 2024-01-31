@@ -23,6 +23,8 @@ import (
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 type PrometheusTask struct {
@@ -54,6 +56,32 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 	errs = append(errs, validation.Run(ctx))
 
 	return apiutilerrors.NewAggregate(errs)
+}
+
+
+func (t *PrometheusTask) fetchTelemetryRemoteWriteConfigs(ctx context.Context) []monv1.RemoteWriteSpec{
+		// Simulate a request to the telemeter request to get the remote write config
+		// TODO: maybe move this into a separate task??
+		// should it make this task fail???
+		// make sure we control timeouts etc. avoid hanging
+		// warn telemeter server about failures? maybe a metric
+		// TODO: cache this??? running tasks shouldn't happen too frequently, but what if?
+		// TODO: only wait for CMO to trigger this?? what if no change is triggered?
+		klog.V(4).Info("getting telemetry remote write config")
+		rwConfig, err := t.client.GetConfigmap(ctx, "telemeter-server", "dynamic-telemetry-remote-write-config")
+		if err != nil {
+			klog.Warning("couldn't fetch the remote write config from the telemeter server")
+			return nil
+		}
+		var telemetryRemoteWriteConfigs []monv1.RemoteWriteSpec
+		// TODO: use yaml3 or decodeYAML? (factorize that)
+		// Myabe make some fileds optional? url? authorization?
+		err = k8syaml.UnmarshalStrict([]byte(rwConfig.Data["remote_write.yaml"]), &telemetryRemoteWriteConfigs)
+		if err != nil {
+			klog.Warning("couldn't unmarshal the remote write config")
+			return nil
+		}
+		return telemetryRemoteWriteConfigs
 }
 
 func (t *PrometheusTask) create(ctx context.Context) error {
@@ -386,7 +414,7 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		}
 
 		klog.V(4).Info("initializing Prometheus object")
-		p, err := t.factory.PrometheusK8s(s, trustedCA, telemetrySecret)
+		p, err := t.factory.PrometheusK8s(s, trustedCA, telemetrySecret, t.fetchTelemetryRemoteWriteConfigs(ctx))
 		if err != nil {
 			return fmt.Errorf("initializing Prometheus object failed: %w", err)
 		}

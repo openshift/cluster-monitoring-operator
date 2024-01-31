@@ -336,8 +336,8 @@ func (c *Config) SetTelemetryMatches(matches []string) {
 
 func (c *Config) SetRemoteWrite(rw bool) {
 	c.RemoteWrite = rw
-	if c.RemoteWrite && c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL == "https://infogw.api.stage.openshift.com/" {
-		c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL = "https://infogw.api.stage.openshift.com/metrics/v1/receive"
+	if c.RemoteWrite && c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL == "https://infogw.api.openshift.com/" {
+		c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL = "https://infogw.api.openshift.com/metrics/v1/receive"
 	}
 }
 
@@ -355,6 +355,7 @@ func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) er
 	return nil
 }
 
+// TODO
 func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token != "" {
 		return nil

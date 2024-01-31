@@ -226,6 +226,7 @@ main() {
 		-kubeconfig="$kubeconfig" \
 		-namespace=openshift-monitoring \
 		-configmap=cluster-monitoring-config \
+		-enabled-remote-write="true" \
 		-logtostderr=true -v=4 2>&1 | tee tmp/operator.log
 }
 

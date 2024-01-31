@@ -1340,7 +1340,7 @@ func (f *Factory) PrometheusK8sTelemetrySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap, telemetrySecret *v1.Secret) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap, telemetrySecret *v1.Secret, telemetryRemoteWriteConfigs []monv1.RemoteWriteSpec) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheusK8s()
 	if err != nil {
 		return nil, err
@@ -1407,61 +1407,111 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 	}
 
 	clusterID := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID
+	// TODO: prometheus doesn't seem to stop remote writing when it's disabled??
+	// maybe stale markers or sth from telemeter server side??
 	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && f.config.RemoteWrite {
-		selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
-		if err != nil {
-			return nil, fmt.Errorf("generate label selector relabel config: %w", err)
-		}
-
 		p.Spec.Secrets = append(p.Spec.Secrets, telemetrySecret.GetName())
 
-		spec := monv1.RemoteWriteSpec{
-			URL:             f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL,
-			BearerTokenFile: fmt.Sprintf("/etc/prometheus/secrets/%s/%s", telemetrySecret.GetName(), telemetryTokenSecretKey),
-			QueueConfig: &monv1.QueueConfig{
-				// Amount of samples to load from the WAL into the in-memory
-				// buffer before waiting for samples to be sent successfully
-				// and then continuing to read from the WAL.
-				Capacity: 30000,
-				// Should we accumulate 10000 samples before the batch send
-				// deadline is reached, we will send this amount of samples
-				// anyways.
-				MaxSamplesPerSend: 10000,
-				// Batch samples for 1m until we send them if we not reach the
-				// 10000 MaxSamplesPerSend first.
-				BatchSendDeadline: "1m",
-				// Backoff is doubled on every backoff. We start with 1s
-				// backoff and double until the MaxBackOff.
-				MinBackoff: "1s",
-				// 128s is the 8th backoff in a row, once we end up here, we
-				// don't increase backoff time anymore. As we would at most
-				// produce (concurrency/256) number of requests per second.
-				MaxBackoff: "256s",
-			},
-			WriteRelabelConfigs: []monv1.RelabelConfig{
-				*selectorRelabelConfig,
-				{
+		// TODO: if we want to make CMO disable remote write??
+		if telemetryRemoteWriteConfigs != nil {
+			// TODO: check overhead of having multiple remote write config ~100? etc
+			for i := range telemetryRemoteWriteConfigs {
+				telemetryRemoteWriteConfigs[i].Authorization = &monv1.Authorization{
+					CredentialsFile: fmt.Sprintf("/etc/prometheus/secrets/%s/%s", telemetrySecret.GetName(), telemetryTokenSecretKey),
+				}
+				telemetryRemoteWriteConfigs[i].QueueConfig =  &monv1.QueueConfig{
+					Capacity: 30000,
+					MaxSamplesPerSend: 10000,
+					BatchSendDeadline: "1m",
+					MinBackoff: "1s",
+					MaxBackoff: "256s",
+				}
+				telemetryRemoteWriteConfigs[i].WriteRelabelConfigs = append(telemetryRemoteWriteConfigs[i].WriteRelabelConfigs,
+				monv1.RelabelConfig{
 					TargetLabel: "_id",
 					Replacement: clusterID,
 				},
-				// relabeling the `ALERTS` series to `alerts` allows us to make
-				// a distinction between the series produced in-cluster and out
-				// of cluster.
-				{
+				// TODO: telemetry server seems to omit the prometheus_replica
+				// external label.
+				// and it emits "conflicts" errors when both replicas send equal series.
+				monv1.RelabelConfig{
+					TargetLabel: "prom_replica",
+					Replacement: "$(POD_NAME)",
+				},
+				monv1.RelabelConfig{
 					SourceLabels: []monv1.LabelName{"__name__"},
 					TargetLabel:  "__name__",
 					Regex:        "ALERTS",
 					Replacement:  "alerts",
-				},
-			},
-			MetadataConfig: &monv1.MetadataConfig{
-				Send: false,
-			},
-		}
+				})
+				telemetryRemoteWriteConfigs[i].MetadataConfig = &monv1.MetadataConfig{
+					Send: false,
+				}
+			}
+			p.Spec.RemoteWrite = telemetryRemoteWriteConfigs
+		} else {
+			// Use the default remote write config
+			// TODO: get rid of this transformation code. and directly provide config in remote write format to CMO.
+			selectorRelabelConfig, err := promqlgen.LabelSelectorsToRelabelConfig(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches)
+			if err != nil {
+				return nil, fmt.Errorf("generate label selector relabel config: %w", err)
+			}
 
-		p.Spec.RemoteWrite = []monv1.RemoteWriteSpec{spec}
+			spec := monv1.RemoteWriteSpec{
+				URL:             f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL,
+				BearerTokenFile: fmt.Sprintf("/etc/prometheus/secrets/%s/%s", telemetrySecret.GetName(), telemetryTokenSecretKey),
+				QueueConfig: &monv1.QueueConfig{
+					// Amount of samples to load from the WAL into the in-memory
+					// buffer before waiting for samples to be sent successfully
+					// and then continuing to read from the WAL.
+					Capacity: 30000,
+					// Should we accumulate 10000 samples before the batch send
+					// deadline is reached, we will send this amount of samples
+					// anyways.
+					MaxSamplesPerSend: 10000,
+					// Batch samples for 1m until we send them if we not reach the
+					// 10000 MaxSamplesPerSend first.
+					BatchSendDeadline: "1m",
+					// Backoff is doubled on every backoff. We start with 1s
+					// backoff and double until the MaxBackOff.
+					MinBackoff: "1s",
+					// 128s is the 8th backoff in a row, once we end up here, we
+					// don't increase backoff time anymore. As we would at most
+					// produce (concurrency/256) number of requests per second.
+					MaxBackoff: "256s",
+				},
+				WriteRelabelConfigs: []monv1.RelabelConfig{
+					*selectorRelabelConfig,
+					{
+						TargetLabel: "_id",
+						Replacement: clusterID,
+					},
+					// TODO: telemetry server seems to omit the prometheus_replica
+					// external label.
+					// and it emits "conflicts" errors when both replicas send equal series.
+					{
+						TargetLabel: "prom_replica",
+						Replacement: "$(POD_NAME)",
+					},
+					// relabeling the `ALERTS` series to `alerts` allows us to make
+					// a distinction between the series produced in-cluster and out
+					// of cluster.
+					{
+						SourceLabels: []monv1.LabelName{"__name__"},
+						TargetLabel:  "__name__",
+						Regex:        "ALERTS",
+						Replacement:  "alerts",
+					},
+				},
+				MetadataConfig: &monv1.MetadataConfig{
+					Send: false,
+				},
+			}
+			p.Spec.RemoteWrite = []monv1.RemoteWriteSpec{spec}
+		}
 	}
 
+	// TODO
 	if len(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite) > 0 {
 		p.Spec.RemoteWrite = addRemoteWriteConfigs(clusterID, p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
 	}
