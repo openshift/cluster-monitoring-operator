@@ -86,16 +86,12 @@ function(params)
           // Collect metrics from CRI-O.
           [{
             interval: '30s',
-            port: 'https-metrics',
             scheme: 'https',
+            port: 'crio-metrics',
+            namespaceSelector: {
+              matchNames: [ 'openshift-machine-config-operator'],
+            },
             relabelings: [
-              {
-                sourceLabels: ['__address__'],
-                action: 'replace',
-                targetLabel: '__address__',
-                regex: '(.+)(?::\\d+)',
-                replacement: '$1:9637',
-              },
               {
                 sourceLabels: ['endpoint'],
                 action: 'replace',
