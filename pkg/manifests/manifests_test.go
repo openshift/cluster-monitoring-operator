@@ -16,7 +16,6 @@ package manifests
 
 import (
 	"context"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"net/url"
@@ -3960,8 +3959,7 @@ func TestTelemeterConfiguration(t *testing.T) {
 		}
 	}
 
-	hash := sha256.New()
-	expectedTokenHash := string(hash.Sum([]byte("test")))
+	expectedTokenHash := "8o29vfqfspfr9"
 
 	if tokenHash, ok := d.Spec.Template.Annotations["telemeter-token-hash"]; !ok {
 		t.Fatalf("telemeter-token-hash annotation not set in telemeter-client deployment")
