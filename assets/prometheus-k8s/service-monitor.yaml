@@ -14,7 +14,7 @@ spec:
   endpoints:
   - bearerTokenFile: ""
     interval: 30s
-    port: metrics
+    port: web
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt

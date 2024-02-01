@@ -1587,29 +1587,13 @@ ingress:
 
 	for _, container := range p.Spec.Containers {
 		switch container.Name {
-		case "prometheus-proxy":
-			if container.Image != "docker.io/openshift/origin-oauth-proxy:latest" {
-				t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
-			}
-			volumeName := "prometheus-trusted-ca-bundle"
-			if !volumeConfigured(p.Spec.Volumes, volumeName) {
-				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
-			}
-			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
-				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
-			}
-
-		case "kube-rbac-proxy":
+		case "kube-rbac-proxy-web":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 				t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
 			}
 			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(p.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
 			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(p.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 
-		case "prom-label-proxy":
-			if container.Image != "docker.io/openshift/origin-prom-label-proxy:latest" {
-				t.Fatalf("image for %s is not configured correctly: %s", container.Name, container.Image)
-			}
 		case "prometheus":
 			volumeName := "prometheus-trusted-ca-bundle"
 			if !volumeConfigured(p.Spec.Volumes, volumeName) {

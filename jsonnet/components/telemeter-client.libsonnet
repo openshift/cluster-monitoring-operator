@@ -17,6 +17,9 @@ function(params) {
         'TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305',
         'TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
       ],
+      telemeterClient+:: {
+        from: 'https://prometheus-k8s.%(namespace)s.svc:9091' % cfg,
+      },
     },
   },
 

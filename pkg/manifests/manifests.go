@@ -1467,12 +1467,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
-		case "prometheus-proxy":
-			p.Spec.Containers[i].Image = f.config.Images.OauthProxy
-
-			f.injectProxyVariables(&p.Spec.Containers[i])
-
-		case "kube-rbac-proxy", "kube-rbac-proxy-web":
+		case "kube-rbac-proxy-web":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "kube-rbac-proxy-thanos":
@@ -1505,8 +1500,6 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 						},
 					},
 				})
-		case "prom-label-proxy":
-			p.Spec.Containers[i].Image = f.config.Images.PromLabelProxy
 		}
 	}
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
@@ -1527,11 +1520,11 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		})
 		p.Spec.Volumes = append(p.Spec.Volumes, volume)
 
-		// we only need the trusted CA bundle in:
-		// 1. Prometheus, because users might want to configure external remote write.
-		// 2. In OAuth proxy, as that communicates externally when executing the OAuth handshake.
+		// We only need the trusted CA bundle in Prometheus, because users
+		// might want to remote write to an endpoint whose certificate is
+		// trusted by the CA bundle.
 		for i, container := range p.Spec.Containers {
-			if container.Name == "prometheus-proxy" || container.Name == "prometheus" {
+			if container.Name == "prometheus" {
 				p.Spec.Containers[i].VolumeMounts = append(
 					p.Spec.Containers[i].VolumeMounts,
 					trustedCABundleVolumeMount(volumeName),

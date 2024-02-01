@@ -11,7 +11,7 @@
   // Before OCP 4.16, the function was implemented by the OpenShift's
   // oauth-proxy and the access was gated on the permission to 'get' any
   // 'namespaces' resource (or `cluster-monitoring-view` ClusterRole)..
-  kubeRBACSecretForMonitoringAPI(name, labels):: {
+  kubeRBACSecretForMonitoringAPI(name, labels, additionalConfig={}):: {
     apiVersion: 'v1',
     kind: 'Secret',
     metadata: {
@@ -32,7 +32,7 @@
             name: 'k8s',
           },
         },
-      }),
+      } + additionalConfig),
     },
   },
 
