@@ -382,6 +382,10 @@ function(params)
             value: '15ms',
           },
         ],
+        // Increase the startup probe timeout to 1h from 15m to avoid restart
+        // failures when the WAL replay takes a long time.
+        // See https://issues.redhat.com/browse/OCPBUGS-4168 for details.
+        maximumStartupDurationSeconds: 3600,
         containers: [
           {
             name: 'prometheus-proxy',

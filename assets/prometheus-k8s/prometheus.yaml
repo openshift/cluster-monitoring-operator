@@ -164,6 +164,7 @@ spec:
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
   image: quay.io/prometheus/prometheus:v2.49.1
   listenLocal: true
+  maximumStartupDurationSeconds: 3600
   nodeSelector:
     kubernetes.io/os: linux
   podMetadata:

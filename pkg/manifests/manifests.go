@@ -1483,16 +1483,6 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
-		case "prometheus":
-			// Increase the startup probe timeout to 1h from 15m to avoid restart failures when the WAL replay
-			// takes a long time. See https://issues.redhat.com/browse/OCPBUGS-4168 for details.
-			// TODO (JoaoBraveCoding): Once prometheus-operator adds CRD support to configure startupProbe directly
-			// we should use that instead of using strategic merge patch
-			// See https://github.com/prometheus-operator/prometheus-operator/issues/4730
-			p.Spec.Containers[i].StartupProbe = &v1.Probe{
-				PeriodSeconds:    15,
-				FailureThreshold: 240,
-			}
 		case "prometheus-proxy":
 			p.Spec.Containers[i].Image = f.config.Images.OauthProxy
 
