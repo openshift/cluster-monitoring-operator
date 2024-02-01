@@ -18,9 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
@@ -244,17 +241,6 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, tqpr)
 	if err != nil {
 		return fmt.Errorf("reconciling Thanos Querier PrometheusRule failed: %w", err)
-	}
-
-	// TODO: remove this deletion in the next OCP release after this is published.
-	err = t.client.DeleteSecret(ctx, &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "thanos-querier-oauth-cookie",
-			Namespace: "openshift-monitoring",
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("deleting Thanos Querier OAuth cookie secret failed: %w", err)
 	}
 
 	return nil
