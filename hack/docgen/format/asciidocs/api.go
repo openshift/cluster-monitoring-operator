@@ -133,9 +133,6 @@ func PrintAPIDocs(args []string) {
 			moduleContent += "|===\n"
 			moduleContent += "| Property | Type | Description \n"
 			for _, f := range t.Fields {
-				if strings.HasPrefix(fmt.Sprint(f.Description()), "OmitFromDoc") {
-					continue
-				}
 				moduleContent += fmt.Sprint("|", f.Name(), "|", f.TypeLink(typeSetUnion), "|", f.Description(), "\n\n")
 			}
 			moduleContent += "|===\n"

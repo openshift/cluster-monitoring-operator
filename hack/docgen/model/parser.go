@@ -32,7 +32,7 @@ func Load(path string) (TypeSet, error) {
 
 	for _, t := range types.Types {
 		structType, ok := t.Decl.Specs[0].(*ast.TypeSpec).Type.(*ast.StructType)
-		if !ok || hideFromDoc(t.Doc) {
+		if !ok || omitFromDoc(t.Doc) {
 			continue
 		}
 
@@ -49,7 +49,7 @@ func Load(path string) (TypeSet, error) {
 	for _, currentStruct := range structs {
 		for _, field := range currentStruct.rawFields {
 			field := Field(*field)
-			if hideFromDoc(field.Doc.Text()) {
+			if omitFromDoc(field.Doc.Text()) {
 				continue
 			}
 			if field.IsInlined() {
@@ -83,9 +83,9 @@ func Load(path string) (TypeSet, error) {
 	return structs, nil
 }
 
-// hideFromDoc helps filetring out elements that are not intended to be shown in docs.
-func hideFromDoc(doc string) bool {
-	return strings.HasPrefix(doc, "HideFromDoc: ")
+// omitFromDoc helps filetring out elements that are not intended to be shown in docs.
+func omitFromDoc(doc string) bool {
+	return strings.HasPrefix(doc, "OmitFromDoc")
 }
 
 func mergeFields(to *StructType, from *StructType, structs TypeSet) {
