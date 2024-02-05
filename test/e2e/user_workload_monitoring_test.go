@@ -340,7 +340,7 @@ func assertAlertmanagerInstancesDiscovered(expectedInstances int) func(_ *testin
 	return func(t *testing.T) {
 		query := `max by (job) (prometheus_notifications_alertmanagers_discovered{job="prometheus-user-workload"})`
 		f.ThanosQuerierClient.WaitForQueryReturn(
-			t, 15*time.Minute, query,
+			t, 5*time.Minute, query,
 			func(v float64) error {
 				if v == float64(expectedInstances) {
 					return nil
