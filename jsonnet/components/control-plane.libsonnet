@@ -87,13 +87,18 @@ function(params)
           [{
             interval: '30s',
             port: 'https-metrics',
+            scheme: 'https',
+            tlsConfig+: {
+              serverName: 'machine-config-daemon.openshift-machine-config-operator.svc',
+              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+            },
             relabelings: [
               {
                 sourceLabels: ['__address__'],
                 action: 'replace',
                 targetLabel: '__address__',
                 regex: '(.+)(?::\\d+)',
-                replacement: '$1:9537',
+                replacement: '$1:9637',
               },
               {
                 sourceLabels: ['endpoint'],
