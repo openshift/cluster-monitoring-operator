@@ -5,9 +5,7 @@
         [if o.kind == 'ServiceMonitor' then 'endpoints' else 'podMetricsEndpoints']: [
           if std.objectHas(e, 'scheme') && e.scheme == 'https' then
             e {
-              bearerTokenFile: if (std.objectHas(e, 'relabelings') && std.isArray(e.relabelings) && std.filter(function(p) if std.objectHas(p, 'replacement') then std.length(std.findSubstr('9637', p.replacement)) > 0 else false, e.relabelings) != []) then '/var/run/secrets/kubernetes.io/serviceaccount/token' else '',
-            } +
-            {
+              bearerTokenFile: '',
               tlsConfig+: {
                             certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
                             keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
