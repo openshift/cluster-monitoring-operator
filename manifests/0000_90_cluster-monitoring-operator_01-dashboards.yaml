@@ -1865,12 +1865,24 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
+  name: dashboard-cluster-total
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-cluster-total
   namespace: openshift-config-managed
 ---
@@ -4863,12 +4875,24 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
+  name: dashboard-k8s-resources-cluster
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-k8s-resources-cluster
   namespace: openshift-config-managed
 ---
@@ -7570,6 +7594,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
@@ -7577,6 +7602,17 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
+  name: dashboard-k8s-resources-namespace
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-k8s-resources-namespace
   namespace: openshift-config-managed
 ---
@@ -8582,12 +8618,24 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
+  name: dashboard-k8s-resources-node
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-k8s-resources-node
   namespace: openshift-config-managed
 ---
@@ -10484,6 +10532,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
@@ -10491,6 +10540,17 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
+  name: dashboard-k8s-resources-pod
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-k8s-resources-pod
   namespace: openshift-config-managed
 ---
@@ -12449,6 +12509,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
@@ -12456,6 +12517,17 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
+  name: dashboard-k8s-resources-workload
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-k8s-resources-workload
   namespace: openshift-config-managed
 ---
@@ -14567,6 +14639,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
@@ -14574,6 +14647,17 @@ metadata:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
     console.openshift.io/odc-dashboard: "true"
+  name: dashboard-k8s-resources-workloads-namespace
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-k8s-resources-workloads-namespace
   namespace: openshift-config-managed
 ---
@@ -16025,12 +16109,24 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
+  name: dashboard-namespace-by-pod
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-namespace-by-pod
   namespace: openshift-config-managed
 ---
@@ -17080,12 +17176,24 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
+  name: dashboard-node-cluster-rsrc-use
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-node-cluster-rsrc-use
   namespace: openshift-config-managed
 ---
@@ -18189,12 +18297,24 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
+  name: dashboard-node-rsrc-use
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-node-rsrc-use
   namespace: openshift-config-managed
 ---
@@ -19410,12 +19530,24 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
+  name: dashboard-pod-total
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-pod-total
   namespace: openshift-config-managed
 ---
@@ -20654,11 +20786,23 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
     app.kubernetes.io/part-of: openshift-monitoring
     console.openshift.io/dashboard: "true"
+  name: dashboard-prometheus
+  namespace: openshift-config-managed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/delete: "true"
   name: grafana-dashboard-prometheus
   namespace: openshift-config-managed

@@ -144,26 +144,58 @@ function(params)
     consoleDashboardDefinitions: {
       apiVersion: 'v1',
       kind: 'ConfigMapList',
-      items: std.filterMap(
-        // etcd dashboard is deployed by cluster-etcd-operator
-        // PR: https://github.com/openshift/cluster-etcd-operator/pull/837
-        function(d) d.metadata.name != 'grafana-dashboard-etcd',
+      items: std.flatMap(
         function(d)
-          d {
-            metadata+: {
-              namespace: 'openshift-config-managed',
-              labels+: {
-                'console.openshift.io/dashboard': 'true',
-              } + if std.count(odcDashboards, d.metadata.name) > 0 then {
-                'console.openshift.io/odc-dashboard': 'true',
-              } else {},
+          local name = d.metadata.name;
+          if std.startsWith(name, 'grafana-') then
+            [
+              // Strip the "grafana-" from all dashboard configmaps.
+              d {
+                metadata+: {
+                  name: if std.startsWith(name, 'grafana-') then std.substr(name, std.length('grafana-'), std.length(name)) else name,
+                },
+              },
+              // Tell CVO to remove the old dashboard configmaps prefixed by "grafana-".
+              // It can be removed after OCP 4.16 branch is cut.
+              // See https://issues.redhat.com/browse/OCPBUGS-18326.
+              {
+                apiVersion: 'v1',
+                kind: 'ConfigMap',
+                metadata: {
+                  name: name,
+                  namespace: d.metadata.namespace,
+                  annotations: {
+                    'release.openshift.io/delete': 'true',
+                  },
+                },
+              },
+            ]
+          else
+            [d],
+        std.filterMap(
+          // etcd dashboard is deployed by cluster-etcd-operator
+          // PR: https://github.com/openshift/cluster-etcd-operator/pull/837
+          function(d) d.metadata.name != 'grafana-dashboard-etcd',
+          function(d)
+            d {
+              metadata+: {
+                namespace: 'openshift-config-managed',
+                annotations+: {
+                  'capability.openshift.io/name': 'Console',
+                },
+                labels+: {
+                  'console.openshift.io/dashboard': 'true',
+                } + if std.count(odcDashboards, d.metadata.name) > 0 then {
+                  'console.openshift.io/odc-dashboard': 'true',
+                } else {},
+              },
             },
-          },
-        // Openshift Console cannot show chart with both stacked and unstacked metrics,
-        // so charts with metrics such as request/quota/limit show all metrics in
-        // an unstacked way to avoid confusion.
-        // please refer to: https://issues.redhat.com/browse/OCPBUGS-5353
-        nodeRoleTemplate(unstackDashboards(glib.dashboardDefinitions.items)),
+          // Openshift Console cannot show chart with both stacked and unstacked metrics,
+          // so charts with metrics such as request/quota/limit show all metrics in
+          // an unstacked way to avoid confusion.
+          // please refer to: https://issues.redhat.com/browse/OCPBUGS-5353
+          nodeRoleTemplate(unstackDashboards(glib.dashboardDefinitions.items)),
+        ),
       ),
     },
   }
