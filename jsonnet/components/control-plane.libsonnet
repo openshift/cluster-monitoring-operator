@@ -87,13 +87,17 @@ function(params)
           [{
             interval: '30s',
             port: 'https-metrics',
+            scheme: 'https',
+            tlsConfig+: {
+              caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
+            },
             relabelings: [
               {
                 sourceLabels: ['__address__'],
                 action: 'replace',
                 targetLabel: '__address__',
                 regex: '(.+)(?::\\d+)',
-                replacement: '$1:9537',
+                replacement: '$1:9637',
               },
               {
                 sourceLabels: ['endpoint'],
