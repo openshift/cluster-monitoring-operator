@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 
@@ -118,16 +120,6 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		}
 	}
 
-	ps, err := t.factory.PrometheusK8sProxySecret()
-	if err != nil {
-		return fmt.Errorf("initializing Prometheus proxy Secret failed: %w", err)
-	}
-
-	err = t.client.CreateIfNotExistSecret(ctx, ps)
-	if err != nil {
-		return fmt.Errorf("creating Prometheus proxy Secret failed: %w", err)
-	}
-
 	rs, err := t.factory.PrometheusRBACProxySecret()
 	if err != nil {
 		return fmt.Errorf("initializing Prometheus RBAC proxy Secret failed: %w", err)
@@ -136,6 +128,16 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
 		return fmt.Errorf("creating or updating Prometheus RBAC proxy Secret failed: %w", err)
+	}
+
+	rs, err = t.factory.PrometheusK8sRBACProxyWebSecret()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus RBAC proxy web Secret failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
+	if err != nil {
+		return fmt.Errorf("creating or updating Prometheus RBAC proxy web Secret failed: %w", err)
 	}
 
 	sa, err := t.factory.PrometheusK8sServiceAccount()
@@ -416,6 +418,17 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smt)
 	if err != nil {
 		return fmt.Errorf("reconciling Prometheus Thanos sidecar ServiceMonitor failed: %w", err)
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteSecret(ctx, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "prometheus-k8s-proxy",
+			Namespace: "openshift-monitoring",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("deleting Prometheus proxy Secret failed: %w", err)
 	}
 
 	return nil

@@ -17,9 +17,6 @@ spec:
   - name: web
     port: 9091
     targetPort: web
-  - name: metrics
-    port: 9092
-    targetPort: metrics
   selector:
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/instance: k8s

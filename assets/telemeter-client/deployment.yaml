@@ -42,7 +42,7 @@ spec:
         - name: ANONYMIZE_LABELS
           value: ""
         - name: FROM
-          value: https://prometheus-k8s.openshift-monitoring.svc:9092
+          value: https://prometheus-k8s.openshift-monitoring.svc:9091
         - name: ID
           value: ""
         - name: TO
