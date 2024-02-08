@@ -626,7 +626,7 @@ func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string,
 func Poll(interval, timeout time.Duration, f func() error) error {
 	var lastErr error
 
-	err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, false, func(context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, true, func(context.Context) (bool, error) {
 		lastErr = f()
 		if lastErr != nil {
 			return false, nil

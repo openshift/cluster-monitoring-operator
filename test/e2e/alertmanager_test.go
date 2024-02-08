@@ -171,8 +171,6 @@ func testAlertmanagerReady(t *testing.T, name, ns string, validator ...validator
 }
 
 func testAlertmanagerTenancyAPI(t *testing.T, host string) {
-	t.Helper()
-
 	ctx := context.Background()
 	const testNs = "tenancy-api-e2e-test"
 
@@ -242,44 +240,53 @@ func testAlertmanagerTenancyAPI(t *testing.T, host string) {
 		now.Add(time.Hour).Format(time.RFC3339),
 	))
 
-	assertDo := func(user string, expectedCode int, do func() (*http.Response, error)) []byte {
-		t.Helper()
+	do := func(user string, expectedCode int, do func() (*http.Response, error)) ([]byte, error) {
+		var b []byte
+		err := framework.Poll(5*time.Second, time.Minute, func() error {
+			var err error
+			resp, err := do()
+			if err != nil {
+				return fmt.Errorf("user[%s]: %s %s: request failed: %w", user, resp.Request.Method, resp.Request.URL.String(), err)
+			}
+			defer resp.Body.Close()
 
-		resp, err := do()
-		if err != nil {
-			t.Fatalf("user[%s]: request failed: %v", user, err)
-		}
-		defer resp.Body.Close()
+			b, err = io.ReadAll(resp.Body)
+			if err != nil {
+				return fmt.Errorf("user[%s]: %s %s: fail to read response body: %w", user, resp.Request.Method, resp.Request.URL.String(), err)
+			}
 
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("user[%s]: fail to read response body: %v", user, err)
-		}
+			if resp.StatusCode != expectedCode {
+				return fmt.Errorf("user[%s]: %s %s: expecting %d status code, got %d (%q)", user, resp.Request.Method, resp.Request.URL.String(), expectedCode, resp.StatusCode, framework.ClampMax(b))
+			}
 
-		if resp.StatusCode != expectedCode {
-			t.Fatalf("user[%s]: expecting %d status code, got %d (%q)", user, expectedCode, resp.StatusCode, framework.ClampMax(b))
-		}
+			return nil
+		})
 
-		return b
+		return b, err
 	}
 
 	for _, sa := range []string{"viewer", "anonymous"} {
-		assertDo(
+		if _, err := do(
 			sa,
 			http.StatusForbidden,
 			func() (*http.Response, error) {
 				return clients[sa].Do("POST", "/api/v2/silences", sil)
 			},
-		)
+		); err != nil {
+			t.Fatalf("user[%s]: %v", sa, err)
+		}
 	}
 
-	b := assertDo(
+	b, err := do(
 		"editor",
 		http.StatusOK,
 		func() (*http.Response, error) {
 			return clients["editor"].Do("POST", "/api/v2/silences", sil)
 		},
 	)
+	if err != nil {
+		t.Fatalf("user[editor]: %v", err)
+	}
 
 	// Save silence ID for deletion.
 	parsed, err := gabs.ParseJSON(b)
@@ -297,23 +304,29 @@ func testAlertmanagerTenancyAPI(t *testing.T, host string) {
 		}
 	})
 
-	assertDo(
+	_, err = do(
 		"anonymous",
 		http.StatusForbidden,
 		func() (*http.Response, error) {
 			return clients["anonymous"].Do("GET", "/api/v2/silences", nil)
 		},
 	)
+	if err != nil {
+		t.Fatalf("user[anonymous]: %v", err)
+	}
 
 	// List silences and check that the 'namespace' label matcher has been overwritten.
 	for _, sa := range []string{"viewer", "editor"} {
-		b = assertDo(
+		b, err := do(
 			sa,
 			http.StatusOK,
 			func() (*http.Response, error) {
 				return clients[sa].Do("GET", "/api/v2/silences", nil)
 			},
 		)
+		if err != nil {
+			t.Fatalf("user[%s]: %v", sa, err)
+		}
 
 		parsed, err = gabs.ParseJSON(b)
 		if err != nil {
@@ -365,23 +378,29 @@ func testAlertmanagerTenancyAPI(t *testing.T, host string) {
 
 	// Try to delete the silence without permissions.
 	for _, sa := range []string{"viewer", "anonymous"} {
-		assertDo(
+		_, err = do(
 			sa,
 			http.StatusForbidden,
 			func() (*http.Response, error) {
 				return clients[sa].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), nil)
 			},
 		)
+		if err != nil {
+			t.Fatalf("user[%s]: %v", sa, err)
+		}
 	}
 
 	// Delete the silence with permissions.
-	assertDo(
+	_, err = do(
 		"editor",
 		http.StatusOK,
 		func() (*http.Response, error) {
 			return clients["editor"].Do("DELETE", fmt.Sprintf("/api/v2/silence/%s", silID), sil)
 		},
 	)
+	if err != nil {
+		t.Fatalf("user[editor]: %v", err)
+	}
 }
 
 // Even when no persistent storage is configured, silences (and notifications)
