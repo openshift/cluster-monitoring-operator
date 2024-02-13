@@ -2968,20 +2968,17 @@ ingress:
 
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
+	volumeName := "alertmanager-trusted-ca-bundle"
 	for _, container := range a.Spec.Containers {
-		volumeName := "alertmanager-trusted-ca-bundle"
 		switch container.Name {
-		case "prometheus-proxy", "prometheus":
-			if !volumeConfigured(a.Spec.Volumes, volumeName) {
-				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
-			}
-			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
-				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
-			}
-		case "kube-rbac-proxy", "kube-rbac-proxy-metric":
+		case "kube-rbac-proxy", "kube-rbac-proxy-metric", "kube-rbac-proxy-web":
 			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(a.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
 			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(a.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
+	}
+
+	if !volumeConfigured(a.Spec.Volumes, volumeName) {
+		t.Fatalf("trusted CA bundle volume is not configured correctly")
 	}
 
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",

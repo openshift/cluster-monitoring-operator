@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -156,14 +158,14 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Alertmanager ServiceAccount failed: %w", err)
 	}
 
-	ps, err := t.factory.AlertmanagerProxySecret()
+	ps, err := t.factory.AlertmanagerRBACProxyWebSecret()
 	if err != nil {
-		return fmt.Errorf("initializing Alertmanager proxy Secret failed: %w", err)
+		return fmt.Errorf("initializing Alertmanager proxy web Secret failed: %w", err)
 	}
 
 	err = t.client.CreateIfNotExistSecret(ctx, ps)
 	if err != nil {
-		return fmt.Errorf("creating Alertmanager proxy Secret failed: %w", err)
+		return fmt.Errorf("creating Alertmanager proxy web Secret failed: %w", err)
 	}
 
 	svc, err := t.factory.AlertmanagerService()
@@ -225,6 +227,18 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reconciling Alertmanager ServiceMonitor failed: %w", err)
 	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteSecret(ctx, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "alertmanager-main-proxy",
+			Namespace: "openshift-monitoring",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("deleting Alertmanager proxy Secret failed: %w", err)
+	}
+
 	return nil
 }
 
@@ -299,9 +313,9 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("deleting Alertmanager ServiceAccount failed: %w", err)
 	}
 
-	ps, err := t.factory.AlertmanagerProxySecret()
+	ps, err := t.factory.AlertmanagerRBACProxyWebSecret()
 	if err != nil {
-		return fmt.Errorf("initializing Alertmanager proxy Secret failed: %w", err)
+		return fmt.Errorf("initializing Alertmanager proxy web Secret failed: %w", err)
 	}
 
 	err = t.client.DeleteSecret(ctx, ps)
@@ -332,7 +346,7 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 	}
 
 	{
-		// Create trusted CA bundle ConfigMap.
+		// Delete trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.AlertmanagerTrustedCABundle()
 		if err != nil {
 			return fmt.Errorf("initializing Alertmanager CA bundle ConfigMap failed: %w", err)
