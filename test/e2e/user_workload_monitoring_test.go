@@ -549,6 +549,7 @@ func assertTenancyForMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Check that the service account can request the tenancy-aware /api/v1/query API endpoint using HTTP GET.
 	for _, tc := range []struct {
 		name      string
 		query     string
@@ -665,7 +666,7 @@ func assertTenancyForMetrics(t *testing.T) {
 		})
 	}
 
-	// Check that the account doesn't have to access the rules and alerts endpoint.
+	// Check that the account doesn't have to access the rules and alerts endpoints.
 	for _, path := range []string{"/api/v1/rules", "/api/v1/alerts"} {
 		err = framework.Poll(5*time.Second, time.Minute, func() error {
 			// The tenancy port (9092) is only exposed in-cluster so we need to use
@@ -800,25 +801,33 @@ func assertTenancyForMetrics(t *testing.T) {
 				},
 			)
 
-			resp, err := client.Do(tc.method, "/api/v1/query?namespace="+userWorkloadTestNs+"&query=up", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer resp.Body.Close()
-			// Body: {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up",...},"value":[1695582946.784,"1"]}]}}
-			respBodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatal(err)
-			}
+			// It might take some time for kube-rbac-proxy to catch up the updated permission.
+			err = framework.Poll(time.Second, time.Minute, func() error {
+				resp, err := client.Do(tc.method, "/api/v1/query?namespace="+userWorkloadTestNs+"&query=up", nil)
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
+				// Body: {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up",...},"value":[1695582946.784,"1"]}]}}
+				respBodyBytes, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return err
+				}
 
-			if tc.expectNotOKOnQuery {
-				if resp.StatusCode == http.StatusOK {
-					t.Fatal("expected request to be rejected, but succeeded")
+				if tc.expectNotOKOnQuery {
+					if resp.StatusCode == http.StatusOK {
+						return fmt.Errorf("expected request to be rejected, but succeeded")
+					}
+				} else {
+					if resp.StatusCode != http.StatusOK {
+						return fmt.Errorf("expected request to be accepted, but got status code %d (%s)", resp.StatusCode, respBodyBytes)
+					}
 				}
-			} else {
-				if resp.StatusCode != http.StatusOK {
-					t.Fatalf("expected request to be accepted, but got status code %d (%s)", resp.StatusCode, respBodyBytes)
-				}
+
+				return nil
+			})
+			if err != nil {
+				t.Fatal(err)
 			}
 		})
 	}
