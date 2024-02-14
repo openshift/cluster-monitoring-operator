@@ -4,6 +4,7 @@ local tlsVolumeName = 'kube-state-metrics-tls';
 local kubeStateMetrics = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-state-metrics.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params)
   local cfg = params;
@@ -16,7 +17,13 @@ function(params)
       metadata+: {
         annotations+: {
           'service.beta.openshift.io/serving-cert-secret-name': 'kube-state-metrics-tls',
-        },
+        } + withDescription(
+          |||
+            Expose kube-state-metrics `/metrics` endpoints within the cluster on the following ports:
+            * Port %d provides access to the Kubernetes resource metrics. This port is for internal use, and no other usage is guaranteed.
+            * Port %d provides access to the internal kube-state-metrics metrics. This port is for internal use, and no other usage is guaranteed.
+          ||| % [$.service.spec.ports[0].port, $.service.spec.ports[1].port],
+        ),
       },
     },
 

@@ -3,6 +3,7 @@ local tlsVolumeName = 'prometheus-operator-user-workload-tls';
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local rbac = import '../utils/rbac.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params)
   local po = operator(params);
@@ -176,7 +177,7 @@ function(params)
       metadata+: {
         annotations+: {
           'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-operator-user-workload-tls',
-        },
+        } + withDescription('Expose the `/metrics` endpoint on port %d. This port is for internal use, and no other usage is guaranteed.' % $.service.spec.ports[0].port),
       },
     },
 

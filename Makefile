@@ -174,8 +174,10 @@ check-versions:
 .PHONY: docs
 docs: $(EMBEDMD_BIN) $(DOCGEN_BIN) Documentation/telemetry/telemeter_query
 	$(EMBEDMD_BIN) -w `find Documentation -name "*.md"`
-	$(DOCGEN_BIN) markdown $(K8S_VERSION) $(PO_VERSION) $(TYPES_TARGET) > Documentation/api.md
-	$(DOCGEN_BIN) asciidocs $(K8S_VERSION) $(PO_VERSION) $(TYPES_TARGET)
+	$(DOCGEN_BIN) api markdown $(K8S_VERSION) $(PO_VERSION) $(TYPES_TARGET) > Documentation/api.md
+	$(DOCGEN_BIN) api asciidocs $(K8S_VERSION) $(PO_VERSION) $(TYPES_TARGET)
+	$(DOCGEN_BIN) resources markdown > Documentation/resources.md
+	$(DOCGEN_BIN) resources asciidocs > Documentation/resources.adoc
 
 Documentation/telemetry/telemeter_query: manifests/0000_50_cluster-monitoring-operator_04-config.yaml hack/telemeter_query.go
 	go generate ./hack/telemeter_query.go > Documentation/telemetry/telemeter_query

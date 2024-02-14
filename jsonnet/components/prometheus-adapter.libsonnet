@@ -15,6 +15,7 @@ local generateCertInjection = import '../utils/generate-certificate-injection.li
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 local prometheusAdapter = (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet');
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params)
   local cfg = params;
@@ -45,7 +46,7 @@ function(params)
         metadata+: {
           annotations+: {
             'service.beta.openshift.io/serving-cert-secret-name': tlsVolumeName,
-          },
+          } + withDescription('Expose the `prometheus-adapter` web server on port %d. This port is for internal use, and no other usage is guaranteed.' % $.service.spec.ports[0].port),
         },
         spec+: {
           type: 'ClusterIP',

@@ -1,12 +1,23 @@
 # Cluster Monitoring Operator Docgen
 
-This package contains the code that automatically generates `Documentation/api.md` the code is heavily inspired by the (current) prometheus-operator codegen solution however, some adaptations were made to the format to alight it as much as possible with the OpenShift docs format.
+This package contains the code that automatically generates the following files:
 
-### Goal
-The goal of this code is to automate the generation of documentation that will not only be used by users but also by our technical writers who have to maintain an updated version of it on OpenShift docs. Because of this requirement, a custom code solution was used instead of an open source one to facilitate compliance with the OpenShift docs format. 
+* `Documentation/api.md`
+* `Documentation/resources.md`
+* `Documentation/api.adoc`
+* `Documentation/resources.adoc`
 
-### How it works
-The code will generate the documentation based on comments in the golang code. It will ingest the file `pkg/manifests/types.go` which contains all the types used by CMO and parse it accordingly.
+The code is heavily inspired by the prometheus-operator's codegen tool however, some adaptations were made to the format to align it as much as possible with the OpenShift docs format.
+
+## Goal
+
+The goal of this code is to automate the generation of documentation that will not only be used by users but also by our technical writers who have to maintain an updated version of it for the OpenShift docs. Because of this requirement, a custom code solution was used instead of an open source one to facilitate compliance with the OpenShift docs format.
+
+## How it works
+
+### `Documentation/api.{adoc,md}`
+
+For `Documentation/api.{adoc,md}`, the tool generates the documentation based on comments found in the `pkg/manifests/types.go` file.
 
 #### External links
 
@@ -20,7 +31,11 @@ Some data types require that some fields are present when specified while others
 
 Some fields can be omitted from the documentation if their documentation starts with `// OmitFromDoc`.
 
-### How to run
+### `Documentation/resources.{adoc,md}`
+
+The tool parses the manifests from the `assets` and `manifests` directories, then it generates the page based on the `openshift.io/description` annotations.
+
+## How to run
 
 To update the documentation, run:
 

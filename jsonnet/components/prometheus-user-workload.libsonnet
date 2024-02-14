@@ -1,5 +1,7 @@
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 
@@ -58,7 +60,20 @@ function(params)
       metadata+: {
         annotations: {
           'service.beta.openshift.io/serving-cert-secret-name': 'prometheus-user-workload-tls',
-        },
+        } + withDescription(
+          |||
+            Expose the Prometheus web server within the cluster on the following ports:
+            * Port %d provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
+            * Port %d provides access to the `/federate` endpoint only. %s
+
+            This also exposes the `/metrics` endpoint of the Thanos sidecar web server on port %d. This port is for internal use, and no other usage is guaranteed.
+          ||| % [
+            $.service.spec.ports[0].port,
+            $.service.spec.ports[1].port,
+            requiredClusterRoles(['cluster-monitoring-view'], true),
+            $.service.spec.ports[2].port,
+          ],
+        ),
       },
       spec+: {
         ports: [
@@ -89,6 +104,9 @@ function(params)
         name: 'federate',
         namespace: cfg.namespace,
         labels: cfg.commonLabels,
+        annotations: withDescription(
+          'Expose the `/federate` endpoint of the `%s` service via a router.' % $.service.metadata.name,
+        ),
       },
       spec: {
         path: '/federate',

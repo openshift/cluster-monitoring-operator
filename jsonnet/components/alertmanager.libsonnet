@@ -3,6 +3,9 @@ local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/json
 // local krp = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
+local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 
 function(params)
   local cfg = params {
@@ -20,6 +23,9 @@ function(params)
       metadata: {
         name: 'alertmanager-main',
         namespace: cfg.namespace,
+        annotations: withDescription(
+          'Expose the `/api` endpoints of the `alertmanager-main` service via a router.',
+        ),
       },
       spec: {
         path: '/api',
@@ -68,7 +74,20 @@ function(params)
       metadata+: {
         annotations: {
           'service.beta.openshift.io/serving-cert-secret-name': 'alertmanager-main-tls',
-        },
+        } + withDescription(
+          |||
+            Expose the Alertmanager web server within the cluster on the following ports:
+            * Port %d provides access to all the Alertmanager endpoints. %s
+            * Port %d provides access to the Alertmanager endpoints restricted to a given project. %s
+            * Port %d provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
+          ||| % [
+            $.service.spec.ports[0].port,
+            requiredRoles(['monitoring-alertmanager-edit'], 'openshift-monitoring'),
+            $.service.spec.ports[1].port,
+            requiredClusterRoles(['monitoring-rules-edit', 'monitoring-edit'], false, ''),
+            $.service.spec.ports[2].port,
+          ],
+        ),
       },
       spec+: {
         ports: [

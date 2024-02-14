@@ -1,10 +1,9 @@
-// I didn't invest much time into this file since telemeter-client is scheduled for deprecation when we enable remote-write in prometheus
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params) {
   local cfg = params,
-  //local osm = import 'github.com/openshift/openshift-state-metrics/jsonnet/openshift-state-metrics.libsonnet';
   local tc = (import 'github.com/openshift/telemeter/jsonnet/telemeter/client.libsonnet') + {
     _config+:: {
       namespace: cfg.namespace,
@@ -23,13 +22,16 @@ function(params) {
     },
   },
 
-  // Remapping everything as this is the only way I could think of without refactoring imported library
   prometheusRule: tc.telemeterClient.prometheusRule,
   clusterRoleBindingView: tc.telemeterClient.clusterRoleBindingView,
   clusterRoleBinding: tc.telemeterClient.clusterRoleBinding,
   clusterRole: tc.telemeterClient.clusterRole,
   serviceAccount: tc.telemeterClient.serviceAccount,
-  service: tc.telemeterClient.service,
+  service: tc.telemeterClient.service {
+    metadata+: {
+      annotations+: withDescription('Expose the `/metrics` endpoint on port %d. This port is for internal use, and no other usage is guaranteed.' % $.service.spec.ports[0].port),
+    },
+  },
   serviceMonitor: tc.telemeterClient.serviceMonitor {
     spec+: {
       endpoints: [

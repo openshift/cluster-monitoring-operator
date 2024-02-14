@@ -1,6 +1,8 @@
 apiVersion: v1
 kind: Route
 metadata:
+  annotations:
+    openshift.io/description: Expose the `/federate` endpoint of the `prometheus-user-workload` service via a router.
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
