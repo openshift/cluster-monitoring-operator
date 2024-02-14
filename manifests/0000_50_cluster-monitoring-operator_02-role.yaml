@@ -211,10 +211,6 @@ rules:
   - get
   - create
   - update
-- nonResourceURLs:
-  - /federate
-  verbs:
-  - get
 - apiGroups:
   - ""
   resourceNames:

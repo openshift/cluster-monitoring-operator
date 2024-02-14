@@ -5,6 +5,7 @@ metadata:
     openshift.io/description: |-
       Expose the Prometheus web server within the cluster on the following ports:
       * Port 9091 provides access to all the Prometheus endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
+      * Port 9092 provides access the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
     service.beta.openshift.io/serving-cert-secret-name: prometheus-k8s-tls
   labels:
     app.kubernetes.io/component: prometheus
@@ -20,6 +21,9 @@ spec:
   - name: web
     port: 9091
     targetPort: web
+  - name: metrics
+    port: 9092
+    targetPort: metrics
   selector:
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/instance: k8s

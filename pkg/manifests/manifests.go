@@ -58,8 +58,6 @@ const (
 	configManagedNamespace = "openshift-config-managed"
 	sharedConfigMap        = "monitoring-shared-config"
 
-	clientCAArg = "--client-ca-file=/etc/tls/client/client-ca.crt"
-
 	tmpClusterIDLabelName = "__tmp_openshift_cluster_id__"
 
 	nodeSelectorMaster = "node-role.kubernetes.io/master"
@@ -1467,41 +1465,12 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
-		case "kube-rbac-proxy-web":
+		case "kube-rbac-proxy", "kube-rbac-proxy-web", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
-		case "kube-rbac-proxy-thanos":
-			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-
-			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
-			p.Spec.Containers[i].Args = append(
-				p.Spec.Containers[i].Args,
-				clientCAArg,
-			)
-
-			p.Spec.Containers[i].VolumeMounts = append(
-				p.Spec.Containers[i].VolumeMounts,
-				v1.VolumeMount{
-					Name:      "metrics-client-ca",
-					MountPath: "/etc/tls/client",
-					ReadOnly:  true,
-				},
-			)
-
-			p.Spec.Volumes = append(
-				p.Spec.Volumes,
-				v1.Volume{
-					Name: "metrics-client-ca",
-					VolumeSource: v1.VolumeSource{
-						ConfigMap: &v1.ConfigMapVolumeSource{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: "metrics-client-ca",
-							},
-						},
-					},
-				})
 		}
 	}
+
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
 		VolumeSource: v1.VolumeSource{
