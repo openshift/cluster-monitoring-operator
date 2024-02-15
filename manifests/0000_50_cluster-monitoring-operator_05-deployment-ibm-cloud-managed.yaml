@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
   labels:
     app: cluster-monitoring-operator
     app.kubernetes.io/managed-by: cluster-version-operator

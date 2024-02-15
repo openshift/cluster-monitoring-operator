@@ -1867,6 +1867,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -1880,6 +1881,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -4877,6 +4879,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -4890,6 +4893,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -7596,6 +7600,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -7610,6 +7615,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -8620,6 +8626,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -8633,6 +8640,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -10534,6 +10542,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -10548,6 +10557,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -12511,6 +12521,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -12525,6 +12536,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -14641,6 +14653,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -14655,6 +14668,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -16111,6 +16125,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -16124,6 +16139,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -17178,6 +17194,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -17191,6 +17208,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -18299,6 +18317,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -18312,6 +18331,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -19532,6 +19552,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -19545,6 +19566,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
@@ -20788,6 +20810,7 @@ metadata:
   annotations:
     capability.openshift.io/name: Console
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   labels:
@@ -20801,6 +20824,7 @@ kind: ConfigMap
 metadata:
   annotations:
     include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
     release.openshift.io/delete: "true"
