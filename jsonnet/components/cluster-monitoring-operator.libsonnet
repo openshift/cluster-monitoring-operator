@@ -359,10 +359,6 @@ function(params) {
         resourceNames: ['k8s'],
         verbs: ['get', 'create', 'update'],
       },
-      {
-        nonResourceURLs: ['/federate'],
-        verbs: ['get'],
-      },
     ],
   },
 

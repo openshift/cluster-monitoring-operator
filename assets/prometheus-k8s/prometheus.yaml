@@ -52,7 +52,6 @@ spec:
     - --config-file=/etc/kube-rbac-proxy/config.yaml
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
-    - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --ignore-paths=/-/healthy,/-/ready
     image: quay.io/brancz/kube-rbac-proxy:v0.15.0
@@ -73,11 +72,35 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-k8s-tls
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-prometheus-k8s-kube-rbac-proxy-web
+  - args:
+    - --secure-listen-address=0.0.0.0:9092
+    - --upstream=http://127.0.0.1:9090
+    - --allow-paths=/metrics,/federate
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --client-ca-file=/etc/tls/client/client-ca.crt
+    - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
+    name: kube-rbac-proxy
+    ports:
+    - containerPort: 9092
+      name: metrics
+    resources:
+      requests:
+        cpu: 1m
+        memory: 15Mi
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-prometheus-k8s-tls
     - mountPath: /etc/tls/client
       name: configmap-metrics-client-ca
       readOnly: true
     - mountPath: /etc/kube-rbac-proxy
-      name: secret-prometheus-k8s-kube-rbac-proxy-web
+      name: secret-kube-rbac-proxy
   - args:
     - --secure-listen-address=[$(POD_IP)]:10903
     - --upstream=http://127.0.0.1:10902
@@ -106,8 +129,13 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-k8s-thanos-sidecar-tls
+      readOnly: true
     - mountPath: /etc/kube-rbac-proxy
       name: secret-kube-rbac-proxy
+      readOnly: true
+    - mountPath: /etc/tls/client
+      name: configmap-metrics-client-ca
+      readOnly: true
   - args:
     - sidecar
     - --prometheus.url=http://localhost:9090/

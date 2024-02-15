@@ -103,9 +103,11 @@ function(params)
           |||
             Expose the Prometheus web server within the cluster on the following ports:
             * Port %d provides access to all the Prometheus endpoints. %s
+            * Port %d provides access the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
             requiredClusterRoles(['cluster-monitoring-view'], true),
+            $.service.spec.ports[1].port,
           ],
         ),
       },
@@ -115,6 +117,11 @@ function(params)
             name: 'web',
             port: 9091,
             targetPort: 'web',
+          },
+          {
+            name: 'metrics',
+            port: 9092,
+            targetPort: 'metrics',
           },
         ],
         type: 'ClusterIP',
@@ -208,28 +215,16 @@ function(params)
       }],
     },
 
+    // Eventually this container could be merged with the 'kube-rbac-proxy-web'
+    // container once https://github.com/brancz/kube-rbac-proxy/issues/146 is
+    // implemented.
     kubeRbacProxySecret: generateSecret.staticAuthSecret(
       cfg.namespace,
       cfg.commonLabels,
       'kube-rbac-proxy',
-    ),
-
-    kubeRbacProxyWebSecret: generateSecret.kubeRBACSecretForMonitoringAPI(
-      'prometheus-k8s-kube-rbac-proxy-web',
-      cfg.commonLabels,
       {
         authorization+: {
-          static: [
-            // The prometheus-k8s service account is allowed to access the /metrics endpoint.
-            {
-              user: {
-                name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
-              },
-              verb: 'get',
-              path: '/metrics',
-              resourceRequest: false,
-            },
-            // telemeter-client using the prometheus-k8s TLS client certificate is allowed to access the /federate endpoint.
+          static+: [
             {
               user: {
                 name: 'system:serviceaccount:openshift-monitoring:prometheus-k8s',
@@ -238,7 +233,6 @@ function(params)
               path: '/federate',
               resourceRequest: false,
             },
-            // The telemeter-client service account is allowed to access the /federate endpoint.
             {
               user: {
                 name: 'system:serviceaccount:openshift-monitoring:telemeter-client',
@@ -249,7 +243,12 @@ function(params)
             },
           ],
         },
-      }
+      },
+    ),
+
+    kubeRbacProxyWebSecret: generateSecret.kubeRBACSecretForMonitoringAPI(
+      'prometheus-k8s-kube-rbac-proxy-web',
+      cfg.commonLabels,
     ),
 
     // Secret holding the token to authenticate against the Telemetry server when using native remote-write.
@@ -272,7 +271,7 @@ function(params)
       spec+: {
         endpoints: [
           {
-            port: 'web',
+            port: 'metrics',
             interval: '30s',
             scheme: 'https',
             tlsConfig: {
@@ -414,7 +413,6 @@ function(params)
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--tls-cert-file=/etc/tls/private/tls.crt',
               '--tls-private-key-file=/etc/tls/private/tls.key',
-              '--client-ca-file=/etc/tls/client/client-ca.crt',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               // Liveness and readiness endpoints are always allowed.
               '--ignore-paths=' + std.join(',', ['/-/healthy', '/-/ready']),
@@ -423,11 +421,6 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-' + prometheusTLSSecret,
-              },
-              {
-                mountPath: '/etc/tls/client',
-                name: 'configmap-metrics-client-ca',
-                readOnly: true,
               },
               {
                 mountPath: '/etc/kube-rbac-proxy',
@@ -440,6 +433,47 @@ function(params)
                 drop: ['ALL'],
               },
             },
+          },
+          {
+            name: 'kube-rbac-proxy',
+            image: cfg.kubeRbacProxyImage,
+            resources: {
+              requests: {
+                memory: '15Mi',
+                cpu: '1m',
+              },
+            },
+            ports: [
+              {
+                containerPort: 9092,
+                name: 'metrics',
+              },
+            ],
+            args: [
+              '--secure-listen-address=0.0.0.0:9092',
+              '--upstream=http://127.0.0.1:9090',
+              '--allow-paths=/metrics,/federate',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--client-ca-file=/etc/tls/client/client-ca.crt',
+              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+            ],
+            volumeMounts: [
+              {
+                mountPath: '/etc/tls/private',
+                name: 'secret-prometheus-k8s-tls',
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'configmap-metrics-client-ca',
+                readOnly: true,
+              },
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+              },
+            ],
           },
           {
             name: 'kube-rbac-proxy-thanos',
@@ -479,10 +513,17 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-' + thanosSidecarTLSSecret,
+                readOnly: true,
               },
               {
                 mountPath: '/etc/kube-rbac-proxy',
                 name: 'secret-' + $.kubeRbacProxySecret.metadata.name,
+                readOnly: true,
+              },
+              {
+                mountPath: '/etc/tls/client',
+                name: 'configmap-metrics-client-ca',
+                readOnly: true,
               },
             ],
           },
