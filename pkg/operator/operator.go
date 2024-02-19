@@ -26,6 +26,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	configv1client "github.com/openshift/client-go/config/clientset/versioned"
 	configv1informers "github.com/openshift/client-go/config/informers/externalversions"
+	"github.com/openshift/library-go/pkg/operator/certrotation"
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	"github.com/openshift/library-go/pkg/operator/csr"
 	"github.com/openshift/library-go/pkg/operator/events"
@@ -449,7 +450,9 @@ func New(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
 			SecretName:      "metrics-client-certs",
-			JiraComponent:   "Monitoring",
+			AdditionalAnnotations: certrotation.AdditionalAnnotations{
+				JiraComponent: "Monitoring",
+			},
 		},
 		csrOption,
 		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
@@ -471,7 +474,9 @@ func New(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
 			SecretName:      "federate-client-certs",
-			JiraComponent:   "Monitoring",
+			AdditionalAnnotations: certrotation.AdditionalAnnotations{
+				JiraComponent: "Monitoring",
+			},
 		},
 		csrOption,
 		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
