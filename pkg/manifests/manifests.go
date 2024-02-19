@@ -3249,7 +3249,6 @@ func (f *Factory) ThanosRulerRBACProxyMetricsSecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) ThanosRulerCustomResource(
-	queryURL string,
 	trustedCA *v1.ConfigMap,
 	grpcTLS *v1.Secret,
 	alertmanagerConfig *v1.Secret,
@@ -3340,8 +3339,11 @@ func (f *Factory) ThanosRulerCustomResource(
 	f.mountThanosRulerAlertmanagerSecrets(t)
 	f.injectThanosRulerAlertmanagerDigest(t, alertmanagerConfig)
 
-	if queryURL != "" {
-		t.Spec.AlertQueryURL = queryURL
+	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
+		t.Spec.AlertQueryURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	t.Namespace = f.namespaceUserWorkload
