@@ -3064,7 +3064,7 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 
 	c.UserWorkloadConfiguration = uwc
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
 	a, err := f.AlertmanagerUserWorkload(
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 	)
@@ -3091,6 +3091,11 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 
 	if a.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
 		t.Fatal("Alertmanager UWM spread contraints WhenUnsatisfiable not configured correctly")
+	}
+
+	expectedExternalURL := "https://console-openshift-console.apps.foo.devcluster.openshift.com/monitoring"
+	if a.Spec.ExternalURL != expectedExternalURL {
+		t.Fatalf("Alertmanager external URL is not configured correctly, expected %s, but got %s", expectedExternalURL, a.Spec.ExternalURL)
 	}
 }
 
@@ -4078,9 +4083,8 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
 	tr, err := f.ThanosRulerCustomResource(
-		"",
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
@@ -4111,6 +4115,11 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	if !reflect.DeepEqual(tr.Spec.Resources, *f.config.UserWorkloadConfiguration.ThanosRuler.Resources) {
 		t.Fatal("Thanos ruler resources not configured correctly")
 	}
+
+	expectedExternalURL := "https://console-openshift-console.apps.foo.devcluster.openshift.com/monitoring"
+	if tr.Spec.AlertQueryURL != expectedExternalURL {
+		t.Fatalf("Thanos Ruler alertquery URL is not configured correctly, expected %s, but got %s", expectedExternalURL, tr.Spec.AlertQueryURL)
+	}
 }
 
 func TestThanosRulerRetentionConfig(t *testing.T) {
@@ -4120,7 +4129,6 @@ func TestThanosRulerRetentionConfig(t *testing.T) {
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 	tr, err := f.ThanosRulerCustomResource(
-		"",
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
@@ -4215,7 +4223,6 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 			name: "Thanos ruler",
 			getSpec: func(f *Factory) (spec, error) {
 				t, err := f.ThanosRulerCustomResource(
-					"",
 					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					nil,
