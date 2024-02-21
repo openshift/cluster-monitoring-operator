@@ -10,9 +10,9 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-kit/log v0.2.1
 	github.com/imdario/mergo v0.3.16
-	github.com/openshift/api v0.0.0-20231109185848-6cd72e415ddb
-	github.com/openshift/client-go v0.0.0-20230926161409-848405da69e1
-	github.com/openshift/library-go v0.0.0-20231128230659-785a9313da6c
+	github.com/openshift/api v0.0.0-20231218131639-7a5aa77cc72d
+	github.com/openshift/client-go v0.0.0-20231218140158-47f6d749b9d9
+	github.com/openshift/library-go v0.0.0-20240216151214-738f3fa4ccf8
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.71.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.71.0
 	github.com/prometheus/client_golang v1.18.0
