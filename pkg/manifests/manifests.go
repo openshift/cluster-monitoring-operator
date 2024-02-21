@@ -1459,7 +1459,9 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		p.Spec.RemoteWrite = addRemoteWriteConfigs(clusterID, p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
 	}
 
-	for _, rw := range p.Spec.RemoteWrite {
+	for k := range p.Spec.RemoteWrite {
+		rw := &p.Spec.RemoteWrite[k]
+
 		if f.proxy.HTTPProxy() != "" {
 			rw.ProxyURL = f.proxy.HTTPProxy()
 		}
