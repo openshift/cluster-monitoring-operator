@@ -258,6 +258,9 @@ func New(
 	informer := cache.NewSharedIndexInformer(
 		o.client.SecretListWatchForNamespace(namespace), &v1.Secret{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
@@ -271,6 +274,9 @@ func New(
 	o.cmapInf = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace(namespace), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := o.cmapInf.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 	_, err = o.cmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
@@ -283,6 +289,9 @@ func New(
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace(namespaceUserWorkload), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
@@ -297,6 +306,9 @@ func New(
 		o.client.ConfigMapListWatchForNamespace("kube-system"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
@@ -309,6 +321,9 @@ func New(
 		o.client.ConfigMapListWatchForNamespace("openshift-config-managed"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
@@ -321,6 +336,9 @@ func New(
 		o.client.ConfigMapListWatchForNamespace("openshift-config"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
@@ -333,6 +351,9 @@ func New(
 		o.client.InfrastructureListWatchForResource(ctx, clusterResourceName),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
@@ -345,6 +366,9 @@ func New(
 		o.client.ApiServersListWatchForResource(ctx, clusterResourceName),
 		&configv1.APIServer{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) {
@@ -360,6 +384,9 @@ func New(
 		o.client.ConsoleListWatch(ctx),
 		&configv1.Console{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) {
@@ -375,6 +402,9 @@ func New(
 		o.client.ClusterOperatorListWatch(ctx, "ingress"),
 		&configv1.ClusterOperator{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 
 	// According to the component-selection enhancement proposal [1] the
 	// ingress cluster operator (or capability) could be added after an
@@ -397,6 +427,9 @@ func New(
 		o.client.ClusterVersionListWatch(ctx, "version"),
 		&configv1.ClusterVersion{}, resyncPeriod, cache.Indexers{},
 	)
+	if err := informer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
