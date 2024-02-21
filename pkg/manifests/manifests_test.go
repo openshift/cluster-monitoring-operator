@@ -54,13 +54,15 @@ func defaultInfrastructureReader() InfrastructureReader {
 	return &fakeInfrastructureReader{highlyAvailableInfrastructure: true, hostedControlPlane: false}
 }
 
-type fakeProxyReader struct{}
+type fakeProxyReader struct {
+	httpProxy, httpsProxy, noProxy string
+}
 
-func (f *fakeProxyReader) HTTPProxy() string { return "" }
+func (f *fakeProxyReader) HTTPProxy() string { return f.httpProxy }
 
-func (f *fakeProxyReader) HTTPSProxy() string { return "" }
+func (f *fakeProxyReader) HTTPSProxy() string { return f.httpsProxy }
 
-func (f *fakeProxyReader) NoProxy() string { return "" }
+func (f *fakeProxyReader) NoProxy() string { return f.noProxy }
 
 const assetsPath = "../../assets"
 
@@ -1507,6 +1509,71 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
+	config := func() *Config {
+		c, err := NewConfigFromString("", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
+
+		return c
+	}
+
+	for _, tc := range []struct {
+		name                        string
+		proxyReader                 ProxyReader
+		expectedRemoteWriteProxyURL string
+	}{
+		{
+			name:                        "no proxy",
+			proxyReader:                 &fakeProxyReader{},
+			expectedRemoteWriteProxyURL: "",
+		},
+
+		{
+			name:                        "HTTP proxy",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy"},
+			expectedRemoteWriteProxyURL: "http://my-proxy",
+		},
+
+		{
+			name:                        "HTTPS proxy",
+			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy"},
+			expectedRemoteWriteProxyURL: "https://my-secured-proxy",
+		},
+
+		{
+			name:                        "HTTP & HTTPS proxy",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy"},
+			expectedRemoteWriteProxyURL: "https://my-secured-proxy",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", config(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got string
+			for _, rw := range p.Spec.RemoteWrite {
+				got = rw.ProxyURL
+				break
+			}
+
+			if !reflect.DeepEqual(got, tc.expectedRemoteWriteProxyURL) {
+				t.Errorf("want remote write proxy URL %v, got %v", tc.expectedRemoteWriteProxyURL, got)
+			}
+		})
 	}
 }
 
