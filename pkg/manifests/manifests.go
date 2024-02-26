@@ -482,12 +482,11 @@ func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*mo
 
 	// TODO(simonpasquier): link to the alerting page of the dev console. It
 	// depends on https://issues.redhat.com/browse/MON-2289.
-	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
-		a.Spec.ExternalURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
-		if err != nil {
-			return nil, err
-		}
+	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "monitoring")
+	if err != nil {
+		return nil, err
 	}
+	a.Spec.ExternalURL = alertGeneratorURL
 
 	alertmanagerConfig := f.config.UserWorkloadConfiguration.Alertmanager
 
@@ -613,12 +612,11 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 
 	a.Spec.Image = &f.config.Images.Alertmanager
 
-	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
-		a.Spec.ExternalURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
-		if err != nil {
-			return nil, err
-		}
+	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "monitoring")
+	if err != nil {
+		return nil, err
 	}
+	a.Spec.ExternalURL = alertGeneratorURL
 
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel != "" {
 		a.Spec.LogLevel = f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel
@@ -1360,12 +1358,11 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 
 	p.Spec.Image = &f.config.Images.Prometheus
 
-	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
-		p.Spec.ExternalURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
-		if err != nil {
-			return nil, err
-		}
+	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "monitoring")
+	if err != nil {
+		return nil, err
 	}
+	p.Spec.ExternalURL = alertGeneratorURL
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources != nil {
 		p.Spec.Resources = *f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.Resources
@@ -1732,12 +1729,11 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 
 	p.Spec.Image = &f.config.Images.Prometheus
 
-	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
-		p.Spec.ExternalURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
-		if err != nil {
-			return nil, err
-		}
+	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "monitoring")
+	if err != nil {
+		return nil, err
 	}
+	p.Spec.ExternalURL = alertGeneratorURL
 
 	if f.config.UserWorkloadConfiguration.Prometheus.Resources != nil {
 		p.Spec.Resources = *f.config.UserWorkloadConfiguration.Prometheus.Resources
@@ -3264,12 +3260,11 @@ func (f *Factory) ThanosRulerCustomResource(
 	f.mountThanosRulerAlertmanagerSecrets(t)
 	f.injectThanosRulerAlertmanagerDigest(t, alertmanagerConfig)
 
-	if f.consoleConfig != nil && f.consoleConfig.Status.ConsoleURL != "" {
-		t.Spec.AlertQueryURL, err = url.JoinPath(f.consoleConfig.Status.ConsoleURL, "monitoring")
-		if err != nil {
-			return nil, err
-		}
+	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "monitoring")
+	if err != nil {
+		return nil, err
 	}
+	t.Spec.AlertQueryURL = alertGeneratorURL
 
 	t.Namespace = f.namespaceUserWorkload
 
@@ -3656,6 +3651,13 @@ func (f *Factory) HashSecret(secret *v1.Secret, data ...string) (*v1.Secret, err
 		},
 		Data: m,
 	}, nil
+}
+
+func makeConsoleURL(c *configv1.Console, path string) (string, error) {
+	if c != nil && c.Status.ConsoleURL != "" {
+		return url.JoinPath(c.Status.ConsoleURL, path)
+	}
+	return "", nil
 }
 
 func serviceMonitors(appendMinimal bool, fullServiceMonitor, minimalServiceMonitor func() (*monv1.ServiceMonitor, error)) ([]*monv1.ServiceMonitor, error) {
