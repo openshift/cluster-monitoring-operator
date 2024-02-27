@@ -34,6 +34,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 
+	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 	monClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	monBetaClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1beta1"
@@ -117,7 +118,8 @@ func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 		return nil, nil, fmt.Errorf("creating monitoring beta client failed: %w", err)
 	}
 
-	operatorClient, err := client.NewForConfig(config, "", namespaceName, userWorkloadNamespaceName)
+	// The event recorder will be used by some CreateOrUpdateXXX utils for creation/update events.
+	operatorClient, err := client.NewForConfig(config, "", namespaceName, userWorkloadNamespaceName, client.EventRecorder(events.NewInMemoryRecorder("cluster-monitoring-operator")))
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating operator client failed: %w", err)
 	}

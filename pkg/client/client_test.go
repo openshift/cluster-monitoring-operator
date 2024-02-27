@@ -462,6 +462,7 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 			expectedAnnotations: map[string]string{
 				"monitoring.openshift.io/foo": "bar",
 			},
+			expectedData: map[string][]byte{},
 		},
 		{
 			name: "label/annotation merge",
@@ -479,6 +480,8 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 			},
 			updatedAnnotations: map[string]string{
 				"monitoring.openshift.io/foo": "bar",
+				// dropping an annotation or a label requires 2 steps.
+				"monitoring.openshift.io/bar-": "",
 			},
 			expectedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
@@ -488,12 +491,13 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 				"monitoring.openshift.io/foo": "bar",
 				"annotation":                  "value",
 			},
+			expectedData: map[string][]byte{},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			s := &v1.Secret{
+			initial := &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "secret",
 					Namespace:   ns,
@@ -504,162 +508,25 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 			}
 
 			c := Client{
-				kclient: fake.NewSimpleClientset(s.DeepCopy()),
+				kclient:       fake.NewSimpleClientset(initial),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 			}
 
-			if _, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, s.Name, metav1.GetOptions{}); err != nil {
-				t.Fatal(err)
-			}
+			_, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, initial.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			s.SetLabels(tc.updatedLabels)
-			s.SetAnnotations(tc.updatedAnnotations)
-			s.Data = tc.updatedData
-			if err := c.CreateOrUpdateSecret(ctx, s); err != nil {
-				t.Fatal(err)
-			}
-			after, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, s.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			required := initial.DeepCopy()
+			required.SetLabels(tc.updatedLabels)
+			required.SetAnnotations(tc.updatedAnnotations)
+			required.Data = tc.updatedData
+			err = c.CreateOrUpdateSecret(ctx, required)
+			require.NoError(t, err)
+			final, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, required.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
-			}
-			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
-			}
-			if !reflect.DeepEqual(tc.expectedData, after.Data) {
-				t.Errorf("%q: expected data %q, got %q", tc.name, tc.expectedData, after.Data)
-			}
-		})
-	}
-}
-
-func TestCreateOrUpdateSecretWithSCOData(t *testing.T) {
-	ctx := context.Background()
-	testCases := []struct {
-		name               string
-		serviceAnnotations map[string]string
-		initialData        map[string][]byte
-		updatedData        map[string][]byte
-		expectedData       map[string][]byte
-		ownerRefs          []metav1.OwnerReference
-	}{
-		{
-			name: "retain existing tls data",
-			serviceAnnotations: map[string]string{
-				"service.beta.openshift.io/serving-cert-secret-name": "secret",
-			},
-			initialData: map[string][]byte{
-				"tls.crt": []byte("foocrt"),
-				"tls.key": []byte("fookey"),
-			},
-			updatedData: map[string][]byte{},
-			expectedData: map[string][]byte{
-				"tls.crt": []byte("foocrt"),
-				"tls.key": []byte("fookey"),
-			},
-			ownerRefs: []metav1.OwnerReference{
-				{
-					Kind: "Service",
-					Name: "service",
-				},
-			},
-		},
-		{
-			name: "retain existing tls data with multiple owner refs",
-			serviceAnnotations: map[string]string{
-				"service.beta.openshift.io/serving-cert-secret-name": "secret",
-			},
-			initialData: map[string][]byte{
-				"tls.crt": []byte("foocrt"),
-				"tls.key": []byte("fookey"),
-			},
-			updatedData: map[string][]byte{},
-			expectedData: map[string][]byte{
-				"tls.crt": []byte("foocrt"),
-				"tls.key": []byte("fookey"),
-			},
-			ownerRefs: []metav1.OwnerReference{
-				{
-					Kind: "any",
-					Name: "doesnotexist",
-				},
-				{
-					Kind: "Service",
-					Name: "service",
-				},
-			},
-		},
-		{
-			name: "drop existing but empty tls data",
-			serviceAnnotations: map[string]string{
-				"service.beta.openshift.io/serving-cert-secret-name": "secret",
-			},
-			initialData: map[string][]byte{
-				"tls.crt": []byte(""),
-				"tls.key": []byte(""),
-			},
-			ownerRefs: []metav1.OwnerReference{
-				{
-					Kind: "Service",
-					Name: "service",
-				},
-			},
-		},
-		{
-			name: "drop existing without owning Service",
-			initialData: map[string][]byte{
-				"tls.crt": []byte("foocrt"),
-				"tls.key": []byte("fookey"),
-			},
-			ownerRefs: []metav1.OwnerReference{
-				{
-					Kind: "Service",
-					Name: "service",
-				},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(st *testing.T) {
-			s := &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            "secret",
-					Namespace:       ns,
-					OwnerReferences: tc.ownerRefs,
-				},
-				Data: tc.initialData,
-			}
-			svc := &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        "service",
-					Namespace:   ns,
-					Annotations: tc.serviceAnnotations,
-				},
-			}
-
-			c := Client{
-				kclient: fake.NewSimpleClientset(s.DeepCopy(), svc),
-			}
-
-			if _, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, s.Name, metav1.GetOptions{}); err != nil {
-				t.Fatal(err)
-			}
-
-			s.Data = tc.updatedData
-			if err := c.CreateOrUpdateSecret(ctx, s); err != nil {
-				t.Fatal(err)
-			}
-			after, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, s.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if !reflect.DeepEqual(tc.expectedData, after.Data) {
-				t.Errorf("%q: expected data %q, got %q", tc.name, tc.expectedData, after.Data)
-			}
+			require.Equal(t, tc.expectedAnnotations, final.Annotations)
+			require.Equal(t, tc.expectedLabels, final.Labels)
+			require.Equal(t, tc.expectedData, final.Data)
 		})
 	}
 }
@@ -709,6 +576,8 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 			},
 			updatedAnnotations: map[string]string{
 				"monitoring.openshift.io/foo": "bar",
+				// dropping an annotation or a label requires 2 steps.
+				"monitoring.openshift.io/bar-": "",
 			},
 			expectedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
@@ -743,29 +612,16 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 			initialData: map[string]string{
 				"service-ca.crt": "foocrt",
 			},
-			updatedData:  map[string]string{},
-			expectedData: map[string]string{},
-		},
-		{
-			name: "drop existing but empty service-ca.crt",
-			initialAnnotations: map[string]string{
-				"service.beta.openshift.io/inject-cabundle": "true",
-			},
-			initialData: map[string]string{
-				"service-ca.crt": "",
-			},
-			updatedAnnotations: map[string]string{
-				"service.beta.openshift.io/inject-cabundle": "true",
-			},
-			expectedAnnotations: map[string]string{
-				"service.beta.openshift.io/inject-cabundle": "true",
-			},
+			updatedData:         map[string]string{},
+			expectedLabels:      map[string]string{},
+			expectedAnnotations: map[string]string{},
+			expectedData:        map[string]string{},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			cm := &v1.ConfigMap{
+			initial := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "cluster-monitoring-operator",
 					Namespace:   ns,
@@ -776,34 +632,26 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 			}
 
 			c := Client{
-				kclient: fake.NewSimpleClientset(cm),
+				kclient:       fake.NewSimpleClientset(initial),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 			}
 
-			if _, err := c.kclient.CoreV1().ConfigMaps(ns).Get(ctx, cm.Name, metav1.GetOptions{}); err != nil {
-				t.Fatal(err)
-			}
+			_, err := c.kclient.CoreV1().ConfigMaps(ns).Get(ctx, initial.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			cm.SetLabels(tc.updatedLabels)
-			cm.SetAnnotations(tc.updatedAnnotations)
-			cm.Data = tc.updatedData
-			if err := c.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-				t.Fatal(err)
-			}
+			required := initial.DeepCopy()
+			required.SetLabels(tc.updatedLabels)
+			required.SetAnnotations(tc.updatedAnnotations)
+			required.Data = tc.updatedData
+			err = c.CreateOrUpdateConfigMap(ctx, required)
+			require.NoError(t, err)
 
-			after, err := c.kclient.CoreV1().ConfigMaps(ns).Get(ctx, cm.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			final, err := c.kclient.CoreV1().ConfigMaps(ns).Get(ctx, required.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
-			}
-			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
-			}
-			if !reflect.DeepEqual(tc.expectedData, after.Data) {
-				t.Errorf("%q: expected data %q, got %q", tc.name, tc.expectedData, after.Data)
-			}
+			require.Equal(t, tc.expectedAnnotations, final.Annotations)
+			require.Equal(t, tc.expectedLabels, final.Labels)
+			require.Equal(t, tc.expectedData, final.Data)
 		})
 	}
 }
@@ -815,12 +663,14 @@ func TestCreateOrUpdateService(t *testing.T) {
 		initialSessionAffinity v1.ServiceAffinity
 		initialLabels          map[string]string
 		initialAnnotations     map[string]string
+
 		updatedSessionAffinity v1.ServiceAffinity
 		updatedLabels          map[string]string
 		updatedAnnotations     map[string]string
-		expectedUpdate         bool
-		expectedLabels         map[string]string
-		expectedAnnotations    map[string]string
+
+		expectedUpdate      bool
+		expectedLabels      map[string]string
+		expectedAnnotations map[string]string
 	}{
 		{
 			name:                   "inital labels/annotations are empty and no spec change",
@@ -832,9 +682,14 @@ func TestCreateOrUpdateService(t *testing.T) {
 			updatedAnnotations: map[string]string{
 				"monitoring.openshift.io/foo": "bar",
 			},
-			expectedLabels:      nil,
-			expectedAnnotations: nil,
-			expectedUpdate:      false,
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			expectedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo":     "bar",
+				"operator.openshift.io/spec-hash": "ef98a3bf71ba50f21b3121fbf6ef73901a2df315d6b4ac90c36e051f240d9dc0",
+			},
+			expectedUpdate: false,
 		},
 		{
 			name:                   "inital labels/annotations are empty and spec change",
@@ -850,7 +705,8 @@ func TestCreateOrUpdateService(t *testing.T) {
 				"app.kubernetes.io/name": "app",
 			},
 			expectedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
+				"monitoring.openshift.io/foo":     "bar",
+				"operator.openshift.io/spec-hash": "ef98a3bf71ba50f21b3121fbf6ef73901a2df315d6b4ac90c36e051f240d9dc0",
 			},
 			expectedUpdate: true,
 		},
@@ -871,15 +727,17 @@ func TestCreateOrUpdateService(t *testing.T) {
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
+				"monitoring.openshift.io/foo":  "bar",
+				"monitoring.openshift.io/bar-": "",
 			},
 			expectedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
 				"label":                  "value",
 			},
 			expectedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
-				"annotation":                  "value",
+				"monitoring.openshift.io/foo":     "bar",
+				"annotation":                      "value",
+				"operator.openshift.io/spec-hash": "ef98a3bf71ba50f21b3121fbf6ef73901a2df315d6b4ac90c36e051f240d9dc0",
 			},
 			expectedUpdate: true,
 		},
@@ -887,7 +745,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			svc := &v1.Service{
+			initial := &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s",
 					Namespace:   ns,
@@ -922,35 +780,29 @@ func TestCreateOrUpdateService(t *testing.T) {
 			}
 
 			c := Client{
-				kclient: fake.NewSimpleClientset(svc.DeepCopy()),
+				kclient:       fake.NewSimpleClientset(initial),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 			}
 
-			before, err := c.kclient.CoreV1().Services(ns).Get(ctx, svc.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			initial, err := c.kclient.CoreV1().Services(ns).Get(ctx, initial.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			svc.SetLabels(tc.updatedLabels)
-			svc.SetAnnotations(tc.updatedAnnotations)
-			svc.Spec.SessionAffinity = v1.ServiceAffinityClientIP
-			if err := c.CreateOrUpdateService(ctx, svc); err != nil {
-				t.Fatal(err)
-			}
+			required := initial.DeepCopy()
+			required.SetLabels(tc.updatedLabels)
+			required.SetAnnotations(tc.updatedAnnotations)
+			required.Spec.SessionAffinity = tc.updatedSessionAffinity
+			err = c.CreateOrUpdateService(ctx, required)
+			require.NoError(t, err)
 
-			after, err := c.kclient.CoreV1().Services(ns).Get(ctx, svc.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			final, err := c.kclient.CoreV1().Services(ns).Get(ctx, required.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			if tc.expectedUpdate == reflect.DeepEqual(before, after) {
-				t.Errorf("expected update %v, got none", tc.expectedUpdate)
-			}
-
-			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
-			}
-			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+			require.Equal(t, tc.expectedAnnotations, final.Annotations)
+			require.Equal(t, tc.expectedLabels, final.Labels)
+			if tc.expectedUpdate {
+				require.Equal(t, required.Spec, final.Spec)
+			} else {
+				require.Equal(t, initial.Spec, final.Spec)
 			}
 		})
 	}
@@ -1147,7 +999,8 @@ func TestCreateOrUpdateRole(t *testing.T) {
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
+				"monitoring.openshift.io/foo":  "bar",
+				"monitoring.openshift.io/bar-": "",
 			},
 			expectedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
@@ -1162,7 +1015,7 @@ func TestCreateOrUpdateRole(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			role := &rbacv1.Role{
+			initial := &rbacv1.Role{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s-config",
 					Namespace:   ns,
@@ -1171,28 +1024,23 @@ func TestCreateOrUpdateRole(t *testing.T) {
 				},
 			}
 			c := Client{
-				kclient: fake.NewSimpleClientset(role.DeepCopy()),
+				kclient:       fake.NewSimpleClientset(initial),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 			}
-			if _, err := c.kclient.RbacV1().Roles(ns).Get(ctx, role.Name, metav1.GetOptions{}); err != nil {
-				t.Fatal(err)
-			}
+			_, err := c.kclient.RbacV1().Roles(ns).Get(ctx, initial.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			role.SetLabels(tc.updatedLabels)
-			role.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateRole(ctx, role); err != nil {
-				t.Fatal(err)
-			}
-			after, err := c.kclient.RbacV1().Roles(ns).Get(ctx, role.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			required := initial.DeepCopy()
+			required.SetLabels(tc.updatedLabels)
+			required.SetAnnotations(tc.updatedAnnotations)
+			err = c.CreateOrUpdateRole(ctx, required)
+			require.NoError(t, err)
 
-			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
-			}
-			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
-			}
+			final, err := c.kclient.RbacV1().Roles(ns).Get(ctx, required.Name, metav1.GetOptions{})
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expectedAnnotations, final.Annotations)
+			require.Equal(t, tc.expectedLabels, final.Labels)
 		})
 	}
 }
@@ -1217,15 +1065,23 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 	}{
 		{
 			name: "inital labels/annotations are empty and no spec change",
+			// This is the default value.
+			initialRoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+			},
 			updatedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
 				"monitoring.openshift.io/foo": "bar",
 			},
-			expectedLabels:      nil,
-			expectedAnnotations: nil,
-			expectedUpdate:      false,
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			expectedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+			},
+			expectedUpdate: false,
 		},
 		{
 			name: "label/annotation merge and RoleRef change",
@@ -1242,7 +1098,8 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
+				"monitoring.openshift.io/foo":  "bar",
+				"monitoring.openshift.io/bar-": "",
 			},
 			updatedRoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
@@ -1270,11 +1127,16 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 				"monitoring.openshift.io/bar": "",
 				"annotation":                  "value",
 			},
+			// This is the default value and it's enforced by CreateOrUpdateRoleBinding.
+			initialRoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+			},
 			updatedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
+				"monitoring.openshift.io/foo":  "bar",
+				"monitoring.openshift.io/bar-": "",
 			},
 			updatedSubjects: []rbacv1.Subject{
 				{
@@ -1282,6 +1144,10 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 					Name:      "prometheus",
 					Namespace: ns,
 				},
+			},
+			// This is the default value and it's enforced by CreateOrUpdateRoleBinding.
+			updatedRoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
 			},
 			expectedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
@@ -1297,7 +1163,7 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			roleBinding := &rbacv1.RoleBinding{
+			initial := &rbacv1.RoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s-config",
 					Namespace:   ns,
@@ -1308,35 +1174,30 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 				Subjects: tc.initialSubjects,
 			}
 			c := Client{
-				kclient: fake.NewSimpleClientset(roleBinding.DeepCopy()),
+				kclient:       fake.NewSimpleClientset(initial),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 			}
-			before, err := c.kclient.RbacV1().RoleBindings(ns).Get(ctx, roleBinding.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			initial, err := c.kclient.RbacV1().RoleBindings(ns).Get(ctx, initial.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			roleBinding.SetLabels(tc.updatedLabels)
-			roleBinding.SetAnnotations(tc.updatedAnnotations)
-			roleBinding.RoleRef = tc.updatedRoleRef
-			roleBinding.Subjects = tc.updatedSubjects
-			err = c.CreateOrUpdateRoleBinding(ctx, roleBinding)
-			if err != nil {
-				t.Fatal(err)
-			}
-			after, err := c.kclient.RbacV1().RoleBindings(ns).Get(ctx, roleBinding.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			required := initial.DeepCopy()
+			required.SetLabels(tc.updatedLabels)
+			required.SetAnnotations(tc.updatedAnnotations)
+			required.RoleRef = tc.updatedRoleRef
+			required.Subjects = tc.updatedSubjects
+			err = c.CreateOrUpdateRoleBinding(ctx, required)
+			require.NoError(t, err)
+			final, err := c.kclient.RbacV1().RoleBindings(ns).Get(ctx, required.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			if tc.expectedUpdate == reflect.DeepEqual(before, after) {
-				t.Errorf("expected update %v, got none", tc.expectedUpdate)
-			}
-
-			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("test %s for expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
-			}
-			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("test %s for expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
+			require.Equal(t, tc.expectedAnnotations, final.Annotations)
+			require.Equal(t, tc.expectedLabels, final.Labels)
+			if tc.expectedUpdate {
+				require.Equal(t, required.RoleRef, final.RoleRef)
+				require.Equal(t, required.Subjects, final.Subjects)
+			} else {
+				require.Equal(t, initial.RoleRef, final.RoleRef)
+				require.Equal(t, initial.Subjects, final.Subjects)
 			}
 		})
 	}
@@ -1383,7 +1244,8 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
+				"monitoring.openshift.io/foo":  "bar",
+				"monitoring.openshift.io/bar-": "",
 			},
 			expectedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
@@ -1398,7 +1260,7 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			clusterRole := &rbacv1.ClusterRole{
+			initial := &rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s",
 					Labels:      tc.initialLabels,
@@ -1406,28 +1268,23 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 				},
 			}
 			c := Client{
-				kclient: fake.NewSimpleClientset(clusterRole.DeepCopy()),
+				kclient:       fake.NewSimpleClientset(initial),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 			}
-			if _, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, clusterRole.Name, metav1.GetOptions{}); err != nil {
-				t.Fatal(err)
-			}
+			_, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, initial.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			clusterRole.SetLabels(tc.updatedLabels)
-			clusterRole.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdateClusterRole(ctx, clusterRole); err != nil {
-				t.Fatal(err)
-			}
-			after, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, clusterRole.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			required := initial.DeepCopy()
+			required.SetLabels(tc.updatedLabels)
+			required.SetAnnotations(tc.updatedAnnotations)
+			err = c.CreateOrUpdateClusterRole(ctx, required)
+			require.NoError(t, err)
 
-			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("test %s for expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
-			}
-			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("test %s for expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
-			}
+			final, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, required.Name, metav1.GetOptions{})
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expectedAnnotations, final.Annotations)
+			require.Equal(t, tc.expectedLabels, final.Labels)
 		})
 	}
 }
@@ -1452,15 +1309,23 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 	}{
 		{
 			name: "inital labels/annotations are empty and no spec change",
+			// This is the default value.
+			initialRoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+			},
 			updatedLabels: map[string]string{
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
 				"monitoring.openshift.io/foo": "bar",
 			},
-			expectedLabels:      nil,
-			expectedAnnotations: nil,
-			expectedUpdate:      false,
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/name": "app",
+			},
+			expectedAnnotations: map[string]string{
+				"monitoring.openshift.io/foo": "bar",
+			},
+			expectedUpdate: false,
 		},
 		{
 			name: "label/annotation merge and RoleRef change",
@@ -1477,7 +1342,8 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
+				"monitoring.openshift.io/foo":  "bar",
+				"monitoring.openshift.io/bar-": "",
 			},
 			updatedRoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
@@ -1496,6 +1362,10 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 		},
 		{
 			name: "label/annotation merge and Subjects change",
+			// This is the default value and it's enforced by CreateOrUpdateRoleBinding.
+			updatedRoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+			},
 			initialLabels: map[string]string{
 				"app.kubernetes.io/name": "",
 				"label":                  "value",
@@ -1509,7 +1379,8 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 				"app.kubernetes.io/name": "app",
 			},
 			updatedAnnotations: map[string]string{
-				"monitoring.openshift.io/foo": "bar",
+				"monitoring.openshift.io/foo":  "bar",
+				"monitoring.openshift.io/bar-": "",
 			},
 			updatedSubjects: []rbacv1.Subject{
 				{
@@ -1532,7 +1403,7 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+			initial := &rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "prometheus-k8s",
 					Labels:      tc.initialLabels,
@@ -1543,34 +1414,31 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 			}
 
 			c := Client{
-				kclient: fake.NewSimpleClientset(clusterRoleBinding.DeepCopy()),
+				kclient:       fake.NewSimpleClientset(initial.DeepCopy()),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
 			}
-			before, err := c.kclient.RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			initial, err := c.kclient.RbacV1().ClusterRoleBindings().Get(ctx, initial.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			clusterRoleBinding.SetLabels(tc.updatedLabels)
-			clusterRoleBinding.SetAnnotations(tc.updatedAnnotations)
-			clusterRoleBinding.RoleRef = tc.updatedRoleRef
-			clusterRoleBinding.Subjects = tc.updatedSubjects
-			if err := c.CreateOrUpdateClusterRoleBinding(ctx, clusterRoleBinding); err != nil {
-				t.Fatal(err)
-			}
-			after, err := c.kclient.RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			required := initial.DeepCopy()
+			required.SetLabels(tc.updatedLabels)
+			required.SetAnnotations(tc.updatedAnnotations)
+			required.RoleRef = tc.updatedRoleRef
+			required.Subjects = tc.updatedSubjects
+			err = c.CreateOrUpdateClusterRoleBinding(ctx, required)
+			require.NoError(t, err)
 
-			if tc.expectedUpdate == reflect.DeepEqual(before, after) {
-				t.Errorf("expected update %v, got none", tc.expectedUpdate)
-			}
+			final, err := c.kclient.RbacV1().ClusterRoleBindings().Get(ctx, required.Name, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("test %s for expected annotations %q, got %q", tc.name, tc.expectedAnnotations, after.Annotations)
-			}
-			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("test %s for expected labels %q, got %q", tc.name, tc.expectedLabels, after.Labels)
+			require.Equal(t, tc.expectedAnnotations, final.Annotations)
+			require.Equal(t, tc.expectedLabels, final.Labels)
+			if tc.expectedUpdate {
+				require.Equal(t, required.RoleRef, final.RoleRef)
+				require.Equal(t, required.Subjects, final.Subjects)
+			} else {
+				require.Equal(t, initial.RoleRef, final.RoleRef)
+				require.Equal(t, initial.Subjects, final.Subjects)
 			}
 		})
 	}

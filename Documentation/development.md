@@ -49,7 +49,10 @@ It is easier to follow the following workflow
 #### Finally:
 1. Port the changes back to `jsonnet` or vendored `jsonnet`
 
-
+#### NOTE:
+For some resources (see corresponding `CreateOrUpdateXXX`), removing a label/annotation needs to be done across two OCP releases:
+- In the first release, you should add the suffix `"-"` to the relevant annotation/label. [CMO will then delete that annotation/label on the Kubernetes API.](https://github.com/openshift/library-go/blob/126b47137408f93a2fc9f2e8cbeedda61f9ebbfb/pkg/operator/resource/resourcemerge/object_merger.go#L141-L169)
+- In the second release, you can remove that annotation/label from the resource manifest under `assets/`.
 
 ## Updating individual vendored jsonnet code
 

@@ -1431,60 +1431,8 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 }
 
 func (c *Client) CreateOrUpdateSecret(ctx context.Context, s *v1.Secret) error {
-	sClient := c.kclient.CoreV1().Secrets(s.GetNamespace())
-	existing, err := sClient.Get(ctx, s.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := sClient.Create(ctx, s, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating Secret object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving Secret object failed: %w", err)
-	}
-
-	required := s.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-	// Check if the Secret has an owner reference to a Service, that carries
-	// the annotation with key
-	// service.beta.openshift.io/serving-cert-secret-name and the Secrets
-	// name as the value.
-	// This means that service-ca-operator controls and populates the two
-	// data fields tls.crt and tls.key. We want to retain those on updates
-	// if they exist and are not empty.
-	if c.maybeHasServiceCAData(ctx, required) {
-		if v, ok := existing.Data["tls.crt"]; ok && len(v) > 0 {
-			required.Data["tls.crt"] = v
-		}
-		if v, ok := existing.Data["tls.key"]; ok && len(v) > 0 {
-			required.Data["tls.key"] = v
-		}
-	}
-	_, err = sClient.Update(ctx, required, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating Secret object failed: %w", err)
-	}
-	return nil
-}
-
-// maybeHasServiceCAData checks if the passed Secret s has at least one owner reference that
-// points to a Service with the annotation service.beta.openshift.io/serving-cert-secret-name: s.name
-func (c *Client) maybeHasServiceCAData(ctx context.Context, s *v1.Secret) bool {
-	for _, owner := range s.OwnerReferences {
-		if owner.Kind != "Service" {
-			continue
-		}
-		sclient := c.kclient.CoreV1().Services(s.GetNamespace())
-		svc, err := sclient.Get(ctx, owner.Name, metav1.GetOptions{})
-		if err != nil {
-			continue
-		}
-		if secName, ok := svc.Annotations["service.beta.openshift.io/serving-cert-secret-name"]; ok && secName == s.Name {
-			return true
-		}
-	}
-	return false
+	_, _, err := resourceapply.ApplySecret(ctx, c.kclient.CoreV1(), c.eventRecorder, s)
+	return err
 }
 
 func (c *Client) CreateIfNotExistSecret(ctx context.Context, s *v1.Secret) error {
@@ -1524,33 +1472,8 @@ func (c *Client) DeleteConfigMapList(ctx context.Context, cml *v1.ConfigMapList)
 }
 
 func (c *Client) CreateOrUpdateConfigMap(ctx context.Context, cm *v1.ConfigMap) error {
-	cmClient := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace())
-	existing, err := cmClient.Get(ctx, cm.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := cmClient.Create(ctx, cm, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating ConfigMap object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving ConfigMap object failed: %w", err)
-	}
-
-	required := cm.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-	if val, ok := required.Annotations["service.beta.openshift.io/inject-cabundle"]; ok && val == "true" {
-		// retain any service-ca data that service-ca-operator has created
-		if v, ok := existing.Data["service-ca.crt"]; ok && len(v) > 0 {
-			required.Data["service-ca.crt"] = v
-		}
-	}
-
-	_, err = cmClient.Update(ctx, required, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating ConfigMap object failed: %w", err)
-	}
-	return nil
+	_, _, err := resourceapply.ApplyConfigMap(ctx, c.kclient.CoreV1(), c.eventRecorder, cm)
+	return err
 }
 
 func (c *Client) DeleteIfExists(ctx context.Context, nsName string) error {
@@ -1589,177 +1512,33 @@ func (c *Client) CreateIfNotExistConfigMap(ctx context.Context, cm *v1.ConfigMap
 }
 
 func (c *Client) CreateOrUpdatePodDisruptionBudget(ctx context.Context, pdb *policyv1.PodDisruptionBudget) error {
-	pdbClient := c.kclient.PolicyV1().PodDisruptionBudgets(pdb.Namespace)
-	existing, err := pdbClient.Get(ctx, pdb.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := pdbClient.Create(ctx, pdb, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating PodDisruptionBudget object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving PodDisruptionBudget object failed: %w", err)
-	}
-
-	required := pdb.DeepCopy()
-	required.ResourceVersion = existing.ResourceVersion
-
-	if reflect.DeepEqual(&required.ObjectMeta, &existing.ObjectMeta) {
-		return nil
-	}
-
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
-	_, err = pdbClient.Update(ctx, required, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating PodDisruptionBudget object failed: %w", err)
-	}
-	return nil
+	_, _, err := resourceapply.ApplyPodDisruptionBudget(ctx, c.kclient.PolicyV1(), c.eventRecorder, pdb)
+	return err
 }
 
 func (c *Client) CreateOrUpdateService(ctx context.Context, svc *v1.Service) error {
-	sclient := c.kclient.CoreV1().Services(svc.GetNamespace())
-	existing, err := sclient.Get(ctx, svc.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err = sclient.Create(ctx, svc, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating Service object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving Service object failed: %w", err)
-	}
-
-	required := svc.DeepCopy()
-	required.ResourceVersion = existing.ResourceVersion
-	if required.Spec.Type == v1.ServiceTypeClusterIP {
-		required.Spec.ClusterIP = existing.Spec.ClusterIP
-	}
-
-	if reflect.DeepEqual(required.Spec, existing.Spec) {
-		return nil
-	}
-
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
-	_, err = sclient.Update(ctx, required, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating Service object failed: %w", err)
-	}
-	return nil
+	_, _, err := resourceapply.ApplyService(ctx, c.kclient.CoreV1(), c.eventRecorder, svc)
+	return err
 }
 
 func (c *Client) CreateOrUpdateRoleBinding(ctx context.Context, rb *rbacv1.RoleBinding) error {
-	rbClient := c.kclient.RbacV1().RoleBindings(rb.GetNamespace())
-	existing, err := rbClient.Get(ctx, rb.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := rbClient.Create(ctx, rb, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating RoleBinding object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving RoleBinding object failed: %w", err)
-	}
-
-	if reflect.DeepEqual(rb.RoleRef, existing.RoleRef) &&
-		reflect.DeepEqual(rb.Subjects, existing.Subjects) {
-		return nil
-	}
-
-	required := rb.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
-	_, err = rbClient.Update(ctx, required, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating RoleBinding object failed: %w", err)
-	}
-	return nil
+	_, _, err := resourceapply.ApplyRoleBinding(ctx, c.kclient.RbacV1(), c.eventRecorder, rb)
+	return err
 }
 
 func (c *Client) CreateOrUpdateRole(ctx context.Context, r *rbacv1.Role) error {
-	rClient := c.kclient.RbacV1().Roles(r.GetNamespace())
-	existing, err := rClient.Get(ctx, r.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := rClient.Create(ctx, r, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating Role object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving Role object failed: %w", err)
-	}
-
-	required := r.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
-	_, err = rClient.Update(ctx, required, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating Role object failed: %w", err)
-	}
-	return nil
+	_, _, err := resourceapply.ApplyRole(ctx, c.kclient.RbacV1(), c.eventRecorder, r)
+	return err
 }
 
 func (c *Client) CreateOrUpdateClusterRole(ctx context.Context, cr *rbacv1.ClusterRole) error {
-	crClient := c.kclient.RbacV1().ClusterRoles()
-	existing, err := crClient.Get(ctx, cr.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := crClient.Create(ctx, cr, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating ClusterRole object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving ClusterRole object failed: %w", err)
-	}
-
-	required := cr.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
-	_, err = crClient.Update(ctx, required, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating ClusterRole object failed: %w", err)
-	}
-	return nil
+	_, _, err := resourceapply.ApplyClusterRole(ctx, c.kclient.RbacV1(), c.eventRecorder, cr)
+	return err
 }
 
 func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbacv1.ClusterRoleBinding) error {
-	crbClient := c.kclient.RbacV1().ClusterRoleBindings()
-	existing, err := crbClient.Get(ctx, crb.GetName(), metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err := crbClient.Create(ctx, crb, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("creating ClusterRoleBinding object failed: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("retrieving ClusterRoleBinding object failed: %w", err)
-	}
-
-	if reflect.DeepEqual(crb.RoleRef, existing.RoleRef) &&
-		reflect.DeepEqual(crb.Subjects, existing.Subjects) {
-		return nil
-	}
-
-	required := crb.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
-	err = crbClient.Delete(ctx, crb.Name, metav1.DeleteOptions{})
-	if err != nil {
-		return fmt.Errorf("deleting ClusterRoleBinding object failed: %w", err)
-	}
-
-	_, err = crbClient.Create(ctx, required, metav1.CreateOptions{})
-	if err != nil {
-		return fmt.Errorf("updating ClusterRoleBinding object failed: %w", err)
-	}
-	return nil
+	_, _, err := resourceapply.ApplyClusterRoleBinding(ctx, c.kclient.RbacV1(), c.eventRecorder, crb)
+	return err
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
