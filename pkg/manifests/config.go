@@ -428,22 +428,16 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 }
 
 func (c *Config) Precheck() error {
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.TechPreview {
-		return fmt.Errorf("collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview: %w", ErrConfigValidation)
+	// Validate the configured collection profile.
+	for _, profile := range SupportedCollectionProfiles {
+		var v float64
+		if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
+			v = 1
+		}
+		metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
 	}
-
-	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
-	if c.TechPreview {
-		for _, profile := range SupportedCollectionProfiles {
-			var v float64
-			if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
-				v = 1
-			}
-			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
-		}
-		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-			return fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
-		}
+	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
+		return fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
 	}
 
 	// Highlight deprecated config fields.
