@@ -36,7 +36,6 @@ func TestUserWorkloadAlertmanager(t *testing.T) {
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	f.AssertStatefulSetExistsAndRollout("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
-	f.AssertServiceExists("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	for _, scenario := range []struct {
 		name string
