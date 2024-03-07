@@ -76,13 +76,13 @@ const (
 var (
 	AlertmanagerConfig                = "alertmanager/secret.yaml"
 	AlertmanagerService               = "alertmanager/service.yaml"
-	AlertmanagerProxySecret           = "alertmanager/proxy-secret.yaml"
 	AlertmanagerMain                  = "alertmanager/alertmanager.yaml"
 	AlertmanagerServiceAccount        = "alertmanager/service-account.yaml"
 	AlertmanagerClusterRoleBinding    = "alertmanager/cluster-role-binding.yaml"
 	AlertmanagerClusterRole           = "alertmanager/cluster-role.yaml"
 	AlertmanagerRBACProxySecret       = "alertmanager/kube-rbac-proxy-secret.yaml"
 	AlertmanagerRBACProxyMetricSecret = "alertmanager/kube-rbac-proxy-metric-secret.yaml"
+	AlertmanagerRBACProxyWebSecret    = "alertmanager/kube-rbac-proxy-web-secret.yaml"
 	AlertmanagerRoute                 = "alertmanager/route.yaml"
 	AlertmanagerServiceMonitor        = "alertmanager/service-monitor.yaml"
 	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
@@ -385,21 +385,6 @@ func (f *Factory) AlertmanagerUserWorkloadSecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadSecret))
 }
 
-func (f *Factory) AlertmanagerProxySecret() (*v1.Secret, error) {
-	s, err := f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerProxySecret))
-	if err != nil {
-		return nil, err
-	}
-
-	p, err := GeneratePassword(43)
-	if err != nil {
-		return nil, err
-	}
-	s.Data["session_secret"] = []byte(p)
-
-	return s, nil
-}
-
 func (f *Factory) AlertmanagerService() (*v1.Service, error) {
 	return f.NewService(f.assets.MustNewAssetSlice(AlertmanagerService))
 }
@@ -666,28 +651,21 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 			f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.TopologySpreadConstraints
 	}
 
+	if trustedCABundleCM != nil {
+		volumeName := "alertmanager-trusted-ca-bundle"
+		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
+
+		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
+		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
+			Key:  TrustedCABundleKey,
+			Path: "tls-ca-bundle.pem",
+		})
+		a.Spec.Volumes = append(a.Spec.Volumes, volume)
+	}
+
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
-		case "alertmanager-proxy":
-			a.Spec.Containers[i].Image = f.config.Images.OauthProxy
-
-			f.injectProxyVariables(&a.Spec.Containers[i])
-
-			if trustedCABundleCM != nil {
-				volumeName := "alertmanager-trusted-ca-bundle"
-				a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
-				volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
-				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-					Key:  TrustedCABundleKey,
-					Path: "tls-ca-bundle.pem",
-				})
-				a.Spec.Volumes = append(a.Spec.Volumes, volume)
-				a.Spec.Containers[i].VolumeMounts = append(
-					a.Spec.Containers[i].VolumeMounts,
-					trustedCABundleVolumeMount(volumeName),
-				)
-			}
-		case "kube-rbac-proxy", "kube-rbac-proxy-metric":
+		case "kube-rbac-proxy", "kube-rbac-proxy-metric", "kube-rbac-proxy-web":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		case "prom-label-proxy":
@@ -714,6 +692,10 @@ func (f *Factory) AlertmanagerUserWorkloadRBACProxyTenancySecret() (*v1.Secret, 
 
 func (f *Factory) AlertmanagerRBACProxyMetricSecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerRBACProxyMetricSecret))
+}
+
+func (f *Factory) AlertmanagerRBACProxyWebSecret() (*v1.Secret, error) {
+	return f.NewSecret(f.assets.MustNewAssetSlice(AlertmanagerRBACProxyWebSecret))
 }
 
 func (f *Factory) AlertmanagerUserWorkloadRBACProxyMetricSecret() (*v1.Secret, error) {
@@ -3564,8 +3546,6 @@ func trustedCABundleVolumeMount(name string) v1.VolumeMount {
 }
 
 func trustedCABundleVolume(configMapName, volumeName string) v1.Volume {
-	yes := true
-
 	return v1.Volume{
 		Name: volumeName,
 		VolumeSource: v1.VolumeSource{
@@ -3573,7 +3553,8 @@ func trustedCABundleVolume(configMapName, volumeName string) v1.Volume {
 				LocalObjectReference: v1.LocalObjectReference{
 					Name: configMapName,
 				},
-				Optional: &yes,
+				// TODO(simonpasquier): evaluate if the volume should really be optional.
+				Optional: ptr.To(true),
 			},
 		},
 	}

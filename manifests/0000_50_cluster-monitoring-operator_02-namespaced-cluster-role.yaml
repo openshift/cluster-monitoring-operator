@@ -67,6 +67,7 @@ rules:
   - monitoring.coreos.com
   resourceNames:
   - user-workload
+  - main
   resources:
   - alertmanagers/api
   verbs:

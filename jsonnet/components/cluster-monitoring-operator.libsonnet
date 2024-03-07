@@ -298,7 +298,7 @@ function(params) {
       },
       {
         apiGroups: ['monitoring.coreos.com'],
-        resourceNames: ['user-workload'],
+        resourceNames: ['user-workload', 'main'],
         resources: ['alertmanagers/api'],
         verbs: ['*'],
       },
@@ -379,7 +379,8 @@ function(params) {
     ],
   },
 
-  // This role enables read/write access to the platform Alertmanager API through OAuth proxy.
+  // This role enables read/write access to the platform Alertmanager API
+  // through kube-rbac-proxy.
   monitoringAlertmanagerEditRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
@@ -387,12 +388,22 @@ function(params) {
       name: 'monitoring-alertmanager-edit',
       namespace: cfg.namespace,
     },
-    rules: [{
-      apiGroups: ['monitoring.coreos.com'],
-      resources: ['alertmanagers'],
-      verbs: ['patch'],
-      resourceNames: ['non-existant'],
-    }],
+    rules: [
+      {
+        // this permission used to be required when Alertmanager was protected via OAuth proxy.
+        // TODO: remove it after OCP 4.16 is released.
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['alertmanagers'],
+        verbs: ['patch'],
+        resourceNames: ['non-existant'],
+      },
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['alertmanagers/api'],
+        resourceNames: ['main'],
+        verbs: ['*'],
+      },
+    ],
   },
 
   // This role provides read access to the user-workload Alertmanager API.

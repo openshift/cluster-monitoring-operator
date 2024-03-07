@@ -43,16 +43,7 @@ function(params)
       },
     },
 
-    // The ServiceAccount needs this annotation, to signify the identity
-    // provider, that when a users it doing the oauth flow through the oauth
-    // proxy, that it should redirect to the alertmanager-main route on
-    // successful authentication.
     serviceAccount+: {
-      metadata+: {
-        annotations+: {
-          'serviceaccounts.openshift.io/oauth-redirectreference.alertmanager-main': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"alertmanager-main"}}',
-        },
-      },
       // Alertmanager can mount the token into the pod since
       // https://github.com/prometheus-operator/prometheus-operator/pull/5474
       // and v0.66.0
@@ -67,8 +58,8 @@ function(params)
     // cluster-monitoring-operator, that when reconciling this service the
     // cluster IP needs to be retained.
     //
-    // The ports are overridden, as due to the port binding of the oauth proxy
-    // the serving port is 9094 instead of the 9093 default.
+    // The ports are overridden because the kube-rbac-proxy sidecar listens on
+    // serving port 9094 instead of the default port (9093).
 
     service+: {
       metadata+: {
@@ -111,21 +102,8 @@ function(params)
       },
     },
 
-    // The proxy secret is there to encrypt session created by the oauth proxy.
-    proxySecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'alertmanager-main-proxy',
-        namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'alertmanager-main' },
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
-    // In order for the oauth proxy to perform a TokenReview and
-    // SubjectAccessReview for authN and authZ the alertmanager ServiceAccount
+    // In order for the kube-rbac-proxy sidecar to perform a TokenReview and
+    // SubjectAccessReview for authN and authZ, the alertmanager ServiceAccount
     // requires the `create` action on both of these.
 
     clusterRole: {
@@ -182,7 +160,7 @@ function(params)
       metadata: {
         name: 'alertmanager-kube-rbac-proxy',
         namespace: cfg.namespace,
-        labels: { 'app.kubernetes.io/name': 'alertmanager-main' },
+        labels: cfg.commonLabels { 'app.kubernetes.io/name': 'alertmanager-main' },
       },
       type: 'Opaque',
       stringData: {
@@ -209,6 +187,31 @@ function(params)
       },
     },
 
+    kubeRbacProxyWebSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'alertmanager-kube-rbac-proxy-web',
+        namespace: 'openshift-monitoring',
+        labels: cfg.commonLabels,
+      },
+      type: 'Opaque',
+      data: {},
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            resourceAttributes: {
+              apiGroup: 'monitoring.coreos.com',
+              resource: 'alertmanagers',
+              subresource: 'api',
+              namespace: 'openshift-monitoring',
+              name: 'main',
+            },
+          },
+        }),
+      },
+    },
+
     // This changes the alertmanager to be scraped with TLS, authN and authZ,
     // which are not present in kube-prometheus.
     serviceMonitor+: {
@@ -228,8 +231,6 @@ function(params)
       },
     },
 
-    // These patches inject the oauth proxy as a sidecar and configures it with
-    // TLS.
     alertmanager+: {
       spec+: {
         securityContext: {
@@ -247,9 +248,9 @@ function(params)
         },
         secrets: [
           'alertmanager-main-tls',
-          'alertmanager-main-proxy',
           $.kubeRbacProxySecret.metadata.name,
           $.kubeRbacProxyMetricSecret.metadata.name,
+          $.kubeRbacProxyWebSecret.metadata.name,
         ],
         listenLocal: true,
         resources: {
@@ -261,58 +262,40 @@ function(params)
         automountServiceAccountToken: true,
         containers: [
           {
-            name: 'alertmanager-proxy',
-            image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
-            ports: [
-              {
-                containerPort: 9095,
-                name: 'web',
-              },
-            ],
-            env: [
-              {
-                name: 'HTTP_PROXY',
-                value: '',
-              },
-              {
-                name: 'HTTPS_PROXY',
-                value: '',
-              },
-              {
-                name: 'NO_PROXY',
-                value: '',
-              },
-            ],
-            args: [
-              '-provider=openshift',
-              '-https-address=:9095',
-              '-http-address=',
-              '-email-domain=*',
-              '-upstream=http://localhost:9093',
-              '-openshift-sar=[{"resource": "namespaces", "verb": "get"}, {"resource": "alertmanagers", "resourceAPIGroup": "monitoring.coreos.com", "namespace": "openshift-monitoring", "verb": "patch", "resourceName": "non-existant"}]',
-              '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}, "/": {"resource":"alertmanagers", "group": "monitoring.coreos.com", "namespace": "openshift-monitoring", "verb": "patch", "name": "non-existant"}}',
-              '-tls-cert=/etc/tls/private/tls.crt',
-              '-tls-key=/etc/tls/private/tls.key',
-              '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
-              '-cookie-secret-file=/etc/proxy/secrets/session_secret',
-              '-openshift-service-account=alertmanager-main',
-              '-openshift-ca=/etc/pki/tls/cert.pem',
-              '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-            ],
+            name: 'kube-rbac-proxy-web',
+            image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
                 cpu: '1m',
                 memory: '20Mi',
               },
             },
+            ports: [
+              {
+                containerPort: 9095,
+                name: 'web',
+              },
+            ],
+            args: [
+              '--secure-listen-address=0.0.0.0:9095',
+              '--upstream=http://127.0.0.1:9093',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
+              '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+              // Liveness and readiness endpoints are always allowed.
+              '--ignore-paths=' + std.join(',', ['/-/healthy', '/-/ready']),
+            ],
             volumeMounts: [
+              {
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
+                readOnly: true,
+              },
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-alertmanager-main-tls',
-              },
-              {
-                mountPath: '/etc/proxy/secrets',
-                name: 'secret-alertmanager-main-proxy',
+                readOnly: true,
               },
             ],
           },
@@ -351,7 +334,8 @@ function(params)
             ],
           },
           {
-            // TODO: merge this metric proxy with tenancy proxy when the issue below is fixed:
+            // TODO: merge this metric proxy with the kube-rbac-proxy-web when
+            // the issue below is fixed:
             // https://github.com/brancz/kube-rbac-proxy/issues/146
             name: 'kube-rbac-proxy-metric',
             image: cfg.kubeRbacProxyImage,
@@ -375,7 +359,6 @@ function(params)
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--client-ca-file=/etc/tls/client/client-ca.crt',
-              '--logtostderr=true',
               '--allow-paths=/metrics',
             ],
             volumeMounts: [
