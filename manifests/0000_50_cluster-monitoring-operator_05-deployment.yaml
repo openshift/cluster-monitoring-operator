@@ -51,6 +51,7 @@ spec:
           secretName: cluster-monitoring-operator-tls
       containers:
       - args:
+        - "-enabled-remote-write=true"
         - "-namespace=openshift-monitoring"
         - "-namespace-user-workload=openshift-user-workload-monitoring"
         - "-configmap=cluster-monitoring-config"

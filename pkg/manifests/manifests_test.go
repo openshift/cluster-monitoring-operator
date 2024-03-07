@@ -380,7 +380,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil, nil)
+	_, err = f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1156,6 +1156,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -1280,6 +1281,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				tc.telemetrySecret,
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -1350,6 +1352,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
 		nil,
 	)
 	if err != nil {
@@ -1494,6 +1497,7 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -1560,6 +1564,7 @@ ingress:
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
 		nil,
 	)
 	if err != nil {
@@ -1773,6 +1778,7 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
+				nil,
 			)
 			if err != nil {
 				if !tc.errExpected {
@@ -1849,6 +1855,7 @@ func TestPrometheusCollectionProfile(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
 			)
 			if err != nil {
 				t.Fatalf("Unexpected error but got %v", err)
@@ -1908,6 +1915,7 @@ func TestPrometheusRetentionConfigs(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
+				nil,
 			)
 
 			if err != nil {
@@ -1959,6 +1967,7 @@ prometheusK8s:
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
 		nil,
 	)
 	if err != nil {
@@ -2166,6 +2175,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
 				nil,
 			)
 			if err != nil {
@@ -4160,6 +4170,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 				p, err := f.PrometheusK8s(
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+					nil,
 					nil,
 				)
 				if err != nil {

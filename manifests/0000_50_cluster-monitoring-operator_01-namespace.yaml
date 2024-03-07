@@ -30,3 +30,19 @@ metadata:
     openshift.io/cluster-monitoring: "true"
     name: openshift-user-workload-monitoring
     network.openshift.io/policy-group: monitoring
+# TODO: just temp
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: telemeter-server
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    openshift.io/node-selector: ""
+    include.release.openshift.io/single-node-developer: "true"
+    workload.openshift.io/allowed: "management"
+  labels:
+    openshift.io/cluster-monitoring: "true"
+    name: telemeter-server
+    network.openshift.io/policy-group: monitoring

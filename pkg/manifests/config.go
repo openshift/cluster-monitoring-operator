@@ -355,6 +355,7 @@ func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) er
 	return nil
 }
 
+// TODO
 func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token != "" {
 		return nil
