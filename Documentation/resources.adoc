@@ -109,7 +109,7 @@ Expose the `prometheus-adapter` web server on port 443. This port is for interna
 
 Expose the Prometheus web server within the cluster on the following ports:
 * Port 9091 provides access to all the Prometheus endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
-* Port 9092 provides access the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
+* Port 9092 provides access the `/metrics` and `/federate` endpoints only. This port is for internal use, and no other usage is guaranteed.
 
 === openshift-user-workload-monitoring/prometheus-operator
 

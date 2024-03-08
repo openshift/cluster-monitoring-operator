@@ -103,7 +103,7 @@ function(params)
           |||
             Expose the Prometheus web server within the cluster on the following ports:
             * Port %d provides access to all the Prometheus endpoints. %s
-            * Port %d provides access the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
+            * Port %d provides access the `/metrics` and `/federate` endpoints only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
             requiredClusterRoles(['cluster-monitoring-view'], true),
