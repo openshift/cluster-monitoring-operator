@@ -267,6 +267,16 @@ func (c *Config) applyDefaults() {
 		}
 	}
 
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil {
+		c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{}
+	}
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit == nil {
+		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit = &Audit{}
+	}
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile == "" {
+		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
+	}
+
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
 		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
 	}

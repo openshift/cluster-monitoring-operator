@@ -2797,6 +2797,135 @@ metricsServer:
 	require.Equal(t, "383c7cmidrae2", podAnnotations["monitoring.openshift.io/serving-ca-secret-hash"])
 }
 
+func TestMetricsServerAuditLog(t *testing.T) {
+	argsForProfile := func(profile string) []string {
+		return []string{
+			fmt.Sprintf("--audit-policy-file=/etc/audit/%s-profile.yaml", profile),
+			"--audit-log-path=/var/log/metrics-server/audit.log",
+			"--audit-log-maxsize=100",
+			"--audit-log-maxbackup=5",
+			"--audit-log-compress=true",
+		}
+	}
+
+	tt := []struct {
+		scenario string
+		config   string
+		args     []string
+		err      error
+	}{{
+		scenario: "no config",
+		config:   ``,
+		args:     argsForProfile("metadata"),
+	}, {
+		scenario: "no metrics-server config",
+		config:   `metricsServer: `,
+		args:     argsForProfile("metadata"),
+	}, {
+		scenario: "no audit config",
+		config: `
+metricsServer:
+  audit: {} `,
+		args: argsForProfile("metadata"),
+	}, {
+		scenario: "Request",
+		config: `
+metricsServer:
+  audit:
+    profile: Request
+`,
+		args: argsForProfile("request"),
+	}, {
+		scenario: "RequestResponse",
+		config: `
+metricsServer:
+  audit:
+    profile: RequestResponse
+`,
+		args: argsForProfile("requestresponse"),
+	}, {
+		scenario: "None",
+		config: `
+  metricsServer:
+    audit:
+     profile: None
+`,
+		args: argsForProfile("none"),
+	}, {
+		scenario: "no audit config",
+		config: `
+  metricsServer:
+    audit:
+      profile: Foobar  # should generate an error
+`,
+		err: ErrConfigValidation,
+	}}
+
+	for _, test := range tt {
+		t.Run(test.scenario, func(t *testing.T) {
+			c, err := NewConfigFromString(test.config, false)
+			if err != nil {
+				t.Logf("%s\n\n", test.config)
+				t.Fatal(err)
+			}
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring",
+				c, defaultInfrastructureReader(), &fakeProxyReader{},
+				NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+			kubeletCABundle := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubelet-serving-ca-bundle",
+					Namespace: "openshift-monitoring",
+				},
+				Data: map[string]string{
+					"ca-bundle.crt": "ca-certificate",
+				},
+			}
+			servingCASecret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "metrics-server-tls",
+					Namespace: "openshift-monitoring",
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("foo"),
+					"tls.key": []byte("bar"),
+				},
+			}
+			metricsClientSecret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "metrics-client-cert",
+					Namespace: "openshift-monitoring",
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("bar"),
+					"tls.key": []byte("foo"),
+				},
+			}
+
+			d, err := f.MetricsServerDeployment(kubeletCABundle, servingCASecret, metricsClientSecret)
+
+			if test.err != nil || err != nil {
+				// fail only if the error isn't what is expected
+				if !errors.Is(err, test.err) {
+					t.Fatalf("Expected error %q but got %q", test.err, err)
+				}
+				return
+			}
+
+			adapterArgs := d.Spec.Template.Spec.Containers[0].Args
+			auditArgs := []string{}
+			for _, arg := range adapterArgs {
+				if strings.HasPrefix(arg, "--audit-") {
+					auditArgs = append(auditArgs, arg)
+				}
+			}
+			assertDeepEqual(t, test.args, auditArgs,
+				"metrics-server audit is not configured correctly")
+		})
+	}
+}
+
 func TestAlertmanagerMainStartupProbe(t *testing.T) {
 	for _, tc := range []struct {
 		name                string

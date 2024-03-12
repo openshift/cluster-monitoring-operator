@@ -88,6 +88,12 @@ spec:
           name: secret-metrics-client-certs
         - mountPath: /etc/tls/kubelet-serving-ca-bundle
           name: configmap-kubelet-serving-ca-bundle
+        - mountPath: /etc/audit
+          name: metrics-server-audit-profiles
+          readOnly: true
+        - mountPath: /var/log/metrics-server
+          name: audit-log
+          readOnly: false
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
@@ -102,3 +108,8 @@ spec:
       - configMap:
           name: kubelet-serving-ca-bundle
         name: configmap-kubelet-serving-ca-bundle
+      - emptyDir: {}
+        name: audit-log
+      - configMap:
+          name: metrics-server-audit-profiles
+        name: metrics-server-audit-profiles
