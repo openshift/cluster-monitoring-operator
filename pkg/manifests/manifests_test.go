@@ -54,13 +54,17 @@ func defaultInfrastructureReader() InfrastructureReader {
 	return &fakeInfrastructureReader{highlyAvailableInfrastructure: true, hostedControlPlane: false}
 }
 
-type fakeProxyReader struct{}
+type fakeProxyReader struct {
+	httpProxy  string
+	httpsProxy string
+	noProxy    string
+}
 
-func (f *fakeProxyReader) HTTPProxy() string { return "" }
+func (f *fakeProxyReader) HTTPProxy() string { return f.httpProxy }
 
-func (f *fakeProxyReader) HTTPSProxy() string { return "" }
+func (f *fakeProxyReader) HTTPSProxy() string { return f.httpsProxy }
 
-func (f *fakeProxyReader) NoProxy() string { return "" }
+func (f *fakeProxyReader) NoProxy() string { return f.noProxy }
 
 const assetsPath = "../../assets"
 
@@ -1296,6 +1300,34 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 				t.Errorf("want remote write URLs %v, got %v", tc.expectedRemoteWriteURLs, got)
 			}
 		})
+	}
+}
+
+func TestPrometheusK8sRemoteWriteConfigWithProxy(t *testing.T) {
+	c, err := NewConfigFromString(`prometheusK8s:
+  remoteWrite:
+    - url: https://test.remotewrite.com/api/write
+      remoteTimeout: 30s
+`, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{httpProxy: "http://test.proxy.com"}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	p, err := f.PrometheusK8s(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
+		t.Errorf("want remote write URL https://test.remotewrite.com/api/write, got %v", p.Spec.RemoteWrite[0].URL)
+	}
+	if p.Spec.RemoteWrite[0].ProxyURL != "http://test.proxy.com" {
+		t.Errorf("want remote write ProxyURL http://test.proxy.com, got %v", p.Spec.RemoteWrite[0].ProxyURL)
 	}
 }
 
