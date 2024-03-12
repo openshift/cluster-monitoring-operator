@@ -4,6 +4,7 @@
 
 - [#2302](https://github.com/openshift/cluster-monitoring-operator/issues/2302) Enable feature `extra-scrape-metrics` in Prometheus user-workload
 - [#2319](https://github.com/openshift/cluster-monitoring-operator/pull/2319) Allow read-only access to the Alertmanager API (use `monitoring-alertmanager-view`).
+- [#2283](https://github.com/openshift/cluster-monitoring-operator/pull/2283) Expose KSM's `--metric-denylist` in `cluster-monitoring-config` ConfigMap, and allow users to enable metrics that are "denied" by default.
 
 ## 4.15
 

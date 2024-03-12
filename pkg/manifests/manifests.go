@@ -15,6 +15,7 @@
 package manifests
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/base64"
@@ -23,6 +24,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"net"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -757,6 +759,94 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 	}
 
 	return d, nil
+}
+
+// KubeStateMetricsDenylistBoundsCheck ensures that the user is:
+// * able to enable metrics that are denied by default, and,
+// * unable to disable metrics that are enabled by default.
+func (f *Factory) KubeStateMetricsDenylistBoundsCheck(deployment *appsv1.Deployment, service *v1.Service, secret *v1.Secret) (*appsv1.Deployment, error) {
+	// Fail early if the deny-list is empty.
+	if len(f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.MetricDenylist) == 0 {
+		return deployment, nil
+	}
+
+	// Fetch the `/metrics` port.
+	var p int32
+	for _, port := range service.Spec.Ports {
+		if port.Name == "https-main" {
+			p = port.Port
+			break
+		}
+	}
+
+	// Query the endpoint.
+	t := time.NewTimer(5 * time.Second)
+	var req *http.Request
+	var resp *http.Response
+	var err error
+	for {
+		select {
+		case <-t.C:
+			return nil, fmt.Errorf("timed out waiting to fetch kube-state-metrics /metrics endpoint: %w", err)
+		default:
+			u := &url.URL{
+				Scheme: "https",
+				Host:   fmt.Sprintf("%s.%s.svc:%d", service.GetName(), service.GetNamespace(), p),
+				Path:   "/metrics",
+			}
+			client := &http.Client{
+				Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+			}
+			req, err = http.NewRequest(http.MethodGet, u.String(), nil)
+			if err != nil {
+				return nil, err
+			}
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", string(secret.Data["token"])))
+			resp, err = client.Do(req)
+			if err == nil {
+				break
+			}
+		}
+		if resp != nil && resp.StatusCode == http.StatusOK {
+			break
+		}
+	}
+	defer resp.Body.Close()
+
+	// Prep the current deny-list regex.
+	denylist := f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.MetricDenylist
+	denylistRegex := strings.Join(denylist, "|")
+
+	// Parse the response.
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// A metric that is denied by default will never be in the served `/metrics` payload.
+		if matched, _ := regexp.MatchString(denylistRegex, line); matched {
+			if strings.HasPrefix(line, "#") {
+				line = strings.Split(line, " ")[2]
+			}
+			return nil, fmt.Errorf("cannot deny a metric enabled by default: %s", line)
+		}
+	}
+
+	// Update the deployment with the user-defined deny-list, since it has no violations.
+	for i := range deployment.Spec.Template.Spec.Containers {
+		if deployment.Spec.Template.Spec.Containers[i].Name == "kube-state-metrics" {
+			var args []string
+			for _, arg := range deployment.Spec.Template.Spec.Containers[i].Args {
+				if !strings.HasPrefix(arg, "--metric-denylist") {
+					args = append(args, arg)
+				}
+			}
+			args = append(args, fmt.Sprintf("--metric-denylist=%s", strings.Join(denylist, ",")))
+			deployment.Spec.Template.Spec.Containers[i].Args = args
+			break
+		}
+	}
+
+	return deployment, nil
 }
 
 func (f *Factory) KubeStateMetricsServiceAccount() (*v1.ServiceAccount, error) {

@@ -603,6 +603,22 @@ func (c *Client) GetSecret(ctx context.Context, namespace, name string) (*v1.Sec
 	return c.kclient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
+// GetTokenSecret returns the first secret in the given namespace with the name: prefix+"-token-"+[hash].
+func (c *Client) GetTokenSecret(ctx context.Context, namespace, prefix string) (*v1.Secret, error) {
+	secrets, err := c.kclient.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("listing secrets in namespace %s failed: %w", namespace, err)
+	}
+
+	for _, secret := range secrets.Items {
+		if strings.HasPrefix(secret.GetName(), prefix+"-token-") {
+			return &secret, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no secret found with the prefix \"%s-token\" in namespace %s", prefix, namespace)
+}
+
 func (c *Client) GetPrometheusRule(ctx context.Context, namespace, name string) (*monv1.PrometheusRule, error) {
 	return c.mclient.MonitoringV1().PrometheusRules(namespace).Get(ctx, name, metav1.GetOptions{})
 }

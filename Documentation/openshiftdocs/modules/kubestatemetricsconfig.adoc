@@ -18,6 +18,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
+|metricDenylist|[]string|Comma-separated list of metrics not to be enabled. This list comprises exact metric names and/or regex patterns.
+
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
 |resources|*v1.ResourceRequirements|Defines resource requests and limits for the KubeStateMetrics container.

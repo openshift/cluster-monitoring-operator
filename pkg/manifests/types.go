@@ -146,6 +146,9 @@ type DedicatedServiceMonitors struct {
 // The `KubeStateMetricsConfig` resource defines settings for the
 // `kube-state-metrics` agent.
 type KubeStateMetricsConfig struct {
+	// Comma-separated list of metrics not to be enabled.
+	// This list comprises exact metric names and/or regex patterns.
+	MetricDenylist []string `json:"metricDenylist,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines resource requests and limits for the KubeStateMetrics container.
