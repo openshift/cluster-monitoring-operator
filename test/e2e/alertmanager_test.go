@@ -123,7 +123,7 @@ enableUserWorkload: true`,
 
 			testAlertmanagerReady(t, tc.amName, tc.amNamespace)
 
-			// The tenancy port (9092) is only exposed in-cluster so we need to use
+			// The tenancy port (9092) is only exposed in-cluster, so we need to use
 			// port forwarding to access kube-rbac-proxy.
 			host, cleanUp, err := f.ForwardPort(t, tc.amNamespace, fmt.Sprintf("alertmanager-%s", tc.amName), 9092)
 			if err != nil {

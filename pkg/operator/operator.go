@@ -416,7 +416,7 @@ func New(
 	configInformers := configv1informers.NewSharedInformerFactory(configClient, 10*time.Minute)
 	missingVersion := "0.0.1-snapshot"
 
-	// By default when the enabled/disabled list of featuregates changes,
+	// By default, when the enabled/disabled list of featuregates changes,
 	// os.Exit is called which will trigger a restart of the container and
 	// the new container will get the updated value.
 	featureGateAccessor := featuregates.NewFeatureGateAccess(
@@ -966,7 +966,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	}
 
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
-	// its enabled by admin via Cluster Monitoring ConfigMap.  The above
+	// it's enabled by admin via Cluster Monitoring ConfigMap.  The above
 	// loadConfig() already initializes the structs with nil values for
 	// UserWorkloadConfiguration struct.
 	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled {

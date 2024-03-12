@@ -929,7 +929,7 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 
 		pattern, err := regexListToArg(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Systemd.Units)
 		if err != nil {
-			return nil, fmt.Errorf("systemd unit pattern valiation error: %w", err)
+			return nil, fmt.Errorf("systemd unit pattern validation error: %w", err)
 		}
 		args = setArg(args, "--collector.systemd.unit-include=", pattern)
 	} else {
@@ -1386,7 +1386,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 				Capacity: 30000,
 				// Should we accumulate 10000 samples before the batch send
 				// deadline is reached, we will send this amount of samples
-				// anyways.
+				// anyway.
 				MaxSamplesPerSend: 10000,
 				// Batch samples for 1m until we send them if we not reach the
 				// 10000 MaxSamplesPerSend first.
@@ -1469,7 +1469,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 		p.Spec.Volumes = append(p.Spec.Volumes, volume)
 
 		// We only need the trusted CA bundle in Prometheus, because users
-		// might want to remote write to an endpoint whose certificate is
+		// might want to remotely write to an endpoint whose certificate is
 		// trusted by the CA bundle.
 		for i, container := range p.Spec.Containers {
 			if container.Name == "prometheus" {
@@ -1521,7 +1521,7 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 		return fmt.Errorf(`query log file can't be stored on the root directory: %w`, ErrConfigValidation)
 	}
 
-	// /prometheus is where Prometheus will store the TSDB so it is
+	// /prometheus is where Prometheus will store the TSDB, so it is
 	// already mounted inside the pod (either from a persistent volume claim or from an empty dir).
 	// When queryLogFile is a simple filename the prometheus-operator will take
 	// care of mounting an emptyDir under /var/log/prometheus
@@ -1564,7 +1564,7 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 func setupProfilesToIgnore(p *monv1.Prometheus, cp CollectionProfile) error {
 	// Our goal is to configure Prometheus to select both the resources that
 	// either don't have the collection profile label or have the desired value.
-	// However with label selectors we are not able to express OR conditions.
+	// However, with label selectors we are not able to express OR conditions.
 	// Hence, the only alternative is to configure Prometheus to not select any
 	// resource that matches either of the collection profiles that we are not
 	// interested in.
@@ -2070,7 +2070,7 @@ func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecr
 	// are rotated.
 	dep.Spec.Template.Annotations["monitoring.openshift.io/serving-ca-secret-hash"] = hashByteMap(tlsSecret.Data)
 
-	// Hash the metrics client cert and propagate it as a annotation to the
+	// Hash the metrics client cert and propagate it as an annotation to the
 	// deployment's pods to trigger a new rollout when the metrics client cert
 	// is rotated.
 	dep.Spec.Template.Annotations["monitoring.openshift.io/metrics-client-cert-hash"] = hashByteMap(metricsClientCert.Data)
@@ -3081,7 +3081,7 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap, s *v1
 			cmd := []string{}
 			// Note: matchers are read only during CMO bootstrap. This mechanism was chosen as CMO image will be reloaded during upgrades
 			// and matchers shouldn't change during runtime. It offers similar amount of protection against unwanted configuration changes
-			// while not having any performance penalty. However it should be changed to usual reconciliation mechanism after CMO performance
+			// while not having any performance penalty. However, it should be changed to usual reconciliation mechanism after CMO performance
 			// issues are solved.
 			for _, a := range d.Spec.Template.Spec.Containers[i].Command {
 				if !strings.HasPrefix(a, "--match=") {

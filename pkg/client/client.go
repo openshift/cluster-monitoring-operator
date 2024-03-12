@@ -1749,7 +1749,7 @@ func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
 }
 
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
-// over `existing` keys and values. Additionally function performs filtering of labels and annotations from `exiting` map
+// over `existing` keys and values. Additionally, function performs filtering of labels and annotations from `exiting` map
 // where keys starting from string defined in `metadataPrefix` are deleted. This prevents issues with preserving stale
 // metadata defined by the operator
 func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {
@@ -1806,7 +1806,7 @@ func WithLastError(e *error) func(o *pollOptions) {
 }
 
 // Poll is a wrapper around wait.PollUntilContextTimeout that allows adding the passed lastError into
-// the final error if if set by the condition, this would add more context to the "context deadline exceeded" error e.g..
+// the final error if set by the condition, adding more context to the "context deadline exceeded" error.
 func Poll(ctx context.Context, condition wait.ConditionWithContextFunc, options ...func(o *pollOptions)) error {
 	opts := pollOptions{timeout: 5 * time.Minute, interval: time.Second}
 	for _, o := range options {

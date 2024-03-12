@@ -1,10 +1,10 @@
 # Cluster Monitoring
 
-Cluster monitoring ships with a pre-configured and self-updating monitoring stack that is based on the [Prometheus][prometheus] open source project and its wider eco-system. It provides monitoring of cluster components and ships with a set of alerts to immediately notify cluster admins about any occurring problems.
+Cluster monitoring ships with a pre-configured and self-updating monitoring stack that is based on the [Prometheus][prometheus] open source project and its wider ecosystem. It provides monitoring of cluster components and ships with a set of alerts to immediately notify cluster admins about any occurring problems.
 
 ## Overview
 
-At the heart of the monitoring stack sits the Cluster Monitoring Operator, which watches over the deployed monitoring components and resources, and ensures that they are always up to date.
+At the heart of the monitoring stack sits the Cluster Monitoring Operator, which watches over the deployed monitoring components and resources, and ensures that they are always up-to-date.
 
 One of the core components that Cluster Monitoring ships is the [Prometheus Operator][prom-operator]. The Prometheus Operator creates, configures, and manages Prometheus monitoring instances. It automatically generates monitoring target configurations based on familiar Kubernetes label queries.
 

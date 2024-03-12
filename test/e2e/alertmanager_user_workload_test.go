@@ -60,7 +60,7 @@ func assertUWMAlertsAccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Grant enough permissions to the account so it can read rules.
+	// Grant enough permissions to the account, so it can read rules.
 	_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "monitoring-rules-view")
 	if err != nil {
 		t.Fatal(err)
@@ -78,7 +78,7 @@ func assertUWMAlertsAccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The uwm alerts port (9095) is only exposed in-cluster so we need to use
+	// The uwm alerts port (9095) is only exposed in-cluster, so we need to use
 	// port forwarding to access kube-rbac-proxy.
 	host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "alertmanager-user-workload", 9095)
 	if err != nil {

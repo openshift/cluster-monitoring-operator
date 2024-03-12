@@ -1127,7 +1127,7 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 				"monitoring.openshift.io/bar": "",
 				"annotation":                  "value",
 			},
-			// This is the default value and it's enforced by CreateOrUpdateRoleBinding.
+			// This is the default value, and it's enforced by CreateOrUpdateRoleBinding.
 			initialRoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 			},
@@ -1145,7 +1145,7 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 					Namespace: ns,
 				},
 			},
-			// This is the default value and it's enforced by CreateOrUpdateRoleBinding.
+			// This is the default value, and it's enforced by CreateOrUpdateRoleBinding.
 			updatedRoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 			},
@@ -1362,7 +1362,7 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 		},
 		{
 			name: "label/annotation merge and Subjects change",
-			// This is the default value and it's enforced by CreateOrUpdateRoleBinding.
+			// This is the default value, and it's enforced by CreateOrUpdateRoleBinding.
 			updatedRoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 			},

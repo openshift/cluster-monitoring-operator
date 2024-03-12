@@ -146,7 +146,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("creating Thanos Ruler kube-rbac-proxy metrics Secret failed: %w", err)
 	}
 
-	// Thanos components use https://godoc.org/github.com/prometheus/common/config#NewClientFromConfig
+	// Thanos' components use https://godoc.org/github.com/prometheus/common/config#NewClientFromConfig
 	// under the hood and the returned http.Client detects whenever the certificates are rotated,
 	// so there is no need for us to rotate the CA.
 	qcs, err := t.factory.ThanosRulerQueryConfigSecret()
@@ -159,7 +159,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("creating Thanos Ruler query config Secret failed: %w", err)
 	}
 
-	// Thanos components use https://godoc.org/github.com/prometheus/common/config#NewClientFromConfig
+	// Thanos' components use https://godoc.org/github.com/prometheus/common/config#NewClientFromConfig
 	// under the hood and the returned http.Client detects whenever the certificates are rotated,
 	// so there is no need for us to rotate the CA.
 	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
