@@ -124,6 +124,10 @@ type K8sPrometheusAdapter struct {
 // The `MetricsServerConfig` resource defines settings for the Metrics Server component.
 // Note that this setting only applies when the MetricsServer feature gate is enabled.
 type MetricsServerConfig struct {
+	// Defines the audit configuration used by the Metrics Server instance.
+	// Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`.
+	// The default value is `metadata`.
+	Audit *Audit `json:"audit,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines tolerations for the pods.

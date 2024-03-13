@@ -18,6 +18,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 [options="header"]
 |===
 | Property | Type | Description 
+|audit|*Audit|Defines the audit configuration used by the Metrics Server instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`.
+
 |nodeSelector|map[string]string|Defines the nodes on which the pods are scheduled.
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.

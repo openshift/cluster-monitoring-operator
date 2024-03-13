@@ -203,6 +203,7 @@ var (
 	MetricsServerClusterRoleBinding              = "metrics-server/cluster-role-binding.yaml"
 	MetricsServerClusterRoleBindingAuthDelegator = "metrics-server/cluster-role-binding-auth-delegator.yaml"
 	MetricsServerRoleBindingAuthReader           = "metrics-server/role-binding-auth-reader.yaml"
+	MetricsServerConfigMapAuditPolicy            = "metrics-server/configmap-audit-profiles.yaml"
 	MetricsServerDeployment                      = "metrics-server/deployment.yaml"
 	MetricsServerService                         = "metrics-server/service.yaml"
 	MetricsServerServiceMonitor                  = "metrics-server/service-monitor.yaml"
@@ -2023,6 +2024,10 @@ func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1.APIService, 
 	return f.NewAPIService(f.assets.MustNewAssetSlice(PrometheusAdapterAPIService))
 }
 
+func (f *Factory) MetricsServerConfigMapAuditPolicy() (*v1.ConfigMap, error) {
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(MetricsServerConfigMapAuditPolicy))
+}
+
 func (f *Factory) MetricsServerServiceAccount() (*v1.ServiceAccount, error) {
 	return f.NewServiceAccount(f.assets.MustNewAssetSlice(MetricsServerServiceAccount))
 }
@@ -2079,6 +2084,19 @@ func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecr
 	if config == nil {
 		return dep, nil
 	}
+
+	if err := validateAuditProfile(config.Audit.Profile); err != nil {
+		return nil, err
+	}
+
+	profile := strings.ToLower(string(config.Audit.Profile))
+	containers[idx].Args = append(containers[idx].Args,
+		fmt.Sprintf("--audit-policy-file=/etc/audit/%s-profile.yaml", profile),
+		"--audit-log-path=/var/log/metrics-server/audit.log",
+		"--audit-log-maxsize=100", // 100 MB
+		"--audit-log-maxbackup=5", // limit space consumed by restricting backups
+		"--audit-log-compress=true",
+	)
 
 	if len(config.NodeSelector) > 0 {
 		podSpec.NodeSelector = config.NodeSelector

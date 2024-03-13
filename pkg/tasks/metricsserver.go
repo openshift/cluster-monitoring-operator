@@ -143,6 +143,18 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 			return err
 		}
 
+		{
+			cm, err := t.factory.MetricsServerConfigMapAuditPolicy()
+			if err != nil {
+				return fmt.Errorf("initializing MetricsServer AuditPolicy ConfigMap failed: %w", err)
+			}
+
+			err = t.client.CreateOrUpdateConfigMap(ctx, cm)
+			if err != nil {
+				return fmt.Errorf("reconciling MetricsServer AuditPolicy ConfigMap failed: %w", err)
+			}
+		}
+
 		dep, err := t.factory.MetricsServerDeployment(cacm, scas, mcs)
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer Deployment failed: %w", err)
