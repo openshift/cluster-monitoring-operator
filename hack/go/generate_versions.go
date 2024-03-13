@@ -17,11 +17,11 @@ import (
 )
 
 const (
-	mainBranch        = "master"
-	metricsServerRepo = "openshift/kubernetes-metrics-server"
-	versionFile       = "../../jsonnet/versions.yaml"
+	mainBranch          = "master"
+	metricsServerRepo   = "openshift/kubernetes-metrics-server"
+	versionFile         = "../../jsonnet/versions.yaml"
 	versionNotFound     = "N/A"
-	OCPVersionHeader   = " OCP Version"
+	OCPVersionHeader    = " OCP Version"
 	depsVersionsFile    = "../../Documentation/deps-versions.md"
 	versionFileComments = `---
 # This file is meant to be managed by hack/go/generate_versions.go script
@@ -146,7 +146,7 @@ func updateDepsVersionsFile(fileP string, components Components) error {
 		}
 		rows = append(rows, row)
 		err = releaseVersion.IncrementMinor()
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}
@@ -181,7 +181,7 @@ func getVersion(repo, ref string) (string, error) {
 	baseURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s", repo, ref)
 	link := fmt.Sprintf("%s/VERSION", baseURL)
 	if repo == metricsServerRepo {
-		link = fmt.Sprintf("%s/manifests/release/kustomization.yaml", baseURL)
+		link = fmt.Sprintf("%s/manifests/components/release/kustomization.yaml", baseURL)
 	}
 	raw, err := fetchVersion(link)
 	if err != nil {
