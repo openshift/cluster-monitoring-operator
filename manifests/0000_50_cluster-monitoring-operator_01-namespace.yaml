@@ -3,6 +3,7 @@ kind: Namespace
 metadata:
   name: openshift-monitoring
   annotations:
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     openshift.io/node-selector: ""
@@ -21,6 +22,7 @@ kind: Namespace
 metadata:
   name: openshift-user-workload-monitoring
   annotations:
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     openshift.io/node-selector: ""
