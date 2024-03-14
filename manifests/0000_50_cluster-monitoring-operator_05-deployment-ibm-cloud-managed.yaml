@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"
   labels:
     app: cluster-monitoring-operator

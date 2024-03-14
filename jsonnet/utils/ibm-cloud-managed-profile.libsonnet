@@ -19,6 +19,7 @@
       for x in std.objectFields(annotations)
     } +
     {
+      ['include.release.openshift.io/hypershift']: 'true',
       ['include.release.openshift.io/' + profile]: 'true',
     },
 
