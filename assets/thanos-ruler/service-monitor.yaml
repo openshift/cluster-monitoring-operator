@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: thanos-rule
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.33.0
+    app.kubernetes.io/version: 0.34.0
   name: thanos-ruler
   namespace: openshift-user-workload-monitoring
 spec:
