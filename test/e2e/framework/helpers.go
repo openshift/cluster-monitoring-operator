@@ -1,9 +1,11 @@
 package framework
 
 import (
+	"context"
 	"testing"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -166,6 +168,45 @@ func (f *Framework) MustGetPods(t *testing.T, namespace string) *v1.PodList {
 		t.Fatalf("failed to get pods in namespace %s - %s", namespace, err.Error())
 	}
 	return pods
+}
+
+func (f *Framework) GetClusterVersion(name string) (*configv1.ClusterVersion, error) {
+	return f.OpenShiftConfigClient.ConfigV1().ClusterVersions().Get(context.Background(), name, metav1.GetOptions{})
+}
+
+func (f *Framework) IsFeatureGateEnabled(t *testing.T, name string) bool {
+	t.Helper()
+	var enabledFeatureGates []configv1.FeatureGateAttributes
+	// Get cluster version
+	clusterVersion, err := f.GetClusterVersion("version")
+	if err != nil {
+		t.Fatalf("failed to get cluster version: %s", err.Error())
+	}
+
+	// Get the desired cluster version
+	version := clusterVersion.Status.Desired.Version
+
+	// Get FeatureGates
+	featureGates, err := f.OpenShiftConfigClient.ConfigV1().FeatureGates().Get(context.Background(), "cluster", metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("failed to get featuregate `cluster`: %s", err.Error())
+	}
+
+	// Get Enabled FeatureGates for the desired cluster version
+	for _, fg := range featureGates.Status.FeatureGates {
+		if fg.Version == version {
+			enabledFeatureGates = fg.Enabled
+			break
+		}
+	}
+
+	for _, g := range enabledFeatureGates {
+		if g.Name == configv1.FeatureGateName(name) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func ensureCreatedByTestLabel(obj metav1.Object) {

@@ -30,6 +30,27 @@ import (
 	apiservicesv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
+const MetricsServerFeatureGate string = "MetricsServer"
+
+func skipMetricsServerTests(t *testing.T) {
+	if !f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
+		t.Skip("Skipping Metrics Server test")
+	}
+}
+
+func skipPrometheusAdapterTests(t *testing.T) {
+	if f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
+		t.Skip("Skipping Prometheus Adapter test")
+	}
+}
+
+func isAPIServicePointingToRightMetricsService(t *testing.T, metricsService *apiservicesv1.APIService) bool {
+	if f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
+		return metricsService.Spec.Service.Name == "metrics-server"
+	}
+	return metricsService.Spec.Service.Name == "prometheus-adapter"
+}
+
 func isNodeInNodesList(node string, nodes []corev1.Node) bool {
 	for _, n := range nodes {
 		if n.Name == node {
@@ -68,6 +89,10 @@ func TestMetricsAPIAvailability(t *testing.T) {
 		}
 		if !isAPIServiceAvailable(metricsService.Status.Conditions) {
 			lastErr = errors.New("v1beta1.metrics.k8s.io apiservice is not available")
+			return false, nil
+		}
+		if !isAPIServicePointingToRightMetricsService(t, metricsService) {
+			lastErr = errors.New("v1beta1.metrics.k8s.io apiservice is not pointing to right metrics api service")
 			return false, nil
 		}
 		return true, nil
@@ -226,6 +251,7 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 }
 
 func TestPrometheusAdapterCARotation(t *testing.T) {
+	skipPrometheusAdapterTests(t)
 	ctx := context.Background()
 	// Wait for prometheus-adapter deployment
 	f.AssertDeploymentExistsAndRollout("prometheus-adapter", f.Ns)(t)
@@ -311,4 +337,46 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.AssertDeploymentExistsAndRollout("prometheus-adapter", f.Ns)(t)
+}
+
+func TestMetricsServerRollout(t *testing.T) {
+	skipMetricsServerTests(t)
+	for _, test := range []scenario{
+		{
+			name:      "assert metrics-server deployment is rolled out",
+			assertion: f.AssertDeploymentExistsAndRollout("metrics-server", f.Ns),
+		},
+		{
+			name:      "assert metrics-server service is created",
+			assertion: f.AssertServiceExists("metrics-server", f.Ns),
+		},
+		{
+			name:      "assert metrics-server service monitor is created",
+			assertion: f.AssertServiceMonitorExists("metrics-server", f.Ns),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfiguration(
+				f.Ns,
+				"app.kubernetes.io/name=metrics-server,app.kubernetes.io/component=metrics-server",
+				[]framework.PodAssertion{
+					expectContainerArg("--metric-resolution=15s", "metrics-server"),
+				},
+			),
+		},
+		{
+			name:      "assert prometheus-adapter service monitor is deleted",
+			assertion: f.AssertServiceMonitorDoesNotExist("prometheus-adapter", f.Ns),
+		},
+		{
+			name:      "assert prometheus-adapter service is deleted",
+			assertion: f.AssertServiceDoesNotExist("prometheus-adapter", f.Ns),
+		},
+		{
+			name:      "assert prometheus-adapter deployment is deleted",
+			assertion: f.AssertDeploymentDoesNotExist("prometheus-adapter", f.Ns),
+		},
+	} {
+		t.Run(test.name, test.assertion)
+	}
 }
