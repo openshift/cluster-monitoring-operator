@@ -63,6 +63,9 @@ func NewRuleController(ctx context.Context, client *client.Client, version strin
 		resyncPeriod,
 		cache.Indexers{},
 	)
+	if err := ruleInformer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 
 	// All generated PrometheusRule objects go into the platform namespace as
 	// well, so we only need to watch those here.
@@ -72,6 +75,9 @@ func NewRuleController(ctx context.Context, client *client.Client, version strin
 		resyncPeriod,
 		cache.Indexers{},
 	)
+	if err := promRuleInformer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 
 	queue := workqueue.NewNamedRateLimitingQueue(
 		workqueue.NewItemExponentialFailureRateLimiter(queueBaseDelay, queueMaxDelay),

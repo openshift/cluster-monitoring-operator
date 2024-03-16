@@ -68,6 +68,9 @@ func NewRelabelConfigController(ctx context.Context, client *client.Client) (*Re
 		resyncPeriod,
 		cache.Indexers{},
 	)
+	if err := relabelConfigInformer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 
 	// We only care about watching the single secret that is generated from
 	// combining the AlertRelabelConfig resources.
@@ -77,6 +80,9 @@ func NewRelabelConfigController(ctx context.Context, client *client.Client) (*Re
 		resyncPeriod,
 		cache.Indexers{},
 	)
+	if err := secretInformer.SetWatchErrorHandler(func(r *cache.Reflector, err error){fmt.Println("TOTO", r, err)}); err != nil {
+		panic(err)
+	}
 
 	queue := workqueue.NewNamedRateLimitingQueue(
 		workqueue.NewItemExponentialFailureRateLimiter(queueBaseDelay, queueMaxDelay),
