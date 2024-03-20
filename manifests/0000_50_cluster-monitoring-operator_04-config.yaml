@@ -240,6 +240,11 @@ data:
     #
     # owners: (https://github.com/kubevirt)
     #
+    # cnv_abnormal holds issues with the pods for each container, e.g. memory exceeded value.
+    - '{__name__="cnv_abnormal"}'
+    #
+    # owners: (https://github.com/kubevirt)
+    #
     # cluster:vmi_request_cpu_cores:sum is the total number of CPU cores requested by pods of VMIs.
     - '{__name__="cluster:vmi_request_cpu_cores:sum"}'
     #
