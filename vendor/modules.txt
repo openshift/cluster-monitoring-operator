@@ -304,8 +304,8 @@ github.com/munnerz/goautoneg
 # github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 ## explicit
 github.com/mwitkow/go-conntrack
-# github.com/openshift/api v0.0.0-20231218131639-7a5aa77cc72d
-## explicit; go 1.20
+# github.com/openshift/api v0.0.0-20240320105957-b09bc66e1760
+## explicit; go 1.21
 github.com/openshift/api
 github.com/openshift/api/annotations
 github.com/openshift/api/apiserver
@@ -341,6 +341,7 @@ github.com/openshift/api/machine/v1alpha1
 github.com/openshift/api/machine/v1beta1
 github.com/openshift/api/monitoring
 github.com/openshift/api/monitoring/v1
+github.com/openshift/api/monitoring/v1/zz_generated.crd-manifests
 github.com/openshift/api/monitoring/v1alpha1
 github.com/openshift/api/network
 github.com/openshift/api/network/v1
