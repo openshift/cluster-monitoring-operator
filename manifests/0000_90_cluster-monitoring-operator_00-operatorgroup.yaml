@@ -4,6 +4,7 @@ metadata:
   name: openshift-cluster-monitoring
   namespace: openshift-monitoring
   annotations:
+    include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     olm.providedAPIs: Alertmanager.v1.monitoring.coreos.com,PodMonitor.v1.monitoring.coreos.com,Probe.v1.monitoring.coreos.com,Prometheus.v1.monitoring.coreos.com,PrometheusRule.v1.monitoring.coreos.com,ServiceMonitor.v1.monitoring.coreos.com,ThanosRuler.v1.monitoring.coreos.com,AlertmanagerConfig.v1alpha1.monitoring.coreos.com

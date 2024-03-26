@@ -150,6 +150,7 @@ function(params) {
       name: cfg.name,
       annotations: {
         'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/hypershift': 'true',
         'include.release.openshift.io/self-managed-high-availability': 'true',
         'include.release.openshift.io/single-node-developer': 'true',
       },
@@ -266,6 +267,7 @@ function(params) {
       name: 'cluster-monitoring-operator-namespaced',
       annotations: {
         'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/hypershift': 'true',
         'include.release.openshift.io/self-managed-high-availability': 'true',
         'include.release.openshift.io/single-node-developer': 'true',
       },
@@ -317,6 +319,7 @@ function(params) {
       namespace: cfg.namespace,
       annotations: {
         'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/hypershift': 'true',
         'include.release.openshift.io/self-managed-high-availability': 'true',
         'include.release.openshift.io/single-node-developer': 'true',
       },
