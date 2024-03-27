@@ -2,6 +2,12 @@ package framework
 
 import (
 	"context"
+	"io/ioutil"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -69,6 +75,23 @@ func (f *Framework) buildConfigMap(o metav1.ObjectMeta, config string) (*v1.Conf
 			"config.yaml": config,
 		},
 	}, nil
+}
+
+// ReadManifest reads a manifest from the provided path.
+func (f *Framework) ReadManifest(manifestPath string) ([]byte, error) {
+	manifestPath = filepath.Clean(manifestPath)
+	return ioutil.ReadFile(manifestPath)
+}
+
+// BuildCRD builds a CRD from the provided manifest.
+func (f *Framework) BuildCRD(manifest []byte) (runtime.Object, error) {
+	crdStruct := &apiextv1.CustomResourceDefinition{}
+	decode := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer().Decode
+	got, _, err := decode(manifest, nil, crdStruct)
+	if err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // MustCreateOrUpdateConfigMap or fail the test
