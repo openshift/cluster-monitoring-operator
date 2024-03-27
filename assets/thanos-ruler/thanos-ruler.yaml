@@ -114,7 +114,7 @@ spec:
     caFile: /etc/tls/grpc/ca.crt
     certFile: /etc/tls/grpc/server.crt
     keyFile: /etc/tls/grpc/server.key
-  image: quay.io/thanos/thanos:v0.33.0
+  image: quay.io/thanos/thanos:v0.34.0
   listenLocal: true
   podMetadata:
     annotations:
@@ -151,7 +151,7 @@ spec:
     seccompProfile:
       type: RuntimeDefault
   serviceAccountName: thanos-ruler
-  version: 0.33.0
+  version: 0.34.0
   volumes:
   - configmap:
       items:
