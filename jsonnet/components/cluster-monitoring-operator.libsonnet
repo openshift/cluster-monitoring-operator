@@ -346,6 +346,9 @@ function(params) {
     kind: 'ClusterRole',
     metadata: {
       name: 'cluster-monitoring-view',
+      labels: {
+        'rbac.authorization.k8s.io/aggregate-to-view': 'true',
+      },
     },
     rules: [
       {
