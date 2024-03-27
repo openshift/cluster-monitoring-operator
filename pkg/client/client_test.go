@@ -2238,7 +2238,8 @@ func TestPollUntil(t *testing.T) {
 
 	// the parent context times out.
 	var lastErr6 error
-	parentCtx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	parentCtx, parentCancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer parentCancel()
 	err = testPoll(parentCtx, func(ctx context.Context) (bool, error) {
 		return false, nil
 	}, &lastErr6)
