@@ -28,6 +28,7 @@ linters:
     - wastedassign
     - whitespace
     - gci
+    - govet
 
 linters-settings:
   depguard:
