@@ -639,7 +639,7 @@ type PrometheusRestrictedConfig struct {
 	// This definition must be specified using the following regular
 	// expression pattern: `[0-9]+(ms|s|m|h|d|w|y)` (ms = milliseconds,
 	// s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years).
-	// The default value is `15d`.
+	// The default value is `24h`.
 	Retention string `json:"retention,omitempty"`
 	// Defines the maximum amount of disk space used by data blocks plus the
 	// write-ahead log (WAL).
