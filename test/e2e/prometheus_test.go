@@ -111,7 +111,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 	}
 	prometheusReceiverURL := svc.Name + "." + svc.Namespace + ".svc.cluster.local"
 
-	// setup a self-signed ca and store the artifacts in a secret
+	// set up a self-signed ca and store the artifacts in a secret
 	secName := fmt.Sprintf("selfsigned-%s-bundle", name)
 	tlsSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -223,7 +223,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 				{
 					query: `absent(prometheus_build_info{__tmp_openshift_cluster_id__=~".+"})`,
 					// absent returns 1 if query result is empty, an empty vector otherwise.
-					// Hence the description below will never appear in a test output as
+					// Hence, the description below will never appear in a test output as
 					// promClient.WaitForQueryReturn will return an error before it runs the
 					// validation function.
 					expected:    func(v float64) bool { return v == 1 },

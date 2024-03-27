@@ -15,7 +15,7 @@ You should keep this in mind when deciding in which release you want your featur
 
 # Contribution Flow
 Before you get started, you have to perform the following **mandatory** steps:
-* Open an bug in Bugzilla
+* Open a bug in Bugzilla
 * Fork this repository
 
 If you want to make changes to the actual code, please follow the [Coding Style](#coding-style) for code changes.
@@ -31,7 +31,7 @@ These steps outline the general contribution workflow:
 * Submit a pull request to the original repository. (see [Format of Pull Requests](#format-of-pull-requests))
 
 ## Required tools
-To allow scripts and `make` targets working correctly, ensure you have following tools installed in your system:
+To allow scripts and `make` targets working correctly, ensure you have the following tools installed in your system:
 
 * golang (see `go.mod` file for minimum required go version)
 * `awk` (GNU variant)
@@ -117,7 +117,7 @@ Supposing $KUBECONFIG is set to the config file of a Kubernetes cluster running 
 The testing consist of 3 aspects:
 - unit tests, can be run separately by `make test-unit`.
 - Prometheus rule tests, can be run separately by `make test-rules`.
-- end to end tests, can be run separately by `make test-e2e`.
+- end-to-end tests, can be run separately by `make test-e2e`.
 
 If we need to run a specific test case of the E2E test, we can use the following command.
 ```bash

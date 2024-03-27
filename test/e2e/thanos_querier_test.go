@@ -82,7 +82,7 @@ func TestThanosQuerierTrustedCA(t *testing.T) {
 }
 
 func TestThanosQueryCanQueryWatchdogAlert(t *testing.T) {
-	// The 2 minute timeout is what console CI tests set.
+	// The 2-minute timeout is what console CI tests set.
 	// If this test is flaky, we should increase until
 	// we can fix the possible DNS resolve issues.
 	f.ThanosQuerierClient.WaitForRulesReturn(

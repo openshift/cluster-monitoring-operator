@@ -34,7 +34,7 @@ func main() {
 	)
 
 	if format != markDownFormat && format != asciiDocsFormat {
-		fmt.Fprintf(os.Stderr, "Unsupported format %q, supported formats are: %q or %q\n", os.Args[2], markDownFormat, asciiDocsFormat)
+		_, _ = fmt.Fprintf(os.Stderr, "Unsupported format %q, supported formats are: %q or %q\n", os.Args[2], markDownFormat, asciiDocsFormat)
 		os.Exit(1)
 	}
 
@@ -48,11 +48,11 @@ func main() {
 		}
 	case "resources":
 		if err := PrintManagedResources(format); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to print managed resources: %s\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "failed to print managed resources: %s\n", err)
 			os.Exit(1)
 		}
 	default:
-		fmt.Fprintf(os.Stderr, "Unsupported command %q, supported commands are: api or resources\n", cmd)
+		_, _ = fmt.Fprintf(os.Stderr, "Unsupported command %q, supported commands are: api or resources\n", cmd)
 		os.Exit(1)
 	}
 }

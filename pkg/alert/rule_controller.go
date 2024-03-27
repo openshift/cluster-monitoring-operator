@@ -436,7 +436,7 @@ func (rc *RuleController) handlePrometheusRuleDelete(obj interface{}) {
 	rc.enqueue(key)
 }
 
-// firstAlertingRuleOwner returns the name of the first owner reference found that
+// firstAlertingRuleOwner returns the name of the first owner-reference found that
 // is an AlertingRule resource, or an empty string if there is none.
 func firstAlertingRuleOwner(refs []metav1.OwnerReference) string {
 	apiVersion, kind := osmv1.GroupVersion.String(), "AlertingRule"

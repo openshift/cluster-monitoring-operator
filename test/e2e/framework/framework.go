@@ -688,7 +688,7 @@ const (
 )
 
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
-// over `existing` keys and values. Additionally function performs filtering of labels and annotations from `exiting` map
+// over `existing` keys and values. Additionally, function performs filtering of labels and annotations from `exiting` map
 // where keys starting from string defined in `metadataPrefix` are deleted. This prevents issues with preserving stale
 // metadata defined by the operator
 func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {

@@ -57,6 +57,6 @@ func (s *StructType) Description() string {
 }
 
 // IsOnlyEmbedded returns true if the struct is only used as an embedded field in other structs.
-func (s StructType) IsOnlyEmbedded() bool {
+func (s *StructType) IsOnlyEmbedded() bool {
 	return s.referenceCount != 0 && s.referenceCount == s.embeddedCount
 }

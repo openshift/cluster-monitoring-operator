@@ -181,7 +181,9 @@ func (c *PrometheusClient) PrometheusTargets() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -202,7 +204,9 @@ func (c *PrometheusClient) PrometheusRules() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -223,7 +227,9 @@ func (c *PrometheusClient) PrometheusLabel(label string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -263,7 +269,9 @@ func (c *PrometheusClient) getAlertmanager(path string, kvs ...string) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

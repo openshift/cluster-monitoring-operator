@@ -574,7 +574,7 @@ func assertTenancyForMetrics(t *testing.T) {
 			t.Logf("Running query %q", tc.query)
 
 			var cleanupFn func() error
-			// Grant just-enough permissions to the account so it can read metrics.
+			// Grant just-enough permissions to the account, so it can read metrics.
 			err = framework.Poll(2*time.Second, 10*time.Second, func() error {
 				cleanupFn, err = f.CreateRoleBindingFromTypedRole(userWorkloadTestNs, testAccount, &rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
@@ -600,7 +600,7 @@ func assertTenancyForMetrics(t *testing.T) {
 			}()
 
 			err = framework.Poll(5*time.Second, time.Minute, func() error {
-				// The tenancy port (9092) is only exposed in-cluster so we need to use
+				// The tenancy port (9092) is only exposed in-cluster, so we need to use
 				// port forwarding to access kube-rbac-proxy.
 				host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
 				if err != nil {
@@ -668,7 +668,7 @@ func assertTenancyForMetrics(t *testing.T) {
 	// Check that the account doesn't have to access the rules and alerts endpoint.
 	for _, path := range []string{"/api/v1/rules", "/api/v1/alerts"} {
 		err = framework.Poll(5*time.Second, time.Minute, func() error {
-			// The tenancy port (9092) is only exposed in-cluster so we need to use
+			// The tenancy port (9092) is only exposed in-cluster, so we need to use
 			// port forwarding to access kube-rbac-proxy.
 			host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
 			if err != nil {
@@ -833,7 +833,7 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Grant enough permissions to the account so it can read rules.
+	// Grant enough permissions to the account, so it can read rules.
 	_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "monitoring-rules-view")
 	if err != nil {
 		t.Fatal(err)
@@ -851,7 +851,7 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The tenancy port (9093) is only exposed in-cluster so we need to use
+	// The tenancy port (9093) is only exposed in-cluster, so we need to use
 	// port forwarding to access kube-rbac-proxy.
 	host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9093)
 	if err != nil {
@@ -1063,7 +1063,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 
 			return nil
 		}
-		// The federate port (9092) is only exposed in-cluster so we need to use
+		// The federate port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "prometheus-user-workload", 9092)
 		if err != nil {
@@ -1130,7 +1130,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 
 	// check /api/v1/labels endpoint
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
-		// The tenancy port (9092) is only exposed in-cluster so we need to use
+		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
 		if err != nil {
@@ -1184,7 +1184,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 
 	// Check the /api/v1/series endpoint.
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
-		// The tenancy port (9092) is only exposed in-cluster so we need to use
+		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
 		if err != nil {
@@ -1238,7 +1238,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 
 	// Check that /api/v1/label/{namespace}/values returns a single value.
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
-		// The tenancy port (9092) is only exposed in-cluster so we need to use
+		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
 		if err != nil {
