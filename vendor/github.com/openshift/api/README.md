@@ -81,7 +81,6 @@ When copying, it matters which `// +foo` markers are two comments blocks up and 
 // +kubebuilder:printcolumn:name=Column Name,JSONPath=.status.something,type=string,description=how users should interpret this.
 // +kubebuilder:metadata:annotations=key=value
 // +kubebuilder:metadata:labels=key=value
-// +kubebuilder:metadata:annotations=include.release.openshift.io/single-node-developer=true
 // +kubebuilder:validation:XValidation:rule=
 type MyAPI struct {
 	metav1.TypeMeta `json:",inline"`

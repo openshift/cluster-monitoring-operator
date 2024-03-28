@@ -168,6 +168,7 @@ type Operator struct {
 	remoteWrite               bool
 	userWorkloadEnabled       bool
 	metricsServerEnabled      bool
+	collectionProfilesEnabled bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
@@ -244,6 +245,7 @@ func New(
 		remoteWrite:               remoteWrite,
 		userWorkloadEnabled:       false,
 		metricsServerEnabled:      false,
+		collectionProfilesEnabled: false,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
@@ -435,6 +437,7 @@ func New(
 			return nil, err
 		}
 		o.metricsServerEnabled = featureGates.Enabled(configv1.FeatureGateMetricsServer)
+		o.collectionProfilesEnabled = featureGates.Enabled(configv1.FeatureGateMetricsCollectionProfiles)
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
 	}
@@ -924,7 +927,7 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 	return uwc, nil
 }
 
-func (o *Operator) loadConfig(key string, tp bool) (*manifests.Config, error) {
+func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred when retrieving the Cluster Monitoring ConfigMap: %w", err)
@@ -942,7 +945,7 @@ func (o *Operator) loadConfig(key string, tp bool) (*manifests.Config, error) {
 		return nil, errors.New("the Cluster Monitoring ConfigMap doesn't contain a 'config.yaml' key")
 	}
 
-	cParsed, err := manifests.NewConfigFromString(configContent, tp)
+	cParsed, err := manifests.NewConfigFromString(configContent, o.collectionProfilesEnabled)
 	if err != nil {
 		return nil, fmt.Errorf("the Cluster Monitoring ConfigMap could not be parsed: %w", err)
 	}
@@ -951,12 +954,7 @@ func (o *Operator) loadConfig(key string, tp bool) (*manifests.Config, error) {
 }
 
 func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, error) {
-	tp, err := o.client.TechPreviewEnabled(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := o.loadConfig(key, tp)
+	c, err := o.loadConfig(key)
 	if err != nil {
 		return nil, err
 	}
