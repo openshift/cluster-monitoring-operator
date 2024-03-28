@@ -155,7 +155,12 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 			}
 		}
 
-		dep, err := t.factory.MetricsServerDeployment(cacm, scas, mcs)
+		apiAuthConfigmap, err := t.client.WaitForConfigMapByNsName(ctx, types.NamespacedName{Namespace: "kube-system", Name: "extension-apiserver-authentication"})
+		if err != nil {
+			return fmt.Errorf("failed to wait for kube-system/extension-apiserver-authentication configmap: %w", err)
+		}
+
+		dep, err := t.factory.MetricsServerDeployment(cacm, scas, mcs, apiAuthConfigmap.Data)
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer Deployment failed: %w", err)
 		}

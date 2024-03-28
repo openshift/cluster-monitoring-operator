@@ -2050,7 +2050,7 @@ func (f *Factory) MetricsServerRoleBindingAuthReader() (*rbacv1.RoleBinding, err
 	return f.NewRoleBinding(f.assets.MustNewAssetSlice(MetricsServerRoleBindingAuthReader))
 }
 
-func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecret, metricsClientCert *v1.Secret) (*appsv1.Deployment, error) {
+func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecret, metricsClientCert *v1.Secret, requestheader map[string]string) (*appsv1.Deployment, error) {
 	dep, err := f.NewDeployment(f.assets.MustNewAssetSlice(MetricsServerDeployment))
 	if err != nil {
 		return nil, err
@@ -2086,6 +2086,26 @@ func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecr
 	if config == nil {
 		return dep, nil
 	}
+
+	r := newErrMapReader(requestheader)
+
+	var (
+		requestheaderAllowedNames       = strings.Join(r.slice("requestheader-allowed-names"), ",")
+		requestheaderExtraHeadersPrefix = strings.Join(r.slice("requestheader-extra-headers-prefix"), ",")
+		requestheaderGroupHeaders       = strings.Join(r.slice("requestheader-group-headers"), ",")
+		requestheaderUsernameHeaders    = strings.Join(r.slice("requestheader-username-headers"), ",")
+	)
+
+	if r.Error() != nil {
+		return nil, fmt.Errorf("value not found in extension api server authentication configmap: %w", r.err)
+	}
+
+	containers[idx].Args = append(containers[idx].Args,
+		"--requestheader-allowed-names="+requestheaderAllowedNames,
+		"--requestheader-extra-headers-prefix="+requestheaderExtraHeadersPrefix,
+		"--requestheader-group-headers="+requestheaderGroupHeaders,
+		"--requestheader-username-headers="+requestheaderUsernameHeaders,
+	)
 
 	if err := validateAuditProfile(config.Audit.Profile); err != nil {
 		return nil, err
