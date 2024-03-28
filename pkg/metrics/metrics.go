@@ -5,6 +5,12 @@ import (
 	"k8s.io/component-base/metrics/legacyregistry"
 )
 
+// The various stability levels used here are analogous to the ones used in the Kubernetes project. They are:
+// INTERNAL metrics have no stability guarantees, as such, labels may be arbitrarily added/removed and the metric may be deleted at any time.
+// ALPHA metrics have no stability guarantees, as such, labels may be arbitrarily added/removed, while metrics undergo a deprecation cycle before deletion.
+// BETA metrics have some stability guarantees, as such, labels may be added but not removed, while metrics undergo a deprecation cycle before deletion.
+// STABLE metrics are guaranteed not be mutated.
+
 // ReconcileAttempts is a counter that indicates the number of attempts to reconcile the operator configuration.
 var ReconcileAttempts = metrics.NewCounter(&metrics.CounterOpts{
 	Name:           "cluster_monitoring_operator_reconcile_attempts_total",
@@ -25,7 +31,7 @@ var ReconcileStatus = metrics.NewGauge(&metrics.GaugeOpts{
 var CollectionProfile = metrics.NewGaugeVec(&metrics.GaugeOpts{
 	Name:           "cluster_monitoring_operator_collection_profile",
 	Help:           "Information about collection profiles. Set to 1 for the configured collection profile, else 0.",
-	StabilityLevel: metrics.ALPHA,
+	StabilityLevel: metrics.BETA,
 }, []string{"profile"})
 
 var DeprecatedConfig = metrics.NewGaugeVec(&metrics.GaugeOpts{
