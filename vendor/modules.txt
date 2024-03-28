@@ -304,8 +304,8 @@ github.com/munnerz/goautoneg
 # github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 ## explicit
 github.com/mwitkow/go-conntrack
-# github.com/openshift/api v0.0.0-20231218131639-7a5aa77cc72d
-## explicit; go 1.20
+# github.com/openshift/api v0.0.0-20240327143419-1e5b8d673d96
+## explicit; go 1.21
 github.com/openshift/api
 github.com/openshift/api/annotations
 github.com/openshift/api/apiserver
