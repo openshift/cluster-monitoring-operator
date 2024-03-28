@@ -172,6 +172,7 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
+| metricDenylist | []string | Comma-separated list of metrics not to be enabled. This list comprises exact metric names and/or regex patterns. |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core) | Defines resource requests and limits for the KubeStateMetrics container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core) | Defines tolerations for the pods. |

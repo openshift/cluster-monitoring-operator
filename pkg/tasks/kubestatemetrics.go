@@ -95,6 +95,16 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 		return fmt.Errorf("reconciling kube-state-metrics Deployment failed: %w", err)
 	}
 
+	dep, err = t.factory.KubeStateMetricsDenylistBoundsCheck(dep, svc)
+	if err != nil {
+		return fmt.Errorf("verifying kube-state-metrics deny-list bounds failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateDeployment(ctx, dep)
+	if err != nil {
+		return fmt.Errorf("reconciling kube-state-metrics Deployment failed: %w", err)
+	}
+
 	pr, err := t.factory.KubeStateMetricsPrometheusRule()
 	if err != nil {
 		return fmt.Errorf("initializing kube-state-metrics rules PrometheusRule failed: %w", err)
