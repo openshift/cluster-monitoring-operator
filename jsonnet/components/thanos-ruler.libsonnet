@@ -33,8 +33,6 @@ function(params)
       spec: $.mixin.prometheusAlerts,
     },
 
-    trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'thanos-ruler-trusted-ca-bundle'),
-
     route: {
       apiVersion: 'v1',
       kind: 'Route',
@@ -178,22 +176,6 @@ function(params)
       data: {},
     },
 
-    // holds the secret which is used encrypt/decrypt cookies
-    // issued by the oauth proxy.
-    oauthCookieSecret: {
-      apiVersion: 'v1',
-      kind: 'Secret',
-      metadata: {
-        name: 'thanos-ruler-oauth-cookie',
-        namespace: tr.config.namespace,
-        labels: {
-          'app.kubernetes.io/name': tr.config.name,
-        },
-      },
-      type: 'Opaque',
-      data: {},
-    },
-
     // alertmanager config holds the http configuration
     // for communication between thanos ruler and alertmanager.
     alertmanagersConfigSecret: {
@@ -258,7 +240,7 @@ function(params)
     serviceAccount+: {
       metadata+: {
         annotations: {
-          'serviceaccounts.openshift.io/oauth-redirectreference.thanos-ruler': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-ruler"}}',
+          'serviceaccounts.openshift.io/oauth-redirectreference.thanos-ruler-': '',
         },
       },
     },
@@ -320,6 +302,31 @@ function(params)
       },
 
     kubeRbacProxyMetricsSecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'thanos-ruler-kube-rbac-proxy-metrics'),
+
+    kubeRbacProxyWebSecret: {
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: {
+        name: 'thanos-' + cfg.crName + '-kube-rbac-proxy-web',
+        namespace: tr.config.namespace,
+        labels: cfg.commonLabels,
+      },
+      type: 'Opaque',
+      data: {},
+      stringData: {
+        'config.yaml': std.manifestYamlDoc({
+          authorization: {
+            resourceAttributes: {
+              apiGroup: 'monitoring.coreos.com',
+              resource: 'prometheuses',
+              subresource: 'api',
+              namespace: 'openshift-monitoring',
+              name: 'k8s',
+            },
+          },
+        }),
+      },
+    },
 
     thanosRuler: {
       apiVersion: 'monitoring.coreos.com/v1',
@@ -395,15 +402,15 @@ function(params)
             },
           },
           {
-            name: 'secret-thanos-ruler-oauth-cookie',
-            secret: {
-              secretName: $.oauthCookieSecret.metadata.name,
-            },
-          },
-          {
             name: 'secret-' + $.kubeRbacProxyMetricsSecret.metadata.name,
             secret: {
               secretName: $.kubeRbacProxyMetricsSecret.metadata.name,
+            },
+          },
+          {
+            name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
+            secret: {
+              secretName: $.kubeRbacProxyWebSecret.metadata.name,
             },
           },
           {
@@ -417,8 +424,9 @@ function(params)
         priorityClassName: 'openshift-user-critical',
         containers: [
           {
-            // Note: this is performing strategic-merge-patch for thanos-ruler container.
-            // Remainder of the container configuration is managed by prometheus-operator based on $.thanosRuler.spec
+            // Note: this is performing strategic-merge-patch for thanos-ruler
+            // container. the rest of the container configuration is managed by
+            // prometheus-operator based on $.thanosRuler.spec.
             name: tr.config.name,
             volumeMounts: [
               {
@@ -442,32 +450,18 @@ function(params)
             },
           },
           {
-            name: 'thanos-ruler-proxy',
-            image: 'quay.io/openshift/oauth-proxy:latest',  //FIXME(paulfantom)
+            name: 'kube-rbac-proxy-web',
+            image: cfg.kubeRbacProxyImage,
             ports: [{
               containerPort: $.service.spec.ports[0].port,
               name: 'web',
             }],
-            env: [
-              { name: 'HTTP_PROXY', value: '' },
-              { name: 'HTTPS_PROXY', value: '' },
-              { name: 'NO_PROXY', value: '' },
-            ],
             args: [
-              '-provider=openshift',
-              '-https-address=:9091',
-              '-http-address=',
-              '-email-domain=*',
-              '-upstream=http://localhost:10902',
-              '-openshift-sar={"resource": "namespaces", "verb": "get"}',
-              '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}',
-              '-tls-cert=/etc/tls/private/tls.crt',
-              '-tls-key=/etc/tls/private/tls.key',
-              '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token',
-              '-cookie-secret-file=/etc/proxy/secrets/session_secret',
-              '-openshift-service-account=thanos-ruler',
-              '-openshift-ca=/etc/pki/tls/cert.pem',
-              '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+              '--secure-listen-address=0.0.0.0:9091',
+              '--upstream=http://127.0.0.1:10902',
+              '--config-file=/etc/kube-rbac-proxy/config.yaml',
+              '--tls-cert-file=/etc/tls/private/tls.crt',
+              '--tls-private-key-file=/etc/tls/private/tls.key',
             ],
             resources: {
               requests: {
@@ -479,10 +473,12 @@ function(params)
               {
                 mountPath: '/etc/tls/private',
                 name: 'secret-thanos-ruler-tls',
+                readOnly: true,
               },
               {
-                mountPath: '/etc/proxy/secrets',
-                name: 'secret-thanos-ruler-oauth-cookie',
+                mountPath: '/etc/kube-rbac-proxy',
+                name: 'secret-' + $.kubeRbacProxyWebSecret.metadata.name,
+                readOnly: true,
               },
             ],
             securityContext: {
@@ -493,10 +489,11 @@ function(params)
             },
           },
           {
-            // TODO: merge this metric proxy with tenancy proxy when the issue below is fixed:
+            // TODO: merge this metric proxy with the kube-rbac-proxy-web
+            // container when the issue below is fixed:
             // https://github.com/brancz/kube-rbac-proxy/issues/146
             name: 'kube-rbac-proxy-metrics',
-            image: 'quay.io/openshift/origin-kube-rbac-proxy:latest',
+            image: cfg.kubeRbacProxyImage,
             resources: {
               requests: {
                 memory: '15Mi',

@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
@@ -126,14 +129,14 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Thanos Ruler ServiceAccount failed: %w", err)
 	}
 
-	s, err := t.factory.ThanosRulerOauthCookieSecret()
+	s, err := t.factory.ThanosRulerRBACProxyWebSecret()
 	if err != nil {
-		return fmt.Errorf("initializing Thanos Ruler OAuth Cookie Secret failed: %w", err)
+		return fmt.Errorf("initializing Thanos Ruler kube-rbac-proxy web Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, s)
+	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
-		return fmt.Errorf("creating Thanos Ruler OAuth Cookie Secret failed: %w", err)
+		return fmt.Errorf("creating Thanos Ruler kube-rbac-proxy web Secret failed: %w", err)
 	}
 
 	s, err = t.factory.ThanosRulerRBACProxyMetricsSecret()
@@ -141,7 +144,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Thanos Ruler kube-rbac-proxy metrics Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, s)
+	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return fmt.Errorf("creating Thanos Ruler kube-rbac-proxy metrics Secret failed: %w", err)
 	}
@@ -154,7 +157,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Thanos Ruler query config Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, qcs)
+	err = t.client.CreateOrUpdateSecret(ctx, qcs)
 	if err != nil {
 		return fmt.Errorf("creating Thanos Ruler query config Secret failed: %w", err)
 	}
@@ -174,22 +177,6 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 	}
 
 	{
-		// Create trusted CA bundle ConfigMap.
-		trustedCA, err := t.factory.ThanosRulerTrustedCABundle()
-		if err != nil {
-			return fmt.Errorf("initializing Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
-		}
-
-		cbs := &caBundleSyncer{
-			client:  t.client,
-			factory: t.factory,
-			prefix:  "thanos-ruler",
-		}
-		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
-		if err != nil {
-			return fmt.Errorf("syncing Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
-		}
-
 		grpcTLS, err := t.factory.GRPCSecret()
 		if err != nil {
 			return fmt.Errorf("initializing UserWorkload Thanos Ruler GRPC secret failed: %w", err)
@@ -241,7 +228,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 			}
 		}
 
-		tr, err := t.factory.ThanosRulerCustomResource(trustedCA, grpcSecret, acs)
+		tr, err := t.factory.ThanosRulerCustomResource(grpcSecret, acs)
 		if err != nil {
 			return fmt.Errorf("initializing ThanosRuler object failed: %w", err)
 		}
@@ -289,6 +276,35 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		if err = t.client.DeleteRoleBinding(ctx, tramrb); err != nil {
 			return fmt.Errorf("deleting Thanos Ruler Alertmanager Role Binding failed: %w", err)
 		}
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteSecret(ctx, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "thanos-ruler-oauth-cookie",
+			Namespace: "openshift-user-workload-monitoring",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("deleting Thanos Ruler OAuth Cookie Secret failed: %w", err)
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	trustedCA := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "thanos-ruler-trusted-ca-bundle",
+			Namespace: "openshift-user-workload-monitoring",
+		},
+	}
+	err = t.client.DeleteConfigMap(ctx, trustedCA)
+	if err != nil {
+		return fmt.Errorf("deleting Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteHashedConfigMap(ctx, trustedCA.GetNamespace(), "thanos-ruler", "")
+	if err != nil {
+		return fmt.Errorf("deleting all hashed Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
 	}
 
 	return nil
@@ -365,31 +381,6 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("deleting Thanos Ruler Alertmanager Role Binding failed: %w", err)
 	}
 
-	oauthSecret, err := t.factory.ThanosRulerOauthCookieSecret()
-	if err != nil {
-		return fmt.Errorf("initializing Thanos Ruler OAuth Cookie Secret failed: %w", err)
-	}
-
-	err = t.client.DeleteSecret(ctx, oauthSecret)
-	if err != nil {
-		return fmt.Errorf("deleting Thanos Ruler OAuth Cookie Secret failed: %w", err)
-	}
-
-	trustedCA, err := t.factory.ThanosRulerTrustedCABundle()
-	if err != nil {
-		return fmt.Errorf("initializing Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
-	}
-
-	err = t.client.DeleteConfigMap(ctx, trustedCA)
-	if err != nil {
-		return fmt.Errorf("deleting Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
-	}
-
-	err = t.client.DeleteHashedConfigMap(ctx, trustedCA.GetNamespace(), "thanos-ruler", "")
-	if err != nil {
-		return fmt.Errorf("deleting all hashed Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
-	}
-
 	grpcTLS, err := t.factory.GRPCSecret()
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload Thanos Ruler GRPC secret failed: %w", err)
@@ -414,11 +405,6 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("error hashing UserWorkload Thanos Ruler GRPC TLS secret: %w", err)
 	}
 
-	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
-	if err != nil {
-		return fmt.Errorf("initializing Thanos Ruler Alertmanager config Secret failed: %w", err)
-	}
-
 	pdb, err := t.factory.ThanosRulerPodDisruptionBudget()
 	if err != nil {
 		return fmt.Errorf("initializing Thanos Ruler PodDisruptionBudget object failed: %w", err)
@@ -431,7 +417,12 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 		}
 	}
 
-	tr, err := t.factory.ThanosRulerCustomResource(trustedCA, grpcSecret, acs)
+	acs, err := t.factory.ThanosRulerAlertmanagerConfigSecret()
+	if err != nil {
+		return fmt.Errorf("initializing Thanos Ruler Alertmanager config Secret failed: %w", err)
+	}
+
+	tr, err := t.factory.ThanosRulerCustomResource(grpcSecret, acs)
 	if err != nil {
 		return fmt.Errorf("initializing ThanosRuler object failed: %w", err)
 	}
@@ -439,6 +430,11 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteThanosRuler(ctx, tr)
 	if err != nil {
 		return fmt.Errorf("deleting ThanosRuler object failed: %w", err)
+	}
+
+	err = t.client.DeleteSecret(ctx, acs)
+	if err != nil {
+		return fmt.Errorf("deleting Thanos Ruler alertmanager config Secret failed: %w", err)
 	}
 
 	err = t.client.DeleteSecret(ctx, grpcSecret)
@@ -456,10 +452,24 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("deleting Thanos Ruler query config Secret failed: %w", err)
 	}
 
-	err = t.client.DeleteSecret(ctx, acs)
-
+	s, err := t.factory.ThanosRulerRBACProxyWebSecret()
 	if err != nil {
-		return fmt.Errorf("creating Thanos Ruler alertmanager config Secret failed: %w", err)
+		return fmt.Errorf("initializing Thanos Ruler kube-rbac-proxy web Secret failed: %w", err)
+	}
+
+	err = t.client.DeleteSecret(ctx, s)
+	if err != nil {
+		return fmt.Errorf("deleting Thanos Ruler kube-rbac-proxy web Secret failed: %w", err)
+	}
+
+	s, err = t.factory.ThanosRulerRBACProxyMetricsSecret()
+	if err != nil {
+		return fmt.Errorf("initializing Thanos Ruler kube-rbac-proxy metrics Secret failed: %w", err)
+	}
+
+	err = t.client.DeleteSecret(ctx, s)
+	if err != nil {
+		return fmt.Errorf("deleting Thanos Ruler kube-rbac-proxy metrics Secret failed: %w", err)
 	}
 
 	trsm, err := t.factory.ThanosRulerServiceMonitor()
@@ -471,5 +481,17 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("deleting Thanos Ruler ServiceMonitor failed: %w", err)
 	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteSecret(ctx, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "thanos-ruler-oauth-cookie",
+			Namespace: "openshift-user-workload-monitoring",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("deleting Thanos Ruler OAuth Cookie Secret failed: %w", err)
+	}
+
 	return nil
 }
