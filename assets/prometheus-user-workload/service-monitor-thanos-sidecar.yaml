@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.49.1
+    app.kubernetes.io/version: 2.50.1
   name: thanos-sidecar
   namespace: openshift-user-workload-monitoring
 spec:
