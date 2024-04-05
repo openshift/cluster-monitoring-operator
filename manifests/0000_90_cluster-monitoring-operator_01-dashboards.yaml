@@ -1790,7 +1790,7 @@ data:
                         "value": "default"
                     },
                     "hide": 0,
-                    "label": "Data Source",
+                    "label": "Data source",
                     "name": "datasource",
                     "options": [
 
@@ -1919,14 +1919,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 1,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -1961,7 +1958,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Utilisation",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2005,14 +2002,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 2,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -2047,7 +2041,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Requests Commitment",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2091,14 +2085,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 3,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -2133,7 +2124,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Limits Commitment",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2177,14 +2168,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 4,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -2219,7 +2207,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Utilisation",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2263,14 +2251,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 5,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -2305,7 +2290,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Requests Commitment",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2349,14 +2334,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 6,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -2391,7 +2373,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Limits Commitment",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2446,14 +2428,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 7,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -2490,7 +2469,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2545,14 +2524,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 8,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -2807,7 +2783,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2863,14 +2839,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 9,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -2907,7 +2880,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Usage (w/o cache)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -2962,14 +2935,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 10,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -3224,7 +3194,7 @@ data:
                         "timeShift": null,
                         "title": "Requests by Namespace",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -3282,12 +3252,10 @@ data:
                         "id": 11,
                         "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -3516,7 +3484,7 @@ data:
                         "timeShift": null,
                         "title": "Current Network Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -3572,14 +3540,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 12,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -3616,7 +3581,7 @@ data:
                         "timeShift": null,
                         "title": "Receive Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -3659,14 +3624,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 13,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -3703,7 +3665,7 @@ data:
                         "timeShift": null,
                         "title": "Transmit Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -3758,14 +3720,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 14,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -3802,7 +3761,7 @@ data:
                         "timeShift": null,
                         "title": "Average Container Bandwidth by Namespace: Received",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -3845,14 +3804,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 15,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -3889,7 +3845,7 @@ data:
                         "timeShift": null,
                         "title": "Average Container Bandwidth by Namespace: Transmitted",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -3944,14 +3900,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 16,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -3988,7 +3941,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -4031,14 +3984,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 17,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -4075,7 +4025,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -4130,14 +4080,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 18,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -4174,7 +4121,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -4217,14 +4164,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 19,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -4261,7 +4205,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -4317,14 +4261,11 @@ data:
                         "decimals": -1,
                         "fill": 10,
                         "id": 20,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -4361,7 +4302,7 @@ data:
                         "timeShift": null,
                         "title": "IOPS(Reads+Writes)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -4404,14 +4345,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 21,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -4448,7 +4386,7 @@ data:
                         "timeShift": null,
                         "title": "ThroughPut(Read+Write)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -4503,14 +4441,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 22,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -4743,7 +4678,7 @@ data:
                         "timeShift": null,
                         "title": "Current Storage IO",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -4929,14 +4864,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 1,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -4971,7 +4903,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Utilisation (from requests)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -5015,14 +4947,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 2,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -5057,7 +4986,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Utilisation (from limits)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -5101,14 +5030,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 3,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -5143,7 +5069,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Utilisation (from requests)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -5187,14 +5113,11 @@ data:
                         "fill": 1,
                         "format": "percentunit",
                         "id": 4,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -5229,7 +5152,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Utilisation (from limits)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -5284,14 +5207,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 5,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -5361,7 +5281,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -5416,14 +5336,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 6,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -5626,7 +5543,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -5682,14 +5599,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 7,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -5759,7 +5673,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Usage (w/o cache)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -5814,14 +5728,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 8,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -6102,7 +6013,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -6158,14 +6069,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 9,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -6394,7 +6302,7 @@ data:
                         "timeShift": null,
                         "title": "Current Network Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -6450,14 +6358,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 10,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -6494,7 +6399,7 @@ data:
                         "timeShift": null,
                         "title": "Receive Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -6537,14 +6442,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 11,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -6581,7 +6483,7 @@ data:
                         "timeShift": null,
                         "title": "Transmit Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -6636,14 +6538,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 12,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -6680,7 +6579,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -6723,14 +6622,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 13,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -6767,7 +6663,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -6822,14 +6718,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 14,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -6866,7 +6759,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -6909,14 +6802,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 15,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -6953,7 +6843,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -7009,14 +6899,11 @@ data:
                         "decimals": -1,
                         "fill": 10,
                         "id": 16,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -7053,7 +6940,7 @@ data:
                         "timeShift": null,
                         "title": "IOPS(Reads+Writes)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -7096,14 +6983,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 17,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -7140,7 +7024,7 @@ data:
                         "timeShift": null,
                         "title": "ThroughPut(Read+Write)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -7195,14 +7079,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 18,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -7435,7 +7316,7 @@ data:
                         "timeShift": null,
                         "title": "Current Storage IO",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -7648,14 +7529,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 1,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -7708,7 +7586,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -7763,14 +7641,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 2,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -7973,7 +7848,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -8029,14 +7904,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 3,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -8089,7 +7961,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Usage (w/o cache)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -8144,14 +8016,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 4,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -8432,7 +8301,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -8671,14 +8540,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 1,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -8744,7 +8610,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -8799,14 +8665,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 2,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": true,
                             "max": true,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -8850,7 +8713,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Throttling",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -8905,14 +8768,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 3,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -9115,7 +8975,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -9171,14 +9031,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 4,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -9246,7 +9103,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Usage (WSS)",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -9301,14 +9158,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 5,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -9589,7 +9443,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -9645,14 +9499,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 6,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -9689,7 +9540,7 @@ data:
                         "timeShift": null,
                         "title": "Receive Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -9732,14 +9583,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 7,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -9776,7 +9624,7 @@ data:
                         "timeShift": null,
                         "title": "Transmit Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -9831,14 +9679,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 8,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -9875,7 +9720,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -9918,14 +9763,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 9,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -9962,7 +9804,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -10017,14 +9859,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 10,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -10061,7 +9900,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -10104,14 +9943,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 11,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -10148,7 +9984,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -10204,14 +10040,11 @@ data:
                         "decimals": -1,
                         "fill": 10,
                         "id": 12,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -10254,7 +10087,7 @@ data:
                         "timeShift": null,
                         "title": "IOPS",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -10297,14 +10130,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 13,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -10347,7 +10177,7 @@ data:
                         "timeShift": null,
                         "title": "ThroughPut",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -10586,14 +10416,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 1,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -10630,7 +10457,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -10685,14 +10512,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 2,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -10895,7 +10719,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -10951,14 +10775,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 3,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -10995,7 +10816,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -11050,14 +10871,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 4,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -11260,7 +11078,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -11316,14 +11134,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 5,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -11552,7 +11367,7 @@ data:
                         "timeShift": null,
                         "title": "Current Network Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -11608,14 +11423,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 6,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -11652,7 +11464,7 @@ data:
                         "timeShift": null,
                         "title": "Receive Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -11695,14 +11507,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 7,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -11739,7 +11548,7 @@ data:
                         "timeShift": null,
                         "title": "Transmit Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -11794,14 +11603,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 8,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -11838,7 +11644,7 @@ data:
                         "timeShift": null,
                         "title": "Average Container Bandwidth by Pod: Received",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -11881,14 +11687,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 9,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -11925,7 +11728,7 @@ data:
                         "timeShift": null,
                         "title": "Average Container Bandwidth by Pod: Transmitted",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -11980,14 +11783,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 10,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -12024,7 +11824,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -12067,14 +11867,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 11,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -12111,7 +11908,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -12166,14 +11963,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 12,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -12210,7 +12004,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -12253,14 +12047,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 13,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -12297,7 +12088,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -12563,14 +12354,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 1,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -12640,7 +12428,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -12695,14 +12483,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 2,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -12950,7 +12735,7 @@ data:
                         "timeShift": null,
                         "title": "CPU Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -13006,14 +12791,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 3,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -13083,7 +12865,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -13138,14 +12920,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 4,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -13393,7 +13172,7 @@ data:
                         "timeShift": null,
                         "title": "Memory Quota",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -13449,14 +13228,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 1,
                         "id": 5,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -13704,7 +13480,7 @@ data:
                         "timeShift": null,
                         "title": "Current Network Usage",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -13760,14 +13536,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 6,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -13804,7 +13577,7 @@ data:
                         "timeShift": null,
                         "title": "Receive Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -13847,14 +13620,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 7,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -13891,7 +13661,7 @@ data:
                         "timeShift": null,
                         "title": "Transmit Bandwidth",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -13946,14 +13716,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 8,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -13990,7 +13757,7 @@ data:
                         "timeShift": null,
                         "title": "Average Container Bandwidth by Workload: Received",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -14033,14 +13800,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 9,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -14077,7 +13841,7 @@ data:
                         "timeShift": null,
                         "title": "Average Container Bandwidth by Workload: Transmitted",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -14132,14 +13896,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 10,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -14176,7 +13937,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -14219,14 +13980,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 11,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -14263,7 +14021,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -14318,14 +14076,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 12,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -14362,7 +14117,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Received Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -14405,14 +14160,11 @@ data:
                         "datasource": "$datasource",
                         "fill": 10,
                         "id": 13,
-                        "interval": "1m",
                         "legend": {
-                            "alignAsTable": true,
                             "avg": false,
                             "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
                             "show": true,
                             "total": false,
                             "values": false
@@ -14449,7 +14201,7 @@ data:
                         "timeShift": null,
                         "title": "Rate of Transmitted Packets Dropped",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 2,
                             "value_type": "individual"
                         },
@@ -15922,7 +15674,7 @@ data:
                         "value": "default"
                     },
                     "hide": 0,
-                    "label": "Data Source",
+                    "label": "Data source",
                     "name": "datasource",
                     "options": [
 
@@ -19311,7 +19063,7 @@ data:
                         "value": "default"
                     },
                     "hide": 0,
-                    "label": "Data Source",
+                    "label": "Data source",
                     "name": "datasource",
                     "options": [
 
