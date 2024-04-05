@@ -6,7 +6,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    operator.prometheus.io/version: 0.72.0
+    operator.prometheus.io/version: 0.73.0
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
@@ -153,7 +153,7 @@ spec:
                             description: Months is a list of MonthRange
                             items:
                               description: MonthRange is an inclusive range of months of the year beginning in January Months can be specified by name (e.g 'January') by numerical month (e.g '1') or as an inclusive range (e.g 'January:March', '1:3', '1:March')
-                              pattern: ^((?i)january|february|march|april|may|june|july|august|september|october|november|december|[1-12])(?:((:((?i)january|february|march|april|may|june|july|august|september|october|november|december|[1-12]))$)|$)
+                              pattern: ^((?i)january|february|march|april|may|june|july|august|september|october|november|december|1[0-2]|[1-9])(?:((:((?i)january|february|march|april|may|june|july|august|september|october|november|december|1[0-2]|[1-9]))$)|$)
                               type: string
                             type: array
                           times:
@@ -934,6 +934,9 @@ spec:
                           sendResolved:
                             description: Whether to notify about resolved alerts.
                             type: boolean
+                          summary:
+                            description: Message summary template. It requires Alertmanager >= 0.27.0.
+                            type: string
                           text:
                             description: Message body template.
                             type: string
@@ -5128,6 +5131,9 @@ spec:
                           sendResolved:
                             description: Whether to notify about resolved alerts.
                             type: boolean
+                          summary:
+                            description: Message summary template. It requires Alertmanager >= 0.27.0.
+                            type: string
                           text:
                             description: Message body template.
                             type: string
@@ -8509,7 +8515,7 @@ spec:
                             description: Months is a list of MonthRange
                             items:
                               description: MonthRange is an inclusive range of months of the year beginning in January Months can be specified by name (e.g 'January') by numerical month (e.g '1') or as an inclusive range (e.g 'January:March', '1:3', '1:March')
-                              pattern: ^((?i)january|february|march|april|may|june|july|august|september|october|november|december|[1-12])(?:((:((?i)january|february|march|april|may|june|july|august|september|october|november|december|[1-12]))$)|$)
+                              pattern: ^((?i)january|february|march|april|may|june|july|august|september|october|november|december|1[0-2]|[1-9])(?:((:((?i)january|february|march|april|may|june|july|august|september|october|november|december|1[0-2]|[1-9]))$)|$)
                               type: string
                             type: array
                           times:
