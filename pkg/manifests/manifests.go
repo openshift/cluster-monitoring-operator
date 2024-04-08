@@ -2050,7 +2050,7 @@ func (f *Factory) MetricsServerRoleBindingAuthReader() (*rbacv1.RoleBinding, err
 	return f.NewRoleBinding(f.assets.MustNewAssetSlice(MetricsServerRoleBindingAuthReader))
 }
 
-func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecret, metricsClientCert *v1.Secret, requestheader map[string]string) (*appsv1.Deployment, error) {
+func (f *Factory) MetricsServerDeployment(apiAuthSecretName string, kubeletCABundle *v1.ConfigMap, servingCASecret, metricsClientCert *v1.Secret, requestheader map[string]string) (*appsv1.Deployment, error) {
 	dep, err := f.NewDeployment(f.assets.MustNewAssetSlice(MetricsServerDeployment))
 	if err != nil {
 		return nil, err
@@ -2075,7 +2075,7 @@ func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecr
 	// Hash the TLS secret and propagate it as a annotation to the
 	// deployment's pods to trigger a new rollout when the TLS certificate/key
 	// are rotated.
-	dep.Spec.Template.Annotations["monitoring.openshift.io/serving-ca-secret-hash"] = hashByteMap(tlsSecret.Data)
+	dep.Spec.Template.Annotations["monitoring.openshift.io/serving-ca-secret-hash"] = hashByteMap(servingCASecret.Data)
 
 	// Hash the metrics client cert and propagate it as a annotation to the
 	// deployment's pods to trigger a new rollout when the metrics client cert
@@ -2101,10 +2101,20 @@ func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecr
 	}
 
 	containers[idx].Args = append(containers[idx].Args,
+		"--client-ca-file=/etc/client-ca-bundle/client-ca-file",
+		"--requestheader-client-ca-file=/etc/client-ca-bundle/requestheader-client-ca-file",
 		"--requestheader-allowed-names="+requestheaderAllowedNames,
 		"--requestheader-extra-headers-prefix="+requestheaderExtraHeadersPrefix,
 		"--requestheader-group-headers="+requestheaderGroupHeaders,
 		"--requestheader-username-headers="+requestheaderUsernameHeaders,
+	)
+
+	podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts,
+		v1.VolumeMount{
+			Name:      "client-ca-bundle",
+			ReadOnly:  true,
+			MountPath: "/etc/client-ca-bundle",
+		},
 	)
 
 	if err := validateAuditProfile(config.Audit.Profile); err != nil {
@@ -2118,6 +2128,17 @@ func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecr
 		"--audit-log-maxsize=100", // 100 MB
 		"--audit-log-maxbackup=5", // limit space consumed by restricting backups
 		"--audit-log-compress=true",
+	)
+
+	podSpec.Volumes = append(podSpec.Volumes,
+		v1.Volume{
+			Name: "client-ca-bundle",
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: apiAuthSecretName,
+				},
+			},
+		},
 	)
 
 	if len(config.NodeSelector) > 0 {
@@ -2137,6 +2158,52 @@ func (f *Factory) MetricsServerDeployment(kubeletCABundle *v1.ConfigMap, tlsSecr
 	}
 
 	return dep, nil
+}
+
+func (f *Factory) MetricsServerSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1.ConfigMap) (*v1.Secret, error) {
+	data := make(map[string]string)
+
+	for k, v := range tlsSecret.Data {
+		data[k] = string(v)
+	}
+
+	for k, v := range apiAuthConfigmap.Data {
+		data[k] = v
+	}
+
+	r := newErrMapReader(data)
+
+	var (
+		clientCA              = r.value("client-ca-file")
+		requestheaderClientCA = r.value("requestheader-client-ca-file")
+		tlsCA                 = r.value("tls.crt")
+		tlsKey                = r.value("tls.key")
+	)
+
+	if r.Error() != nil {
+		return nil, fmt.Errorf("value not found in extension api server authentication configmap: %w", r.err)
+	}
+
+	h := fnv.New64()
+	h.Write([]byte(clientCA + requestheaderClientCA + tlsCA + tlsKey))
+	hash := strconv.FormatUint(h.Sum64(), 32)
+
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: f.namespace,
+			Name:      fmt.Sprintf("metrics-server-%s", hash),
+			Labels: map[string]string{
+				"monitoring.openshift.io/name": "metrics-server",
+				"monitoring.openshift.io/hash": hash,
+			},
+		},
+		Data: map[string][]byte{
+			"client-ca-file":               []byte(clientCA),
+			"requestheader-client-ca-file": []byte(requestheaderClientCA),
+			"tls.crt":                      []byte(tlsCA),
+			"tls.key":                      []byte(tlsKey),
+		},
+	}, nil
 }
 
 func (f *Factory) MetricsServerPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {

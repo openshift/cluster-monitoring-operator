@@ -155,12 +155,32 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 			}
 		}
 
+		tlsSecret, err := t.client.WaitForSecretByNsName(ctx, types.NamespacedName{Namespace: t.namespace, Name: "metrics-server-tls"})
+		if err != nil {
+			return fmt.Errorf("failed to wait for metrics-server-tls secret: %w", err)
+		}
+
 		apiAuthConfigmap, err := t.client.WaitForConfigMapByNsName(ctx, types.NamespacedName{Namespace: "kube-system", Name: "extension-apiserver-authentication"})
 		if err != nil {
 			return fmt.Errorf("failed to wait for kube-system/extension-apiserver-authentication configmap: %w", err)
 		}
 
-		dep, err := t.factory.MetricsServerDeployment(cacm, scas, mcs, apiAuthConfigmap.Data)
+		secret, err := t.factory.MetricsServerSecret(tlsSecret, apiAuthConfigmap)
+		if err != nil {
+			return fmt.Errorf("failed to create metrics-server secret: %w", err)
+		}
+
+		err = t.deleteOldMetricsServerSecrets(secret.Labels["monitoring.openshift.io/hash"])
+		if err != nil {
+			return fmt.Errorf("deleting old metrics-server secrets failed: %w", err)
+		}
+
+		err = t.client.CreateOrUpdateSecret(ctx, secret)
+		if err != nil {
+			return fmt.Errorf("reconciling MetricsServer Secret failed: %w", err)
+		}
+
+		dep, err := t.factory.MetricsServerDeployment(secret.Name, cacm, scas, mcs, apiAuthConfigmap.Data)
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer Deployment failed: %w", err)
 		}
@@ -261,5 +281,24 @@ func (t *MetricsServerTask) removePrometheusAdapterResources(ctx context.Context
 	}
 
 	// TODO(slashpai): Add steps to remove other resources if any
+	return nil
+}
+
+func (t *MetricsServerTask) deleteOldMetricsServerSecrets(newHash string) error {
+	secrets, err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).List(t.ctx, metav1.ListOptions{
+		LabelSelector: "monitoring.openshift.io/name=metrics-server,monitoring.openshift.io/hash!=" + newHash,
+	})
+
+	if err != nil {
+		return fmt.Errorf("error listing metrics-server secrets: %w", err)
+	}
+
+	for i := range secrets.Items {
+		err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).Delete(t.ctx, secrets.Items[i].Name, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("error deleting secret: %s: %w", secrets.Items[i].Name, err)
+		}
+	}
+
 	return nil
 }

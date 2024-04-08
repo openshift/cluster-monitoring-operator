@@ -2820,7 +2820,7 @@ metricsServer:
 		"requestheader-group-headers":        "",
 		"requestheader-username-headers":     "",
 	}
-	d, err := f.MetricsServerDeployment(kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
+	d, err := f.MetricsServerDeployment("foo", kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2981,7 +2981,7 @@ metricsServer:
 				"requestheader-group-headers":        "",
 				"requestheader-username-headers":     "",
 			}
-			d, err := f.MetricsServerDeployment(kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
+			d, err := f.MetricsServerDeployment("foo", kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
 
 			if test.err != nil || err != nil {
 				// fail only if the error isn't what is expected
