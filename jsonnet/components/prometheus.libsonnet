@@ -83,6 +83,13 @@ function(params)
     serviceAccount+: {
       // service account token is managed by the operator.
       automountServiceAccountToken: false,
+      metadata+: {
+        annotations+: {
+          // TODO(simonpasquier): remove this step after OCP 4.16 is released.
+          // https://issues.redhat.com/browse/MON-3801.
+          'serviceaccounts.openshift.io/oauth-redirectreference.prometheus-k8s-': '',
+        },
+      },
     },
 
     // Adding the serving certs annotation causes the serving certs controller

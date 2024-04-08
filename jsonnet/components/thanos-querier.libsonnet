@@ -190,7 +190,9 @@ function(params)
         namespace: cfg.namespace,
         labels: tq.config.commonLabels,
         annotations: {
-          'serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier': '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier"}}',
+          // TODO(simonpasquier): remove this step after OCP 4.16 is released.
+          // https://issues.redhat.com/browse/MON-3801.
+          'serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier-': '',
         },
       },
     },
