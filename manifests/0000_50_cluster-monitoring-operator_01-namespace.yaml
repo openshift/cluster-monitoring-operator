@@ -30,3 +30,6 @@ metadata:
     openshift.io/cluster-monitoring: "true"
     name: openshift-user-workload-monitoring
     network.openshift.io/policy-group: monitoring
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
