@@ -2813,7 +2813,13 @@ metricsServer:
 			"tls.key": []byte("foo"),
 		},
 	}
-	d, err := f.MetricsServerDeployment(kubeletCABundle, servingCASecret, metricsClientSecret)
+	apiAuthConfigMapData := map[string]string{
+		"requestheader-allowed-names":        "",
+		"requestheader-extra-headers-prefix": "",
+		"requestheader-group-headers":        "",
+		"requestheader-username-headers":     "",
+	}
+	d, err := f.MetricsServerDeployment("foo", kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2968,8 +2974,13 @@ metricsServer:
 					"tls.key": []byte("foo"),
 				},
 			}
-
-			d, err := f.MetricsServerDeployment(kubeletCABundle, servingCASecret, metricsClientSecret)
+			apiAuthConfigMapData := map[string]string{
+				"requestheader-allowed-names":        "",
+				"requestheader-extra-headers-prefix": "",
+				"requestheader-group-headers":        "",
+				"requestheader-username-headers":     "",
+			}
+			d, err := f.MetricsServerDeployment("foo", kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
 
 			if test.err != nil || err != nil {
 				// fail only if the error isn't what is expected
