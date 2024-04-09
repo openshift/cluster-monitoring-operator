@@ -19,6 +19,8 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 |enableUserWorkload|*bool|`UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
 
+|userWorkload|*link:userworkloadconfig.adoc[UserWorkloadConfig]|`UserWorkload` defines settings for the monitoring of user-defined projects.
+
 |metricsServer|*link:metricsserverconfig.adoc[MetricsServerConfig]|`MetricsServer` defines settings for the MetricsServer component.
 
 |kubeStateMetrics|*link:kubestatemetricsconfig.adoc[KubeStateMetricsConfig]|`KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.

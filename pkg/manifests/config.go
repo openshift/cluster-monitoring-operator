@@ -30,6 +30,7 @@ import (
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/ptr"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 )
@@ -243,10 +244,19 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
 		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
-		disable := false
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = &disable
+		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
 	}
+
+	if c.ClusterMonitoringConfiguration.UserWorkload == nil {
+		c.ClusterMonitoringConfiguration.UserWorkload = &UserWorkloadConfig{}
+	}
+
+	if c.ClusterMonitoringConfiguration.UserWorkload.RulesWithoutLabelEnforcementAllowed == nil {
+		c.ClusterMonitoringConfiguration.UserWorkload.RulesWithoutLabelEnforcementAllowed = ptr.To(true)
+	}
+
 	if c.ClusterMonitoringConfiguration.ThanosQuerierConfig == nil {
 		c.ClusterMonitoringConfiguration.ThanosQuerierConfig = &ThanosQuerierConfig{}
 	}
@@ -278,33 +288,36 @@ func (c *Config) applyDefaults() {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
 	}
 
-	// `defaultExcludedDevices` is the default for two arguments: `collector.netclass.ignored-devices` and `--collector.netdev.device-exclude`.
-	// The following virtual NICs are ignored by default:
-	// * `veth` network interface associated with containers.
-	// * OVN renames `veth.*` to `<rand-hex>@if<X>` where `X` is `/sys/class/net/<if>/ifindex`
-	// thus `[a-f0-9]{15}`
-	// * `enP.*` virtual NICs on Azure cluster
-	// * OVN virtual interfaces `ovn-k8s-mp[0-9]*`
-	// * virtual tunnels and bridges: `tun[0-9]*|br[0-9]*|br-ex|br-int|br-ext`
-	// * Calico Virtual NICs `cali[a-f0-9]*`
-	// Refer to:
-	// https://issues.redhat.com/browse/OCPBUGS-1321
-	// https://issues.redhat.com/browse/OCPBUGS-2729
-	// https://issues.redhat.com/browse/OCPBUGS-7282
-	defaultExcludedDevices := []string{
-		"veth.*",
-		"[a-f0-9]{15}",
-		"enP.*",
-		"ovn-k8s-mp[0-9]*",
-		"br-ex",
-		"br-int",
-		"br-ext",
-		"br[0-9]*",
-		"tun[0-9]*",
-		"cali[a-f0-9]*",
-	}
 	if c.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices == nil {
-		c.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices = &defaultExcludedDevices
+		// `IgnoredNetworkDevices` is the default for two arguments:
+		// `collector.netclass.ignored-devices` and
+		// `--collector.netdev.device-exclude`.
+		//
+		// The following virtual NICs are ignored by default:
+		// * `veth` network interface associated with containers.
+		// * OVN renames `veth.*` to `<rand-hex>@if<X>` where `X` is `/sys/class/net/<if>/ifindex`
+		// thus `[a-f0-9]{15}`
+		// * `enP.*` virtual NICs on Azure cluster
+		// * OVN virtual interfaces `ovn-k8s-mp[0-9]*`
+		// * virtual tunnels and bridges: `tun[0-9]*|br[0-9]*|br-ex|br-int|br-ext`
+		// * Calico Virtual NICs `cali[a-f0-9]*`
+		//
+		// Refer to:
+		// https://issues.redhat.com/browse/OCPBUGS-1321
+		// https://issues.redhat.com/browse/OCPBUGS-2729
+		// https://issues.redhat.com/browse/OCPBUGS-7282
+		c.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices = ptr.To([]string{
+			"veth.*",
+			"[a-f0-9]{15}",
+			"enP.*",
+			"ovn-k8s-mp[0-9]*",
+			"br-ex",
+			"br-int",
+			"br-ext",
+			"br[0-9]*",
+			"tun[0-9]*",
+			"cali[a-f0-9]*",
+		})
 	}
 }
 
