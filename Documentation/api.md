@@ -47,6 +47,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [TelemeterClientConfig](#telemeterclientconfig)
 * [ThanosQuerierConfig](#thanosquerierconfig)
 * [ThanosRulerConfig](#thanosrulerconfig)
+* [UserWorkloadConfig](#userworkloadconfig)
 * [UserWorkloadConfiguration](#userworkloadconfiguration)
 
 ## AdditionalAlertmanagerConfig
@@ -128,6 +129,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | -------- | ---- | ----------- |
 | alertmanagerMain | *[AlertmanagerMainConfig](#alertmanagermainconfig) | `AlertmanagerMainConfig` defines settings for the Alertmanager component in the `openshift-monitoring` namespace. |
 | enableUserWorkload | *bool | `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects. |
+| userWorkload | *[UserWorkloadConfig](#userworkloadconfig) | `UserWorkload` defines settings for the monitoring of user-defined projects. |
 | metricsServer | *[MetricsServerConfig](#metricsserverconfig) | `MetricsServer` defines settings for the MetricsServer component. |
 | kubeStateMetrics | *[KubeStateMetricsConfig](#kubestatemetricsconfig) | `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent. |
 | prometheusK8s | *[PrometheusK8sConfig](#prometheusk8sconfig) | `PrometheusK8sConfig` defines settings for the Prometheus component. |
@@ -618,6 +620,21 @@ The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler inst
 
 [Back to TOC](#table-of-contents)
 
+## UserWorkloadConfig
+
+#### Description
+
+The `UserWorkloadConfig` resource defines settings for the monitoring of user-defined projects.
+
+
+<em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| rulesWithoutLabelEnforcementAllowed | *bool | A Boolean flag that enables or disables the ability to deploy user-defined `PrometheusRules` objects for which the `namespace` label isn't enforced to the namespace of the object. Such objects should be created in a namespace configured under the `namespacesWithoutLabelEnforcement` property of the `UserWorkloadConfiguration` resource. The default value is `true`. |
+
+[Back to TOC](#table-of-contents)
+
 ## UserWorkloadConfiguration
 
 #### Description
@@ -630,5 +647,6 @@ The `UserWorkloadConfiguration` resource defines the settings responsible for us
 | prometheus | *[PrometheusRestrictedConfig](#prometheusrestrictedconfig) | Defines the settings for the Prometheus component in user workload monitoring. |
 | prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | Defines the settings for the Prometheus Operator component in user workload monitoring. |
 | thanosRuler | *[ThanosRulerConfig](#thanosrulerconfig) | Defines the settings for the Thanos Ruler component in user workload monitoring. |
+| namespacesWithoutLabelEnforcement | []string | Defines the list of namespaces for which Prometheus and Thanos Ruler in user-defined monitoring don't enforce the `namespace` label value in `PrometheusRule` objects.\n\nIt allows to define recording and alerting rules that can query across multiple projects (not limited to user-defined projects) instead of deploying identical `PrometheusRule` objects in each user project.\n\nTo make the resulting alerts and metrics visible to project users, the query expressions should return a `namespace` label with a non-empty value. |
 
 [Back to TOC](#table-of-contents)

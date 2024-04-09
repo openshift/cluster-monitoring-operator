@@ -91,7 +91,9 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-	setupUserApplication(t, f)
+	if err := deployUserApplication(f); err != nil {
+		t.Fatal(err)
+	}
 
 	for _, scenario := range []struct {
 		name string
@@ -135,20 +137,33 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
+		fmt.Sprintf(`prometheus:
   enforcedTargetLimit: 10
   volumeClaimTemplate:
     spec:
       resources:
         requests:
           storage: 2Gi
-`,
+namespacesWithoutLabelEnforcement:
+- %s
+`, notEnforcedNs),
 	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-	setupUserApplication(t, f)
+
+	if err := deployUserApplication(f); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := deployGlobalRules(f); err != nil {
+		t.Fatalf("failed to deploy global rules: %s", err)
+	}
+
+	if err := createPrometheusAlertmanagerInUserNamespace(f); err != nil {
+		t.Fatalf("failed to create Alertmanager object in user namespace: %s", err)
+	}
 
 	for _, scenario := range []struct {
 		name string
@@ -163,6 +178,10 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 			f:    assertTenancyForRulesAndAlerts,
 		},
 		{
+			name: "assert rules without namespace enforcement",
+			f:    assertGlobalRulesWithoutNamespaceEnforcement,
+		},
+		{
 			name: "assert prometheus is not deployed in user namespace",
 			f:    f.AssertStatefulsetDoesNotExist("prometheus-not-to-be-reconciled", userWorkloadTestNs),
 		},
@@ -173,6 +192,13 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 	} {
 		t.Run(scenario.name, scenario.f)
 	}
+
+	// Disable cross-namespace rules via the CMO config.
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, `enableUserWorkload: true
+userWorkload:
+  rulesWithoutLabelEnforcementAllowed: false
+`))
+	t.Run("assert cross-namespace rules are not allowed from CMO config", assertGlobalRulesWithNamespaceEnforcement)
 }
 
 func TestUserWorkloadMonitoringOptOut(t *testing.T) {
@@ -192,7 +218,9 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-	setupUserApplication(t, f)
+	if err := deployUserApplication(f); err != nil {
+		t.Fatal(err)
+	}
 
 	for _, scenario := range []struct {
 		name string
@@ -1037,6 +1065,54 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		if err != nil {
 			t.Fatalf("the account has access to the %q endpoint of Thanos querier: %v", path, err)
 		}
+	}
+}
+
+// assertGlobalRulesWithoutNamespaceEnforcement ensures that cross-namespace
+// rules generate metrics without namespace label.
+func assertGlobalRulesWithoutNamespaceEnforcement(t *testing.T) {
+	t.Helper()
+
+	for _, q := range []string{
+		`count(test:pods:count{namespace=""})`,
+		`count(test:up:count{namespace=""})`,
+	} {
+		f.ThanosQuerierClient.WaitForQueryReturn(
+			t,
+			5*time.Minute,
+			q,
+			func(v float64) error {
+				if v == 1.0 {
+					return nil
+				}
+
+				return fmt.Errorf("query %q: expected 1.0, got %f", q, v)
+			},
+		)
+	}
+}
+
+// assertGlobalRulesWithNamespaceEnforcement ensures that cross-namespace rules
+// don't generate metrics without namespace label.
+func assertGlobalRulesWithNamespaceEnforcement(t *testing.T) {
+	t.Helper()
+
+	for _, q := range []string{
+		`absent(test:pods:count{namespace=""})`,
+		`absent(test:up:count{namespace=""})`,
+	} {
+		f.ThanosQuerierClient.WaitForQueryReturn(
+			t,
+			5*time.Minute,
+			q,
+			func(v float64) error {
+				if v == 1.0 {
+					return nil
+				}
+
+				return fmt.Errorf("query %q: expected 1.0, got %f", q, v)
+			},
+		)
 	}
 }
 

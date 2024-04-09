@@ -1,0 +1,25 @@
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
+
+== UserWorkloadConfig
+
+=== Description
+
+The `UserWorkloadConfig` resource defines settings for the monitoring of user-defined projects.
+
+
+
+Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|rulesWithoutLabelEnforcementAllowed|*bool|A Boolean flag that enables or disables the ability to deploy user-defined `PrometheusRules` objects for which the `namespace` label isn't enforced to the namespace of the object. Such objects should be created in a namespace configured under the `namespacesWithoutLabelEnforcement` property of the `UserWorkloadConfiguration` resource. The default value is `true`.
+
+|===
+
+link:../index.adoc[Back to TOC]
