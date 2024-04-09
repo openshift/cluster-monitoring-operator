@@ -292,6 +292,8 @@ function(params)
 
     prometheus+: {
       spec+: {
+        // Enable experimental additional scrape metrics feature
+        enableFeatures+: ['extra-scrape-metrics'],
         overrideHonorTimestamps: true,
         overrideHonorLabels: true,
         ignoreNamespaceSelectors: true,

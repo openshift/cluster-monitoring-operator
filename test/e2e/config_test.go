@@ -654,7 +654,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					// Set by default.
-					expectContainerArg("--enable-feature=exemplar-storage", containerName),
+					expectContainerArg("--enable-feature=extra-scrape-metrics,exemplar-storage", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),

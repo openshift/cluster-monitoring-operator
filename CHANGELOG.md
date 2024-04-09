@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.16
+
+- [#2302](https://github.com/openshift/cluster-monitoring-operator/issues/2302) Enable feature `extra-scrape-metrics` in Prometheus user-workload
+
 ## 4.15
 
 - [#2022](https://github.com/openshift/cluster-monitoring-operator/pull/2022) Add support to switch to metrics server from prometheus-adapter when the `MetricsServer` feature gate is enabled.
