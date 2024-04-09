@@ -332,6 +332,7 @@ local inCluster =
         },
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
         commonLabels+: $.values.common.commonLabels,
+        kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
       },
       thanosQuerier: $.values.thanos {
         name: 'thanos-querier',

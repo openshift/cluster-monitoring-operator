@@ -37,29 +37,13 @@ spec:
     - mountPath: /etc/prometheus/configmaps/serving-certs-ca-bundle
       name: serving-certs-ca-bundle
   - args:
-    - -provider=openshift
-    - -https-address=:9091
-    - -http-address=
-    - -email-domain=*
-    - -upstream=http://localhost:10902
-    - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
-    - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
-    - -tls-cert=/etc/tls/private/tls.crt
-    - -tls-key=/etc/tls/private/tls.key
-    - -client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token
-    - -cookie-secret-file=/etc/proxy/secrets/session_secret
-    - -openshift-service-account=thanos-ruler
-    - -openshift-ca=/etc/pki/tls/cert.pem
-    - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    env:
-    - name: HTTP_PROXY
-      value: ""
-    - name: HTTPS_PROXY
-      value: ""
-    - name: NO_PROXY
-      value: ""
-    image: quay.io/openshift/oauth-proxy:latest
-    name: thanos-ruler-proxy
+    - --secure-listen-address=0.0.0.0:9091
+    - --upstream=http://127.0.0.1:10902
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
+    name: kube-rbac-proxy-web
     ports:
     - containerPort: 9091
       name: web
@@ -76,8 +60,10 @@ spec:
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-thanos-ruler-tls
-    - mountPath: /etc/proxy/secrets
-      name: secret-thanos-ruler-oauth-cookie
+      readOnly: true
+    - mountPath: /etc/kube-rbac-proxy
+      name: secret-thanos-user-workload-kube-rbac-proxy-web
+      readOnly: true
   - args:
     - --secure-listen-address=0.0.0.0:9092
     - --upstream=http://127.0.0.1:10902
@@ -86,7 +72,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --allow-paths=/metrics
-    image: quay.io/openshift/origin-kube-rbac-proxy:latest
+    image: quay.io/brancz/kube-rbac-proxy:v0.15.0
     name: kube-rbac-proxy-metrics
     ports:
     - containerPort: 9092
@@ -162,12 +148,12 @@ spec:
   - name: secret-thanos-ruler-tls
     secret:
       secretName: thanos-ruler-tls
-  - name: secret-thanos-ruler-oauth-cookie
-    secret:
-      secretName: thanos-ruler-oauth-cookie
   - name: secret-thanos-ruler-kube-rbac-proxy-metrics
     secret:
       secretName: thanos-ruler-kube-rbac-proxy-metrics
+  - name: secret-thanos-user-workload-kube-rbac-proxy-web
+    secret:
+      secretName: thanos-user-workload-kube-rbac-proxy-web
   - configMap:
       name: metrics-client-ca
     name: metrics-client-ca

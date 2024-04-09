@@ -4287,7 +4287,6 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	}
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
 	tr, err := f.ThanosRulerCustomResource(
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
 	)
@@ -4295,17 +4294,6 @@ func TestThanosRulerConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, container := range tr.Spec.Containers {
-		if container.Name == "thanos-ruler-proxy" {
-			volumeName := "thanos-ruler-trusted-ca-bundle"
-			if !volumeConfigured(tr.Spec.Volumes, volumeName) {
-				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
-			}
-			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
-				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
-			}
-		}
-	}
 	if tr.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
 		t.Fatal("Thanos ruler topology spread contraints MaxSkew not configured correctly")
 	}
@@ -4331,7 +4319,6 @@ func TestThanosRulerRetentionConfig(t *testing.T) {
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 	tr, err := f.ThanosRulerCustomResource(
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
 	)
@@ -4425,7 +4412,6 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 			name: "Thanos ruler",
 			getSpec: func(f *Factory) (spec, error) {
 				t, err := f.ThanosRulerCustomResource(
-					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					nil,
 				)
