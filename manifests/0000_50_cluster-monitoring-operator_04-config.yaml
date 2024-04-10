@@ -1052,6 +1052,26 @@ data:
     #
     # cluster:volume_manager_selinux_volumes_admitted_total shows how many Pods had set SELinux context and successfuly started.
     - '{__name__="cluster:volume_manager_selinux_volumes_admitted_total"}'
+    #
+    # owners: (https://github.com/openshift/lightspeed-service, @openshift/team-openshift-lightspeed)
+    #
+    # ols:provider_model_configuration shows which providers and models are configured and enabled
+    - '{__name__="ols:provider_model_configuration"}'
+    #
+    # owners: (https://github.com/openshift/lightspeed-service, @openshift/team-openshift-lightspeed)
+    #
+    # ols:rest_api_query_calls_total:2xx shows the count of successful ols query requests
+    - '{__name__="ols:rest_api_query_calls_total:2xx"}'
+    #
+    # owners: (https://github.com/openshift/lightspeed-service, @openshift/team-openshift-lightspeed)
+    #
+    # ols:rest_api_query_calls_total:4xx shows the count of ols query calls that were rejected due to auth or other validity issues
+    - '{__name__="ols:rest_api_query_calls_total:4xx"}'
+    #
+    # owners: (https://github.com/openshift/lightspeed-service, @openshift/team-openshift-lightspeed)
+    #
+    # ols:rest_api_query_calls_total:5xx shows the count of ols query calls that failed due to internal OLS errors (which may include errors interacting with external services such as LLM providers)
+    - '{__name__="ols:rest_api_query_calls_total:5xx"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
