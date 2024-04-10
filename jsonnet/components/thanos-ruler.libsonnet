@@ -337,6 +337,9 @@ function(params)
         labels: {
           thanosRulerName: cfg.crName,
         },
+        annotations+: {
+          'operator.prometheus.io/controller-id': 'openshift-user-workload-monitoring/prometheus-operator',
+        },
       },
       spec: {
         affinity: {

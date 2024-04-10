@@ -1,6 +1,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
+  annotations:
+    operator.prometheus.io/controller-id: openshift-monitoring/prometheus-operator
   labels:
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/instance: k8s

@@ -328,6 +328,11 @@ function(params)
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and
     // authZ it requires some additonal configuration.
     prometheus+: {
+      metadata+: {
+        annotations+: {
+          'operator.prometheus.io/controller-id': 'openshift-monitoring/prometheus-operator',
+        },
+      },
       spec+: {
         alerting+: {
           alertmanagers:

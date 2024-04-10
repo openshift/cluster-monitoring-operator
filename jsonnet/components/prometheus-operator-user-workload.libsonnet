@@ -97,6 +97,7 @@ function(params)
                         '--config-reloader-cpu-request=1m',
                         '--config-reloader-memory-request=10Mi',
                         '--web.listen-address=127.0.0.1:8080',
+                        '--controller-id=openshift-user-workload-monitoring/prometheus-operator',
                       ],
                       ports: [],
                       resources: {
