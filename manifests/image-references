@@ -30,10 +30,6 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-prometheus-alertmanager:latest
-  - name: oauth-proxy
-    from:
-      kind: DockerImage
-      name: quay.io/openshift/origin-oauth-proxy:latest
   - name: prometheus-node-exporter
     from:
       kind: DockerImage
